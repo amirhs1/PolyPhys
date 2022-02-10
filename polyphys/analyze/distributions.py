@@ -137,13 +137,13 @@ def sphere_sphere_intersection(
     return vol
 
 
-class Distributions(object):
+class Distribution(object):
     hist_path: str
     edge_path: str
     hist_info: Type[SumRule]
     geometry: str = 'biaxial'
     direction: str = 'longitudinal'
-    normalized: bool = True
+    normalized: bool = False
     """computes the local number density of any type of particle and the \
     local volume fraction of bead (spheres) in 1D (cylinder with the \
     periodic boundary condition (PBC) along the longitudinal axis (z axis)), \
@@ -350,11 +350,10 @@ class Distributions(object):
         radius_attr: str,
         geometry: str = 'biaxial',
         direction: str = 'longitudinal',
-        normalized: bool = True,
+        normalized: bool = False,
     ):
         if isinstance(hist_data, np.ndarray):
-            self.histogram = hist_data[0, :]
-            self.centers = hist_data[1, :]
+            self.histogram = hist_data
         else:
             raise ValueError(
                 f"'{hist_data}'"
@@ -362,6 +361,7 @@ class Distributions(object):
         if isinstance(edges, np.ndarray):
             self.edges = edges
             self.box_length = self.edges[-1] - self.edges[0]
+            self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
             # assuming bin.edges are equally-spaced
             self.bin_size = self.edges[1] - self.edges[0]
         else:
@@ -399,6 +399,17 @@ class Distributions(object):
         self._set_args()
         self._number_density()
         self._volume_fraction()
+        if self.normalized is True:
+            # the sum of rho is not equal to the bulk number density when r
+            # approaches infinity, i.e. natom/vol_system. This arises from
+            # the way we descritize the local number desnity.
+            self.rho = self.rho / self.rho.sum()
+            # time averaging: the sum of histograms = natoms * nframes.
+            # normalization: the sum of the number density is now 1.
+            # the sum of phi is not equal to the bulk volume fraction when r
+            # approaches infinity, i.e, (natoms*vol_atom)/vol_system. This
+            # arises from the way we descritize the local number desnity.
+            self.phi = self.phi / self.phi.sum()
 
     def _consecutive_bounds(self):
         """
@@ -619,7 +630,7 @@ class Distributions(object):
             # bin, there is no previous bin, so this quanyoyu is initiated
             # by 0:
             intersect_vol_previous = 0
-            for edge_idx in range(bound_minxax[0], bound_minxax[1] + 1):
+            for edge_idx in range(bound_minxax[0], bound_minxax[1] + 2):
                 # The difference between the intersection volume of a bead
                 # with a bin edge with index idx and the previous bin is the
                 # volume share of the bin (or center) with index idx-1:
@@ -667,7 +678,7 @@ class Distributions(object):
         in different geometries.
         """
         self._args = {
-            'cubic': {
+            'box': {
                 'r': (1, ),
                 # For concentric spherical shells, the constant, i.e. 1,
                 # is redundant and merely defined to make the use of args
@@ -685,7 +696,7 @@ class Distributions(object):
                 'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
                 'z': (self.hist_info.dcyl, )
             },
-            'cylindrical': {
+            'biaxial': {
                 'r': (self.hist_info.lcyl, ),
                 'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
                 'z': (self.hist_info.dcyl, )
@@ -716,20 +727,14 @@ class Distributions(object):
         """
         integrand = self._integrands[self.geometry][self.direction]
         arguments = self._args[self.geometry][self.direction]
-        bin_vols = np.array(
-            [integrate.quad(
-                integrand, self.edges[idx],
-                self.edges[idx] + self.bin_size,
-                args=arguments)[0] for idx in range(len(self.edges[:-1]))])
+        bin_vols = np.array([integrate.quad(
+            integrand,
+            self.edges[idx],
+            self.edges[idx] + self.bin_size,
+            args=arguments)[0] for idx in range(len(self.edges[:-1]))
+        ])
         # histogram[col_name] and bin_vols have the same size, so:
         self.rho = self.histogram / bin_vols
-        # the sum of rho is not equal to the bulk number density when r
-        # approaches infinity, i.e. natom/vol_system. This arises from
-        # the way we descritize the local number desnity.
-        if self.normalized:
-            self.rho = self.rho / self.rho.sum()
-            # time averaging: the sum of histograms = natoms * nframes.
-            # normalization: the sum of the number density is now 1.
 
     def _volume_fraction(self):
         """
@@ -742,18 +747,13 @@ class Distributions(object):
         volume fraction is normalized to give the integral of the local \
         volume fraction  along the direction of interest in the region of \
         interest. (See the explnation for the `_number_density` method and \
-        `Distributions` class).
+        `Distribution` class).
         """
         n_centers = len(self.rho)
         self.phi = np.zeros(n_centers)
         for c_idx in range(n_centers):
             for idx, vol in self.volume_shares[c_idx].items():
                 self.phi[c_idx] = self.phi[c_idx] + (self.rho[idx] * vol)
-        # the sum of phi is not equal to the bulk volume fraction when r
-        # approaches infinity, i.e, (natoms*vol_atom)/vol_system. This arises
-        # from the way we descritize the local number desnity.
-        if self.normalized:
-            self.phi = self.phi / self.phi.sum()
 
 
 def distributions_generator(
@@ -830,7 +830,7 @@ def distributions_generator(
             lineage='whole',
             ispath=False
         )
-        distributions = Distributions(
+        distributions = Distribution(
             histogram,
             bin_edges[whole],
             whole_info,
