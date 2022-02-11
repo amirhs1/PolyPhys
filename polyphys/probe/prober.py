@@ -1,6 +1,8 @@
+from typing import Optional
 import MDAnalysis as mda
 import numpy as np
 from polyphys.manage.parser import SumRule
+from polyphys.manage.organizer import invalid_keyword
 
 
 def log_outputs(log_file, geometry):
@@ -244,14 +246,14 @@ def simple_stats(property_name, array):
     of the mean (sem) for an array.
 
     Parameters
-    ----------i
+    ----------
     property_name : str
         Name of physical property.
     array: numpy array of float
         Values of `property_name`.
 
-    Return
-    ------
+    Returns
+    -------
     stats: dict
         an dict of mean, std, var, and sem of `property_name`
     """
@@ -279,8 +281,8 @@ def end_to_end(positions):
         in a frame or snapshot or time step. `positions` is sorted by atom \
         number form 1 to N.
 
-    Return
-    ------
+    Returns
+    -------
     edn_to_end: numppy array of dtype float
     """
     # calculation in the center of geometry of the atom group.
@@ -304,8 +306,8 @@ def max_distance(positions):
         in a frame or snapshot or time step. `positions` is sorted by atom \
         number form 1 to N.
 
-    Return
-    ------
+    Returns
+    -------
     [xmax, ymax, zmax]: numpy array of dtype float
     """
     # calculation in the center of geometry of the atom group.
@@ -338,8 +340,8 @@ def fsd(
         It can be any integer in the range of the spatial dimension of the \
         system.
 
-    Return
-    ------
+    Returns
+    -------
     fsd: numpy array of dtype float
 
     References
@@ -374,8 +376,8 @@ def bin_create(sim_name, edge_name, bin_size, lmin, lmax, save_to):
     save_to : str
         Whether save outputs to memory as csv files or not.
 
-    Return
-    ------
+    Returns
+    -------
     bin_edges : numpy array of dtype float
         The edges to pass into a histogram. Save `bin_edges` to file if \
         `save_to` is not None.
@@ -388,10 +390,27 @@ def bin_create(sim_name, edge_name, bin_size, lmin, lmax, save_to):
     return bin_edges, hist
 
 
-def fixedsize_bins(sim_name, edge_name, bin_size, lmin, lmax, save_to):
+def fixedsize_bins(
+    sim_name: str,
+    edge_name: str,
+    bin_size: float,
+    lmin: float, 
+    lmax: float,
+    bin_type: str = 'ordinaray',
+    save_to: Optional[str] = None,
+    ):
     """
-    generates arrays of bins and histograms, ensuring that the `bin_size`
+    generates arrays of bins and histograms, ensuring that the `bin_size` \
     guaranteed. To achieve this, it extend the `lmin` and `lmax` limits.
+
+    To-do List
+    ----------
+    1. Following the idea used: 
+    https://docs.mdanalysis.org/1.1.1/_modules/MDAnalysis/lib/util.html#fixedwidth_bins 
+    Makes input array-like so bins can be calculated for 1D data (then all parameters 
+    are simple floats) or nD data (then parameters are supplied as arrays, with each entry
+    correpsonding to one dimension).
+    2. Eliminate the if-statement for the periodic_bin_edges.
 
     Parameters
     ----------
@@ -405,11 +424,28 @@ def fixedsize_bins(sim_name, edge_name, bin_size, lmin, lmax, save_to):
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    save_to : str
+    bin_type: {'ordinary', 'nonnegative', 'periodic'}, defualt 'ordinary'
+        The type of bin in a given direction in a given coordinate system:
+
+        'ordinary'
+            A bounded or unbounded coordinate such as any of the cartesian coordinates or \
+            or the polar coordinate in the spherical coordinate system. For such coordinates, \
+            the `lmin` and `lmax` limits are equaly extended to ensure the `bin_size`.
+
+        'nonnegative'
+            A nonnegative coordinate such as the r direction in the polar or spherical \
+            coordinate system. For such coordinates, ONLY `lmax` limit is extended to \
+            ensure the `bin_size`.
+
+        'periodic'
+            A periodic coordinate such as the azimuthal direction in the spherical coordinate. \
+            For such coordinates, the initial `lmin` and `lmax` limits are used. 
+
+    save_to : str, default None
         Whether save outputs to memory as csv files or not.
 
-    Return
-    ------
+    Returns
+    -------
     bin_edges : numpy array of dtype float
         The edges to pass into a histogram. Save `bin_edges` to file if \
         `save_to` is not None.
@@ -419,11 +455,35 @@ def fixedsize_bins(sim_name, edge_name, bin_size, lmin, lmax, save_to):
     Reference:
     https://docs.mdanalysis.org/1.1.1/documentation_pages/lib/util.html#MDAnalysis.analysis.density.fixedwidth_bins
     """
-    bin_params = mda.lib.util.fixedwidth_bins(bin_size, lmin, lmax)
+    _bin_types = ['ordinary', 'nonnagative', 'periodic']
+    if not np.all(lmin < lmax):
+        raise ValueError('Boundaries are not sane: should be xmin < xmax.')
+    _delta = np.asarray(bin_size, dtype=np.float_)
+    _lmin = np.asarray(lmin, dtype=np.float_)
+    _lmax = np.asarray(lmax, dtype=np.float_)
+    _length = _lmax - _lmin
+
+    if bin_type == 'ordinary':
+        nbins = np.ceil(_length / _delta).astype(np.int_)  # number of bins
+        dx = 0.5 * (nbins * _delta - _length)  # add half of the excess to each end
+        _lmin = _lmin - dx 
+        _lmax =  _lmax + dx
+    elif bin_type == 'nonnegative':
+        nbins = np.ceil(_length / _delta).astype(np.int_)
+        dx = 0.5 * (nbins * _delta - _length)
+        _lmax =  _lmax + 2 * dx
+    elif bin_type == 'periodic':
+        periodic_bin_edges = np.arange(_lmin, _lmax + _delta, _delta)
+    else:
+        invalid_keyword(bin_type, _bin_types)
     # create empty grid with the right dimensions (and get the edges)
-    hist_collectors, bin_edges = \
-        np.histogram(np.zeros(1), bins=bin_params['Nbins'],
-                     range=(bin_params['min'], bin_params['max']))
+    hist_collectors, bin_edges = np.histogram(
+        np.zeros(1),
+        bins=nbins,            
+        range=(_lmin, _lmax)
+    )
+    if bin_type == 'periodic': # improved this.
+        bin_edges = periodic_bin_edges
     hist_collectors *= 0
     np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
     return bin_edges, hist_collectors
@@ -572,8 +632,13 @@ def probe_bug_with_histogram(
 
 
 def probe_bug(
-              topology, trajectory, geometry, lineage,
-              save_to="./", continuous=False):
+    topology: str,
+    trajectory: str,
+    geometry: str = 'biaxial',
+    lineage: str = 'segment',
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
     """
     runs various analyses on a `lineage` simulation of a 'bug' atom group in \
     the `geometry` of interest.
@@ -584,11 +649,11 @@ def probe_bug(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'biaxial', 'slit', 'box'}, defualt 'biaxial'
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}
+    lineage: {'segment', 'whole'}, default 'segment'
         Type of the input file.
-    save_to: str
+    save_to: str, default './'
         The absolute/relative path of a directory to which outputs are saved.
     continuous: bool, default False
         Whether a `trajectory` file is a part of a sequence of trajectory \
@@ -639,8 +704,14 @@ def probe_bug(
         }
     # distribution of the size of the end-to-end
     rflory_edges, rflory_hist = fixedsize_bins(
-        sim_name, 'rfloryEdgeMon', bin_edges['rfloryEdge']['bin_size'],
-        0, bin_edges['rfloryEdge']['lmax'], save_to)
+        sim_name,
+        'rfloryEdgeMon',
+        bin_edges['rfloryEdge']['bin_size'],
+        0,
+        bin_edges['rfloryEdge']['lmax'],
+        bin_type='nonnegative', 
+        save_to=save_to
+    )
     fsd_t = np.empty([0])
     rflory_t = np.empty([0])
     gyr_t = np.empty([0])
@@ -655,8 +726,6 @@ def probe_bug(
         dummy_hist, _ = np.histogram(rms, rflory_edges)
         # RDF of the end-to-end distance
         rflory_hist = np.add(rflory_hist, dummy_hist)
-        # number density in the cell's frame of reference
-        # histogram in r direction
     np.save(save_to + sim_name + '-rfloryHistMon.npy', rflory_hist)
     np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
     np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
@@ -667,7 +736,13 @@ def probe_bug(
     print('done.')
 
 
-def rmsd_bug(topology, trajectory, geometry, lineage, save_to="./"):
+def rmsd_bug(
+    topology: str,
+    trajectory: str,
+    geometry: str = 'biaxial',
+    lineage: str = 'segment',
+    save_to: str = './'
+) -> None:
     """
     comptues the rmsd of a 'segment simulation of a 'bug' atom group in the \
     `geometry` of interest, and then saves the output to the `save_to` \
@@ -682,11 +757,11 @@ def rmsd_bug(topology, trajectory, geometry, lineage, save_to="./"):
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}
+    lineage: {'segment', 'whole'}, default 'segment'
         Type of the input file.
-    save_to: str
+    save_to: str, default './'
         The absolute/relative path of a directory to which output is saved.
     """
     sim_info = SumRule(
@@ -704,20 +779,36 @@ def rmsd_bug(topology, trajectory, geometry, lineage, save_to="./"):
     lj_dt = sim_info.dt
     sim_real_dt = lj_nstep * lj_dt * time_unit
     cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt)
+        topology,
+        trajectory,
+        topology_format='DATA',
+        format='LAMMPSDUMP', 
+        lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", 
+        dt=sim_real_dt
+    )
     cell.transfer_to_memory(step=50, verbose=False)
     _ = mda.analysis.align.AlignTraj(
-        cell, cell, select='resid 1', filename=sim_name + '.dcd').run()
+        cell,
+        cell,
+        select='resid 1',
+        filename=sim_name + '.dcd'
+    ).run()
     matrix = mda.analysis.diffusionmap.DistanceMatrix(
-        cell, select='resid 1').run()
+        cell,
+        select='resid 1'
+    ).run()
     np.save(save_to + sim_name + '-rmsdMatrixMon.npy', matrix.dist_matrix)
 
 
 def probe_all(
-        topology, trajectory, geometry, lineage,
-        save_to="./", continuous=False):
+    topology: str,
+    trajectory: str,
+    geometry: str = 'biaxial',
+    lineage: str = 'segment',
+    save_to: str = "./",
+    continuous: Optional[bool] = False
+) -> None:
     """
     runs various analyses on a `lineage` simulation of an 'all' atom \
     group in the `geometry` of interest, and saves a variety of \
@@ -729,9 +820,9 @@ def probe_all(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}
+    lineage: {'segment', 'whole'}, default 'segment'
         Type of the input file.
     save_to: str
         The absolute/relative path of a directory to which outputs are saved.
@@ -778,9 +869,14 @@ def probe_all(
     lj_dt = sim_info.dt
     sim_real_dt = lj_nstep * lj_dt * time_unit
     cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt)
+        topology,
+        trajectory,
+        topology_format='DATA',
+        format='LAMMPSDUMP',
+        lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z",
+        dt=sim_real_dt
+    )
     # slicing trajectory based the continuous condition
     if continuous:
         sliced_trj = cell.trajectory[0: -1]
@@ -792,27 +888,60 @@ def probe_all(
     # bin edges and histograms in different directions:
     # radial direction of the cylindrical coordinate system
     r_edges, r_hist_crd = fixedsize_bins(
-        sim_name, 'rEdgeCrd', bin_edges['rEdge']['bin_size'],
-        0.0, bin_edges['rEdge']['lmax'], save_to)
+        sim_name,
+        'rEdgeCrd',
+        bin_edges['rEdge']['bin_size'],
+        0.0,
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
     _, r_hist_mon = fixedsize_bins(
-        sim_name, 'rEdgeMon', bin_edges['rEdge']['bin_size'],
-        0.0, bin_edges['rEdge']['lmax'], save_to)
+        sim_name,
+        'rEdgeMon',
+        bin_edges['rEdge']['bin_size'],
+        0.0,
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
     # z direction of the cylindrical coordinate system
     z_edges, z_hist_crd = fixedsize_bins(
-        sim_name, 'zEdgeCrd', bin_edges['zEdge']['bin_size'],
-        -1 * bin_edges['zEdge']['lmax'], bin_edges['zEdge']['lmax'], save_to)
+        sim_name,
+        'zEdgeCrd',
+        bin_edges['zEdge']['bin_size'],
+        -1 * bin_edges['zEdge']['lmax'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
     _, z_hist_mon = fixedsize_bins(
-        sim_name, 'zEdgeMon', bin_edges['zEdge']['bin_size'],
-        -1 * bin_edges['zEdge']['lmax'], bin_edges['zEdge']['lmax'], save_to)
+        sim_name,
+        'zEdgeMon',
+        bin_edges['zEdge']['bin_size'],
+        -1 * bin_edges['zEdge']['lmax'],
+        bin_edges['zEdge']['lmax'],
+         bin_type='ordinary',
+        save_to=save_to
+    )
     # theta of the cylindrical coordinate system
     theta_edges, theta_hist_crd = fixedsize_bins(
-        sim_name, 'thetaEdgeCrd', bin_edges['thetaEdge']['bin_size'],
-        -1 * bin_edges['thetaEdge']['lmax'], bin_edges['thetaEdge']['lmax'],
-        save_to)  # in radians
+        sim_name, 'thetaEdgeCrd',
+        bin_edges['thetaEdge']['bin_size'],
+        -1 * bin_edges['thetaEdge']['lmax'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+    )  # in radians
     _, theta_hist_mon = fixedsize_bins(
-        sim_name, 'thetaEdgeMon', bin_edges['thetaEdge']['bin_size'],
-        -1 * bin_edges['thetaEdge']['lmax'], bin_edges['thetaEdge']['lmax'],
-        save_to)  # in radians
+        sim_name,
+        'thetaEdgeMon',
+        bin_edges['thetaEdge']['bin_size'],
+        -1 * bin_edges['thetaEdge']['lmax'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+    )  # in radians
     # check if any of the histograms are empty or not.
     if any([
             r_hist_crd.any() != 0, r_hist_mon.any() != 0,
@@ -838,11 +967,15 @@ def probe_all(
         z_hist_mon = np.add(z_hist_mon, dummy_hist)
         # histogram in theta
         theta = np.arctan2(
-                crds.positions[:, 1], crds.positions[:, 0])  # in degrees
+            crds.positions[:, 1],
+            crds.positions[:, 0]
+        )  # in degrees
         dummy_hist, _ = np.histogram(theta, theta_edges)
         theta_hist_crd = np.add(theta_hist_crd, dummy_hist)
         theta = np.arctan2(
-                bug.positions[:, 1], bug.positions[:, 0])  # in degrees
+            bug.positions[:, 1],
+            bug.positions[:, 0]
+        )  # in degrees
         dummy_hist, _ = np.histogram(theta, theta_edges)
         theta_hist_mon = np.add(theta_hist_mon, dummy_hist)
     lastname = 'Crd'
