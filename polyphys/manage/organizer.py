@@ -374,7 +374,7 @@ def save_parent(
         The physical property.
     save_to : str
         Absolute/relative path of a directory to which outputs are saved.
-    group: {'bug', 'all'}, default bug
+    group: {'bug', 'all'}, default 'bug'
         Type of the particle group.
     ext: {'csv', 'npy'}, defualt 'csv'
     """
