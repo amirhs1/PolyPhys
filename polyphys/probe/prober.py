@@ -1,19 +1,60 @@
-from typing import Optional
+from typing import Optional, Tuple, List
 import MDAnalysis as mda
 import numpy as np
 from polyphys.manage.parser import SumRule
 from polyphys.manage.organizer import invalid_keyword
 
 
-def log_outputs(log_file, geometry):
-    cell_attrs = SumRule(log_file, geometry)
-    output = f"N{cell_attrs.nmon}D{cell_attrs.dcyl}ac{cell_attrs.dcrowd}"
-    details_out = output + "-log_details.csv"
+def log_datasets(
+    log: str,
+    geometry: str = 'biaxial',
+    group: str = 'bug',
+    lineage: str = 'segment'
+) -> Tuple[str, str]:
+    """
+    generates the 'details' and 'runtime' 'csv' files with a pre-defined list \
+    of header names.
+
+    The 'details' file contains the information about  input parameters \
+    and settings in a set of LAMMPS simulations.
+
+    The 'runtime' file contains information about the runtimes of a set of \
+     LAMMPS simulations.
+
+    Parameters
+    ----------
+    log: str
+        The name of the LAMMPS log file.
+    geometry : {'biaxial', 'slit', 'box'}, defualt 'biaxial'
+        Shape of the simulation box.
+    group: {'bug', 'all'}, default 'bug'
+        Type of the particle group.
+    lineage: {'segment', 'whole'}, default 'segment'
+        Type of the input file.
+
+    Returns:
+    details_out: str
+        The name of the details dataset.
+    runtime_out: str
+        The name of the runtime dataset.
+    """
+    sim_info = SumRule(
+        log,
+        geometry=geometry,
+        group=group,
+        lineage=lineage,
+    )
+    details_out = sim_info.ensemble + '-log_details.csv'
     with open(details_out, 'w') as detailsfile:
+        # write simulation information
+        for lineage_name in sim_info.genealogy:
+            detailsfile.write(f"{lineage_name},")
+        for attr_name in sim_info.attributes:
+            detailsfile.write(f"{attr_name},")
         # neig_modify delay NUM every NUM check YES/NO:
-        detailsfile.write('groupname,filename,ens,run_seg,rskin,delay,every,\
-            check,epsilon,dcrowd,')
-        detailsfile.write('ncrowd,lcyl,dcyl,nmon,total_time_s,cores,timestep,\
+        detailsfile.write(',ens,run_seg,rskin,delay,every,\
+            check,')
+        detailsfile.write('total_time_s,cores,timestep,\
             atoms,ts_per_sec,')
         # Section columns: min time, avg time, max time, %varavg, %total"
         # Section rows: Pair, Bond, Neigh, Comm, Output, Modify, Other
@@ -21,42 +62,68 @@ def log_outputs(log_file, geometry):
             neigh_pct,comm_avg_s,')
         detailsfile.write('comm_pct,output_avg_s,output_pct,modify_avg_s,\
             modify_pct,other_avg_s,other_pct,dangerous\n')
-    runtime_out = output + "-log_runtime.csv"
+    runtime_out = sim_info.ensemble + "-log_runtime.csv"
     with open(runtime_out, 'w') as runfile:
         runfile.write('groupname,filename,ncores,natoms,wall_time\n')
     return details_out, runtime_out
 
 
-def lammps_log_details(log_files, details_out, runtime_out):
-    for file in log_files:
-        filename = file[0].split('.log')
-        filename = filename[0]
-        filename = filename.split('/')[-1]
-        ens = filename.split('ens')[-1]
-        groupname = filename.split('ens')[0]
-        with open(file[0], 'r') as log,\
+def log_parser(
+    logs: List[Tuple[str]],
+    details_out: str,
+    runtime_out: str,
+    geometry: str = 'biaxial',
+    group: str = 'bug',
+    lineage: str = 'segment'
+) -> None:
+    """
+    parses a LAMMPS `logs`, gather the information about simulations from \
+    their `logs`, and write down simulation detials to `details_out` csv \
+    files and runtime information to `runtime_out` csv file.
+
+    Parameters
+    ----------
+    logs: list of str
+        The list of LAMMPS log files where each element of list is a tuple \
+        file with one element; a string that is the filepath for the log.
+    details_out: str
+        The name of the 'details' file in which the simulation detials is \
+        written.
+    runtime_out: str
+        The name of the 'runtime' file in whihc the runtime information is \
+        written.
+    geometry : {'biaxial', 'slit', 'box'}, defualt 'biaxial'
+        Shape of the simulation box.
+    group: {'bug', 'all'}, default 'bug'
+        Type of the particle group.
+    lineage: {'segment', 'whole'}, default 'segment'
+        Type of the input file.
+    """
+    for log in logs:
+        sim_info = SumRule(
+            log,
+            geometry=geometry,
+            group=group,
+            lineage=lineage,
+        )
+        filename = sim_info.filename
+        ens = sim_info.ensemble_id
+        groupname = sim_info.lineage_name
+        with open(details_out, mode='w') as detailsfile:
+            # write simulation detials
+            for lineage_name in sim_info.genealogy:
+                attr_value = getattr(sim_info, lineage_name)
+                detailsfile.write(f"{attr_value},")
+            for attr_name in sim_info.attributes:
+                attr_value = getattr(sim_info, attr_name)
+                detailsfile.write(f"{attr_value},")
+        with open(log[0], 'r') as log,\
             open(details_out, 'a') as detailsfile,\
                 open(runtime_out, 'a') as runfile:
             line = log.readline()
-            # The other of while loop are important
             # neigh_modify delay every check page one
             j = 1
             while line:
-                while line.startswith('variable'):
-                    words = line.split()
-                    line = log.readline()
-                    if words[1] == 'epsilon1':
-                        epsilon = words[3]
-                    if words[1] == 'sig2':
-                        dcrowd = words[3]
-                    if words[1] == 'n_crowd':
-                        ncrowd = words[3]
-                    if words[1] == 'lz':
-                        lcyl = str(2*float(words[3]))
-                    if words[1] == 'r':
-                        dcyl = str(2*float(words[3]))
-                    if words[1] == 'n_bug':
-                        nmon = words[3]
                 if line.startswith('neighbor'):
                     words = line.split()
                     rskin = words[1].strip()  # rskin
@@ -68,12 +135,6 @@ def lammps_log_details(log_files, details_out, runtime_out):
                     every = words[4].strip()
                     check = words[6].strip()
                 if line.startswith('Loop time'):
-                    detailsfile.write(groupname)
-                    detailsfile.write(",")
-                    detailsfile.write(filename)
-                    detailsfile.write(",")
-                    detailsfile.write(ens)
-                    detailsfile.write(",")
                     detailsfile.write(str(j))  # total time
                     detailsfile.write(",")
                     j += 1
@@ -86,18 +147,6 @@ def lammps_log_details(log_files, details_out, runtime_out):
                     detailsfile.write(every)  # every
                     detailsfile.write(",")
                     detailsfile.write(check)  # check
-                    detailsfile.write(",")
-                    detailsfile.write(epsilon)  # epsilon
-                    detailsfile.write(",")
-                    detailsfile.write(dcrowd)  # dcrowd
-                    detailsfile.write(",")
-                    detailsfile.write(ncrowd)  # ncrowd
-                    detailsfile.write(",")
-                    detailsfile.write(lcyl)  # lcyl
-                    detailsfile.write(",")
-                    detailsfile.write(dcyl)  # dcyl
-                    detailsfile.write(",")
-                    detailsfile.write(nmon)  # nmon
                     detailsfile.write(",")
                     words = line.split()
                     detailsfile.write(words[3].strip())  # total time
@@ -394,22 +443,22 @@ def fixedsize_bins(
     sim_name: str,
     edge_name: str,
     bin_size: float,
-    lmin: float, 
+    lmin: float,
     lmax: float,
     bin_type: str = 'ordinaray',
     save_to: Optional[str] = None,
-    ):
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     generates arrays of bins and histograms, ensuring that the `bin_size` \
     guaranteed. To achieve this, it extend the `lmin` and `lmax` limits.
 
     To-do List
     ----------
-    1. Following the idea used: 
-    https://docs.mdanalysis.org/1.1.1/_modules/MDAnalysis/lib/util.html#fixedwidth_bins 
-    Makes input array-like so bins can be calculated for 1D data (then all parameters 
-    are simple floats) or nD data (then parameters are supplied as arrays, with each entry
-    correpsonding to one dimension).
+    1. Following the idea used:
+    https://docs.mdanalysis.org/1.1.1/_modules/MDAnalysis/lib/util.html#fixedwidth_bins
+    Makes input array-like so bins can be calculated for 1D data (then all \
+    parameters are simple floats) or nD data (then parameters are supplied \
+    as arrays, with each entry correpsonding to one dimension).
     2. Eliminate the if-statement for the periodic_bin_edges.
 
     Parameters
@@ -428,18 +477,20 @@ def fixedsize_bins(
         The type of bin in a given direction in a given coordinate system:
 
         'ordinary'
-            A bounded or unbounded coordinate such as any of the cartesian coordinates or \
-            or the polar coordinate in the spherical coordinate system. For such coordinates, \
-            the `lmin` and `lmax` limits are equaly extended to ensure the `bin_size`.
+            A bounded or unbounded coordinate such as any of the cartesian \
+            coordinates or the polar coordinate in the spherical coordinate \
+            system. For such coordinates, the `lmin` and `lmax` limits are \
+            equaly extended to ensure the `bin_size`.
 
         'nonnegative'
-            A nonnegative coordinate such as the r direction in the polar or spherical \
-            coordinate system. For such coordinates, ONLY `lmax` limit is extended to \
-            ensure the `bin_size`.
+            A nonnegative coordinate such as the r direction in the polar \
+            or spherical coordinate system. For such coordinates, ONLY `lmax` \
+            limit is extended to ensure the `bin_size`.
 
         'periodic'
-            A periodic coordinate such as the azimuthal direction in the spherical coordinate. \
-            For such coordinates, the initial `lmin` and `lmax` limits are used. 
+            A periodic coordinate such as the azimuthal direction in the \
+            spherical coordinate. For such coordinates, the initial `lmin` \
+            and `lmax` limits are used.
 
     save_to : str, default None
         Whether save outputs to memory as csv files or not.
@@ -462,28 +513,33 @@ def fixedsize_bins(
     _lmin = np.asarray(lmin, dtype=np.float_)
     _lmax = np.asarray(lmax, dtype=np.float_)
     _length = _lmax - _lmin
-
     if bin_type == 'ordinary':
         nbins = np.ceil(_length / _delta).astype(np.int_)  # number of bins
-        dx = 0.5 * (nbins * _delta - _length)  # add half of the excess to each end
-        _lmin = _lmin - dx 
-        _lmax =  _lmax + dx
+        dx = 0.5 * (nbins * _delta - _length)
+        # add half of the excess to each end:
+        _lmin = _lmin - dx
+        _lmax = _lmax + dx
+        # create empty grid with the right dimensions (and get the edges)
+        hist_collectors, bin_edges = np.histogram(
+            np.zeros(1),
+            bins=nbins,
+            range=(_lmin, _lmax)
+        )
     elif bin_type == 'nonnegative':
         nbins = np.ceil(_length / _delta).astype(np.int_)
         dx = 0.5 * (nbins * _delta - _length)
-        _lmax =  _lmax + 2 * dx
+        # add full of the excess to upper end:
+        _lmax = _lmax + 2 * dx
+        hist_collectors, bin_edges = np.histogram(
+            np.zeros(1),
+            bins=nbins,
+            range=(_lmin, _lmax)
+        )
     elif bin_type == 'periodic':
-        periodic_bin_edges = np.arange(_lmin, _lmax + _delta, _delta)
+        bin_edges = np.arange(_lmin, _lmax + _delta, _delta)
+        hist_collectors = np.zeros(len(bin_edges) - 1, dtype=np.int16)
     else:
         invalid_keyword(bin_type, _bin_types)
-    # create empty grid with the right dimensions (and get the edges)
-    hist_collectors, bin_edges = np.histogram(
-        np.zeros(1),
-        bins=nbins,            
-        range=(_lmin, _lmax)
-    )
-    if bin_type == 'periodic': # improved this.
-        bin_edges = periodic_bin_edges
     hist_collectors *= 0
     np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
     return bin_edges, hist_collectors
@@ -709,7 +765,7 @@ def probe_bug(
         bin_edges['rfloryEdge']['bin_size'],
         0,
         bin_edges['rfloryEdge']['lmax'],
-        bin_type='nonnegative', 
+        bin_type='nonnegative',
         save_to=save_to
     )
     fsd_t = np.empty([0])
@@ -782,9 +838,9 @@ def rmsd_bug(
         topology,
         trajectory,
         topology_format='DATA',
-        format='LAMMPSDUMP', 
+        format='LAMMPSDUMP',
         lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", 
+        atom_style="id resid type x y z",
         dt=sim_real_dt
     )
     cell.transfer_to_memory(step=50, verbose=False)
@@ -921,7 +977,7 @@ def probe_all(
         bin_edges['zEdge']['bin_size'],
         -1 * bin_edges['zEdge']['lmax'],
         bin_edges['zEdge']['lmax'],
-         bin_type='ordinary',
+        bin_type='ordinary',
         save_to=save_to
     )
     # theta of the cylindrical coordinate system
