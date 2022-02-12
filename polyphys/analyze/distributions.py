@@ -682,10 +682,10 @@ class Distribution(object):
                 # is redundant and merely defined to make the use of args
                 # parameter of scipi.integral.quad function consistent among
                 # integrands.
-                'theta': (0.5 * self.hist_info.lcyl, ),
+                'theta': (self.hist_info.lcyl, ),
                 # In a box cubic or free space, the radius of the space
                 # is half of the length of simulation box.
-                'phi': (0.5 * self.hist_info.lcyl, ),
+                'phi': (self.hist_info.lcyl, ),
                 # In a box cubic or free space, the radius of the space
                 # is half of the length of simulation box.
             },
