@@ -10,4 +10,4 @@ from polyphys import probe
 from polyphys import visualize
 from polyphys import manage
 
-__all__ = ["analyze", "construct", "probe", "visualize", "manage"]
+__all__ = ['analyze', 'construct', 'probe', 'visualize', 'manage']
