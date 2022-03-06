@@ -55,8 +55,8 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `polyphys` for local development.
-1. Fork the `polyphys` repo on GitHub.
+Ready to contribute? Here's how to set up ``polyphys`` for local development.
+1. Fork the ``polyphys`` repo on GitHub.
 2. Clone your fork locally:
    
 ..:: git

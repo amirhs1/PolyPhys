@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Dict, Type
 import MDAnalysis as mda
 import numpy as np
 from polyphys.manage.parser import SumRule
@@ -25,14 +25,15 @@ def log_datasets(
     ----------
     log: str
         The name of the LAMMPS log file.
-    geometry : {'biaxial', 'slit', 'box'}, defualt 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
     group: {'bug', 'all'}, default 'bug'
         Type of the particle group.
     lineage: {'segment', 'whole'}, default 'segment'
         Type of the input file.
 
-    Returns:
+    Returns
+    -------
     details_out: str
         The name of the details dataset.
     runtime_out: str
@@ -52,7 +53,8 @@ def log_datasets(
         for attr_name in sim_info.attributes:
             detailsfile.write(f"{attr_name},")
         # neig_modify delay NUM every NUM check YES/NO:
-        detailsfile.write(',ens,run_seg,rskin,delay,every,\
+        detailsfile.write(',ens,run_seg,'
+                          'rskin,delay,every,\
             check,')
         detailsfile.write('total_time_s,cores,timestep,\
             atoms,ts_per_sec,')
@@ -64,10 +66,11 @@ def log_datasets(
             modify_pct,other_avg_s,other_pct,dangerous\n')
     runtime_out = sim_info.ensemble + "-log_runtime.csv"
     with open(runtime_out, 'w') as runfile:
-        runfile.write('groupname,filename,ncores,natoms,wall_time\n')
+        runfile.write('groupname,filename,n_cores,n_atoms,wall_time\n')
     return details_out, runtime_out
 
 
+# noinspection DuplicatedCode
 def log_parser(
     logs: List[Tuple[str]],
     details_out: str,
@@ -78,7 +81,7 @@ def log_parser(
 ) -> None:
     """
     parses a LAMMPS `logs`, gather the information about simulations from \
-    their `logs`, and write down simulation detials to `details_out` csv \
+    their `logs`, and write down simulation details to `details_out` csv \
     files and runtime information to `runtime_out` csv file.
 
     Parameters
@@ -87,12 +90,12 @@ def log_parser(
         The list of LAMMPS log files where each element of list is a tuple \
         file with one element; a string that is the filepath for the log.
     details_out: str
-        The name of the 'details' file in which the simulation detials is \
+        The name of the 'details' file in which the simulation details is \
         written.
     runtime_out: str
-        The name of the 'runtime' file in whihc the runtime information is \
+        The name of the 'runtime' file in which the runtime information is \
         written.
-    geometry : {'biaxial', 'slit', 'box'}, defualt 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
     group: {'bug', 'all'}, default 'bug'
         Type of the particle group.
@@ -101,7 +104,7 @@ def log_parser(
     """
     for log in logs:
         sim_info = SumRule(
-            log,
+            log[0],
             geometry=geometry,
             group=group,
             lineage=lineage,
@@ -110,17 +113,17 @@ def log_parser(
         ens = sim_info.ensemble_id
         groupname = sim_info.lineage_name
         with open(details_out, mode='w') as detailsfile:
-            # write simulation detials
+            # write simulation details
             for lineage_name in sim_info.genealogy:
                 attr_value = getattr(sim_info, lineage_name)
                 detailsfile.write(f"{attr_value},")
             for attr_name in sim_info.attributes:
                 attr_value = getattr(sim_info, attr_name)
                 detailsfile.write(f"{attr_value},")
-        with open(log[0], 'r') as log,\
+        with open(log[0], 'r') as logfile,\
             open(details_out, 'a') as detailsfile,\
                 open(runtime_out, 'a') as runfile:
-            line = log.readline()
+            line = logfile.readline()
             # neigh_modify delay every check page one
             j = 1
             while line:
@@ -138,8 +141,8 @@ def log_parser(
                     detailsfile.write(str(j))  # total time
                     detailsfile.write(",")
                     j += 1
-                    # neighbor and neigh_modify ocurres\
-                    # one time but other occures 15 times.
+                    # neighbor and neigh_modify occurs\
+                    # one time but other occurs 15 times.
                     detailsfile.write(rskin)  # rskin
                     detailsfile.write(",")
                     detailsfile.write(delay)  # delay
@@ -151,26 +154,26 @@ def log_parser(
                     words = line.split()
                     detailsfile.write(words[3].strip())  # total time
                     detailsfile.write(",")
-                    ncores = words[5].strip()
-                    detailsfile.write(ncores)  # # of cores
+                    n_cores = words[5].strip()
+                    detailsfile.write(n_cores)  # # of cores
                     detailsfile.write(",")
                     detailsfile.write(words[8].strip())  # total timesteps
                     detailsfile.write(",")
-                    natoms = words[11].strip()
-                    detailsfile.write(natoms)  # total atoms
+                    n_atoms = words[11].strip()
+                    detailsfile.write(n_atoms)  # total atoms
                     detailsfile.write(",")
                 if line.startswith('Performance:'):
                     words = line.split()
                     detailsfile.write(words[3].strip())  # timesteps per second
                     detailsfile.write(",")
                 if line.startswith('Section'):
-                    _ = log.readline()
+                    _ = logfile.readline()
                     for i in range(6):  \
                             # Section rows: Pair, Bond, Neigh, Comm, Output,\
                         # Modify, Other
                         # Section columns: min time, avg time, max time,\
                         # %varavg, %total"
-                        line = log.readline()
+                        line = logfile.readline()
                         sect_min = line.split('|')[2].strip()
                         detailsfile.write(sect_min)
                         detailsfile.write(",")
@@ -178,7 +181,7 @@ def log_parser(
                         sect_pct = line.split()[-1]  # Pair pct of total time
                         detailsfile.write(sect_pct)
                         detailsfile.write(",")
-                    line = log.readline()
+                    line = logfile.readline()
                     sect_min = line.split('|')[2].strip()
                     detailsfile.write(sect_min)
                     detailsfile.write(",")
@@ -196,17 +199,22 @@ def log_parser(
                     runfile.write(",")
                     runfile.write(filename)
                     runfile.write(",")
-                    runfile.write(ncores)
+                    runfile.write(n_cores)
                     runfile.write(",")
-                    runfile.write(natoms)
+                    runfile.write(n_atoms)
                     runfile.write(",")
                     words = line.split()
                     runfile.write(words[-1])  # total wall time
                     runfile.write("\n")
-                line = log.readline()
+                line = logfile.readline()
 
 
-def stamps_report_with_measures(report_name, sim_info, n_frames, **measures):
+def stamps_report_with_measures(
+    report_name: str,
+    sim_info: Type[SumRule],
+    n_frames: int,
+    measures: Dict[str, float],
+) -> None:
     """
     writes a summary of stamps (properties and attributes) of a simulation \
     to file.
@@ -225,9 +233,9 @@ def stamps_report_with_measures(report_name, sim_info, n_frames, **measures):
         and physical attributes of a simulation.
     n_frames: int
         Number of frames/snapshots/configurations in a simulation.
-    *measures: list of one or more dict
-        A list of one or more measures. Each measure is a dictionary in which \
-        each key and values pair are the name and value of a physical property.
+    *measures: dict
+        A dictionary of measures where a key and value pair is the name and \
+        value of a physical property.
     """
     with open(report_name, mode='w') as report:
         # write header
@@ -235,9 +243,8 @@ def stamps_report_with_measures(report_name, sim_info, n_frames, **measures):
             report.write(f"{lineage_name},")
         for attr_name in sim_info.attributes:
             report.write(f"{attr_name},")
-        for measure in measures:  # each measure is a dict
-            for stat_name in measure.keys():
-                report.write(f"{stat_name},")
+        for measure_name in measures.keys():  # each measure is a dict
+            report.write(f"{measure_name},")
         report.write("n_frames\n")
         # write values
         for lineage_name in sim_info.genealogy:
@@ -246,9 +253,8 @@ def stamps_report_with_measures(report_name, sim_info, n_frames, **measures):
         for attr_name in sim_info.attributes:
             attr_value = getattr(sim_info, attr_name)
             report.write(f"{attr_value},")
-        for measure in measures:
-            for stat_value in measure.values():
-                report.write(f"{stat_value},")
+        for measure_value in measures.values():
+            report.write(f"{measure_value},")
         report.write(f"{n_frames}")
 
 
@@ -325,14 +331,14 @@ def end_to_end(positions):
 
     Parameters
     ----------
-    positions : numpy ndarray of dtype float
-        Positions (a natoms*ndim  array) of the N atoms within an atom group \
-        in a frame or snapshot or time step. `positions` is sorted by atom \
-        number form 1 to N.
+    positions : numpy array of float
+        Positions (a n_atoms*n_dim  array) of the N atoms within an atom \
+        group in a frame or snapshot or time step. `positions` is sorted \
+        by atom number form 1 to N.
 
     Returns
     -------
-    edn_to_end: numppy array of dtype float
+    edn_to_end: numpy array of float
     """
     # calculation in the center of geometry of the atom group.
     positions = positions - np.mean(positions, axis=0)
@@ -342,7 +348,7 @@ def end_to_end(positions):
 
 def max_distance(positions):
     """
-    measures the maximum ditance in each of the three Cartesian direction, \
+    measures the maximum distance in each of the three Cartesian direction, \
     in the frame of reference located at the polymer's center of geometry.
 
     The maximum distance is computed by subtracting the max and min of all \
@@ -350,14 +356,14 @@ def max_distance(positions):
 
     Parameters
     ----------
-    positions: numpy ndarray of dtype float
-        Positions (a natoms*ndim  array) of the N atoms within an atom group \
-        in a frame or snapshot or time step. `positions` is sorted by atom \
-        number form 1 to N.
+    positions: numpy array of dtype float
+        Positions (a n_atoms*n_dim  array) of the N atoms within an atom \
+        group in a frame or snapshot or time step. `positions` is sorted \
+        by atom number form 1 to N.
 
     Returns
     -------
-    [xmax, ymax, zmax]: numpy array of dtype float
+    [xmax, ymax, zmax]: numpy array of  float
     """
     # calculation in the center of geometry of the atom group.
     positions = positions - np.mean(positions, axis=0)
@@ -380,10 +386,10 @@ def fsd(
 
     Parameters
     ----------
-    positions: numpy ndarray of dtype float
-        Positions (a natoms*ndim  array) of the N atoms within an atom group \
-        in a frame or snapshot or time step. `positions` is sorted by atom \
-        number form 1 to N.
+    positions: numpy array of  float
+        Positions (a n_atoms*n_dim  array) of the N atoms within an atom \
+        group in a frame or snapshot or time step. `positions` is sorted \
+        by atom number form 1 to N.
     axis: int or tuple of int, default 2
         The index of the axis of the cylinder; by default it is the z axis.\
         It can be any integer in the range of the spatial dimension of the \
@@ -391,7 +397,7 @@ def fsd(
 
     Returns
     -------
-    fsd: numpy array of dtype float
+    fsd: numpy array of  float
 
     References
     ----------
@@ -427,10 +433,10 @@ def bin_create(sim_name, edge_name, bin_size, lmin, lmax, save_to):
 
     Returns
     -------
-    bin_edges : numpy array of dtype float
+    bin_edges : numpy array of float
         The edges to pass into a histogram. Save `bin_edges` to file if \
         `save_to` is not None.
-    hist: array of dtype int
+    hist: array of int
         An empty histogram
     """
     bin_edges = np.arange(lmin, lmax + bin_size, bin_size)
@@ -445,7 +451,7 @@ def fixedsize_bins(
     bin_size: float,
     lmin: float,
     lmax: float,
-    bin_type: str = 'ordinaray',
+    bin_type: str = 'ordinary',
     save_to: Optional[str] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -458,7 +464,7 @@ def fixedsize_bins(
     https://docs.mdanalysis.org/1.1.1/_modules/MDAnalysis/lib/util.html#fixedwidth_bins
     Makes input array-like so bins can be calculated for 1D data (then all \
     parameters are simple floats) or nD data (then parameters are supplied \
-    as arrays, with each entry correpsonding to one dimension).
+    as arrays, with each entry corresponding to one dimension).
     2. Eliminate the if-statement for the periodic_bin_edges.
 
     Parameters
@@ -473,14 +479,14 @@ def fixedsize_bins(
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    bin_type: {'ordinary', 'nonnegative', 'periodic'}, defualt 'ordinary'
+    bin_type: {'ordinary', 'nonnegative', 'periodic'}, default 'ordinary'
         The type of bin in a given direction in a given coordinate system:
 
         'ordinary'
             A bounded or unbounded coordinate such as any of the cartesian \
             coordinates or the polar coordinate in the spherical coordinate \
             system. For such coordinates, the `lmin` and `lmax` limits are \
-            equaly extended to ensure the `bin_size`.
+            equally extended to ensure the `bin_size`.
 
         'nonnegative'
             A nonnegative coordinate such as the r direction in the polar \
@@ -497,16 +503,18 @@ def fixedsize_bins(
 
     Returns
     -------
-    bin_edges : numpy array of dtype float
+    bin_edges : numpy array of  float
         The edges to pass into a histogram. Save `bin_edges` to file if \
         `save_to` is not None.
-    hist: array of dtype int
+    hist: array of  int
         An empty histogram
 
     Reference:
     https://docs.mdanalysis.org/1.1.1/documentation_pages/lib/util.html#MDAnalysis.analysis.density.fixedwidth_bins
     """
-    _bin_types = ['ordinary', 'nonnagative', 'periodic']
+    hist_collectors = 0
+    bin_edges = 0
+    bin_types = ['ordinary', 'nonnagative', 'periodic']
     if not np.all(lmin < lmax):
         raise ValueError('Boundaries are not sane: should be xmin < xmax.')
     _delta = np.asarray(bin_size, dtype=np.float_)
@@ -514,177 +522,35 @@ def fixedsize_bins(
     _lmax = np.asarray(lmax, dtype=np.float_)
     _length = _lmax - _lmin
     if bin_type == 'ordinary':
-        nbins = np.ceil(_length / _delta).astype(np.int_)  # number of bins
-        dx = 0.5 * (nbins * _delta - _length)
+        n_bins = np.ceil(_length / _delta).astype(np.int_)  # number of bins
+        dx = 0.5 * (n_bins * _delta - _length)
         # add half of the excess to each end:
         _lmin = _lmin - dx
         _lmax = _lmax + dx
         # create empty grid with the right dimensions (and get the edges)
         hist_collectors, bin_edges = np.histogram(
             np.zeros(1),
-            bins=nbins,
+            bins=n_bins,
             range=(_lmin, _lmax)
         )
     elif bin_type == 'nonnegative':
-        nbins = np.ceil(_length / _delta).astype(np.int_)
-        dx = 0.5 * (nbins * _delta - _length)
+        n_bins = np.ceil(_length / _delta).astype(np.int_)
+        dx = 0.5 * (n_bins * _delta - _length)
         # add full of the excess to upper end:
         _lmax = _lmax + 2 * dx
         hist_collectors, bin_edges = np.histogram(
             np.zeros(1),
-            bins=nbins,
+            bins=n_bins,
             range=(_lmin, _lmax)
         )
     elif bin_type == 'periodic':
         bin_edges = np.arange(_lmin, _lmax + _delta, _delta)
         hist_collectors = np.zeros(len(bin_edges) - 1, dtype=np.int16)
     else:
-        invalid_keyword(bin_type, _bin_types)
+        invalid_keyword(bin_type, bin_types)
     hist_collectors *= 0
     np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
     return bin_edges, hist_collectors
-
-
-def probe_bug_with_histogram(
-    topology,
-    trajectory,
-    geometry,
-    lineage,
-    save_to="./",
-    continuous=False
-) -> None:
-    """
-    runs various analyses on a `lineage` simulation of a 'bug' atom group in \
-    the `geometry` of interest.
-
-    Parameters
-    ----------
-    toplogy: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory \
-        segments or not.
-    """
-    if (lineage == 'segment') & (continuous is False):
-        print(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trjectories.")
-    print("Setting the name of analyze file...")
-    sim_info = SumRule(
-        trajectory,
-        geometry=geometry,
-        group='bug',
-        lineage=lineage
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # dict of bin edges:
-    bin_edges = {
-        'rEdge': {
-            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
-            'lmax': 0.5 * sim_info.dcyl
-            },
-        'zEdge': {
-            'bin_size':  0.5 * min(sim_info.dmon, sim_info.dcrowd),
-            'lmax': 0.5 * sim_info.lcyl
-            },
-        'thetaEdge': {
-            'bin_size':  np.pi / 36,
-            'lmax': np.pi
-            },
-        'rfloryEdge': {
-            'bin_size': 0.5 * sim_info.dmon,
-            'lmax': sim_info.nmon * sim_info.dmon
-            }
-        }
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon * np.sqrt(sim_info.mmon * sim_info.eps_others) \
-        # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt)
-    # slicing trajectory based the continuous condition
-    if continuous:
-        sliced_trj = cell.trajectory[0: -1]
-        n_frames = cell.trajectory.n_frames - 1
-    else:
-        sliced_trj = cell.trajectory
-        n_frames = cell.trajectory.n_frames
-    # selecting atom groups
-    bug = cell.select_atoms('resid 1')  # the polymer
-    # bin edges and histograms in different directions:
-    r_edges, r_hist = fixedsize_bins(
-        sim_name, 'rEdge', bin_edges['rEdge']['bin_size'],
-        0.0, bin_edges['rEdge']['lmax'], save_to)
-    z_edges, z_hist = fixedsize_bins(
-        sim_name, 'zEdge', bin_edges['zEdge']['bin_size'],
-        -1 * bin_edges['zEdge']['lmax'], bin_edges['zEdge']['lmax'], save_to)
-    theta_edges, theta_hist = fixedsize_bins(
-        sim_name, 'thetaEdge', bin_edges['thetaEdge']['bin_size'],
-        -1 * bin_edges['thetaEdge']['lmax'], bin_edges['thetaEdge']['lmax'],
-        save_to)  # in radians
-    # distribution of the size of the end-to-end
-    rflory_edges, rflory_hist = fixedsize_bins(
-        sim_name, 'rfloryEdge', bin_edges['rfloryEdge']['bin_size'],
-        0, bin_edges['rfloryEdge']['lmax'], save_to)
-    fsd_t = np.empty([0])
-    rflory_t = np.empty([0])
-    gyr_t = np.empty([0])
-    if any([
-            r_hist.any() != 0, z_hist.any() != 0,
-            theta_hist.any() != 0, rflory_hist.any() != 0
-            ]):
-        raise ValueError("One of the histogram collectors are not empty!")
-    for _ in sliced_trj:
-        # various measures of chain size
-        fsd_t = np.append(fsd_t, np.array([fsd(bug.positions)]), axis=0)
-        gyr_t = np.append(gyr_t, np.array([bug.radius_of_gyration()]), axis=0)
-        rms = end_to_end(bug.positions)
-        rflory_t = np.append(rflory_t, np.array([rms]), axis=0)
-        dummy_hist, _ = np.histogram(rms, rflory_edges)
-        # RDF of the end-to-end distance
-        rflory_hist = np.add(rflory_hist, dummy_hist)
-        # number density in the cell's frame of reference
-        # histogram in r direction
-        rmon = np.linalg.norm(bug.positions[:, :2], axis=1)
-        dummy_hist, _ = np.histogram(rmon, r_edges)
-        r_hist = np.add(r_hist, dummy_hist)
-        # histogram in z direction
-        zmon = bug.positions[:, 2]
-        dummy_hist, _ = np.histogram(zmon, z_edges)
-        z_hist = np.add(z_hist, dummy_hist)
-        # histogram in theta
-        theta = np.arctan2(
-                    bug.positions[:, 1], bug.positions[:, 0])  # in radians
-        dummy_hist, _ = np.histogram(theta, theta_edges)
-        theta_hist = np.add(theta_hist, dummy_hist)
-    np.save(save_to + sim_name + '-rHistMon.npy', r_hist)
-    np.save(save_to + sim_name + '-zHistMon.npy', z_hist)
-    np.save(save_to + sim_name + '-thetaHistMon.npy', theta_hist)
-    np.save(save_to + sim_name + '-rfloryHistMon.npy', rflory_hist)
-    np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
-    np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
-    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
-    # Simulation stamps:
-    outfile = save_to + sim_name + "-stamps.csv"
-    stamps_report(outfile, sim_info, n_frames)
-    print('done.')
 
 
 def probe_bug(
@@ -701,11 +567,11 @@ def probe_bug(
 
     Parameters
     ----------
-    toplogy: str
+    topology: str
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}, defualt 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
     lineage: {'segment', 'whole'}, default 'segment'
         Type of the input file.
@@ -722,7 +588,7 @@ def probe_bug(
             "and 'continuous' is "
             f"'{continuous}. "
             "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trjectories.")
+            f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...")
     sim_info = SumRule(
         trajectory,
@@ -792,6 +658,7 @@ def probe_bug(
     print('done.')
 
 
+# noinspection PyUnresolvedReferences
 def rmsd_bug(
     topology: str,
     trajectory: str,
@@ -800,7 +667,7 @@ def rmsd_bug(
     save_to: str = './'
 ) -> None:
     """
-    comptues the rmsd of a 'segment simulation of a 'bug' atom group in the \
+    computes the rmsd of a 'segment simulation of a 'bug' atom group in the \
     `geometry` of interest, and then saves the output to the `save_to` \
     directory.
 
@@ -809,7 +676,7 @@ def rmsd_bug(
 
     Parameters
     ----------
-    toplogy: str
+    topology: str
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
@@ -872,7 +739,7 @@ def probe_all(
 
     Parameters
     ----------
-    toplogy: str
+    topology: str
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
@@ -893,7 +760,7 @@ def probe_all(
             "and 'continuous' is "
             f"'{continuous}. "
             "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trjectories.")
+            f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...\n")
     sim_info = SumRule(
         trajectory,
@@ -1008,18 +875,210 @@ def probe_all(
             "One of the histogram collectors are not empty!")
     for _ in sliced_trj:
         # histogram in r direction
-        rpos = np.linalg.norm(crds.positions[:, :2], axis=1)
-        dummy_hist, _ = np.histogram(rpos, r_edges)
+        r_coor = np.linalg.norm(crds.positions[:, :2], axis=1)
+        dummy_hist, _ = np.histogram(r_coor, r_edges)
         r_hist_crd = np.add(r_hist_crd, dummy_hist)
-        rpos = np.linalg.norm(bug.positions[:, :2], axis=1)
-        dummy_hist, _ = np.histogram(rpos, r_edges)
+        r_coor = np.linalg.norm(bug.positions[:, :2], axis=1)
+        dummy_hist, _ = np.histogram(r_coor, r_edges)
         r_hist_mon = np.add(r_hist_mon, dummy_hist)
         # histogram in z direction
-        zpos = crds.positions[:, 2]
-        dummy_hist, _ = np.histogram(zpos, z_edges)
+        z_coor = crds.positions[:, 2]
+        dummy_hist, _ = np.histogram(z_coor, z_edges)
         z_hist_crd = np.add(z_hist_crd, dummy_hist)
-        zpos = bug.positions[:, 2]
-        dummy_hist, _ = np.histogram(zpos, z_edges)
+        z_coor = bug.positions[:, 2]
+        dummy_hist, _ = np.histogram(z_coor, z_edges)
+        z_hist_mon = np.add(z_hist_mon, dummy_hist)
+        # histogram in theta
+        theta = np.arctan2(
+            crds.positions[:, 1],
+            crds.positions[:, 0]
+        )  # in degrees
+        dummy_hist, _ = np.histogram(theta, theta_edges)
+        theta_hist_crd = np.add(theta_hist_crd, dummy_hist)
+        theta = np.arctan2(
+            bug.positions[:, 1],
+            bug.positions[:, 0]
+        )  # in degrees
+        dummy_hist, _ = np.histogram(theta, theta_edges)
+        theta_hist_mon = np.add(theta_hist_mon, dummy_hist)
+    lastname = 'Crd'
+    np.save(save_to + sim_name + '-rHist' + lastname + '.npy', r_hist_crd)
+    np.save(save_to + sim_name + '-zHist' + lastname + '.npy', z_hist_crd)
+    np.save(
+        save_to + sim_name + '-thetaHist' + lastname + '.npy', theta_hist_crd
+    )
+    lastname = 'Mon'
+    np.save(save_to + sim_name + '-rHist' + lastname + '.npy', r_hist_mon)
+    np.save(save_to + sim_name + '-zHist' + lastname + '.npy', z_hist_mon)
+    np.save(
+        save_to + sim_name + '-thetaHist' + lastname + '.npy', theta_hist_mon
+    )
+    print('done.')
+
+
+def probe_all_new(
+    topology: str,
+    trajectory: str,
+    geometry: str = 'biaxial',
+    lineage: str = 'segment',
+    save_to: str = './',
+    continuous: Optional[bool] = False
+) -> None:
+    """
+    runs various analyses on a `lineage` simulation of an 'all' atom \
+    group in the `geometry` of interest, and saves a variety of \
+    outputs (mostly in the csv format) to the `save_to` directory.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial
+        Shape of the simulation box.
+    lineage: {'segment', 'whole'}, default 'segment'
+        Type of the input file.
+    save_to: str
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory \
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        print(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.")
+    print("Setting the name of analyze file...\n")
+    sim_info = SumRule(
+        trajectory,
+        geometry=geometry,
+        group='all',
+        lineage=lineage
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...")
+    # dict of bin edges:
+    bin_edges = {
+        'rEdge': {
+            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmax': 0.5 * sim_info.dcyl + min(sim_info.dmon, sim_info.dcrowd)
+            },
+        'zEdge': {
+            'bin_size':  0.5 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmax': 0.5 * sim_info.lcyl + min(sim_info.dmon, sim_info.dcrowd)
+            },
+        'thetaEdge': {
+            'bin_size':  np.pi / 36,
+            'lmax': np.pi + np.pi / 36
+            }
+        }
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon * np.sqrt(sim_info.mmon * sim_info.eps_others) \
+        # LJ time unit
+    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cell = mda.Universe(
+        topology,
+        trajectory,
+        topology_format='DATA',
+        format='LAMMPSDUMP',
+        lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z",
+        dt=sim_real_dt
+    )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+    else:
+        sliced_trj = cell.trajectory
+    # selecting atom groups
+    crds = cell.select_atoms('resid 0')  # crowders
+    bug = cell.select_atoms('resid 1')  # the chain or monomers
+    # bin edges and histograms in different directions:
+    # radial direction of the cylindrical coordinate system
+    r_edges, r_hist_crd = fixedsize_bins(
+        sim_name,
+        'rEdgeCrd',
+        bin_edges['rEdge']['bin_size'],
+        0.0,
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    _, r_hist_mon = fixedsize_bins(
+        sim_name,
+        'rEdgeMon',
+        bin_edges['rEdge']['bin_size'],
+        0.0,
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    # z direction of the cylindrical coordinate system
+    z_edges, z_hist_crd = fixedsize_bins(
+        sim_name,
+        'zEdgeCrd',
+        bin_edges['zEdge']['bin_size'],
+        -1 * bin_edges['zEdge']['lmax'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    _, z_hist_mon = fixedsize_bins(
+        sim_name,
+        'zEdgeMon',
+        bin_edges['zEdge']['bin_size'],
+        -1 * bin_edges['zEdge']['lmax'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # theta of the cylindrical coordinate system
+    theta_edges, theta_hist_crd = fixedsize_bins(
+        sim_name, 'thetaEdgeCrd',
+        bin_edges['thetaEdge']['bin_size'],
+        -1 * bin_edges['thetaEdge']['lmax'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+    )  # in radians
+    _, theta_hist_mon = fixedsize_bins(
+        sim_name,
+        'thetaEdgeMon',
+        bin_edges['thetaEdge']['bin_size'],
+        -1 * bin_edges['thetaEdge']['lmax'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+    )  # in radians
+    # check if any of the histograms are empty or not.
+    if any([
+            r_hist_crd.any() != 0, r_hist_mon.any() != 0,
+            z_hist_crd.any() != 0, z_hist_mon.any() != 0,
+            theta_hist_crd.any() != 0, theta_hist_mon.any() != 0
+            ]):
+        raise ValueError(
+            "One of the histogram collectors are not empty!")
+    for _ in sliced_trj:
+        # histogram in r direction
+        r_coor = np.linalg.norm(crds.positions[:, :2], axis=1)
+        dummy_hist, _ = np.histogram(r_coor, r_edges)
+        r_hist_crd = np.add(r_hist_crd, dummy_hist)
+        r_coor = np.linalg.norm(bug.positions[:, :2], axis=1)
+        dummy_hist, _ = np.histogram(r_coor, r_edges)
+        r_hist_mon = np.add(r_hist_mon, dummy_hist)
+        # histogram in z direction
+        z_coor = crds.positions[:, 2]
+        dummy_hist, _ = np.histogram(z_coor, z_edges)
+        z_hist_crd = np.add(z_hist_crd, dummy_hist)
+        z_coor = bug.positions[:, 2]
+        dummy_hist, _ = np.histogram(z_coor, z_edges)
         z_hist_mon = np.add(z_hist_mon, dummy_hist)
         # histogram in theta
         theta = np.arctan2(

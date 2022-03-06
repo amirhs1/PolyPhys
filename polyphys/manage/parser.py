@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import os
 import re
 
 
@@ -10,7 +12,7 @@ class SumRule(object):
     ispath: bool = True
     """
     parses a `lineage_name` to extract information about the 'lineage' of \
-    that 'lineag_name', based on the following 'lineage' patterns:
+    that 'lineage_name', based on the following 'lineage' patterns:
 
     segment: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
         One of multiple chunks of a complete simulation or measurement.
@@ -33,8 +35,8 @@ class SumRule(object):
     ensemble: 'lz', 'dt', 'bdump', 'adump', 'ens', and 'j'
     space:  'lz', 'nc', 'dt', 'bdump', 'adump', 'ens' , and 'j'
 
-    There are some diffeence between the keywords of physical attributes and \
-    their associated attributes in the `SumeRule` class. Below, the these two \
+    There are some difference between the keywords of physical attributes and \
+    their associated attributes in the `SumRule` class. Below, the these two \
     types of attributes are explained.
 
     To-do List
@@ -71,7 +73,7 @@ class SumRule(object):
     pathname: str, default "N/A"
         Equal to `name` if `name` is a filepath, otherwise "N/A".
     filename: str
-        Name of a the file reffered to by `name` if `name` is a filepath, \
+        Name of a the file referred to by `name` if `name` is a filepath, \
         otherwise the `name` itself.
     lineage_name: str,
         The unique name of type extracted from self.fullname
@@ -91,14 +93,14 @@ class SumRule(object):
         Wall-particle LJ interaction strength. Its associated keyword is \
         'epsilon' keyword.
     dcrowd: float, np.nan
-        Size (diamter) of a crowder. Its associated keyword is 'sig' or 'ac'.
+        Size (diameter) of a crowder. Its associated keyword is 'sig' or 'ac'.
     ncrowd: int, np.nan
         number of crowders
     ensemble_id: int, np.nan
         The ensemble number of a 'whole' simulation in an ensemble.
     segment_id: int, np.nan
         The 'segment_id' keyword starts with 'j', ends with a 'padded' \
-        number such as '05' or '14', showing the succesion of segments \
+        number such as '05' or '14', showing the succession of segments \
         in a whole file.
     dt: float, np.nan
         Simulation timestep. Its associated keyword is 'dt'.
@@ -128,7 +130,7 @@ class SumRule(object):
     segment: str or "N/A"
         A segment's name if applicable, otherwise "N/A"
     self.rho_m_bulk: float, default np.nan
-        Bulk number desnity fraction of monomers
+        Bulk number density fraction of monomers
     self.phi_m_bulk: float, default np.nan
         Bulk volume fraction of monomers
     self.rho_c_bulk: float, default np.nan
@@ -138,7 +140,7 @@ class SumRule(object):
 
     Class Attributes
     ----------------
-    _geomteries: list of str
+    _geometries: list of str
         Possible geometries of a simulation box
     _groups: list of str
         Possible groups of the `SumRule` project.
@@ -159,60 +161,60 @@ class SumRule(object):
             'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump', 'ensemble_id': 'ens', 'segment_id': 'j'
-            },
+        },
         'whole': {
             'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump', 'ensemble_id': 'ens'
-            },
+        },
         'ensemble_long': {
             'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump'
-            },
+        },
         'ensemble': {
             'nmon': 'N', 'dcyl': 'D', 'dcrd': 'ac', 'ncrowd': 'nc'
-            },
+        },
         'space': {
             'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac'
-            }
         }
+    }
     _physical_attributes = {
         'segment': [
             'dmon', 'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
-            ],
+        ],
         'whole': [
             'dmon', 'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
-            ],
+        ],
         'ensemble_long': [
             'dmon', 'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
-            ],
+        ],
         'ensemble': [
             'dmon'
-            ],
+        ],
         'space': [
             'dmon'
-            ]
-        }
+        ]
+    }
     _genealogy = {
         'segment': [
             'lineage_name', 'segment', 'whole', 'ensemble_long',
             'ensemble', 'space'
-            ],
+        ],
         'whole': [
             'lineage_name', 'whole', 'ensemble_long', 'ensemble',
             'space'
-            ],
+        ],
         'ensemble_long': [
             'lineage_name', 'ensemble_long', 'ensemble', 'space',
-            ],
+        ],
         'ensemble': [
             'lineage_name', 'ensemble', 'space'
-            ],
+        ],
         'space': [
             'lineage_name', 'space'
-            ]
-        }
+        ]
+    }
 
     def __init__(
         self,
@@ -257,7 +259,7 @@ class SumRule(object):
             self.filename = name
         self._find_lineage_name()
         self._initiate_attributes()
-        self._parser_lineage_name()
+        self._parse_lineage_name()
         self._set_parents()
         self._bulk_attributes()
         self.attributes = list(self._lineage_attributes[self.lineage].keys())\
@@ -270,12 +272,12 @@ class SumRule(object):
             Name: '{self.filename}',
             Geometry: '{self.geometry},
             Group: '{self.group}',
-            Lineage: '{self.lineage}')
+            Lineage: '{self.lineage}'
         """
         return observation
 
     def __repr__(self) -> str:
-        return f"Observation('{self.filename}' in geometry '{self.geometry} \
+        return f"Observation('{self.filename}' in geometry '{self.geometry}' \
             from group '{self.group}' with lineage '{self.lineage}'"
 
     def _find_lineage_name(self):
@@ -319,7 +321,7 @@ class SumRule(object):
         self.phi_c_bulk = np.nan
         self.rho_c_bulk = np.nan
 
-    def _parser_lineage_name(self):
+    def _parse_lineage_name(self):
         """
         parses a lineage_name based on a list of keywords of physical \
         attributes.
@@ -338,7 +340,7 @@ class SumRule(object):
                 if attr_keyword == 'lz':
                     attr_value = 2 * attr_value
                 if attr_keyword == 'r':
-                    attr_value = 2 * attr_value - 1
+                    attr_value = 2 * attr_value - self.dmon
                 setattr(self, attr_name, attr_value)
             except ValueError:
                 print(
@@ -354,7 +356,7 @@ class SumRule(object):
         set to parent names for a lineage_name based on it lineage.
 
 
-        The following map is used for seeting relationships:
+        The following map is used for setting relationships:
         'segment' lineage is a child of 'whole' lineage.
         'whole' lineage is a child of 'ensemble' lineage.
         'ensemble' lineage is a child of 'space' lineage.
@@ -396,7 +398,7 @@ class SumRule(object):
 
     def _bulk_attributes(self):
         """
-        computes some physicla attributes of a lineage based on its \
+        computes some physical attributes of a lineage based on its \
         primary attributes.
         """
         if self.lineage in ['segment', 'whole']:
@@ -407,3 +409,249 @@ class SumRule(object):
             vol_crowd = np.pi * self.dcrowd**3 / 6
             self.rho_c_bulk = self.ncrowd / vol_cell
             self.phi_c_bulk = self.rho_c_bulk * vol_crowd
+
+
+class FloryChain(object):
+    """
+    extract the attributes of a Flory-type polymer chain from the `filename`
+    of its size data and then clean the data itself.
+
+    The chain size data are obtained solving a Flory equation for a linear
+    chain with or without the three-body term. The excluded volume and
+    three-body interaction coefficient, each, are model in two different
+    ways.
+
+    Parameters
+    ----------
+    name: str
+        Name that is parsed for extracting information.
+    ispath: bool, default True
+        Whether the name is a filepath or a simple name.
+
+    Attributes
+    ----------
+
+    Class Attributes
+    ----------------
+
+     """
+    _physical_attributes = {
+        'deGennes': {
+            'dimension': 'dim',
+            'w3body': 'w',
+            'nmon': 'n',
+            'dcyl': 'd',
+            'dcrowd': 'ac'
+        },
+        'twoBodyOnly': {
+            'dimension': 'dim',
+            'w3body': 'w',
+            'nmon': 'n',
+            'dcyl': 'd',
+            'dcrowd': 'ac'
+        },
+        'shendruk': {
+            'dimension': 'dim',
+            'nmon': 'n',
+            'dcyl': 'd',
+            'dcrowd': 'ac'
+        }
+    }
+    _column_names = {
+        'deGennes': ['phi_c', 'vexc', 'swollen'],
+        'twoBodyOnly': ['phi_c', 'vexc', 'swollen'],
+        'shendruk': ['phi_c', 'vexc', 'w3body', 'swollen']
+    }
+
+    def __init__(
+        self,
+        name: str,
+        limit: bool = False,
+        ispath: bool = True
+    ):
+        self.limit = limit
+        self.ispath = ispath
+        if self.ispath:
+            self.filepath = name
+            self.extention = os.path.splitext(name.split("/")[-1])[1]
+            self.filename = os.path.splitext(name.split("/")[-1])[0]
+        else:
+            self.filepath = "N/A"
+            self.extention = "N/A"
+            self.filename = name
+        self._initiate_attributes()
+        self._parse_attributes()
+        self._athermal_virial_coeffs()
+        self._initial_chain_size()
+        self._clean()
+        self._expand()
+        self._scale()
+
+    def __str__(self) -> str:
+        observation = f"""
+        A Flory chain:
+            Name: '{self.filename}',
+        """
+        return observation
+
+    def __repr__(self) -> str:
+        return f"A Flory chain('{self.filename}')"
+
+    def _initiate_attributes(self):
+        """
+        defines and initiates the class attribute based on the physical \
+        attributes defined for the project.
+        """
+        self.w3body_model = "N/A"
+        self.vexc_model = "N/A"
+        self.dmon = 1.0
+        self.nmon = np.nan
+        self.dcyl = np.nan
+        self.dcrowd = np.nan
+        self.dimension = np.nan
+        self.w3body = np.nan
+
+    def _parse_attributes(self):
+        """
+        parses a lineage_name based on a list of keywords of physical \
+        attributes.
+        """
+        words = self.filename.split('-')
+        self.w3body_model = words[1]
+        self.vexc_model = words[2]
+        attrs_pattern = re.compile(r'([a-zA-Z\-]+)')
+        attrs = attrs_pattern.split(words[-1])
+        attributes_float = ['dmon', 'dcyl', 'dcrowd', 'three_body']
+        for attr_name, attr_keyword in \
+                self._physical_attributes[self.w3body_model].items():
+            try:
+                attr_value = attrs[attrs.index(attr_keyword)+1]
+                if attr_name in attributes_float:
+                    attr_value = float(attr_value)
+                else:
+                    attr_value = int(float(attr_value))
+                setattr(self, attr_name, attr_value)
+            except ValueError:
+                print(
+                    f"'{attr_keyword}'"
+                    " attribute keyword is not in "
+                    f"'{self.filename}'"
+                    " lineage name. Please check whether "
+                    f"'{self.filename}'"
+                    " is valid name or not.")
+
+    def _athermal_virial_coeffs(self):
+        """
+        compute the excluded volume (second viriral coefficient) and
+        three-body coefficient (thrid virial coefficient) for the
+        equivalent athermal system.
+        """
+        if self.vexc_model == 'AOExcVol':
+            # The hard-sphere potenial's virial coefficient
+            self.vexc_athr = (4/3) * np.pi * self.dmon**3
+            self.w3body_athr = (5/8) * self.vexc_athr**2
+        elif self.vexc_model == 'HaExcVol':
+            # The fully-repulsive Weeks–Chandler–Anderson (WCA) potential
+            # with r_cut = 2**(1/6) * sigma where sigma=self.dmon=1.0
+            self.vexc_athr = 4.40944631
+            self.w3body_athr = (5/8) * self.vexc_athr**2
+        else:
+            vexc_models = ['AOExcVol', 'HaExcVol']
+            raise ValueError(
+                f"'{self.vexc_model}' "
+                "is not a valid model of the excluded volume of monomers."
+                f"Please select one of these '{vexc_models}' models."
+            )
+
+    def _initial_chain_size(self):
+        """
+        compute the equlibirium chain size in the given dimension in
+        the absent of crowders.
+        """
+        self.flory_exponent = 3 / (self.dimension + 2)
+        if self.dimension == 3:
+            self.r_flory = 1.12 * self.dmon * self.nmon ** self.flory_exponent
+        elif self.dimension == 2:
+            print("In 2-dimensional space, the pre-factor is set to 1.0.")
+            self.r_flory = 1.0 * self.dmon * (
+                self.nmon ** self.flory_exponent *
+                (self.dmon/self.dcyl) ** (1/4)
+                )
+        elif self.dimension == 1:
+            self.r_flory = 1.37 * self.dmon * (
+                self.nmon ** self.flory_exponent *
+                (self.dmon/self.dcyl) ** (2/3)
+                )
+        else:
+            raise ValueError(
+                f"'{self.dimension}' "
+                "is not a valid dimension for the system."
+                f"Please select one of these '{list(range(1,4,1))}' models."
+            )
+        self.r_ideal = self.dmon * self.nmon ** 0.5
+
+    def _clean(self):
+        """
+        clean a dataset of a chain's size based on its attributes.
+        """
+        if self.ispath:
+            df = pd.read_csv(
+                self.filepath,
+                index_col=False,
+                names=self._column_names[self.w3body_model]
+            )
+        else:
+            raise ValueError(
+                f"'{self.filepath}' "
+                "is not a valid filepath."
+            )
+        df.dropna(inplace=True)
+        df.sort_values(by=['phi_c'], inplace=True)
+        df.reset_index(inplace=True, drop=True)
+        if self.w3body_model == 'deGennes':
+            if self.nmon == 80:
+                df = df.groupby('phi_c').min()
+                df.reset_index(inplace=True)
+        elif self.w3body_model == 'shendruk':
+            df = df.groupby('phi_c').min()
+            df.reset_index(inplace=True)
+        else:
+            df = df.sort_values(by=['swollen'])
+        self.chain_size = df
+
+    def _expand(self):
+        """
+        expand `self.chain_size` by adding the physical attributes to it as
+         new columns.
+        """
+        self.chain_size['w3body_model'] = self.w3body_model
+        self.chain_size['vexc_model'] = self.vexc_model
+        for attr_name in self._physical_attributes[self.w3body_model].keys():
+            self.chain_size[attr_name] = getattr(self, attr_name)
+
+    def _scale(self, limit=False):
+        """
+        scale a chain's attributes.
+        """
+        self.chain_size['phi_c_scaled'] = \
+            self.dmon * self.chain_size['phi_c'] / self.dcrowd
+        # phi_c*a/a_c for a_c << a for maximum free energy gain:
+        self.chain_size['vexc_scaled'] = \
+            self.chain_size['vexc'] / self.vexc_athr
+        self.chain_size['r'] = self.chain_size['swollen'] * self.r_ideal
+        self.r_max = self.chain_size['r'].max()
+        self.chain_size['r_scaled_max'] = self.chain_size['r'] / self.r_max
+        self.chain_size['r_scaled_flory'] = self.chain_size['r'] / self.r_flory
+        self.chain_size['w3body_scaled'] = \
+            self.chain_size['w3body'] / self.w3body_athr
+        if self.w3body_model == 'shendruk':
+            self.w3body = (
+                self.chain_size['w3body'].min(),
+                self.chain_size['w3body'].max()
+                )
+        if limit:
+            # Limit the data only to -1*exc_vol_athr <= exc_vol <= exc_vol_athr
+            limit_range = \
+                (self.chain_size['vexc_scaled'] <= 1.5) & (
+                 self.chain_size['vexc_scaled'] >= -1.0)
+            self.chain_size = self.chain_size[limit_range]

@@ -396,3 +396,111 @@ def analyze_segments(
         rho_and_phi=rho_and_phi_all,
         no_rho_and_phi=no_rho_and_phi_all
     )
+
+
+def analyze_wholes(
+    input_database: str,
+    geometry: str = 'biaxial',
+    hierarchy: str = "/N*/N*"
+) -> None:
+    """
+    reads in the 'probe' observations based on the `hierarchy` of directories \
+    and files from the `input_database` path to the 'probe' phase of a \
+    'space' and creates the 'analysis' phase at that parent directory of the \
+    'probe' of that 'space', infers 'space' names from `input_database` path \
+    and creates a 'space' directories at various stages in the 'analysis' \
+    directory for both 'bug' and 'all' groups.
+
+    Parameters
+    ----------
+    input_database: str
+        Path to the input_database; a 'space' directory at a given 'phase'.
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+        Shape of the simulation box.
+    hierarchy: str
+        Hierarchy of the directories and files within the `input_database`.
+    """
+    # if not pathlib.Path(input_database).exists():
+    #    raise ValueError(
+    #        f"'{input_database}'"
+    #        "path does not exist."
+    #        )
+    observations = glob(input_database + hierarchy)
+    if observations == []:
+        raise ValueError(
+            "File not found in "
+            f"'{input_database + hierarchy}'"
+            )
+    # 'bug' save_to paths:
+    save_to_whole = database_path(
+        input_database, 'analysis', stage='wholeSim', group='bug'
+    )
+    save_to_ens = database_path(
+        input_database, 'analysis', stage='ens', group='bug'
+    )
+    save_to_ens_avg = database_path(
+        input_database, 'analysis', stage='ensAvg', group='bug'
+    )
+    # stamps:
+    stamp_files = sort_filenames(observations, fmts=['-stamps.csv'])
+    whole_stamps = children_stamps(
+        stamp_files,
+        lineage='whole',
+        save_to=save_to_whole
+    )
+    _ = parents_stamps(
+        whole_stamps,
+        geometry=geometry,
+        lineage='whole',
+        save_to=save_to_ens_avg
+    )
+    # 'bug' time series and histograms:
+    tseries_bug = [  # property_, species, group
+                   ('fsdT', 'Mon', 'bug'),
+                   ('gyrT', 'Mon', 'bug'),
+                   ('rfloryT', 'Mon', 'bug')
+                   ]
+    time_series(
+        observations,
+        (save_to_whole, save_to_ens, save_to_ens_avg),
+        tseries_bug,
+        geometry=geometry
+    )
+    no_rho_and_phi_bug = [  # direction, species, group
+                          ('rflory', 'Mon', 'bug')
+                          ]
+    histograms(
+        observations,
+        (save_to_whole, save_to_ens, save_to_ens_avg),
+        geometry=geometry,
+        no_rho_and_phi=no_rho_and_phi_bug
+    )
+    # 'all' save_to paths:
+    save_to_whole = database_path(
+        input_database, 'analysis', stage='wholeSim', group='all'
+    )
+    save_to_ens = database_path(
+        input_database, 'analysis', stage='ens', group='all'
+    )
+    save_to_ens_avg = database_path(
+        input_database, 'analysis', stage='ensAvg', group='all'
+    )
+    # 'all' histograms:
+    rho_and_phi_all = [  # direction, direction long name, species, group
+                   ('r', 'Crd', 'all'),
+                   ('z', 'Crd', 'all'),
+                   ('r', 'Mon', 'all'),
+                   ('z', 'Mon', 'all'),
+                   ]
+    no_rho_and_phi_all = [  # direction, species, group
+                      ('theta', 'Crd', 'all'),
+                      ('theta', 'Mon', 'all'),
+                      ('rflory', 'Mon', 'bug')
+                      ]
+    histograms(
+        observations,
+        (save_to_whole, save_to_ens, save_to_ens_avg),
+        geometry=geometry,
+        rho_and_phi=rho_and_phi_all,
+        no_rho_and_phi=no_rho_and_phi_all
+    )
