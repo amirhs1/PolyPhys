@@ -9,8 +9,8 @@ for file in N*.bug.data; do
 
 	mkdir "${dir}"
 	
-	cp extraction_all_in_one_*.py extraction_all_in_one.py
-	mv extraction_all_in_one.py "${dir}"
+	cp probe-all_in_one_*.py probe-all_in_one.py
+	mv probe-all_in_one.py "${dir}"
 	
 	cp -R polyphys "${dir}"
 
