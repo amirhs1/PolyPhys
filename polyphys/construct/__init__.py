@@ -1,3 +1,3 @@
-from polyphys.construct import datafile
+from polyphys.construct import builder
 
-__all__ = ["datafile"]
+__all__ = ["builder"]
