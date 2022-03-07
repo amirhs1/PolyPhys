@@ -491,7 +491,8 @@ def fixedsize_bins(
         'nonnegative'
             A nonnegative coordinate such as the r direction in the polar \
             or spherical coordinate system. For such coordinates, ONLY `lmax` \
-            limit is extended to ensure the `bin_size`.
+            limit is extended to ensure the `bin_size`. `lmin` is either 0.0
+            or a positive number smaller than `lmax`.
 
         'periodic'
             A periodic coordinate such as the azimuthal direction in the \
@@ -536,8 +537,11 @@ def fixedsize_bins(
     elif bin_type == 'nonnegative':
         n_bins = np.ceil(_length / _delta).astype(np.int_)
         dx = 0.5 * (n_bins * _delta - _length)
+        _lmin = _lmin - dx
+        if _lmin <= 0.0:
+            _lmin = 0.0
         # add full of the excess to upper end:
-        _lmax = _lmax + 2 * dx
+        _lmax = _lmax + dx
         hist_collectors, bin_edges = np.histogram(
             np.zeros(1),
             bins=n_bins,
@@ -634,9 +638,12 @@ def probe_bug(
         bin_type='nonnegative',
         save_to=save_to
     )
-    fsd_t = np.empty([0])
-    rflory_t = np.empty([0])
-    gyr_t = np.empty([0])
+    fsd_t = np.empty(0)
+    rflory_t = np.empty(0)
+    gyr_t = np.empty(0)
+    principal_axes_t = np.empty([0, 3, 3])
+    asphericity_t = np.empty(0)
+    shape_parameter_t = np.empty(0)
     if rflory_hist.any() != 0:
         raise ValueError("One of the histogram collectors are not empty!")
     for _ in sliced_trj:
@@ -648,10 +655,30 @@ def probe_bug(
         dummy_hist, _ = np.histogram(rms, rflory_edges)
         # RDF of the end-to-end distance
         rflory_hist = np.add(rflory_hist, dummy_hist)
+        # shape parameters:
+        asphericity_t = np.append(
+            asphericity_t,
+            np.array([bug.asphericity(pbc=False, unwrap=False)]),
+            axis=0
+        )
+        principal_axes_t = np.append(
+            principal_axes_t,
+            np.array([bug.principal_axes(pbc=False)]),
+            axis=0
+        )
+        shape_parameter_t = np.append(
+            shape_parameter_t,
+            np.array([bug.shape_parameter(pbc=False)]),
+            axis=0
+        )
+
     np.save(save_to + sim_name + '-rfloryHistMon.npy', rflory_hist)
     np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
     np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
     np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
