@@ -27,7 +27,7 @@ pip install --no-index MDAnalysis
 exe(){
 dir=${1}
 file=$(echo $dir | cut -d / -f 1)
-(cd ${file} && python probe_all_in_one.py > ${file}-python_out-probe_all_in_one.txt)
+(cd ${file} && python probe-bug_trj_segments.py > ${file}-python_out-probe-bug_trj_segments.txt)
 }
 
 
@@ -38,6 +38,6 @@ echo "Starting run at: `date`"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-proble_all_in_one.txt ::: N*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-bug_trj_segments.txt ::: N*/
 
 echo "Program glost_launch finished with exit code $? at: `date`"

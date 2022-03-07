@@ -1,2 +1,2 @@
 #!/bin/bash
-sbatch submit-probe_all_in_one.sh
+sbatch submit-probe-bug_trj_segments.sh
