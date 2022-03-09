@@ -34,6 +34,7 @@ Follow these instructions to restart a crashed simulation; the main idea is to f
 1. Run **org_dir_generator.sh** to rename *incomplete* and *res* directories, and create a *complete* directory.
    1. **Caution:** The name of append name for *incomplete* and *restart* directories are different in different projects.
 2. Edit and run **copy_files_from_---_example** (where **---** is either **res** or **incomplete** keywords.) to copy trajectory, log, and data files from incomplete and restart directories to the new directories. (**Caution** : edit the **restart_files_collectors.sh** to match the new of the incomplete and restart directories).
+(**Caution** : check the name of **bug**, **log**, and **all** files since they should be different for **incomplete** and **restart** files.).
 3. Edit and run **restart_trj_bug_merger.sh** to merge the **bug** incomplete and restart trajectories, creating full trajectories.
    1. **Caution:** Edit the **ens** and **dir** in **restart_trj_merger.sh** to match the new of the incomplete and restart directories.
 4. Edit and run **restart_trj_all_merger.sh** to merge the **all** incomplete and restart trajectories, creating full trajectories.

@@ -2,7 +2,7 @@
 # copies the python script asnd package which are then executed by gnuparallal.
 for dir in N*/; do
     echo "$dir"
-    cp probe_all_in_one_*.py probe_all_in_one.py
-    mv probe_all_in_one.py "$dir"
+    cp probe-all_trj_segments*.py probe-all_trj_segments.py
+    mv probe-all_trj_segments.py "$dir"
     cp -R polyphys "${dir}"
 done
