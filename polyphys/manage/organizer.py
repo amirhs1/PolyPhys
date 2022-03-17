@@ -1,101 +1,100 @@
-"""
-A module that organizes and combines pandas dataframes based on patterns in \
+"""A module that organizes and combines pandas dataframes based on patterns in
 filenames.
 
 
-The organizer module is for post-processing phase in which clean data files \
-are generated from experiments. This module uses the following terminology \
+The organizer module is for post-processing phase in which clean data files
+are generated from experiments. This module uses the following terminology
 to distinguish different files and directories from each other:
 
 experiment:
-    another name for a simulation or run on HPC using 'LAMMPS' or similar \
+    another name for a simulation or run on HPC using 'LAMMPS' or similar
     packages.
 
 lineage: {'segment', 'whole', 'ensemble', 'space'}
-    a keyword that shows whether a file or directory is a 'segment', \
+    a keyword that shows whether a file or directory is a 'segment',
     'whole', 'ensemble', or 'space'.
 
     segment:
-    The output of a long simulation or run is usually split into two or more \
+    The output of a long simulation or run is usually split into two or more
     segments. 'segment' refers to one of multiple chunks of a 'whole' file.
 
     whole:
         A complete file; a collection of 'segments'.
 
     ensemble:
-        A collection of 'wholes' files that differs only in their initial \
+        A collection of 'wholes' files that differs only in their initial
         conditions (e.g., random number seed).
-        An ensemble is a group of themodynamically-equivalent experiments \
-        (more precisely states) of a system. In in-situ experimentation, \
-        such experiments or states or virtual copies are created by doing an \
-        experiment with different seudo-random generator seeds while keeping \
-        all the other attributes fixed. In other words, experiments in an \
-        ensemble differs only in their initial conditions (the random \
-        generator seed) in the phase space, but have the same attributes \
-        (macroscopic property). The 'name' of an ensmble does not have 'ens' \
-        'segment' attribute. An ensemble can be varied by changing ONE \
-        macroscopic attribute of a system at a time. A group of enembles with \
+        An ensemble is a group of themodynamically-equivalent experiments
+        (more precisely states) of a system. In in-situ experimentation,
+        such experiments or states or virtual copies are created by doing an
+        experiment with different seudo-random generator seeds while keeping
+        all the other attributes fixed. In other words, experiments in an
+        ensemble differs only in their initial conditions (the random
+        generator seed) in the phase space, but have the same attributes
+        (macroscopic property). The 'name' of an ensmble does not have 'ens'
+        'segment' attribute. An ensemble can be varied by changing ONE
+        macroscopic attribute of a system at a time. A group of enembles with
         ONE varring attribute belongs to an 'space' group.
 
     space:
         A collection of ensembles.
-        A 'space' is created by fixing all the attributes of the system under \
+        A 'space' is created by fixing all the attributes of the system under
         study, except one.
 
 attribute:
-    a macroscopic feature that characterizes a system under study; for \
-    instance, the length of a cubic simulation box or the toplogy of a \
-    polymer (see `parser` module lists of 'attribute' keywords of a system. \
-    For the list of valid attributes, please see `parser` module and the \
+    a macroscopic feature that characterizes a system under study; for
+    instance, the length of a cubic simulation box or the toplogy of a
+    polymer (see `parser` module lists of 'attribute' keywords of a system.
+    For the list of valid attributes, please see `parser` module and the
     classes defined therein.
 
 property_:
-    a phyiscal feature that is measured in an experiment; for instance, the \
-    bin edges and frequencies of the local number denisty of a given species \
-    or the end-to-end size of a polymer over time. a property 'keyword' is \
-    camelCase or CamelCase, and it has information about the direction, name, \
-    and species of a physica property; for example, "rHistMon" means a \
+    a phyiscal feature that is measured in an experiment; for instance, the
+    bin edges and frequencies of the local number denisty of a given species
+    or the end-to-end size of a polymer over time. a property 'keyword' is
+    camelCase or CamelCase, and it has information about the direction, name,
+    and species of a physica property; for example, "rHistMon" means a
     histogram file in the radial direction for monomers.
 
 species:
-    The keyword for the type of a species; for instance, 'Mon' stands for \
-    monomers. A list of species is defined within a class or function that \
+    The keyword for the type of a species; for instance, 'Mon' stands for
+    monomers. A list of species is defined within a class or function that
     works differently based on the type of species.
 
 direction:
-    The short name of a direction in a given coordiante system; for instance, \
-    'r' for the radial direction in the spherical coordinate system.  A list \
-    of species is defined within a class or function that works differently \
+    The short name of a direction in a given coordiante system; for instance,
+    'r' for the radial direction in the spherical coordinate system.  A list
+    of species is defined within a class or function that works differently
     based on the type of species.
 
 dir_long:
-    The long name of a direction; for instance, 'radial' for 'r'.  A list of \
-    species is defined within a class or function that works differently \
+    The long name of a direction; for instance, 'radial' for 'r'.  A list of
+    species is defined within a class or function that works differently
     based on the type of species.
 
 group:
-    a 'group' keyword, such as 'bug', identifies a collection of atoms as \
-    they belong to a 'LAMMPS' group (see LAMMPS 'group' command). For the \
-    list of valid group keywords, see `parser` module and the classes \
+    a 'group' keyword, such as 'bug', identifies a collection of atoms as
+    they belong to a 'LAMMPS' group (see LAMMPS 'group' command). For the
+    list of valid group keywords, see `parser` module and the classes
     defined therein.
 
 run: {'restart', 'cont}
-    a 'run' keyword shows whether a simulation trajectory file ('lammpstrj' \
-    or 'trj' extentions) is 'restarted' from a previously broken simulation \
+    a 'run' keyword shows whether a simulation trajectory file ('lammpstrj'
+    or 'trj' extentions) is 'restarted' from a previously broken simulation
     or a 'continued' from a sucessfully finished simulation.
 
-phase: {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe', \
+phase: {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe',
         'analyze', and 'viz'}
-    A keyword ised the name of a directory and is related to one of the \
+    A keyword ised the name of a directory and is related to one of the
     post-processing phases
 
     simulationsAll:
-    The directory that contains all the Lammps-related files for running all \
-    the simulations in a 'space', and the bash scripts for sanity checks and \
+    The directory that contains all the Lammps-related files for running all
+    the simulations in a 'space', and the bash scripts for sanity checks and
     organzing simulation files on a cluster.
 
     simulationCont:
-    The directory that is similar to the 'simulationAll', but it is about a \
+    The directory that is similar to the 'simulationAll', but it is about a
     'space' group that is re-run or continued.
 
     logs:
@@ -105,53 +104,53 @@ phase: {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe', \
     The directory that contains trajectory and toplogy files of a 'space'.
 
     probe:
-    A directory or phase that coantins the files resulted from direct probing \
-    of trajectories in a 'space'. Measuring a polymer's length over time (a \
-    time series) or counting the number of species on a spatial grid (a \
+    A directory or phase that coantins the files resulted from direct probing
+    of trajectories in a 'space'. Measuring a polymer's length over time (a
+    time series) or counting the number of species on a spatial grid (a
     histogram) are two popular probing operations.
 
         observation:
             a file resulted from probing a trjectory.
 
     analyze:
-    A directory or phase that contains the files resulted from analyzing \
-    observations in a 'space'. Measuring the auto-correlation function of \
-    the instantaneous size of a polymer or calculating the radial volume \
-    fraction from a histogram in the radial direction are popular examples. \
+    A directory or phase that contains the files resulted from analyzing
+    observations in a 'space'. Measuring the auto-correlation function of
+    the instantaneous size of a polymer or calculating the radial volume
+    fraction from a histogram in the radial direction are popular examples.
     Ensemble or ensemble-averaged files are also generated in this phase.
 
 stage: {'wholeSim', 'ens', 'ensAvg'}
-    This keyword shows the stage to which a file belongs and is used in \
+    This keyword shows the stage to which a file belongs and is used in
     naming files or directories.
 
     wholeSim:
-    A directory that contains all the 'whole' files in a 'space', where each \
-    'whole' is created by combining all the 'segment' files belonging to a \
+    A directory that contains all the 'whole' files in a 'space', where each
+    'whole' is created by combining all the 'segment' files belonging to a
     'whole'.
 
     ens:
     A directory that contains all the 'ensemble' files of a 'space'.
 
     ensAvg:
-    A 'esneAvg' directory contains all the ensemble-averaged files of a \
-    'space' while an 'ensAvg' file is created by averaging over all the \
+    A 'esneAvg' directory contains all the ensemble-averaged files of a
+    'space' while an 'ensAvg' file is created by averaging over all the
     'whole' data in an 'ensemble' file.
 
 lineage_name:
-    The unique sub-name of a filename which follows one of 'lineage' patterns \
+    The unique sub-name of a filename which follows one of 'lineage' patterns
     define in a class in the `parser` module.
 
 name:
-    A file or directory 'name' is a sequence of 'lineage_name', 'property_', \
+    A file or directory 'name' is a sequence of 'lineage_name', 'property_',
     'phase', 'group', 'stage', or file 'format', separated by a splitter.
 
     Period spliiter ".":
-    This spliiter is used in naming the files the trajectory ('lammpstrj' \
-    and 'trj' extentions) and topology ('data' extention) files that are \
+    This spliiter is used in naming the files the trajectory ('lammpstrj'
+    and 'trj' extentions) and topology ('data' extention) files that are
     generated by LAMMMPS package.
 
     Hypen spliiter "-":
-    This splitter is used in all other file formats, except 'trajectory' and \
+    This splitter is used in all other file formats, except 'trajectory' and
     'topology' files.
 
     A file name has onne of the following general patterns:
@@ -166,41 +165,41 @@ name:
         Directories:
         lineage-phase-group-stage
 
-I   A  file or directory may  have all or part of the aboe period- or hypen- \
+I   A  file or directory may  have all or part of the aboe period- or hypen-
     separated keywords. See below for more information about 'AllInOne' files.
 
-Different files and directories ceated at different 'phases' to oragnize \
-'segment', 'whole', 'ensmeble', or 'ensAvg' files. Below, some general \
+Different files and directories ceated at different 'phases' to oragnize
+'segment', 'whole', 'ensmeble', or 'ensAvg' files. Below, some general
 categories are difined for this files and directories.
 
     'whole' directories:
-    A 'whole' directory contains all the files that belong to a 'whole' \
-    simulation. The 'name' of a 'whole' directory has the same pattern as \
+    A 'whole' directory contains all the files that belong to a 'whole'
+    simulation. The 'name' of a 'whole' directory has the same pattern as
     the 'whole' lineage pattern.
 
     'ens' files:
     See above for the definition of the 'ensemble' 'lineage' and 'ens' 'stage'.
 
     'ensAvg' files:
-    A file that is created by averageing over all the 'whole' files in an \
-    ensemble. An ensemble-averaged file has 'ensAvg' keyword in its filename. \
-    An ensemble-averaged file is created by changing ONE attribute of the \
-    system at a time (similar to an ensemble file). A group of \
-    enemble-averaged files with ONE varring attribute belongs to an 'space' \
+    A file that is created by averageing over all the 'whole' files in an
+    ensemble. An ensemble-averaged file has 'ensAvg' keyword in its filename.
+    An ensemble-averaged file is created by changing ONE attribute of the
+    system at a time (similar to an ensemble file). A group of
+    enemble-averaged files with ONE varring attribute belongs to an 'space'
     group.
 
     'space' directories:
-    A directory contains all the files of all the 'properties' of a 'group' \
+    A directory contains all the files of all the 'properties' of a 'group'
     in a 'space' in a given 'stage' at a given 'phase'.
     A 'space' directory may or may not have the 'group' keyword in tis name.
 
     'all-in-one' files:
-    A clean file (dataset) that contains all the measurements in all the \
+    A clean file (dataset) that contains all the measurements in all the
     'space' groups about a given 'property_'.
 
-A 'space' group results in a curve in the 'viz' phase. An 'ensAvg' file gives \
-a data point. For a given 'property_', if there are N esmebles, each with M \
-'whole' files, then there are N ensemble-average groups and N*M 'whole' files \
+A 'space' group results in a curve in the 'viz' phase. An 'ensAvg' file gives
+a data point. For a given 'property_', if there are N esmebles, each with M
+'whole' files, then there are N ensemble-average groups and N*M 'whole' files
 in the space group.
 """
 # from typing import NamedTuple
@@ -212,6 +211,7 @@ from typing import (
     Union
 )
 import pathlib
+from glob import glob
 import re
 import numpy as np
 import pandas as pd
@@ -221,8 +221,7 @@ from polyphys.manage.parser import SumRule
 def camel_case_split(
     word: str
 ) -> List[str]:
-    """
-    split a camleCase or CamelCase `str` to its constituent sub-strings.
+    """split a camleCase or CamelCase `str` to its constituent sub-strings.
 
     Parameters
     ----------
@@ -243,7 +242,7 @@ def camel_case_split(
 def isfloat(
     string: str
 ) -> Union[float, str]:
-    """Converts `string` to float if possible, otherwise returns the \
+    """convert `string` to float if possible, otherwise returns the
         original string.
 
     Parameters
@@ -266,7 +265,7 @@ def isfloat(
 def sort_by_alphanumeric(
     alphanumeric: str
 ) -> List[Union[int, str, float]]:
-    """Splits an `alphanumeric` into words and integers.
+    """split an `alphanumeric` into words and integers.
 
     Parameters
     ----------
@@ -290,14 +289,14 @@ def sort_filenames(
     fmts: List[str] = ['data', 'lammpstrj'],
     report: bool = False
 ) -> List[str]:
-    """Returns an alphanumerically sorted list of strings.
+    """return an alphanumerically sorted list of strings.
 
 
-    Groups `fnames` with the same names into tuples where the length of \
-    tuples is the length of `fmts`. For instance, A LAMMPS molecular \
-    dynamics simulation output usually is composed of two type of files; \
-    a trajectroy (trj or lammpstrj extentions) constisting of several \
-    snapshots and a topology (data extention) containing information \
+    Groups `fnames` with the same names into tuples where the length of
+    tuples is the length of `fmts`. For instance, A LAMMPS molecular
+    dynamics simulation output usually is composed of two type of files;
+    a trajectroy (trj or lammpstrj extentions) constisting of several
+    snapshots and a topology (data extention) containing information
     about simulation box, particle and bond types.
 
     Parameters
@@ -305,7 +304,7 @@ def sort_filenames(
     fnames : list of str
         a list of filenames.
     fmts : list of str or tuple, defualt=['data',('lammpstrj','trj')]
-        a list of formats where each format can have one or more extensions \
+        a list of formats where each format can have one or more extensions
         (passed as a tuple).
     report : bool, default=False
         shows a report or not.
@@ -317,7 +316,7 @@ def sort_filenames(
 
     """
     fnames_by_fmt = [None] * len(fmts)
-    # a nested list where each sublist has all the files with the same\
+    # a nested list where each sublist has all the files with the same
     # extension:
     for fmt_idx, fmt_exts in enumerate(fmts):
         fnames_by_fmt[fmt_idx] = \
@@ -336,8 +335,7 @@ def invalid_keyword(
     keyword: str,
     valid_keywords: List[str]
 ) -> None:
-    """
-    raises an error if `keyowrd` is not in `valid_keywords`.
+    """raise an error if `keyowrd` is not in `valid_keywords`.
 
     Parameters
     ----------
@@ -361,8 +359,7 @@ def save_parent(
     group: str = 'bug',
     ext: str = 'csv',
 ) -> None:
-    """
-    saves the `data` to memory as a file with extension `ext`.
+    """save the `data` to memory as a file with extension `ext`.
 
     Parameters
     ----------
@@ -392,18 +389,17 @@ def database_path(
     stage: Optional[str] = None,
     group: Optional[str] = None
 ) -> str:
-    """
-    creates a `stage` directory for a `group` at a given `phase` in \
-    a `phase` directory. If the directory exists, raises error, and \
-    return the path of the existing directory. If the `phase` \
+    """create a `stage` directory for a `group` at a given `phase` in
+    a `phase` directory. If the directory exists, raises error, and
+    return the path of the existing directory. If the `phase`
     directory does not exist, `new_directory` creates it.
 
-    The path of 'phase' directory is inferred from the `old_path` and \
+    The path of 'phase' directory is inferred from the `old_path` and
     is at the same level of the 'phase' level of the `old_path`.
 
     General hierarchy of the `input_path`:
         "root/parent1/.../parentN/old_phase/old_directory"
-    where the old_directory and the new_directory created below have \
+    where the old_directory and the new_directory created below have
     the similar pattern:
 
         old_directory: "space-old_phase-old_group-old_stage"
@@ -417,8 +413,8 @@ def database_path(
     ----------
     input_database: str
         Path to directory.
-    phase : {'simulationsAll', 'simulationsCont', 'logs', 'trjs',\
-                      'probe', 'analysis', 'viz'}
+    phase : {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe',
+    'analysis', 'viz'}
         Name of the new phase
     stage: {'wholeSim', 'ens', 'ensAvg'}, default None
         Stage of the new directory.
@@ -473,8 +469,7 @@ def whole(
     relation: str = 'histogram',
     save_to: Optional[str] = None
 ) -> Dict[str, np.ndarray]:
-    """
-    generates `whole` array for `property_` of the particle `group` in the \
+    """generates `whole` array for `property_` of the particle `group` in the
     `geometry` of interest from its `segments`.
 
     Parameters
@@ -482,7 +477,7 @@ def whole(
     property_ : str
         The physical property.
     children : list of tuples
-        List of tuples where each tuple at least has one member (the path to \
+        List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
@@ -492,18 +487,18 @@ def whole(
         Relation between segments and wholes:
 
         'hisotgram'
-            Child is a histogram-like 'segment' file, so the children of \
-            a parent should be sum horizontally (along "axis=0" in \
+            Child is a histogram-like 'segment' file, so the children of
+            a parent should be sum horizontally (along "axis=0" in
             numpy's lingo,).
 
         'tseries'
-            Child is a time-series-like 'segment' file, so the children of \
-            a parent should be concatnated vertically (along "axis=0" in \
+            Child is a time-series-like 'segment' file, so the children of
+            a parent should be concatnated vertically (along "axis=0" in
             Pandas's lingo).
 
         'bin_edge'
-            Child is a bin edges 'segment' file. All the siblings' 'segments' \
-            are the same, so one parent's 'bin_edges' is created by rewriting \
+            Child is a bin edges 'segment' file. All the siblings' 'segments'
+            are the same, so one parent's 'bin_edges' is created by rewriting
             similar segments on each other.
 
     save_to : str, defualt None
@@ -512,12 +507,12 @@ def whole(
     Return
     ------
     siblings: dict of np.ndarray
-        Dict of siblings where keys are 'whole' names (str) and values \
+        Dict of siblings where keys are 'whole' names (str) and values
         are whole data (arrays).
 
     Notes
     -----
-    Please see the 'SumRule' and 'organizer' documentation for definitions \
+    Please see the 'SumRule' and 'organizer' documentation for definitions
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
@@ -539,13 +534,13 @@ def whole(
             lineage='segment'
         )
         whole_name = getattr(segment_info, 'whole')
-        child_df = np.load(segment[0])
+        child_arr = np.load(segment[0])
         if not bool(wholes):  # is ens_names empty or not?
-            wholes[whole_name] = [child_df]
+            wholes[whole_name] = [child_arr]
         elif whole_name not in wholes.keys():
-            wholes[whole_name] = [child_df]
+            wholes[whole_name] = [child_arr]
         else:
-            wholes[whole_name].append(child_df)
+            wholes[whole_name].append(child_arr)
     wholes = dict(
         map(
             mapping_func[relation],
@@ -559,7 +554,8 @@ def whole(
                     whole[0],
                     save_parent(
                         whole[0], whole[1],
-                        property_, save_to, group=group, ext='npy'
+                        property_, save_to,
+                        group=group, ext='npy'
                     )
                 ),
                 wholes.items()
@@ -576,8 +572,7 @@ def ensemble(
     edge_wholes: Optional[Dict[str, np.ndarray]] = None,
     save_to: str = None
 ) -> Dict[str, pd.DataFrame]:
-    """
-    generates ensembles from `wholes` for the physical property `property_` \
+    """generate ensembles from `wholes` for the physical property `property_`
     of a particle `group` in a `geometry` of interest.
 
     Parameters
@@ -585,14 +580,14 @@ def ensemble(
     property_ : str
         The physical property.
     wholes : dict of np.ndarray
-        A dictionary in which keys are 'whole' names and values are data \
+        A dictionary in which keys are 'whole' names and values are data
         (1D array).
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         The shape of the simulation box.
     group: {'bug', 'all'}, defualt 'bug'
         The type of the particle group.
     edge_wholes:  dict of np.ndarray, default None
-        A dictionary in which keys are 'whole' names and values are bin_edges.\
+        A dictionary in which keys are 'whole' names and values are bin_edges.
         This option is used if `wholes` are histograms.
     save_to : str, default None
         An/a absolute/relative path of a directory to which outputs are saved.
@@ -600,8 +595,8 @@ def ensemble(
     Return
     ------
     ensembles : dict of pd.DataFrame
-        A dictionary for `property_` in which keys are ensemble names and \
-        values are dataframes. In each dataframe, the columns are wholes of \
+        A dictionary for `property_` in which keys are ensemble names and
+        values are dataframes. In each dataframe, the columns are wholes of
         that ensemble.
     """
     # Averging over ensembles with simailar initial paramters
@@ -632,8 +627,7 @@ def ensemble(
     def mapping_func(
         ens: Dict[str, np.ndarray]
     ) -> Tuple[str, pd.DataFrame]:
-        """
-        creates ab ensemble from a dictionary of wholes.
+        """create an ensemble from a dictionary of wholes.
 
         Parameters
         ----------
@@ -645,7 +639,6 @@ def ensemble(
         A tuple of ensemble name and its assocaited dataframe.
         """
         return (ens[0], pd.DataFrame.from_dict(ens[1], orient='columns'))
-
     ensembles = dict(
         map(
             mapping_func,
@@ -661,7 +654,8 @@ def ensemble(
                 lambda ensemble: (ensemble[0],
                                   save_parent(
                                     ensemble[0], ensemble[1],
-                                    property_, save_to, group=group, ext='csv')
+                                    property_, save_to,
+                                    group=group, ext='csv')
                                   ),
                 ensembles.items()
             )
@@ -677,10 +671,9 @@ def ensemble_avg(
     exclude: list = ['bin_center'],
     save_to: str = None
 ) -> Dict[str, pd.DataFrame]:
-    """
-    performs averaging over wholes (columns) of each ensemble (dataframe) \
-    in the `ensembles` of the physical property `property_` of a particle \
-    `group`, if that columns is a valid 'whole' simulation name, not a \
+    """perform averaging over wholes (columns) of each ensemble (dataframe)
+    in the `ensembles` of the physical property `property_` of a particle
+    `group`, if that columns is a valid 'whole' simulation name, not a
     `exclude` columns.
 
     Parameters
@@ -688,10 +681,10 @@ def ensemble_avg(
     property_ : str
         The physical property.
     siblings : dict of DataFrame
-        Dictionary of siblings (dataframes) where keys are parent names and \
-        values are siblings (dataframes). In each siblings' dataframe, the \
-        number of columns is equal to or more than the number of \
-        children of that parent. Columns' names are the children' names and \
+        Dictionary of siblings (dataframes) where keys are parent names and
+        values are siblings (dataframes). In each siblings' dataframe, the
+        number of columns is equal to or more than the number of
+        children of that parent. Columns' names are the children' names and
         the names given by `exclude`.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         The shape of the simulation box.
@@ -705,7 +698,7 @@ def ensemble_avg(
     Return
     ------
     ens_avgs : dict of pd.DataFrame
-        Dict of  on `property_` where keys are ensemble names and \
+        Dict of  on `property_` where keys are ensemble names and
         values are dataframes of ensemble-averaged measurements.
     """
     # Averging over ensembles with simailar initial paramters
@@ -724,9 +717,9 @@ def ensemble_avg(
         fname = whole_info.ensemble_long  # ensemble's full name
         # Property name as the column name in the 'ensemble' lineage,
         # but use the parent name as the column in 'whole' linegae
-        ens_df[fname + '-' + property_ + '_mean'] = ens_df[wholes].mean(axis=1)
-        ens_df[fname + '-' + property_ + '_var'] = ens_df[wholes].var(axis=1)
-        ens_df[fname + '-' + property_ + '_sem'] = ens_df[wholes].sem(axis=1)
+        ens_df[fname + '-' + property_ + '-mean'] = ens_df[wholes].mean(axis=1)
+        ens_df[fname + '-' + property_ + '-var'] = ens_df[wholes].var(axis=1)
+        ens_df[fname + '-' + property_ + '-sem'] = ens_df[wholes].sem(axis=1)
         ens_df.drop(columns=wholes, inplace=True)
         ens_avgs[ens] = ens_df
     if save_to is not None:
@@ -751,18 +744,17 @@ def children_stamps(
     lineage: str = 'segment',
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
-    """
-    generates a dataset of the phyiscal attributes and equilibrium \
-    (time-averaged) physical properties of all the `lineage` simulations of a \
+    """generates a dataset of the phyiscal attributes and equilibrium
+    (time-averaged) physical properties of all the `lineage` simulations of a
     particle `group` in a 'space' in a `geometry`.
 
-    The name of space is created from the first value of 'filename' in \
+    The name of space is created from the first value of 'filename' in
     the generated dataset.
 
     Parameters
     ----------
     stamps: list of tuple
-        List of tuples where each tumple has one member and that member is a \
+        List of tuples where each tumple has one member and that member is a
         filepath to the stamp of a 'segment' simulation in a space.
     group: {'bug', 'all'}, default 'bug'
         Type of the particle group.
@@ -795,9 +787,8 @@ def parents_stamps(
     lineage: str = 'segment',
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
-    """
-    performs merging/ensemble-averaging over all the 'segment/'whole'\
-    simulation stamps in a 'space' in a given `geometry` for a given \
+    """perform merging/ensemble-averaging over all the 'segment/'whole'
+    simulation stamps in a 'space' in a given `geometry` for a given
     `group` basedon the given `lineage`.
 
     Parameters
@@ -815,9 +806,9 @@ def parents_stamps(
 
     Notes
     -----
-    If `lineage='segment'`, then stamps are for 'segments' and they have only \
-    different 'segment_id' for a given 'whole' parent. If `lineage='whole'`, \
-    then stamps are for 'wholes' and they have only different 'ensemble_id' \
+    If `lineage='segment'`, then stamps are for 'segments' and they have only
+    different 'segment_id' for a given 'whole' parent. If `lineage='whole'`,
+    then stamps are for 'wholes' and they have only different 'ensemble_id'
     for a given 'ensemble' parent.
 
     Return
@@ -853,7 +844,7 @@ def parents_stamps(
     # agg functions forproperties, attributes, and genealogy:
     agg_funcs = dict()
     # CAUTION: 'properties' is sometimes empty, since sometimes no properties
-    # is measured during probling. Let' check this and then create
+    # is measured during probing. Let's check this and then create
     # aggregation dictionary
     if properties != []:
         # properties are at equilibrium, so the values of each property_
@@ -916,3 +907,104 @@ def parents_stamps(
         )
         parents_stamps.to_csv(save_to + filename, index=False)
     return parents_stamps
+
+
+def all_in_one_tseries(
+    property_path: str,
+    property_: str,
+    property_pattern: str = 'N*',
+    physical_attrs: list = None,
+    group: str = 'bug',
+    geometry: str = 'biaxial',
+    save_to: str = None
+) -> pd.DataFrame:
+    """take the `property_path` to the directory in which the ansemble-average
+    timeseries of a given physical `property_` of a given `group` in a given
+    `geometry`, and performs the following operations in the `orient` of
+    interest: First, it concatenates the timeseries into one dataframe along
+    the 0 or 'row' or 'index' in pandas's lingo, and thenadds the physical
+    `attributes` of interest as the name columns to the concatenated
+    timeseries.
+
+    In each 'ensemble-averaged' dataframe, there are 3 columns with
+    this name patter:
+    column name = 'long_ensemble-group-porperty_[-measure]-stat'
+    where '[-measure]' is a physical measurement such as the auto correlation
+    function (AFC) done on the physical 'property_'. [...] means this keyword
+    in the column name can be optional. the 'stat' keyword is either 'mean',
+    'ver', or 'sem'.
+
+    Parameters
+    ----------
+    property_path: str
+        Path to the the timeseries of the physical property of interest.
+    property_: str
+        Name of the physical property of interest.
+    property_pattern: str, default 'N*'
+        The pattern by which the filenames of timeseries are started with.
+    attributes: list, default None
+        The physical attributes that will added as new columns to the
+        concatenated timeseries.
+    group: {'bug', 'all'}, defualt 'bug'
+        The type of the particle group.
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+        The shape of the simulation box.
+    save_to : str, default None
+        An/a absolute/relative path of a directory to which outputs are saved.
+
+    Return
+    ------
+    all_in_one: pandas.DataFrame
+        a dataframe in which all the timeseries are concatenated along `orient`
+        of interest, and "properties and attributes" of interest are added to
+        it as the new columns.
+    """
+    property_ext = "-" + property_ + ".csv"
+    property_csvs = glob(property_path + "/" + property_pattern + property_ext)
+    property_csvs = sort_filenames(property_csvs, fmts=[property_ext])
+    property_db = []
+    if physical_attrs is None:
+        physical_attrs = [
+            'space', 'ensemble_long', 'ensemble', 'nmon', 'dcyl', 'dcrowd',
+            'phi_c_bulk'
+        ]
+    for property_csv in property_csvs:
+        property_df = pd.read_csv(property_csv[0], header=0)
+        # the first column of porperty_df is used to extract
+        # the information about the property and the space it
+        # belongs to.
+        child_name = property_df.columns[0].split('-')[0]
+        property_info = SumRule(
+            child_name,
+            geometry=geometry,
+            group=group,
+            lineage='ensemble_long',
+            ispath=False
+        )
+        # Column names wihtout 'ensemble_long' name
+        # See the explanantion above abput the column name.
+        col_names = ["-".join(col[1:]) for col in
+                     list(
+                         property_df.columns.str.split(
+                             pat='-', expand=False
+                             )
+                         )
+                     ]
+        property_df = pd.read_csv(
+            property_csv[0],
+            names=col_names,
+            skiprows=[0]
+        )
+        property_df.reset_index(inplace=True)
+        property_df.rename(columns={'index': 'time'}, inplace=True)
+        property_df['time'] = property_df['time'] * property_info.dt
+        for attr_name in physical_attrs:
+            property_df[attr_name] = getattr(property_info, attr_name)
+        property_db.append(property_df)
+    property_db = pd.concat(property_db, axis=0)
+    property_db.reset_index(inplace=True, drop=True)
+    if save_to is not None:
+        output = "-".join(property_.split("-")[:2])  # dropping "-ensAvg"
+        output = "-".join(["allInOne", group, output])
+        property_db.to_csv(save_to + output + ".csv", index=False)
+    return property_db
