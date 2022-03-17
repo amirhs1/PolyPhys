@@ -1,8 +1,8 @@
 # Setting up the *PipeLine* packages
 
 1. Go to the **___-trjs** directory.
-2. Check and (if needed) fix **....all.data** files via running **fix_PairIJ_all_data_files_v---.sh**. This bash script fixes some lines in the **all** data (topology) files, so they can be read by **MDAnalysis** package. This step can be dropped if the bug in **MDAnalysis** is resolved.
-3. copy **___nc0___ens1.all.data** to **data_template-cylinder_bug_n___d___.data**
+2. Check and (if needed) fix **....all.data** files via running **fix_PairIJ_all_data_files_v---.sh**. This bash script fixes some lines in the **all** data (topology) files, so they can be read by **MDAnalysis** package. This step can be dropped if the bug/issue in **MDAnalysis** is resolved.
+3. copy **___nc0___ens1.all.data** to **data_template-cylinder_bug_n___d___.data**.
 **Steps 5 and 6 are Optional**
 4. Go to the *$HOME/github/sumrule_pipeline*:
     1. Run **git pull git@github.com:amirhs1/sumrule_pipeline.git main** to pull from repository.

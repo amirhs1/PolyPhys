@@ -1,5 +1,8 @@
 from datetime import datetime
+from typing import Dict, List, Tuple
 import numpy as np
+import pandas as pd
+from matplotlib import axes
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
@@ -9,8 +12,15 @@ from polyphys.manage.parser import SumRule
 
 
 def rdf_ideal_plotter(
-                ax, bin_edges, nmon, dmon, rdf=True, dmon_large=0, **kwargs):
-    """plots the probability distribution function (pdf) of the end-to-end \
+    ax,
+    bin_edges,
+    nmon,
+    dmon,
+    rdf=True,
+    dmon_large=0,
+    **kwargs
+):
+    """plots the probability distribution function (pdf) of the end-to-end
     vector of an ideal linear chain.
 
     Parameters:
@@ -18,13 +28,13 @@ def rdf_ideal_plotter(
     bin_edges: an array of bins' edges.
     nmon: number of monomers
     dmon: size of monomer (or the kuhn segment)
-    rdf: The probability distribution of the end-to-end distance of an \
+    rdf: The probability distribution of the end-to-end distance of an
     ideal linear chainm
-    dmon_large: size of the pair of monomers at the two ends of the chain. \
+    dmon_large: size of the pair of monomers at the two ends of the chain.
     This is used for scaling bin centers defined below.
 
     Return:
-    a plot of (normalized) radial probability distribution function of \
+    a plot of (normalized) radial probability distribution function of
         the magnitude of the end-to-end distance vector.
     """
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  \
@@ -40,20 +50,20 @@ def rdf_ideal_plotter(
 
 
 def pdf_plotter(ax, histo_collections, bin_edges, dmon_large=0, **kwargs):
-    """ plots probability distribution function (pdf) of the end-to-end \
+    """ plots probability distribution function (pdf) of the end-to-end
     distance vector.
 
     Parameters:
     ax: matplotlib axis object.
-    histo_collections: the collected histogram in the direction of interest \
+    histo_collections: the collected histogram in the direction of interest
     over whole universe.
     bin_edges: an array of bins' edges.
-    dmon_large = size of the pair of monomers at the two ends of the chain. \
+    dmon_large = size of the pair of monomers at the two ends of the chain.
     This is used for scaling bin centers defined below.
     **kwargs: the parameters that are used in ax
 
     Return:
-    a plot of (normalized) probability distribution function of the \
+    a plot of (normalized) probability distribution function of the
     end-to-end distance vector.
     """
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
@@ -65,21 +75,21 @@ def pdf_plotter(ax, histo_collections, bin_edges, dmon_large=0, **kwargs):
 
 
 def rdf_plotter(ax, histo_collections, bin_edges, dmon_large=0, **kwargs):
-    """plots radial distribution function (rdf) or the probability \
-    distribution function of the magnitude of the end-to-end vector \
+    """plots radial distribution function (rdf) or the probability
+    distribution function of the magnitude of the end-to-end vector
     (or *the end-to-end distance*) between R and R+dR.
 
     Parameters:
     ax: matplotlib axis object.
-    histo_collections: the collected histogram in the direction of interest \
+    histo_collections: the collected histogram in the direction of interest
     over whole universe.
     bin_edges: an array of bins' edges.
-    dmon_large: size of the pair of monomers at the two ends of the chain. \
+    dmon_large: size of the pair of monomers at the two ends of the chain.
     This is used for scaling bin centers defined below.
     **kwargs: the parameters that are used in ax.
 
     return:
-    a plot of (normalized) radial probability distribution function of \
+    a plot of (normalized) radial probability distribution function of
     the magnitude of the end-to-end distance vector.
     """
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  \
@@ -91,7 +101,7 @@ def rdf_plotter(ax, histo_collections, bin_edges, dmon_large=0, **kwargs):
 
 def rdf_real_plotter(
                 ax, bin_edges, rFlory, rdf=True, dmon_large=0, **kwargs):
-    """plots the probability distribution function (pdf) of the \
+    """plots the probability distribution function (pdf) of the
     end-to-end vector of a real linear chain.
 
     Parameters:
@@ -99,13 +109,13 @@ def rdf_real_plotter(
     bin_edges: an array of bins' edges.
     nmon: number of monomers
     dmon: size of monomer (or the kuhn segment)
-    rdf: The probability distribution of the end-to-end distance of an ideal\
+    rdf: The probability distribution of the end-to-end distance of an ideal
     linear chainm
-    dmon_large: size of the pair of monomers at the two ends of the chain. \
+    dmon_large: size of the pair of monomers at the two ends of the chain.
     This is used for scaling bin centers defined below.
 
     return:
-    a plot of (normalized) radial probability distribution function of \
+    a plot of (normalized) radial probability distribution function of
     the magnitude of the end-to-end distance vector.
     """
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
@@ -181,23 +191,23 @@ def looping_plotter(plotting_df):
 
 def chainsize_plot(df, xcol, save_to=None, fontsize=20, ext='pdf'):
     """
-    plot the different measures of chain size (furthermost distance, radius \
-    of gyration, and Flory radius (end-to-end distance)) as function of \
+    plot the different measures of chain size (furthermost distance, radius
+    of gyration, and Flory radius (end-to-end distance)) as function of
     the bulk volume fraction of crowders in varied systems.
 
-    The difference in systems arises from the difference in the chain \
+    The difference in systems arises from the difference in the chain
     size (number of monomers), crowder size, and cylinder size.
 
     Cuation:
-    This methid is indeed a fine-tuned wrapper to produce high-quality \
-    figure, so you probably need to change many of ints internal codes \
+    This methid is indeed a fine-tuned wrapper to produce high-quality
+    figure, so you probably need to change many of ints internal codes
     if you want to use in a very differetn style.
 
     Parameters:
-    df (pandas dataframe): The dataframe that contains the statisitcal \
+    df (pandas dataframe): The dataframe that contains the statisitcal
     properties of chain in different systems.
     xcol (str): the x-axis variable.
-    colors (a list of RGB tuples or matplotlib.colors.Colormap): the length \
+    colors (a list of RGB tuples or matplotlib.colors.Colormap): the length
     of list choose by the chain property which is represented by hue keyword.
     fontsize (float): Font size for the x and y axis labels.
     save_to (str): address to which the ensemble files of a group are saved.
@@ -289,73 +299,131 @@ def chainsize_plot(df, xcol, save_to=None, fontsize=20, ext='pdf'):
     plt.savefig(picname, dpi=300, bbox_inches='tight')
 
 
+def acf_plot(
+    ax: axes.Axes,
+    acf_db: pd.DataFrame,
+    time: np.array,
+    property_: str,
+    color: str
+) -> axes.Axes:
+    """plot the auto-correlation function (AFCs) with its associated
+    confidence intervals (CIs) for the physical `property_`.
+
+    Parameters
+    ----------
+    ax: matplotlib.axes.Axes
+        The Axes in which the data is plotted.
+    acf_db: pd.DataFrame
+        The dataframe in which the ACF and CIs of the `property_` are
+        located.
+    time: np.array
+        The time data plotted along x axis.
+    property_: str
+        The physical property of interest.
+    color: str
+        A color as it recognised by matplotlib.
+
+    Return
+    ------
+    acf_t: matplotlib.axes.Axes
+        the plotted ACF with its assocaited CIs.
+    """
+    acf_t = ax.plot(acf_db[property_+'-acf-mean'], color=color)
+    acf_t = ax.fill_between(
+        time,
+        acf_db[property_+'-acfLowerCi-mean'],
+        acf_db[property_+'-acfUpperCi-mean'],
+        color=color,
+        alpha=0.25
+    )
+    return acf_t
+
+
 def acf_plot_with_ci(
-                acf, ens_names, group_name, attrs_dict, phi_crds,
-                ylimits=(-0.3, 1.1, 0.2), fontsize=20, nrows=4, ncols=3,
-                lags=7000, ext='pdf'):
-    """plots the auto-correlation functions (AFCs) of a group ofphysical \
-    attributes (attrs_dict) with their associated confidence intervals \
-    (CIs) in one plot for all the ensembles in a simulation group.
+    acf: pd.DataFrame,
+    ensembles: List[str],
+    space: str,
+    properties: Dict[str, Dict[str, str]],
+    phi_crds: List[float],
+    xlimits: Tuple[float, float, float] = (0, 7000, 1000),
+    ylimits: Tuple[float, float, float] = (-0.3, 1.1, 0.2),
+    fontsize: int = 20,
+    nrows: int = 4,
+    ncols: int = 3,
+    lags: int = 7000,
+    ext: str = 'pdf',
+    save_to: str = './'
+) -> None:
+    """plot the auto-correlation function (AFC) with its associated
+    confidence intervals (CIs) of a group of physical `properties` in one
+    plot for all the `ensembles` in a simulation `space`, and save it in
+    `ext` format into the `save_to` path.
 
-    Issues:
-    The function does not work if le(ens_names) != ncols*nrows - resloved, \
-    the user can set nrows and ncols.
-    It does not guarantee that the a phi_crd is correctly associated with \
-    an ens_name - resolved, provided that the ens_names and phi_crds are \
-    given as ordered lists.
+    Parameters
+    ----------
+    acf: pd.DataFrame
+        The dataset of the ACFs.
+    ensembles: dict
+        The ordered list of ensemble names in the `space`.
+    space: str
+        The name of the simulation `space` to which `ensembles` belong.
+    properties: dict of dict
+        A dictionary in which the keys are the name of physical properties for
+        which the ACFs are plotted and the values are dictionaries. In each
+        internal dictionary, the keys are 'name', 'symbol', 'color', and
+        similar characteristics and the values are the spcific values of these
+        characteristics for a physical property.
+    phi_crds: np.array
+        An ordered list of bulk volume fraction of crowders.
+    xlimits: tuple, default (0, 7000, 1000),
+        The lower and upper limits, and the step for the x-ticks.
+    ylimits: tuple, default (-0.3, 1.1, 0.2)
+        The lower and upper limits, and the step for the y-ticks.
+    fontsize: int, default 20
+        The maximum font size in the plot.
+    nrows: int, default 4
+        The number of subplot rows
+    ncols: int, default 3
+        The number of subplot columns
+    lags: int, default 7000
+        The maximum lag in th AFC plot.
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
 
-    Parameters:
-    acf (pandas dataframe): the dataset of the ACFs.
-    ens_names (list of str): the ordered names of ensembles in a \
-    simulations group.
-    group_name (str): the name of simulation group
-    attrs_dict (dict): the dictionary of attributes for them, the ACF \
-    graphs are plotted tegether.
-    phi_crds (numpy array): the ordered bulk volume fraction of crowders.
-    ylimits (tuple): the lower and upper limits, and the step for the y-ticks.
-    fontsize (int): the maximum font size in the plot.
-    lags (int): the maximum lag in th AFC plot.
-    nrows (int): number of subplot rows
-    ncols (int): number of subplot columns
-    ext (str): foramt of the output file.
-
-    Return:
-    Save a plot in ext format into a file.
-
-    Requirements:
-    PipeLine, Matplotlib, Statsmodels
+    Requirements
+    ------------
+    Matplotlib, Statsmodels
     """
     fig, axes = plt.subplots(
-        nrows=nrows, ncols=ncols, figsize=(16, 12), sharey=True, sharex=True)
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(16, 12),
+        sharey=True,
+        sharex=True
+    )
     mpl.rcParams['font.family'] = "Times New Roman"
     mpl.rcParams['mathtext.default'] = 'regular'
-
-    def acf_plot(ax, acf_db, time, attr, color):
-        acf_t = ax.plot(acf_db[attr+'-acf_only'], color=color)
-        acf_t = ax.fill_between(
-            time, acf_db[attr+'-acf_ci_lower'], acf_db[attr+'-acf_ci_upper'],
-            color=color, alpha=0.25)
-        return acf_t
     time = np.arange(lags+1)
     for idx, (ens_name, phi_c, ax) in \
-            enumerate(zip(ens_names, phi_crds, axes.flat)):
+            enumerate(zip(ensembles, phi_crds, axes.flat)):
         ax.axhline(y=0, c='black', ls='--', lw=1)
-        acf_ens = acf.loc[acf['ens_name'] == ens_name, :]
+        acf_ens = acf.loc[acf['ensemble'] == ens_name, :]
         acf_ens.reset_index(inplace=True)
         legend_colors = []
         legend_labels = []
-        for attr, attr_dict in attrs_dict.items():
-            _ = acf_plot(ax, acf_ens, time, attr, attr_dict['color'])
-            legend_colors.append(attr_dict['color'])
-            legend_colors.append(mpl.colors.to_rgba(attr_dict['color'], 0.25))
-            legend_labels.append(attr_dict['symbol'])
-            legend_labels.append(attr_dict['symbol'] + " CIs")
+        for property_, prop_dict in properties.items():
+            _ = acf_plot(ax, acf_ens, time, property_, prop_dict['color'])
+            legend_colors.append(prop_dict['color'])
+            legend_colors.append(mpl.colors.to_rgba(prop_dict['color'], 0.25))
+            legend_labels.append(prop_dict['symbol'])
+            legend_labels.append(prop_dict['symbol'] + " CIs")
         ax.legend(
             title=fr'$\phi_c^{{(bulk)}}={phi_c}$', title_fontsize=fontsize-2,
             framealpha=None, frameon=False)
         ptune.yticks(ax, ylimits, code=True, fontsize=fontsize-6, decimals=3)
-        ptune.xticks(
-            ax, (0, lags, 1000), code=True, fontsize=fontsize-6, decimals=3)
+        ptune.xticks(ax, xlimits, code=True, fontsize=fontsize-6, decimals=3)
         if idx % 3 == 0:
             ax.set_ylabel(r"$C(\hat{t})$", fontsize=fontsize-2)
         if idx >= 9:
@@ -364,95 +432,169 @@ def acf_plot_with_ci(
                 fontsize=fontsize-2)
     phi_c_patches = ptune.color_patcher(legend_colors)
     phi_c_legends = mpl.legend.Legend(
-        axes[0, 2], handles=phi_c_patches, labels=legend_labels,
-        title='Physical property', title_fontsize=fontsize-2,
-        fontsize=fontsize-4, framealpha=None, frameon=False,
-        bbox_to_anchor=(1.02, 1.02))
+        axes[0, 2],
+        handles=phi_c_patches,
+        labels=legend_labels,
+        title='Physical property',
+        title_fontsize=fontsize-2,
+        fontsize=fontsize-4,
+        framealpha=None,
+        frameon=False,
+        bbox_to_anchor=(1.02, 1.02)
+    )
     axes[0, 2].add_artist(phi_c_legends)
-    cell_attrs = SumRule(
-        ens_name, geometry='cylindrical', cell_type=None, warning=False)
+    space_info = SumRule(
+        space, geometry='biaxial',
+        group='bug',
+        lineage='space',
+        ispath=False
+    )
     fig.suptitle(
-        f"the ACFs of three physical properties of a chain in a \
-        system with $N={cell_attrs.nmon}$, $D={cell_attrs.dcyl}$, \
-        $a={cell_attrs.dcrowd}$.", fontsize=fontsize+2)
-    fname = "acf-confidence_intervals-" + group_name + "." + ext
+        f"the ACFs of three physical properties of a chain in a"
+        f"system with $N={space_info.nmon}$, $D={space_info.dcyl}$,"
+        f" $a={space_info.dcrowd}$.", fontsize=fontsize+2)
+    output = save_to + "acf-confidence_intervals-" + space + "." + ext
     fig.tight_layout()
-    plt.savefig(fname, bbox_inches='tight')
+    plt.savefig(output, bbox_inches='tight')
     plt.close()
 
 
 def acf_plot_group(
-                acf, group_names, attr, attr_dict, phi_crds, phi_colors,
-                ylimits=(-0.2, 1.0, 0.2), fontsize=20, lags=7000, nrows=4,
-                ncols=3, ext='pdf'):
-    """plots the auto-correlation functions (AFCs) of the physical \
-    property 'attr' for all the simulation groups.
+    acf: pd.DataFrame,
+    spaces: List[str],
+    property_: str,
+    property_dict: Dict[str, str],
+    phi_crds: List[float],
+    phi_colors: sns.palettes._ColorPalette,
+    xlimits: Tuple[float, float, float] = (0, 7000, 1000),
+    ylimits: Tuple[float, float, float] = (-0.3, 1.1, 0.2),
+    fontsize: int = 20,
+    nrows: int = 4,
+    ncols: int = 3,
+    legend_anchor: Tuple[float, float] = (1.25, 1.02),
+    lags: int = 7000,
+    ext: str = 'pdf',
+    save_to: str = './'
+) -> None:
+    """plot the auto-correlation functions (AFCs) of the physical
+    `property_` for all the simulation `spaces`.
 
-    Issues:
-    The function does not work if le(ens_names) != ncols*nrows - resloved, \
-    the user can set nrows and ncols.
-    It does not guarantee that the a phi_crd is correctly associated with \
-    an ens_name - resolved, provided that the ens_names and phi_crds are \
-    given as ordered lists.
+    Parameters
+    ----------
+    acf: pd.DataFrame
+        The dataset of the ACFs.
+    ensembles: dict
+        The ordered list of ensemble names in the `space`.
+    space: str
+        The name of the simulation `space` to which `ensembles` belong.
+    property_: str
+        Name of the physical property
+    property_dict: dict of str
+        A dictionary in which the keys are the name of physical properties for
+        which the ACFs are plotted and the values are dictionaries. In each
+        internal dictionary, the keys are 'name', 'symbol', 'color', and
+        similar characteristics and the values are the spcific values of these
+        characteristics for a physical property.
+    phi_crds: np.array
+        An ordered list of bulk volume fraction of crowders.
+    phi_colors: sns.palettes._ColorPalette
+        A palette of colors for `phi_crds`.
+    xlimits: tuple, default (0, 7000, 1000),
+        The lower and upper limits, and the step for the x-ticks.
+    ylimits: tuple, default (-0.3, 1.1, 0.2)
+        The lower and upper limits, and the step for the y-ticks.
+    fontsize: int, default 20
+        The maximum font size in the plot.
+    nrows: int, default 4
+        The number of subplot rows
+    ncols: int, default 3
+        The number of subplot columns
+    legend_anchor: tuple of two floats
+        Position at which the legend is placed.
+    lags: int, default 7000
+        The maximum lag in th AFC plot.
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
 
-    Parameters:
-    acf (pandas dataframe): the dataset of the ACFs.
-    group_names (list of str): the ordered names of simulation groups.
-    attr (str): the name of physical property for which the ACF is measured.
-    phi_crds (numpy array): the ordered bulk volume fraction of crowders.
-    phi_colors (list): a list of matplotlib colors
-    ylimits (tuple): the lower and upper limits, and the step for the y-ticks.
-    fontsize (int): the maximum font size in the plot.
-    lags (int): the maximum lag in th AFC plot.
-    nrows (int): number of subplot rows
-    ncols (int): number of subplot columns
-    ext (str): foramt of the output file.
-
-    Return:
-    Save a plot in ext format into a file.
-
-    Requirements:
-    PipeLine, Matplotlib, Statsmodels
+    Requirements
+    ------------
+    Matplotlib
     """
     fig, axes = plt.subplots(
         nrows=nrows, ncols=ncols, figsize=(16, 12), sharey=True)
     mpl.rcParams['font.family'] = "Times New Roman"
     mpl.rcParams['mathtext.default'] = 'regular'
     time = np.arange(lags+1)
-    for idx, (group_name, ax) in enumerate(zip(group_names, axes.flat)):
-        acf_group = acf.loc[acf['group_name'] == group_name, :]
-        ens_names = list(acf_group['ens_name'].drop_duplicates())
-        ens_names = sorted(ens_names, key=organizer.sort_by_alphanumeric)
+    if nrows * ncols > 1:
+        axes_ = axes.flat
+    else:
+        axes_ = [axes]
+    for idx, (space, ax) in enumerate(zip(spaces, axes_)):
+        acf_space = acf.loc[acf['space'] == space, :]
+        ensembles = list(acf_space['ensemble'].drop_duplicates())
+        ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
         ax.grid(True, ls=':', lw=0.75, c='black')
         ax.tick_params(
-            axis='both', direction='inout', width=1, labelsize=fontsize-4,
-            color='black')
+            axis='both',
+            direction='inout',
+            width=1,
+            labelsize=fontsize-4,
+            color='black'
+        )
         ax.axhline(y=0, c='black', ls='--', lw=1)
-        for ens_name, color in zip(ens_names, phi_colors):
-            acf_ens = acf_group[acf_group['ens_name'] == ens_name]
+        for ens, color in zip(ensembles, phi_colors):
+            acf_ens = acf_space[acf_space['ensemble'] == ens]
             acf_ens.reset_index(inplace=True)
-            ax.plot(time, acf_ens[attr+"-acf_only"], color=color)
-        ptune.yticks(ax, ylimits, code=True, fontsize=fontsize-4, decimals=3)
+            ax.plot(time, acf_ens[property_ + "-acf-mean"], color=color)
+        ptune.yticks(
+            ax, ylimits, code=True, fontsize=fontsize-6, decimals=3
+        )
         ptune.xticks(
-            ax, (0, lags, 1000), code=True, fontsize=fontsize-4, decimals=1)
-        if idx % 3 == 0:
-            ax.set_ylabel(attr_dict['symbol'], fontsize=fontsize-2)
+            ax, xlimits, code=True, fontsize=fontsize-6, decimals=3
+        )
+        if idx % ncols == 0:
+            ax.set_ylabel(
+                property_dict['symbol'],
+                fontsize=fontsize-2
+                )
         ax.set_xlabel(
             r"$\hat{t}=lag\times {\Delta t_{sampling}}/{\tau}$",
             fontsize=fontsize - 2)
-        cell_attrs = SumRule(
-            ens_name, geometry='cylindrical', cell_type=None, warning=False)
+        space_info = SumRule(
+            space, geometry='biaxial',
+            group='bug',
+            lineage='space',
+            ispath=False
+        )
         ax.set_title(
-            fr"({idx+1}) $N={cell_attrs.nmon}$, $D={cell_attrs.dcyl}$, \
-            $a={cell_attrs.dcrowd}$", fontsize=fontsize)
+            fr"({idx+1}) $N={space_info.nmon}$, $D={space_info.dcyl}$"
+            fr", $a={space_info.dcrowd}$",
+            fontsize=fontsize
+        )
+    if nrows == 1 & ncols == 1:
+        leg_ax = axes
+    elif nrows == 1:
+        leg_ax = axes[ncols-1]
+    elif ncols == 1:
+        leg_ax = axes[0]
+    else:
+        leg_ax = axes[0, ncols-1]
     phi_c_patches = ptune.color_patcher(phi_colors)
     phi_c_legends = mpl.legend.Legend(
-        axes[0, 2], handles=phi_c_patches, labels=list(phi_crds),
-        title=r'$\phi_c^{(bulk)}$', title_fontsize=fontsize-2,
-        fontsize=fontsize-4, framealpha=None, frameon=False,
-        bbox_to_anchor=(1.02, 1.02))
-    axes[0, 2].add_artist(phi_c_legends)
-    fname = 'acf'+"-"+attr+"."+ext
+        leg_ax,
+        handles=phi_c_patches,
+        labels=list(phi_crds),
+        title=r'$\phi_c^{(bulk)}$',
+        title_fontsize=fontsize-2,
+        fontsize=fontsize-4,
+        framealpha=None,
+        frameon=False,
+        bbox_to_anchor=(1.12, 1.02)
+    )
+    leg_ax.add_artist(phi_c_legends)
+    output = save_to + 'acf' + "-" + property_ + "." + ext
     fig.tight_layout()
-    plt.savefig(fname, dpi=200, bbox_inches='tight')
+    plt.savefig(output, dpi=200, bbox_inches='tight')
     plt.close()

@@ -44,7 +44,11 @@ def acf_of_wholes(
     lower_cls = pd.DataFrame(columns=ensemble.columns)
     upper_cls = pd.DataFrame(columns=ensemble.columns)
     for whole in ensemble.columns:
-        acf_t = tsas.acf(ensemble.loc[:, whole], nlags=nlags, alpha=alpha)
+        acf_t = tsas.acf(
+            ensemble.loc[:, whole].values,
+            nlags=nlags,
+            alpha=alpha
+        )
         acfs[whole] = acf_t[0]
         lower_cls[whole] = acf_t[1][:, 0] - acf_t[0]
         upper_cls[whole] = acf_t[1][:, 1] - acf_t[0]
@@ -108,8 +112,7 @@ def acf_generator(
     acfs = {}
     lower_cls = {}
     upper_cls = {}
-    for ens_name, ens in ensembles.items():  \
-            # bunch of simulations in a group/ensemble/ensemble-averaged group
+    for ens_name, ens in ensembles.items():
         acf, lower_cl, upper_cl = acf_of_wholes(ens, nlags, alpha)
         acfs[ens_name] = acf
         lower_cls[ens_name] = lower_cl
@@ -136,7 +139,7 @@ def acf_generator(
                                  save_parent(
                                     ens[0],
                                     ens[1],
-                                    property_ + '-acfLowerCl',
+                                    property_ + '-acfLowerCi',
                                     save_to,
                                     group=group,
                                     ext='csv'
@@ -151,7 +154,7 @@ def acf_generator(
                                  save_parent(
                                     ens[0],
                                     ens[1],
-                                    property_ + '-acfUpperCl',
+                                    property_ + '-acfUpperCi',
                                     save_to,
                                     group=group,
                                     ext='csv'

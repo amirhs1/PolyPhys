@@ -1,8 +1,18 @@
-# Importing necessary packages:
 from glob import glob
-from polyphys.construct.builder import data_file_generator
+from polyphys.construct.builder import bug_data_file_generator
 
-path = "./*.j01.bug.lammpstrj"
-fnames = glob(path)
-dfile_template = glob("./data_template-cylinder_bug_n*.data")
-data_file_generator(dfile_template, fnames)
+
+def main() -> None:
+    path = "./*.j01.bug.lammpstrj"
+    bug_trjs = glob(path)
+    data_template = glob("./data_template-biaxial-bug-N*.data")
+    data_template = data_template[0]
+    bug_data_file_generator(
+        data_template,
+        bug_trjs,
+        geometry='biaxial',
+        lineage='segment'
+    )
+
+
+main()
