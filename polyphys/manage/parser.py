@@ -11,7 +11,7 @@ class SumRule(object):
     lineage: str = 'segment'
     ispath: bool = True
     """
-    parses a `lineage_name` to extract information about the 'lineage' of \
+    parses a `lineage_name` to extract information about the 'lineage' oftrj
     that 'lineage_name', based on the following 'lineage' patterns:
 
     segment: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
@@ -19,15 +19,15 @@ class SumRule(object):
     whole: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#
         A complete simulation or measurement; a collection of 'segments'.
     ensemble: N#D#ac#nc#
-        A collection of 'wholes' (complete simulations) that differs only \
+        A collection of 'wholes' (complete simulations) that differs only
         in their initial conditions (e.g., random number seed).
     ensemble_long: N#epsilon#r#lz#sig#nc#dt#bdump#adump#
         Long name of an ensemble.
     space: N#D#ac#
         A collection of ensembles.
 
-    In the above lineages, the keywords are attributes where their values \
-    (shown by "#" sign) are float or integer number. If a lineage does not \
+    In the above lineages, the keywords are attributes where their values
+    (shown by "#" sign) are float or integer number. If a lineage does not
     have an attribute, then the value of that attribute is set to numpy.nan.
     These are the attributes with "numpy.nan" values for different lineages:
     whole: 'j'
@@ -35,13 +35,13 @@ class SumRule(object):
     ensemble: 'lz', 'dt', 'bdump', 'adump', 'ens', and 'j'
     space:  'lz', 'nc', 'dt', 'bdump', 'adump', 'ens' , and 'j'
 
-    There are some difference between the keywords of physical attributes and \
-    their associated attributes in the `SumRule` class. Below, the these two \
+    There are some difference between the keywords of physical attributes and
+    their associated attributes in the `SumRule` class. Below, the these two
     types of attributes are explained.
 
     To-do List
     ----------
-    1. This class can be split to 4 classes in the following order of \
+    1. This class can be split to 4 classes in the following order of
     inheritance: parent->child: space -> ensemble -> whole -> segment.
     2. Using @attribute for attributes to get, set, or delete them.
 
@@ -52,9 +52,9 @@ class SumRule(object):
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
     group: {'bug', 'all'}, default 'bug'
-        Type of the particle group. 'bug' is used for a single polymer. \
+        Type of the particle group. 'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
-    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble', \
+    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
         'space'}, default 'segment'
         Type of the lineage of the name.
     ispath: bool, default True
@@ -65,15 +65,15 @@ class SumRule(object):
     geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
     group: {'bug', 'all'}
-        Type of the particle group.  'bug' is used for a single polymer. \
+        Type of the particle group.  'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
-    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble', \
+    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
         'space'}, default whole
         Type of the lineage of the name.
     pathname: str, default "N/A"
         Equal to `name` if `name` is a filepath, otherwise "N/A".
     filename: str
-        Name of a the file referred to by `name` if `name` is a filepath, \
+        Name of a the file referred to by `name` if `name` is a filepath,
         otherwise the `name` itself.
     lineage_name: str,
         The unique name of type extracted from self.fullname
@@ -82,15 +82,25 @@ class SumRule(object):
     nmon: int, np.nan
         Number of monomers. Its associated keyword is 'N'.
     dcyl: float, np.nan
-        Size (or diameter) of the biaxial confinement, inferred from either \
-        'r' keyword (radius of the biaxial confinement, a cylinder with open \
-        ends) or 'D' keyword (size of that confinement
+        Size (or diameter) of the `biaxial` or `slit` confinement, inferred
+        from either 'r' keyword (radius of the biaxial confinement; a cylinder
+        with open ends) or 'D' keyword (size of that confinement. Following
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
+        domain over which x and y cartesian coordiantes are defined in the
+        'biaxial' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
+        inculsive is the domain over which z cartesian coordiante is defined
+        in the 'slit' geometry. It is important to note that `dcyl` is
+        different from the size defined in LAMMPS input file if the
+        wall-forming particle are defined; in this case:
+            `self.dcyl` = LAMMPS.dcyl - `self.dwall`
+        Hence, `dcyl` is defined differenty in different parser classes in
+        this module.
     lcyl: float, np.nan
-        Length of the biaxial confinement along z axis (the periodic, \
-        direction), inferred from 'lz' keyword (half of the length of the \
+        Length of the biaxial confinement along z axis (the periodic,
+        direction), inferred from 'lz' keyword (half of the length of the
         biaxial confinement along z axis.
     epsilon: float, np.nan
-        Wall-particle LJ interaction strength. Its associated keyword is \
+        Wall-particle LJ interaction strength. Its associated keyword is
         'epsilon' keyword.
     dcrowd: float, np.nan
         Size (diameter) of a crowder. Its associated keyword is 'sig' or 'ac'.
@@ -99,16 +109,16 @@ class SumRule(object):
     ensemble_id: int, np.nan
         The ensemble number of a 'whole' simulation in an ensemble.
     segment_id: int, np.nan
-        The 'segment_id' keyword starts with 'j', ends with a 'padded' \
-        number such as '05' or '14', showing the succession of segments \
+        The 'segment_id' keyword starts with 'j', ends with a 'padded'
+        number such as '05' or '14', showing the succession of segments
         in a whole file.
     dt: float, np.nan
         Simulation timestep. Its associated keyword is 'dt'.
     bdump: int
-        Frequency by which 'bug' configurations are dumped in a 'bug' \
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'bdump'.
     adump: int, default np.nan
-        Frequency by which 'all' configurations are dumped in a 'segment' \
+        Frequency by which 'all' configurations are dumped in a 'segment'
         trajectory file. Its associated keyword is 'adump'.
     mmon: float, default 1.0
         Mass of a monomer
@@ -123,7 +133,7 @@ class SumRule(object):
     ensemble: str or "N/A"
         An ensemble's name if applicable, otherwise "N/A"
     ensemble_long: str or "N/A"
-        The name of ensemble derived from 'whole' name if applicable, \
+        The name of ensemble derived from 'whole' name if applicable,
         otherwise "N/A"
     whole: str or "N/A"
         A whole's name if applicable, otherwise "N/A"
@@ -145,13 +155,13 @@ class SumRule(object):
     _groups: list of str
         Possible groups of the `SumRule` project.
     _lineage_attributes: dict of dict
-        a dictionary of `lineage` names. For each `lineage`, a dictionary \
-        maps the keywords of physical attributes in that lineage to their \
+        a dictionary of `lineage` names. For each `lineage`, a dictionary
+        maps the keywords of physical attributes in that lineage to their
         corresponding attributes in `SumRule` class.
     _lineage_private_attributes: dict of lists
-        a dictionary of `lineage` names. For each `lineage`, a list of \
-        class attributes that are NOT "N/A" or np.nan is created that can be\
-        used in the simulation/experiment/run report files (called \
+        a dictionary of `lineage` names. For each `lineage`, a list of
+        class attributes that are NOT "N/A" or np.nan is created that can be
+        used in the simulation/experiment/run report files (called
         "*-properties.csv")
     """
     _geometries = ['biaxial', 'slit', 'box']
@@ -261,7 +271,8 @@ class SumRule(object):
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
-        self._bulk_attributes()
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
+            self._bulk_attributes()
         self.attributes = list(self._lineage_attributes[self.lineage].keys())\
             + self._physical_attributes[self.lineage]
         self.genealogy = self._genealogy[self.lineage]
@@ -282,12 +293,12 @@ class SumRule(object):
 
     def _find_lineage_name(self):
         """
-        parses the unique lineage_name (the first substring of filename \
+        parses the unique lineage_name (the first substring of filename
         and/or the segment keyword middle substring) of a filename.
         """
         if self.lineage in ['segment', 'whole']:
             # a 'segment' lineage only used in 'probe' phase
-            # a 'whole' lineage used in 'probe' or 'analyze' phases\
+            # a 'whole' lineage used in 'probe' or 'analyze' phases
             # so its lineage_name is either ended by 'group' keyword or "-".
             # these two combined below:
             self.lineage_name = \
@@ -297,7 +308,7 @@ class SumRule(object):
 
     def _initiate_attributes(self):
         """
-        defines and initiates the class attribute based on the physical \
+        defines and initiates the class attribute based on the physical
         attributes defined for the project.
         """
         self.dmon = 1.0
@@ -323,7 +334,7 @@ class SumRule(object):
 
     def _parse_lineage_name(self):
         """
-        parses a lineage_name based on a list of keywords of physical \
+        parses a lineage_name based on a list of keywords of physical
         attributes.
         """
         str_lineages = re.compile(r'([a-zA-Z\-]+)')
@@ -398,17 +409,16 @@ class SumRule(object):
 
     def _bulk_attributes(self):
         """
-        computes some physical attributes of a lineage based on its \
+        computes some physical attributes of a lineage based on its
         primary attributes.
         """
-        if self.lineage in ['segment', 'whole']:
-            vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
-            vol_mon = np.pi * self.dmon**3 / 6
-            self.rho_m_bulk = self.nmon / vol_cell
-            self.phi_m_bulk = self.rho_m_bulk * vol_mon
-            vol_crowd = np.pi * self.dcrowd**3 / 6
-            self.rho_c_bulk = self.ncrowd / vol_cell
-            self.phi_c_bulk = self.rho_c_bulk * vol_crowd
+        vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
+        vol_mon = np.pi * self.dmon**3 / 6
+        self.rho_m_bulk = self.nmon / vol_cell
+        self.phi_m_bulk = self.rho_m_bulk * vol_mon
+        vol_crowd = np.pi * self.dcrowd**3 / 6
+        self.rho_c_bulk = self.ncrowd / vol_cell
+        self.phi_c_bulk = self.rho_c_bulk * vol_crowd
 
 
 class FloryChain(object):
@@ -430,6 +440,20 @@ class FloryChain(object):
 
     Attributes
     ----------
+    dcyl: float, np.nan
+        Size (or diameter) of the `biaxial` or `slit` confinement, inferred
+        from either 'r' keyword (radius of the biaxial confinement; a cylinder
+        with open ends) or 'D' keyword (size of that confinement. Following
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
+        domain over which x and y cartesian coordiantes are defined in the
+        'biaxial' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
+        inculsive is the domain over which z cartesian coordiante is defined
+        in the 'slit' geometry. It is important to note that `dcyl` is
+        different from the size defined in LAMMPS input file if the
+        wall-forming particle are defined; in this case:
+            `self.dcyl` = LAMMPS.dcyl - `self.dwall`
+        Hence, `dcyl` is defined differenty in different parser classes in
+        this module.
 
     Class Attributes
     ----------------
@@ -499,7 +523,7 @@ class FloryChain(object):
 
     def _initiate_attributes(self):
         """
-        defines and initiates the class attribute based on the physical \
+        defines and initiates the class attribute based on the physical
         attributes defined for the project.
         """
         self.w3body_model = "N/A"
@@ -513,7 +537,7 @@ class FloryChain(object):
 
     def _parse_attributes(self):
         """
-        parses a lineage_name based on a list of keywords of physical \
+        parses a lineage_name based on a list of keywords of physical
         attributes.
         """
         words = self.filename.split('-')
@@ -655,3 +679,169 @@ class FloryChain(object):
                 (self.chain_size['vexc_scaled'] <= 1.5) & (
                  self.chain_size['vexc_scaled'] >= -1.0)
             self.chain_size = self.chain_size[limit_range]
+
+
+class DataTemplate(object):
+    name: str
+    ispath: bool = True
+    """Parse the filename of a LAMMPS template data file based on one of the
+    following file name templates:
+
+    1. 'data_template-geometry-group-N#D#L#'
+
+        where 'data_template' is the fixed header name of the LAMMPS template
+        files, 'geometry' is the geoemtery of the space, 'group' is the name of
+        file group, 'N" is the number of monomers, 'D' is the diameter (size)
+        of the cylinder, and 'L' is the length of cylinder. This template is
+        for 'biaxial' and 'slit' geomteries. It is important to note that the
+        system is peroidic along z direction with range [-L/2,L/2] inclusive
+        in the 'biaxial' geoemtry while it is periodic along x and y directions
+        both with the same range [-D/2,D/2] in the 'slit' geometry. Here, x, y,
+        and z are cartesian coordinates.
+
+     2. 'data_template-geometry-group-N#L#'
+
+        where 'data_template' is the fixed header name of the LAMMPS template
+        files, 'geometry' is the geoemtery of the space, 'group' is the name of
+        file group, 'N" is the number of monomers, and 'L' is the length
+        (size) of the cubic box.
+
+
+    To-do List
+    ----------
+    1. It would be great if the user set the input file name template for its
+    project.
+
+    Parameters
+    ----------
+    name: str
+        The filename or filepath of the LAMMPS template data file.
+    ispath: bool, default True
+        Whether the name is a filepath or a simple name.
+
+    Attributes
+    ----------
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+        Shape of the simulation box
+    group: {'bug', 'all'}, default 'bug'
+        Type of the particle group.
+    nmon: int, np.nan
+        Number of monomers. Its associated keyword is 'N'.
+    dcyl: float, np.nan
+        Size (or diameter) of the biaxial (cylindrical) confinement, inferred
+        from 'D' keyword keyword. Cuation: The size of cylindrical confinement
+        is defined based on the LAMMPS' tango, so it is different from the size
+        defined in other parsers defined in this module.
+
+    Class Attributes
+    ----------------
+    _groups: list of str
+        Possible groups of the `SumRule` project.
+    _geometries_attributes: dict of dict
+        a dictionary of `geometry` names. For each `geometry`, a dictionary
+        maps the keywords of physical attributes in that geometry to their
+        corresponding attributes in `DataTemplate` class.
+    """
+    _groups = ['bug', 'all']
+    _geometries_attributes = {
+        'biaxial': {
+            'nmon': 'N', 'dcyl': 'D', 'lcyl': 'L'
+        },
+        'slit': {
+            'nmon': 'N', 'dcyl': 'D', 'lcyl': 'L'
+        },
+        'box': {
+            'nmon': 'N',  'lcyl': 'L',
+        }
+    }
+
+    def __init__(
+        self,
+        name: str,
+        ispath: bool = True
+    ):
+        if ispath:
+            self.filepath = name
+            self.filename = name.split("/")[-1]
+        else:
+            self.filepath = "N/A"
+            self.filename = name
+        self._initiate_attributes()
+        self._parse_filename()
+
+    def __str__(self) -> str:
+        observation = f"""
+        Lammps template data file:
+            Name: '{self.filename}',
+            Geometry: '{self.geometry},
+        """
+        return observation
+
+    def __repr__(self) -> str:
+        return f"LAMMPS template data('{self.filename}' in geometry \
+            '{self.geometry}' from group '{self.group}'."
+
+    def _initiate_attributes(self):
+        """
+        defines and initiates the class attribute based on the physical
+        attributes defined for the project.
+        """
+        self.geometry = 'N/A'
+        self.group = 'N/A'
+        self.nmon = np.nan
+        self.dcyl = np.nan
+        self.lcyl = np.nan
+
+    def _parse_filename(self):
+        """
+        parses a lineage_name based on a list of keywords of physical
+        attributes.
+        """
+        words = self.filename.split('-')
+        if len(words) == 4:
+            raise ValueError(
+                f"The number of words in the filename '{self.filename}'"
+                " is not 4 when it is split by '-'. Please check whether"
+                " the file name match the template data file name:"
+                " 'data_template-geometry-group-N#D#' or not."
+            )
+        geometry = words[1]
+        if geometry in self._geometries_attributes.keys():
+            self.geometry = geometry
+        else:
+            geometries_string = "'" + "', '".join(
+                self._geometries_attributes.keys()) + "'"
+            raise ValueError(
+                f"'{geometry}' "
+                "is not a valid geometry. Please select one of "
+                f"{geometries_string} geometries.")
+        group = words[2]
+        if group in self._groups:
+            self.group = group
+        else:
+            groups_string = "'" + "', '".join(
+                self._groups) + "'"
+            raise ValueError(
+                f"'{group}' "
+                "is not a valid particle group. Please select one of "
+                f"{groups_string} groups.")
+        str_attrs = re.compile(r'([a-zA-Z\-]+)')
+        attributes_float = ['dcyl', 'lcyl']
+        attrs = str_attrs.split(words[3])
+        for attr_name, attr_keyword in \
+                self._geometries_attributes[self.geometry].items():
+            try:
+                attr_value = attrs[attrs.index(attr_keyword)+1]
+                if attr_name in attributes_float:
+                    attr_value = float(attr_value)
+                else:
+                    attr_value = int(float(attr_value))
+                setattr(self, attr_name, attr_value)
+            except ValueError:
+                print(
+                    f"'{attr_keyword}'"
+                    " attribute keyword is not in "
+                    f"'{self.filename}'"
+                    " template data name. Please check whether "
+                    f"'{self.filename}'"
+                    " is valid name or not.")

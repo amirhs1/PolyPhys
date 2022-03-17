@@ -1,7 +1,7 @@
 """
 a collection of classes and functions used by other modules and submodules.
 """
-
+import matplotlib.colors as mplc
 import numpy as np
 import matplotlib as mpl
 
@@ -21,7 +21,7 @@ def round_down_first_non_zero(x: float) -> float:
     else:
         exponent = np.floor(np.log10(abs(x)))
         non_zero = 10 ** exponent
-        return round(np.floor(x/non_zero)*non_zero, abs(exponent))
+        return round(np.floor(x/non_zero)*non_zero, int(abs(exponent)))
 
 
 def round_up_nearest(dividend: float, diviser: float) -> float:
@@ -150,11 +150,6 @@ def yticks_nstep(axis, limits, code=False, decimals=3, **kwargs):
     code  (bool): whether shows the tick lables or not.
     decimals (int): number of decimal in tick labels.
     **kwargs: the same as the kwargs for set_yticklabels
-
-    Return: -
-
-    Requirements:
-    matplotlib
     """
     lower, upper, nstep = limits
     if not isinstance(nstep, int):
@@ -226,11 +221,6 @@ def change_legend_name(line, legend_names, **kwargs):
     a seaborn lineplot keyword (hue, style, size) or an item for the keyword \
     -- See the caution above.
     **kwargs : The standard kwargs for matplotlib.legend method.
-
-    Return: -
-
-    Requirements:
-    Matplotlib, Seaborn.
     """
     legned_old_names = line.legend(
         fontsize=16, bbox_to_anchor=(1.005, 1), loc=2, edgecolor='black',
@@ -279,3 +269,41 @@ def marker_handler(attributes, markers, color='black', **kwargs):
             [], [],  marker=marker, label=attr, color=color, **kwargs)
         handles.append(mline)
     return handles
+
+
+def truncated_colormap(
+    cmap: mplc.Colormap,
+    min_value: float = 0.0,
+    max_value: float = 1.0,
+    ncolors: float = 200
+) -> mplc.Colormap:
+    """create a linear segmented color map from a given color map between a
+    pair min and max values into n points. This function allows the user to
+    created discrete color maps from contiunous ones.
+
+    Parameters
+    ----------
+    cmap : matplotlib.colors.Colormap
+        an equidistantly (matplotlib or seaborn) color map in the range [0,1]
+        where i.e. 0 maps to colors[0] and 1 maps to colors[-1] of the colors
+        in the cmap.
+    min_value: float, default 0.0
+        The minimum value of the truncated cmap in the range [0,1]
+    max_value: float, default 1.0
+        The maximum value of the truncated cmap in the range [0,1]
+    ncolors: int, default 200
+        Number of the colors in the truncated cmap.
+
+    Return
+    ------
+    matplotlib.colors.ColorMap:
+        A truncated color map.
+    """
+    return mplc.LinearSegmentedColormap.from_list(
+        f'trunc({cmap.name},{min_value},{max_value})',
+        cmap(
+            np.linspace(
+                min_value, max_value, ncolors
+                )
+            )
+        )
