@@ -1,10 +1,21 @@
-from typing import Dict, Tuple
+from glob import glob
+from typing import (
+    List,
+    Dict,
+    Tuple,
+    Callable
+)
+
+import numpy as np
 import pandas as pd
+from scipy import optimize
 import statsmodels.tsa.stattools as tsas
 from polyphys.manage.organizer import (
     invalid_keyword,
-    save_parent
+    save_parent,
+    sort_filenames
 )
+from polyphys.manage.parser import SumRule
 
 
 def acf_of_wholes(
@@ -164,3 +175,133 @@ def acf_generator(
                     )
                 )
     return acfs, lower_cls, upper_cls
+
+
+def fit_wholes(
+    property_path: str,
+    property_: str,
+    fit_func: Callable,
+    fit_params: List[str],
+    scale: str = None,
+    length: int = 50000,
+    property_pattern: str = 'N*',
+    save_to: str = None,
+    **kwargs
+) -> pd.DataFrame:
+    """take the `property_path` to the directory in which the ansemble-average
+    timeseries of a given physical `property_` of a given `group` in a given
+    `geometry`, and performs the following operations in the `orient` of
+    interest: First, it concatenates the timeseries into one dataframe along
+    the 0 or 'row' or 'index' in pandas's lingo, and thenadds the physical
+    `attributes` of interest as the name columns to the concatenated
+    timeseries.
+
+    In each 'ensemble-averaged' dataframe, there are 3 columns with
+    this name patter:
+    column name = 'long_ensemble-group-porperty_[-measure]-stat'
+    where '[-measure]' is a physical measurement such as the auto correlation
+    function (AFC) done on the physical 'property_'. [...] means this keyword
+    in the column name can be optional. the 'stat' keyword is either 'mean',
+    'ver', or 'sem'.
+
+    Parameters
+    ----------
+    property_path: str
+        Path to the the timeseries of the physical property of interest.
+    property_: str
+        Name of the physical property of interest.
+    fit_func: func
+        Function fit to the data
+    fit_params: dict of str
+        List of the `fit_func` parameters.
+    scale: {'zscore', 'minmax}, default None,
+        Whether scaled the data before fitting or not. If data is scaled, one
+        of these two optionsis used:
+
+        'zscore':
+        Scaling data by subtracting the mean of data and then dividing by the
+        standard deviation; this is, using the z-score of data instead of the
+        original data in fitting process.
+
+        'minmax':
+        Scaling data to [0,1] range by the min-max normalization; that is,
+        reducing the min value form data and diving it by the pick-to-pick
+        value (= data_max - data_min).
+
+    length: int = 50000,
+        The length of data to which `fit_func` is fit.
+    property_pattern: str, default 'N*'
+        The pattern by which the filenames of timeseries are started with.
+    save_to : str, default None
+        An/a absolute/relative path of a directory to which outputs are saved.
+    **kwargs :
+        Keyword argumnts passed to `scipy.optimize.fit` method.
+
+    Return
+    ------
+    all_in_one: pandas.DataFrame
+        a dataframe in which all the timeseries are concatenated along `orient`
+        of interest, and "properties and attributes" of interest are added to
+        it as the new columns.
+
+    Requirements:
+    Scipy, Numpy, PolyPhys, Pandas
+    """
+    invalid_keyword(scale, ['zscore', 'minmax', None])
+    func_name = fit_func.__name__
+    property_ext = '-' + property_ + '.csv'
+    property_csvs = glob(property_path + property_pattern + property_ext)
+    property_csvs = sort_filenames(property_csvs, fmts=[property_ext])
+    params_std = [param + '-std' for param in fit_params]
+    cols = ['whole', 'convergence'] + fit_params + params_std
+    fit_data = []
+    for property_csv in property_csvs:
+        property_df = pd.read_csv(property_csv[0], header=0)
+        # the first column of porperty_df is used to extract
+        # the information about the property and the space it
+        # belongs to.
+        for col in property_df.columns:
+            whole_name = col.split('-')[0]
+            whole_info = SumRule(
+                whole_name,
+                geometry='biaxial',
+                group='bug',
+                lineage='whole',
+                ispath=False
+            )
+            whole_data = [whole_name]
+            y = property_df.loc[:length, col].values
+            x = (np.arange(len(y)) + 1.0) * whole_info.dt
+            if scale == 'zscore':
+                y_mean = y.mean()
+                y_std = y.std()
+                y = (y - y_mean) / y_std
+            elif scale == 'minmax':
+                y_min = y.min()
+                y_max = y.max()
+                y = (y - y_min) / (y_max - y_min)
+            try:
+                params, cov_mat = optimize.curve_fit(
+                    fit_func,
+                    x,
+                    y,
+                    **kwargs
+                )
+                whole_data.extend([True])
+                whole_data.extend(params)
+                whole_data.extend(np.diag(cov_mat))
+                fit_data.append(whole_data)
+            except RuntimeError:
+                print("could not fit " + whole_name)
+                # the'convergance' parameter is the second element
+                # in whole_data list:
+                whole_data.extend([False])
+                whole_data.extend(np.zeros(4))
+                whole_data.extend(np.zeros(4))
+                fit_data.append(whole_data)
+                continue
+    fit_df = pd.DataFrame(data=fit_data, columns=cols)
+    if save_to is not None:
+        output = '-'.join(['fitReport', func_name, property_])
+        fit_df.to_csv(save_to + output + ".csv", index=False)
+    return fit_df

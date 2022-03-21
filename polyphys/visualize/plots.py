@@ -299,12 +299,13 @@ def chainsize_plot(df, xcol, save_to=None, fontsize=20, ext='pdf'):
     plt.savefig(picname, dpi=300, bbox_inches='tight')
 
 
-def acf_plot(
+def pacf(
     ax: axes.Axes,
     acf_db: pd.DataFrame,
     time: np.array,
     property_: str,
-    color: str
+    color: str,
+    **acf_kwargs
 ) -> axes.Axes:
     """plot the auto-correlation function (AFCs) with its associated
     confidence intervals (CIs) for the physical `property_`.
@@ -322,13 +323,15 @@ def acf_plot(
         The physical property of interest.
     color: str
         A color as it recognised by matplotlib.
+    **acf_kwargs :
+        Keyword argumnts passed to `ax.plot` method below.
 
     Return
     ------
     acf_t: matplotlib.axes.Axes
         the plotted ACF with its assocaited CIs.
     """
-    acf_t = ax.plot(acf_db[property_+'-acf-mean'], color=color)
+    acf_t = ax.plot(acf_db[property_+'-acf-mean'], color=color, **acf_kwargs)
     acf_t = ax.fill_between(
         time,
         acf_db[property_+'-acfLowerCi-mean'],
@@ -339,12 +342,11 @@ def acf_plot(
     return acf_t
 
 
-def acf_plot_with_ci(
-    acf: pd.DataFrame,
-    ensembles: List[str],
+def pacf_with_ci_space(
+    space_acf: pd.DataFrame,
     space: str,
     properties: Dict[str, Dict[str, str]],
-    phi_crds: List[float],
+    round_to: float = 0.025,
     xlimits: Tuple[float, float, float] = (0, 7000, 1000),
     ylimits: Tuple[float, float, float] = (-0.3, 1.1, 0.2),
     fontsize: int = 20,
@@ -352,19 +354,22 @@ def acf_plot_with_ci(
     ncols: int = 3,
     lags: int = 7000,
     ext: str = 'pdf',
-    save_to: str = './'
+    save_to: str = './',
+    **save_kwargs
 ) -> None:
     """plot the auto-correlation function (AFC) with its associated
     confidence intervals (CIs) of a group of physical `properties` in one
     plot for all the `ensembles` in a simulation `space`, and save it in
     `ext` format into the `save_to` path.
 
+    Issues:
+    1. Currently, this polot works weel if we have 12=4*3 values for each
+    properties. Look at seeaborn col_wrap parameter.
+
     Parameters
     ----------
-    acf: pd.DataFrame
+    space_acf: pd.DataFrame
         The dataset of the ACFs.
-    ensembles: dict
-        The ordered list of ensemble names in the `space`.
     space: str
         The name of the simulation `space` to which `ensembles` belong.
     properties: dict of dict
@@ -373,8 +378,9 @@ def acf_plot_with_ci(
         internal dictionary, the keys are 'name', 'symbol', 'color', and
         similar characteristics and the values are the spcific values of these
         characteristics for a physical property.
-    phi_crds: np.array
-        An ordered list of bulk volume fraction of crowders.
+    round_to: float, default 0.025
+        The flot number to which the bulk volume fraction of crowders are
+        rounded.
     xlimits: tuple, default (0, 7000, 1000),
         The lower and upper limits, and the step for the x-ticks.
     ylimits: tuple, default (-0.3, 1.1, 0.2)
@@ -386,11 +392,14 @@ def acf_plot_with_ci(
     ncols: int, default 3
         The number of subplot columns
     lags: int, default 7000
-        The maximum lag in th AFC plot.
+        The maximum lag in th AFC plot; use to slice the data and change the
+        range of plotted data.
     ext: str, default 'pdf'
         The format of the output file.
     save_to : str, default './'
         An/a absolute/relative path of a directory to which outputs are saved.
+    save_kwrags:
+        Keywords arguments pass to the plt.savefig method.
 
     Requirements
     ------------
@@ -405,20 +414,30 @@ def acf_plot_with_ci(
     )
     mpl.rcParams['font.family'] = "Times New Roman"
     mpl.rcParams['mathtext.default'] = 'regular'
+    ensembles = list(space_acf['ensemble'].drop_duplicates())
+    ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
     time = np.arange(lags+1)
-    for idx, (ens_name, phi_c, ax) in \
-            enumerate(zip(ensembles, phi_crds, axes.flat)):
+    for idx, (ens_name, ax) in enumerate(zip(ensembles, axes.flat)):
         ax.axhline(y=0, c='black', ls='--', lw=1)
-        acf_ens = acf.loc[acf['ensemble'] == ens_name, :]
-        acf_ens.reset_index(inplace=True)
+        ens_acf = space_acf.loc[space_acf['ensemble'] == ens_name, :]
+        ens_acf.reset_index(inplace=True)
+        # all the rows have the same 'phi_c_bulk' value:
+        phi_c = ens_acf.loc[0, 'phi_c_bulk']
+        phi_c = np.round(np.floor(np.array(phi_c) / round_to) * round_to, 3)
         legend_colors = []
         legend_labels = []
         for property_, prop_dict in properties.items():
-            _ = acf_plot(ax, acf_ens, time, property_, prop_dict['color'])
+            _ = pacf(
+                ax,
+                ens_acf.loc[:lags],
+                time,
+                property_,
+                prop_dict['color']
+            )
             legend_colors.append(prop_dict['color'])
             legend_colors.append(mpl.colors.to_rgba(prop_dict['color'], 0.25))
             legend_labels.append(prop_dict['symbol'])
-            legend_labels.append(prop_dict['symbol'] + " CIs")
+            legend_labels.append(prop_dict['symbol'] + ": CIs")
         ax.legend(
             title=fr'$\phi_c^{{(bulk)}}={phi_c}$', title_fontsize=fontsize-2,
             framealpha=None, frameon=False)
@@ -453,13 +472,14 @@ def acf_plot_with_ci(
         f"the ACFs of three physical properties of a chain in a"
         f"system with $N={space_info.nmon}$, $D={space_info.dcyl}$,"
         f" $a={space_info.dcrowd}$.", fontsize=fontsize+2)
-    output = save_to + "acf-confidence_intervals-" + space + "." + ext
+    output = save_to + "acf-confidence_intervals-" + space
+    output = output + '-lags' + str(lags) + "." + ext
     fig.tight_layout()
-    plt.savefig(output, bbox_inches='tight')
+    plt.savefig(output, bbox_inches='tight', **save_kwargs)
     plt.close()
 
 
-def acf_plot_group(
+def pacf_allInOne(
     acf: pd.DataFrame,
     spaces: List[str],
     property_: str,
@@ -474,7 +494,8 @@ def acf_plot_group(
     legend_anchor: Tuple[float, float] = (1.25, 1.02),
     lags: int = 7000,
     ext: str = 'pdf',
-    save_to: str = './'
+    save_to: str = './',
+    **save_kwrags
 ) -> None:
     """plot the auto-correlation functions (AFCs) of the physical
     `property_` for all the simulation `spaces`.
@@ -517,6 +538,8 @@ def acf_plot_group(
         The format of the output file.
     save_to : str, default './'
         An/a absolute/relative path of a directory to which outputs are saved.
+    **save_kwrags:
+        Keywords arguments pass to the plt.savefig method.
 
     Requirements
     ------------
@@ -591,10 +614,10 @@ def acf_plot_group(
         fontsize=fontsize-4,
         framealpha=None,
         frameon=False,
-        bbox_to_anchor=(1.12, 1.02)
+        bbox_to_anchor=legend_anchor
     )
     leg_ax.add_artist(phi_c_legends)
     output = save_to + 'acf' + "-" + property_ + "." + ext
     fig.tight_layout()
-    plt.savefig(output, dpi=200, bbox_inches='tight')
+    plt.savefig(output, bbox_inches='tight', **save_kwrags)
     plt.close()

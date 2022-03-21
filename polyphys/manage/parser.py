@@ -44,6 +44,7 @@ class SumRule(object):
     1. This class can be split to 4 classes in the following order of
     inheritance: parent->child: space -> ensemble -> whole -> segment.
     2. Using @attribute for attributes to get, set, or delete them.
+    3. self.dcyl is set by self.dwall and self-dwall is 1.0 by default.
 
     Parameters
     ----------
@@ -351,7 +352,7 @@ class SumRule(object):
                 if attr_keyword == 'lz':
                     attr_value = 2 * attr_value
                 if attr_keyword == 'r':
-                    attr_value = 2 * attr_value - self.dmon
+                    attr_value = 2 * attr_value - self.dwall
                 setattr(self, attr_name, attr_value)
             except ValueError:
                 print(
