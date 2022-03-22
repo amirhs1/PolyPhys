@@ -1,5 +1,9 @@
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import (
+    Dict,
+    List,
+    Tuple
+)
 import numpy as np
 import pandas as pd
 from matplotlib import axes
@@ -9,6 +13,7 @@ import seaborn as sns
 from polyphys.manage import organizer
 from polyphys.visualize import tuning as ptune
 from polyphys.manage.parser import SumRule
+from polyphys.analyze import correlations
 
 
 def rdf_ideal_plotter(
@@ -305,7 +310,8 @@ def pacf(
     time: np.array,
     property_: str,
     color: str,
-    **acf_kwargs
+    fbetween_label: str = None,
+    **acf_kwargs,
 ) -> axes.Axes:
     """plot the auto-correlation function (AFCs) with its associated
     confidence intervals (CIs) for the physical `property_`.
@@ -323,6 +329,8 @@ def pacf(
         The physical property of interest.
     color: str
         A color as it recognised by matplotlib.
+    fbetween_lable: str, default None
+        Label for the fill_between curve (the confidence interval).
     **acf_kwargs :
         Keyword argumnts passed to `ax.plot` method below.
 
@@ -332,13 +340,23 @@ def pacf(
         the plotted ACF with its assocaited CIs.
     """
     acf_t = ax.plot(acf_db[property_+'-acf-mean'], color=color, **acf_kwargs)
-    acf_t = ax.fill_between(
-        time,
-        acf_db[property_+'-acfLowerCi-mean'],
-        acf_db[property_+'-acfUpperCi-mean'],
-        color=color,
-        alpha=0.25
-    )
+    if fbetween_label is not None:
+        acf_t = ax.fill_between(
+            time,
+            acf_db[property_+'-acfLowerCi-mean'],
+            acf_db[property_+'-acfUpperCi-mean'],
+            color=color,
+            alpha=0.25,
+            label='CI'
+        )
+    else:
+        acf_t = ax.fill_between(
+            time,
+            acf_db[property_+'-acfLowerCi-mean'],
+            acf_db[property_+'-acfUpperCi-mean'],
+            color=color,
+            alpha=0.25,
+        )
     return acf_t
 
 
@@ -376,7 +394,7 @@ def pacf_with_ci_space(
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
-        similar characteristics and the values are the spcific values of these
+        the like, and the values are the spcific values of these
         characteristics for a physical property.
     round_to: float, default 0.025
         The flot number to which the bulk volume fraction of crowders are
@@ -414,6 +432,9 @@ def pacf_with_ci_space(
     )
     mpl.rcParams['font.family'] = "Times New Roman"
     mpl.rcParams['mathtext.default'] = 'regular'
+    plt.rcParams.update({
+        "text.usetex": True
+    })
     ensembles = list(space_acf['ensemble'].drop_duplicates())
     ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
     time = np.arange(lags+1)
@@ -438,9 +459,8 @@ def pacf_with_ci_space(
             legend_colors.append(mpl.colors.to_rgba(prop_dict['color'], 0.25))
             legend_labels.append(prop_dict['symbol'])
             legend_labels.append(prop_dict['symbol'] + ": CIs")
-        ax.legend(
-            title=fr'$\phi_c^{{(bulk)}}={phi_c}$', title_fontsize=fontsize-2,
-            framealpha=None, frameon=False)
+        ax_title = fr'({idx+1}) $\phi_c^{{(bulk)}}={phi_c}$'
+        ax.set_title(ax_title, fontsize=fontsize-5)
         ptune.yticks(ax, ylimits, code=True, fontsize=fontsize-6, decimals=3)
         ptune.xticks(ax, xlimits, code=True, fontsize=fontsize-6, decimals=3)
         if idx % 3 == 0:
@@ -469,13 +489,223 @@ def pacf_with_ci_space(
         ispath=False
     )
     fig.suptitle(
-        f"the ACFs of three physical properties of a chain in a"
-        f"system with $N={space_info.nmon}$, $D={space_info.dcyl}$,"
-        f" $a={space_info.dcrowd}$.", fontsize=fontsize+2)
+        "the ACFs of different physical properties "
+        fr"($N={space_info.dmon}, D={space_info.dcyl}, a={space_info.dcrowd}$)",
+        fontsize=fontsize+2
+    )
     output = save_to + "acf-confidence_intervals-" + space
     output = output + '-lags' + str(lags) + "." + ext
     fig.tight_layout()
-    plt.savefig(output, bbox_inches='tight', **save_kwargs)
+    fig.savefig(output, bbox_inches='tight', **save_kwargs)
+    plt.close()
+
+
+def pacf_fit_curve_space(
+    space: str,
+    space_stamps: pd.DataFrame,
+    space_acf: pd.DataFrame,
+    func_name: str,
+    property_: str,
+    properties: Dict[str, str],
+    x_type: str = 'index',
+    round_to: float = 0.025,
+    fontsize: int = 20,
+    nrows: int = 4,
+    ncols: int = 3,
+    ext: str = 'pdf',
+    save_to: str = './',
+    **save_kwargs
+) -> None:
+    """plot the auto-correlation function (AFC) with its associated
+    confidence intervals (CIs) of a physical `property_` with its asscoated
+    fitting function 'func' in oneplot for all the `ensembles` in a simulation
+    `space`, and save it in `ext` format into the `save_to` path.
+
+    Issues:
+    1. Currently, this polot works weel if we have 12=4*3 values for each
+    properties. Look at seeaborn col_wrap parameter.
+
+    Parameters
+    ----------
+    space: str
+        The name of the simulation `space` to which `ensembles` belong.
+    space_stamps: pd.DataFrame
+        Dataframe that contains the physical attributes, equilibirium
+        properties, and the fitting parameters of `func` for each
+        'ensemble' in the 'space'
+    space_acf: pd.DataFrame
+        The dataset of the ACFs.
+    func_name: str
+        Function fitted to the ACF data of `property_`.
+    property_: str
+        The physical property of interest.
+    properties: dict of dict
+        A dictionary in which the keys are the name of physical properties for
+        which the ACFs are plotted and the values are dictionaries. In each
+        internal dictionary, the keys are 'name', 'symbol', 'color', and
+        the like and the values are the spcific values of these
+        characteristics for a physical property.
+    x_type: {'index', 'time'}, default 'index'
+        Whether use the 'index' of the data set as x variable or use the real
+    round_to: float, default 0.025
+        The flot number to which the bulk volume fraction of crowders are
+        rounded.
+    xlimits: tuple, default (0, 7000, 1000),
+        The lower and upper limits, and the step for the x-ticks.
+    ylimits: tuple, default (-0.3, 1.1, 0.2)
+        The lower and upper limits, and the step for the y-ticks.
+    fontsize: int, default 20
+        The maximum font size in the plot.
+    nrows: int, default 4
+        The number of subplot rows
+    ncols: int, default 3
+        The number of subplot columns
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+    save_kwrags:
+        Keywords arguments pass to the plt.savefig method.
+
+    Requirements
+    ------------
+    Matplotlib, Statsmodels
+    """
+    fit_info = {
+        'mono_unit_exp': {
+            'func': correlations.mono_unit_exp,
+            'name': r'$\exp[-\omega t^{\alpha}]$',
+            'params': ['omega', 'alpha'],
+            'p_labels': r'$(\omega,\alpha)$'
+        },
+        'mono_unit_exp_tau': {
+            'func': correlations.mono_unit_exp_tau,
+            'name': r'$\exp[-\frac{t}{\tau}^{\alpha}]$',
+            'params': ['tau', 'alpha'],
+            'p_labels': r'$(\omega,\alpha)$'
+        },
+        'mono_exp_tau_res': {
+            'func': correlations.mono_exp_tau_res,
+            'name': r'$A\exp[-\frac{t}{\tau}^{\alpha}]+B$',
+            'params': ['tau', 'alpha', 'amp', 'residue'],
+            'p_labels': r'$(\omega,\alpha,A,B)$'
+        },
+        'mono_exp_res': {
+            'func': correlations.mono_exp_res,
+            'name': r'$A\exp[-\omega t^{\alpha}]+B$',
+            'params': ['omega', 'alpha', 'amp', 'residue'],
+            'p_labels': r'$(\omega,\alpha,A,B)$'
+        },
+        'mono_exp': {
+            'func': correlations.mono_exp,
+            'name': r'$A\exp[-\omega t^{\alpha}]$',
+            'params': ['omega', 'alpha', 'amp'],
+            'p_labels': r'$(\omega,\alpha,A)$'
+        },
+        'mono_exp_tau': {
+            'func': correlations.mono_exp_tau,
+            'name': r'$A\exp[-\frac{t}{\tau}^{\alpha}]$',
+            'params': ['tau', 'alpha', 'amp'],
+            'p_labels': r'$(\omega,\alpha,A)$'
+        }
+    }
+    func = fit_info[func_name]['func']
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(16, 12),
+        sharey=True,
+        sharex=True
+    )
+    mpl.rcParams['font.family'] = "Times New Roman"
+    mpl.rcParams['mathtext.default'] = 'regular'
+    plt.rcParams.update({
+        "text.usetex": True
+    })
+    cols = ['phi_c_bulk']
+    cols.extend(fit_info[func_name]['params'])
+    for idx, (ax, (_, row)) in enumerate(
+        zip(
+            axes.flat, space_stamps[cols].iterrows()
+        )
+    ):
+        phi_c = row['phi_c_bulk']
+        params = row[fit_info[func_name]['params']].values
+        ens_df = space_acf.loc[space_acf['phi_c_bulk'] == phi_c]
+        ens_df.reset_index(inplace=True)
+        phi_c = np.round(np.floor(phi_c/round_to)*round_to, 3)
+        if x_type == 'time':
+            x = ens_df['time']
+        else:
+            x = ens_df.index.values
+        y = func(x, *params)
+        x_axis = ens_df.index.values
+        ax.axhline(y=0, c='black', ls='--', lw=1)
+        ax.axhline(
+            y=1/np.e,
+            c='black',
+            ls='-',
+            lw=1,
+            alpha=0.5,
+            label=r'$ACF(t)=e^{-1}$'
+        )
+        _ = pacf(
+            ax,
+            ens_df,
+            x_axis,
+            property_,
+            'steelblue',
+            fbetween_label='CI',
+            label='data'
+        )
+        params = np.around(params, 3)
+        params = [str(param) for param in list(params)]
+        params = ','.join(params)
+        ax.plot(
+            x_axis,
+            y,
+            ls='--',
+            lw=1.5,
+            color='firebrick',
+            label='fit')
+        if idx == (ncols - 1):
+            ax.legend(fontsize=fontsize-7, frameon=False, ncol=2)
+        ax.tick_params(
+            axis='both',
+            direction='inout',
+            width=1,
+            labelsize=fontsize-8,
+            color='black'
+        )
+        ax_title = fr'({idx+1}) $\phi_c^{{(bulk)}}={phi_c}$: '
+        ax_title = ax_title + fit_info[func_name]['p_labels']
+        ax_title = ax_title + r'$=$' + fr'$({params})$'
+        ax.set_title(ax_title, fontsize=fontsize-5)
+        if idx % ncols == 0:
+            ax.set_ylabel(r"$ACF(t)$", fontsize=fontsize-2)
+        if idx >= ((nrows-1) * ncols):
+            ax.set_xlabel(
+                r"$t=lag\times {\Delta t_{sampling}}/{\tau_{LJ}}$",
+                fontsize=fontsize-2
+            )
+    # sinfo: is the space information:
+    sinfo = SumRule(
+        space,
+        geometry='biaxial',
+        group='bug',
+        lineage='space',
+        ispath=False
+    )
+    space_title = fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
+    title = 'Exponential fit (' + fit_info[func_name]['name']
+    title = title + ') to the autocorrelation function (ACF) of the '
+    title = title + properties[property_]['name']
+    title = title + space_title
+    fig.suptitle(title, fontsize=fontsize - 2)
+    fig.tight_layout()
+    output = '-'.join(['acf', 'fitCurve', func_name, property_, space])
+    output = output + '.' + ext
+    fig.savefig(save_to + output, bbox_inches='tight', **save_kwargs)
     plt.close()
 
 
@@ -514,7 +744,7 @@ def pacf_allInOne(
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
-        similar characteristics and the values are the spcific values of these
+        the like and the values are the spcific values of these
         characteristics for a physical property.
     phi_crds: np.array
         An ordered list of bulk volume fraction of crowders.

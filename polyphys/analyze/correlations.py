@@ -1,9 +1,7 @@
 from glob import glob
 from typing import (
-    List,
     Dict,
     Tuple,
-    Callable
 )
 
 import numpy as np
@@ -177,11 +175,139 @@ def acf_generator(
     return acfs, lower_cls, upper_cls
 
 
+def mono_unit_exp(x, omega, alpha):
+    """calculate the mono-exponential decay with the unit amplitude, decay
+    coefficient `omega` and decay exponent `alpha` for array `x`.
+
+    Parameters
+    ----------
+    x: array-like
+        Input data
+    omega: float
+        Decay coefficient
+    alpha: float
+        Decay exponent
+
+    Return
+    ------
+    array-like:
+        Measured exponentail values for the input data `x`.
+    """
+    return np.exp(-1 * omega * x ** alpha)
+
+
+def mono_unit_exp_tau(x, tau, alpha):
+    """calculate the mono-exponential decay with the unit amplitude, decay
+    time `tau` and decay exponent `alpha` for array `x`.
+
+    Parameters
+    ----------
+    x: array-like
+        Input data
+    tau: float
+        Decay coefficient
+    alpha: float
+        Decay exponent
+
+    Return
+    ------
+    array-like:
+        Measured exponentail values for the input data `x`.
+    """
+    return np.exp(-1 * (x/tau) ** alpha)
+
+
+def mono_exp_tau_res(x, tau, alpha, amp, residue):
+    """calculate the mono-exponential decay with the amplitude `amp`, decay
+    time `tau`, decay exponent `alpha` and 'residue` for array `x`.
+
+    Parameters
+    ----------
+    x: array-like
+        Input data
+    tau: float
+        Decay coefficient
+    alpha: float
+        Decay exponent
+
+    Return
+    ------
+    array-like:
+        Measured exponentail values for the input data `x`.
+    """
+    return amp * np.exp(-1 * (x/tau) ** alpha) + residue
+
+
+def mono_exp_res(x, omega, alpha, amp, residue):
+    """calculate the mono-exponential decay with the amplitude `amp`,
+    decay coefficient `tau`, decay exponent `alpha` and 'residue`
+    for array `x`.
+
+    Parameters
+    ----------
+    x: array-like
+        Input data
+    tau: float
+        Decay coefficient
+    alpha: float
+        Decay exponent
+
+    Return
+    ------
+    array-like:
+        Measured exponentail values for the input data `x`.
+    """
+    return amp * np.exp(-1 * omega * x ** alpha) + residue
+
+
+def mono_exp(x, omega, alpha, amp):
+    """calculate the mono-exponential decay with the amplitude `amp`,
+    decay coefficient `omega`, and decay exponent `alpha` for array `x`.
+
+    Parameters
+    ----------
+    x: array-like
+        Input data
+    tau: float
+        Decay coefficient
+    alpha: float
+        Decay exponent
+
+    Return
+    ------
+    array-like:
+        Measured exponentail values for the input data `x`.
+    """
+    return amp * np.exp(-1 * omega * x ** alpha)
+
+
+def mono_exp_tau(x, tau, alpha, amp):
+    """calculate the mono-exponential decay with the amplitude `amp`,
+    decay time `tau`, and decay exponent `alpha` for array `x`.
+
+    Parameters
+    ----------
+    x: array-like
+        Input data
+    tau: float
+        Decay coefficient
+    alpha: float
+        Decay exponent
+
+    Return
+    ------
+    array-like:
+        Measured exponentail values for the input data `x`.
+    """
+    return amp * np.exp(-1 * (x/tau) ** alpha)
+
+
 def fit_wholes(
+    space: str,
     property_path: str,
     property_: str,
-    fit_func: Callable,
-    fit_params: List[str],
+    func_name: str,
+    x_type: str = 'index',
     scale: str = None,
     length: int = 50000,
     property_pattern: str = 'N*',
@@ -206,14 +332,17 @@ def fit_wholes(
 
     Parameters
     ----------
+    space: str
+        The name of the simulation `space` to which `ensembles` belong.
     property_path: str
         Path to the the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    fit_func: func
+    func_name: str
         Function fit to the data
-    fit_params: dict of str
-        List of the `fit_func` parameters.
+    x_type: {'index', 'time'}, default 'index'
+        Whether use the 'index' of the data set as x variable or use the real
+        'time' of simulation as x vaiable.
     scale: {'zscore', 'minmax}, default None,
         Whether scaled the data before fitting or not. If data is scaled, one
         of these two optionsis used:
@@ -248,7 +377,35 @@ def fit_wholes(
     Scipy, Numpy, PolyPhys, Pandas
     """
     invalid_keyword(scale, ['zscore', 'minmax', None])
-    func_name = fit_func.__name__
+    fit_funcs = {
+        'mono_unit_exp': {
+            'func': mono_unit_exp,
+            'params': ['omega', 'alpha']
+        },
+        'mono_unit_exp_tau': {
+            'func': mono_unit_exp_tau,
+            'params': ['tau', 'alpha']
+        },
+        'mono_exp_tau_res': {
+            'func': mono_exp_tau_res,
+            'params': ['tau', 'alpha', 'amp', 'residue']
+        },
+        'mono_exp_res': {
+            'func': mono_exp_res,
+            'params': ['omega', 'alpha', 'amp', 'residue']
+        },
+        'mono_exp': {
+            'func': mono_exp,
+            'params': ['omega', 'alpha', 'amp']
+        },
+        'mono_exp_tau': {
+            'func': mono_exp_tau,
+            'params': ['tau', 'alpha', 'amp']
+        }
+    }
+    invalid_keyword(func_name, fit_funcs.keys())
+    fit_func = fit_funcs[func_name]['func']
+    fit_params = fit_funcs[func_name]['params']
     property_ext = '-' + property_ + '.csv'
     property_csvs = glob(property_path + property_pattern + property_ext)
     property_csvs = sort_filenames(property_csvs, fmts=[property_ext])
@@ -271,7 +428,10 @@ def fit_wholes(
             )
             whole_data = [whole_name]
             y = property_df.loc[:length, col].values
-            x = (np.arange(len(y)) + 1.0) * whole_info.dt
+            if x_type == 'time':
+                x = (np.arange(len(y)) + 1.0) * whole_info.dt
+            else:
+                x = (np.arange(len(y)) + 1.0)  # lags or index
             if scale == 'zscore':
                 y_mean = y.mean()
                 y_std = y.std()
@@ -302,6 +462,8 @@ def fit_wholes(
                 continue
     fit_df = pd.DataFrame(data=fit_data, columns=cols)
     if save_to is not None:
-        output = '-'.join(['fitReport', func_name, property_])
+        output = '-'.join(
+            ['fitReport', func_name, property_, space, 'length' + str(length)]
+         )
         fit_df.to_csv(save_to + output + ".csv", index=False)
     return fit_df
