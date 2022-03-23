@@ -20,8 +20,11 @@ for bug_trj in bug_trjs:
                        lineage=trj_lineage)
     # all the frames in the last segment are probed:
     if trj_info.segment_id == len(bug_trjs):
-        prober.probe_bug(bug_topo, bug_trj, geometry, trj_lineage, save_to)
+        prober.probe_bug(
+            bug_topo, bug_trj, geometry, trj_lineage, save_to
+        )
     # the last frame in the all other segments is ignored:
     else:
-        prober.probe_bug(bug_topo, bug_trj, geometry, trj_lineage, save_to,
-                         continuous=True)
+        prober.probe_bug(
+            bug_topo, bug_trj, geometry, trj_lineage, save_to, continuous=True
+        )
