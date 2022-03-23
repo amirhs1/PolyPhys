@@ -482,7 +482,7 @@ def pacf_with_ci_space(
         bbox_to_anchor=(1.02, 1.02)
     )
     axes[0, 2].add_artist(phi_c_legends)
-    space_info = SumRule(
+    s_info = SumRule(
         space, geometry='biaxial',
         group='bug',
         lineage='space',
@@ -490,7 +490,7 @@ def pacf_with_ci_space(
     )
     fig.suptitle(
         "the ACFs of different physical properties "
-        fr"($N={space_info.dmon}, D={space_info.dcyl}, a={space_info.dcrowd}$)",
+        fr"($N={s_info.dmon}, D={s_info.dcyl}, a={s_info.dcrowd}$)",
         fontsize=fontsize+2
     )
     output = save_to + "acf-confidence_intervals-" + space
@@ -696,11 +696,17 @@ def pacf_fit_curve_space(
         lineage='space',
         ispath=False
     )
-    space_title = fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
-    title = 'Exponential fit (' + fit_info[func_name]['name']
-    title = title + ') to the autocorrelation function (ACF) of the '
-    title = title + properties[property_]['name']
-    title = title + space_title
+    #space_title = fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
+    #title = 'Exponential fit (' + fit_info[func_name]['name']
+    #title = title + ') to the autocorrelation function (ACF) of the '
+    #title = title + properties[property_]['name']
+    #title = title + space_title
+    title = (
+        'Exponential fit (' + fit_info[func_name]['name']
+        + ') to the autocorrelation function (ACF) of the '
+        + properties[property_]['name']
+        + fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
+    )
     fig.suptitle(title, fontsize=fontsize - 2)
     fig.tight_layout()
     output = '-'.join(['acf', 'fitCurve', func_name, property_, space])

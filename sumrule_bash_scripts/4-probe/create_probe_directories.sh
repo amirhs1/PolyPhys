@@ -4,7 +4,8 @@ currentname=$(pwd | rev | cut -d / -f 1 | rev) #report name
 name=$( echo "$currentname" | cut -d - -f 1)
 probe=${name}-probe
 mkdir "${probe}"
-mv N*-probe_report.txt "$probe"
+cp slurm*.out ${probe}-slurm_report.out 
+mv ${probe}-slurm_report.out ./${probe}/
 for dir in N*ep*/; do
     mkdir "${probe}/$dir"
     echo "$dir"
