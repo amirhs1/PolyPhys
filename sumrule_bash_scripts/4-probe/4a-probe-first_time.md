@@ -4,7 +4,7 @@
 2. Run **create_trjs_directories.sh** to create the simulations directories and move the corresponding toplogy and trjaectory files into them, and to copy relevant scripts and files for doing the **probe** phase in python.
 3. Run **probe_runfiles-first_time.sh** to copy run files from **PolyPhys** to **N___-all_trjs** directory.
     1. *Caution: check how many **probe_all_in_one_---.py** you have.*
-4. Check the **PipeLine.py** file to make sure which packages you need.
+4. Check the **PolyPhys** package to make sure which packages you need.
 5. Add the packages to the ***submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file.
 6. Set the number of cores, time, and memeory in the **submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file based on what group/type of particles you want to analyze.
 7. Check the name of Python file in the **submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file.

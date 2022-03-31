@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
 from polyphys.manage import organizer
-from polyphys.visualize import tuning as ptune
+from polyphys.visualize import tuner as ptuner
 from polyphys.manage.parser import SumRule
 from polyphys.analyze import correlations
 
@@ -278,24 +278,24 @@ def chainsize_plot(df, xcol, save_to=None, fontsize=20, ext='pdf'):
         axis.grid(True, ls=':', lw=1)
         axis.tick_params(axis='both', direction='inout', width=1)
         axis.set_ylabel(ylabels[xcol][num], fontsize=fontsize)
-        ptune.yticks(axis, (0, 1.0, 0.2), code=True, fontsize=14, decimals=3)
+        ptuner.yticks(axis, (0, 1.0, 0.2), code=True, fontsize=14, decimals=3)
     xticks_dict = {
-        'phi_c_bulk': (0.0, ptune.round_up_nearest(
+        'phi_c_bulk': (0.0, ptuner.round_up_nearest(
             df['phi_c_bulk'].max(), 0.05),
                 0.05),
-        'phi_c_bulk_normalized': (0.0, ptune.round_up_nearest(
+        'phi_c_bulk_normalized': (0.0, ptuner.round_up_nearest(
             df['phi_c_bulk_normalized'].max(), 0.05),
                 0.05),
-        'phi_c_bulk_eff': (0.0, ptune.round_up_nearest(
+        'phi_c_bulk_eff': (0.0, ptuner.round_up_nearest(
             df['phi_c_bulk_eff'].max(), 0.05),
                 0.05),
-        'phi_c_bulk_eff_normalized': (0.0, ptune.round_up_nearest(
+        'phi_c_bulk_eff_normalized': (0.0, ptuner.round_up_nearest(
             df['phi_c_bulk_eff_normalized'].max(), 0.05),
                 0.05)
     }
-    ptune.xticks(
+    ptuner.xticks(
         axes[2], xticks_dict[xcol], code=True, fontsize=14, decimals=2)
-    ptune.change_legend_name(line1, legends_labels)
+    ptuner.change_legend_name(line1, legends_labels)
     line3.set_xlabel(xlabels[xcol], fontsize=fontsize)
     if save_to is not None:
         picname = save_to + "chainsize-" + xcol + "." + ext
@@ -304,7 +304,247 @@ def chainsize_plot(df, xcol, save_to=None, fontsize=20, ext='pdf'):
     plt.savefig(picname, dpi=300, bbox_inches='tight')
 
 
-def pacf(
+def p_vexc(
+    axis: axes.Axes,
+    vexc_data: pd.DataFrame,
+    xname: str,
+    yname: str,
+    hue: str,
+    palette: dict,
+    **kwargs,
+):
+    """plot the excluded-volume data `yname` as function of `xname` for
+    different values of the crowder size 'dcrowd'.
+
+    Parameters
+    ----------
+    axis: matplotlib.axes
+        The axis over which the curves are plotted
+    vexc_data: pd.DataFrame
+        The excluded-volume data.
+    xname: str
+        The name of column used as x data.
+    yname: str
+        The name of column used as y data.
+    hue: str:
+        The name of column used to color the data.
+    palette: dict
+        A dictionary in which the keys are the crowder sizes and the values
+        are their associated colors.
+    kwargs: dict
+       The **kwargs in the `matplotlib.plot` used to customized the plot.
+    Requirements
+    ------------
+    matplotlib, seaborn, pandas
+    """
+    _legend_titles = {
+        'dcrowd': r'${a_c}/{a}$',
+        'vexc_model': 'Model'
+    }
+    mpl.rcParams['font.family'] = "Times New Roman"
+    mpl.rcParams['mathtext.default'] = 'regular'
+    plt.rcParams.update({"text.usetex": True})
+    line_plot = sns.lineplot(
+        x=xname,
+        y=yname,
+        ax=axis,
+        hue=hue,
+        palette=palette,
+        data=vexc_data,
+        legend='full',
+        **kwargs
+    )
+    handlers, labels = line_plot.get_legend_handles_labels()
+    line_plot.legend_.remove()
+    line_plot.legend(
+        handlers,
+        labels,
+        title=_legend_titles[hue],
+        ncol=2,
+        framealpha=0.4
+    )
+    axis.grid(True, ls=':', lw=1)
+    axis.tick_params(axis='both', direction='inout', width=1.25)
+    axis.axhline(0, color='black', lw=1, ls='--')
+
+
+def p_vexc_models(
+    vexc_df: pd.DataFrame,
+    dcrowds: List[float],
+    phi_c_limit: float = 0.4,
+    color_map: str = 'coolwarm',
+    save_to: str = './'
+) -> None:
+    """plot the excluded-volume of monomers (scaled by their value in the
+    absence of crowders)  as function of the bulk volume fraction of crowders
+    and rescaled bulk volume fraction of crowder for different excluded-volume
+    models.
+
+    Parameters
+    ----------
+    vexc_df: pd.DataFrame
+        The excluded-volume data.
+    dcrowds: list of float
+        List of crowder sizes.
+    phi_c_limit: float, default 0.4
+        The upper limit on the bulk volume fraction of crowders in the
+        `vexc_df`.
+    color_map: str, default 'coolwarm'
+        Name of the color map used for curves with different crowder sizes.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+
+    Requirements
+    ------------
+    matplotlib, seaborn
+    """
+    _xnames = ['phi_c_bulk', 'phi_c_bulk_scaled']
+    _vexc_styles = {
+        'AO': {
+            'model_fullname': 'Asakura-Oosawa interactions',
+            'line': {
+                'ls': '-',
+                'lw': 1.75,
+                'alpha': None
+            },
+        },
+        'LJ': {
+            'model_fullname': 'Lennard-Jones interactions',
+            'line': {
+                'ls': '--',
+                'lw': 1.75,
+                'alpha': None
+            },
+        },
+        'Edwards': {
+            'model_fullname': 'Edwards-type interactions',
+            'line': {
+                'ls': '-.',
+                'lw': 1.75,
+                'alpha': None
+            },
+        }
+    }
+    _label_dict = {
+        "phi_c_bulk": r"$\phi_c$",
+        "phi_c_bulk_scaled": r"${a\phi_c}/{a_c}$",
+        "vexc_scaled": r"$v_{exc}/v_{athr}$",
+    }
+    _mpl_settings = {
+        'legend.fontsize': 10,
+        'legend.title_fontsize': 12,
+        'font.family': 'Times New Roman',
+        'font.weight': 'bold',
+        'mathtext.default': 'regular',
+        'text.usetex': True
+    }
+    plt.rcParams.update(_mpl_settings)
+    vexc_df = vexc_df.loc[vexc_df['phi_c_bulk'] <= phi_c_limit, :]
+    vexc_df = vexc_df.loc[vexc_df['dcrowd'].isin(dcrowds), :]
+    dcrowds_color = sns.color_palette(color_map, len(dcrowds))
+    dcrowds_dict = dict(zip(dcrowds, dcrowds_color))
+    fig, axes = plt.subplots(
+        nrows=len(_vexc_styles.keys()),
+        ncols=2,
+        sharey=True,
+        sharex='col',
+        figsize=(16, 9)
+    )
+    for row_idx, vexc_model in enumerate(_vexc_styles.keys()):
+        row_axes = axes[row_idx, :]
+        for xname, axis in zip(_xnames, row_axes):
+            model_cond = vexc_df['vexc_model'] == vexc_model
+            vexc_per_model = vexc_df.loc[model_cond, :]
+            p_vexc(
+                axis,
+                vexc_per_model,
+                xname,
+                'vexc_scaled',
+                'dcrowd',
+                dcrowds_dict,
+                **_vexc_styles[vexc_model]['line']
+            )
+            axis.set_title(
+                _vexc_styles[vexc_model]['model_fullname'],
+                fontsize=16
+            )
+            axis.set_xlabel(_label_dict[xname], fontsize=16)
+            axis.set_ylabel(_label_dict['vexc_scaled'], fontsize=16)
+    fig.tight_layout()
+    output = save_to + f"vExc-Models-phicLimit{str(phi_c_limit)}.pdf"
+    plt.savefig(output, dpi=200)
+
+
+def p_vexc_dcrowds(
+    vexc_df,
+    dcrowds,
+    phi_c_limit: float = 0.4,
+    color_map: str = 'flare',
+    save_to: str = './'
+):
+    vexc_df = vexc_df.loc[vexc_df['phi_c_bulk'] <= phi_c_limit, :]
+    vexc_df = vexc_df.loc[vexc_df['dcrowd'].isin(dcrowds), :]
+    dcrowds_color = sns.color_palette(color_map, len(dcrowds))
+    dcrowds_dict = dict(zip(dcrowds, dcrowds_color))
+    _mpl_settings = {
+        'legend.fontsize': 10,
+        'legend.title_fontsize': 12,
+        'font.family': 'Times New Roman',
+        'font.weight': 'bold',
+        'mathtext.default': 'regular',
+        'text.usetex': True
+    }
+    plt.rcParams.update(_mpl_settings)
+    fig, axes = plt.subplots(
+        nrows=len(dcrowds),
+        ncols=1,
+        sharex=True,
+        figsize=(8, 6)
+    )
+    for row_idx, (dcrowd, axis) in enumerate(zip(dcrowds, axes)):
+        dcrowd_cond = vexc_df['dcrowd'] == dcrowd
+        vexc_per_dcrowd = vexc_df.loc[dcrowd_cond, :]
+        line_plot = sns.lineplot(
+            x='phi_c_bulk',
+            y='vexc_scaled',
+            style='vexc_model',
+            ax=axis,
+            data=vexc_per_dcrowd,
+            color=dcrowds_dict[dcrowd],
+            dashes=[(1, 0), (1, 0.5), (3, 1)]
+        )
+        handlers, labels = line_plot.get_legend_handles_labels()
+        line_plot.legend_.remove()
+        if row_idx == 0:
+            line_plot.legend(
+                handlers,
+                labels,
+                title='Model',
+                ncol=3,
+                framealpha=0.6,
+                loc='lower right'
+            )
+        color_patches = ptuner.color_patcher([dcrowds_dict[dcrowd]])
+        color_legend = mpl.legend.Legend(
+            line_plot,
+            handles=color_patches,
+            labels=[rf'${{a_c}}/{{a}}={dcrowd}$'],
+            title=None,
+            loc='lower left',
+            framealpha=0.6
+        )
+        line_plot.add_artist(color_legend)
+        axis.grid(True, ls=':', lw=1)
+        axis.tick_params(axis='both', direction='inout', width=1.25)
+        axis.axhline(0, color='black', lw=1, ls='--')
+        axis.set_xlabel(r"$\phi_c$", fontsize=13)
+        axis.set_ylabel(r"$v_{exc}/v_{athr}$", fontsize=13)
+    fig.tight_layout()
+    output = save_to + f"vExcl-Dcrowds-phicLimit{str(phi_c_limit)}.pdf"
+    plt.savefig(output, dpi=200)
+
+
+def p_acf(
     ax: axes.Axes,
     acf_db: pd.DataFrame,
     time: np.array,
@@ -339,6 +579,9 @@ def pacf(
     acf_t: matplotlib.axes.Axes
         the plotted ACF with its assocaited CIs.
     """
+    mpl.rcParams['font.family'] = "Times New Roman"
+    mpl.rcParams['mathtext.default'] = 'regular'
+    plt.rcParams.update({"text.usetex": True})
     acf_t = ax.plot(acf_db[property_+'-acf-mean'], color=color, **acf_kwargs)
     if fbetween_label is not None:
         acf_t = ax.fill_between(
@@ -360,7 +603,7 @@ def pacf(
     return acf_t
 
 
-def pacf_with_ci_space(
+def p_acf_with_ci_space(
     space_acf: pd.DataFrame,
     space: str,
     properties: Dict[str, Dict[str, str]],
@@ -432,9 +675,7 @@ def pacf_with_ci_space(
     )
     mpl.rcParams['font.family'] = "Times New Roman"
     mpl.rcParams['mathtext.default'] = 'regular'
-    plt.rcParams.update({
-        "text.usetex": True
-    })
+    plt.rcParams.update({"text.usetex": True})
     ensembles = list(space_acf['ensemble'].drop_duplicates())
     ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
     time = np.arange(lags+1)
@@ -448,7 +689,7 @@ def pacf_with_ci_space(
         legend_colors = []
         legend_labels = []
         for property_, prop_dict in properties.items():
-            _ = pacf(
+            _ = p_acf(
                 ax,
                 ens_acf.loc[:lags],
                 time,
@@ -461,15 +702,15 @@ def pacf_with_ci_space(
             legend_labels.append(prop_dict['symbol'] + ": CIs")
         ax_title = fr'({idx+1}) $\phi_c^{{(bulk)}}={phi_c}$'
         ax.set_title(ax_title, fontsize=fontsize-5)
-        ptune.yticks(ax, ylimits, code=True, fontsize=fontsize-6, decimals=3)
-        ptune.xticks(ax, xlimits, code=True, fontsize=fontsize-6, decimals=3)
+        ptuner.yticks(ax, ylimits, code=True, fontsize=fontsize-6, decimals=3)
+        ptuner.xticks(ax, xlimits, code=True, fontsize=fontsize-6, decimals=3)
         if idx % 3 == 0:
             ax.set_ylabel(r"$C(\hat{t})$", fontsize=fontsize-2)
         if idx >= 9:
             ax.set_xlabel(
                 r"$\hat{t}=lag\times {\Delta t_{sampling}}/{\tau}$",
                 fontsize=fontsize-2)
-    phi_c_patches = ptune.color_patcher(legend_colors)
+    phi_c_patches = ptuner.color_patcher(legend_colors)
     phi_c_legends = mpl.legend.Legend(
         axes[0, 2],
         handles=phi_c_patches,
@@ -500,7 +741,7 @@ def pacf_with_ci_space(
     plt.close()
 
 
-def pacf_fit_curve_space(
+def p_acf_fit_curve_space(
     space: str,
     space_stamps: pd.DataFrame,
     space_acf: pd.DataFrame,
@@ -619,9 +860,7 @@ def pacf_fit_curve_space(
     )
     mpl.rcParams['font.family'] = "Times New Roman"
     mpl.rcParams['mathtext.default'] = 'regular'
-    plt.rcParams.update({
-        "text.usetex": True
-    })
+    plt.rcParams.update({"text.usetex": True})
     cols = ['phi_c_bulk']
     cols.extend(fit_info[func_name]['params'])
     for idx, (ax, (_, row)) in enumerate(
@@ -649,7 +888,7 @@ def pacf_fit_curve_space(
             alpha=0.5,
             label=r'$ACF(t)=e^{-1}$'
         )
-        _ = pacf(
+        _ = p_acf(
             ax,
             ens_df,
             x_axis,
@@ -696,11 +935,11 @@ def pacf_fit_curve_space(
         lineage='space',
         ispath=False
     )
-    #space_title = fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
-    #title = 'Exponential fit (' + fit_info[func_name]['name']
-    #title = title + ') to the autocorrelation function (ACF) of the '
-    #title = title + properties[property_]['name']
-    #title = title + space_title
+    # space_title = fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
+    # title = 'Exponential fit (' + fit_info[func_name]['name']
+    # title = title + ') to the autocorrelation function (ACF) of the '
+    # title = title + properties[property_]['name']
+    # title = title + space_title
     title = (
         'Exponential fit (' + fit_info[func_name]['name']
         + ') to the autocorrelation function (ACF) of the '
@@ -715,7 +954,7 @@ def pacf_fit_curve_space(
     plt.close()
 
 
-def pacf_allInOne(
+def p_acf_allInOne(
     acf: pd.DataFrame,
     spaces: List[str],
     property_: str,
@@ -785,6 +1024,7 @@ def pacf_allInOne(
         nrows=nrows, ncols=ncols, figsize=(16, 12), sharey=True)
     mpl.rcParams['font.family'] = "Times New Roman"
     mpl.rcParams['mathtext.default'] = 'regular'
+    plt.rcParams.update({"text.usetex": True})
     time = np.arange(lags+1)
     if nrows * ncols > 1:
         axes_ = axes.flat
@@ -807,10 +1047,10 @@ def pacf_allInOne(
             acf_ens = acf_space[acf_space['ensemble'] == ens]
             acf_ens.reset_index(inplace=True)
             ax.plot(time, acf_ens[property_ + "-acf-mean"], color=color)
-        ptune.yticks(
+        ptuner.yticks(
             ax, ylimits, code=True, fontsize=fontsize-6, decimals=3
         )
-        ptune.xticks(
+        ptuner.xticks(
             ax, xlimits, code=True, fontsize=fontsize-6, decimals=3
         )
         if idx % ncols == 0:
@@ -840,7 +1080,7 @@ def pacf_allInOne(
         leg_ax = axes[0]
     else:
         leg_ax = axes[0, ncols-1]
-    phi_c_patches = ptune.color_patcher(phi_colors)
+    phi_c_patches = ptuner.color_patcher(phi_colors)
     phi_c_legends = mpl.legend.Legend(
         leg_ax,
         handles=phi_c_patches,

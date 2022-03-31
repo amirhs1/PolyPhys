@@ -1,7 +1,11 @@
+from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import os
 import re
+from typing import TypeVar
+
+TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
 
 
 class SumRule(object):
@@ -264,7 +268,8 @@ class SumRule(object):
                 f"{types_string} types.")
         if ispath:
             self.filepath = name
-            self.filename = name.split("/")[-1]
+            self.filename, _ = os.path.splitext(self.filepath)
+            self.filename = self.filename.split("/")[-1]
         else:
             self.filepath = "N/A"
             self.filename = name
@@ -309,7 +314,7 @@ class SumRule(object):
 
     def _initiate_attributes(self):
         """
-        defines and initiates the class attribute based on the physical
+        defines and initiates the class attributes based on the physical
         attributes defined for the project.
         """
         self.dmon = 1.0
@@ -495,14 +500,12 @@ class FloryChain(object):
         ispath: bool = True
     ):
         self.limit = limit
-        self.ispath = ispath
-        if self.ispath:
+        if ispath:
             self.filepath = name
-            self.extention = os.path.splitext(name.split("/")[-1])[1]
-            self.filename = os.path.splitext(name.split("/")[-1])[0]
+            self.filename, _ = os.path.splitext(self.filepath)
+            self.filename = self.filename.split("/")[-1]
         else:
             self.filepath = "N/A"
-            self.extention = "N/A"
             self.filename = name
         self._initiate_attributes()
         self._parse_attributes()
@@ -763,7 +766,8 @@ class DataTemplate(object):
     ):
         if ispath:
             self.filepath = name
-            self.filename = name.split("/")[-1]
+            self.filename, _ = os.path.splitext(self.filepath)
+            self.filename = self.filename.split("/")[-1]
         else:
             self.filepath = "N/A"
             self.filename = name
@@ -846,3 +850,185 @@ class DataTemplate(object):
                     " template data name. Please check whether "
                     f"'{self.filename}'"
                     " is valid name or not.")
+
+
+@dataclass
+class ExcludedVolume(object):
+    name: str
+    ispath: bool = True
+    """Parse a filepath/filename of a 'csv' file that contains the
+    excluded-volume data of a monomer in crowded media and retrieve
+    information about the exclude-volume data in that 'csv' file.
+
+    The excluded-volume data are currently available for three models:
+
+        AO: The Asakura-Oosawa depletion interaction
+            The excluded volume of a large hard-spheres in a solution of
+            smaller by using the Asakura-Oosawa depletion potential as the
+            effetive pair potential between a pair of monomers.
+
+        Edwards: The Edwards-type interaction
+            The excluded volume of a monomer in a solution of Edwards
+            (self-avoiding) polymers and hard sphere (larger than monomers) is
+            found by solving a coarse-grained Hamiltonian of the system.
+
+        LJ: The Lannard-Jones interaction
+            The excluded volume of amonmoer is given by a function that is
+            fitted to the numerically-measurd excluded volume of a monomer
+            in a bead-on-spring chain. Monomers and crowders are interacting
+            by the Lannard-Jone interaction with various cut-off and
+            interaction parameters.
+
+
+    Parameters
+    ----------
+    name: str
+        The name of the filepath or the filename.
+    ispath: bool
+        Whether the `name` is a filepath or not.
+
+    Attributes
+    ----------
+    self.filepath: str
+        Path to the data file.
+    self.filename: str
+        Name of the data file.
+    self.dmon: float
+        Size (diameter) of a monomer
+    self.vexc_model: str
+        Model by which the excluded-volume data in a crowded media is
+        calculated.
+    self.dcrowd: float
+        Size of a crowder
+    self.vexc_athr: float
+        The excluded volume of a monomer in the absence of crowders in the high
+        temperature (athermal) limit.
+    self.vexc_df: pd.DataFrame
+        A pandad dataframe that contains the excluded-volume data.
+
+    Class attributes
+    ----------------
+    self._vexc_models: list of str
+        List if the defined excluded-volume models.
+    """
+    _vexc_models = ['AO', 'LJ', 'Edwards']
+
+    def __init__(
+        self,
+        name: str,
+        ispath: bool = True
+    ):
+        if ispath:
+            self.filepath = name
+            self.filename, _ = os.path.splitext(self.filepath)
+            self.filename = self.filename.split('/')[-1]
+        else:
+            self.filepath = "N/A"
+            self.filename = name
+        self._initiate_attributes()
+        self._parse_name()
+        self._set_vexc_athermal()
+
+    def _initiate_attributes(self) -> None:
+        """defines and initiates the class attributes based on the physical
+        attributes defined for the project.
+        """
+        self.vexc_model = "N/A"
+        self.dmon = 1.0
+        self.dcrowd = np.nan
+
+    def _parse_name(self) -> None:
+        """
+        parses a lineage_name based on a list of keywords of physical
+        attributes.
+        """
+        str_attrs = re.compile(r'([a-zA-Z\-]+)')
+        words = self.filename.split('-')
+        if words[1] in self._vexc_models:
+            self.vexc_model = words[1]  # model name
+        else:
+            vexc_models_string = "'" + "', '".join(
+                self._vexc_models) + "'"
+            raise ValueError(
+                f"'{words[1]}' "
+                "is not a valid excluded-volume model. Please check wehther "
+                "the data belongs to one of "
+                f"{vexc_models_string} model or not.")
+        words = str_attrs.split(words[2])  # find dcrowd
+        self.dcrowd = float(words[words.index('ac')+1])
+        if (self.dcrowd == 1.0) & (self.vexc_model == 'WCA'):
+            print(f"The excluded data for 'a_c={self.dcrowd}'"
+                  " is computed via the fitting function for a_c<a in the"
+                  f"exculded-volume model '{self.vexc_model}'.")
+
+    def _set_vexc_athermal(self):
+        """set the athermal excluded-volume of a monomer in the absence of the
+        crowders based on a given model.
+        """
+        _vexc_athrs = {
+            'AO': (4/3) * np.pi * (self.dmon**3),
+            'Edwards': (4/3) * np.pi * (self.dmon**3),
+            'LJ': 4.40945
+        }
+        self.vexc_athr = _vexc_athrs[self.vexc_model]
+
+    def read_data(
+        self,
+    ) -> TExcludedVolume:
+        """Read the excluded-volume data"""
+        if self.ispath is True:
+            self.vexc_df = pd.read_csv(
+                self.filepath,
+                names=['phi_c_bulk', 'vexc'])
+            return self
+        else:
+            raise ValueError(
+                "The excluded volume data not found:"
+                f"'{self.filename}' is not a valide filepath"
+            )
+
+    def scale(
+        self,
+        limit: bool = True
+    ) -> TExcludedVolume:
+        """Rescale the bulk volume fraction of crowders 'phi_c_bulk' and
+        excluded-volume 'vexc' and add them as two new columns to
+        `self.vexc_df` attribute.
+
+        Parameters
+        ----------
+        limit: bool, default True
+            Whether limit the excluded-volume data to [-1*vexc_athr,
+            vexc_athr] or not.
+
+        Returns
+        -------
+        self: ParserExcVol
+            An updated ParserExcVol.self object.
+        """
+        # phi_c is rescaled as phi_c*a/a_c when a_c << a to gain the maximum
+        # depletion free energy:
+        self.vexc_df['phi_c_bulk_scaled'] = (
+            self.dmon * self.vexc_df['phi_c_bulk'] / self.dcrowd
+            )
+        self.vexc_df['vexc_scaled'] = self.vexc_df['vexc'] / self.vexc_athr
+        # Limit the vexc data to [-1*vexc_athr, vexc_athr]:
+        if limit is True:
+            self.vexc_df = self.vexc_df[
+                (self.vexc_df['vexc_scaled'] <= 1.0) &
+                (self.vexc_df['vexc_scaled'] >= (-1*1.0))
+            ]
+        return self
+
+    def add_model_info(self) -> TExcludedVolume:
+        """Add `self.vexc_model` and `self.dcrowd` data as two new columns to
+        the `self.vexc_df` attribute.
+
+        Returns
+        -------
+        self: ParserExcVol
+            An updated ParserExcVol.self object.
+        """
+        self.vexc_df['vexc_model'] = self.vexc_model
+        self.vexc_df['dcrowd'] = self.dcrowd
+        return self
