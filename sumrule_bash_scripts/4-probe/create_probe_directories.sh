@@ -13,7 +13,5 @@ for dir in N*ep*/; do
     mv ./N*.csv "../${probe}/$dir"
     mv ./N*.npy "../${probe}/$dir"
     mv ./*.txt "../${probe}/$dir"
-    rm ./*.py
-    rm -r PipeLine
     cd ..
 done
