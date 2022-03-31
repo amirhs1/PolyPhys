@@ -1,7 +1,9 @@
 #!/bin/bash
-# copies necessary files for a job array on the slurm schedular
-cp ../PolyPhys/sumrule_bash_scripts/4a-probe-first_time/sbatch*.sh .
-cp ../PolyPhys/sumrule_bash_scripts/4a-probe-first_time/submit*.sh .
-cp ../PolyPhys/sumrule_bash_scripts/4a-probe-first_time/probe-*.py .
+# copies necessary files for a job array on the slurm schedular for probing for the first time
+cp ../PolyPhys/sumrule_bash_scripts/4-probe/create_trjs_directories.sh .
+cp ../PolyPhys/sumrule_bash_scripts/4-probe/sbatch*.sh .
+cp ../PolyPhys/sumrule_bash_scripts/4-probe/submit*.sh .
+cp ../PolyPhys/sumrule_bash_scripts/4-probe/probe-*.py .
+cp ../PolyPhys/sumrule_bash_scripts/4-probe/probe_gnuparallel*.sh .
+cp ../PolyPhys/sumrule_bash_scripts/4-probe/create_probe_directories.sh .
 cp -R ../PolyPhys/polyphys .
-cp ../PolyPhys/sumrule_bash_scripts/4a-probe-first_time/probe_gnuparallel*.sh .

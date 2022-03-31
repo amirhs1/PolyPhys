@@ -1,7 +1,7 @@
 """
 A subpackage for visualizing different physical properties of polymers.
 """
-from . import tuning
-from . import plots
+from . import tuner
+from . import plotter
 
-__all__ = ["tuning", "plots"]
+__all__ = ["tuner", "plotter"]
