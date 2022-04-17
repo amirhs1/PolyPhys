@@ -428,7 +428,7 @@ def p_vexc_models(
     _label_dict = {
         "phi_c_bulk": r"$\phi_c$",
         "phi_c_bulk_scaled": r"${a\phi_c}/{a_c}$",
-        "vexc_scaled": r"$v_{exc}/v_{athr}$",
+        "vexc_scaled": r"$v_{exc}/v_{0}$",
     }
     _mpl_settings = {
         'legend.fontsize': 10,
@@ -480,6 +480,7 @@ def p_vexc_dcrowds(
     dcrowds,
     phi_c_limit: float = 0.4,
     color_map: str = 'flare',
+    fontsize: int = 13,
     save_to: str = './'
 ):
     vexc_df = vexc_df.loc[vexc_df['phi_c_bulk'] <= phi_c_limit, :]
@@ -487,8 +488,10 @@ def p_vexc_dcrowds(
     dcrowds_color = sns.color_palette(color_map, len(dcrowds))
     dcrowds_dict = dict(zip(dcrowds, dcrowds_color))
     _mpl_settings = {
-        'legend.fontsize': 10,
-        'legend.title_fontsize': 12,
+        'legend.fontsize': fontsize-3,
+        'legend.title_fontsize': fontsize-3,
+        'xtick.labelsize': fontsize,
+        'ytick.labelsize': fontsize,
         'font.family': 'Times New Roman',
         'font.weight': 'bold',
         'mathtext.default': 'regular',
@@ -511,7 +514,7 @@ def p_vexc_dcrowds(
             ax=axis,
             data=vexc_per_dcrowd,
             color=dcrowds_dict[dcrowd],
-            dashes=[(1, 0), (1, 0.5), (3, 1)]
+            dashes=[(1, 0), (2, 2), (4, 1)]
         )
         handlers, labels = line_plot.get_legend_handles_labels()
         line_plot.legend_.remove()
@@ -537,10 +540,10 @@ def p_vexc_dcrowds(
         axis.grid(True, ls=':', lw=1)
         axis.tick_params(axis='both', direction='inout', width=1.25)
         axis.axhline(0, color='black', lw=1, ls='--')
-        axis.set_xlabel(r"$\phi_c$", fontsize=13)
-        axis.set_ylabel(r"$v_{exc}/v_{athr}$", fontsize=13)
+        axis.set_xlabel(r"$\phi_c$", fontsize=fontsize)
+        axis.set_ylabel(r"$v_{exc}/v_{0}$", fontsize=fontsize)
     fig.tight_layout()
-    output = save_to + f"vExcl-Dcrowds-phicLimit{str(phi_c_limit)}.pdf"
+    output = save_to + f"vExc-Dcrowds-phicLimit{str(phi_c_limit)}.pdf"
     plt.savefig(output, dpi=200)
 
 
