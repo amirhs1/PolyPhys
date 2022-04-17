@@ -62,19 +62,25 @@ def parse_lammps_trj(
     return snapshot
 
 
-def parse_lammps_data(
+def parse_lammps_data_string_style(
     data_in: TextIOWrapper,
     kind: str = 'bond',
 ) -> Dict[str, Union[float, int]]:
     """parse the headers of a LAMMPS trjectory data
     file of a given `kind`.
 
+    Issues:
+    Currently the data reader converts all the words in a line into float but this not correct for some items see: https://docs.lammps.org/read_data.html
+
+    Check the issue with image flags.
+
     Parameters
     ----------
     data_in: io.TextIOWrapper
         Data file opened in the 'read' mode.
-    kind: {'full', 'bond', 'atom'}, default, 'bond'
+    kind: {'full', 'bond', 'atom', 'bond_simple'}, default, 'bond'
         The kind of the LAMMMPS data file.
+        'bond_simple' is simialr to bond but without image flags.
 
     Return
     ------
@@ -88,7 +94,12 @@ def parse_lammps_data(
             'bond_types': ['Bond_Coeffs'],
             'n_atoms': ['Atoms', 'Velocities'],
             'n_bonds': ['Bonds']
+        },
+        'bond_simple': {  # order of header in bond data file:
+            'n_atoms': ['Atoms', 'Velocities'],
+            'n_bonds': ['Bonds']
         }
+
     }
     topology = dict()
     _ = data_in.readline()
@@ -98,10 +109,11 @@ def parse_lammps_data(
     topology['n_atoms'] = int(words[0])
     line = data_in.readline()
     words = line.split(' ')
-    topology['atom_types'] = int(words[0])
+    topology['n_bonds'] = int(words[0])
+    _ = data_in.readline()
     line = data_in.readline()
     words = line.split(' ')
-    topology['n_bonds'] = int(words[0])
+    topology['atom_types'] = int(words[0])
     line = data_in.readline()
     words = line.split(' ')
     topology['bond_types'] = int(words[0])
@@ -292,7 +304,7 @@ def bug_data_file_generator(
             # ------------------------------------------------------------
             # infer atom and bond types and information from data template
             # ------------------------------------------------------------
-            topo_data = parse_lammps_data(data_in, kind='bond')
+            topo_data = parse_lammps_data_string_style(data_in, kind='bond')
             # The bond data are used below.
             # ---------------------
             # write trj data header
