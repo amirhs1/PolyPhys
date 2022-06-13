@@ -845,6 +845,7 @@ class TransFoci(object):
                     " lineage name. Please check whether "
                     f"'{self.filename}'"
                     " is valid name or not.")
+        setattr(self, 'nmon', self.nmon_large + self.nmon_small)
 
     def _set_parents(self):
         """
