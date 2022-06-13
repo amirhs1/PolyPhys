@@ -1,0 +1,51 @@
+#read_restart    restart.6.46000000
+
+variable epsilon1 equal 5.0
+variable sig2 equal 2.0
+variable n_crowd equal 20790
+variable lz equal 504
+variable i equal 6
+variable r equal 10.5
+variable n_bug equal 2000
+variable randseed equal 3249
+
+change_box  all x final -${r} ${r} y final -${r} ${r} z final -${lz} ${lz} boundary f f p units box
+region  cylshell cylinder z 0.0 0.0 ${r} INF INF units box
+
+variable sig1 equal 1.0
+variable sig12 equal (${sig1}+${sig2})/2
+variable cutoff11 equal ${sig1}*1.12246
+variable cutoff12 equal ((${sig1}+${sig2})/2.0)*1.12246
+
+neighbor                0.2 bin
+neigh_modify    delay 0 every 1 check yes 
+
+fix     F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+
+fix     F_wall1 bug wall/region cylshell lj126 ${epsilon1} ${sig1} ${cutoff11} # Interaction between the lateral wall and the monomers.
+fix     F_wall2 crowd wall/region cylshell lj126 1.0 ${sig12}  ${cutoff12} # Interaction between the lateral wall and the crowders.
+
+fix             F_nve all nve
+fix             F_recenter bug recenter NULL NULL 0.0 shift all units box
+
+timestep    0.005
+thermo 10000
+
+dump     D_bug bug atom  1000 bug.i${i}.restart.lammpstrj
+dump_modify D_bug scale no
+
+variable fname string input.lmp
+variable j loop 6 pad
+    label dump_loop
+    dump         D_all all atom  5000 bug.i${i}.j${j}.restart.lammpstrj.gz
+    dump_modify D_all scale no pad 2
+    restart 1000000  ./restart.new.i${i}
+    run 5000000
+    undump D_all
+    next j
+    jump ${fname} dump_loop
+
+undump D_all
+undump D_bug
+write_data all.n${n_bug}.nc${n_crowd}.data pair ij
+write_restart    ./restart_after

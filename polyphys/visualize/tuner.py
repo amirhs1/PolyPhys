@@ -27,13 +27,16 @@ def round_down_first_non_zero(x: float) -> float:
 def round_up_nearest(dividend: float, diviser: float) -> float:
     """rounds up the floating-point number dividend by the diviser.
 
-    Parameters:
-    dividend (float): The number should be rounded up.
-    diviser (float): The number used as the diviser.
+    Parameters
+    ----------
+    dividend: float
+        The number should be rounded up.
+    diviser: float
+        The number used as the diviser.
 
     Return
-    A floating-point number that is a ceil for dividend and is divisible
-        by diviser.
+    ------
+    float: The ceil for dividend and is divisible by diviser.
     """
     return np.ceil(dividend / diviser) * diviser
 
@@ -54,23 +57,26 @@ def color_patcher(colors):
 
 
 def yticks(axis, limits, code=False, decimals=3, **kwargs):
-    """set yticks of of a given axis based on the lower and upper limits
+    """set yticks of a given axis based on the lower and upper limits
     as well as the step size between ticks and a frame-like limit below
     the lower limit and above the upper limit.
 
     Caution: The numbers are not rounded based on standard convention in
     which ticks are multiples of 10^m where m is an integer number.
 
-    Parameters:
-    axis (matplotlib.axes.Axes): The axis for which the ticks are changed.
-    limits (a tuple for 4 numbers in this order: (float, float, float, float)):
-    the first number is lower limit, the second one is the upper limit,
-    the 3rd is the step size  between ticks, and the last one is a tolerance
-    code  (bool): whether shows the tick lables or not.
-    decimals (int): number of decimal in tick labels.
-    **kwargs: the same as the kwargs for set_yticklabels
-
-    Return: --
+    Parameters
+    ----------
+    axis: matplotlib.axes.Axes
+        The axis for which the ticks are changed.
+    limits: tuple of 3 floats
+        The first number is lower limit, the second one is the upper limit,
+        the 3rd is the step size  between ticks.
+    code: bool
+        Whether shows the tick lables or not.
+    decimals: int
+        Number of decimal in tick labels.
+    **kwargs:
+        The same as the kwargs for matplotlib.pyplot.Axis.set_yticklabels
     """
     lower, upper, step = limits
     tolerance = round_down_first_non_zero(step / 10)
@@ -98,24 +104,26 @@ def yticks(axis, limits, code=False, decimals=3, **kwargs):
 
 
 def xticks(axis, limits, code=False, decimals=3, **kwargs):
-    """set xticks of of a given axis based on the lower and upper limits
+    """set xticks of a given axis based on the lower and upper limits
     as well as the step size between ticks and a frame-like limit below
     the lower limit and above the upper limit.
 
     Caution: The numbers are not rounded based on standard convention in
     which ticks are multiples of 10^m where m is an integer number.
 
-    Parameters:
-    axis (matplotlib.axes.Axes): The axis for which the ticks are changed.
-    limits (a tuple for 4 numbers in this order: (float, float, float,
-    float)): the first number is lower limit, the second one is the upper
-    limit, the 3rd is the step size  between ticks, and the last one is a
-    tolerance.
-    code  (bool): whether shows the tick lables or not.
-    decimals (int): number of decimal in tick labels.
-    **kwargs: the same as the kwargs for set_xticklabels
-
-    Return: -
+    Parameters
+    ----------
+    axis: matplotlib.axes.Axes
+        The axis for which the ticks are changed.
+    limits: tuple of 3 floats
+        The first number is lower limit, the second one is the upper limit,
+        the 3rd is the step size  between ticks.
+    code: bool
+        Whether shows the tick lables or not.
+    decimals: int
+        Number of decimal in tick labels.
+    **kwargs:
+        The same as the kwargs for matplotlib.pyplot.Axis.set_xticklabels
     """
     lower, upper, step = limits
     tolerance = round_down_first_non_zero(step / 10)
