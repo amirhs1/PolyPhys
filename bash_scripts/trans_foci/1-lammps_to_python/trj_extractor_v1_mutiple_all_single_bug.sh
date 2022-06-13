@@ -6,28 +6,26 @@ simtype=$( echo "$pname" | cut -d - -f 2 | cut -d _ -f 1) # whether the simulati
 if [ "$simtype" = "all" ]; then
     trjdir=${name}-trjs # name of trjactories directory
 elif [ "$simtype" = "cont" ]; then
-    trjdir=${name}-${simtype}_trjs
+    trjdir=${name}-trjs_${simtype}
 else
     echo "not a 'all_simulations' or 'cont_simulations' directory"
     exit 1
 fi
 echo "Trajectory directory: $trjdir"
 mkdir "$trjdir"
-for dir in N*eps*[1-8]/; do
+for dir in epss*[1-8].ring/; do
     echo "$dir"
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"
     cd "$dir" || exit
-    cp bug.i*.lammpstrj "$fname".j02.bug.lammpstrj
-    mv "$fname".j02.bug.lammpstrj ../"$trjdir"/"$fname"/
-    cp log.lammps  "$fname".cont.log 
-    mv "$fname".cont.log ../"$trjdir"/"$fname"/
-    for gzfile in all.*.lammpstrj.gz;do 
+    cp "$fname".bug.lammpstrj ../"$trjdir"/"$fname"/
+    cp "$fname".all.data ../"$trjdir"/"$fname"/
+    cp log.lammps  "$fname".log 
+    mv "$fname".log ../"$trjdir"/"$fname"/
+    for gzfile in eps*.all.lammpstrj.gz;do 
             gzip -dk "$gzfile"
-            allfile=$( echo "$gzfile" | cut -d . -f -4)
-            j=$(echo "$allfile" | cut -d . -f 3)
-            mv "$allfile" "$fname"."$j".all.lammpstrj 
-            mv "$fname"."$j".all.lammpstrj ../"$trjdir"/"$fname"/
+            allfile=${gzfile[*]:0: -3}
+            mv "$allfile" ../"$trjdir"/"$fname"/
     done
     cd ..
 done
