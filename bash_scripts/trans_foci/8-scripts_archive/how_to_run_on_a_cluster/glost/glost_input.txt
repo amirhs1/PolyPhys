@@ -1,0 +1,1 @@
+mkdir N50lsig0.3nc2500 && cd N50lsig0.3nc2500 && mkdir archive && lmp_icc_openmpi < N50lsig0.3nc2500.in  > log.out.1.txt
