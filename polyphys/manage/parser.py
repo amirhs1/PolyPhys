@@ -17,8 +17,7 @@ class SumRule(object):
     group: str = 'bug'
     lineage: str = 'segment'
     ispath: bool = True
-    """
-    parses a `lineage_name` to extract information about the 'lineage' oftrj
+    """parses a `lineage_name` to extract information about the 'lineage' oftrj
     that 'lineage_name', based on the following 'lineage' patterns:
 
     segment: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
