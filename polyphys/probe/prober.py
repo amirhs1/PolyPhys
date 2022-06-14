@@ -1,217 +1,342 @@
-from typing import Optional, Tuple, List, Dict, Type
+from typing import Optional, Tuple, Dict, Type
 import MDAnalysis as mda
 import numpy as np
+import pandas as pd
+import os
 from polyphys.manage.parser import SumRule
 from polyphys.manage.organizer import invalid_keyword
 
 
-def log_datasets(
-    log: str,
-    geometry: str = 'biaxial',
-    group: str = 'bug',
-    lineage: str = 'segment'
-) -> Tuple[str, str]:
-    """
-    generates the 'details' and 'runtime' 'csv' files with a pre-defined list
-    of header names.
-
-    The 'details' file contains the information about  input parameters
-    and settings in a set of LAMMPS simulations.
-
-    The 'runtime' file contains information about the runtimes of a set of
-     LAMMPS simulations.
+def log_stat(
+    logpath: str,
+    save_to: str = None
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """parses a LAMMPS `log` file to extract the performance information about
+    a simulation.
 
     Parameters
     ----------
-    log: str
-        The name of the LAMMPS log file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
-        Shape of the simulation box.
-    group: {'bug', 'all'}, default 'bug'
-        Type of the particle group.
-    lineage: {'segment', 'whole'}, default 'segment'
-        Type of the input file.
+    logpath: str
+        Path to a log file
+    save_to : str, default None
+        Absolute/relative path of a directory to which outputs are saved.
 
     Return
     ------
-    details_out: str
-        The name of the details dataset.
-    runtime_out: str
-        The name of the runtime dataset.
+    run_stat: pd.DataFrame
+        A dataframe in which each row is equivalent to one run loop in a
+        LAMMPS input file (a LAMMPS input file can has several "run" commands
+        and thus several performance breakdowns. The columns in the dataframe
+        are about the parallel efficiency, speed, performance breakdown, and
+        dagerousn buils of neighbor lists.
+    wall_time_stat: pd.DataFrame
+        A dataframe with one row in which the columns are the log name, number
+        of atoms, number of cores (cpus), and the total wall time.
     """
-    sim_info = SumRule(
-        log,
-        geometry=geometry,
-        group=group,
-        lineage=lineage,
-    )
-    details_out = sim_info.ensemble + '-log_details.csv'
-    with open(details_out, 'w') as detailsfile:
-        # write simulation information
-        for lineage_name in sim_info.genealogy:
-            detailsfile.write(f"{lineage_name},")
-        for attr_name in sim_info.attributes:
-            detailsfile.write(f"{attr_name},")
-        # neig_modify delay NUM every NUM check YES/NO:
-        detailsfile.write(
-            ',ens,run_seg,rskin,delay,every,check,'
-        )
-        detailsfile.write(
-            'total_time_s,cores,timestep,atoms,ts_per_sec,'
-        )
-        # Section columns: min time, avg time, max time, %varavg, %total"
-        # Section rows: Pair, Bond, Neigh, Comm, Output, Modify, Other
-        detailsfile.write(
-            'pair_avg_s,pair_pct,bond_avg_s,bond_pct,neigh_avg_s,'
-            'neigh_pct,comm_avg_s,'
-        )
-        detailsfile.write(
-            'comm_pct,output_avg_s,output_pct,modify_avg_s,'
-            'modify_pct,other_avg_s,other_pct,dangerous\n'
-        )
-    runtime_out = sim_info.ensemble + "-log_runtime.csv"
-    with open(runtime_out, 'w') as runfile:
-        runfile.write('groupname,filename,n_cores,n_atoms,wall_time\n')
-    return details_out, runtime_out
+    logname, _ = os.path.splitext(logpath)
+    logname = logname.split("/")[-1]
+    run_stat = {
+        "log_name": [],
+        "loop_id": [],
+        "loop_time_second": [],
+        "n_cores": [],
+        "loop_steps": [],
+        "n_atoms": [],
+        "step_per_second": [],
+        "mpi_task": [],
+        "openmp_threads": [],
+        "pair_avg_s": [],
+        "pair_pct": [],
+        "bond_avg_s": [],
+        "bond_pct": [],
+        "neigh_avg_s": [],
+        "neigh_pct": [],
+        "comm_avg_s": [],
+        "comm_pct": [],
+        "output_avg_s": [],
+        "output_pct": [],
+        "modify_avg_s": [],
+        "modify_pct": [],
+        "other_avg_s": [],
+        "other_pct": [],
+        "dangerous_builds": []
+    }
+    wall_time_stat = {
+        "log_name": [],
+        "n_cores": [],
+        "n_atoms": [],
+        "wall_time": []
+    }
+    with open(logpath, 'r') as logfile:
+        lines = logfile.readlines()
+        # neigh_modify delay every check page one
+        j = 1  # if j > 1, then there is a loop in the lammmps input file.
+        for idx, line in enumerate(lines):
+            if line.startswith('Loop time'):
+                run_stat["log_name"].append(logname)  # total time
+                run_stat["loop_id"].append(j)  # total time
+                j += 1
+                words = line.split()
+                run_stat["loop_time_second"].append(float(words[3].strip()))
+                n_cores = int(words[5].strip())
+                run_stat["n_cores"].append(n_cores)
+                run_stat["loop_steps"].append(int(words[8].strip()))
+                n_atoms = int(words[11].strip())
+                run_stat["n_atoms"].append(n_atoms)
+            if line.startswith('Performance:'):
+                words = line.split()
+                run_stat["step_per_second"].append(float(words[3].strip()))
+                words = lines[idx+1].split()  # next line
+                run_stat["mpi_task"].append(int(words[4].strip()))
+                run_stat["openmp_threads"].append(int(words[8].strip()))
+            if line.startswith("MPI task timing breakdown:"):
+                words = lines[idx+3].split("|")
+                run_stat["pair_avg_s"].append(float(words[2].strip()))
+                run_stat["pair_pct"].append(float(words[5].strip()))
+                words = lines[idx+4].split("|")
+                run_stat["bond_avg_s"].append(float(words[2].strip()))
+                run_stat["bond_pct"].append(float(words[5].strip()))
+                words = lines[idx+5].split("|")
+                run_stat["neigh_avg_s"].append(float(words[2].strip()))
+                run_stat["neigh_pct"].append(float(words[5].strip()))
+                words = lines[idx+6].split("|")
+                run_stat["comm_avg_s"].append(float(words[2].strip()))
+                run_stat["comm_pct"].append(float(words[5].strip()))
+                words = lines[idx+7].split("|")
+                run_stat["output_avg_s"].append(float(words[2].strip()))
+                run_stat["output_pct"].append(float(words[5].strip()))
+                words = lines[idx+8].split("|")
+                run_stat["modify_avg_s"].append(float(words[2].strip()))
+                run_stat["modify_pct"].append(float(words[5].strip()))
+                words = lines[idx+9].split("|")
+                run_stat["other_avg_s"].append(float(words[2].strip()))
+                run_stat["other_pct"].append(float(words[5].strip()))
+            if line.startswith('Dangerous'):
+                words = line.split()
+                run_stat["dangerous_builds"].append(int(words[-1]))
+            if line.startswith('Total wall time'):
+                wall_time_stat['log_name'].append(logname)
+                wall_time_stat['n_cores'].append(n_cores)
+                wall_time_stat['n_atoms'].append(n_atoms)
+                words = line.split()
+                # total wall time:
+                wall_time_stat['wall_time'].append(words[-1])
+        run_stat = pd.DataFrame.from_dict(run_stat)
+        wall_time_stat = pd.DataFrame.from_dict(wall_time_stat)
+        if save_to is not None:
+            run_stat.to_csv(logname + '-runStat.csv', index=False)
+            wall_time_stat.to_csv(logname + "-runWallTime.csv", index=False)
+        return run_stat, wall_time_stat
 
 
-# noinspection DuplicatedCode
-def log_parser(
-    logs: List[Tuple[str]],
-    details_out: str,
-    runtime_out: str,
-    geometry: str = 'biaxial',
-    group: str = 'bug',
-    lineage: str = 'segment'
-) -> None:
-    """
-    parses a LAMMPS `logs`, gather the information about simulations from
-    their `logs`, and write down simulation details to `details_out` csv
-    files and runtime information to `runtime_out` csv file.
+def thermo_multi(
+    logpath: str,
+    save_to: str = None
+) -> pd.DataFrame:
+    """parses a LAMMPS `log` file written with "multi" thermo style to extract
+    the thermodynamic data about a simulation.
+
+    The thermodyanmic information can be related to multiple "run" commands in
+    a LAMMPS input file.
 
     Parameters
     ----------
-    logs: list of str
-        The list of LAMMPS log files where each element of list is a tuple
-        file with one element; a string that is the filepath for the log.
-    details_out: str
-        The name of the 'details' file in which the simulation details is
-        written.
-    runtime_out: str
-        The name of the 'runtime' file in which the runtime information is
-        written.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
-        Shape of the simulation box.
-    group: {'bug', 'all'}, default 'bug'
-        Type of the particle group.
-    lineage: {'segment', 'whole'}, default 'segment'
-        Type of the input file.
-    """
-    for log in logs:
-        sim_info = SumRule(
-            log[0],
-            geometry=geometry,
-            group=group,
-            lineage=lineage,
-        )
-        filename = sim_info.filename
-        ens = sim_info.ensemble_id
-        groupname = sim_info.lineage_name
-        with open(details_out, mode='w') as detailsfile:
-            # write simulation details
-            for lineage_name in sim_info.genealogy:
-                attr_value = getattr(sim_info, lineage_name)
-                detailsfile.write(f"{attr_value},")
-            for attr_name in sim_info.attributes:
-                attr_value = getattr(sim_info, attr_name)
-                detailsfile.write(f"{attr_value},")
-        with open(log[0], 'r') as logfile,\
-            open(details_out, 'a') as detailsfile,\
-                open(runtime_out, 'a') as runfile:
-            line = logfile.readline()
-            # neigh_modify delay every check page one
-            j = 1
-            while line:
-                if line.startswith('neighbor'):
-                    words = line.split()
-                    rskin = words[1].strip()  # rskin
-                # neigh_modify delay every check page one
-                if line.startswith('neigh_modify'):
-                    words = line.split()
-                    # picking the NUMs and Yes/No from neigh_modify
-                    delay = words[2].strip()
-                    every = words[4].strip()
-                    check = words[6].strip()
-                if line.startswith('Loop time'):
-                    detailsfile.write(str(j))  # total time
-                    detailsfile.write(",")
-                    j += 1
-                    # neighbor and neigh_modify occurs
-                    # one time but other occurs 15 times.
-                    detailsfile.write(rskin)  # rskin
-                    detailsfile.write(",")
-                    detailsfile.write(delay)  # delay
-                    detailsfile.write(",")
-                    detailsfile.write(every)  # every
-                    detailsfile.write(",")
-                    detailsfile.write(check)  # check
-                    detailsfile.write(",")
-                    words = line.split()
-                    detailsfile.write(words[3].strip())  # total time
-                    detailsfile.write(",")
-                    n_cores = words[5].strip()
-                    detailsfile.write(n_cores)  # # of cores
-                    detailsfile.write(",")
-                    detailsfile.write(words[8].strip())  # total timesteps
-                    detailsfile.write(",")
-                    n_atoms = words[11].strip()
-                    detailsfile.write(n_atoms)  # total atoms
-                    detailsfile.write(",")
-                if line.startswith('Performance:'):
-                    words = line.split()
-                    detailsfile.write(words[3].strip())  # timesteps per second
-                    detailsfile.write(",")
-                if line.startswith('Section'):
-                    _ = logfile.readline()
-                    for i in range(6):  \
-                            # Section rows: Pair, Bond, Neigh, Comm, Output,
-                        # Modify, Other
-                        # Section columns: min time, avg time, max time,
-                        # %varavg, %total"
-                        line = logfile.readline()
-                        sect_min = line.split('|')[2].strip()
-                        detailsfile.write(sect_min)
-                        detailsfile.write(",")
+    logpath: str
+        Path to a log file
+    save_to : str, default None
+        Absolute/relative path of a directory to which outputs are saved.
 
-                        sect_pct = line.split()[-1]  # Pair pct of total time
-                        detailsfile.write(sect_pct)
-                        detailsfile.write(",")
-                    line = logfile.readline()
-                    sect_min = line.split('|')[2].strip()
-                    detailsfile.write(sect_min)
-                    detailsfile.write(",")
-                    sect_pct = line.split()[-1]  # Pair pct of total time
-                    detailsfile.write(sect_pct)
-                    detailsfile.write(",")
-                if line.startswith('Dangerous'):
-                    words = line.split()
-                    detailsfile.write(str(int(words[-1])))  \
-                        # # number of dangerous builds
-                    detailsfile.write("\n")
-                # runtime files
-                if line.startswith('Total wall time'):
-                    runfile.write(groupname)
-                    runfile.write(",")
-                    runfile.write(filename)
-                    runfile.write(",")
-                    runfile.write(n_cores)
-                    runfile.write(",")
-                    runfile.write(n_atoms)
-                    runfile.write(",")
-                    words = line.split()
-                    runfile.write(words[-1])  # total wall time
-                    runfile.write("\n")
+    Return
+    ------
+    thermo: pd.DataFrame
+        A dataframe in which the columns are the various thermodynamic
+        quantities of the "multi" thermo style.
+    """
+    logname, _ = os.path.splitext(logpath)
+    logname = logname.split("/")[-1]
+    thermo = {
+        "Step": [],
+        "TotEng": [],
+        "KinEng": [],
+        "Temp": [],
+        "PotEng": [],
+        "E_bond": [],
+        "E_angle": [],
+        "E_dihed": [],
+        "E_impro": [],
+        "E_vdwl": [],
+        "E_coul": [],
+        "E_long": [],
+        "Press": []
+    }
+    with open(logpath, 'r') as logfile:
+        lines = logfile.readlines()
+        for idx, line in enumerate(lines):
+            if line.startswith("---------------- Step"):
+                words = line.split()
+                thermo["Step"].append(int(words[2]))  # Step
+                next_line = lines[idx+1]
+                # the "els .. break" statement ensures all the 4 lines after
+                # this line belong to the same time step.
+                if next_line.startswith("TotEng"):
+                    words = next_line.split()
+                    thermo["TotEng"].append(float(words[2]))  # TotEng
+                    thermo["KinEng"].append(float(words[5]))  # KinEng
+                    thermo["Temp"].append(float(words[8]))  # Temp
+                else:
+                    break
+                next_line = lines[idx+2]
+                if next_line.startswith("PotEng"):
+                    words = next_line.split()
+                    thermo["PotEng"].append(float(words[2]))  # PotEng
+                    thermo["E_bond"].append(float(words[5]))  # E_bond
+                    thermo["E_angle"].append(float(words[8]))  # E_angle
+                else:
+                    break
+                next_line = lines[idx+3]
+                if next_line.startswith("E_dihed"):
+                    words = next_line.split()
+                    thermo["E_dihed"].append(float(words[2]))  # E_coul
+                    thermo["E_impro"].append(float(words[5]))  # E_impro
+                    thermo["E_vdwl"].append(float(words[8]))  # E_vdwl
+                else:
+                    break
+                next_line = lines[idx+4]
+                if next_line.startswith("E_coul"):
+                    words = next_line.split()
+                    thermo["E_coul"].append(float(words[2]))  # E_coul
+                    thermo["E_long"].append(float(words[5]))  # E_long
+                    thermo["Press"].append(float(words[8]))  # Press
+                else:
+                    break
+    thermo = pd.DataFrame.from_dict(thermo)
+    thermo.drop_duplicates(inplace=True)
+    thermo.reset_index(inplace=True, drop=True)
+    if save_to is not None:
+        thermo.to_csv(logname + '-thermo.csv', index=False)
+    return thermo
+
+
+def thermo_one_and_custom(
+    logpath: str,
+    save_to: str = None
+) -> pd.DataFrame:
+    """parses a LAMMPS `log` file written with "one" or "custom" thermo styles
+    to extractthe thermodynamic data about a simulation.
+
+    The thermodyanmic information can be related to multiple "run" commands in
+    a LAMMPS input file.
+
+    Parameters
+    ----------
+    logpath: str
+        Path to a log file
+    save_to : str, default None
+        Absolute/relative path of a directory to which outputs are saved.
+
+    Return
+    ------
+    thermo: pd.DataFrame
+        A dataframe in which the columns are the various thermodynamic
+        quantities of the "one" thermo style or the custom thermodynamic
+        quanitites of the "custom" thermo style.
+    """
+    logname, _ = os.path.splitext(logpath)
+    logname = logname.split("/")[-1]
+    thermo = {}
+    with open(logpath, 'r') as logfile:
+        line = logfile.readline()
+        loop_counter = 1  # counts the # of runs/loops in a log
+        while(line):
+            if line.startswith("Step"):
+                if loop_counter == 1:
+                    headers = [word.strip() for word in line.split()]
+                    thermo = {header: [] for header in headers}
+                loop_counter += 1
                 line = logfile.readline()
+                while(line):
+                    if line.startswith("Loop time of "):
+                        break
+                    try:
+                        words = [float(i) for i in line.split()]
+                        for key, value in zip(thermo.keys(), words):
+                            if key == 'Step':
+                                thermo[key].append(int(value))  # Step
+                            else:
+                                thermo[key].append(value)
+                    except ValueError or IndexError:
+                        pass
+                    line = logfile.readline()
+            else:
+                line = logfile.readline()
+    thermo = pd.DataFrame.from_dict(thermo)
+    thermo.drop_duplicates(inplace=True)
+    if save_to is not None:
+        thermo.to_csv(logname + '-thermo.csv', index=False)
+    return thermo
+
+
+def thermo_one(
+    logpath: str,
+    save_to: str = None
+) -> pd.DataFrame:
+    """parses a LAMMPS `log` file written with "one" or "custom" thermo styles
+    to extractthe thermodynamic data about a simulation.
+
+    The thermodyanmic information can be related to multiple "run" commands in
+    a LAMMPS input file.
+
+    Parameters
+    ----------
+    logpath: str
+        Path to a log file
+    save_to : str, default None
+        Absolute/relative path of a directory to which outputs are saved.
+
+    Return
+    ------
+    thermo: pd.DataFrame
+        A dataframe in which the columns are the various thermodynamic
+        quantities of the "one" thermo style.
+    """
+    logfile, _ = os.path.splitext(logpath)
+    logfile = logfile.split("/")[-1]
+    thermo = {
+        "Step": [],
+        "Temp": [],
+        "E_pair": [],
+        "E_mol": [],
+        "TotEng": [],
+        "Press": []
+    }
+    with open(logpath, 'r') as logfile:
+        line = logfile.readline()
+        while(line):
+            if line.startswith("Step Temp E_pair E_mol TotEng Press"):
+                line = logfile.readline()
+                while(line):
+                    if line.startswith("Loop time of "):
+                        break
+                    try:
+                        words = [float(i) for i in line.strip().split()]
+                        thermo["Step"].append(int(words[0]))  # Step
+                        thermo["Temp"].append(float(words[1]))  # Temp
+                        thermo["E_pair"].append(float(words[2]))  # E_pair
+                        thermo["E_mol"].append(float(words[3]))  # E_mol
+                        thermo["TotEng"].append(float(words[4]))  # TotEng
+                        thermo["Press"].append(float(words[5]))  # Press
+                    except ValueError:
+                        print("Some text has snuck into the thermo output,")
+                        print("this text is ignored.")
+                        pass
+                    line = logfile.readline()
+            else:
+                line = logfile.readline()
+    thermo = pd.DataFrame.from_dict(thermo)
+    thermo.drop_duplicates(inplace=True)
+    if save_to is not None:
+        thermo.to_csv(logfile + '-thermo.csv', index=False)
+    return thermo
 
 
 def stamps_report_with_measures(
