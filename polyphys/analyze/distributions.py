@@ -362,10 +362,9 @@ class Distribution(object):
             geomteries_string = (
                 "'" + "', '".join(self._directions.keys()) + "'"
                 )
-            raise ValueError(f"'{geometry}' "
-                             "is not a valid geometry for the simulation box.
-                                 Please select one of "
-                             f"{geomteries_string} geometries.")
+            raise ValueError(
+                f"'{geometry}' is not a valid geometry for the simulation box."
+                f" Please select one of {geomteries_string} geometries.")
         if direction in self._directions[self.geometry]:
             self.direction = direction
         else:
@@ -379,8 +378,7 @@ class Distribution(object):
         self.hist_info = hist_info
         self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
         self.normalized = normalized
-        self.short_name_rho =:wq
-        
+        self.short_name_rho = \
             self._fullnames[self.geometry][self.direction]+'Rho'
         self.short_name_phi = \
             self._fullnames[self.geometry][self.direction]+'Phis'
@@ -850,12 +848,11 @@ def entropic_energy(histo_collections, beta=1.0):
     beta: k_B*T is the inverse of the thermal energy.
 
     return:
-    the dimensionlessfree energy potential of the end-to-end distance 
+    the dimensionlessfree energy potential of the end-to-end distance
     -beta * Ln(P(r)*4pi*r^2) = -beta * Ln(histo_collections) where
     beta=k_BT is set 1.0.
     """
-    histo_collections = histo_collections / np.sum(histo_collections) 
-        # normalization
+    histo_collections = histo_collections / np.sum(histo_collections)
     free_energy = -1.0 * (
         np.log(histo_collections) - np.log(np.sum(histo_collections))) / beta
     return free_energy
@@ -890,8 +887,7 @@ def looping_p(histo_collections, bin_edges, Rmax, Rmin):
     Returns:
     The probability of looping.
     """
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2 
-        # the centers of the bins being used for plotting
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     histo_collections = np.multiply(
         histo_collections, (bin_edges[1:] - bin_edges[:-1]))
     histo_collections = histo_collections / np.sum(histo_collections)
