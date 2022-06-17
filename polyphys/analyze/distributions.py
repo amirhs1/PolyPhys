@@ -1,13 +1,13 @@
 """
-A sub-module to calculate various 1D spatial distributions of finite (not \
-point-like) particles (i.e. beads) in spherical, cylindrical, cartesian, or \
+A sub-module to calculate various 1D spatial distributions of finite (not
+point-like) particles (i.e. beads) in spherical, cylindrical, cartesian, or
 polar coordinate system in a box, slit, or biaxial geomtery.
 
-Finite particle can be hard or soft. The volume of a hard particle is set by \
-its geometrical shape. However, the volume of a soft particle is given by the \
-probability distribution function (PDF) of its mass around its center of mass \
-(COM) or its center of geoemetry (COG). Such a PDF can have some connection \
-with the soft potential defined for the interaction of this particle with \
+Finite particle can be hard or soft. The volume of a hard particle is set by
+its geometrical shape. However, the volume of a soft particle is given by the
+probability distribution function (PDF) of its mass around its center of mass
+(COM) or its center of geoemetry (COG). Such a PDF can have some connection
+with the soft potential defined for the interaction of this particle with
 other particles in a system.
 
 Currently, tehe following distribution are implemeted:
@@ -46,7 +46,7 @@ def spherical_segment(
 
     Notes
     -----
-    1. a and b can be negative or postive, depending on the position \
+    1. a and b can be negative or postive, depending on the position
     with respect to the center of sphere in the range [-r,r].
     2. When a=r or b=r, we have a spherical cap.
 
@@ -81,9 +81,9 @@ def sphere_sphere_intersection(
         d: float
 ) -> float:
     """
-    computes the volume of intersection of two spheres. The sphere with \
-    redius `r1` has distance `d`from the other one with radius `r2` \
-    along axis x, so the vector form of distance is indeed (d,0,0) \
+    computes the volume of intersection of two spheres. The sphere with
+    redius `r1` has distance `d`from the other one with radius `r2`
+    along axis x, so the vector form of distance is indeed (d,0,0)
     in cartesian coordinate system.
 
     Parameters
@@ -135,28 +135,28 @@ class Distribution(object):
     geometry: str = 'biaxial'
     direction: str = 'longitudinal'
     normalized: bool = False
-    """computes the local number density of any type of particle and the \
-    local volume fraction of bead (spheres) in 1D (cylinder with the \
-    periodic boundary condition (PBC) along the longitudinal axis (z axis)), \
-    2D (slit with the PBC along the x and y axes (radial direction)), and 3D \
+    """computes the local number density of any type of particle and the
+    local volume fraction of bead (spheres) in 1D (cylinder with the
+    periodic boundary condition (PBC) along the longitudinal axis (z axis)),
+    2D (slit with the PBC along the x and y axes (radial direction)), and 3D
     (cube with the PBC along x, y, and z axes (spheric)).
 
     Parameters:
-    histogram (pandas dataframe): a dataframe of an ensemble or \
-    ensemble-averaged or group simulation in which the index is the bin \
-    centers, the names of the columns are the name of simulations in an \
-    ensemble or the name of ensemble-averaged group or the name of \
-    simulation group, the columns are the frequenies of partilces of the \
-    type of interest (see radius_type) in each of the bins, and the number \
-    of columns is the number of simulations in a ensemble, one in an \
-    ensemble-averaged group, or the number of ensmebles (=the number of \
+    histogram (pandas dataframe): a dataframe of an ensemble or
+    ensemble-averaged or group simulation in which the index is the bin
+    centers, the names of the columns are the name of simulations in an
+    ensemble or the name of ensemble-averaged group or the name of
+    simulation group, the columns are the frequenies of partilces of the
+    type of interest (see radius_type) in each of the bins, and the number
+    of columns is the number of simulations in a ensemble, one in an
+    ensemble-averaged group, or the number of ensmebles (=the number of
     ensemble-averaged) groups an a simulations group.
-    properties (pandas dataframe): the properties of each simulation/ \
-    ensemble-averaged simulation/ensemble-averaged simulations of the \
-    simualtions/ensemble-averaged simulation/ensemble-averaged simulations \
+    properties (pandas dataframe): the properties of each simulation/
+    ensemble-averaged simulation/ensemble-averaged simulations of the
+    simualtions/ensemble-averaged simulation/ensemble-averaged simulations
     in a ensemble/ensemble-averged group/simulation group.
-    raduis_type (str): name of the column in the properties in which the size \
-    (or diameter) of the particles are tabled. The particle type is the same \
+    raduis_type (str): name of the column in the properties in which the size
+    (or diameter) of the particles are tabled. The particle type is the same
     for all the particles that their frequencies are counted in histogram.
     geometry (str): the shape of the simulation box
     direction (str): the direction of interest in the geometry of interest.
@@ -180,112 +180,112 @@ class Distribution(object):
     self.short_name_phi:
         the short name of volume fraction distribution
     self.r_bead:
-        the radius of the particles that their type is set by \
+        the radius of the particles that their type is set by
         raduis_type
     self.bin_size (float):
         the size of the equaly-sized bins.
-    self.edges (numpy array): the edges of the bins of the same size. The \
+    self.edges (numpy array): the edges of the bins of the same size. The
         range is [A-0.5*bin_size, B+0.5*bin_size]
     self.rho (pandas dataframe):
-        the dataframe of the local number \
-        densities which has the same index, number of columns and names of \
-        columns as self.histogram. However, the column values are the local \
+        the dataframe of the local number
+        densities which has the same index, number of columns and names of
+        columns as self.histogram. However, the column values are the local
         number densities.
     self.phi (pandas dataframe):
-        the dataframe of the local volume \
-        fractions which has the same index, number of columns and names of \
-        columns as self.histogram. However, the column values are the local \
+        the dataframe of the local volume
+        fractions which has the same index, number of columns and names of
+        columns as self.histogram. However, the column values are the local
         volume fractions.
     self.bounds: numpy.ndarray
-        Indices of the lower and upper boundaries of a bead that resides at \
+        Indices of the lower and upper boundaries of a bead that resides at
         each of centers in `self.center`.
     self.volume_shares: A two-fold nested dict
-        A nested dictionary in which keys are indices of `self.centers` \
-        (the positions of a bead's center) and the values are themselves \
-        dictionaries. In each of this dictionary, each key is one of the \
-        indices of `self.centers` within the bounds (inclusivily, i.e. \
-        [A,B] includes A and B as well given by `self.bounds` and the \
-        value of that key is the share of the bin of that center from the \
-        volume of the bead. The sum of all the values in one inner \
+        A nested dictionary in which keys are indices of `self.centers`
+        (the positions of a bead's center) and the values are themselves
+        dictionaries. In each of this dictionary, each key is one of the
+        indices of `self.centers` within the bounds (inclusivily, i.e.
+        [A,B] includes A and B as well given by `self.bounds` and the
+        value of that key is the share of the bin of that center from the
+        volume of the bead. The sum of all the values in one inner
         dictionary is equal to the volume of the bead.
     self._args: dict
         The arugments of eahc of the nine _integrands.
 
     Notes
     -----
-    To calculate the distribution of local volume fraction, we have to \
-    consider how the volume of a bead (particle) intersect with the bins \
-    defined in a given direction in a given coordinate system. This \
+    To calculate the distribution of local volume fraction, we have to
+    consider how the volume of a bead (particle) intersect with the bins
+    defined in a given direction in a given coordinate system. This
     problem has two steps:
-        1. Finding the bins (more precisely, the edges) by which the boundary \
-        (or volume) of a particle intersects. In practice, the lower and \
+        1. Finding the bins (more precisely, the edges) by which the boundary
+        (or volume) of a particle intersects. In practice, the lower and
         upper limits of these edges are found.
         2. Calculating the share of each bin from the volume of a bead.
 
-    While COGs or COMs of beads can be anywhere in thesystem, it is assumed \
-    that the COGs or COMs of all the beads reside in a bin are the center of \
-    that bin. While this assumption produces some error in the local volume \
+    While COGs or COMs of beads can be anywhere in thesystem, it is assumed
+    that the COGs or COMs of all the beads reside in a bin are the center of
+    that bin. While this assumption produces some error in the local volume
     distirbution, it significantly reduces the computaional cost. Moreover, the
-    error decrease by increase the number of bins at a fixed volume of the \
-    systen. By this assumption, all the beads in a bin are equivalent and it \
-    is sufficent to do the two above steps only for one bead in a given \
+    error decrease by increase the number of bins at a fixed volume of the
+    systen. By this assumption, all the beads in a bin are equivalent and it
+    is sufficent to do the two above steps only for one bead in a given
     direction in a given geomtery.
 
-    To find the upper and lower bounds on edges, the center of a bead with \
-    radius `self.r_bead` is placed at one of `self.centers`. Using the \
-    above assumption, for a given `self.r_bead`, a pair of lower and upper \
-    bounds (`self.bounds`) can be found for each center. It is assumed \
-    that a lower or upper bound is the leftmost, rightmost, innermost, or \
+    To find the upper and lower bounds on edges, the center of a bead with
+    radius `self.r_bead` is placed at one of `self.centers`. Using the
+    above assumption, for a given `self.r_bead`, a pair of lower and upper
+    bounds (`self.bounds`) can be found for each center. It is assumed
+    that a lower or upper bound is the leftmost, rightmost, innermost, or
     outermost edges smaller than the boundary of bead in a given direction.
 
     There are four bin schemes:
 
         'concenteric':
-            bins, edges, or centers are non-negative strictly increasing \
-            arrays, creating concentirc circles, spherical shells, or \
-            cylindircal shells along the radial direction in the polar, \
+            bins, edges, or centers are non-negative strictly increasing
+            arrays, creating concentirc circles, spherical shells, or
+            cylindircal shells along the radial direction in the polar,
             spherical, or cylindrical coordinate system respectively.
 
         'consecutive':
-            bins, edges, or centers are strictly increasing arrays, \
-            creating consecutive slits with rectangular or circular cross \
-            sections along the different directions in the cartesian \
-            coordinate system or the longitudinal direction in the \
+            bins, edges, or centers are strictly increasing arrays,
+            creating consecutive slits with rectangular or circular cross
+            sections along the different directions in the cartesian
+            coordinate system or the longitudinal direction in the
             cylindrical coordinate system respectively.
 
         'periodic':
-            bins, edges, or centers are strictly increasing but bounded \
-            by the period of the direction of interest, thus creating \
-            periodic circular (or disk) sectors or spherical wedges along \
-            the polar direction with period [0,2*Pi] in the polar and \
-            cylindircal coordinate systems or the spherical coordiante \
+            bins, edges, or centers are strictly increasing but bounded
+            by the period of the direction of interest, thus creating
+            periodic circular (or disk) sectors or spherical wedges along
+            the polar direction with period [0,2*Pi] in the polar and
+            cylindircal coordinate systems or the spherical coordiante
             system respectively, or generating concentric.
 
         'neighboring:
-            bins, edges, or centers are strictly increasing but bounded \
-            by the period of the direction of interest, thus generating \
-            sectors created by two neighboring azimuth (conic) planes \
+            bins, edges, or centers are strictly increasing but bounded
+            by the period of the direction of interest, thus generating
+            sectors created by two neighboring azimuth (conic) planes
             along the azimuth direction in the spherical coordiante system.
 
     For each of this bin type, an algorithm is defined below to find the
     lower and upper bounds.
 
-    Finding bond edges along a given direction is a 1D problem. Moreover, \
-    the following assumtions about positions of beads (particles), bin \
+    Finding bond edges along a given direction is a 1D problem. Moreover,
+    the following assumtions about positions of beads (particles), bin
     centers and edges are used in this class:
-    1. If a bead is in a bin, its position is assumed to be the center \
+    1. If a bead is in a bin, its position is assumed to be the center
         of that bin, not its actual position.
     2. len(self.edges) = len(self.centers) + 1
     3. For a bin, we have: left_edge <= center < right_edge.
     4. There is only one center between two consecutive edges.
-    5. The edge and center arrays are strictly increasing funcions of \
+    5. The edge and center arrays are strictly increasing funcions of
         their indices.
-    6. The bins are equally spaced, son bin_size is the same between any \
+    6. The bins are equally spaced, son bin_size is the same between any
         two consecutive edges.
 
-    To coserve the total volume of the beads, the periodic boundary condition \
-    (PBS) is imposed if required (For instance, the z direction in the \
-    biaxial geometry). The PBC is impose in both step: finding the bounds \
+    To coserve the total volume of the beads, the periodic boundary condition
+    (PBS) is imposed if required (For instance, the z direction in the
+    biaxial geometry). The PBC is impose in both step: finding the bounds
     and calculating the volume shares.
     """
     _directions = {
@@ -295,8 +295,8 @@ class Distribution(object):
     }
     _integrands = {
         'box': {
-            'r': lambda r, const: 4 * const * np.pi * r**2, \
-            # constant is redundant and merely defined to consistantly use \
+            'r': lambda r, const: 4 * const * np.pi * r**2,
+            # constant is redundant and merely defined to consistantly use
             # of 'args' parameter of "scipi.integral.quad" among integrands.
             'theta': lambda theta, dcyl: np.pi * dcyl**3 * np.sin(theta) / 12,
             'phi': lambda theta, dcyl: dcyl**3 / 12
@@ -363,7 +363,7 @@ class Distribution(object):
                 "'" + "', '".join(self._directions.keys()) + "'"
                 )
             raise ValueError(f"'{geometry}' "
-                             "is not a valid geometry for the simulation box. \
+                             "is not a valid geometry for the simulation box.
                                  Please select one of "
                              f"{geomteries_string} geometries.")
         if direction in self._directions[self.geometry]:
@@ -379,7 +379,8 @@ class Distribution(object):
         self.hist_info = hist_info
         self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
         self.normalized = normalized
-        self.short_name_rho = \
+        self.short_name_rho =:wq
+        
             self._fullnames[self.geometry][self.direction]+'Rho'
         self.short_name_phi = \
             self._fullnames[self.geometry][self.direction]+'Phis'
@@ -697,16 +698,16 @@ class Distribution(object):
 
         Parameters
         ----------
-        col_name: the name of column for which the number density is \
+        col_name: the name of column for which the number density is
         calculated.
 
         Notes
         -----
-        The number density in each simulation is an average over the number \
-        densities collected every X time steps, so there are N=L/X \
-        measurements of the local number desnity in each simulation where L \
-        is total number of time steps in the simulation; for instance, in \
-        the cylindrical sum rule project X=5000 and the total number of \
+        The number density in each simulation is an average over the number
+        densities collected every X time steps, so there are N=L/X
+        measurements of the local number desnity in each simulation where L
+        is total number of time steps in the simulation; for instance, in
+        the cylindrical sum rule project X=5000 and the total number of
         time steps is 7*10^7, so N=14001.
         """
         integrand = self._integrands[self.geometry][self.direction]
@@ -722,15 +723,15 @@ class Distribution(object):
 
     def _volume_fraction(self):
         """
-        computes the local volume fraction along the direction of interest \
+        computes the local volume fraction along the direction of interest
         in the given goemetry.
 
         Notes
         -----
-        It is assumed that all the particles have the same shape. The local \
-        volume fraction is normalized to give the integral of the local \
-        volume fraction  along the direction of interest in the region of \
-        interest. (See the explnation for the `_number_density` method and \
+        It is assumed that all the particles have the same shape. The local
+        volume fraction is normalized to give the integral of the local
+        volume fraction  along the direction of interest in the region of
+        interest. (See the explnation for the `_number_density` method and
         `Distribution` class).
         """
         n_centers = len(self.rho)
@@ -751,53 +752,53 @@ def distributions_generator(
     normalized: bool = False
 ) -> Tuple[Dict, Dict]:
     """
-    generates the local number density (rho) and volume fraction (phi) \
-    of the bead_name woth bead_type column name in properties \
+    generates the local number density (rho) and volume fraction (phi)
+    of the bead_name woth bead_type column name in properties
     dataframe along the direction of interest in the geometry of interest.
 
     Caution:
-    For the sumrule problem in the cylindrical goemetry, a simulation group \
-    is a collection of simulations that all have the same values for the \
-    number of monomers, the diameter of cylinder, and the size of crowders \
-    (assuming size of monomers is 1). An ensemble (usually with M number of \
-    simulations) is a collection of themodynamically-equivalent simulations \
-    that all have the same values for the number of monomers, the diameter \
-    of cylinder, the size of crowders, and the same number of crowders \
-    (assuming size of monomers is 1).  In standard statitatical mechanical \
-    approach, an ensmeble is equivalent a simulation, but here we used it \
+    For the sumrule problem in the cylindrical goemetry, a simulation group
+    is a collection of simulations that all have the same values for the
+    number of monomers, the diameter of cylinder, and the size of crowders
+    (assuming size of monomers is 1). An ensemble (usually with M number of
+    simulations) is a collection of themodynamically-equivalent simulations
+    that all have the same values for the number of monomers, the diameter
+    of cylinder, the size of crowders, and the same number of crowders
+    (assuming size of monomers is 1).  In standard statitatical mechanical
+    approach, an ensmeble is equivalent a simulation, but here we used it
     to reffer to all the thermodynamically-equivalent simulations.
-    In an ensemble-average simulation group, each ensemble is replaced with \
-    the average of all its simulation, so if we have M simulation in an \
-    ensemble and P ensembles in a group, then we have M*P simulations in a \
-    simulation group and P ensemble-averaged simulations in a \
+    In an ensemble-average simulation group, each ensemble is replaced with
+    the average of all its simulation, so if we have M simulation in an
+    ensemble and P ensembles in a group, then we have M*P simulations in a
+    simulation group and P ensemble-averaged simulations in a
     ensemble-averaged simulation group.
 
     Parameters:
-    histogram (dict): a dictionary of an ensemble or ensemble-averaged or \
+    histogram (dict): a dictionary of an ensemble or ensemble-averaged or
     group simulation in which the keys are the name of ensembles/\
-    ensemble-averaged groups/groups and the keys of the histogram \
-    dataframes. The names of the columns in each dataframe are the name of \
-    simulations in an ensemble or the name of ensemble-averaged group or \
-    the name of simulation group, the columns are the frequenies of \
-    partilces of the type of interest (see radius_type) in each of the \
-    bins, and the number of columns is the number of simulations in a \
-    ensemble, one in an ensemble-averaged group, or the number of \
-    ensmebles (=the number of ensemble-averaged) groups an a simulations \
+    ensemble-averaged groups/groups and the keys of the histogram
+    dataframes. The names of the columns in each dataframe are the name of
+    simulations in an ensemble or the name of ensemble-averaged group or
+    the name of simulation group, the columns are the frequenies of
+    partilces of the type of interest (see radius_type) in each of the
+    bins, and the number of columns is the number of simulations in a
+    ensemble, one in an ensemble-averaged group, or the number of
+    ensmebles (=the number of ensemble-averaged) groups an a simulations
     group.
     properties (pandas dataframe): the properties of each simulation/\
-    ensemble-averaged simulation/ensemble-averaged simulations of the \
-    simualtions/ensemble-averaged simulation/ensemble-averaged simulations \
+    ensemble-averaged simulation/ensemble-averaged simulations of the
+    simualtions/ensemble-averaged simulation/ensemble-averaged simulations
     in a ensemble/ensemble-averged group/simulation group.
-    raduis_type (str): the name of the column in the properties in which \
-    the size (or diameter) of the particles are tabled. The particle type \
-    is the same for all the particles that their frequencies are counted \
+    raduis_type (str): the name of the column in the properties in which
+    the size (or diameter) of the particles are tabled. The particle type
+    is the same for all the particles that their frequencies are counted
     in histogram.
     geometry (str): the shape of the simulation box
     direction (str): the direction of interest in the geometry of interest.
     bead_name: the name of paticle type.
     save_to: path to which the output saved.
     normalized: whether normalized the distributions or not.
-    segments: wether a simulation file is created from a bunch of segments \
+    segments: wether a simulation file is created from a bunch of segments
     or not -- This is the case for 'all' type files.
     """
     densities = {}
@@ -838,22 +839,22 @@ def distributions_generator(
 
 def entropic_energy(histo_collections, beta=1.0):
     """
-    this is the effective free energy potential as the function of the \
-    end-to-end distance. Here, we use the end-to-end distance as the \
+    this is the effective free energy potential as the function of the
+    end-to-end distance. Here, we use the end-to-end distance as the
     action parameters and write a Langevin equation for that.
 
     parameters:
-    histo_collections: radial distribution function or the probability \
-    distribution function of *the magnitude of the end-to-end vector * \
+    histo_collections: radial distribution function or the probability
+    distribution function of *the magnitude of the end-to-end vector *
     (or *the end-to-end distance*) between R and R+dR.
     beta: k_B*T is the inverse of the thermal energy.
 
     return:
-    the dimensionlessfree energy potential of the end-to-end distance  \
-    -beta * Ln(P(r)*4pi*r^2) = -beta * Ln(histo_collections) where \
+    the dimensionlessfree energy potential of the end-to-end distance 
+    -beta * Ln(P(r)*4pi*r^2) = -beta * Ln(histo_collections) where
     beta=k_BT is set 1.0.
     """
-    histo_collections = histo_collections / np.sum(histo_collections)  \
+    histo_collections = histo_collections / np.sum(histo_collections) 
         # normalization
     free_energy = -1.0 * (
         np.log(histo_collections) - np.log(np.sum(histo_collections))) / beta
@@ -861,35 +862,35 @@ def entropic_energy(histo_collections, beta=1.0):
 
 
 def looping_p(histo_collections, bin_edges, Rmax, Rmin):
-    """looping entropy P_L is defined as the integral from Rmin to Rmax over \
-    P(R)*4pi*R^2*dR; since P(R)*4pi*R^2 is equivalent to hitso_collection[i] \
-    for the bin between bin_edges[i] and bin_edges[i+1] we have \
-    P_L = integral from Rmin to Rmax over P(R)*4pi*R^2*dR ~ sum from Rmin \
-    to Rmax over P(bin_center_i)*4pi*bin_centers_i^2*(bin_edges_i+1 - \
-    bin_edges_i)=sum from Rmin to Rmax over hitso_collection_i*(bin_edges_i+1 \
+    """looping entropy P_L is defined as the integral from Rmin to Rmax over
+    P(R)*4pi*R^2*dR; since P(R)*4pi*R^2 is equivalent to hitso_collection[i]
+    for the bin between bin_edges[i] and bin_edges[i+1] we have
+    P_L = integral from Rmin to Rmax over P(R)*4pi*R^2*dR ~ sum from Rmin
+    to Rmax over P(bin_center_i)*4pi*bin_centers_i^2*(bin_edges_i+1 -
+    bin_edges_i)=sum from Rmin to Rmax over hitso_collection_i*(bin_edges_i+1
     - bin_edges_i)
 
-    Since the sizes of the bins are equal ((bin_edges_i+1 - bin_edges_i) \
-    =constant), the effect of (bin_edges_i+1 - bin_edges_i) is cancell out \
+    Since the sizes of the bins are equal ((bin_edges_i+1 - bin_edges_i)
+    =constant), the effect of (bin_edges_i+1 - bin_edges_i) is cancell out
     upon normalization.
 
     Inputs:
-    histo_collections: a numpy array of the histograms of the Flory radius \
-    or the end-to-end distance during the whole run (the total number of \
+    histo_collections: a numpy array of the histograms of the Flory radius
+    or the end-to-end distance during the whole run (the total number of
     data points is equal to the total number of time steps.)
     bin_edges: the edges of the bins used in histograming.
-    Rmax: the minimum center-to-center distance the two end-of-chain \
-    monomers can have; Since they have the same size, this is usually equal \
+    Rmax: the minimum center-to-center distance the two end-of-chain
+    monomers can have; Since they have the same size, this is usually equal
     to their diameter (or size).
-    Rmin: this is the size of the crowders that can reside between two \
-    monomers. When the center-to-center distance between two monomers is \
-    less than Rmax+Rmin, no crowders can be between two monomers and the \
+    Rmin: this is the size of the crowders that can reside between two
+    monomers. When the center-to-center distance between two monomers is
+    less than Rmax+Rmin, no crowders can be between two monomers and the
     depletion force is non-zero.
 
     Returns:
     The probability of looping.
     """
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2  \
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2 
         # the centers of the bins being used for plotting
     histo_collections = np.multiply(
         histo_collections, (bin_edges[1:] - bin_edges[:-1]))
