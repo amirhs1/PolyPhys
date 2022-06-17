@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script copies the dump bug/momomer file from a run folder to the simulation folder and rename it to the run folder name
-pname=$(pwd | rev | cut -d / -f 1 | rev) #parent name
+pname=$(pwd | rev | cut -d / -f 1 | rev) # pattern of the parent name: D#al#nl#ns#ac#-SIMTYPE
 name=$( echo "$pname" | cut -d - -f 1)
 simtype=$( echo "$pname" | cut -d - -f 2 | cut -d _ -f 1) # whether the simulations are "all" or "cont"; "all" means that the first time simulations are run; "cont" means this is the 2nd time they are run since the system has not yet reached equilibrium.
 if [ "$simtype" = "all" ]; then
