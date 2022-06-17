@@ -84,7 +84,7 @@ class SumRule(object):
         Name of a the file referred to by `name` if `name` is a filepath,
         otherwise the `name` itself.
     lineage_name: str,
-        The unique name of type extracted from self.fullname
+        The unique name of the type extracted from self.fullname
     dmon: float, default 1.0
         Size (diameter) of a monomer
     nmon: int, np.nan

@@ -11,8 +11,8 @@ def log_stat(
     logpath: str,
     save_to: str = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """parses a LAMMPS `log` file to extract the performance information about
-    a simulation.
+    """parses a LAMMPS log file loacted at the `logpath` to extract the
+    performance information about a simulation in a given project.
 
     Parameters
     ----------
@@ -122,7 +122,9 @@ def log_stat(
                 # total wall time:
                 wall_time_stat['wall_time'].append(words[-1])
         run_stat = pd.DataFrame.from_dict(run_stat)
+        run_stat['filename'] = logname
         wall_time_stat = pd.DataFrame.from_dict(wall_time_stat)
+        wall_time_stat['filename'] = logname
         if save_to is not None:
             run_stat.to_csv(logname + '-runStat.csv', index=False)
             wall_time_stat.to_csv(logname + "-runWallTime.csv", index=False)
@@ -212,6 +214,7 @@ def thermo_multi(
     thermo = pd.DataFrame.from_dict(thermo)
     thermo.drop_duplicates(inplace=True)
     thermo.reset_index(inplace=True, drop=True)
+    thermo['filename'] = logname
     if save_to is not None:
         thermo.to_csv(logname + '-thermo.csv', index=False)
     return thermo
@@ -264,13 +267,16 @@ def thermo_one_and_custom(
                                 thermo[key].append(int(value))  # Step
                             else:
                                 thermo[key].append(value)
-                    except ValueError or IndexError:
+                    except ValueError:
+                        # Some text has snuck into the thermo output,
+                        # this text is ignored.
                         pass
                     line = logfile.readline()
             else:
                 line = logfile.readline()
     thermo = pd.DataFrame.from_dict(thermo)
     thermo.drop_duplicates(inplace=True)
+    thermo['filename'] = logname
     if save_to is not None:
         thermo.to_csv(logname + '-thermo.csv', index=False)
     return thermo
@@ -299,8 +305,8 @@ def thermo_one(
         A dataframe in which the columns are the various thermodynamic
         quantities of the "one" thermo style.
     """
-    logfile, _ = os.path.splitext(logpath)
-    logfile = logfile.split("/")[-1]
+    logname, _ = os.path.splitext(logpath)
+    logname = logname.split("/")[-1]
     thermo = {
         "Step": [],
         "Temp": [],
@@ -326,14 +332,15 @@ def thermo_one(
                         thermo["TotEng"].append(float(words[4]))  # TotEng
                         thermo["Press"].append(float(words[5]))  # Press
                     except ValueError:
-                        print("Some text has snuck into the thermo output,")
-                        print("this text is ignored.")
+                        # Some text has snuck into the thermo output,
+                        # this text is ignored.
                         pass
                     line = logfile.readline()
             else:
                 line = logfile.readline()
     thermo = pd.DataFrame.from_dict(thermo)
     thermo.drop_duplicates(inplace=True)
+    thermo['filename'] = logname
     if save_to is not None:
         thermo.to_csv(logfile + '-thermo.csv', index=False)
     return thermo
