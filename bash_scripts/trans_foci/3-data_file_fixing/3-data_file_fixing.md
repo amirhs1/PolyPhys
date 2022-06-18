@@ -1,8 +1,8 @@
 # Setting up the *PipeLine* packages
 
-1. Go to the **___-trjs** directory with this pattern: **D#al#nl#ns#ac#-trjs** or **D#al#nl#ns#ac#phic#-___**
+1. Go to the **___-trjs** directory with this pattern: **ns#nl#al#D#ac#-trjs** or **ns#nl#al#D#ac#phic#-___**
 2. Check and (if needed) fix **....all.data** files via running **fix_PairIJ_all_data_v#.sh**. This bash script fixes some lines in the **all** data (topology) files, so they can be read by **MDAnalysis** package. This step can be dropped if the bug/issue in **MDAnalysis** is resolved.
-**Caution**: the *fix_PairIJ_all_data_files_v#.sh* assumes the pattern of the parent directory is **D#al#nl#ns#ac#-trjs** and the pair style is **lj-cut**.
+**Caution**: the *fix_PairIJ_all_data_files_v#.sh* assumes the pattern of the parent directory is **ns#nl#al#D#ac#-trjs** and the pair style is **lj-cut**.
 3. copy **___nc0___ens1.all.data** to **fake_nc0_all.data**. 
 **Caution**: Some templates are availble in this folder all of them starting **data_templete** but iti is better to use the origin ones from the simulations.
 4. Run the **fake_bug_data.sh** script to fake **N___.bug.data** for **bug trajectories**. Since we want to use the data file to extract the mass and topology information, such a faking is ok.
