@@ -1,6 +1,6 @@
 #!/bin/bash
 # fix the 'all' data files with coreecting the number of crowders.
-# pattern of the currentname (parent directory): D#al#nl#ns#ac#-trjs
+# pattern of the currentname (parent directory): ns#nl#al#D#ac#-trjs
 currentname=$(pwd | rev | cut -d / -f 1 | rev) #report name
 name=$( echo "${currentname}"| cut -d - -f 1)
 temp=$( echo "${name}" | grep -Eo '[a-zA-Z\-]+|[0-9\.]+')
