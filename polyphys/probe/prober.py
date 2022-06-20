@@ -1433,9 +1433,9 @@ def trans_fuci_bug(
             np.array([dir_contacts]),
             axis=0
         )
-        contacts = clusters.contact_matrix(dir_contacts)
         bonds_stat = clusters.count_bonds(dir_contacts)
         bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        contacts = clusters.contact_matrix(dir_contacts)
         clusters_stat = clusters.count_clusters(contacts)
         clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
     # Saving collectors to memory
@@ -1448,7 +1448,7 @@ def trans_fuci_bug(
     np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
     # -foci
     np.save(save_to + sim_name + '-distTFoci.npy', foci_t)
-    np.save(save_to + sim_name + '-directContactsTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-directContactsTFoci.npy', dir_contacts_t)
     np.save(save_to + sim_name + '-bondsTFoci.npy', bonds_t)
     np.save(save_to + sim_name + '-clustersTFoci.npy', clusters_t)
     # Simulation stamps:
