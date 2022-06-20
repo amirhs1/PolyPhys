@@ -168,7 +168,7 @@ def connectivity_matrix(dir_connectivites: np.ndarray) -> np.ndarray:
     return connectivites
 
 
-def direct_connectivites_from_sq_dists(
+def direct_connectivity_from_sq_dists(
     positions: np.ndarray,
     cutoff: float,
     pbc: Optional[dict] = None,
