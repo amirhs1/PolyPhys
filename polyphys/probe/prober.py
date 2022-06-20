@@ -3,7 +3,8 @@ import MDAnalysis as mda
 import numpy as np
 import pandas as pd
 import os
-from polyphys.manage.parser import SumRule
+from itertools import combinations
+from polyphys.manage.parser import SumRule, TransFoci
 from polyphys.manage.organizer import invalid_keyword
 
 
@@ -11,7 +12,7 @@ def log_stat(
     logpath: str,
     save_to: str = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """parses a LAMMPS log file loacted at the `logpath` to extract the
+    """Parses a LAMMPS log file loacted at the `logpath` to extract the
     performance information about a simulation in a given project.
 
     Parameters
@@ -135,7 +136,7 @@ def thermo_multi(
     logpath: str,
     save_to: str = None
 ) -> pd.DataFrame:
-    """parses a LAMMPS `log` file written with "multi" thermo style to extract
+    """Parses a LAMMPS `log` file written with "multi" thermo style to extract
     the thermodynamic data about a simulation.
 
     The thermodyanmic information can be related to multiple "run" commands in
@@ -224,7 +225,7 @@ def thermo_one_and_custom(
     logpath: str,
     save_to: str = None
 ) -> pd.DataFrame:
-    """parses a LAMMPS `log` file written with "one" or "custom" thermo styles
+    """Parses a LAMMPS `log` file written with "one" or "custom" thermo styles
     to extractthe thermodynamic data about a simulation.
 
     The thermodyanmic information can be related to multiple "run" commands in
@@ -286,7 +287,7 @@ def thermo_one(
     logpath: str,
     save_to: str = None
 ) -> pd.DataFrame:
-    """parses a LAMMPS `log` file written with "one" or "custom" thermo styles
+    """Parses a LAMMPS `log` file written with "one" or "custom" thermo styles
     to extractthe thermodynamic data about a simulation.
 
     The thermodyanmic information can be related to multiple "run" commands in
@@ -352,8 +353,7 @@ def stamps_report_with_measures(
     n_frames: int,
     measures: Dict[str, float],
 ) -> None:
-    """
-    writes a summary of stamps (properties and attributes) of a simulation
+    """Writes a summary of stamps (properties and attributes) of a simulation
     to file.
 
     `stamps_report` generates a dataset called `report_name` of the
@@ -396,8 +396,7 @@ def stamps_report_with_measures(
 
 
 def stamps_report(report_name, sim_info, n_frames):
-    """
-    writes a summary of stamps (properties and attributes) of a simulation
+    """Writes a summary of stamps (properties and attributes) of a simulation
     to file.
 
     `stamps_report` generates a dataset called `report_name` of the
@@ -433,8 +432,7 @@ def stamps_report(report_name, sim_info, n_frames):
 
 
 def simple_stats(property_name, array):
-    """
-    measures the mean, standard deviation, variance, and standard error
+    """Measures the mean, standard deviation, variance, and standard error
     of the mean (sem) for an array.
 
     Parameters
@@ -459,8 +457,7 @@ def simple_stats(property_name, array):
 
 
 def end_to_end(positions):
-    """
-    measures the end-to-end distance of a linear polymer, in the frame of
+    """Measures the end-to-end distance of a linear polymer, in the frame of
     reference located at the polymer's center of geometry.
 
     `positions` is sorted by atom id, so the end-to-end distance is simply
@@ -475,7 +472,7 @@ def end_to_end(positions):
 
     Return
     ------
-    edn_to_end: numpy array of float
+    end_to_end: numpy array of float
     """
     # calculation in the center of geometry of the atom group.
     positions = positions - np.mean(positions, axis=0)
@@ -484,8 +481,7 @@ def end_to_end(positions):
 
 
 def max_distance(positions):
-    """
-    measures the maximum distance in each of the three Cartesian direction,
+    """Measures the maximum distance in each of the three Cartesian direction,
     in the frame of reference located at the polymer's center of geometry.
 
     The maximum distance is computed by subtracting the max and min of all
@@ -514,8 +510,7 @@ def fsd(
     positions: np.ndarray,
     axis=2
 ) -> np.ndarray:
-    """
-    calculates the average size/diameter of a polymer confined in a
+    """Calculates the average size/diameter of a polymer confined in a
     cylindrical geometry based on the farthermost distance concept.
 
     fsd stands for Feret's statistical diameter: other names are the mean
@@ -550,8 +545,7 @@ def fsd(
 
 
 def bin_create(sim_name, edge_name, bin_size, lmin, lmax, save_to):
-    """
-    generates arrays of bins and histograms
+    """Generates arrays of bins and histograms
 
     Parameters
     ----------
@@ -591,8 +585,7 @@ def fixedsize_bins(
     bin_type: str = 'ordinary',
     save_to: Optional[str] = None,
 ) -> dict:
-    """
-    generates arrays of bins and histograms, ensuring that the `bin_size`
+    """Generates arrays of bins and histograms, ensuring that the `bin_size`
     guaranteed. To achieve this, it extend the `lmin` and `lmax` limits.
 
     To-do List
@@ -716,7 +709,7 @@ def fixedsize_bins(
     return results
 
 
-def probe_bug(
+def sum_rule_bug(
     topology: str,
     trajectory: str,
     geometry: str = 'biaxial',
@@ -724,8 +717,7 @@ def probe_bug(
     save_to: str = './',
     continuous: bool = False
 ) -> None:
-    """
-    runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
     Parameters
@@ -821,7 +813,7 @@ def probe_bug(
     print('done.')
 
 
-def probe_bug_with_flory_hist(
+def sum_rule_bug_flory_hist(
     topology: str,
     trajectory: str,
     geometry: str = 'biaxial',
@@ -829,8 +821,7 @@ def probe_bug_with_flory_hist(
     save_to: str = './',
     continuous: bool = False
 ) -> None:
-    """
-    runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
     Parameters
@@ -966,15 +957,14 @@ def probe_bug_with_flory_hist(
 
 
 # noinspection PyUnresolvedReferences
-def rmsd_bug(
+def sum_rule_bug_rmsd(
     topology: str,
     trajectory: str,
     geometry: str = 'biaxial',
     lineage: str = 'segment',
     save_to: str = './'
 ) -> None:
-    """
-    computes the rmsd of a 'segment simulation of a 'bug' atom group in the
+    """Computes the rmsd of a 'segment simulation of a 'bug' atom group in the
     `geometry` of interest, and then saves the output to the `save_to`
     directory.
 
@@ -1031,7 +1021,7 @@ def rmsd_bug(
     np.save(save_to + sim_name + '-rmsdMatrixMon.npy', matrix.dist_matrix)
 
 
-def probe_all(
+def sum_rule_all(
     topology: str,
     trajectory: str,
     geometry: str = 'biaxial',
@@ -1039,8 +1029,7 @@ def probe_all(
     save_to: str = "./",
     continuous: Optional[bool] = False
 ) -> None:
-    """
-    runs various analyses on a `lineage` simulation of an 'all' atom
+    """Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
 
@@ -1308,4 +1297,124 @@ def probe_all(
         save_to + sim_name + '-thetaHistStd' + lastname + '.npy',
         theta_hist_mon_info['collector_std']
     )
+    print('done.')
+
+
+def trans_fuci_bug(
+    topology: str,
+    trajectory: str,
+    geometry: str = 'biaxial',
+    lineage: str = 'segment',
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    the `geometry` of interest.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+        Shape of the simulation box.
+    lineage: {'segment', 'whole'}, default 'segment'
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        print(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.")
+    print("Setting the name of analyze file...")
+    sim_info = TransFoci(
+        trajectory,
+        geometry=geometry,
+        group='bug',
+        lineage=lineage
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+        n_frames = cell.trajectory.n_frames - 1
+    else:
+        sliced_trj = cell.trajectory
+        n_frames = cell.trajectory.n_frames
+    # selecting atom groups
+    foci = cell.select_atoms('type 2')  # the foci
+    bug = cell.select_atoms('resid 1')  # the bug/polymer
+    # defining collectors
+    foci_pairs = list(combinations(range(len(foci)), 2))  # number of foci
+    foci_t = np.empty([0, 5])
+    fsd_t = np.empty(0)
+    rflory_t = np.empty(0)
+    gyr_t = np.empty(0)
+    principal_axes_t = np.empty([0, 3, 3])
+    asphericity_t = np.empty(0)
+    shape_parameter_t = np.empty(0)
+    for _ in sliced_trj:
+        # various measures of chain size
+        fsd_t = np.append(fsd_t, np.array([fsd(bug.positions)]), axis=0)
+        gyr_t = np.append(gyr_t, np.array([bug.radius_of_gyration()]), axis=0)
+        rms = end_to_end(bug.positions)
+        rflory_t = np.append(rflory_t, np.array([rms]), axis=0)
+        # shape parameters:
+        asphericity_t = np.append(
+            asphericity_t,
+            np.array([bug.asphericity(pbc=False, unwrap=False)]),
+            axis=0
+        )
+        principal_axes_t = np.append(
+            principal_axes_t,
+            np.array([bug.principal_axes(pbc=False)]),
+            axis=0
+        )
+        shape_parameter_t = np.append(
+            shape_parameter_t,
+            np.array([bug.shape_parameter(pbc=False)]),
+            axis=0
+        )
+        for (i, j) in foci_pairs:
+            pair_dist = np.array([
+                i,
+                j,
+                foci.atoms[i].id,
+                foci.atoms[j].id,
+                np.linalg.norm(
+                    foci.atoms[i].position - foci.atoms[j].position)]
+            )
+            foci_t = np.append(foci_t, np.array([pair_dist]), axis=0)
+
+    np.save(save_to + sim_name + '-distTFoci.npy', foci_t)
+    np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
+    np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
+    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
+    # Simulation stamps:
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
     print('done.')
