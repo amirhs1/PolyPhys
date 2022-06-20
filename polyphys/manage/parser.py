@@ -462,13 +462,13 @@ class TransFoci(object):
         One of multiple chunks of a complete simulation or measurement.
     whole: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens
         A complete simulation or measurement; a collection of 'segments'.
-    ensemble: D#al#nl#ns#ac#nc#
+    ensemble: ns#nl#al#D#ac#nc#
         N#D#ac#nc#
         A collection of 'wholes' (complete simulations) that differs only
         in their initial conditions (e.g., random number seed).
     ensemble_long: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#
         Long name of an ensemble.
-    space: D#al#nl#ns#ac#
+    space: ns#nl#al#D#ac#
         A collection of ensembles with a unique set of all the input
         parameters except number of crowders (nc).
 
@@ -879,27 +879,27 @@ class TransFoci(object):
             self.whole = "N/A"
             self.segment = "N/A"
         elif self.lineage == 'ensemble_long':
-            self.space = 'D' + str(self.dcyl) + 'al' + str(self.dmon_large) \
-                + 'nl' + str(self.nmon) + 'ns' + str(self.nmon_small) \
-                + 'ac' + str(self.dcrowd)
+            self.space = 'ns' + str(self.nmon_small) + 'nl' + \
+                str(self.nmon) + 'al' + str(self.dmon_large) + 'D' + \
+                str(self.dcyl) + 'ac' + str(self.dcrowd)
             self.ensemble = self.space + 'nc' + str(self.ncrowd)
             warnings.warn(convention_warning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
         elif self.lineage == 'whole':
-            self.space = 'D' + str(self.dcyl) + 'al' + str(self.dmon_large) \
-                + 'nl' + str(self.nmon) + 'ns' + str(self.nmon_small) \
-                + 'ac' + str(self.dcrowd)
+            self.space = 'ns' + str(self.nmon_small) + 'nl' + \
+                str(self.nmon) + 'al' + str(self.dmon_large) + 'D' + \
+                str(self.dcyl) + 'ac' + str(self.dcrowd)
             self.ensemble = self.space + 'nc' + str(self.ncrowd)
             warnings.warn(convention_warning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
         else:
-            self.space = 'D' + str(self.dcyl) + 'al' + str(self.dmon_large) \
-                + 'nl' + str(self.nmon) + 'ns' + str(self.nmon_small) \
-                + 'ac' + str(self.dcrowd)
+            self.space = 'ns' + str(self.nmon_small) + 'nl' + \
+                str(self.nmon) + 'al' + str(self.dmon_large) + 'D' + \
+                str(self.dcyl) + 'ac' + str(self.dcrowd)
             self.ensemble = self.space + 'nc' + str(self.ncrowd)
             warnings.warn(convention_warning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
@@ -912,9 +912,11 @@ class TransFoci(object):
         primary attributes.
         """
         vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
-        vol_mon = np.pi * (self.dmon_small**3 + self.dmon_large**3) / 6
+        vol_mon_s = np.pi * self.dmon_small**3 / 6
+        vol_mon_l = np.pi * self.dmon_large**3 / 6
         self.rho_m_bulk = self.nmon / vol_cell
-        self.phi_m_bulk = self.rho_m_bulk * vol_mon
+        self.phi_m_bulk = (vol_mon_s * self.nmon_small +
+                           vol_mon_l * self.nmon_large) / vol_cell
         vol_crowd = np.pi * self.dcrowd**3 / 6
         self.rho_c_bulk = self.ncrowd / vol_cell
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
