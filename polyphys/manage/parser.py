@@ -865,6 +865,10 @@ class TransFoci(object):
             " shortkey in a lineage_name of types:" +
             " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
+        space_name = 'ns' + str(self.nmon_small) + 'nl' + \
+            str(self.nmon_large) + 'al' + str(self.dmon_large) + 'D' + \
+            str(self.dcyl) + 'ac' + str(self.dcrowd)
+        ensemble_name = space_name + 'nc' + str(self.ncrowd)
         if self.lineage == 'space':
             self.space = self.lineage_name
             self.ensemble = "N/A"
@@ -879,28 +883,22 @@ class TransFoci(object):
             self.whole = "N/A"
             self.segment = "N/A"
         elif self.lineage == 'ensemble_long':
-            self.space = 'ns' + str(self.nmon_small) + 'nl' + \
-                str(self.nmon) + 'al' + str(self.dmon_large) + 'D' + \
-                str(self.dcyl) + 'ac' + str(self.dcrowd)
-            self.ensemble = self.space + 'nc' + str(self.ncrowd)
+            self.space = space_name
+            self.ensemble = ensemble_name
             warnings.warn(convention_warning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
         elif self.lineage == 'whole':
-            self.space = 'ns' + str(self.nmon_small) + 'nl' + \
-                str(self.nmon) + 'al' + str(self.dmon_large) + 'D' + \
-                str(self.dcyl) + 'ac' + str(self.dcrowd)
-            self.ensemble = self.space + 'nc' + str(self.ncrowd)
+            self.space = space_name
+            self.ensemble = ensemble_name
             warnings.warn(convention_warning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
         else:
-            self.space = 'ns' + str(self.nmon_small) + 'nl' + \
-                str(self.nmon) + 'al' + str(self.dmon_large) + 'D' + \
-                str(self.dcyl) + 'ac' + str(self.dcrowd)
-            self.ensemble = self.space + 'nc' + str(self.ncrowd)
+            self.space = space_name
+            self.ensemble = ensemble_name
             warnings.warn(convention_warning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name.split(".j")[0]
