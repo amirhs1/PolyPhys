@@ -202,7 +202,6 @@ a data point. For a given 'property_', if there are N esmebles, each with M
 'whole' files, then there are N ensemble-average groups and N*M 'whole' files
 in the space group.
 """
-# from typing import NamedTuple
 from typing import (
     List,
     Dict,
@@ -370,7 +369,7 @@ def save_parent(
     property_ : str
         The physical property.
     save_to : str
-        Absolute/relative path of a directory to which outputs are saved.
+        An/a absolute/relative path of a directory to which outputs are saved.
     group: {'bug', 'all'}, default 'bug'
         Type of the particle group.
     ext: {'csv', 'npy'}, defualt 'csv'

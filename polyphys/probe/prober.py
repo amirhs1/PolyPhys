@@ -3,9 +3,9 @@ import MDAnalysis as mda
 import numpy as np
 import pandas as pd
 import os
-from itertools import combinations
 from polyphys.manage.parser import SumRule, TransFoci
 from polyphys.manage.organizer import invalid_keyword
+from polyphys.analyze import clusters
 
 
 def log_stat(
@@ -720,6 +720,14 @@ def sum_rule_bug(
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
+    Note
+    ----
+    The probability of the end-to-end distance or gyration radius or any other
+    chain/polymer-level property can later be computed from applying histogram
+    functions to the time-series of the property, thus they are not measured
+    directyl from the trajectories and "sum_rule_bug_flory_hist" function can
+    be deleted.
+
     Parameters
     ----------
     topology: str
@@ -823,6 +831,14 @@ def sum_rule_bug_flory_hist(
 ) -> None:
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
+
+    Note
+    ----
+    The probability of the end-to-end distance or gyration radius or any other
+    chain/polymer-level property can later be computed from applying histogram
+    functions to the time-series of the property, thus they are not measured
+    directyl from the trajectories and "sum_rule_bug_flory_hist" function can
+    be deleted.
 
     Parameters
     ----------
@@ -969,7 +985,7 @@ def sum_rule_bug_rmsd(
     directory.
 
     `rmsd_bug` does not support the `continuous` option defined in
-    `probe_bug` and `probe_all`.
+    `sum_rule_bug` and `sum_rule_all` functions.
 
     Parameters
     ----------
@@ -1350,6 +1366,7 @@ def trans_fuci_bug(
     lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
     lj_dt = sim_info.dt
     sim_real_dt = lj_nstep * lj_dt * time_unit
+    cluster_cutoff = sim_info.dmon_large + sim_info.dcrowd
     cell = mda.Universe(
         topology, trajectory, topology_format='DATA',
         format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
@@ -1366,21 +1383,28 @@ def trans_fuci_bug(
     foci = cell.select_atoms('type 2')  # the foci
     bug = cell.select_atoms('resid 1')  # the bug/polymer
     # defining collectors
-    foci_pairs = list(combinations(range(len(foci)), 2))  # number of foci
-    foci_t = np.empty([0, 5])
+    # -bug:
     fsd_t = np.empty(0)
     rflory_t = np.empty(0)
     gyr_t = np.empty(0)
     principal_axes_t = np.empty([0, 3, 3])
     asphericity_t = np.empty(0)
     shape_parameter_t = np.empty(0)
+    # -foci:
+    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
+    dir_contacts_t = np.empty(
+        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
+    )
+    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
+    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
     for _ in sliced_trj:
-        # various measures of chain size
+        # bug:
+        # -various measures of chain size
         fsd_t = np.append(fsd_t, np.array([fsd(bug.positions)]), axis=0)
         gyr_t = np.append(gyr_t, np.array([bug.radius_of_gyration()]), axis=0)
         rms = end_to_end(bug.positions)
         rflory_t = np.append(rflory_t, np.array([rms]), axis=0)
-        # shape parameters:
+        # -shape parameters:
         asphericity_t = np.append(
             asphericity_t,
             np.array([bug.asphericity(pbc=False, unwrap=False)]),
@@ -1396,24 +1420,37 @@ def trans_fuci_bug(
             np.array([bug.shape_parameter(pbc=False)]),
             axis=0
         )
-        for (i, j) in foci_pairs:
-            pair_dist = np.array([
-                i,
-                j,
-                foci.atoms[i].id,
-                foci.atoms[j].id,
-                np.linalg.norm(
-                    foci.atoms[i].position - foci.atoms[j].position)]
-            )
-            foci_t = np.append(foci_t, np.array([pair_dist]), axis=0)
-
-    np.save(save_to + sim_name + '-distTFoci.npy', foci_t)
+        # foci:
+        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
+        foci_pair_dist = np.triu(dist_sq_mat, 1)
+        foci_pair_dist = np.sqrt(foci_pair_dist)
+        # keep atom ids on the diag
+        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
+        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
+        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
+        dir_contacts_t = np.append(
+            dir_contacts_t,
+            np.array([dir_contacts]),
+            axis=0
+        )
+        contacts = clusters.contact_matrix(dir_contacts)
+        bonds_stat = clusters.count_bonds(dir_contacts)
+        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        clusters_stat = clusters.count_clusters(contacts)
+        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+    # Saving collectors to memory
+    # -bug
     np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
     np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
     np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
     np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
     np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
+    # -foci
+    np.save(save_to + sim_name + '-distTFoci.npy', foci_t)
+    np.save(save_to + sim_name + '-directContactsTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-bondsTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-clustersTFoci.npy', clusters_t)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
