@@ -20,8 +20,14 @@ for all_trj in all_trjs:
                        lineage=trj_lineage)
     # all the frames in the last segment are probed:
     if trj_info.segment_id == len(all_trjs):
-        prober.probe_all(all_topo, all_trj, geometry, trj_lineage, save_to)
+        prober.sum_rule_all(all_topo, all_trj, geometry, trj_lineage, save_to)
     # the last frame in the all other segments is ignored:
     else:
-        prober.probe_all(all_topo, all_trj, geometry, trj_lineage, save_to,
-                         continuous=True)
+        prober.sum_rule_all(
+            all_topo,
+            all_trj,
+            geometry,
+            trj_lineage,
+            save_to,
+            continuous=True
+        )
