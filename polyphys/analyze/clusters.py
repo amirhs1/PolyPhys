@@ -360,13 +360,13 @@ def count_clusters(contacts: np.ndarray) -> np.ndarray:
     # to properly collect all the eigenvalues.
     cluster_list = np.zeros(n_atoms + 1, dtype=int)
     clusters, _ = npla.eig(contacts)
-    # Sanity check for having meaning cluster sizes:
-    if np.any(clusters < 0):
-        raise ValueError("A cluster with size smaller than 0 found!")
     # numpy returns infinitesimal numbers instead of zero when an eigenvalue
     # is 0. Below, these eigenvalues are rounded to 0. The non-zero
     # values are already integer, so rounding does not affect them.
     clusters = np.asarray(np.round(clusters), dtype=int)
+    # Sanity check for having meaning cluster sizes:
+    if np.any(clusters < 0):
+        raise ValueError("A cluster with size smaller than 0 found!")
     cluster_sizes, cluster_counts = np.unique(clusters, return_counts=True)
     # Above, the eigenvalue with value 0 can be interpreted in this way:
     # The system has clusters with size equal to or larger than 1
