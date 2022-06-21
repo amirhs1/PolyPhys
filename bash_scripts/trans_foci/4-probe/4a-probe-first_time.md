@@ -6,10 +6,11 @@
 2. Run **probe_runfiles-first_time.sh** to copy run files from **PolyPhys** to **ns#nl#al#D#ac#-all_trjs** directory.
 **Caution**: check how many **probe_all_in_one_---.py** you have.
 **Cuation**: check the relative path of the files with respect to the trj directories.
-3. Check the **PolyPhys** package to make sure which packages you need.
-4. Add the packages to the ***submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file.
-5. Set the number of cores, time, and memeory in the **submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file based on what group/type of particles you want to analyze.
-6. Check the name of Python file in the **submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file.
-7. Run the **sbatch-probe_all_in_one.sh**, **sbatch-probe_all_trj_segments.sh**, or **sbatch-probe_all_bug_segments.sh** file.
-8. After the rum finsihed, check slurm file and change its name to **ns#nl#al#D#ac#-probe-slurm_report.out**
-9. Run **create_probe_directories.sh** to create a new directory **ns#nl#al#D#ac#-probe** and move all the **csv**, **npy**, or **txt** files to their corresponding simulation directories.
+3. Run **probe_gnuparallel-___.sh** to copy the **polyphys** package and **probe___.py** file to each **simulation directory**.
+4. Check the **PolyPhys** package to make sure which packages you need.
+5. Add the packages to the ***submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file.
+6. Set the number of cores, time, and memeory in the **submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file based on what group/type of particles you want to analyze.
+7. Check the name of Python file in the **submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file.
+8. Run the **sbatch-probe_all_in_one.sh**, **sbatch-probe_all_trj_segments.sh**, or **sbatch-probe_all_bug_segments.sh** file.
+9. After the run finsihed, check slurm file and change its name to **ns#nl#al#D#ac#-probe-slurm_report.out**
+10. Run **create_probe_directories.sh** to create a new directory **ns#nl#al#D#ac#-probe** and move all the **csv**, **npy**, or **txt** files to their corresponding simulation directories.
