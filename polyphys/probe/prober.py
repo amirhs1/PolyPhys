@@ -6,6 +6,7 @@ import os
 from polyphys.manage.parser import SumRule, TransFoci
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters
+import warnings
 
 
 def log_stat(
@@ -1344,13 +1345,14 @@ def trans_fuci_bug(
         segments or not.
     """
     if (lineage == 'segment') & (continuous is False):
-        print(
+        warnings.warn(
             "lineage is "
             f"'{lineage}' "
             "and 'continuous' is "
             f"'{continuous}. "
             "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.")
+            f"'{trajectory}' is NOT part of a sequence of trajectories."
+        )
     print("Setting the name of analyze file...")
     sim_info = TransFoci(
         trajectory,
