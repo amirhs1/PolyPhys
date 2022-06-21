@@ -1,5 +1,6 @@
 from glob import glob
 from typing import (
+    Callable,
     Dict,
     Tuple,
 )
@@ -13,7 +14,6 @@ from polyphys.manage.organizer import (
     save_parent,
     sort_filenames
 )
-from polyphys.manage.parser import SumRule
 
 
 def acf_of_wholes(
@@ -21,9 +21,8 @@ def acf_of_wholes(
     nlags: int,
     alpha: float
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """
-    calculates the `nlags` auto correlation function (ACF) of 'wholes' \
-    in the `ensemble` and thier lower and upper confidence limits with \
+    """Calculates the `nlags` auto correlation function (ACF) of 'wholes'
+    in the `ensemble` and thier lower and upper confidence limits with
     accuracy 1-`alpha`.
 
     Parameters
@@ -33,9 +32,9 @@ def acf_of_wholes(
     nlags :int
         Maximum lag in the ACF.
     alpha: float
-        If a number is given, the confidence intervals for the given level \
-        are returned. For instance if alpha=.05, 95 % confidence intervals \
-        are returned where the standard deviation is computed according to \
+        If a number is given, the confidence intervals for the given level
+        are returned. For instance if alpha=.05, 95 % confidence intervals
+        are returned where the standard deviation is computed according to
         Bartlett”s formula.
 
     Return
@@ -43,10 +42,10 @@ def acf_of_wholes(
     acfs: DataFrame
         A dataframe in which the columns are wholes' ACFs.
     lower_cls: DataFrame
-        A dataframe in which the columns are the lower limits of the \
+        A dataframe in which the columns are the lower limits of the
         confidence intervals of the acfs of wholes.
     upper_cls: DataFrame
-        A dataframe in which the columns are the upper limits of the \
+        A dataframe in which the columns are the upper limits of the
         confidence intervals of the acfs of wholes.
     """
     acfs = pd.DataFrame(columns=ensemble.columns)
@@ -74,9 +73,8 @@ def acf_generator(
 ) -> Tuple[Dict[str, pd.DataFrame],
            Dict[str, pd.DataFrame],
            Dict[str, pd.DataFrame]]:
-    """
-    generates the autocorrelation function (ACF) of `nlags` lags of the \
-    'wholes' in each of the `ensembles` of the given attribute or property \
+    """Generates the autocorrelation function (ACF) of `nlags` lags of the
+    'wholes' in each of the `ensembles` of the given attribute or property
     (property_) with their associate confidence intervals (CIs) (alpha).
 
     Parameters
@@ -84,15 +82,15 @@ def acf_generator(
     property_ : str
         The physical property.
     whole: dict of DataFrame
-        a dictionary of ensembles in which each key is a ensemble' name and \
-        its associated value is the dataframe of its wholes. The names of \
+        a dictionary of ensembles in which each key is a ensemble' name and
+        its associated value is the dataframe of its wholes. The names of
         the columns in each dataframe are wholes' names.
     nlags :int
         Maximum lag in the ACF.
     alpha: float
-        If a number is given, the confidence intervals for the given level \
-        are returned. For instance if alpha=.05, 95 % confidence intervals \
-        are returned where the standard deviation is computed according to \
+        If a number is given, the confidence intervals for the given level
+        are returned. For instance if alpha=.05, 95 % confidence intervals
+        are returned where the standard deviation is computed according to
         Bartlett”s formula.
      group: {'bug', 'all'}, default 'bug'
         Type of the particle group.
@@ -102,19 +100,19 @@ def acf_generator(
     Return
     ------
     acfs: dict of DataFrame
-        Dict of ensembles where keys are ensembles' names and values are \
-        ensembles' acfs (dataframes). In each ensemble dataframe, columns \
+        Dict of ensembles where keys are ensembles' names and values are
+        ensembles' acfs (dataframes). In each ensemble dataframe, columns
         are wholes names.
     lower_cls: dict of DataFrame
-        Dict of ensembles where keys are ensembles' names and values are the \
-        lower limits of the confidence intervals of the acfs of ensembles. \
+        Dict of ensembles where keys are ensembles' names and values are the
+        lower limits of the confidence intervals of the acfs of ensembles.
         In each ensemble dataframe, columns are wholes's names.
     upper_cls: dict of DataFrame
-        Dict of ensembles where keys are ensembles' names and values are the \
-        upper limits of the confidence intervals of the acfs of ensembles. \
+        Dict of ensembles where keys are ensembles' names and values are the
+        upper limits of the confidence intervals of the acfs of ensembles.
         In each ensemble dataframe, columns are wholes's names.
 
-    These three dictionaries are also written to memory as csv files if \
+    These three dictionaries are also written to memory as csv files if
     save_to is not None.
     """
     invalid_keyword(group, ['bug', 'all'])
@@ -176,7 +174,7 @@ def acf_generator(
 
 
 def mono_unit_exp(x, omega, alpha):
-    """calculate the mono-exponential decay with the unit amplitude, decay
+    """Calculates the mono-exponential decay with the unit amplitude, decay
     coefficient `omega` and decay exponent `alpha` for array `x`.
 
     Parameters
@@ -197,7 +195,7 @@ def mono_unit_exp(x, omega, alpha):
 
 
 def mono_unit_exp_tau(x, tau, alpha):
-    """calculate the mono-exponential decay with the unit amplitude, decay
+    """Calculates the mono-exponential decay with the unit amplitude, decay
     time `tau` and decay exponent `alpha` for array `x`.
 
     Parameters
@@ -218,7 +216,7 @@ def mono_unit_exp_tau(x, tau, alpha):
 
 
 def mono_exp_tau_res(x, tau, alpha, amp, residue):
-    """calculate the mono-exponential decay with the amplitude `amp`, decay
+    """Calculates the mono-exponential decay with the amplitude `amp`, decay
     time `tau`, decay exponent `alpha` and 'residue` for array `x`.
 
     Parameters
@@ -239,7 +237,7 @@ def mono_exp_tau_res(x, tau, alpha, amp, residue):
 
 
 def mono_exp_res(x, omega, alpha, amp, residue):
-    """calculate the mono-exponential decay with the amplitude `amp`,
+    """Calculates the mono-exponential decay with the amplitude `amp`,
     decay coefficient `tau`, decay exponent `alpha` and 'residue`
     for array `x`.
 
@@ -261,7 +259,7 @@ def mono_exp_res(x, omega, alpha, amp, residue):
 
 
 def mono_exp(x, omega, alpha, amp):
-    """calculate the mono-exponential decay with the amplitude `amp`,
+    """Calculates the mono-exponential decay with the amplitude `amp`,
     decay coefficient `omega`, and decay exponent `alpha` for array `x`.
 
     Parameters
@@ -282,7 +280,7 @@ def mono_exp(x, omega, alpha, amp):
 
 
 def mono_exp_tau(x, tau, alpha, amp):
-    """calculate the mono-exponential decay with the amplitude `amp`,
+    """Calculates the mono-exponential decay with the amplitude `amp`,
     decay time `tau`, and decay exponent `alpha` for array `x`.
 
     Parameters
@@ -307,14 +305,15 @@ def fit_wholes(
     property_path: str,
     property_: str,
     func_name: str,
+    property_pattern: str,
+    parser: Callable,
     x_type: str = 'index',
     scale: str = None,
     length: int = 50000,
-    property_pattern: str = 'N*',
     save_to: str = None,
     **kwargs
 ) -> pd.DataFrame:
-    """take the `property_path` to the directory in which the ansemble-average
+    """Takes the `property_path` to the directory in which the ansemble-average
     timeseries of a given physical `property_` of a given `group` in a given
     `geometry`, and performs the following operations in the `orient` of
     interest: First, it concatenates the timeseries into one dataframe along
@@ -340,6 +339,11 @@ def fit_wholes(
         Name of the physical property of interest.
     func_name: str
         Function fit to the data
+    property_pattern: str
+        The pattern by which the filenames of timeseries are started with.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     x_type: {'index', 'time'}, default 'index'
         Whether use the 'index' of the data set as x variable or use the real
         'time' of simulation as x vaiable.
@@ -359,8 +363,6 @@ def fit_wholes(
 
     length: int = 50000,
         The length of data to which `fit_func` is fit.
-    property_pattern: str, default 'N*'
-        The pattern by which the filenames of timeseries are started with.
     save_to : str, default None
         An/a absolute/relative path of a directory to which outputs are saved.
     **kwargs :
@@ -419,7 +421,7 @@ def fit_wholes(
         # belongs to.
         for col in property_df.columns:
             whole_name = col.split('-')[0]
-            whole_info = SumRule(
+            whole_info = parser(
                 whole_name,
                 geometry='biaxial',
                 group='bug',
