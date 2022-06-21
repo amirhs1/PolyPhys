@@ -207,14 +207,14 @@ from typing import (
     Dict,
     Tuple,
     Optional,
-    Union
+    Union,
+    Callable
 )
 import pathlib
 from glob import glob
 import re
 import numpy as np
 import pandas as pd
-from polyphys.manage.parser import SumRule
 
 
 def camel_case_split(
@@ -463,6 +463,7 @@ def database_path(
 def whole(
     property_: str,
     segments: List[Tuple[str]],
+    parser: Callable,
     geometry: str = 'biaxial',
     group: str = 'bug',
     relation: str = 'histogram',
@@ -478,6 +479,9 @@ def whole(
     children : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
     group: {'bug', 'all'}, default 'bug'
@@ -511,7 +515,7 @@ def whole(
 
     Notes
     -----
-    Please see the 'SumRule' and 'organizer' documentation for definitions
+    Please see the 'organizer' documentation for definitions
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
@@ -526,7 +530,7 @@ def whole(
     }
     wholes = {}
     for segment in segments:
-        segment_info = SumRule(
+        segment_info = parser(
             segment[0],
             geometry=geometry,
             group=group,
@@ -566,6 +570,7 @@ def whole(
 def ensemble(
     property_: str,
     wholes: Dict[str, np.ndarray],
+    parser: Callable,
     geometry: str = 'biaxial',
     group: str = 'bug',
     edge_wholes: Optional[Dict[str, np.ndarray]] = None,
@@ -581,6 +586,9 @@ def ensemble(
     wholes : dict of np.ndarray
         A dictionary in which keys are 'whole' names and values are data
         (1D array).
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         The shape of the simulation box.
     group: {'bug', 'all'}, defualt 'bug'
@@ -604,7 +612,7 @@ def ensemble(
     ensembles = {}
     bin_centers = {}
     for w_name, w_arr in wholes.items():
-        w_info = SumRule(
+        w_info = parser(
             w_name,
             geometry=geometry,
             group=group,
@@ -665,6 +673,7 @@ def ensemble(
 def ensemble_avg(
     property_: str,
     ensembles: Dict[str, pd.DataFrame],
+    parser: Callable,
     geometry: str = 'biaxial',
     group: str = 'bug',
     exclude: list = ['bin_center'],
@@ -685,6 +694,9 @@ def ensemble_avg(
         number of columns is equal to or more than the number of
         children of that parent. Columns' names are the children' names and
         the names given by `exclude`.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         The shape of the simulation box.
     group: {'bug', 'all'}, defualt 'bug'
@@ -706,7 +718,7 @@ def ensemble_avg(
     ens_avgs = {}
     for ens, ens_df in ensembles.items():
         wholes = [col for col in ens_df.columns if col not in exclude]
-        whole_info = SumRule(
+        whole_info = parser(
             wholes[0],
             geometry=geometry,
             group=group,
@@ -781,6 +793,7 @@ def children_stamps(
 
 def parents_stamps(
     stamps: pd.DataFrame,
+    parser: Callable,
     geometry: str = 'biaxial',
     group: str = 'bug',
     lineage: str = 'segment',
@@ -794,6 +807,9 @@ def parents_stamps(
     ----------
     stamps: DataFrame
         Dataframe of all the simulation stamps in the `group` in a space.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box
     group: {'bug', 'all'}, default 'bug'
@@ -822,7 +838,7 @@ def parents_stamps(
     stamps_cols = stamps.columns
     # children have the same attributes genealogy but with different values, so
     # the list of attribute and genealogy are the same:
-    children_info = SumRule(
+    children_info = parser(
         stamps.loc[0, lineage],
         geometry=geometry,
         group=group,
@@ -872,7 +888,7 @@ def parents_stamps(
     parents_names = stamps[parent_lineage].drop_duplicates().tolist()
     # parents have the same attributes genealogy but with different values, so
     # the list of attribute and genealogy are the same:
-    parents_info = SumRule(
+    parents_info = parser(
         parents_names[0],
         geometry=geometry,
         group=group,
@@ -911,6 +927,7 @@ def parents_stamps(
 def all_in_one_tseries(
     property_path: str,
     property_: str,
+    parser: Callable,
     property_pattern: str = 'N*',
     physical_attrs: list = None,
     group: str = 'bug',
@@ -939,6 +956,9 @@ def all_in_one_tseries(
         Path to the the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     property_pattern: str, default 'N*'
         The pattern by which the filenames of timeseries are started with.
     attributes: list, default None
@@ -973,7 +993,7 @@ def all_in_one_tseries(
         # the information about the property and the space it
         # belongs to.
         child_name = property_df.columns[0].split('-')[0]
-        property_info = SumRule(
+        property_info = parser(
             child_name,
             geometry=geometry,
             group=group,

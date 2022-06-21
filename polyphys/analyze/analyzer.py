@@ -1,4 +1,5 @@
 from typing import (
+    Callable,
     List,
     Tuple,
     Optional,
@@ -82,6 +83,7 @@ def time_series(
             wholes = whole(
                 property_ + species,
                 segments,
+                parser,
                 geometry=geometry,
                 group=group,
                 relation='tseries',
@@ -90,6 +92,7 @@ def time_series(
             ensembles = ensemble(
                     property_ + species,
                     wholes,
+                    parser,
                     geometry=geometry,
                     group=group,
                     save_to=save_to_ens
@@ -97,6 +100,7 @@ def time_series(
             _ = ensemble_avg(
                     property_ + species,
                     ensembles,
+                    parser,
                     geometry='biaxial',
                     group=group,
                     save_to=save_to_ens_avg
@@ -112,6 +116,7 @@ def time_series(
             wholes = whole(
                 property_ + species,
                 segments,
+                parser,
                 geometry=geometry,
                 group=group,
                 relation='tseries',
@@ -120,6 +125,7 @@ def time_series(
             ensembles = ensemble(
                     property_ + species,
                     wholes,
+                    parser,
                     geometry=geometry,
                     group=group,
                     save_to=save_to_ens
@@ -129,12 +135,14 @@ def time_series(
                 ensembles,
                 nlags,
                 alpha,
+                parser,
                 group=group,
                 save_to=save_to_ens
             )
             _ = ensemble_avg(
                     property_ + species,
                     ensembles,
+                    parser,
                     geometry='biaxial',
                     group=group,
                     save_to=save_to_ens_avg
@@ -142,6 +150,7 @@ def time_series(
             _ = ensemble_avg(
                     property_ + species + '-acf',
                     acfs,
+                    parser,
                     geometry='biaxial',
                     group=group,
                     save_to=save_to_ens_avg
@@ -149,6 +158,7 @@ def time_series(
             _ = ensemble_avg(
                     property_ + species + '-acfLowerCi',
                     lower_cls,
+                    parser,
                     geometry='biaxial',
                     group=group,
                     save_to=save_to_ens_avg
@@ -156,6 +166,7 @@ def time_series(
             _ = ensemble_avg(
                     property_ + species + '-acfUpperCi',
                     upper_cls,
+                    parser,
                     geometry='biaxial',
                     group=group,
                     save_to=save_to_ens_avg
@@ -215,6 +226,7 @@ def histograms(
             wholes = whole(
                 direction + 'Hist' + species,
                 segments,
+                parser,
                 geometry=geometry,
                 group=group,
                 relation='histogram',
@@ -223,6 +235,7 @@ def histograms(
             edge_wholes = whole(
                 direction + 'Edge' + species,
                 edge_segments,
+                parser,
                 geometry=geometry,
                 group=group,
                 relation='bin_edge',
@@ -236,11 +249,13 @@ def histograms(
                 species,
                 geometry,
                 direction,
+                parser,
                 save_to=save_to_whole
             )
             ensembles = ensemble(
                 direction + 'Hist' + species,
                 wholes,
+                parser,
                 geometry=geometry,
                 group=group,
                 edge_wholes=edge_wholes,
@@ -249,6 +264,7 @@ def histograms(
             _ = ensemble_avg(
                 direction + 'Hist' + species,
                 ensembles,
+                parser,
                 geometry='biaxial',
                 group=group,
                 save_to=save_to_ens_avg
@@ -256,6 +272,7 @@ def histograms(
             ensembles = ensemble(
                 direction + 'Rho' + species,
                 rho_wholes,
+                parser,
                 geometry=geometry,
                 group=group,
                 edge_wholes=edge_wholes,
@@ -264,6 +281,7 @@ def histograms(
             _ = ensemble_avg(
                 direction + 'Rho' + species,
                 ensembles,
+                parser,
                 geometry='biaxial',
                 group=group,
                 save_to=save_to_ens_avg
@@ -271,6 +289,7 @@ def histograms(
             ensembles = ensemble(
                 direction + 'Phi' + species,
                 phi_wholes,
+                parser,
                 geometry=geometry,
                 group=group,
                 edge_wholes=edge_wholes,
@@ -279,6 +298,7 @@ def histograms(
             _ = ensemble_avg(
                 direction + 'Phi' + species,
                 ensembles,
+                parser,
                 geometry='biaxial',
                 group=group,
                 save_to=save_to_ens_avg
@@ -298,6 +318,7 @@ def histograms(
             wholes = whole(
                 direction + 'Hist' + species,
                 segments,
+                parser,
                 geometry=geometry,
                 group=group,
                 relation='histogram',
@@ -306,6 +327,7 @@ def histograms(
             edge_wholes = whole(
                 direction + 'Edge' + species,
                 segments,
+                parser,
                 geometry=geometry,
                 group=group,
                 relation='bin_edge',
@@ -314,6 +336,7 @@ def histograms(
             ensembles = ensemble(
                 direction + 'Hist' + species,
                 wholes,
+                parser,
                 geometry=geometry,
                 group=group,
                 edge_wholes=edge_wholes,
@@ -322,6 +345,7 @@ def histograms(
             _ = ensemble_avg(
                 direction + 'Hist' + species,
                 ensembles,
+                parser,
                 geometry='biaxial',
                 group=group,
                 save_to=save_to_ens_avg
@@ -363,6 +387,7 @@ def non_scalar_segments(
         # 'whole' dataframes, each with a 'whole' as its column:
         _ = whole(
             property_ + species,
+            parser,
             segments,
             geometry=geometry,
             group=group,
@@ -487,6 +512,7 @@ def analyze_segments(
 
 def analyze_segments_bug(
     input_database: str,
+    parser: Callable,
     non_scalar_properties: List[Tuple[str, str, str]] = None,
     tseries_properties: List[Tuple[str, str, str]] = None,
     acf_tseries_properties: List[Tuple[str, str, str]] = None,
@@ -513,6 +539,9 @@ def analyze_segments_bug(
     ----------
     input_database: str
         Path to the input_database; a 'space' directory at a given 'phase'.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     non_scalar_properties: list of tuple, default None
         A list of tuples in which each tuple has three string members. The
         first string is the name of a physical property, the second one is
@@ -585,6 +614,7 @@ def analyze_segments_bug(
     )
     _ = parents_stamps(
         whole_stamps,
+        parser,
         geometry=geometry,
         lineage='whole',
         save_to=save_to_ens_avg
@@ -633,13 +663,12 @@ def analyze_wholes(
     geometry: str = 'biaxial',
     hierarchy: str = "/N*/N*"
 ) -> None:
-    """
-    reads in the 'probe' observations based on the `hierarchy` of directories
-    and files from the `input_database` path to the 'probe' phase of a
-    'space' and creates the 'analysis' phase at that parent directory of the
-    'probe' of that 'space', infers 'space' names from `input_database` path
-    and creates a 'space' directories at various stages in the 'analysis'
-    directory for both 'bug' and 'all' groups.
+    """Reads in the 'probe' observations based on the `hierarchy` of
+    directories and files from the `input_database` path to the 'probe'
+    phase of a 'space' and creates the 'analysis' phase at that parent
+    directory of the 'probe' of that 'space', infers 'space' names from
+    `input_database` path and creates a 'space' directories at various
+    stages in the 'analysis' directory for both 'bug' and 'all' groups.
 
     Parameters
     ----------
