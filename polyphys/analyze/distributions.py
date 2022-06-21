@@ -14,12 +14,12 @@ Currently, tehe following distribution are implemeted:
     1. The local number desnity of hard beads.
     2. The local volume fraction of hard beads.
 """
-from typing import Dict, Tuple, Type, Optional
+from typing import Callable, Dict, Tuple, Type, Optional, Union
 import numpy as np
 import scipy.integrate as integrate
-from polyphys.manage.parser import SumRule
-# Analysis based on the dtat extracted from trajectories; in other words,\
-# indirect analysis of trajectories:
+from polyphys.manage.parser import SumRule, TransFoci
+
+ParserT = Union[SumRule, TransFoci]
 
 
 def spherical_segment(
@@ -131,7 +131,7 @@ def sphere_sphere_intersection(
 class Distribution(object):
     hist_path: str
     edge_path: str
-    hist_info: Type[SumRule]
+    hist_info: ParserT
     geometry: str = 'biaxial'
     direction: str = 'longitudinal'
     normalized: bool = False
@@ -400,32 +400,32 @@ class Distribution(object):
 
     def _consecutive_bounds(self):
         """
-        finds the indices of smallest and largest bin edges by which a \
-        bead, that resides at the center of that bin, intersects in a \
+        finds the indices of smallest and largest bin edges by which a
+        bead, that resides at the center of that bin, intersects in a
         'consecutive' bin scheme.
 
         Attributes
         ----------
         self.bounds: np.ndarray
-            Indices of the leftmost and rightmost boundaries of a bead \
-            that resides at each of centers in `self.center`. For each \
-            each center, the following four varaibles are used to \
+            Indices of the leftmost and rightmost boundaries of a bead
+            that resides at each of centers in `self.center`. For each
+            each center, the following four varaibles are used to
             generate `self.bounds`:
 
             leftmost:
-                The value of the center of the bin in which the leftmost \
+                The value of the center of the bin in which the leftmost
                 boundary of a bead is located.
 
             left_bound:
-                The index of the 'smaller' edge of the bin in which the \
+                The index of the 'smaller' edge of the bin in which the
                 leftmost boundary of a bead is located.
 
             rightmost:
-                The value of the center of the bin in which the rightmost \
+                The value of the center of the bin in which the rightmost
                 boundary of a bead is located.
 
             right_bound:
-                The index of the 'smaller' edge of the bin in which the \
+                The index of the 'smaller' edge of the bin in which the
                 rightmost boundary of a bead is located.
         """
         # The left- and right-most bounds by which a bead is limited:
@@ -462,8 +462,8 @@ class Distribution(object):
 
     def _consecutive_vol_shares(self):
         """
-        computes the portion of the volume of a bead (a sphere) in each of \
-        the consecutive disk-like bins by which the bead intersects along \
+        computes the portion of the volume of a bead (a sphere) in each of
+        the consecutive disk-like bins by which the bead intersects along
         the longitudinal direction with the PBC in a cylindrical geometry.
 
         To-do List
@@ -473,13 +473,13 @@ class Distribution(object):
         Attributes
         ----------
         self.volume_shares: A two-fold nested dict
-            A nested dictionary in which keys are indices of `self.centers` \
-            (the positions of a bead's center) and the values are themselves \
-            dictionaries. In each of this dictionary, each key is one of the \
-            indices of `self.centers` within the bounds (inclusivily, i.e. \
-            [A,B] includes A and B as well given by `self.bounds` and the \
-            value of that key is the share of the bin of that center from the \
-            volume of the bead. The sum of all the values in one inner \
+            A nested dictionary in which keys are indices of `self.centers`
+            (the positions of a bead's center) and the values are themselves
+            dictionaries. In each of this dictionary, each key is one of the
+            indices of `self.centers` within the bounds (inclusivily, i.e.
+            [A,B] includes A and B as well given by `self.bounds` and the
+            value of that key is the share of the bin of that center from the
+            volume of the bead. The sum of all the values in one inner
             dictionary is equal to the volume of the bead.
         """
         self.volume_shares = {}
@@ -543,11 +543,11 @@ class Distribution(object):
 
     def _concentric_bounds(self):
         """
-        finds the indices of smallest and largest bin edges by which a \
-        bead, that resides at the center of that bin, intersects in a \
+        finds the indices of smallest and largest bin edges by which a
+        bead, that resides at the center of that bin, intersects in a
         'concentric' bin.
 
-        Instead of the leftmost/rightmost pairs (which are more appropriate \
+        Instead of the leftmost/rightmost pairs (which are more appropriate
         for the longitudinal direction), the innermost/outermost is used.
         """
         # The left- and right-most bounds by which a bead is limited:
@@ -586,9 +586,9 @@ class Distribution(object):
 
     def _concentric_vol_shares(self):
         """
-        computes the portion of the volume of a bead in each of \
-        the conncentric cylindrical-shell-like or spherical-shell-like \
-        bins by which the bead intersects along the radial direction in \
+        computes the portion of the volume of a bead in each of
+        the conncentric cylindrical-shell-like or spherical-shell-like
+        bins by which the bead intersects along the radial direction in
         a cylindrical geometry.
 
         To-do List
@@ -597,17 +597,17 @@ class Distribution(object):
 
         Notes
         -----
-        For the sake of simpilicity, the sphere-sphere interesction is \
-        also used for the sphere-cylinder intersection in the radial \
-        direction in the cylindrical and slit goemteries. Hence, the \
-        concentric_vol_shares can be used in all these three different \
+        For the sake of simpilicity, the sphere-sphere interesction is
+        also used for the sphere-cylinder intersection in the radial
+        direction in the cylindrical and slit goemteries. Hence, the
+        concentric_vol_shares can be used in all these three different
         radial directions.
 
-        This function can be used in calculation of the local volume \
+        This function can be used in calculation of the local volume
         fraction of beads in two different situation:
-        1. The radial direction in the cubic geometry with the \
+        1. The radial direction in the cubic geometry with the
         sphere_sphere_intersection function as the intersection_calculator.
-        2. The radial dirction in the cylindrical geometry with the \
+        2. The radial dirction in the cylindrical geometry with the
         sphere_cylinder_intersection function as the intersection_calculator.
         """
         self.volume_shares = {}
@@ -633,14 +633,14 @@ class Distribution(object):
 
     def _vol_shares_type(self):
         """
-        chooses how the volume_shares should be measured based on the \
+        chooses how the volume_shares should be measured based on the
         given direction.
 
         Notes
         -----
-        Currently, the `_vol_shares` method is implemented in the 'radial' \
-        direction in all the geometries (see the notes for \
-        `_concentric_vol_shares`) and the 'longitudinal' direction in the \
+        Currently, the `_vol_shares` method is implemented in the 'radial'
+        direction in all the geometries (see the notes for
+        `_concentric_vol_shares`) and the 'longitudinal' direction in the
         cylindrical geometry.
         """
         if self.direction == 'r':
@@ -657,7 +657,7 @@ class Distribution(object):
 
     def _set_args(self):
         """
-        sets the arguments for the integrads along different directions \
+        sets the arguments for the integrads along different directions
         in different geometries.
         """
         self._args = {
@@ -688,10 +688,10 @@ class Distribution(object):
 
     def _number_density(self):
         """
-        calculates the local number density along the given direction in \
+        calculates the local number density along the given direction in
         the given geometry.
 
-        If `self.normalized=True`, the the local number density is \
+        If `self.normalized=True`, the the local number density is
         normalized to give the area under the curve equal to one.
 
         Parameters
@@ -742,10 +742,11 @@ class Distribution(object):
 def distributions_generator(
     wholes: Dict[str, np.ndarray],
     bin_edges: Dict[str, np.ndarray],
-    group,
-    species,
-    geometry,
-    direction,
+    group: str,
+    species: str,
+    geometry: str,
+    direction: str,
+    parser: Callable,
     save_to: Optional[str] = None,
     normalized: bool = False
 ) -> Tuple[Dict, Dict]:
@@ -771,42 +772,59 @@ def distributions_generator(
     simulation group and P ensemble-averaged simulations in a
     ensemble-averaged simulation group.
 
-    Parameters:
-    histogram (dict): a dictionary of an ensemble or ensemble-averaged or
-    group simulation in which the keys are the name of ensembles/\
-    ensemble-averaged groups/groups and the keys of the histogram
-    dataframes. The names of the columns in each dataframe are the name of
-    simulations in an ensemble or the name of ensemble-averaged group or
-    the name of simulation group, the columns are the frequenies of
-    partilces of the type of interest (see radius_type) in each of the
-    bins, and the number of columns is the number of simulations in a
-    ensemble, one in an ensemble-averaged group, or the number of
-    ensmebles (=the number of ensemble-averaged) groups an a simulations
-    group.
-    properties (pandas dataframe): the properties of each simulation/\
-    ensemble-averaged simulation/ensemble-averaged simulations of the
-    simualtions/ensemble-averaged simulation/ensemble-averaged simulations
-    in a ensemble/ensemble-averged group/simulation group.
-    raduis_type (str): the name of the column in the properties in which
-    the size (or diameter) of the particles are tabled. The particle type
-    is the same for all the particles that their frequencies are counted
-    in histogram.
-    geometry (str): the shape of the simulation box
-    direction (str): the direction of interest in the geometry of interest.
+    Parameters
+    ----------
+    histogram: dict
+        A dictionary of an ensemble or ensemble-averaged or group
+        simulation in which the keys are the name of ensembles/
+        ensemble-averaged groups/groups and the keys of the histogram
+        dataframes. The names of the columns in each dataframe are the name of
+        simulations in an ensemble or the name of ensemble-averaged group or
+        the name of simulation group, the columns are the frequenies of
+        partilces of the type of interest (see radius_type) in each of the
+        bins, and the number of columns is the number of simulations in a
+        ensemble, one in an ensemble-averaged group, or the number of
+        ensmebles (=the number of ensemble-averaged) groups an a simulations
+        group.
+    properties: pd.dataframe
+        The properties of each simulation/ensemble-averaged
+        simulation/ensemble-averaged simulations of the
+        simualtions/ensemble-averaged simulation/ensemble-averaged simulations
+        in a ensemble/ensemble-averged group/simulation group.
+    raduis_type: str
+        the name of the column in the properties in which the size (or
+        diameter) of the particles are tabled. The particle type is the same
+        for all the particles that their frequencies are counted in histogram.
+    geometry: str
+        the shape of the simulation box
+    direction: str
+        the direction of interest in the geometry of interest.
     bead_name: the name of paticle type.
-    save_to: path to which the output saved.
-    normalized: whether normalized the distributions or not.
-    segments: wether a simulation file is created from a bunch of segments
-    or not -- This is the case for 'all' type files.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
+    save_to: str
+        path to which the output saved.
+    normalized: bool
+        whether normalized the distributions or not.
+
+    Return
+    ------
+    densities: dict
+       A dictionary in which the keys are 'whole' names and
+       the values are the local number densities.
+    vol_fractions: dict
+    A dictionary in which the keys are 'whole' names and
+       the values are the local volume fractions.
     """
     densities = {}
     vol_fractions = {}
     radius_attrs = {
         'Mon': 'dmon',
         'Crd':  'dcrowd'
-        }
+    }
     for whole, histogram in wholes.items():
-        whole_info = SumRule(
+        whole_info = parser(
             whole,
             geometry=geometry,
             group=group,
