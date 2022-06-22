@@ -1,15 +1,18 @@
 from typing import (
     Callable,
+    Type,
     List,
     Tuple,
     Optional,
+    Union
 )
 from glob import glob
 from polyphys.manage.organizer import (
     invalid_keyword,
     sort_filenames,
     database_path,
-    whole,
+    whole_from_file,
+    whole_from_segment,
     ensemble,
     ensemble_avg,
     children_stamps,
@@ -21,24 +24,32 @@ from polyphys.analyze.correlations import acf_generator
 import numpy as np
 import pandas as pd
 
+PropertyT = Type[str]
+SpeciesT = Type[str]
+GroupT = Type[str]
+DirectionT = Type[str]
+TimeSeriesT = Type[Tuple[PropertyT, SpeciesT, GroupT]]
+HistogramT = Type[Tuple[DirectionT, SpeciesT, GroupT]]
+
 
 def time_series(
     observations: List[str],
     parser: Callable,
-    save_to: Tuple[str, str, str],
-    tseries_properties: List[Tuple[str, str, str]] = None,
-    acf_tseries_properties: List[Tuple[str, str, str]] = None,
+    save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
+    segment: bool = False,
+    tseries_properties: Optional[List[TimeSeriesT]] = None,
+    acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
     geometry: str = 'biaxial',
     nlags: int = 7000,
     alpha: float = 0.05
 ) -> None:
-    """
-    runs overs all 'segment' `observations` resulted from 'probing' a
-    `group` in a given `geometry`, merges time series vertically to
-    create 'whole' files, do different analyses on time series
-    including auto correlation function (AFC) analysis, and finally
-    writes the ensembles and ensembles averages of time series and its
+    """Runs various statistical analyses on `observations` of
+    each of `TimeSeriesT` types in a given `geometry` and then
+    writes the ensembles and ensemble-averages of time series and its
     associated analyses to file.
+
+    If the `segment` is `True`, `observations` are "segements" and
+    should be "vertically" merged to create "wholes".
 
     Issue
     -----
@@ -57,10 +68,12 @@ def time_series(
     save_to : tuple of three str
         Absolute or relative path of the directories to which wholes,
         ensembles, and ensemble-aveages are saved.
-    tseries_properties: list of tuple of str
+    segment: bool, default False
+        Whether `observations` are 'segment' or 'whole'
+    tseries_properties: list of HistogramT
         A list of tumple where each tumple has three members: the property
         name, species, and group of a 'time-series' property.
-    acf_tseries_properties: list of tuple of str
+    acf_tseries_properties: list of HistogramT
         A list of tumple where each tumple has three members: the property
         name, species, and group of a 'time-series' property. For
         `cls_tseries_properties`, the the auto correlation function (AFC) is
@@ -79,20 +92,29 @@ def time_series(
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
     if tseries_properties is not None:
         for property_, species, group in tseries_properties:
-            segments = sort_filenames(
+            tseries = sort_filenames(
                 observations,
                 fmts=['-' + property_ + species + '.npy']
             )
-            # 'whole' dataframes, each with a 'whole' as its column:
-            wholes = whole(
-                property_ + species,
-                segments,
-                parser,
-                geometry=geometry,
-                group=group,
-                relation='tseries',
-                save_to=save_to_whole
-            )
+            # if the type is 'segment' we need to merge files and create
+            # 'whole' files.
+            if segment is True:
+                wholes = whole_from_segment(
+                    property_ + species,
+                    tseries,
+                    parser,
+                    geometry=geometry,
+                    group=group,
+                    relation='tseries',
+                    save_to=save_to_whole
+                )
+            else:
+                wholes = whole_from_file(
+                    tseries,
+                    parser,
+                    geometry=geometry,
+                    group=group
+                )
             ensembles = ensemble(
                     property_ + species,
                     wholes,
@@ -109,23 +131,31 @@ def time_series(
                     group=group,
                     save_to=save_to_ens_avg
             )
-        del wholes, ensembles
     if acf_tseries_properties is not None:
         for property_, species, group in acf_tseries_properties:
-            segments = sort_filenames(
+            tseries = sort_filenames(
                 observations,
                 fmts=['-' + property_ + species + '.npy']
             )
-            # 'whole' dataframes, each with a 'whole' as its column:
-            wholes = whole(
-                property_ + species,
-                segments,
-                parser,
-                geometry=geometry,
-                group=group,
-                relation='tseries',
-                save_to=save_to_whole
-            )
+            # if the type is 'segment' we need to merge files and create
+            # 'whole' files.
+            if segment is True:
+                wholes = whole_from_segment(
+                    property_ + species,
+                    tseries,
+                    parser,
+                    geometry=geometry,
+                    group=group,
+                    relation='tseries',
+                    save_to=save_to_whole
+                )
+            else:
+                wholes = whole_from_file(
+                    tseries,
+                    parser,
+                    geometry=geometry,
+                    group=group
+                )
             ensembles = ensemble(
                     property_ + species,
                     wholes,
@@ -179,17 +209,19 @@ def time_series(
 def histograms(
     observations: List[str],
     parser: Callable,
-    save_to: Tuple[str, str, str],
+    save_to:  Tuple[Union[str, None], Union[str, None], Union[str, None]],
+    segment: bool = False,
     geometry: str = 'biaxial',
-    hist_properties: Optional[List[Tuple[str, str, str]]] = None,
-    rho_phi_hist_properties: Optional[List[Tuple[str, str, str]]] = None
+    hist_properties: Optional[List[HistogramT]] = None,
+    rho_phi_hist_properties: Optional[List[HistogramT]] = None
 ) -> None:
-    """run overs all 'segment' `observations` resulted from 'probing' a
-    `group` in a given `geometry`, adds histograms horizontally to
-    create 'whole' files, do different analyses on histograms including
-    local number density and volume fraction analysis, and finally
-    writes the ensembles and ensembles averages of histograms and thier
+    """Runs various statistical analyses on `observations` of
+    each of `HistogramT` types in a given `geometry` and then
+    writes the ensembles and ensemble-averages of time series and its
     associated analyses to file.
+
+    If the `segment` is `True`, `observations` are "segements" and
+    should be "horizontally" merged to create "wholes".
 
     Parameters
     ----------
@@ -202,14 +234,16 @@ def histograms(
     save_to : tuple of three str
         Absolute or relative path of the directories to which wholes,
         ensembles, and ensemble-aveages are saved.
+    segment: bool, default False
+        Whether `observations` are 'segment' or 'whole'
     geometry : {'biaxial', 'slit', 'box'}, default biaxial
         Shape of the simulation box.
-    rho_phi_hist_properties: list of tuple of str, default None
+    rho_phi_hist_properties: list of HistogramT, default None
         A list of tumple where each tumple has four members: the direction,
         direction long name, species, and group of a 'histogram' property.
         These histogram properties are then used to calculate the local
         number density and volume fraction.
-    hist_properties: list of tuple of str, default None
+    hist_properties: list of HistogramT default None
         A list of tumple where each tumple has three members: the direction,
         species, and group of a 'histogram' property.
     """
@@ -221,33 +255,46 @@ def histograms(
     # phi: locla volume fraction
     if rho_phi_hist_properties is not None:
         for direction, species, group in rho_phi_hist_properties:
-            segments = sort_filenames(
+            hists = sort_filenames(
                 observations,
                 fmts=['-' + direction + 'Hist' + species + '.npy']
             )
-            edge_segments = sort_filenames(
+            edges = sort_filenames(
                 observations,
                 fmts=['-' + direction + 'Edge' + species + '.npy']
             )
-            # 'whole' dataframes, each with 'segments' as columns:
-            wholes = whole(
-                direction + 'Hist' + species,
-                segments,
-                parser,
-                geometry=geometry,
-                group=group,
-                relation='histogram',
-                save_to=save_to_whole
-            )
-            edge_wholes = whole(
-                direction + 'Edge' + species,
-                edge_segments,
-                parser,
-                geometry=geometry,
-                group=group,
-                relation='bin_edge',
-                save_to=save_to_whole
-            )
+            if segment is True:
+                wholes = whole_from_segment(
+                    direction + 'Hist' + species,
+                    hists,
+                    parser,
+                    geometry=geometry,
+                    group=group,
+                    relation='histogram',
+                    save_to=save_to_whole
+                )
+                edge_wholes = whole_from_segment(
+                    direction + 'Hist' + species,
+                    edges,
+                    parser,
+                    geometry=geometry,
+                    group=group,
+                    relation='histogram',
+                    save_to=save_to_whole
+                )
+            else:
+                wholes = whole_from_file(
+                    hists,
+                    parser,
+                    geometry=geometry,
+                    group=group
+                )
+                edge_wholes = whole_from_file(
+                    edges,
+                    parser,
+                    geometry=geometry,
+                    group=group
+                )
             # 'whole' dataframes, each with a 'whole' columns.
             rho_wholes, phi_wholes = distributions_generator(
                 wholes,
@@ -313,33 +360,46 @@ def histograms(
         del rho_wholes, phi_wholes, ensembles
     if hist_properties is not None:
         for species, direction, group in hist_properties:
-            segments = sort_filenames(
+            hists = sort_filenames(
                 observations,
                 fmts=['-' + direction + 'Hist' + species + '.npy']
             )
-            edge_segments = sort_filenames(
+            edges = sort_filenames(
                 observations,
                 fmts=['-' + direction + 'Edge' + species + '.npy']
             )
-            # 'whole' dataframes, each with 'segments' as columns:
-            wholes = whole(
-                direction + 'Hist' + species,
-                segments,
-                parser,
-                geometry=geometry,
-                group=group,
-                relation='histogram',
-                save_to=save_to_whole
-            )
-            edge_wholes = whole(
-                direction + 'Edge' + species,
-                segments,
-                parser,
-                geometry=geometry,
-                group=group,
-                relation='bin_edge',
-                save_to=save_to_whole
-            )
+            if segment is True:
+                wholes = whole_from_segment(
+                    direction + 'Hist' + species,
+                    hists,
+                    parser,
+                    geometry=geometry,
+                    group=group,
+                    relation='histogram',
+                    save_to=save_to_whole
+                )
+                edge_wholes = whole_from_segment(
+                    direction + 'Hist' + species,
+                    edges,
+                    parser,
+                    geometry=geometry,
+                    group=group,
+                    relation='histogram',
+                    save_to=save_to_whole
+                )
+            else:
+                wholes = whole_from_file(
+                    hists,
+                    parser,
+                    geometry=geometry,
+                    group=group
+                )
+                edge_wholes = whole_from_file(
+                    edges,
+                    parser,
+                    geometry=geometry,
+                    group=group
+                )
             ensembles = ensemble(
                 direction + 'Hist' + species,
                 wholes,
@@ -359,16 +419,16 @@ def histograms(
             )
 
 
-def non_scalar_segments(
+def nonscalar_timeseries_segments(
     observations: List[str],
     parser: Callable,
-    non_scalar_properties: List[Tuple[str, str, str]],
-    save_to: Tuple[str, str, str],
+    non_scalar_properties: List[TimeSeriesT],
+    save_to: str,
     geometry: str = 'biaxial'
 ) -> None:
-    """run overs all 'segment' `observations` resulted from 'probing' a
-    `group` in a given 'geometry', and sequencially merge
-    `non_scalar_properties`  to create 'whole' files.
+    """Runs overs all 'segment' `observations` of each of `TimeSeriesT` types
+    in a given 'geometry', and sequencially merges `non_scalar_properties` to
+    create 'whole' files.
 
     Parameters
     ----------
@@ -378,12 +438,12 @@ def non_scalar_segments(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    non_scalar_properties: list of tuple
+    non_scalar_properties: list of TimeSeriesT
         A list of tuples in which each tuple has three string members. The
         first string is the name of a physical property, the second one is
         the particletype, and the last one is `group` type. These physical
         properties are all of non_scalar form.
-    save_to : tuple of three str
+    save_to : str
         Absolute or relative path of the directories to which wholes,
         ensembles, and ensemble-aveages are saved.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
@@ -391,15 +451,14 @@ def non_scalar_segments(
     """
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     for property_, species, group in non_scalar_properties:
-        segments = sort_filenames(
-            observations,
-            fmts=['-' + property_ + species + '.npy']
-        )
-        # 'whole' dataframes, each with a 'whole' as its column:
-        _ = whole(
+        tseries = sort_filenames(
+                observations,
+                fmts=['-' + property_ + species + '.npy']
+            )
+        _ = whole_from_segment(
             property_ + species,
+            tseries,
             parser,
-            segments,
             geometry=geometry,
             group=group,
             relation='tseries',
@@ -409,11 +468,11 @@ def non_scalar_segments(
 
 def analyze_segments(
     input_database: str,
+    hierarchy: str,
     parser: Callable,
     geometry: str = 'biaxial',
-    hierarchy: str = "/N*/N*"
 ) -> None:
-    """read in the 'probe' observations of the 'group' particles based on the
+    """Reads in the 'probe' observations of the 'group' particles based on the
     `hierarchy` of directories and files from the `input_database` path to the
     'probe' phase of a 'space' and creates the 'analysis' phase at that parent
     directory of the 'probe' of that 'space', infers 'space' names from
@@ -424,13 +483,15 @@ def analyze_segments(
     ----------
     input_database: str
         Path to the input_database; a 'space' directory at a given 'phase'.
+    hierarchy: str
+        Hierarchy of the directories and files within the `input_database`;
+        for instance, "/N*/N*" means files that starts with "N" and are
+        located in directories starting with "N".
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
-    hierarchy: str
-        Hierarchy of the directories and files within the `input_database`.
     """
     # if not pathlib.Path(input_database).exists():
     #    raise ValueError(
@@ -532,14 +593,14 @@ def analyze_segments(
 
 def analyze_segments_bug(
     input_database: str,
+    hierarchy: str,
     parser: Callable,
-    non_scalar_properties: List[Tuple[str, str, str]] = None,
-    tseries_properties: List[Tuple[str, str, str]] = None,
-    acf_tseries_properties: List[Tuple[str, str, str]] = None,
-    hist_properties: List[Tuple[str, str, str]] = None,
-    rho_phi_hist_properties: List[Tuple[str, str, str]] = None,
+    non_scalar_properties: List[TimeSeriesT] = None,
+    tseries_properties: List[TimeSeriesT] = None,
+    acf_tseries_properties: List[TimeSeriesT] = None,
+    hist_properties: List[HistogramT] = None,
+    rho_phi_hist_properties: List[HistogramT] = None,
     geometry: str = 'biaxial',
-    hierarchy: str = "/N*/N*",
     nlags: int = 7000,
     alpha: float = 0.05
 ) -> None:
@@ -559,6 +620,10 @@ def analyze_segments_bug(
     ----------
     input_database: str
         Path to the input_database; a 'space' directory at a given 'phase'.
+    hierarchy: str
+        Hierarchy of the directories and files within the `input_database`;
+        for instance, "/N*/N*" means files that starts with "N" and are
+        located in directories starting with "N".
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
@@ -591,8 +656,6 @@ def analyze_segments_bug(
         `rho_phi_hists_properties` are also calculated.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
-    hierarchy: str
-        Hierarchy of the directories and files within the `input_database`.
     nlags: int, default 7000
         Maximum lag in the auto correlation function (AFC).
     alpha: float, default 0.05
@@ -623,26 +686,26 @@ def analyze_segments_bug(
     print(stamp_files[:3])
     segments_stamps = children_stamps(
         stamp_files,
-        lineage='segment',
-        save_to=save_to_whole
+        lineage='segment',  # lineage of the children stamps
+        save_to=save_to_whole  # save all the segment stamps in one file
     )
     whole_stamps = parents_stamps(
         segments_stamps,
         parser,
         geometry=geometry,
-        lineage='segment',
-        save_to=save_to_ens
+        lineage='segment',  # lineage of the children stamps
+        save_to=save_to_ens  # save all the whole stamps
     )
     _ = parents_stamps(
         whole_stamps,
         parser,
         geometry=geometry,
-        lineage='whole',
-        save_to=save_to_ens_avg
+        lineage='whole',  # lineage of the children stamps
+        save_to=save_to_ens_avg  # save all the ensemble-averged stamps
     )
     # generating whole properties:
     if non_scalar_properties is not None:
-        non_scalar_segments(
+        nonscalar_timeseries_segments(
             observations,
             parser,
             non_scalar_properties,
@@ -654,6 +717,7 @@ def analyze_segments_bug(
             parser,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             tseries_properties=tseries_properties,
+            segment=True,
             geometry=geometry
         )
     if acf_tseries_properties is not None:
@@ -662,6 +726,7 @@ def analyze_segments_bug(
             parser,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             acf_tseries_properties=acf_tseries_properties,
+            segment=True,
             geometry=geometry,
             nlags=nlags,
             alpha=alpha
@@ -671,6 +736,7 @@ def analyze_segments_bug(
             observations,
             parser,
             (save_to_whole, save_to_ens, save_to_ens_avg),
+            segment=True,
             geometry=geometry,
             hist_properties=hist_properties
         )
@@ -679,23 +745,36 @@ def analyze_segments_bug(
             observations,
             parser,
             (save_to_whole, save_to_ens, save_to_ens_avg),
+            segment=True,
             geometry=geometry,
             rho_phi_hist_properties=rho_phi_hist_properties
         )
 
 
-def analyze_wholes(
+def analyze_wholes_bug(
     input_database: str,
     hierarchy: str,
     parser: Callable,
+    #non_scalar_properties: List[TimeSeriesT] = None,
+    tseries_properties: List[TimeSeriesT] = None,
+    acf_tseries_properties: List[TimeSeriesT] = None,
+    hist_properties: List[HistogramT] = None,
+    rho_phi_hist_properties: List[HistogramT] = None,
     geometry: str = 'biaxial',
+    nlags: int = 7000,
+    alpha: float = 0.05
 ) -> None:
-    """Reads in the 'probe' observations based on the `hierarchy` of
-    directories and files from the `input_database` path to the 'probe'
-    phase of a 'space' and creates the 'analysis' phase at that parent
+    """read in the 'probe' observations of the 'group' particles based on the
+    `hierarchy` of directories and files from the `input_database` path to the
+    'probe' phase of a 'space' and creates the 'analysis' phase at that parent
     directory of the 'probe' of that 'space', infers 'space' names from
-    `input_database` path and creates a 'space' directories at various
-    stages in the 'analysis' directory for both 'bug' and 'all' groups.
+    `input_database` path and creates a 'space' directories at various stages
+    in the 'analysis' directory for both 'bug' and 'all' groups.
+
+    `tseries_properties`, `hists_properties`, `rho_phi_hists_properties` are
+    list of tuples in which each tuple has three string members. The first
+    string is the name of a physical property, the second one is the particle
+    type, and the last one is `group` type.
 
     Parameters
     ----------
@@ -708,14 +787,43 @@ def analyze_wholes(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
+    non_scalar_properties: list of TimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of non_scalar form.
+    tseries_properties: list of TimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the time-series form.
+    acf_tseries_properties: list of TimeSeriesT, default None
+        A list of tumple where each tumple has three members: the property
+        name, species, and group of a 'time-series' property. For
+        `cls_tseries_properties`, the the auto correlation function (AFC) is
+        also computed.
+    hist_properties: list of HistogramT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the histogram form.
+    rho_phi_hist_properties: list of HistogramT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the histogram form; however, in contrast to
+        `hists_properties`, the local number denisty and volume fraction of
+        `rho_phi_hists_properties` are also calculated.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box.
+    nlags: int, default 7000
+        Maximum lag in the auto correlation function (AFC).
+    alpha: float, default 0.05
+        If a number is given, the confidence intervals for the given level
+        are returned. For instance if alpha=.05, 95 % confidence intervals
+        are returned where the standard deviation is computed according to
+        Bartlett”s formula.
     """
-    # if not pathlib.Path(input_database).exists():
-    #    raise ValueError(
-    #        f"'{input_database}'"
-    #        "path does not exist."
-    #        )
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     observations = glob(input_database + hierarchy)
     if observations == []:
@@ -724,9 +832,9 @@ def analyze_wholes(
             f"'{input_database + hierarchy}'"
             )
     # 'bug' save_to paths:
-    save_to_whole = database_path(
-        input_database, 'analysis', stage='wholeSim', group='bug'
-    )
+    #save_to_whole = database_path(
+    #    input_database, 'analysis', stage='wholeSim', group='bug'
+    #)
     save_to_ens = database_path(
         input_database, 'analysis', stage='ens', group='bug'
     )
@@ -735,71 +843,61 @@ def analyze_wholes(
     )
     # stamps:
     stamp_files = sort_filenames(observations, fmts=['-stamps.csv'])
+    #print(stamp_files[:3])
     whole_stamps = children_stamps(
         stamp_files,
-        lineage='whole',
-        save_to=save_to_whole
+        lineage='whole',  # lineage of the children stamps
+        save_to=save_to_ens  # save all the whole stamps
     )
     _ = parents_stamps(
         whole_stamps,
         parser,
         geometry=geometry,
-        lineage='whole',
-        save_to=save_to_ens_avg
+        lineage='whole',  # lineage of the children stamps
+        save_to=save_to_ens  # save all the ensemble-averaged stamps
     )
-    # 'bug' time series and histograms:
-    acf_tseries_bug = [  # property_, species, group
-                   ('fsdT', 'Mon', 'bug'),
-                   ('gyrT', 'Mon', 'bug'),
-                   ('rfloryT', 'Mon', 'bug')
-                   ]
-    time_series(
-        observations,
-        parser,
-        (save_to_whole, save_to_ens, save_to_ens_avg),
-        acf_tseries_properties=acf_tseries_bug,
-        geometry=geometry
-    )
-    hist_bug = [  # direction, species, group
-                          ('rflory', 'Mon', 'bug')
-                          ]
-    histograms(
-        observations,
-        parser,
-        (save_to_whole, save_to_ens, save_to_ens_avg),
-        geometry=geometry,
-        hist_properties=hist_bug
-    )
-    # 'all' save_to paths:
-    save_to_whole = database_path(
-        input_database, 'analysis', stage='wholeSim', group='all'
-    )
-    save_to_ens = database_path(
-        input_database, 'analysis', stage='ens', group='all'
-    )
-    save_to_ens_avg = database_path(
-        input_database, 'analysis', stage='ensAvg', group='all'
-    )
-    # 'all' histograms:
-    rho_phi_hist_all = [  # direction, direction long name, species, group
-                   ('r', 'Crd', 'all'),
-                   ('z', 'Crd', 'all'),
-                   ('r', 'Mon', 'all'),
-                   ('z', 'Mon', 'all'),
-                   ]
-    hist_all = [  # direction, species, group
-                      ('theta', 'Crd', 'all'),
-                      ('theta', 'Mon', 'all'),
-                      ('rflory', 'Mon', 'bug')
-                      ]
-    histograms(
-        observations,
-        parser,
-        (save_to_whole, save_to_ens, save_to_ens_avg),
-        geometry=geometry,
-        hist_properties=hist_all,
-        rho_phi_hist_properties=rho_phi_hist_all
-    )
+    # generating whole properties:
+    #if non_scalar_properties is not None:
+    #    non_scalar_segments(
+    #        observations,
+    #        parser,
+    #        non_scalar_properties,
+    #        save_to_whole,
+    #        geometry=geometry)
+    if tseries_properties is not None:
+        time_series(
+            observations,
+            parser,
+            (None, save_to_ens, save_to_ens_avg),
+            tseries_properties=tseries_properties,
+            geometry=geometry
+        )
+    if acf_tseries_properties is not None:
+        time_series(
+            observations,
+            parser,
+            (None, save_to_ens, save_to_ens_avg),
+            acf_tseries_properties=acf_tseries_properties,
+            geometry=geometry,
+            nlags=nlags,
+            alpha=alpha
+        )
+    if hist_properties is not None:
+        histograms(
+            observations,
+            parser,
+            (None, save_to_ens, save_to_ens_avg),
+            geometry=geometry,
+            hist_properties=hist_properties
+        )
+    if rho_phi_hist_properties is not None:
+        histograms(
+            observations,
+            parser,
+            (None, save_to_ens, save_to_ens_avg),
+            geometry=geometry,
+            rho_phi_hist_properties=rho_phi_hist_properties
+        )
 
 
 def error_calc_block(

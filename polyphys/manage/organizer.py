@@ -460,7 +460,7 @@ def database_path(
         return str(output_database) + "/"
 
 
-def whole(
+def whole_from_segment(
     property_: str,
     segments: List[Tuple[str]],
     parser: Callable,
@@ -564,6 +564,55 @@ def whole(
                 wholes.items()
             )
         )
+    return wholes
+
+
+def whole_from_file(
+    whole_paths: List[Tuple[str]],
+    parser: Callable,
+    geometry: str = 'biaxial',
+    group: str = 'bug',
+) -> Dict[str, np.ndarray]:
+    """Loads `whole` numpy arrays for a given physical property of the
+    particle `group` in the `geometry` of interest from their pathes
+    `wholepathes`.
+
+    Parameters
+    ----------
+    observations : list of tuples
+        List of tuples where each tuple at least has one member (the path to
+        a csv file for the `property_`).
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
+    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+        Shape of the simulation box.
+    group: {'bug', 'all'}, default 'bug'
+        Type of the particle group.
+
+    Return
+    ------
+    siblings: dict of np.ndarray
+        Dict of siblings where keys are 'whole' names (str) and values
+        are whole data (arrays).
+
+    Notes
+    -----
+    Please see the 'organizer' documentation for definitions
+    of 'geomtery', and 'group', and the definitons of their keywords.
+    """
+    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(group, ['bug', 'all'])
+    wholes = {}
+    for whole_path in whole_paths:
+        whole_info = parser(
+            whole_path[0],
+            geometry=geometry,
+            group=group,
+            lineage='whole'
+        )
+        whole_name = getattr(whole_info, 'lineage')
+        wholes[whole_name] = np.load(whole_path[0])
     return wholes
 
 
@@ -900,6 +949,8 @@ def parents_stamps(
     # but itsvalues are 'whole' lineage_names, so it is dropped:
     parents_genealogy.remove('lineage_name')
     parent_cols = parents_attrs + parents_genealogy
+    print(parent_cols)
+    print(agg_funcs)
     parents_stamps = stamps.groupby(parent_cols).agg(agg_funcs)
     parents_stamps.reset_index(inplace=True, drop=True)
     reodered_cols = parents_genealogy + \
