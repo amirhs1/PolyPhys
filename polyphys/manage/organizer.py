@@ -611,7 +611,7 @@ def whole_from_file(
             group=group,
             lineage='whole'
         )
-        whole_name = getattr(whole_info, 'lineage')
+        whole_name = getattr(whole_info, 'lineage_name')
         wholes[whole_name] = np.load(whole_path[0])
     return wholes
 
@@ -842,10 +842,10 @@ def children_stamps(
 
 def parents_stamps(
     stamps: pd.DataFrame,
-    parser: Callable,
     geometry: str = 'biaxial',
     group: str = 'bug',
     lineage: str = 'segment',
+    properties: Optional[Dict[str, Callable]] = None,
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
     """perform merging/ensemble-averaging over all the 'segment/'whole'
@@ -856,15 +856,17 @@ def parents_stamps(
     ----------
     stamps: DataFrame
         Dataframe of all the simulation stamps in the `group` in a space.
-    parser: Callable
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box
     group: {'bug', 'all'}, default 'bug'
         Type of the particle group.
     lineage: {('segment', 'whole'}, default 'segment'
         Lineage type of children's stamps.
+    properties: dict of str
+        A dictionary in which the keys are properties such as the time-
+        averaged radius of gyration which are measured during the 'probe'
+        phase and the values are user-defined or numpy functions which are
+        used as the aggregation function bu pandas.
     save_to : str, default None
         Absolute or relative path of a directory to which outputs are saved.
 
@@ -873,7 +875,9 @@ def parents_stamps(
     If `lineage='segment'`, then stamps are for 'segments' and they have only
     different 'segment_id' for a given 'whole' parent. If `lineage='whole'`,
     then stamps are for 'wholes' and they have only different 'ensemble_id'
-    for a given 'ensemble' parent.
+    for a given 'ensemble' parent. In either scenarios, the 'stamp' files
+    have 'segment' and 'segment_id' columns. If `lineage='whole'`, the
+    values of these two columns are "N/A".
 
     Return
     ------
@@ -884,78 +888,35 @@ def parents_stamps(
     invalid_keyword(group, ['bug', 'all'])
     invalid_keyword(lineage, ['segment', 'whole'])
     # attributes, properties and genealogy:
-    stamps_cols = stamps.columns
-    # children have the same attributes genealogy but with different values, so
-    # the list of attribute and genealogy are the same:
-    children_info = parser(
-        stamps.loc[0, lineage],
-        geometry=geometry,
-        group=group,
-        lineage=lineage,
-        ispath=False
-    )
-    children_genealogy = children_info.genealogy.copy()
-    # no need for 'lineage_name' and 'lineage' later in create parents' df:
-    children_attrs = children_info.attributes.copy()
-    # adding 'n_frames' as an attribute:
-    children_attrs.append('n_frames')
-    # attrs and properties:
-    attrs_properties = list(
-        set(stamps_cols).difference(set(children_genealogy))
-        )
-    # properties:
-    properties = list(set(attrs_properties).difference(set(children_attrs)))
-    # agg functions forproperties, attributes, and genealogy:
+    stamps_cols = list(stamps.columns)
+    stamps_cols.remove("lineage_name")
+    stamps_cols.remove(lineage)
+    # aggregation dictionary: See Note above.
     agg_funcs = dict()
-    # CAUTION: 'properties' is sometimes empty, since sometimes no properties
-    # is measured during probing. Let's check this and then create
-    # aggregation dictionary
-    if properties != []:
-        # properties are at equilibrium, so the values of each property_
-        # is averaged over all children;
-        prop_agg_funcs = ['mean'] * len(properties)
-        agg_funcs.update(zip(properties, prop_agg_funcs))
-    attr_agg_funcs = ['last'] * len(children_attrs)
-    agg_funcs.update(zip(children_attrs, attr_agg_funcs))
-    children_genealogy.remove('lineage_name')
-    children_genealogy.remove(lineage)
-    gene_agg_funcs = ['last'] * len(children_genealogy)
-    agg_funcs.update(zip(children_genealogy, gene_agg_funcs))
-    # Handing 'lineage' specific matters and exceptions:
+    attr_agg_funcs = ['last'] * len(stamps_cols)
+    agg_funcs.update(zip(stamps_cols, attr_agg_funcs))
+    if properties is not None:  # add/update agg funcs for properties.
+        agg_funcs.update(properties)
+    # Handing 'lineage'-specific details:
     if lineage == 'whole':
-        parent_lineage = 'ensemble_long'
+        parent_groupby = 'ensemble_long'
         # aggregating functions for properties
+        stamps_cols.remove("segment_id")  # segment_id is "N/A"
+        stamps_cols.remove("segment")  # segment_id is "N/A"
+        agg_funcs.pop("segment_id")
+        agg_funcs.pop("segment")
         agg_funcs['ensemble_id'] = 'count'
         agg_funcs['n_frames'] = 'last'
         file_lastname = 'ensAvg'
     else:
-        parent_lineage = 'whole'
+        parent_groupby = 'whole'
         # aggregating functions for properties
         agg_funcs['segment_id'] = 'count'
         agg_funcs['n_frames'] = 'sum'
         file_lastname = 'whole'
-    parents_names = stamps[parent_lineage].drop_duplicates().tolist()
-    # parents have the same attributes genealogy but with different values, so
-    # the list of attribute and genealogy are the same:
-    parents_info = parser(
-        parents_names[0],
-        geometry=geometry,
-        group=group,
-        lineage=parent_lineage
-    )
-    parents_attrs = parents_info.attributes.copy()
-    parents_genealogy = parents_info.genealogy.copy()
-    # lineage_name repeated in both 'whole' and 'ensemble' lineages,
-    # but itsvalues are 'whole' lineage_names, so it is dropped:
-    parents_genealogy.remove('lineage_name')
-    parent_cols = parents_attrs + parents_genealogy
-    print(parent_cols)
-    print(agg_funcs)
-    parents_stamps = stamps.groupby(parent_cols).agg(agg_funcs)
-    parents_stamps.reset_index(inplace=True, drop=True)
-    reodered_cols = parents_genealogy + \
-        parents_stamps.columns.drop(parents_genealogy).tolist()
-    parents_stamps = parents_stamps[reodered_cols]
+    agg_funcs.pop(parent_groupby)
+    parents_stamps = stamps.groupby([parent_groupby]).agg(agg_funcs)
+    parents_stamps.reset_index(inplace=True)
     if lineage == 'whole':
         parents_stamps.rename(
             columns={'ensemble_id': 'n_ensembles'},

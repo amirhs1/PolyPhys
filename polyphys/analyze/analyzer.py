@@ -755,7 +755,7 @@ def analyze_wholes_bug(
     input_database: str,
     hierarchy: str,
     parser: Callable,
-    #non_scalar_properties: List[TimeSeriesT] = None,
+    #nonscalar_timeseries_properties: List[TimeSeriesT] = None,
     tseries_properties: List[TimeSeriesT] = None,
     acf_tseries_properties: List[TimeSeriesT] = None,
     hist_properties: List[HistogramT] = None,
@@ -843,7 +843,6 @@ def analyze_wholes_bug(
     )
     # stamps:
     stamp_files = sort_filenames(observations, fmts=['-stamps.csv'])
-    #print(stamp_files[:3])
     whole_stamps = children_stamps(
         stamp_files,
         lineage='whole',  # lineage of the children stamps
@@ -851,16 +850,14 @@ def analyze_wholes_bug(
     )
     _ = parents_stamps(
         whole_stamps,
-        parser,
         geometry=geometry,
         lineage='whole',  # lineage of the children stamps
-        save_to=save_to_ens  # save all the ensemble-averaged stamps
+        save_to=save_to_ens_avg  # save all the ensemble-averaged stamps
     )
     # generating whole properties:
     #if non_scalar_properties is not None:
     #    non_scalar_segments(
     #        observations,
-    #        parser,
     #        non_scalar_properties,
     #        save_to_whole,
     #        geometry=geometry)
