@@ -215,6 +215,7 @@ from glob import glob
 import re
 import numpy as np
 import pandas as pd
+import warnings
 
 
 def camel_case_split(
@@ -833,6 +834,14 @@ def children_stamps(
     space_stamps = [pd.read_csv(stamp[0]) for stamp in stamps]
     space_stamps = pd.concat(space_stamps)
     space_stamps.reset_index(inplace=True, drop=True)
+    if lineage == 'whole':
+        space_stamps.drop(columns=['segment', 'segment_id'], inplace=True)
+    warnings.warn(
+        "'segment' and 'segment_id' columns are dropped when individual"
+        " 'whole' stamps combined to create a single dataframe of 'whole'"
+        " stamps by 'children_stamps'.",
+        UserWarning
+    )
     if save_to is not None:
         space_name = space_stamps.loc[0, 'space']
         filename = '-'.join([space_name, group, lineage, 'stamps.csv'])
@@ -889,8 +898,16 @@ def parents_stamps(
     invalid_keyword(lineage, ['segment', 'whole'])
     # attributes, properties and genealogy:
     stamps_cols = list(stamps.columns)
-    stamps_cols.remove("lineage_name")
-    stamps_cols.remove(lineage)
+    try:
+        stamps_cols.remove("lineage_name")
+        stamps_cols.remove(lineage)
+    except ValueError:
+        print(
+            f"'lineage_name' and '{lineage}'"
+            " columns are not among in stamps column:"
+            f"'{stamps_cols}', they are probably removed in"
+            "a previous call of 'parents_stamps' function."
+        )
     # aggregation dictionary: See Note above.
     agg_funcs = dict()
     attr_agg_funcs = ['last'] * len(stamps_cols)
@@ -900,11 +917,27 @@ def parents_stamps(
     # Handing 'lineage'-specific details:
     if lineage == 'whole':
         parent_groupby = 'ensemble_long'
+        # If the 'whole' stamps are generated directly in the 'probe' phase,
+        # then 'segment' and 'segment_id' columns are "N/A" and are removed
+        # from the list of stamps columns that are added to the parents
+        # stamps.
+        # There is no need to have the "n_segment" column in the parent
+        # stamps, so it is removed. The "whole" stamps directly generated
+        # in the "probe" phase do not have such a column, but those generated
+        # from "segment" stamps have.
+        try:
+            stamps_cols.remove("segment_id")  # segment_id is "N/A"
+            stamps_cols.remove("segment")  # segment_id is "N/A"
+            agg_funcs.pop("segment_id")
+            agg_funcs.pop("segment")
+        except ValueError:
+            print(
+                "'segment_id', 'segment' and 'n_segments'"
+                " columns are not among in stamps column:"
+                f"'{stamps_cols}', they are probably removed in"
+                "a previous call of 'parents_stamps' function."
+            )
         # aggregating functions for properties
-        stamps_cols.remove("segment_id")  # segment_id is "N/A"
-        stamps_cols.remove("segment")  # segment_id is "N/A"
-        agg_funcs.pop("segment_id")
-        agg_funcs.pop("segment")
         agg_funcs['ensemble_id'] = 'count'
         agg_funcs['n_frames'] = 'last'
         file_lastname = 'ensAvg'
@@ -922,6 +955,14 @@ def parents_stamps(
             columns={'ensemble_id': 'n_ensembles'},
             inplace=True
         )
+        try:
+            parents_stamps.drop(columns=['n_segments'], inplace=True)
+        except KeyError:
+            print(
+                "'n_segments' column is among the parents' stamps column:"
+                f"'{stamps_cols}', it is probably bot created in"
+                "a previous call of 'parents_stamps' function."
+            )
     else:
         parents_stamps.rename(
             columns={'segment_id': 'n_segments'},

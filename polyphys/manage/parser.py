@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-import warnings
 import numpy as np
 import pandas as pd
 import os
 import re
 from typing import TypeVar
-
+import warnings
 # This for Python 3.9
 TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
 TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
@@ -394,8 +393,7 @@ class SumRule(object):
         convention_warning = (
             "It is assumed that 'nc' is the last attribute" +
             " shortkey in a lineage_name of types:" +
-            " 'ensemble', 'ensemble_long', 'whole', 'segment'."
-        )
+            " 'ensemble', 'ensemble_long', 'whole', 'segment'.")
         if self.lineage == 'space':
             self.space = self.lineage_name
             self.ensemble = "N/A"
@@ -404,7 +402,7 @@ class SumRule(object):
             self.segment = "N/A"
         elif self.lineage == 'ensemble':
             self.space = self.lineage_name.split('nc')[0]
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble = self.lineage_name
             self.ensemble_long = "N/A"
             self.whole = "N/A"
@@ -413,7 +411,7 @@ class SumRule(object):
             self.space = 'N' + str(self.nmon) + 'D' + str(self.dcyl) \
                 + 'ac' + str(self.dcrowd)
             self.ensemble = self.space + 'nc' + str(self.ncrowd)
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
@@ -421,7 +419,7 @@ class SumRule(object):
             self.space = 'N' + str(self.nmon) + 'D' + str(self.dcyl) \
                 + 'ac' + str(self.dcrowd)
             self.ensemble = self.space + 'nc' + str(self.ncrowd)
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
@@ -429,7 +427,7 @@ class SumRule(object):
             self.space = 'N' + str(self.nmon) + 'D' + str(self.dcyl) \
                 + 'ac' + str(self.dcrowd)
             self.ensemble = self.space + 'nc' + str(self.ncrowd)
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name.split(".j")[0]
             self.segment = self.lineage_name
@@ -877,7 +875,7 @@ class TransFoci(object):
             self.segment = "N/A"
         elif self.lineage == 'ensemble':
             self.space = self.lineage_name.split('nc')[0]
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble = self.lineage_name
             self.ensemble_long = "N/A"
             self.whole = "N/A"
@@ -885,21 +883,21 @@ class TransFoci(object):
         elif self.lineage == 'ensemble_long':
             self.space = space_name
             self.ensemble = ensemble_name
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
         elif self.lineage == 'whole':
             self.space = space_name
             self.ensemble = ensemble_name
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
         else:
             self.space = space_name
             self.ensemble = ensemble_name
-            warnings.warn(convention_warning)
+            warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name.split(".j")[0]
             self.segment = self.lineage_name

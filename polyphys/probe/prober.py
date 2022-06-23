@@ -713,8 +713,8 @@ def fixedsize_bins(
 def sum_rule_bug(
     topology: str,
     trajectory: str,
-    geometry: str = 'biaxial',
-    lineage: str = 'segment',
+    geometry: str,
+    lineage: str,
     save_to: str = './',
     continuous: bool = False
 ) -> None:
@@ -735,9 +735,9 @@ def sum_rule_bug(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}, default 'segment'
+    lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str, default './'
         The absolute/relative path of a directory to which outputs are saved.
@@ -825,8 +825,8 @@ def sum_rule_bug(
 def sum_rule_bug_flory_hist(
     topology: str,
     trajectory: str,
-    geometry: str = 'biaxial',
-    lineage: str = 'segment',
+    geometry: str,
+    lineage: str,
     save_to: str = './',
     continuous: bool = False
 ) -> None:
@@ -847,9 +847,9 @@ def sum_rule_bug_flory_hist(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}, default 'segment'
+    lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str, default './'
         The absolute/relative path of a directory to which outputs are saved.
@@ -977,8 +977,8 @@ def sum_rule_bug_flory_hist(
 def sum_rule_bug_rmsd(
     topology: str,
     trajectory: str,
-    geometry: str = 'biaxial',
-    lineage: str = 'segment',
+    geometry: str,
+    lineage: str,
     save_to: str = './'
 ) -> None:
     """Computes the rmsd of a 'segment simulation of a 'bug' atom group in the
@@ -994,9 +994,9 @@ def sum_rule_bug_rmsd(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}, default 'segment'
+    lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str, default './'
         The absolute/relative path of a directory to which output is saved.
@@ -1041,8 +1041,8 @@ def sum_rule_bug_rmsd(
 def sum_rule_all(
     topology: str,
     trajectory: str,
-    geometry: str = 'biaxial',
-    lineage: str = 'segment',
+    geometry: str,
+    lineage: str,
     save_to: str = "./",
     continuous: Optional[bool] = False
 ) -> None:
@@ -1056,9 +1056,9 @@ def sum_rule_all(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}, default 'segment'
+    lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str
         The absolute/relative path of a directory to which outputs are saved.
@@ -1320,8 +1320,8 @@ def sum_rule_all(
 def trans_fuci_bug(
     topology: str,
     trajectory: str,
-    geometry: str = 'biaxial',
-    lineage: str = 'segment',
+    geometry: str,
+    lineage: str,
     save_to: str = './',
     continuous: bool = False
 ) -> None:
@@ -1334,9 +1334,9 @@ def trans_fuci_bug(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    lineage: {'segment', 'whole'}, default 'segment'
+    lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str, default './'
         The absolute/relative path of a directory to which outputs are saved.
@@ -1351,7 +1351,8 @@ def trans_fuci_bug(
             "and 'continuous' is "
             f"'{continuous}. "
             "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories."
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
         )
     print("Setting the name of analyze file...")
     sim_info = TransFoci(
