@@ -68,7 +68,7 @@ def acf_generator(
     ensembles: Dict[str, pd.DataFrame],
     nlags: int,
     alpha: float,
-    group: str = 'bug',
+    group: str,
     save_to: str = None
 ) -> Tuple[Dict[str, pd.DataFrame],
            Dict[str, pd.DataFrame],
@@ -92,7 +92,7 @@ def acf_generator(
         are returned. For instance if alpha=.05, 95 % confidence intervals
         are returned where the standard deviation is computed according to
         Bartlett”s formula.
-     group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'all'}
         Type of the particle group.
     save_to : str, default None
         Absolute/relative path of a directory to which outputs are saved.
