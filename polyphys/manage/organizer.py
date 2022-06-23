@@ -465,9 +465,9 @@ def whole_from_segment(
     property_: str,
     segments: List[Tuple[str]],
     parser: Callable,
-    geometry: str = 'biaxial',
-    group: str = 'bug',
-    relation: str = 'histogram',
+    geometry: str,
+    group: str,
+    relation: str,
     save_to: Optional[str] = None
 ) -> Dict[str, np.ndarray]:
     """generates `whole` array for `property_` of the particle `group` in the
@@ -483,11 +483,11 @@ def whole_from_segment(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'all'}
         Type of the particle group.
-    relation : {'histogram', 'tseries', 'bin_edges'}, default 'histogram'
+    relation : {'histogram', 'tseries', 'bin_edges'}
         Relation between segments and wholes:
 
         'hisotgram'
@@ -571,8 +571,8 @@ def whole_from_segment(
 def whole_from_file(
     whole_paths: List[Tuple[str]],
     parser: Callable,
-    geometry: str = 'biaxial',
-    group: str = 'bug',
+    geometry: str,
+    group: str,
 ) -> Dict[str, np.ndarray]:
     """Loads `whole` numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their pathes
@@ -586,9 +586,9 @@ def whole_from_file(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'all'}
         Type of the particle group.
 
     Return
@@ -621,8 +621,8 @@ def ensemble(
     property_: str,
     wholes: Dict[str, np.ndarray],
     parser: Callable,
-    geometry: str = 'biaxial',
-    group: str = 'bug',
+    geometry: str,
+    group: str,
     edge_wholes: Optional[Dict[str, np.ndarray]] = None,
     save_to: str = None
 ) -> Dict[str, pd.DataFrame]:
@@ -639,9 +639,9 @@ def ensemble(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         The shape of the simulation box.
-    group: {'bug', 'all'}, defualt 'bug'
+    group: {'bug', 'all'}
         The type of the particle group.
     edge_wholes:  dict of np.ndarray, default None
         A dictionary in which keys are 'whole' names and values are bin_edges.
@@ -724,8 +724,8 @@ def ensemble_avg(
     property_: str,
     ensembles: Dict[str, pd.DataFrame],
     parser: Callable,
-    geometry: str = 'biaxial',
-    group: str = 'bug',
+    geometry: str,
+    group: str,
     exclude: list = ['bin_center'],
     save_to: str = None
 ) -> Dict[str, pd.DataFrame]:
@@ -747,9 +747,9 @@ def ensemble_avg(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         The shape of the simulation box.
-    group: {'bug', 'all'}, defualt 'bug'
+    group: {'bug', 'all'}
         Type of the particle group.
     exclude: list of str, default ['bin_center']
         List of columns that are not 'whole' or 'segment' simulation names.
@@ -801,8 +801,8 @@ def ensemble_avg(
 
 def children_stamps(
     stamps: List[Tuple[str]],
-    group: str = 'bug',
-    lineage: str = 'segment',
+    group: str,
+    lineage: str,
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
     """generates a dataset of the phyiscal attributes and equilibrium
@@ -817,9 +817,9 @@ def children_stamps(
     stamps: list of tuple
         List of tuples where each tumple has one member and that member is a
         filepath to the stamp of a 'segment' simulation in a space.
-    group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'all'}
         Type of the particle group.
-    lineage: {'segment', 'whole'}, default 'segment'
+    lineage: {'segment', 'whole'}
         Lineage type of children' stamps
     save_to : str, default None
         Absolute or relative path of a directory to which outputs are saved.
@@ -851,9 +851,9 @@ def children_stamps(
 
 def parents_stamps(
     stamps: pd.DataFrame,
-    geometry: str = 'biaxial',
-    group: str = 'bug',
-    lineage: str = 'segment',
+    geometry: str,
+    group: str,
+    lineage: str,
     properties: Optional[Dict[str, Callable]] = None,
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
@@ -865,11 +865,11 @@ def parents_stamps(
     ----------
     stamps: DataFrame
         Dataframe of all the simulation stamps in the `group` in a space.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box
-    group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'all'}
         Type of the particle group.
-    lineage: {('segment', 'whole'}, default 'segment'
+    lineage: {('segment', 'whole'}
         Lineage type of children's stamps.
     properties: dict of str
         A dictionary in which the keys are properties such as the time-
@@ -981,23 +981,24 @@ def all_in_one_tseries(
     property_path: str,
     property_: str,
     parser: Callable,
-    property_pattern: str = 'N*',
-    physical_attrs: list = None,
-    group: str = 'bug',
-    geometry: str = 'biaxial',
+    property_pattern: str,
+    physical_attrs: List[str],
+    species: str,
+    group: str,
+    geometry: str,
+    single_space: Optional[bool] = False,
     save_to: str = None
 ) -> pd.DataFrame:
-    """take the `property_path` to the directory in which the ansemble-average
-    timeseries of a given physical `property_` of a given `group` in a given
-    `geometry`, and performs the following operations in the `orient` of
-    interest: First, it concatenates the timeseries into one dataframe along
-    the 0 or 'row' or 'index' in pandas's lingo, and thenadds the physical
-    `attributes` of interest as the name columns to the concatenated
-    timeseries.
+    """Takes the `property_path` to the "ensAvg" of a given space, merges
+    all the "ensAvg" ensmeble time series into one dataframe along the 0
+    or 'row' or 'index' in pandas's lingo. It also adds the physical
+    `attributes` of interest as the new columns to the dataframe.
 
-    In each 'ensemble-averaged' dataframe, there are 3 columns with
-    this name patter:
+    In each 'ensemble-averaged' dataframe, there are 3 columns with this name
+    pattern:
+
     column name = 'long_ensemble-group-porperty_[-measure]-stat'
+
     where '[-measure]' is a physical measurement such as the auto correlation
     function (AFC) done on the physical 'property_'. [...] means this keyword
     in the column name can be optional. the 'stat' keyword is either 'mean',
@@ -1012,15 +1013,21 @@ def all_in_one_tseries(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    property_pattern: str, default 'N*'
-        The pattern by which the filenames of timeseries are started with.
-    attributes: list, default None
+    property_pattern: str
+        The pattern by which the filenames of timeseries are started with; for
+        instance, "N*" means files start with "N"
+    attributes: list of str
         The physical attributes that will added as new columns to the
         concatenated timeseries.
-    group: {'bug', 'all'}, defualt 'bug'
+    species: {'Mon', 'Crd', 'Foci'}
+        The species of particles.
+    group: {'bug', 'all'}
         The type of the particle group.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         The shape of the simulation box.
+    single_space:
+        Whether the all-in-one file is for all the timeseries properties of a
+        single space or all the space in a project.
     save_to : str, default None
         An/a absolute/relative path of a directory to which outputs are saved.
 
@@ -1031,15 +1038,13 @@ def all_in_one_tseries(
         of interest, and "properties and attributes" of interest are added to
         it as the new columns.
     """
+    invalid_keyword(species, ['Mon', 'Crd', 'Foci'])
+    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     property_ext = "-" + property_ + ".csv"
     property_csvs = glob(property_path + "/" + property_pattern + property_ext)
     property_csvs = sort_filenames(property_csvs, fmts=[property_ext])
     property_db = []
-    if physical_attrs is None:
-        physical_attrs = [
-            'space', 'ensemble_long', 'ensemble', 'nmon', 'dcyl', 'dcrowd',
-            'phi_c_bulk'
-        ]
     for property_csv in property_csvs:
         property_df = pd.read_csv(property_csv[0], header=0)
         # the first column of porperty_df is used to extract
@@ -1077,6 +1082,8 @@ def all_in_one_tseries(
     property_db.reset_index(inplace=True, drop=True)
     if save_to is not None:
         output = "-".join(property_.split("-")[:2])  # dropping "-ensAvg"
-        output = "-".join(["allInOne", group, output])
+        output = "-".join([group, species, "allInOne", output])
+        if single_space is True:
+            output = property_db.loc[0, 'space'] + "-" + output
         property_db.to_csv(save_to + output + ".csv", index=False)
     return property_db
