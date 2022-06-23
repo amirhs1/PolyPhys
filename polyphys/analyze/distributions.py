@@ -14,10 +14,11 @@ Currently, tehe following distribution are implemeted:
     1. The local number desnity of hard beads.
     2. The local volume fraction of hard beads.
 """
-from typing import Callable, Dict, Tuple, Type, Optional, Union
+from typing import Callable, Dict, Tuple, Optional, Union
 import numpy as np
 import scipy.integrate as integrate
 from polyphys.manage.parser import SumRule, TransFoci
+import warnings
 
 ParserT = Union[SumRule, TransFoci]
 
@@ -129,11 +130,85 @@ def sphere_sphere_intersection(
 
 
 class Distribution(object):
-    hist_path: str
-    edge_path: str
+    hist_data: np.ndarray
+    edges: Union[np.ndarray, None]
+    centers: Union[np.ndarray, None]
     hist_info: ParserT
+    integrand: Optional[Callable] = None
+    normalized: bool = False
+    """NOT FINISHED YET. Generates a Probability Distribution Function from
+    a given histgrams by taking into account the sizes of multi-dimentional
+    bins.
+
+    Parameters
+    ----------
+
+    Attributes
+    ----------
+    self.histogram:
+        histogram
+    self.centers (numppy array):
+        the centers of the bins: the index of histogram
+    self.edges (numpy array): the edges of the bins of the same size. The
+        range is [A-0.5*bin_size, B+0.5*bin_size]
+    """
+    def __init__(
+        self,
+        hists: np.ndarray,
+        edges: Union[np.ndarray, None],
+        centers: Union[np.ndarray, None],
+        hist_info: ParserT,
+        integrand: Optional[Callable] = None,
+        normalized: bool = False,
+    ):
+        if isinstance(hists, np.ndarray):
+            self.histogram = hists
+        else:
+            raise ValueError(
+                f"'{hists}'"
+                " is not a numpy.ndarray.")
+        if isinstance(edges, np.ndarray) and (centers is None):
+            self.edges = edges
+            self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
+        elif isinstance(centers, np.ndarray) and (edges is None):
+            self.centers = centers
+            # It is assume the bins are of the same size and the centers are
+            # the acutal centers of the bins:
+            _bin_size = centers[1] - centers[0]
+            _edges = centers - 0.5 * _bin_size
+            _edges = np.append(_edges, _edges[-1] + _bin_size)
+            self.edges = _edges
+            warnings.warn(
+                "It is assumed that the bins are of the same size, so 'edges'"
+                "are inferred from 'centers'.",
+                UserWarning
+                )
+        elif isinstance(edges, np.ndarray) and isinstance(centers, np.ndarray):
+            self.edges = edges
+            self.centers = centers
+        else:
+            raise ValueError(
+                f"Either '{edges}' and"
+                f" '{centers}'"
+                " are notnumpy.ndarray, or"
+                " none of them are passed.")
+        self.hist_info = hist_info
+        self.integrand = integrand
+        self.normalized = normalized
+        if self.normalized is True:
+            # the sum of rho is not equal to the bulk number density when r
+            # approaches infinity, i.e. natom/vol_system. This arises from
+            # the way we descritize the local number desnity.
+            self.dist = self.dist / self.dist.sum()
+
+
+class SpatialDistribution(object):
+    hist_data: np.ndarray
+    edges: np.ndarray
+    hist_info: ParserT
+    radius_attr: str
     geometry: str = 'biaxial'
-    direction: str = 'longitudinal'
+    direction: str = 'r'
     normalized: bool = False
     """computes the local number density of any type of particle and the
     local volume fraction of bead (spheres) in 1D (cylinder with the
@@ -334,7 +409,7 @@ class Distribution(object):
         self,
         hist_data: np.ndarray,
         edges: np.ndarray,
-        hist_info: Type[SumRule],
+        hist_info: ParserT,
         radius_attr: str,
         geometry: str = 'biaxial',
         direction: str = 'r',
@@ -831,7 +906,7 @@ def distributions_generator(
             lineage='whole',
             ispath=False
         )
-        distributions = Distribution(
+        distributions = SpatialDistribution(
             histogram,
             bin_edges[whole],
             whole_info,
