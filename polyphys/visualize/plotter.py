@@ -12,7 +12,6 @@ import matplotlib as mpl
 import seaborn as sns
 from polyphys.manage import organizer
 from polyphys.visualize import tuner as ptuner
-from polyphys.manage.parser import SumRule
 from polyphys.analyze import correlations
 
 
@@ -609,19 +608,19 @@ def p_acf(
 def p_acf_with_ci_space(
     space_acf: pd.DataFrame,
     space: str,
+    space_title: str,
     properties: Dict[str, Dict[str, str]],
     round_to: float = 0.025,
     xlimits: Tuple[float, float, float] = (0, 7000, 1000),
     ylimits: Tuple[float, float, float] = (-0.3, 1.1, 0.2),
     fontsize: int = 20,
-    nrows: int = 4,
     ncols: int = 3,
     lags: int = 7000,
     ext: str = 'pdf',
     save_to: str = './',
     **save_kwargs
-) -> None:
-    """plot the auto-correlation function (AFC) with its associated
+):
+    """PlotS the auto-correlation function (AFC) with its associated
     confidence intervals (CIs) of a group of physical `properties` in one
     plot for all the `ensembles` in a simulation `space`, and save it in
     `ext` format into the `save_to` path.
@@ -636,6 +635,8 @@ def p_acf_with_ci_space(
         The dataset of the ACFs.
     space: str
         The name of the simulation `space` to which `ensembles` belong.
+    space_title: str
+        The formatted space name for the plot title.
     properties: dict of dict
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
@@ -651,8 +652,6 @@ def p_acf_with_ci_space(
         The lower and upper limits, and the step for the y-ticks.
     fontsize: int, default 20
         The maximum font size in the plot.
-    nrows: int, default 4
-        The number of subplot rows
     ncols: int, default 3
         The number of subplot columns
     lags: int, default 7000
@@ -669,20 +668,22 @@ def p_acf_with_ci_space(
     ------------
     Matplotlib, Statsmodels
     """
+    mpl.rcParams["font.family"] = "Times New Roman"
+    mpl.rcParams["mathtext.default"] = "regular"
+    plt.rcParams.update({"text.usetex": True})
+    ensembles = list(space_acf['ensemble'].drop_duplicates())
+    ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
+    time = np.arange(lags+1)
+    n_ens = len(ensembles)
+    nrows = int(np.ceil(n_ens / ncols))
     fig, axes = plt.subplots(
         nrows=nrows,
         ncols=ncols,
         figsize=(16, 12),
         sharey=True,
-        sharex=True
+        sharex=False
     )
-    mpl.rcParams['font.family'] = "Times New Roman"
-    mpl.rcParams['mathtext.default'] = 'regular'
-    plt.rcParams.update({"text.usetex": True})
-    ensembles = list(space_acf['ensemble'].drop_duplicates())
-    ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
-    time = np.arange(lags+1)
-    for idx, (ens_name, ax) in enumerate(zip(ensembles, axes.flat)):
+    for idx, (ens_name, ax) in enumerate(zip(ensembles, axes.flat[:n_ens])):
         ax.axhline(y=0, c='black', ls='--', lw=1)
         ens_acf = space_acf.loc[space_acf['ensemble'] == ens_name, :]
         ens_acf.reset_index(inplace=True)
@@ -707,12 +708,11 @@ def p_acf_with_ci_space(
         ax.set_title(ax_title, fontsize=fontsize-5)
         ptuner.yticks(ax, ylimits, code=True, fontsize=fontsize-6, decimals=3)
         ptuner.xticks(ax, xlimits, code=True, fontsize=fontsize-6, decimals=3)
-        if idx % 3 == 0:
+        if idx % ncols == 0:
             ax.set_ylabel(r"$C(\hat{t})$", fontsize=fontsize-2)
-        if idx >= 9:
-            ax.set_xlabel(
-                r"$\hat{t}=lag\times {\Delta t_{sampling}}/{\tau}$",
-                fontsize=fontsize-2)
+        ax.set_xlabel(
+            r"$\hat{t}=lag\times {\Delta t_{sampling}}/{\tau}$",
+            fontsize=fontsize-2)
     phi_c_patches = ptuner.color_patcher(legend_colors)
     phi_c_legends = mpl.legend.Legend(
         axes[0, 2],
@@ -726,17 +726,14 @@ def p_acf_with_ci_space(
         bbox_to_anchor=(1.02, 1.02)
     )
     axes[0, 2].add_artist(phi_c_legends)
-    s_info = SumRule(
-        space, geometry='biaxial',
-        group='bug',
-        lineage='space',
-        ispath=False
-    )
     fig.suptitle(
-        "the ACFs of different physical properties "
-        fr"($N={s_info.dmon}, D={s_info.dcyl}, a={s_info.dcrowd}$)",
+        r"the ACFs of different physical properties " + space_title,
         fontsize=fontsize+2
     )
+    if ncols * nrows > n_ens:
+        axes_to_del = ncols * nrows - n_ens
+        for col_idx in range(1, axes_to_del + 1):
+            fig.delaxes(axes[nrows-1, -1 * col_idx])
     output = save_to + "acf-confidence_intervals-" + space
     output = output + '-lags' + str(lags) + "." + ext
     fig.tight_layout()
@@ -745,9 +742,10 @@ def p_acf_with_ci_space(
 
 
 def p_acf_fit_curve_space(
-    space: str,
-    space_stamps: pd.DataFrame,
     space_acf: pd.DataFrame,
+    space: str,
+    space_title: str,
+    space_stamps: pd.DataFrame,
     func_name: str,
     property_: str,
     properties: Dict[str, str],
@@ -771,14 +769,16 @@ def p_acf_fit_curve_space(
 
     Parameters
     ----------
+    space_acf: pd.DataFrame
+        The dataset of the ACFs.
     space: str
         The name of the simulation `space` to which `ensembles` belong.
+    space_title: str
+        The formatted space name for the plot title.
     space_stamps: pd.DataFrame
         Dataframe that contains the physical attributes, equilibirium
         properties, and the fitting parameters of `func` for each
         'ensemble' in the 'space'
-    space_acf: pd.DataFrame
-        The dataset of the ACFs.
     func_name: str
         Function fitted to the ACF data of `property_`.
     property_: str
@@ -930,24 +930,11 @@ def p_acf_fit_curve_space(
                 r"$t=lag\times {\Delta t_{sampling}}/{\tau_{LJ}}$",
                 fontsize=fontsize-2
             )
-    # sinfo: is the space information:
-    sinfo = SumRule(
-        space,
-        geometry='biaxial',
-        group='bug',
-        lineage='space',
-        ispath=False
-    )
-    # space_title = fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
-    # title = 'Exponential fit (' + fit_info[func_name]['name']
-    # title = title + ') to the autocorrelation function (ACF) of the '
-    # title = title + properties[property_]['name']
-    # title = title + space_title
     title = (
         'Exponential fit (' + fit_info[func_name]['name']
         + ') to the autocorrelation function (ACF) of the '
         + properties[property_]['name']
-        + fr" ($N={sinfo.dmon}, D={sinfo.dcyl}, a_c={sinfo.dcrowd}$)"
+        + space_title
     )
     fig.suptitle(title, fontsize=fontsize - 2)
     fig.tight_layout()
@@ -960,6 +947,7 @@ def p_acf_fit_curve_space(
 def p_acf_allInOne(
     acf: pd.DataFrame,
     spaces: List[str],
+    space_titles: List[str],
     property_: str,
     property_dict: Dict[str, str],
     phi_crds: List[float],
@@ -976,16 +964,16 @@ def p_acf_allInOne(
     **save_kwrags
 ) -> None:
     """plot the auto-correlation functions (AFCs) of the physical
-    `property_` for all the simulation `spaces`.
+    `property_` for all the simulation `spaces` in a projects..
 
     Parameters
     ----------
     acf: pd.DataFrame
         The dataset of the ACFs.
-    ensembles: dict
-        The ordered list of ensemble names in the `space`.
-    space: str
-        The name of the simulation `space` to which `ensembles` belong.
+    spaces: list of str
+        The list of `space` names.
+    space_titles: list of str
+        The list of `space` titles for sub-plots.
     property_: str
         Name of the physical property
     property_dict: dict of str
@@ -1025,15 +1013,16 @@ def p_acf_allInOne(
     """
     fig, axes = plt.subplots(
         nrows=nrows, ncols=ncols, figsize=(16, 12), sharey=True)
-    mpl.rcParams['font.family'] = "Times New Roman"
-    mpl.rcParams['mathtext.default'] = 'regular'
+    mpl.rcParams["font.family"] = "Times New Roman"
+    mpl.rcParams["mathtext.default"] = "regular"
     plt.rcParams.update({"text.usetex": True})
     time = np.arange(lags+1)
     if nrows * ncols > 1:
         axes_ = axes.flat
     else:
         axes_ = [axes]
-    for idx, (space, ax) in enumerate(zip(spaces, axes_)):
+    for idx, (space, space_title, ax) in enumerate(
+            zip(spaces, space_titles, axes_)):
         acf_space = acf.loc[acf['space'] == space, :]
         ensembles = list(acf_space['ensemble'].drop_duplicates())
         ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
@@ -1064,15 +1053,9 @@ def p_acf_allInOne(
         ax.set_xlabel(
             r"$\hat{t}=lag\times {\Delta t_{sampling}}/{\tau}$",
             fontsize=fontsize - 2)
-        space_info = SumRule(
-            space, geometry='biaxial',
-            group='bug',
-            lineage='space',
-            ispath=False
-        )
+
         ax.set_title(
-            fr"({idx+1}) $N={space_info.nmon}$, $D={space_info.dcyl}$"
-            fr", $a={space_info.dcrowd}$",
+            fr"({idx+1})" + space_title,
             fontsize=fontsize
         )
     if nrows == 1 & ncols == 1:

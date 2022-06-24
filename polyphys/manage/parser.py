@@ -12,9 +12,9 @@ TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
 
 class SumRule(object):
     name: str
-    geometry: str = 'biaxial'
-    group: str = 'bug'
-    lineage: str = 'segment'
+    geometry: str
+    group: str
+    lineage: str
     ispath: bool = True
     """parses a `lineage_name` to extract information about the 'lineage' oftrj
     that 'lineage_name', based on the following 'lineage' patterns:
@@ -56,13 +56,13 @@ class SumRule(object):
     ----------
     name: str
         Name that is parsed for extracting information.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'all'}
         Type of the particle group. 'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
     lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
-        'space'}, default 'segment'
+        'space'}
         Type of the lineage of the name.
     ispath: bool, default True
         Whether the name is a filepath or a simple name.
@@ -239,9 +239,9 @@ class SumRule(object):
     def __init__(
         self,
         name: str,
-        geometry: str = 'biaxial',
-        group: str = 'bug',
-        lineage: str = 'segment',
+        geometry: str,
+        group: str,
+        lineage: str,
         ispath: bool = True
     ):
         if geometry in self._geometries:
@@ -448,9 +448,9 @@ class SumRule(object):
 
 class TransFoci(object):
     name: str
-    geometry: str = 'biaxial'
-    group: str = 'bug'
-    lineage: str = 'segment'
+    geometry: str
+    group: str
+    lineage: str
     ispath: bool = True
     """
     parses a `lineage_name` to extract information about the 'lineage' oftrj
@@ -490,24 +490,25 @@ class TransFoci(object):
     2. Using @attribute for attributes to get, set, or delete them.
     3. self.dcyl is set by self.dwall and self-dwall is 1.0 by default.
     4. Can have as many as monomer types and properties as we like.
+    5. Define the following parameters:
+        topology: {'linear', 'ring'},
+            Polymer topology
+        homogeneity: {'homopolymer', 'heteropolymer', 'copolymer'}, defualt
+        'homopolymer'
+            Polymer homogeneity.
 
     Parameters
     ----------
     name: str
         Name that is parsed for extracting information.
-    geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
+    geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
-    group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'all'}
         Type of the particle group. 'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
     lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
-        'space'}, default 'segment'
+        'space'}
         Type of the lineage of the name.
-    topology: {'linear', ring'}, default 'linear'
-        Polymer topology
-    homogeneity: {'homopolymer', 'heteropolymer', 'copolymer'}, defualt
-        'homopolymer'
-        Polymer homogeneity.
     ispath: bool, default True
         Whether the name is a filepath or a simple name.
 
@@ -652,7 +653,7 @@ class TransFoci(object):
             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc'
         },
         'space': {
-            'dcyl': 'r', 'dmon_large': 'al', 'nmon_large': 'nl',
+            'dcyl': 'D', 'dmon_large': 'al', 'nmon_large': 'nl',
             'nmon_small': 'ns', 'dcrowd': 'ac'
         }
     }
@@ -699,9 +700,9 @@ class TransFoci(object):
     def __init__(
         self,
         name: str,
-        geometry: str = 'biaxial',
-        group: str = 'bug',
-        lineage: str = 'segment',
+        geometry: str,
+        group: str,
+        lineage: str,
         ispath: bool = True
     ):
         if geometry in self._geometries:

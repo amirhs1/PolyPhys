@@ -756,9 +756,9 @@ def sum_rule_bug(
     print("Setting the name of analyze file...")
     sim_info = SumRule(
         trajectory,
-        geometry=geometry,
-        group='bug',
-        lineage=lineage
+        geometry,
+        'bug',
+        lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -868,9 +868,9 @@ def sum_rule_bug_flory_hist(
     print("Setting the name of analyze file...")
     sim_info = SumRule(
         trajectory,
-        geometry=geometry,
-        group='bug',
-        lineage=lineage
+        geometry,
+        'bug',
+        lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -1003,9 +1003,9 @@ def sum_rule_bug_rmsd(
     """
     sim_info = SumRule(
         trajectory,
-        geometry=geometry,
-        group='bug',
-        lineage=lineage
+        geometry,
+        'bug',
+        lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print(f"Doing RMSD analysis on {sim_name} ...\n")
@@ -1077,9 +1077,9 @@ def sum_rule_all(
     print("Setting the name of analyze file...\n")
     sim_info = SumRule(
         trajectory,
-        geometry=geometry,
-        group='all',
-        lineage=lineage
+        geometry,
+        'all',
+        lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -1357,9 +1357,9 @@ def trans_fuci_bug(
     print("Setting the name of analyze file...")
     sim_info = TransFoci(
         trajectory,
-        geometry=geometry,
-        group='bug',
-        lineage=lineage
+        geometry,
+        'bug',
+        lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
