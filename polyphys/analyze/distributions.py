@@ -901,9 +901,9 @@ def distributions_generator(
     for whole, histogram in wholes.items():
         whole_info = parser(
             whole,
-            geometry=geometry,
-            group=group,
-            lineage='whole',
+            geometry,
+            group,
+            'whole',
             ispath=False
         )
         distributions = SpatialDistribution(

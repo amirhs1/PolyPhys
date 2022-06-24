@@ -423,9 +423,9 @@ def fit_wholes(
             whole_name = col.split('-')[0]
             whole_info = parser(
                 whole_name,
-                geometry='biaxial',
-                group='bug',
-                lineage='whole',
+                'biaxial',
+                'bug',
+                'whole',
                 ispath=False
             )
             whole_data = [whole_name]

@@ -416,7 +416,7 @@ def database_path(
     phase : {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe',
     'analysis', 'viz'}
         Name of the new phase
-    stage: {'wholeSim', 'ens', 'ensAvg'}, default None
+    stage: {'segment', 'wholeSim', 'ens', 'ensAvg', 'space'}, default None
         Stage of the new directory.
     group: {'bug', 'all'}, default None
         Type of the particle group.
@@ -431,7 +431,9 @@ def database_path(
                      'trjs', 'probe', 'analysis', 'viz']
                     )
     invalid_keyword(group, ['bug', 'all', None])
-    invalid_keyword(stage, ['segment', 'wholeSim', 'ens', 'ensAvg', None])
+    invalid_keyword(stage,
+                    ['segment', 'wholeSim', 'ens', 'ensAvg', 'space', None]
+                    )
     old_path = pathlib.Path(input_database)  # PurePath object
     old_space_parts = old_path.parts
     # Space name of a directory
@@ -449,14 +451,15 @@ def database_path(
     output_database.append(phase)  # New 'phase' path
     output_database.append(dir_name)  # New directory path
     output_database = '/'.join(output_database)
+    # The following is for fixing a bug in my design:
+    if output_database[0] == "/" and output_database[1] == "/":
+        output_database = output_database[1:]
     output_database = pathlib.Path(output_database)
     try:
         output_database.mkdir(parents=True, exist_ok=False)
     except FileExistsError as error:
         print(error)
-        print(
-            f"Directory '{output_database}'"
-            " exist. Files are saved/overwritten to an existing directory.")
+        print("Files are saved/overwritten in an existing directory.")
     finally:
         return str(output_database) + "/"
 
@@ -533,9 +536,9 @@ def whole_from_segment(
     for segment in segments:
         segment_info = parser(
             segment[0],
-            geometry=geometry,
-            group=group,
-            lineage='segment'
+            geometry,
+            group,
+            'segment'
         )
         whole_name = getattr(segment_info, 'whole')
         child_arr = np.load(segment[0])
@@ -608,9 +611,9 @@ def whole_from_file(
     for whole_path in whole_paths:
         whole_info = parser(
             whole_path[0],
-            geometry=geometry,
-            group=group,
-            lineage='whole'
+            geometry,
+            group,
+            'whole'
         )
         whole_name = getattr(whole_info, 'lineage_name')
         wholes[whole_name] = np.load(whole_path[0])
@@ -664,9 +667,9 @@ def ensemble(
     for w_name, w_arr in wholes.items():
         w_info = parser(
             w_name,
-            geometry=geometry,
-            group=group,
-            lineage='whole',
+            geometry,
+            group,
+            'whole',
             ispath=False
         )
         ens_name = getattr(w_info, 'ensemble')
@@ -770,9 +773,9 @@ def ensemble_avg(
         wholes = [col for col in ens_df.columns if col not in exclude]
         whole_info = parser(
             wholes[0],
-            geometry=geometry,
-            group=group,
-            lineage='whole',
+            geometry,
+            group,
+            'whole',
             ispath=False
         )
         fname = whole_info.ensemble_long  # ensemble's full name
@@ -917,26 +920,6 @@ def parents_stamps(
     # Handing 'lineage'-specific details:
     if lineage == 'whole':
         parent_groupby = 'ensemble_long'
-        # If the 'whole' stamps are generated directly in the 'probe' phase,
-        # then 'segment' and 'segment_id' columns are "N/A" and are removed
-        # from the list of stamps columns that are added to the parents
-        # stamps.
-        # There is no need to have the "n_segment" column in the parent
-        # stamps, so it is removed. The "whole" stamps directly generated
-        # in the "probe" phase do not have such a column, but those generated
-        # from "segment" stamps have.
-        try:
-            stamps_cols.remove("segment_id")  # segment_id is "N/A"
-            stamps_cols.remove("segment")  # segment_id is "N/A"
-            agg_funcs.pop("segment_id")
-            agg_funcs.pop("segment")
-        except ValueError:
-            print(
-                "'segment_id', 'segment' and 'n_segments'"
-                " columns are not among in stamps column:"
-                f"'{stamps_cols}', they are probably removed in"
-                "a previous call of 'parents_stamps' function."
-            )
         # aggregating functions for properties
         agg_funcs['ensemble_id'] = 'count'
         agg_funcs['n_frames'] = 'last'
@@ -955,13 +938,19 @@ def parents_stamps(
             columns={'ensemble_id': 'n_ensembles'},
             inplace=True
         )
-        try:
-            parents_stamps.drop(columns=['n_segments'], inplace=True)
-        except KeyError:
-            print(
-                "'n_segments' column is among the parents' stamps column:"
-                f"'{stamps_cols}', it is probably bot created in"
-                "a previous call of 'parents_stamps' function."
+        # If the 'whole' stamps are generated directly in the 'probe' phase,
+        # then 'segment' and 'segment_id' columns are "N/A" and are removed
+        # from the list of stamps columns that are added to the parents
+        # stamps.
+        # There is no need to have the "n_segment" column in the parent
+        # stamps, so it is removed. The "whole" stamps directly generated
+        # in the "probe" phase do not have such a column, but those generated
+        # from "segment" stamps have.
+        # Droping redundant columns silently:
+        parents_stamps.drop(
+            columns=['n_segments', 'segment_id', 'segment'],
+            inplace=True,
+            errors='ignore'
             )
     else:
         parents_stamps.rename(
@@ -977,22 +966,57 @@ def parents_stamps(
     return parents_stamps
 
 
-def all_in_one_tseries(
-    property_path: str,
+def unique_property(
+    filepathes: str,
+    prop_idx: int,
+    ext: str,
+    drop_properties: Optional[List[str]] = None,
+    sep: Optional[str] = "-"
+) -> list:
+    """Finds unique physical properties by spliting filenames given by
+    'filepathes'
+    """
+    uniq_props_stats = glob(filepathes)
+    uniq_props_stats = list(
+        set(
+            [sep.join(
+                property_.split("/")[-1].split(ext)[0].split(sep)[prop_idx:]
+                ) for property_ in uniq_props_stats]
+            )
+        )
+    for drop_property in drop_properties:
+        try:
+            uniq_props_stats.remove(drop_property)
+        except ValueError:
+            print(
+                f"'{drop_property}' is not among unique properties."
+                )
+    uniq_props = list(
+        set(
+            [property_.split(sep)[0] for property_ in uniq_props_stats]
+            )
+        )
+    uniq_props_stats.sort()
+    uniq_props.sort()
+    return uniq_props, uniq_props_stats
+
+
+def space_tseries(
+    input_database: str,
     property_: str,
     parser: Callable,
-    property_pattern: str,
+    hierarchy: str,
     physical_attrs: List[str],
     species: str,
     group: str,
     geometry: str,
-    single_space: Optional[bool] = False,
-    save_to: str = None
+    is_save: bool = False
 ) -> pd.DataFrame:
-    """Takes the `property_path` to the "ensAvg" of a given space, merges
-    all the "ensAvg" ensmeble time series into one dataframe along the 0
-    or 'row' or 'index' in pandas's lingo. It also adds the physical
-    `attributes` of interest as the new columns to the dataframe.
+    """Takes the `property_path` to the 'ensAvg' files of a given `property_`
+    in a given space `input_database`,  adds the `physical_attrs` of interest
+    as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
+    dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
+    in pandas's lingo,
 
     In each 'ensemble-averaged' dataframe, there are 3 columns with this name
     pattern:
@@ -1028,8 +1052,8 @@ def all_in_one_tseries(
     single_space:
         Whether the all-in-one file is for all the timeseries properties of a
         single space or all the space in a project.
-    save_to : str, default None
-        An/a absolute/relative path of a directory to which outputs are saved.
+    is_save : bool, default False
+        whether to save output to file or not.
 
     Return
     ------
@@ -1039,51 +1063,54 @@ def all_in_one_tseries(
         it as the new columns.
     """
     invalid_keyword(species, ['Mon', 'Crd', 'Foci'])
-    invalid_keyword(group, ['bug', 'all'])
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
-    property_ext = "-" + property_ + ".csv"
-    property_csvs = glob(property_path + "/" + property_pattern + property_ext)
-    property_csvs = sort_filenames(property_csvs, fmts=[property_ext])
+    property_ext = "-" + property_ + "-ensAvg.csv"
+    ens_avg_csvs = glob(input_database + hierarchy + property_ext)
+    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
     property_db = []
-    for property_csv in property_csvs:
-        property_df = pd.read_csv(property_csv[0], header=0)
+    for ens_avg_csv in ens_avg_csvs:
+        ens_avg_df = pd.read_csv(ens_avg_csv[0], header=0)
         # the first column of porperty_df is used to extract
         # the information about the property and the space it
         # belongs to.
-        child_name = property_df.columns[0].split('-')[0]
+        # columns in ens_avg_df are ensemble long names
+        ens_long_name = ens_avg_df.columns[0].split('-')[0]
         property_info = parser(
-            child_name,
-            geometry=geometry,
-            group=group,
-            lineage='ensemble_long',
+            ens_long_name,
+            geometry,
+            group,
+            'ensemble_long',
             ispath=False
         )
         # Column names wihtout 'ensemble_long' name
-        # See the explanantion above abput the column name.
+        # See the explanantion in doc abbut column names.
         col_names = ["-".join(col[1:]) for col in
                      list(
-                         property_df.columns.str.split(
+                         ens_avg_df.columns.str.split(
                              pat='-', expand=False
                              )
                          )
                      ]
-        property_df = pd.read_csv(
-            property_csv[0],
+        ens_avg_df = pd.read_csv(
+            ens_avg_csv[0],
             names=col_names,
             skiprows=[0]
         )
-        property_df.reset_index(inplace=True)
-        property_df.rename(columns={'index': 'time'}, inplace=True)
-        property_df['time'] = property_df['time'] * property_info.dt
+        ens_avg_df.reset_index(inplace=True)
+        ens_avg_df.rename(columns={'index': 'time'}, inplace=True)
+        ens_avg_df['time'] = ens_avg_df['time'] * property_info.dt
         for attr_name in physical_attrs:
-            property_df[attr_name] = getattr(property_info, attr_name)
-        property_db.append(property_df)
+            ens_avg_df[attr_name] = getattr(property_info, attr_name)
+        property_db.append(ens_avg_df)
     property_db = pd.concat(property_db, axis=0)
     property_db.reset_index(inplace=True, drop=True)
-    if save_to is not None:
-        output = "-".join(property_.split("-")[:2])  # dropping "-ensAvg"
-        output = "-".join([group, species, "allInOne", output])
-        if single_space is True:
-            output = property_db.loc[0, 'space'] + "-" + output
-        property_db.to_csv(save_to + output + ".csv", index=False)
+    if is_save is not False:
+        save_to_space = database_path(
+            input_database,
+            'analysis',
+            stage='space',
+            group='bug'
+            )
+        space = save_to_space.split("/")[-2].split("-")[0]
+        output = "-".join([space, species, property_]) + "-space.csv"
+        property_db.to_csv(save_to_space + output, index=False)
     return property_db

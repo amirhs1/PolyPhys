@@ -544,7 +544,7 @@ def analyze_bug(
     hierarchy: str,
     parser: Callable,
     geometry: str,
-    is_segment: bool, 
+    is_segment: bool,
     tseries_properties: Optional[List[TimeSeriesT]] = None,
     acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
     hist_properties: Optional[List[HistogramT]] = None,
@@ -665,7 +665,6 @@ def analyze_bug(
         save_to_whole = None
         whole_stamps = children_stamps(
             stamp_files,
-            geometry,
             'bug',
             'whole',  # lineage of the children stamps
             save_to=save_to_ens  # save all the whole stamps
