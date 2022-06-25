@@ -711,7 +711,7 @@ def p_acf_with_ci_space(
         if idx % ncols == 0:
             ax.set_ylabel(r"$C(\hat{t})$", fontsize=fontsize-2)
         ax.set_xlabel(
-            r"$\hat{t}=lag\times {\Delta t_{sampling}}/{\tau}$",
+            r"$\tau_{lags}$",
             fontsize=fontsize-2)
     phi_c_patches = ptuner.color_patcher(legend_colors)
     phi_c_legends = mpl.legend.Legend(
@@ -927,7 +927,7 @@ def p_acf_fit_curve_space(
             ax.set_ylabel(r"$ACF(t)$", fontsize=fontsize-2)
         if idx >= ((nrows-1) * ncols):
             ax.set_xlabel(
-                r"$t=lag\times {\Delta t_{sampling}}/{\tau_{LJ}}$",
+                r"$\tau_{lags}$",
                 fontsize=fontsize-2
             )
     title = (
@@ -1051,7 +1051,7 @@ def p_acf_allInOne(
                 fontsize=fontsize-2
                 )
         ax.set_xlabel(
-            r"$\hat{t}=lag\times {\Delta t_{sampling}}/{\tau}$",
+            r"$\tau_{lags}$",
             fontsize=fontsize - 2)
 
         ax.set_title(
