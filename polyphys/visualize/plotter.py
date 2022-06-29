@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import (
     Dict,
     List,
+    Optional,
     Tuple
 )
 import numpy as np
@@ -609,8 +610,8 @@ def p_acf_with_ci_space(
     space_acf: pd.DataFrame,
     space: str,
     space_title: str,
+    project_name: str,
     properties: Dict[str, Dict[str, str]],
-    round_to: float = 0.025,
     xlimits: Tuple[float, float, float] = (0, 7000, 1000),
     ylimits: Tuple[float, float, float] = (-0.3, 1.1, 0.2),
     fontsize: int = 20,
@@ -620,7 +621,7 @@ def p_acf_with_ci_space(
     save_to: str = './',
     **save_kwargs
 ):
-    """PlotS the auto-correlation function (AFC) with its associated
+    """Plots the auto-correlation function (AFC) with its associated
     confidence intervals (CIs) of a group of physical `properties` in one
     plot for all the `ensembles` in a simulation `space`, and save it in
     `ext` format into the `save_to` path.
@@ -637,15 +638,14 @@ def p_acf_with_ci_space(
         The name of the simulation `space` to which `ensembles` belong.
     space_title: str
         The formatted space name for the plot title.
+    project_name: str
+        The name of a poject.
     properties: dict of dict
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
         the like, and the values are the spcific values of these
         characteristics for a physical property.
-    round_to: float, default 0.025
-        The flot number to which the bulk volume fraction of crowders are
-        rounded.
     xlimits: tuple, default (0, 7000, 1000),
         The lower and upper limits, and the step for the x-ticks.
     ylimits: tuple, default (-0.3, 1.1, 0.2)
@@ -687,9 +687,8 @@ def p_acf_with_ci_space(
         ax.axhline(y=0, c='black', ls='--', lw=1)
         ens_acf = space_acf.loc[space_acf['ensemble'] == ens_name, :]
         ens_acf.reset_index(inplace=True)
-        # all the rows have the same 'phi_c_bulk' value:
-        phi_c = ens_acf.loc[0, 'phi_c_bulk']
-        phi_c = np.round(np.floor(np.array(phi_c) / round_to) * round_to, 3)
+        # all the rows have the same 'phi_c_bulk_round' value:
+        phi_c = ens_acf.loc[0, 'phi_c_bulk_round']
         legend_colors = []
         legend_labels = []
         for property_, prop_dict in properties.items():
@@ -709,10 +708,14 @@ def p_acf_with_ci_space(
         ptuner.yticks(ax, ylimits, code=True, fontsize=fontsize-6, decimals=3)
         ptuner.xticks(ax, xlimits, code=True, fontsize=fontsize-6, decimals=3)
         if idx % ncols == 0:
-            ax.set_ylabel(r"$C(\hat{t})$", fontsize=fontsize-2)
+            ax.set_ylabel(
+                r"$C_{\mathcal{X}\mathcal{X}}(\tau_{lags})$",
+                fontsize=fontsize-3
+            )
         ax.set_xlabel(
             r"$\tau_{lags}$",
-            fontsize=fontsize-2)
+            fontsize=fontsize-2
+        )
     phi_c_patches = ptuner.color_patcher(legend_colors)
     phi_c_legends = mpl.legend.Legend(
         axes[0, 2],
@@ -734,10 +737,10 @@ def p_acf_with_ci_space(
         axes_to_del = ncols * nrows - n_ens
         for col_idx in range(1, axes_to_del + 1):
             fig.delaxes(axes[nrows-1, -1 * col_idx])
-    output = save_to + "acf-confidence_intervals-" + space
+    output = "-".join(["acf-confidence_intervals", project_name, space])
     output = output + '-lags' + str(lags) + "." + ext
     fig.tight_layout()
-    fig.savefig(output, bbox_inches='tight', **save_kwargs)
+    fig.savefig(save_to + output, bbox_inches='tight', **save_kwargs)
     plt.close()
 
 
@@ -745,6 +748,7 @@ def p_acf_fit_curve_space(
     space_acf: pd.DataFrame,
     space: str,
     space_title: str,
+    project_name: str,
     space_stamps: pd.DataFrame,
     func_name: str,
     property_: str,
@@ -775,6 +779,8 @@ def p_acf_fit_curve_space(
         The name of the simulation `space` to which `ensembles` belong.
     space_title: str
         The formatted space name for the plot title.
+    project_name: str
+        The name of a poject.
     space_stamps: pd.DataFrame
         Dataframe that contains the physical attributes, equilibirium
         properties, and the fitting parameters of `func` for each
@@ -871,9 +877,9 @@ def p_acf_fit_curve_space(
             axes.flat, space_stamps[cols].iterrows()
         )
     ):
-        phi_c = row['phi_c_bulk']
+        phi_c = row['phi_c_bulk_round']
         params = row[fit_info[func_name]['params']].values
-        ens_df = space_acf.loc[space_acf['phi_c_bulk'] == phi_c]
+        ens_df = space_acf.loc[space_acf['phi_c_bulk_round'] == phi_c]
         ens_df.reset_index(inplace=True)
         phi_c = np.round(np.floor(phi_c/round_to)*round_to, 3)
         if x_type == 'time':
@@ -924,12 +930,14 @@ def p_acf_fit_curve_space(
         ax_title = ax_title + r'$=$' + fr'$({params})$'
         ax.set_title(ax_title, fontsize=fontsize-5)
         if idx % ncols == 0:
-            ax.set_ylabel(r"$ACF(t)$", fontsize=fontsize-2)
-        if idx >= ((nrows-1) * ncols):
-            ax.set_xlabel(
-                r"$\tau_{lags}$",
-                fontsize=fontsize-2
+            ax.set_ylabel(
+                r"$C_{xx}(\tau_{lags})$",
+                fontsize=fontsize-3
             )
+        ax.set_xlabel(
+            r"$\tau_{lags}$",
+            fontsize=fontsize-2
+        )
     title = (
         'Exponential fit (' + fit_info[func_name]['name']
         + ') to the autocorrelation function (ACF) of the '
@@ -938,16 +946,19 @@ def p_acf_fit_curve_space(
     )
     fig.suptitle(title, fontsize=fontsize - 2)
     fig.tight_layout()
-    output = '-'.join(['acf', 'fitCurve', func_name, property_, space])
+    output = '-'.join(
+        ['acf', 'fitCurve', project_name, func_name, property_, space]
+    )
     output = output + '.' + ext
     fig.savefig(save_to + output, bbox_inches='tight', **save_kwargs)
     plt.close()
 
 
-def p_acf_allInOne(
+def p_acf_allInOne_project(
     acf: pd.DataFrame,
     spaces: List[str],
     space_titles: List[str],
+    project_name: str,
     property_: str,
     property_dict: Dict[str, str],
     phi_crds: List[float],
@@ -963,8 +974,9 @@ def p_acf_allInOne(
     save_to: str = './',
     **save_kwrags
 ) -> None:
-    """plot the auto-correlation functions (AFCs) of the physical
-    `property_` for all the simulation `spaces` in a projects..
+    """plot the auto-correlation functions (AFCs) of the physical `property_`
+    for all the simulation `spaces` in a project, using `attr_values` and
+    `attr_colors` for setting axes' colors.
 
     Parameters
     ----------
@@ -974,6 +986,8 @@ def p_acf_allInOne(
         The list of `space` names.
     space_titles: list of str
         The list of `space` titles for sub-plots.
+    project_name: str
+        The name of a project.
     property_: str
         Name of the physical property
     property_dict: dict of str
@@ -1079,7 +1093,364 @@ def p_acf_allInOne(
         bbox_to_anchor=legend_anchor
     )
     leg_ax.add_artist(phi_c_legends)
-    output = save_to + 'acf' + "-" + property_ + "." + ext
+    output = "-".join(['acf', project_name, property_]) + "." + ext
     fig.tight_layout()
-    plt.savefig(output, bbox_inches='tight', **save_kwrags)
+    plt.savefig(save_to + output, bbox_inches='tight', **save_kwrags)
+    plt.close()
+
+
+def p_tseries_allInOne_project(
+    project_data: pd.DataFrame,
+    spaces: List[str],
+    space_titles: List[str],
+    project_name: str,
+    property_: str,
+    property_dict: Dict[str, str],
+    attr_values: List[float],
+    attr_colors: sns.palettes._ColorPalette,
+    xlimits: Tuple[float, float, float] = None,
+    ylimits: Tuple[float, float, float] = None,
+    fontsize: int = 20,
+    col_wrap: int = 3,
+    legend_anchor: Tuple[float, float] = (1.25, 1.02),
+    ext: str = 'pdf',
+    save_to: str = './',
+    **save_kwrags
+) -> None:
+    """plot the time series of the physical `property_` for all the simulation
+    `spaces` in a projects, using `attr_values` and `attr_colors` for setting
+    axes' colors.
+
+    Parameters
+    ----------
+    project_data: pd.DataFrame
+        The dataset of the ACFs.
+    spaces: list of str
+        The list of `space` names.
+    space_titles: list of str
+        The list of `space` titles for sub-plots.
+    project_name:
+        The name of a project.
+    property_: str
+        Name of the physical property
+    property_dict: dict of str
+        A dictionary in which the keys are the name of physical properties for
+        which the ACFs are plotted and the values are dictionaries. In each
+        internal dictionary, the keys are 'name', 'symbol', 'color', and
+        the like and the values are the spcific values of these
+        characteristics for a physical property.
+    phi_crds: np.array
+        An ordered list of bulk volume fraction of crowders.
+    phi_colors: sns.palettes._ColorPalette
+        A palette of colors for `phi_crds`.
+    xlimits: tuple, default (0, 7000, 1000),
+        The lower and upper limits, and the step for the x-ticks.
+    ylimits: tuple, default (-0.3, 1.1, 0.2)
+        The lower and upper limits, and the step for the y-ticks.
+    fontsize: int, default 20
+        The maximum font size in the plot.
+    nrows: int, default 4
+        The number of subplot rows
+    ncols: int, default 3
+        The number of subplot columns
+    legend_anchor: tuple of two floats
+        Position at which the legend is placed.
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+    **save_kwrags:
+        Keywords arguments pass to the plt.savefig method.
+
+    Requirements
+    ------------
+    Matplotlib
+    """
+    n_spaces = len(spaces)
+    n_cols = col_wrap
+    n_rows = int(np.ceil(n_spaces / col_wrap))
+    fig, axes = plt.subplots(
+        nrows=n_rows, ncols=n_cols, figsize=(16, 12), sharey=True)
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "Times New Roman",
+            "mathtext.default": "regular"
+        }
+    )
+    if len(axes) > 1:
+        axes_ = axes.flat
+    else:
+        axes_ = [axes]
+    for idx, (space, space_title, ax) in enumerate(
+            zip(spaces, space_titles, axes_[:n_spaces])):
+        data_space = project_data.loc[project_data['space'] == space, :]
+        ensembles = list(data_space['ensemble'].drop_duplicates())
+        ensembles = sorted(ensembles, key=organizer.sort_by_alphanumeric)
+        ax.grid(True, ls=':', lw=0.75, c='black')
+        ax.tick_params(
+            axis='both',
+            direction='inout',
+            width=1,
+            labelsize=fontsize-4,
+            color='black'
+        )
+        ax.axhline(y=0, c='black', ls='--', lw=1)
+        for ens, color in zip(ensembles, attr_colors):
+            data_ens = data_space[data_space['ensemble'] == ens]
+            data_ens.reset_index(inplace=True)
+            ax.plot(data_ens['time'], data_ens[property_], color=color)
+        if ylimits is not None:
+            ptuner.yticks(
+                ax, ylimits, code=True, fontsize=fontsize-6, decimals=3
+            )
+        if xlimits is not None:
+            ptuner.xticks(
+                ax, xlimits, code=True, fontsize=fontsize-6, decimals=3
+            )
+        if idx % n_cols == 0:
+            ax.set_ylabel(
+                property_dict['symbol'],
+                fontsize=fontsize-2
+                )
+        ax.set_xlabel(
+            r"$\hat{t}$",
+            fontsize=fontsize - 2)
+
+        ax.set_title(
+            fr"({idx+1})" + space_title,
+            fontsize=fontsize
+        )
+    if n_rows == 1 & n_cols == 1:
+        leg_ax = axes
+    elif n_rows == 1:
+        leg_ax = axes[n_cols-1]
+    elif n_cols == 1:
+        leg_ax = axes[0]
+    else:
+        leg_ax = axes[0, n_cols-1]
+    attr_patches = ptuner.color_patcher(attr_colors)
+    attr_legends = mpl.legend.Legend(
+        leg_ax,
+        handles=attr_patches,
+        labels=list(attr_values),
+        title=r'$\phi_c^{(bulk)}$',
+        title_fontsize=fontsize-2,
+        fontsize=fontsize-4,
+        framealpha=None,
+        frameon=False,
+        bbox_to_anchor=legend_anchor
+    )
+    leg_ax.add_artist(attr_legends)
+    # Deleteing the extra axes
+    if len(axes) > n_spaces:
+        axes_to_del = n_cols * n_rows - n_spaces
+        for col_idx in range(1, axes_to_del + 1):
+            fig.delaxes(axes[n_rows-1, -1 * col_idx])
+    output = "-".join(['tseries', project_name, property_]) + "." + ext
+    fig.tight_layout()
+    plt.savefig(save_to + output, bbox_inches='tight', **save_kwrags)
+    plt.close()
+
+
+def p_tseries_space(
+    property_: str,
+    hue_attr: str,
+    col_attr: str,
+    space_df: pd.DataFrame,
+    space: str,
+    project_name: str,
+    properties_specs: Dict[str, Dict[str, str]],
+    titles: Dict[str, str],
+    x_property: Optional[str] = 'time',
+    fontsize: Optional[int] = 20,
+    col_wrap: Optional[int] = 1,
+    share_x: Optional[str] = True,
+    share_y: Optional[str] = True,
+    ext: Optional[str] = 'pdf',
+    save_to: Optional[str] = './'
+):
+    """Plots the time series of a physical `property_` in a given `space` for
+    all the values of a given `hue_attr` (different colors) and all the values
+    of a given `col_attr` (different subplots).
+
+    Parameters
+    ----------
+    property_: str
+        The timeseries-like property used for y-axis.
+    hue_attr: str
+        The categorial-like property used for coloring curves.
+    col_attr: str
+        The categorial-like property used for creating a grid of sub-plots.
+    space_df: pd.DataFrame
+        The `space` data set
+    space: str
+        The name of `space`
+    project_name: str
+        The name of a project.
+    properties_specs: dict
+        A dictionary in which the keys are 'name', 'symbol', 'color', and
+        the like and the values are the spcific values of these
+        characteristics for the `property_`.
+    titles: dict of dic
+        A dictionary in which the keys are the name of physical properties for
+        which the ACFs are plotted and the values are dictionaries. In each
+        internal dictionary, the keys are 'name', 'symbol', 'color', and
+        the like and the values are the spcific values of these
+        characteristics for the `hue_attr`, `x_property`, or `col_attr`.
+    space_acf: pd.DataFrame
+        The dataset of the ACFs.
+    space: str
+        The name of the simulation `space` to which `ensembles` belong.
+    space_title: str
+        The formatted space name for the plot title.
+    project_name: str
+        The name of a poject.
+    properties: dict of dict[str, str]
+        A nested dictionary in which the keys are the name of categorial-like
+        atrtribute and the values are dictionaries in which the keys are the
+        'name', 'symbol', 'color', and the like, and the values are the
+        spcific values of these characteristics for a physical property.
+    x_property: str, 'time'
+        The timeseries-like property used for x-axis.
+    fontsize: int, default 20
+        The maximum font size in the plot.
+    col_wrap: int, default 1
+        The number of subplot columns
+    share_x: {None, bool, 'row'}, default True
+        Whether to share x-axis limit or not.
+    share_y: {None, bool, 'col'}, default True
+        Whether to share y-axis limit or not.
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+
+    Requirements
+    ------------
+    Matplotlib, Seaborn
+    """
+    sns.set_context(
+        font_scale=2,
+        rc={
+            'font.family': "Times New Roman",
+            'mathtext.default': 'regular',
+            "text.usetex": True,
+            "font.size": fontsize
+        }
+    )
+    tseries_grid = sns.relplot(
+            data=space_df,
+            x=x_property,
+            y=property_,
+            hue=hue_attr,
+            col=col_attr,
+            kind='line',
+            aspect=16/9,
+            facet_kws={'sharey': share_y, 'sharex': share_x},
+            legend='full',
+            ci=None,
+            col_wrap=col_wrap
+        )
+    tseries_grid.map(
+        plt.axhline, y=0, color=".7", dashes=(2, 1), zorder=0)
+    tseries_grid.set_axis_labels(
+        titles[x_property], properties_specs[property_]['symbol'])
+    tseries_grid.set_titles(
+        titles[col_attr]+r"$={col_name}$")
+    tseries_grid.tight_layout(
+        w_pad=0)
+    tseries_grid._legend.set_title(titles[hue_attr])
+    output = "-".join(["tseries", project_name, property_, space]) + "." + ext
+    tseries_grid.savefig(save_to + output, bbox_inches='tight')
+    plt.close()
+
+
+def p_tseries_allInOne_space(
+    property_: str,
+    hue_attr: str,
+    chainsize_space: pd.DataFrame,
+    space: str,
+    space_title: str,
+    property_title: str,
+    hue_title: str,
+    x_property: str = 'time',
+    fontsize: int = 18,
+    save_to: str = "./",
+    ext: str = "pdf",
+    figsize: Tuple[float, float] = (12, 6),
+    leg_ncols: int = 1
+):
+    """Plots the time series of a physical `property_` in a given `space` for
+    all the values of a given `hue_attr` (different colors) and all the values
+    of a given `col_attr` (different subplots).
+
+    Parameters
+    ----------
+    property_: str
+        The timeseries-like property used for y-axis.
+    hue_attr: str
+        The categorial-like property used for coloring curves.
+    chainsize_space: pd.DataFrame
+        The `space` data set
+    space: str
+        The name of `space`
+    space: str
+        The name of the simulation `space` to which `ensembles` belong.
+    space_title: str
+        The formatted space name for the plot title.
+    property_title: str
+        The formatted name of the `property_`
+    hue_title:
+        The formatted name of the `hue_attr`
+    x_property: str, 'time'
+        The timeseries-like property used for x-axis.
+    fontsize: int, default 20
+        The maximum font size in the plot.
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+    figszie: tuple, default (12,6)
+        The size of the figure.
+    leg_ncol: int, default 1
+        The number of columns in the legend.
+
+    Requirements
+    ------------
+    Matplotlib, Seaborn
+    """
+    fig, ax_tseries = plt.subplots(nrows=1, ncols=1, figsize=figsize)
+    sns.set_context(
+        font_scale=2,
+        rc={
+            'font.family': "Times New Roman",
+            'mathtext.default': 'regular',
+            "text.usetex": True,
+            "font.size": fontsize
+        }
+    )
+    tseries_ax = sns.lineplot(x=x_property,
+                              y=property_,
+                              data=chainsize_space,
+                              hue=hue_attr,
+                              palette='rocket_r',
+                              alpha=0.7,
+                              legend='full',
+                              ci=None,
+                              ax=ax_tseries)
+    tseries_ax.set_xlabel(r"$\hat{t}$")
+    tseries_ax.set_ylabel(property_title)
+    tseries_ax.set_title(space_title)
+    sns.move_legend(
+        tseries_ax,
+        "upper left",
+        title=hue_title,
+        frameon=False,
+        bbox_to_anchor=(1, 1),
+        ncol=leg_ncols
+    )
+    output = "-".join(["tseries-allInOne", space, property_]) + "." + ext
+    fig.tight_layout()
+    fig.savefig(save_to + output, bbox_inches='tight')
     plt.close()
