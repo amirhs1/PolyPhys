@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Dict, Type
+from typing import Callable, Optional, Tuple, Dict, Type
 import MDAnalysis as mda
 import numpy as np
 import pandas as pd
@@ -135,6 +135,10 @@ def log_stat(
 
 def thermo_multi(
     logpath: str,
+    parser: Callable,
+    geometry,
+    group,
+    lineage,
     save_to: str = None
 ) -> pd.DataFrame:
     """Parses a LAMMPS `log` file written with "multi" thermo style to extract
@@ -156,6 +160,7 @@ def thermo_multi(
         A dataframe in which the columns are the various thermodynamic
         quantities of the "multi" thermo style.
     """
+    invalid_keyword(lineage, ["whole", "segment"])
     logname, _ = os.path.splitext(logpath)
     logname = logname.split("/")[-1]
     thermo = {
@@ -216,7 +221,23 @@ def thermo_multi(
     thermo = pd.DataFrame.from_dict(thermo)
     thermo.drop_duplicates(inplace=True)
     thermo.reset_index(inplace=True, drop=True)
-    thermo['filename'] = logname
+    log_info = parser(
+        logname,
+        geometry=geometry,
+        group=group,
+        lineage=lineage,
+        ispath=False
+    )
+    for lineage_name in log_info.genealogy:
+        attr_value = getattr(log_info, lineage_name)
+        thermo[lineage_name] = attr_value
+    for attr_name in log_info._lineage_attributes[lineage].keys():
+        attr_value = getattr(log_info, attr_name)
+        thermo[attr_name] = attr_value
+    attr_names = ['phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk']
+    for attr_name in attr_names:
+        attr_value = getattr(log_info, attr_name)
+        thermo[attr_name] = attr_value
     if save_to is not None:
         thermo.to_csv(logname + '-thermo.csv', index=False)
     return thermo
@@ -286,6 +307,10 @@ def thermo_one_and_custom(
 
 def thermo_one(
     logpath: str,
+    parser: Callable,
+    geometry,
+    group,
+    lineage,
     save_to: str = None
 ) -> pd.DataFrame:
     """Parses a LAMMPS `log` file written with "one" or "custom" thermo styles
@@ -307,6 +332,7 @@ def thermo_one(
         A dataframe in which the columns are the various thermodynamic
         quantities of the "one" thermo style.
     """
+    invalid_keyword(lineage, ["whole", "segment"])
     logname, _ = os.path.splitext(logpath)
     logname = logname.split("/")[-1]
     thermo = {
@@ -342,7 +368,23 @@ def thermo_one(
                 line = logfile.readline()
     thermo = pd.DataFrame.from_dict(thermo)
     thermo.drop_duplicates(inplace=True)
-    thermo['filename'] = logname
+    log_info = parser(
+        logname,
+        geometry=geometry,
+        group=group,
+        lineage=lineage,
+        ispath=False
+    )
+    for lineage_name in log_info.genealogy:
+        attr_value = getattr(log_info, lineage_name)
+        thermo[lineage_name] = attr_value
+    for attr_name in log_info._lineage_attributes[lineage].keys():
+        attr_value = getattr(log_info, attr_name)
+        thermo[attr_name] = attr_value
+    attr_names = ['phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk']
+    for attr_name in attr_names:
+        attr_value = getattr(log_info, attr_name)
+        thermo[attr_name] = attr_value
     if save_to is not None:
         thermo.to_csv(logfile + '-thermo.csv', index=False)
     return thermo
