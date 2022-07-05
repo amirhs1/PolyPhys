@@ -1492,10 +1492,10 @@ def trans_fuci_bug(
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
     np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
     # -foci
-    np.save(save_to + sim_name + '-distTFoci.npy', foci_t)
-    np.save(save_to + sim_name + '-directContactsTFoci.npy', dir_contacts_t)
-    np.save(save_to + sim_name + '-bondsTFoci.npy', bonds_t)
-    np.save(save_to + sim_name + '-clustersTFoci.npy', clusters_t)
+    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
+    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
+    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)

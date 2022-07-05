@@ -4,7 +4,7 @@ from typing import (
     Dict,
     Tuple,
 )
-
+import inspect
 import numpy as np
 import pandas as pd
 from scipy import optimize
@@ -466,6 +466,153 @@ def fit_wholes(
     if save_to is not None:
         output = '-'.join(
             ['fitReport', func_name, property_, space, 'length' + str(length)]
+         )
+        fit_df.to_csv(save_to + output + ".csv", index=False)
+    return fit_df
+
+
+def set_x_property(
+    x_property: str,
+    group: str,
+    y_length: int,
+    whole_info: Callable
+) -> np.ndarray:
+    """Defines varibale `x` based on `x_property` and the time difference
+    between two consecutive values of a "whole" time series of a given
+    simulation for which the details are given by `whole_info`.
+    """
+    if x_property == 'time' and group == 'bug':
+        x = (np.arange(y_length) + 1.0) * whole_info.dt * whole_info.bdump
+    elif x_property == 'time' and group == 'all':
+        x = (np.arange(y_length) + 1.0) * whole_info.dt * whole_info.adump
+    elif x_property == 'index':
+        x = (np.arange(y_length) + 1.0)  # lags or index
+    else:
+        raise ValueError(
+            f"'{x_property}' is an invalid 'x_property' or "
+            f"'{group}' is an invalid 'group'."
+        )
+    return x
+
+
+def fit_exp_wholes(
+    space: str,
+    space_path: str,
+    property_: str,
+    fit_func: Callable,
+    parser: Callable,
+    geometry: str,
+    group: str,
+    alpha: float,
+    omega_lag: int,
+    amp_lag: int,
+    res_lag: int,
+    x_property: str = 'index',
+    property_ext: str = 'csv',
+    save_to: str = None,
+    **kwargs
+) -> pd.DataFrame:
+    """Takes the `property_path` to the directory in which the ansemble-average
+    timeseries of a given physical `property_` of a given `group` in a given
+    `geometry`, and performs the following operations in the `orient` of
+    interest: First, it concatenates the timeseries into one dataframe along
+    the 0 or 'row' or 'index' in pandas's lingo, and thenadds the physical
+    `attributes` of interest as the name columns to the concatenated
+    timeseries.
+
+    In each 'ensemble-averaged' dataframe, there are 3 columns with
+    this name patter:
+    column name = 'long_ensemble-group-porperty_[-measure]-stat'
+    where '[-measure]' is a physical measurement such as the auto correlation
+    function (AFC) done on the physical 'property_'. [...] means this keyword
+    in the column name can be optional. the 'stat' keyword is either 'mean',
+    'ver', or 'sem'.
+
+    Issues
+    ------
+    Currently, the `p0` argument of `scipy.optimize.fit_curve` is based on the
+    assumption that the second and third arguments of the `fit_func` are the
+    amplitude of
+
+    Requirements:
+    Scipy, Numpy, PolyPhys, Pandas
+    """
+    space_attributes = [
+        'space', 'ensemble_long', 'ensemble', 'whole', 'nmon', 'dcyl',
+        'dcrowd', 'phi_c_bulk']
+    if inspect.isfunction(fit_func):
+        fit_name = fit_func.__name__
+        # Assuming: 1. All arguments are positional. 2. The first argument is
+        # the independent one. 3. Other positional arguments sould be find by
+        # fitting -- See scipy.optimize.fit_curve
+        fit_params = inspect.getfullargspec(fit_func).args[1:]
+    property_pat = '-' + property_ + '.' + property_ext
+    property_dbs = glob(space_path)
+    property_dbs = sort_filenames(property_dbs, fmts=[property_pat])
+    params_std = ["-".join([property_, param, 'std']) for param in fit_params]
+    params_name = ["-".join([property_, param]) for param in fit_params]
+    stats_names = [
+        "-".join([property_, measure]) for measure in ['mean', 'var', 'sem']
+        ]
+    cols = space_attributes + stats_names + ['convergence']
+    cols = cols + params_name + params_std
+    fit_data = []  # the fiting data for all wholes.
+    for property_db in property_dbs:
+        property_df = pd.read_csv(property_db[0], header=0)
+        # the first column of porperty_df is used to extract
+        # the information about the property and the space it
+        # belongs to.
+        for col in property_df.columns:
+            whole_name = col.split('-')[0]
+            whole_info = parser(
+                whole_name,
+                geometry=geometry,
+                group=group,
+                lineage='whole',
+                ispath=False
+            )
+            whole_data = []  # contains fiiting info of a whole
+            for attr in space_attributes:
+                attr_value = getattr(whole_info, attr)
+                whole_data.append(attr_value)
+            y = property_df.loc[:, col].to_numpy()
+            y_mean = np.mean(y)
+            y_var = np.var(y, ddof=1)
+            y_sem = np.std(y, ddof=1) / len(y) ** 0.5
+            whole_data.extend([y_mean, y_var, y_sem])
+            x = set_x_property(x_property, group, len(y), whole_info)
+            # Issue: p0_guesss only works for
+            # polyphys.analyze.correlations.mono_exp_res
+            # omega sets the x inteval over which fit_func decays:
+            omega = 1 / x[omega_lag]
+            amp = np.mean(y[:amp_lag])
+            res = np.mean(y[-1 * res_lag:])
+            p0_guess = [omega, alpha, amp, res]
+            try:
+                params_values, cov_mat = optimize.curve_fit(
+                    fit_func,
+                    x,
+                    y,
+                    p0=p0_guess,
+                    **kwargs
+                )
+                whole_data.extend([True])
+                whole_data.extend(params_values)
+                whole_data.extend(np.diag(cov_mat))
+                fit_data.append(whole_data)
+            except RuntimeError:
+                print("could not fit " + whole_name)
+                # the'convergance' parameter is the second element
+                # in whole_data list:
+                whole_data.extend([False])
+                whole_data.extend(np.zeros(4))
+                whole_data.extend(np.zeros(4))
+                fit_data.append(whole_data)
+                continue
+    fit_df = pd.DataFrame(data=fit_data, columns=cols)
+    if save_to is not None:
+        output = '-'.join(
+            ['fitReport', space, group, fit_name, property_]
          )
         fit_df.to_csv(save_to + output + ".csv", index=False)
     return fit_df
