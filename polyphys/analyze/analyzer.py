@@ -449,7 +449,10 @@ def nonscalar_time_series(
     Notes
     -----
     Currently, the vector-like properties are histograms collected over time so
-    thery are passed by `nonscalar_hist_properties` argument.
+    thery are passed by `nonscalar_hist_properties` argument. The "avg_axis"
+    ,defined below , sets the axis showing the time evolution, thus allowing
+    performing time-averaging over a vector and finding the averges of its
+    components.
 
     If the `is_segment` is `True`, `observations` are "segements" and
     are "vertically" merged to create "wholes".
@@ -516,6 +519,7 @@ def nonscalar_time_series(
                     geometry,
                     group
                 )
+            # Time-averaging process:
             wholes = {whole_name: np.mean(whole_array, axis=avg_axis)
                       for whole_name, whole_array in wholes.items()
                       }
