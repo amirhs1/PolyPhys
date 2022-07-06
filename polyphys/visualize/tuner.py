@@ -2,43 +2,9 @@
 a collection of classes and functions used by other modules and submodules.
 """
 import matplotlib.colors as mplc
+from ..manage.utilizer import round_down_first_non_zero
 import numpy as np
 import matplotlib as mpl
-
-
-def round_down_first_non_zero(x: float) -> float:
-    """rounds down a number to its first non-zero digit.
-
-    Parameters:
-    x (float or int): number which is rounded.
-
-    Returns:
-    a float or integer number to which to which x is rounded down to its
-        first non-zero digit.
-    """
-    if x == 0:
-        return x
-    else:
-        exponent = np.floor(np.log10(abs(x)))
-        non_zero = 10 ** exponent
-        return round(np.floor(x/non_zero)*non_zero, int(abs(exponent)))
-
-
-def round_up_nearest(dividend: float, diviser: float) -> float:
-    """rounds up the floating-point number dividend by the diviser.
-
-    Parameters
-    ----------
-    dividend: float
-        The number should be rounded up.
-    diviser: float
-        The number used as the diviser.
-
-    Return
-    ------
-    float: The ceil for dividend and is divisible by diviser.
-    """
-    return np.ceil(dividend / diviser) * diviser
 
 
 def color_patcher(colors):

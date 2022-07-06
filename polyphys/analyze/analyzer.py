@@ -7,7 +7,8 @@ from typing import (
     Union
 )
 from glob import glob
-from polyphys.manage.organizer import (
+
+from ..manage.organizer import (
     invalid_keyword,
     sort_filenames,
     database_path,
@@ -18,9 +19,8 @@ from polyphys.manage.organizer import (
     children_stamps,
     parents_stamps
 )
-
-from polyphys.analyze.distributions import distributions_generator
-from polyphys.analyze.correlations import acf_generator
+from .distributions import distributions_generator
+from .correlations import acf_generator
 import numpy as np
 import pandas as pd
 
@@ -840,3 +840,153 @@ def error_calc_block(
     if save_to is not None:
         block_analysis.to_csv(save_to + '-block_average.csv', index=False)
     return block_analysis
+
+
+def ensemble_measure(ensemble_db: str, measure: Callable) -> pd.DataFrame:
+    """Applies `measure_func` column-wise (axis=0) on the "whole" columns in
+    an "ensemble" dataframe of a given property.
+
+    Parameters
+    ----------
+    ensemble_db: str
+    Path to the "ensemble" dataframe of a given property,
+
+    measure_func: Callable
+    The applying function
+
+    Return
+    ------
+    ensemble_measures: pd.DataFrame
+        A datarame in which the indexes are "whole" names and there is a
+        column with the name of the `measure_func`. The values of this column
+        the measuremensts.
+
+    Requirements
+    ------------
+    Pandas, Numpy, or any other package needed for the `measure`
+    """
+    property_ens = pd.read_csv(ensemble_db[0], header=0)
+    ensemble_measures = property_ens.apply(measure, axis=0)
+    ensemble_measures = ensemble_measures.to_frame(name=measure.__name__)
+    return ensemble_measures
+
+
+def space_measure(
+    property_: str,
+    space_db: str,
+    measure: Callable
+) -> pd.DataFrame:
+    """Performs `measure` on all the "ensembles" of a given physcial
+    `property_`in a "space" given. The "wholes" in an "ensemble" are time
+    series. By performing the `measure, we basically converts a time series to
+    a single value such as a mean, standard deviation, or the like.
+
+    It is assume that a `property_` follow this naming convention:
+        path/ensemble-shortnameTspecies.csv
+    where *path8 is the path to the file, *ensemble* is the name of ensemble,
+    *shortname* is the short name of the property, "T" means the file is a
+    time series, and "species" is the particle species to which this property
+    belongs; for example
+        ../ns400nl4al5D20ac1nc0-gyrTMon.csv
+    is the time-varying radius of gyration of a polymer composed of "Mon"
+    species in "ns400nl4al5D20ac1nc0" ensemble.
+
+    The files in the `space_db` are all csv files.
+
+    Parameters
+    ----------
+    property_: str
+        The name of physical property.
+    space_db: str
+        Path to the ensembles of a given property in a given space.
+    measure_func: Callable
+        The applying function
+    property_ext: str, default "-"
+        The extension (or type) of ensemble files.
+
+    Return
+    ------
+    space_measure: pd.DataFrame
+        A dataframe in which the indexes are all the "whole" names in a space
+        and the single column are the values of applied 'measure' on that
+        property.
+
+    Requirements
+    ------------
+    polyphys, Pandas, Numpy, or any other package needed for the `measure`
+    """
+    property_pat = '-' + property_ + '.csv'  # pattern of property files.
+    property_dbs = glob(space_db)
+    property_dbs = sort_filenames(property_dbs, fmts=[property_pat])
+    meas_name = measure.__name__
+    equil_name = "".join(property_.split("T"))  # new name when measure applied
+    equil_meas_name = equil_name + "-" + meas_name
+    space_measure = []
+    for property_db in property_dbs:
+        ens_measure = ensemble_measure(property_db, measure)
+        space_measure.append(ens_measure)
+    space_measure = pd.concat(space_measure)
+    space_measure.rename(
+        columns={meas_name: equil_meas_name}, inplace=True
+    )
+    return space_measure
+
+
+def equilibrium_tseries_wholes(
+    space: str,
+    space_db: str,
+    properties: List[str],
+    measures: List[Callable],
+    whole_stamps: pd.DataFrame,
+    save_to: Optional[str] = None,
+) -> pd.DataFrame:
+    """Performs a group of `measures` on a group of physical `properties` in a
+    given `space` and merges the resulting dataframe with the `whole_stamps`
+    dataset.
+
+    Each statistical measure is applied to each "whole" *times series* (a
+    column in an "ensemble" data frame) in each "ensemble" of a given physical
+    property in a space.
+
+    Parameters
+    ----------
+    space: str
+        The name of a space.
+    space_db: str
+        The glob-wise path to all the csv files in a space; for example:
+        "path-to-space/*.csvs"
+    properties: list of str
+        The names of physical properties.
+    measures: list of Callable
+        The list of applying measures/functions.
+    whole_stamps: pd.DataFrame
+        The dataframe contains the details of each "whole" simulation.
+    save_to : str, default None
+        Absolute or relative path to which the output is wrriten.
+
+    Return
+    ------
+    equil_properties: pd.DataFrame
+        A dataframe of the all attributes and physical properties of all the
+        "whole" simulations in a given `space`.
+
+    Requirements
+    ------------
+    Pandas
+    """
+    equil_properties = []
+    for property_ in properties:
+        property_measures = []
+        for measure in measures:
+            spc_measure = space_measure(property_, space_db, measure)
+            property_measures.append(spc_measure)
+        property_measures = pd.concat(property_measures, axis=1)
+        equil_properties.append(property_measures)
+    equil_properties = pd.concat(equil_properties, axis=1)
+    equil_properties.reset_index(inplace=True)
+    equil_properties.rename(columns={"index": "whole"}, inplace=True)
+    equil_properties = whole_stamps.merge(equil_properties, on="whole")
+    if save_to is not None:
+        output = '-'.join([space, "whole-equilProps"])
+        equil_properties.to_csv(save_to + output + ".csv", index=False)
+    return equil_properties
