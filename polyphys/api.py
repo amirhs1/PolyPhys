@@ -1,55 +1,188 @@
 from glob import glob
+from typing import (
+    List,
+    Callable,
+    Optional
+)
 import numpy as np
 import pandas as pd
 from polyphys.manage import organizer
+from polyphys.analyze import analyzer
 from polyphys.manage.parser import SumRule
+from polyphys.manage.utilizer import round_up_nearest
+
+
+def allInOne_equil_tseries(
+    project: str,
+    analysis_db: str,
+    species: str,
+    group: str,
+    spaces: List[str],
+    properties: List[str],
+    measures: List[Callable],
+    round_to: Optional[float] = 0.025,
+    save_space: Optional[bool] = False,
+    save_to: Optional[str] = None
+) -> pd.DataFrame:
+    """Performs a group of `measures` on a collection of physical `properties`
+    of a `species` in a `group` in all the `spaces` in the "ens" phase of the
+    "analysis" stage of a `project` and merges the resulting dataframes as an
+    "allInOne" dataframe.
+
+    This function adds "phi_c_bulk_round" as anew column to the final dataset.
+
+    Each statistical measure is applied to each "whole" *times series* (a
+    column in an "ensemble" data frame) in each "ensemble" of a given physical
+    property in a space.
+
+    Parameters
+    ----------
+    project: str
+        The name of a project.
+    analysis_db: str
+        The  path to the a"analysis" directory of the project.
+    species: str
+        The name of species.
+    group: str
+        The name of the group to which an `species` belong.
+    spaces: str
+        The names of all the spaces in a prorject.
+    properties: list of str
+        The names of physical properties.
+    measures: list of Callable
+        The list of applying measures/functions.
+    round_to: float, default 0.025
+        The step by which the values of "phi_c_bulk" attribute is rounded.
+    save_space: bool, default False
+        Whether save the "space" dataframes or not.
+    save_to : str, default None
+        Absolute or relative path to which the output is wrriten.
+
+    Requirements
+    ------------
+    polyphys, Pandas.
+    """
+    if save_space:
+        save_to_space = save_to
+    else:
+        save_to_space = False
+    all_in_one_equil_props = []
+    for space in spaces:
+        space_db = analysis_db + "-".join([space, group, "ens"])
+        whole_stamps = space_db + "/*stamps*.csv"
+        whole_stamps = glob(whole_stamps)
+        if len(whole_stamps) > 1:
+            raise ValueError(
+                "More than one 'whole' stamps dataset found. Which of the"
+                f" following is the correct one? '{whole_stamps}'")
+        whole_stamps = pd.read_csv(whole_stamps[0], header=0)
+        spac_equil_props = analyzer.equilibrium_tseries_wholes(
+            space,
+            space_db + "/*.csv",
+            properties,
+            measures,
+            whole_stamps,
+            save_to=save_to_space
+        )
+        all_in_one_equil_props.append(spac_equil_props)
+    all_in_one_equil_props = pd.concat(all_in_one_equil_props)
+    # add rounded phi_crds to the dataset
+    all_in_one_equil_props['phi_c_bulk_round'] = \
+        all_in_one_equil_props['phi_c_bulk'].apply(
+            round_up_nearest,
+            args=[round_to]
+        )
+    output = "-".join(
+        ["allInOne", project, group, species, "equilProps-whole.csv"]
+    )
+    all_in_one_equil_props.to_csv(save_to + output, index=False)
+    return all_in_one_equil_props
+
+
+def allInOne_equil_tseries_ensAvg(
+    project: str,
+    group: str,
+    species: str,
+    properties: List[str],
+    attributes: List[str],
+    project_db: str,
+    save_to: Optional[str] = None
+):
+    """Perform ensemble-avergaing and then normalization on the equilibrium
+    properties in a `project`.
+
+    Parameters
+    ----------
+    prop
+    """
+    project_props_norm = [
+        prop.split("-")[0] for prop in properties if "mean" in prop
+    ]
+    project_path = "-".join(
+        ["allInOne", project, group, species, "equilProps-whole.csv"]
+    )
+    equil = pd.read_csv(project_db + project_path, header=0)
+    cols_to_drop = list(
+        set(equil.columns).difference(set(attributes + properties))
+    )
+    equil.drop(columns=cols_to_drop, inplace=True)
+    equil.groupby(attributes).agg(np.mean).reset_index(inplace=True)
+    for prop in project_props_norm:
+        phi_c_zero_cond = equil['phi_c_bulk_round'] == 0
+        prop_phi_c_zero = equil.loc[phi_c_zero_cond, prop + "-mean"].values[0]
+        equil[prop + "-norm"] = equil[prop + "-mean"] / prop_phi_c_zero
+    output = "-".join(
+        ["allInOne", project, group, species, "equilProps-ensAvg.csv"]
+    )
+    equil.to_csv(save_to + output, index=False)
+    return equil
 
 
 def all_in_one_distributions(
                 dist_tuples, properties, geometry, direction, save_to=None,
                 round_to=4):
-    """takes ensemble-averaged distributions and performs three operations \
-    on them. First, it concatenates the ensemble-averaged distributions of \
+    """takes ensemble-averaged distributions and performs three operations
+    on them. First, it concatenates the ensemble-averaged distributions of
     all the species in an ensebmle into one dataframe.
 
-    In this dataframe, bin centers are indices and the number of columns \
-    are equal to the number of species. Next, it adds the properties of \
-    the ensemble to the merged distributions. Finally, it combines all \
+    In this dataframe, bin centers are indices and the number of columns
+    are equal to the number of species. Next, it adds the properties of
+    the ensemble to the merged distributions. Finally, it combines all
     the ensebles from all the gropus into one dataframe.
 
     Cautions:
-    For each species, a distribution is a dataframe with bin centers as \
+    For each species, a distribution is a dataframe with bin centers as
     indices and a column of frequencies.
-    A simulation group usually results in a graph or curve for the project \
-    and refers to a collection of simulations that all have the same values \
+    A simulation group usually results in a graph or curve for the project
+    and refers to a collection of simulations that all have the same values
     for one or several input parameters of the project.
-    An ensemble is a collection of themodynamically-equivalent simulations \
-    that differs only in their random number seeds, initial conditions, or \
-    boundary conditions but have the same input parameters. In standard \
-    statitatical mechanical approach, an ensmeble is equivalent a simulation, \
-    but here we used it to reffer to all the thermodynamically-equivalent \
+    An ensemble is a collection of themodynamically-equivalent simulations
+    that differs only in their random number seeds, initial conditions, or
+    boundary conditions but have the same input parameters. In standard
+    statitatical mechanical approach, an ensmeble is equivalent a simulation,
+    but here we used it to reffer to all the thermodynamically-equivalent
     simulations.
-    An ensemble-averaged group is an average over all the simulations in an \
+    An ensemble-averaged group is an average over all the simulations in an
     ensemble and usually gives a data point.
-    If there are N ensembles, each with M simulations, then there are N \
-    ensemble-average groups and N*M simulations in the simulation group. \
-    By default, the indexes of an ensemble (dataframe) are timesteps. \
-    For some properties such as histograms, however, the indexes are bin \
-    centers. As a result, simulations are tuples where each tuple can have \
-    one or more members. For histogram-like properties, each tuple has two \
+    If there are N ensembles, each with M simulations, then there are N
+    ensemble-average groups and N*M simulations in the simulation group.
+    By default, the indexes of an ensemble (dataframe) are timesteps.
+    For some properties such as histograms, however, the indexes are bin
+    centers. As a result, simulations are tuples where each tuple can have
+    one or more members. For histogram-like properties, each tuple has two
     members where the second member is the bin edges.
 
     Issue:
-    1. Current implementation only work for a pair of species \
+    1. Current implementation only work for a pair of species
     (e.g., a monomer type and a crowder type).
-    2. This function only works when we have all the three distributions for \
+    2. This function only works when we have all the three distributions for
     a species: local histograms, densities, and volume fractions.
 
     Parameters:
-    dist_tuples (list of tuples): A list of tuples in which each tuple has \
-    all the A*B ensemble-averaged distributions in one ensemble; \
-    here, A is the number of distribution types in this direction \
-    (histogram of particle numbers, number desnity, and volume fraction) , \
+    dist_tuples (list of tuples): A list of tuples in which each tuple has
+    all the A*B ensemble-averaged distributions in one ensemble;
+    here, A is the number of distribution types in this direction
+    (histogram of particle numbers, number desnity, and volume fraction) ,
     and M is the number of different types of particles in that ensemble.
     properties (Pandas dataframe): The database of ensemble-average properties.
     geomtery (str): the geometry of the simulation box.
@@ -58,7 +191,7 @@ def all_in_one_distributions(
     round_to (int): rounding the whole dataframe to the given round-off number.
 
     Return;
-    A pandad databse in which all the dsitbrutions of all the simulation \
+    A pandad databse in which all the dsitbrutions of all the simulation
     groups are merged.
     """
     group_species = []
