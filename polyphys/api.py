@@ -1,6 +1,7 @@
 from glob import glob
 from typing import (
     List,
+    Union,
     Callable,
     Optional
 )
@@ -40,7 +41,7 @@ def allInOne_equil_tseries(
     project: str
         The name of a project.
     analysis_db: str
-        The  path to the a"analysis" directory of the project.
+        The  path to the "analysis" directory of the project.
     species: str
         The name of species.
     group: str
@@ -101,11 +102,11 @@ def allInOne_equil_tseries(
 
 def allInOne_equil_tseries_ensAvg(
     project: str,
-    group: str,
+    project_db: Union[pd.DataFrame, str],
     species: str,
+    group: str,
     properties: List[str],
     attributes: List[str],
-    project_db: str,
     save_to: Optional[str] = None
 ):
     """Perform ensemble-avergaing and then normalization on the equilibrium
@@ -113,29 +114,61 @@ def allInOne_equil_tseries_ensAvg(
 
     Parameters
     ----------
-    prop
+    project: str
+        The name of a project.
+    project_db: str or pd.Dataframe
+        The project "whole" "allInOne" dataframe or the path to it.
+    species: str
+        The name of species.
+    group: str
+        The name of the group to which an `species` belong.
+    properties: list of str
+        The names of physical properties.
+    attributes: list of str
+        The name of physical attributes.
+    save_to : str, default None
+        Absolute or relative path to which the output is wrriten.
+
+    Return
+    ------
+    ens_avg: pd.DataFrame
+        The dataframe of ensemble-averaged properties.
+
+    Requirements
+    ------------
+    Numpy, Pandas.
     """
-    project_props_norm = [
+    if isinstance(project_db, str):
+        project_path = "-".join(
+            ["allInOne", project, group, species, "equilProps-whole.csv"]
+        )
+        project_db = pd.read_csv(project_db + project_path, header=0)
+    cols_to_drop = list(
+        set(project_db.columns).difference(set(attributes + properties))
+    )
+    project_db.drop(columns=cols_to_drop, inplace=True)
+    # Ensemble-averaging all the measures of all the properties:
+    ens_avg = project_db.groupby(attributes).agg(np.mean)
+    ens_avg.reset_index(level="phi_c_bulk_round", inplace=True)
+    # Normalizing the mean values of each property in each ensemble in a
+    # space by the value of the property ensemble with phi_c_bulk_round=0 in
+    # that space:
+    # Here, the normalization is only performed for the "mean" measure not, the
+    # "std" or "sem" measures.
+    normalized_props = [
         prop.split("-")[0] for prop in properties if "mean" in prop
     ]
-    project_path = "-".join(
-        ["allInOne", project, group, species, "equilProps-whole.csv"]
-    )
-    equil = pd.read_csv(project_db + project_path, header=0)
-    cols_to_drop = list(
-        set(equil.columns).difference(set(attributes + properties))
-    )
-    equil.drop(columns=cols_to_drop, inplace=True)
-    equil.groupby(attributes).agg(np.mean).reset_index(inplace=True)
-    for prop in project_props_norm:
-        phi_c_zero_cond = equil['phi_c_bulk_round'] == 0
-        prop_phi_c_zero = equil.loc[phi_c_zero_cond, prop + "-mean"].values[0]
-        equil[prop + "-norm"] = equil[prop + "-mean"] / prop_phi_c_zero
-    output = "-".join(
-        ["allInOne", project, group, species, "equilProps-ensAvg.csv"]
-    )
-    equil.to_csv(save_to + output, index=False)
-    return equil
+    for prop in normalized_props:
+        phi_c_0_cond = ens_avg['phi_c_bulk_round'] == 0
+        prop_phi_c_0 = ens_avg.loc[phi_c_0_cond, prop + "-mean"].values[0]
+        ens_avg[prop + "-norm"] = ens_avg[prop + "-mean"] / prop_phi_c_0
+    ens_avg.reset_index(inplace=True)
+    if save_to is not None:
+        output = "-".join(
+            ["allInOne", project, group, species, "equilProps-ensAvg.csv"]
+        )
+        ens_avg.to_csv(save_to + output, index=False)
+    return ens_avg
 
 
 def all_in_one_distributions(
