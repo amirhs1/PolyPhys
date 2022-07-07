@@ -3,8 +3,11 @@
 currentname=$(pwd | rev | cut -d / -f 1 | rev) #report name
 name=$( echo "$currentname" | cut -d - -f 1)
 probe=${name}-probe
+log=${name}-logs
 mkdir "${probe}"
-cp slurm*.out "${probe}"-slurm_report.out 
+mkdir "${log}"
+job=$(echo slurm*.out | cut -d . -f 1)
+cp slurm*.out "${probe}-${job}_report.out" 
 mv "${probe}"-slurm_report.out ./"${probe}"/
 for dir in eps*/; do
     mkdir "${probe}/$dir"
@@ -13,5 +16,6 @@ for dir in eps*/; do
     mv ./eps*.csv "../${probe}/$dir"
     mv ./eps*.npy "../${probe}/$dir"
     mv ./*.txt "../${probe}/$dir"
+    mv ./*.log "../${log}/"
     cd ..
 done

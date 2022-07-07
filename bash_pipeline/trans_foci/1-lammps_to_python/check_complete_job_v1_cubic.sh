@@ -5,4 +5,6 @@ for dir in ns*/; do
     echo ""
     tail -n 5 "${dir}"output.txt
     echo ""
+    tail -n 5 "${dir}"log.lammps
+    echo ""
 done
