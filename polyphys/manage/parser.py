@@ -865,8 +865,8 @@ class TransFoci(object):
             " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
         space_name = 'ns' + str(self.nmon_small) + 'nl' + \
-            str(self.nmon_large) + 'al' + str(self.dmon_large) + 'D' + \
-            str(self.dcyl) + 'ac' + str(self.dcrowd)
+            str(self.nmon_large) + 'al' + str(self.dmon_large) + \
+            'D' + str(self.dcyl) + 'ac' + str(self.dcrowd)
         ensemble_name = space_name + 'nc' + str(self.ncrowd)
         if self.lineage == 'space':
             self.space = self.lineage_name
