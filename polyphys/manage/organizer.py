@@ -620,16 +620,51 @@ def whole_from_file(
     return wholes
 
 
+def ensemble_from_vectors(
+    ens: Dict[str, np.ndarray]
+) -> Tuple[str, pd.DataFrame]:
+    """create an "ensemble" dataframe from a dictionary of wholes where
+    each "whole" is a numpy vector or 1D array.
+
+    Parameters
+    ----------
+    ens: dict of np.ndarray
+        A dictionary of the wholes' names and arrays in an ensembles.
+
+    Return
+    ------
+    A tuple of ensemble name and its assocaited dataframe.
+    """
+    return (ens[0], pd.DataFrame.from_dict(ens[1], orient='columns'))
+
+
+def ensemble_from_matrix(ens: Dict[str, np.ndarray]) -> Tuple[str, np.ndarray]:
+    """create an "ensemble" dataframe from a dictionary of wholes where
+    each "whole" is a numpy vector or 1D array.
+
+    Parameters
+    ----------
+    ens: dict of np.ndarray
+        A dictionary of the wholes' names and arrays in an ensembles.
+
+    Return
+    ------
+    A tuple of ensemble name and its assocaited dataframe.
+    """
+    return (ens[0], np.stack(list(ens[1].values()), axis=0))
+
+
 def ensemble(
     property_: str,
     wholes: Dict[str, np.ndarray],
     parser: Callable,
     geometry: str,
     group: str,
+    whole_type: str,
     edge_wholes: Optional[Dict[str, np.ndarray]] = None,
     save_to: str = None
-) -> Dict[str, pd.DataFrame]:
-    """generate ensembles from `wholes` for the physical property `property_`
+) -> Dict[str, Union[pd.DataFrame, np.ndarray]]:
+    """Generates ensembles from `wholes` for the physical property `property_`
     of a particle `group` in a `geometry` of interest.
 
     Parameters
@@ -646,6 +681,15 @@ def ensemble(
         The shape of the simulation box.
     group: {'bug', 'all'}
         The type of the particle group.
+    whole_type: {'vector', 'matrix'}
+        The type of "whole" files.
+
+        'vector':
+            A numpy 1D array; for example, a time series or a histogram.
+
+        'matrix':
+            A numpy 2D array; for example, the gyration matrix.
+
     edge_wholes:  dict of np.ndarray, default None
         A dictionary in which keys are 'whole' names and values are bin_edges.
         This option is used if `wholes` are histograms.
@@ -662,6 +706,7 @@ def ensemble(
     # Averging over ensembles with simailar initial paramters
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(whole_type, ['vector', 'matrix'])
     ensembles = {}
     bin_centers = {}
     for w_name, w_arr in wholes.items():
@@ -683,25 +728,19 @@ def ensemble(
             bin_centers[ens_name] = 0.5 * (
                 edge_wholes[w_name][:-1] + edge_wholes[w_name][1:]
             )
-
-    def mapping_func(
-        ens: Dict[str, np.ndarray]
-    ) -> Tuple[str, pd.DataFrame]:
-        """create an ensemble from a dictionary of wholes.
-
-        Parameters
-        ----------
-        ens: dict of np.ndarray
-            A dictionary of the wholes' names and arrays in an ensembles.
-
-        Return
-        ------
-        A tuple of ensemble name and its assocaited dataframe.
-        """
-        return (ens[0], pd.DataFrame.from_dict(ens[1], orient='columns'))
+    whole_types = {
+        "vector": {
+            "mapping_func": ensemble_from_vectors,
+            "ext": "csv"
+        },
+        "matrix": {
+            "mapping_func": ensemble_from_matrix,
+            "ext": "npy"
+        }
+    }
     ensembles = dict(
         map(
-            mapping_func,
+            whole_types[whole_type]["mapping_func"],
             ensembles.items()
         )
     )
@@ -715,7 +754,9 @@ def ensemble(
                                   save_parent(
                                     ensemble[0], ensemble[1],
                                     property_, save_to,
-                                    group=group, ext='csv')
+                                    group=group,
+                                    ext=whole_types[whole_type]["ext"]
+                                    )
                                   ),
                 ensembles.items()
             )
@@ -723,19 +764,86 @@ def ensemble(
     return ensembles
 
 
+def ens_avg_from_df(
+    ens_property: str,
+    ens_data: pd.DataFrame,
+    exclude: List[str]
+) -> Tuple[str, pd.DataFrame]:
+    """Creates an "ensAvg" dataframe from a "ensemble" dataframe. The columns
+    in the "ensemble" dataframe `ens_data` are the "whole" data and any other
+    variable/data given by `exclude`; for instance, if the ensembles is a
+    histogram, then there is "bin_center" column in addition to the "whole"
+    columns.
+
+    Parameters
+    ----------
+    ens_property: str
+        The property name to which theis "ensemble" data belongs.
+    ens_data: pd.DataFrame
+        The dataframe of "ensemble"data.
+    exclude: list of str
+        The list of columns other than "whole" columns.
+
+    Return
+    ------
+    ens_data: pd.DataFrame
+        Update the `ens_data` with avergaing statisicts.
+    """
+    wholes = [col for col in ens_data.columns if col not in exclude]
+    ens_data[ens_property + '-mean'] = ens_data[wholes].mean(axis=1)
+    ens_data[ens_property + '-var'] = ens_data[wholes].var(axis=1, ddof=1)
+    ens_data[ens_property + '-sem'] = ens_data[wholes].sem(axis=1, ddof=1)
+    ens_data.drop(columns=wholes, inplace=True)
+    return ens_data
+
+
+def ens_avg_from_ndarray(
+    ens_property: str,
+    ens_data: np.ndarray,
+    exclude: List[str]
+) -> Dict[str, np.ndarray]:
+    """Creates an "ensAvg" matrix from a "ensemble" matrix. The first axis of
+    the "ensemble" matrix (axis=0 in numpy lingo) contains the whole matrices
+    and statsitical measurements are performed on this axis.
+
+    Parameters
+    ----------
+    ens_property: str
+        The property name to which theis "ensemble" data belongs.
+    ens_data: pd.DataFrame
+        The matrix of "ensemble" data.
+    exclude: list of str
+        The list of columns other than "whole" columns. It does not have any
+        application but is defined for consisitnacy with `ens_avg_from_df`.
+
+    Return
+    ------
+    ens_data: dict
+        A dictionary in which values of various statistical measures and
+        values are the ensemble-averages.
+    """
+    ens_avg = {}
+    ens_avg[ens_property + '-mean'] = np.mean(ens_data, axis=0)
+    ens_avg[ens_property + '-var'] = np.var(ens_data, axis=0, ddof=1)
+    ens_avg[ens_property + '-sem'] = \
+        np.std(ens_data, axis=0, ddof=1) / ens_data.shape[0]**0.5
+    return ens_avg
+
+
 def ensemble_avg(
     property_: str,
     ensembles: Dict[str, pd.DataFrame],
-    parser: Callable,
     geometry: str,
     group: str,
+    ens_type: str,
     exclude: list = ['bin_center'],
     save_to: str = None
 ) -> Dict[str, pd.DataFrame]:
-    """perform averaging over wholes (columns) of each ensemble (dataframe)
-    in the `ensembles` of the physical property `property_` of a particle
-    `group`, if that columns is a valid 'whole' simulation name, not a
-    `exclude` columns.
+    """perform averaging over the "whole" data in each "ensemble" data in the
+    `ensembles` of the physical property `property_` of a particle `group`, if
+    that columns is a valid 'whole' simulation name, not a `exclude` columns.
+
+    The typ
 
     Parameters
     ----------
@@ -754,6 +862,18 @@ def ensemble_avg(
         The shape of the simulation box.
     group: {'bug', 'all'}
         Type of the particle group.
+    ens_type: {'vector', 'matrix'}
+        The type of "ens" values.
+
+        'dataframe':
+            A dataframe in which each column is either a "whole" or an item
+            from `exclude` list.
+
+        'ndarray':
+            A ndarray in which the elements along the first axis (axis=0 in
+            numpy lingo) are "whole" matrices. The length of ndarray along the
+            first axis is equal to the number of different wholes.
+
     exclude: list of str, default ['bin_center']
         List of columns that are not 'whole' or 'segment' simulation names.
     save_to : str, default None
@@ -768,32 +888,37 @@ def ensemble_avg(
     # Averging over ensembles with simailar initial paramters
     invalid_keyword(group, ['bug', 'all'])
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(ens_type, ['dataframe', 'ndarray'])
     ens_avgs = {}
-    for ens, ens_df in ensembles.items():
-        wholes = [col for col in ens_df.columns if col not in exclude]
-        whole_info = parser(
-            wholes[0],
-            geometry,
-            group,
-            'whole',
-            ispath=False
+    ens_types = {
+        "dataframe": {
+            "ens_avg_func": ens_avg_from_df,
+            "ext": "csv"
+        },
+        "ndarray": {
+            "ens_avg_func": ens_avg_from_ndarray,
+            "ext": "npy"
+        }
+    }
+    for ens, ens_data in ensembles.items():
+        ens_property = ens + '-' + property_
+        ens_avg = ens_types[ens_type]["ens_avg_func"](
+           ens_property,
+           ens_data,
+           exclude
         )
-        fname = whole_info.ensemble_long  # ensemble's full name
-        # Property name as the column name in the 'ensemble' lineage,
-        # but use the parent name as the column in 'whole' linegae
-        ens_df[fname + '-' + property_ + '-mean'] = ens_df[wholes].mean(axis=1)
-        ens_df[fname + '-' + property_ + '-var'] = ens_df[wholes].var(axis=1)
-        ens_df[fname + '-' + property_ + '-sem'] = ens_df[wholes].sem(axis=1)
-        ens_df.drop(columns=wholes, inplace=True)
-        ens_avgs[ens] = ens_df
+        ens_avgs[ens] = ens_avg
     if save_to is not None:
         property_ = property_ + '-ensAvg'
         _ = dict(
             map(
                 lambda ens: (ens[0],
                              save_parent(
-                                 ens[0], ens[1], property_, save_to,
-                                 group=group, ext='csv'
+                                 ens[0],
+                                 ens[1],
+                                 property_, save_to,
+                                 group=group,
+                                 ext=ens_types[ens_type]["ext"]
                              )
                              ),
                 ens_avgs.items()
@@ -838,13 +963,20 @@ def children_stamps(
     space_stamps = pd.concat(space_stamps)
     space_stamps.reset_index(inplace=True, drop=True)
     if lineage == 'whole':
-        space_stamps.drop(columns=['segment', 'segment_id'], inplace=True)
-    warnings.warn(
-        "'segment' and 'segment_id' columns are dropped when individual"
-        " 'whole' stamps combined to create a single dataframe of 'whole'"
-        " stamps by 'children_stamps'.",
-        UserWarning
-    )
+        # Some older version of parsers use 'segment'= "N/A" and
+        # 'segment_id'="N/A" in a "whole" stamp when "whole" linage
+        # is used.
+        try:
+            cols_to_drop = ['segment', 'segment_id']
+            space_stamps.drop(columns=cols_to_drop, inplace=True)
+            warnings.warn(
+                "'segment' and 'segment_id' columns are dropped when"
+                " individual 'whole' stamps combined to create a single"
+                " dataframe of 'whole' stamps by 'children_stamps'.",
+                UserWarning
+            )
+        except KeyError:
+            print(f"'{cols_to_drop}' are not among columns.")
     if save_to is not None:
         space_name = space_stamps.loc[0, 'space']
         filename = '-'.join([space_name, group, lineage, 'stamps.csv'])

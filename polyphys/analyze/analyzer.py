@@ -124,14 +124,15 @@ def time_series(
                     parser,
                     geometry,
                     group,
+                    'vector',
                     save_to=save_to_ens
             )
             _ = ensemble_avg(
                     property_ + species,
                     ensembles,
-                    parser,
                     geometry,
                     group,
+                    'dataframe',
                     save_to=save_to_ens_avg
             )
     if acf_tseries_properties is not None:
@@ -165,6 +166,7 @@ def time_series(
                     parser,
                     geometry,
                     group,
+                    'vector',
                     save_to=save_to_ens
                 )
             acfs, lower_cls, upper_cls = acf_generator(
@@ -178,33 +180,33 @@ def time_series(
             _ = ensemble_avg(
                     property_ + species,
                     ensembles,
-                    parser,
                     geometry,
                     group,
+                    'dataframe',
                     save_to=save_to_ens_avg
                 )
             _ = ensemble_avg(
                     property_ + species + '-acf',
                     acfs,
-                    parser,
                     geometry,
                     group,
+                    'dataframe',
                     save_to=save_to_ens_avg
                 )
             _ = ensemble_avg(
                     property_ + species + '-acfLowerCi',
                     lower_cls,
-                    parser,
                     geometry,
                     group,
+                    'dataframe',
                     save_to=save_to_ens_avg
                 )
             _ = ensemble_avg(
                     property_ + species + '-acfUpperCi',
                     upper_cls,
-                    parser,
                     geometry,
                     group,
+                    'dataframe',
                     save_to=save_to_ens_avg
                 )
 
@@ -320,15 +322,16 @@ def histograms(
                 parser,
                 geometry,
                 group,
+                'vector',
                 edge_wholes=edge_wholes,
                 save_to=save_to_ens
             )
             _ = ensemble_avg(
                 direction + 'Hist' + species,
                 ensembles,
-                parser,
                 geometry,
                 group,
+                'dataframe',
                 save_to=save_to_ens_avg
             )
             ensembles = ensemble(
@@ -337,32 +340,34 @@ def histograms(
                 parser,
                 geometry,
                 group,
+                'vector',
                 edge_wholes=edge_wholes,
                 save_to=None
             )
             _ = ensemble_avg(
                 direction + 'Rho' + species,
                 ensembles,
-                parser,
                 geometry,
                 group,
+                'dataframe',
                 save_to=save_to_ens_avg
             )
             ensembles = ensemble(
                 direction + 'Phi' + species,
                 phi_wholes,
-                parser,
                 geometry,
+                parser,
                 group,
+                'vector',
                 edge_wholes=edge_wholes,
                 save_to=save_to_ens
             )
             _ = ensemble_avg(
                 direction + 'Phi' + species,
                 ensembles,
-                parser,
                 geometry,
                 group,
+                'dataframe',
                 save_to=save_to_ens_avg
             )
         del rho_wholes, phi_wholes, ensembles
@@ -414,15 +419,16 @@ def histograms(
                 parser,
                 geometry,
                 group,
+                'vector',
                 edge_wholes=edge_wholes,
                 save_to=save_to_ens
             )
             _ = ensemble_avg(
                 direction + 'Hist' + species,
                 ensembles,
-                parser,
                 geometry,
                 group,
+                'dataframe',
                 save_to=save_to_ens_avg
             )
 
@@ -433,8 +439,8 @@ def nonscalar_time_series(
     geometry: str,
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
-    nonscalar_hist_properties: Optional[List[NonScalarTimeSeriesT]] = None,
-    nonscalar_matrix_properties: Optional[List[NonScalarTimeSeriesT]] = None,
+    nonscalar_hist_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
+    nonscalar_mat_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
 ) -> None:
     """Runs overs all 'segment' `observations` of each of
     "NonScalarTimeSeriesT" types in a given 'geometry', takes time average over
@@ -482,13 +488,13 @@ def nonscalar_time_series(
     save_to : tuple of three str
         Absolute or relative path of the directories to which wholes,
         ensembles, and ensemble-aveages are saved.
-    nonscalar_hist_properties: list of NonScalarTimeSeriesT, default None
+    nonscalar_hist_t_properties: list of NonScalarTimeSeriesT, default None
         A list of tuples in which each tuple has four string members. The
         first string is the name of a physical property, the second one is
         the particletype, the third one is `group` type, and the last one
         is the axis over which the. These physical
         properties are all of nonscalar form.
-    nonscalar_matrix_properties: list of NonScalarTimeSeriesT, default None
+    nonscalar_mat_t_properties: list of NonScalarTimeSeriesT, default None
         A list of tuples in which each tuple has three string members. The
         first string is the name of a physical property, the second one is
         the particletype, and the last one is `group` type. These physical
@@ -496,8 +502,8 @@ def nonscalar_time_series(
     """
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
-    if nonscalar_hist_properties is not None:
-        for property_, species, group, avg_axis in nonscalar_hist_properties:
+    if nonscalar_hist_t_properties is not None:
+        for property_, species, group, avg_axis in nonscalar_hist_t_properties:
             tseries = sort_filenames(
                     observations,
                     fmts=['-' + property_ + species + '.npy']
@@ -529,18 +535,61 @@ def nonscalar_time_series(
                     parser,
                     geometry,
                     group,
+                    'vector',
                     save_to=save_to_ens
             )
             _ = ensemble_avg(
                     property_ + species,
                     ensembles,
+                    geometry,
+                    group,
+                    'dataframe',
+                    save_to=save_to_ens_avg
+            )
+    if nonscalar_mat_t_properties is not None:
+        for property_, species, group, avg_axis in nonscalar_mat_t_properties:
+            tseries = sort_filenames(
+                    observations,
+                    fmts=['-' + property_ + species + '.npy']
+                )
+            if is_segment is True:
+                wholes = whole_from_segment(
+                    property_ + species,
+                    tseries,
                     parser,
                     geometry,
                     group,
+                    'tseries',
+                    save_to=save_to_whole
+                )
+            else:
+                wholes = whole_from_file(
+                    tseries,
+                    parser,
+                    geometry,
+                    group
+                )
+            # Time-averaging process:
+            wholes = {whole_name: np.mean(whole_array, axis=avg_axis)
+                      for whole_name, whole_array in wholes.items()
+                      }
+            ensembles = ensemble(
+                    property_ + species,
+                    wholes,
+                    parser,
+                    geometry,
+                    group,
+                    'matrix',
+                    save_to=save_to_ens
+            )
+            _ = ensemble_avg(
+                    property_ + species,
+                    ensembles,
+                    geometry,
+                    group,
+                    'ndarray',
                     save_to=save_to_ens_avg
             )
-    if nonscalar_matrix_properties is not None:
-        raise NotImplementedError("This part of function is not defined yet!")
 
 
 def analyze_bug(
@@ -553,8 +602,8 @@ def analyze_bug(
     acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
     hist_properties: Optional[List[HistogramT]] = None,
     rho_phi_hist_properties: Optional[List[HistogramT]] = None,
-    nonscalar_hist_properties: Optional[List[NonScalarTimeSeriesT]] = None,
-    nonscalar_matrix_properties: Optional[List[NonScalarTimeSeriesT]] = None,
+    nonscalar_hist_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
+    nonscalar_mat_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
     nlags: int = 7000,
     alpha: float = 0.05
 ) -> None:
@@ -612,13 +661,13 @@ def analyze_bug(
         properties are all of the histogram form; however, in contrast to
         `hists_properties`, the local number denisty and volume fraction of
         `rho_phi_hists_properties` are also calculated.
-    nonscalar_hist_properties: list of NonScalarTimeSeriesT, default None
+    nonscalar_hist_t_properties: list of NonScalarTimeSeriesT, default None
         A list of tuples in which each tuple has four string members. The
         first string is the name of a physical property, the second one is
         the particletype, the third one is `group` type, and the last one
         is the axis over which the. These physical
         properties are all of nonscalar form.
-    nonscalar_matrix_properties: list of NonScalarTimeSeriesT, default None
+    nonscalar_mat_t_properties: list of NonScalarTimeSeriesT, default None
         A list of tuples in which each tuple has three string members. The
         first string is the name of a physical property, the second one is
         the particletype, and the last one is `group` type. These physical
@@ -719,23 +768,23 @@ def analyze_bug(
             (save_to_whole, save_to_ens, save_to_ens_avg),
             rho_phi_hist_properties=rho_phi_hist_properties,
         )
-    if nonscalar_hist_properties is not None:
+    if nonscalar_hist_t_properties is not None:
         nonscalar_time_series(
             observations,
             parser,
             geometry,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_hist_properties=nonscalar_hist_properties,
+            nonscalar_hist_t_properties=nonscalar_hist_t_properties,
         )
-    if nonscalar_matrix_properties is not None:
+    if nonscalar_mat_t_properties is not None:
         nonscalar_time_series(
             observations,
             parser,
             geometry,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_matrix_properties=nonscalar_matrix_properties,
+            nonscalar_mat_t_properties=nonscalar_mat_t_properties,
         )
 
 
