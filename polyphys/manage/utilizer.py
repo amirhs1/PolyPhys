@@ -33,6 +33,7 @@ def round_up_nearest(dividend: float, diviser: float) -> float:
 
     Return
     ------
-    float: The ceil for dividend and is divisible by diviser.
+    float:
+        The rounded number which is divisable by the divisor.
     """
-    return np.ceil(dividend / diviser) * diviser
+    return np.round(dividend / diviser) * diviser
