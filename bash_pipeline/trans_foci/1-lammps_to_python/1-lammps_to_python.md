@@ -5,6 +5,9 @@
      1. ``#ns#nl#al#D#ac#-all_simulations``
      2. ``#ns#nl#al#D#ac#-cont_simulations``
 
+ 2. Using [git_pull-v1.sh](./git_pull-v1.sh) to update the **PolyPhys**
+    directory, so you can use it in the next steps.
+
 Here *D* is the size (diamter) of cylinderical simulation box (an open-end simulation box), *al* is the size of large monomers, *nl* is the number of large monomers, *ns* is the number of small monomers, and *ac* is the size of crowders. The volume fraction of crowders *phic* is needed if the simulation direcotry is not a *full* simulation group, i.e. the simulation group does not coverge the full range of *phic* values in the direoctory.
 
  1. Run **sim_reporter_v---.sh** to to create a report for this siumlation set.
