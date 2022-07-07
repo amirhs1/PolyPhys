@@ -13,6 +13,6 @@
 7. Check the name of Python file in the **submit-probe_all_in_one.sh**, **submit-probe_all_trj_segments.sh**, or **submit-probe_all_bug_segments.sh** file.
 **Cuation:** Check the name of **python**, its **report**, the **pattern** of **directories** and the **report** of the **gnuparallel** code.
 8. Run the **sbatch-probe_all_in_one.sh**, **sbatch-probe_all_trj_segments.sh**, or **sbatch-probe_all_bug_segments.sh** file.
-9. After the rum finsihed, check slurm file and change its name to **ns#nl#al#D#ac#-probe-slurm_report-probe_all_in_one.out**, **ns#nl#al#D#ac#-probe-slurm_report-probe_all_trj_segments.out**, **ns#nl#al#D#ac#-probe-slurm_report-probe_all_bug_segments.out**, or the like.
+9. After the run finsihed, check slurm file and change its name to **ns#nl#al#D#ac#-probe-slurm_report-probe_all_in_one.out**, **ns#nl#al#D#ac#-probe-slurm_report-probe_all_trj_segments.out**, **ns#nl#al#D#ac#-probe-slurm_report-probe_all_bug_segments.out**, or the like.
 **TODO:** this step can be combined with the next one in as if-statement or switch statement.
 10. Run **create_probe_directories.sh** to create a new directory **ns#nl#al#D#ac#-probe** and move all the **csv**, **npy**, or **txt** files to their corresponding simulation directories.
