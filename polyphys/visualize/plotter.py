@@ -3,7 +3,8 @@ from typing import (
     Dict,
     List,
     Optional,
-    Tuple
+    Tuple,
+    Union
 )
 import numpy as np
 import pandas as pd
@@ -139,7 +140,7 @@ def rdf_real_plotter(
 
 
 def looping_plotter(plotting_df):
-    with sns.plotting_context('paper'):
+    with sns.set_theme('paper'):
         font_name = "Times New Roman"
         fig, axes = plt.subplots(
             nrows=2, ncols=1, sharex=True, figsize=(16, 9))
@@ -988,7 +989,7 @@ def p_acf_allInOne_project(
     )
     leg_ax.add_artist(phi_c_legends)
     output = "-".join(['acf', project, property_]) + "." + ext
-    fig.tight_layout()
+    fig.tight_layout(pad=1)
     plt.savefig(save_to + output, bbox_inches='tight', **save_kwrags)
     plt.close()
 
@@ -1130,7 +1131,7 @@ def p_tseries_allInOne_project(
     )
     leg_ax.add_artist(attr_legends)
     output = "-".join(['tseries', project, property_]) + "." + ext
-    fig.tight_layout()
+    fig.tight_layout(pad=1)
     plt.savefig(save_to + output, bbox_inches='tight', **save_kwrags)
     plt.close()
 
@@ -1141,14 +1142,22 @@ def p_tseries_space(
     col_attr: str,
     space_df: pd.DataFrame,
     space: str,
+    space_title: str,
     project: str,
     properties_specs: Dict[str, Dict[str, str]],
     titles: Dict[str, str],
     x_property: Optional[str] = 'time',
-    fontsize: Optional[int] = 20,
+    plot_context: Optional[str] = 'paper',
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        },
     col_wrap: Optional[int] = 1,
     share_x: Optional[str] = True,
     share_y: Optional[str] = True,
+    fig_title_kw: Optional[Dict[str, str]] = {'x': 0.5, 'y': 1.0},
+    axes_style: Optional[str] = 'ticks',
+    font_family: Optional[str] = 'Times New Roman',
     ext: Optional[str] = 'pdf',
     save_to: Optional[str] = './'
 ):
@@ -1168,6 +1177,8 @@ def p_tseries_space(
         The `space` data set
     space: str
         The name of `space`
+    space_title: str
+        The formatted name of `space`.
     project: str
         The name of a project.
     properties_specs: dict
@@ -1195,14 +1206,27 @@ def p_tseries_space(
         spcific values of these characteristics for a physical property.
     x_property: str, 'time'
         The timeseries-like property used for x-axis.
-    fontsize: int, default 20
-        The maximum font size in the plot.
+    plot_context: str, default 'paper'
+        Set seaborn plooting context
+    font_scale: float, default 2
+        The scaling factor for fonts.
+    rc_params: dict, default {
+                               'mathtext.default': 'regular',
+                               'text.usetex': True
+                               }
+        The rc parameters.
+    axes_style: str, default 'ticks',
+        The seabonr axes style.
+    font_family: str, default 'Times New Roman'
+        The seaborn font family
     col_wrap: int, default 1
         The number of subplot columns
     share_x: {None, bool, 'row'}, default True
         Whether to share x-axis limit or not.
     share_y: {None, bool, 'col'}, default True
         Whether to share y-axis limit or not.
+    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+        The kwargs passed to `FacetGrid.fig.suptitle`
     ext: str, default 'pdf'
         The format of the output file.
     save_to : str, default './'
@@ -1212,14 +1236,12 @@ def p_tseries_space(
     ------------
     Matplotlib, Seaborn
     """
-    sns.set_context(
+    sns.set_theme(
+        context=plot_context,
+        style=axes_style,
+        font=font_family,
         font_scale=2,
-        rc={
-            'font.family': "Times New Roman",
-            'mathtext.default': 'regular',
-            "text.usetex": True,
-            "font.size": fontsize
-        }
+        rc=rc_params
     )
     tseries_grid = sns.relplot(
             data=space_df,
@@ -1240,9 +1262,9 @@ def p_tseries_space(
         titles[x_property], properties_specs[property_]['symbol'])
     tseries_grid.set_titles(
         titles[col_attr]+r"$={col_name}$")
-    tseries_grid.tight_layout(
-        w_pad=0)
+    tseries_grid.tight_layout(w_pad=1)
     tseries_grid._legend.set_title(titles[hue_attr])
+    tseries_grid.fig.suptitle(space_title, **fig_title_kw)
     output = "-".join(["tseries", project, property_, space]) + "." + ext
     tseries_grid.savefig(save_to + output, bbox_inches='tight')
     plt.close()
@@ -1251,6 +1273,7 @@ def p_tseries_space(
 def p_tseries_allInOne_space(
     data: pd.DataFrame,
     project: str,
+    project_title: str,
     x_prop,
     y_prop,
     hue_attr: str,
@@ -1262,13 +1285,20 @@ def p_tseries_allInOne_space(
     aspect: float = 1.618,  # golden ratio
     color_palette: str = 'rocket_r',
     alpha: float = 0.7,
+    plot_context: Optional[str] = 'paper',
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        },
     font_scale: int = 2,
-    fontsize: int = 18,
+    axes_style: Optional[str] = 'ticks',
+    font_family: Optional[str] = 'Times New Roman',
     save_to: str = "./",
     ext: str = "pdf",
     facet_kw: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
+    fig_title_kw: dict = {'x': 0.5, 'y': 1.0},
     **kwargs
 ):
     """Plots the time series of a physical `property_` in a given `space` for
@@ -1280,7 +1310,9 @@ def p_tseries_allInOne_space(
     data: pd.DataFrame
         The input dataset
     project: str
-        The timeseries-like property used for y-axis.
+        The name of the project.
+    project_title: str
+        The formatted name of the project.
     x_prop: str
         The time-series index-like property.
     y_prop: str
@@ -1303,10 +1335,19 @@ def p_tseries_allInOne_space(
         The color palette`
     alpha: float, default 0.7
         The transparency of colors. It should be in [0, 1]
+    plot_context: str, default 'paper'
+        Set seaborn plooting context
     font_scale: float, default 2
         The scaling factor for fonts.
-    fontsize: int, default 20
-        The maximum font size in the plot.
+    rc_params: dict, default {
+                               'mathtext.default': 'regular',
+                               'text.usetex': True
+                               }
+        The rc parameters.
+    axes_style: str, default 'ticks',
+        The seabonr axes style.
+    font_family: str, default 'Times New Roman'
+        The seaborn font family
     ext: str, default 'pdf'
         The format of the output file.
     save_to : str, default './'
@@ -1319,6 +1360,8 @@ def p_tseries_allInOne_space(
         'sharey': False, 'sharex': False, 'legend_out': True
         }
         kwargs passed to FaceGrid.
+    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+        The kwargs passed to `FacetGrid.fig.suptitle`
     kwargs:
         kwargs passed to relplot.
 
@@ -1326,14 +1369,13 @@ def p_tseries_allInOne_space(
     ------------
     Matplotlib, Seaborn, Pandas
     """
-    sns.set_context(
+    sns.set_theme(
+        context=plot_context,
+        style=axes_style,
+        palette=color_palette,
+        font=font_family,
         font_scale=font_scale,
-        rc={
-            'font.family': "Times New Roman",
-            'mathtext.default': 'regular',
-            "text.usetex": True,
-            "font.size": fontsize
-        }
+        rc=rc_params
     )
     tseries_grid = sns.relplot(
         data=data,
@@ -1358,7 +1400,8 @@ def p_tseries_allInOne_space(
     )
     tseries_grid.set_titles(attr_titles[col_attr] + r"$={col_name}$")
     tseries_grid.legend.set_title(attr_titles[hue_attr])
-    tseries_grid.tight_layout(w_pad=0)
+    tseries_grid.fig.suptitle(project_title, **fig_title_kw)
+    tseries_grid.tight_layout(w_pad=1)
     output = "-".join(["tseries", project, y_prop, hue_attr, col_attr])
     tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
     plt.close()
@@ -1367,6 +1410,7 @@ def p_tseries_allInOne_space(
 def p_equil_allInOne_project(
     data: pd.DataFrame,
     project: str,
+    project_title: str,
     x_prop,
     y_prop,
     hue_attr: str,
@@ -1378,13 +1422,21 @@ def p_equil_allInOne_project(
     height: float = 3,
     aspect: float = 1.618,  # golden ratio
     color_palette: str = 'rocket_r',
+    plot_context: Optional[str] = 'paper',
     font_scale: int = 2,
-    fontsize: int = 18,
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        },
+    ylabel_pad: Optional[float] = 30,
     save_to: str = "./",
+    axes_style: Optional[str] = 'ticks',
+    font_family: Optional[str] = 'Times New Roman',
     ext: str = "pdf",
     facet_kw: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
+    fig_title_kw: dict = {'x': 0.5, 'y': 1.0},
     **kwargs
 ):
     """Plots the time series of a physical `property_` in a given `space` for
@@ -1397,6 +1449,8 @@ def p_equil_allInOne_project(
         The input dataset
     project: str
         The timeseries-like property used for y-axis.
+    project_title: str
+        The formatted name of the project.
     x_prop: str
         The time-series index-like property.
     y_prop: str
@@ -1419,10 +1473,21 @@ def p_equil_allInOne_project(
         The ratio of width to height.
     color_palette: str, default 'rocket_r'
         The color palette`
+    plot_context: str, default 'paper'
+        Set seaborn plooting context
     font_scale: float, default 2
         The scaling factor for fonts.
-    fontsize: int, default 20
-        The maximum font size in the plot.
+    rc_params: dict, default {
+                               'mathtext.default': 'regular',
+                               'text.usetex': True
+                               }
+        The rc parameters.
+    ylabel_pad: float, default 30,
+        The y-axis lavble pad,
+    axes_style: str, default 'ticks',
+        The seabonr axes style.
+    font_family: str, default 'Times New Roman'
+        The seaborn font family
     ext: str, default 'pdf'
         The format of the output file.
     save_to : str, default './'
@@ -1435,6 +1500,8 @@ def p_equil_allInOne_project(
         'sharey': False, 'sharex': False, 'legend_out': True
         }
         kwargs passed to FaceGrid.
+    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+        The kwargs passed to `FacetGrid.fig.suptitle`
     kwargs:
         kwargs passed to relplot.
 
@@ -1442,15 +1509,14 @@ def p_equil_allInOne_project(
     ------------
     Matplotlib, Seaborn, Pandas
     """
-    sns.set_context(
-                font_scale=font_scale,
-                rc={
-                    'font.family': "Times New Roman",
-                    'mathtext.default': 'regular',
-                    "text.usetex": True,
-                    "font.size": fontsize
-                }
-            )
+    sns.set_theme(
+        context=plot_context,
+        style=axes_style,
+        palette=color_palette,
+        font=font_family,
+        font_scale=font_scale,
+        rc=rc_params
+    )
     tseries_grid = sns.relplot(
         data=data,
         x=x_prop,
@@ -1472,12 +1538,151 @@ def p_equil_allInOne_project(
         ax.set_ylabel(
             prop_specs[property_]["symbol"],
             rotation=0,
-            labelpad=20
+            labelpad=ylabel_pad
         )
         ax.set_title(None)
     tseries_grid.set_xlabels(attr_titles[x_prop])
     tseries_grid.legend.set_title(attr_titles[hue_attr])
-    tseries_grid.tight_layout(w_pad=2)
-    output = "-".join(["equilProp", project, x_prop, hue_attr])
+    tseries_grid.fig.suptitle(project_title, **fig_title_kw)
+    tseries_grid.tight_layout(w_pad=1)
+    output = "-".join(
+        ["equilPlot", project, 'chainMeasures', x_prop, hue_attr]
+    )
+    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
+    plt.close()
+
+
+def p_hist_allInOne_project(
+    data: pd.DataFrame,
+    project: str,
+    project_title: str,
+    x_prop,
+    y_prop,
+    hue_attr: str,
+    col_attr: str,
+    prop_specs: Dict[str, Dict[str, str]],
+    attr_titles: Dict[str, str],
+    kind: Optional[str] = 'point',
+    col_wrap: Optional[int] = 3,
+    height: Optional[float] = 3,
+    aspect: Optional[float] = 1.618,  # golden ratio
+    color_palette: Optional[str] = 'rocket_r',
+    plot_context: Optional[str] = 'paper',
+    font_scale: Optional[int] = 2,
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        },
+    axes_style: Optional[str] = 'ticks',
+    font_family: Optional[str] = 'Times New Roman',
+    save_to: Optional[str] = "./",
+    ext: Optional[str] = "pdf",
+    facet_kw: Optional[dict] = {
+        'sharey': False, 'sharex': False, 'legend_out': True
+        },
+    fig_title_kw: Optional[dict] = {'x': 0.5, 'y': 1.0},
+    **kwargs
+):
+    """Plots the time series of a physical `property_` in a given `space` for
+    all the values of a given `hue_attr` (different colors) and all the values
+    of a given `col_attr` (different subplots).
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        The input dataset
+    project: str
+        The timeseries-like property used for y-axis.
+    project_title: str
+        The formatted name of the project.
+    x_prop: str
+        The time-series index-like property.
+    y_prop: str
+        The time-series-like property
+    hue_attr: str
+        The categorial-like attribute used for coloring curves.
+    col_attr: str
+        The categorial-like attribute used for seting number of sub-plots.
+    kind: str, default 'point'.
+        The kind of catplot.
+    prop_specs: dict of str
+        The formatted details of the `y_prop`.
+    attr_titles:
+        The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
+    col_wrap: int, default 2
+        The number of sub-figure columns
+    height: float, default 3
+        The height of each sub-figure.
+    aspect: float, default 1.618
+        The ratio of width to height.
+    color_palette: str, default 'rocket_r'
+        The color palette`
+    plot_context: str, default 'paper'
+        Set seaborn plooting context
+    font_scale: float, default 2
+        The scaling factor for fonts.
+    rc_params: dict, default {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        }
+        The rc parameters.
+    axes_style: str, default 'ticks',
+        The seabonr axes style.
+    font_family: str, default 'Times New Roman'
+        The seaborn font family
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+    figsize: tuple, default (12,6)
+        The size of the figure.
+    leg_ncol: int, default 1
+        The number of columns in the legend.
+    facet_kw: dict, default {
+        'sharey': False, 'sharex': False, 'legend_out': True
+        }
+        kwargs passed to FaceGrid.
+    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+        The kwargs passed to `FacetGrid.fig.suptitle`
+    kwargs:
+        kwargs passed to relplot.
+
+    Requirements
+    ------------
+    Matplotlib, Seaborn, Pandas
+    """
+    sns.set_theme(
+        context=plot_context,
+        style=axes_style,
+        palette=color_palette,
+        font=font_family,
+        font_scale=font_scale,
+        rc=rc_params
+    )
+    tseries_grid = sns.catplot(
+        data=data,
+        x=x_prop,
+        y=y_prop,
+        col=col_attr,
+        hue=hue_attr,
+        kind=kind,
+        ls="-",
+        height=height,
+        alpha=0.7,
+        aspect=aspect,
+        palette=color_palette,
+        col_wrap=col_wrap,
+        facet_kws=facet_kw,
+        **kwargs
+    )
+    tseries_grid.set_axis_labels(
+        attr_titles[x_prop],
+        prop_specs[y_prop]['symbol']
+    )
+    tseries_grid.set_titles(attr_titles[col_attr] + r"$={col_name}$")
+    tseries_grid.legend.set_title(attr_titles[hue_attr])
+    tseries_grid.fig.suptitle(project_title, **fig_title_kw)
+    tseries_grid.tight_layout(w_pad=1)
+    output = "-".join(['equilPlot', project, y_prop, x_prop, hue_attr])
     tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
     plt.close()

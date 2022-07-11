@@ -7,6 +7,7 @@ from typing import (
     Union
 )
 from glob import glob
+import warnings
 
 from ..manage.organizer import (
     invalid_keyword,
@@ -540,6 +541,14 @@ def nonscalar_time_series(
                 whole_name: np.mean(whole_array, axis=avg_axis)
                 for whole_name, whole_array in wholes.items()
             }
+            # changing property_ name after averaging:
+            property_old = property_
+            property_ = ''.join(property_.split('T'))
+            warnings.warn(
+                f"property name '{property_old}' changed to"
+                f"'{property_}' after averaginv over time.",
+                UserWarning
+            )
             ensembles = ensemble(
                     property_ + species,
                     wholes,
@@ -584,6 +593,14 @@ def nonscalar_time_series(
             wholes = {whole_name: np.mean(whole_array, axis=avg_axis)
                       for whole_name, whole_array in wholes.items()
                       }
+            # changing property_ name after averaging:
+            property_old = property_
+            property_ = ''.join(property_.split('T'))
+            warnings.warn(
+                f"property name '{property_old}' changed to"
+                f"'{property_}' after averaginv over time.",
+                UserWarning
+            )
             ensembles = ensemble(
                     property_ + species,
                     wholes,
