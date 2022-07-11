@@ -1,10 +1,46 @@
 """
 a collection of classes and functions used by other modules and submodules.
 """
+from typing import List
 import matplotlib.colors as mplc
 from ..manage.utilizer import round_down_first_non_zero
 import numpy as np
 import matplotlib as mpl
+import seaborn as sns
+
+
+def set_facet_grid_legend(
+    facet_grid: sns.FacetGrid,
+    new_title: str,
+    new_labels: List[str]
+) -> None:
+    """Sets new labels in a facet gird plot.
+
+    Parameters
+    ----------
+    facet_grid: Seaborn FacetGrid
+        A FacetGrid object
+    new_title: str
+        A new title for the legend.
+    new_labels: list of str
+        A list of new labels.
+
+    Requirements:
+    seaborn, matplotlib
+    """
+    # check axes and find which is have legend
+    for ax in facet_grid.axes.flat:
+        legend = facet_grid.axes.flat[0].get_legend()
+        if legend is not None:
+            break
+    # or legend may be on a figure
+    if legend is None:
+        legend = facet_grid._legend
+
+    # change legend texts
+    legend.set_title(new_title)
+    for text, label in zip(legend.texts, new_labels):
+        text.set_text(label)
 
 
 def color_patcher(colors):

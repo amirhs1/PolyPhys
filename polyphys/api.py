@@ -7,6 +7,7 @@ from typing import (
 )
 import numpy as np
 import pandas as pd
+import itertools
 from polyphys.manage import organizer
 from polyphys.analyze import analyzer
 from polyphys.manage.parser import SumRule
@@ -21,7 +22,8 @@ def allInOne_equil_tseries(
     spaces: List[str],
     properties: List[str],
     measures: List[Callable],
-    round_to: Optional[float] = 0.025,
+    divisor: Optional[float] = 0.025,
+    round_to: Optional[int] = 3,
     save_space: Optional[bool] = False,
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
@@ -52,8 +54,11 @@ def allInOne_equil_tseries(
         The names of physical properties.
     measures: list of Callable
         The list of applying measures/functions.
-    round_to: float, default 0.025
-        The step by which the values of "phi_c_bulk" attribute is rounded.
+    divisor: float, default 0.025
+        The step by which the values of "phi_c_bulk" attribute are rounded.
+    round_to: int, default 3
+        The number of significant decimal digits in the values of "phi_c_bulk"
+        attribute.
     save_space: bool, default False
         Whether save the "space" dataframes or not.
     save_to : str, default None
@@ -91,7 +96,7 @@ def allInOne_equil_tseries(
     all_in_one_equil_props['phi_c_bulk_round'] = \
         all_in_one_equil_props['phi_c_bulk'].apply(
             round_up_nearest,
-            args=[round_to]
+            args=[divisor, round_to]
         )
     output = "-".join(
         ["allInOne", project, group, species, "equilProps-whole.csv"]
@@ -149,20 +154,24 @@ def allInOne_equil_tseries_ensAvg(
     project_db.drop(columns=cols_to_drop, inplace=True)
     # Ensemble-averaging all the measures of all the properties:
     ens_avg = project_db.groupby(attributes).agg(np.mean)
-    ens_avg.reset_index(level="phi_c_bulk_round", inplace=True)
+    ens_avg.reset_index(inplace=True)
     # Normalizing the mean values of each property in each ensemble in a
     # space by the value of the property ensemble with phi_c_bulk_round=0 in
     # that space:
     # Here, the normalization is only performed for the "mean" measure not, the
     # "std" or "sem" measures.
-    normalized_props = [
-        prop.split("-")[0] for prop in properties if "mean" in prop
+    spaces = ens_avg['space'].unique()
+    norm_props = [
+        prop.split('-')[0] for prop in properties if prop.endswith('mean')
     ]
-    for prop in normalized_props:
-        phi_c_0_cond = ens_avg['phi_c_bulk_round'] == 0
-        prop_phi_c_0 = ens_avg.loc[phi_c_0_cond, prop + "-mean"].values[0]
-        ens_avg[prop + "-norm"] = ens_avg[prop + "-mean"] / prop_phi_c_0
-    ens_avg.reset_index(inplace=True)
+    for prop in norm_props:
+        ens_avg[prop + "-norm"] = 0
+    for space, prop in itertools.product(spaces, norm_props):
+        space_con = ens_avg['space'] == space
+        phi_c_con = ens_avg['phi_c_bulk_round'] == 0
+        prop_0 = ens_avg.loc[space_con & phi_c_con, prop + "-mean"].values[0]
+        ens_avg.loc[space_con, prop + "-norm"] = \
+            ens_avg.loc[space_con, prop + "-mean"] / prop_0
     if save_to is not None:
         output = "-".join(
             ["allInOne", project, group, species, "equilProps-ensAvg.csv"]

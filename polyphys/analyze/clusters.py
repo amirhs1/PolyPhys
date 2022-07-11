@@ -286,11 +286,12 @@ def count_bonds(dir_contacts: np.ndarray):
     """Infers the number and size of bonds from the direct contact matrix
     `dir_contacts`.
 
-    The direct contact matrix is a symmetric and its diagonal elements are
-    all 1. The column- or row-wise sum of the matrix shows the number of bonds
+    The direct contact matrix is symmetric and its diagonal elements are 1.
+    The column- or row-wise sum of the matrix shows the number of bonds
     an atom has with itself and other atoms. A self-bond happens due to the
-    definition of the direct contact matirx. With this definition, the
-    number of bonds per atom ranges from 1 to the number of atoms.
+    definition of the direct contact matirx (in which the diagonal elements
+    are 1). Such self-bonds are substracted below to give the correct number of
+    bonds, thus number of bonds per atom ranges from 0 to $n_{atoms}-1$.
 
     Parameters
     ----------
@@ -321,8 +322,7 @@ def count_bonds(dir_contacts: np.ndarray):
 
 
 def count_clusters(contacts: np.ndarray) -> np.ndarray:
-    """Infers the number and size of clusters from the contact matrix
-    `contacts`.
+    """Infers the number and size of clusters from a contact matrix `contacts`.
 
     All the diagonal elemnts of the direct contact matrix are 1; moreover,
     depending on the size and number of clusters, the matrix has many repeated
