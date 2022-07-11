@@ -217,6 +217,8 @@ import numpy as np
 import pandas as pd
 import warnings
 
+from .utilizer import round_up_nearest
+
 
 def camel_case_split(
     word: str
@@ -1253,14 +1255,8 @@ def space_tseries(
         # Column names wihtout 'ensemble_long' name
         # See the explanantion in doc abbut column names.
         col_names = {
-            col: "-".join(col[1:]) for col in list(
-                ens_avg_df.columns.str.split(
-                    pat='-',
-                    expand=False
-                    )
-                )
+            col: "-".join(col.split('-')[1:]) for col in ens_avg_df.columns
         }
-        ens_avg_df = pd.read_csv(ens_avg_csv[0])
         ens_avg_df.rename(columns=col_names, inplace=True)
         ens_avg_df.reset_index(inplace=True)
         ens_avg_df.rename(columns={'index': 'time'}, inplace=True)
@@ -1293,6 +1289,9 @@ def space_hists(
     group: str,
     geometry: str,
     bin_center: Optional[np.ndarray] = None,
+    normalize: Optional[bool] = False,
+    divisor: Optional[float] = 0.025,
+    round_to: Optional[int] = 3,
     is_save: Optional[bool] = False
 ) -> pd.DataFrame:
     """Takes the `property_path` to 'ensAvg' time series of a given `property_`
@@ -1347,6 +1346,13 @@ def space_hists(
         centers is used in all different ensemble-averaged dataframes. This is
         the case for "clustersHistTFoci" or "bondsHistTFoci" properties, but
         not for "zHistMon" or "rHistCrd".
+    normalize: bool, default False
+        Whether normalize hists or not.
+    divisor: float, default 0.025
+        The step by which the values of "phi_c_bulk" attribute are rounded.
+    round_to: int, default 3
+        The number of significant decimal digits in the values of "phi_c_bulk"
+        attribute.
     is_save : bool, default False
         whether to save output to file or not.
 
@@ -1367,12 +1373,12 @@ def space_hists(
     ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
     property_db = []
     for ens_avg_csv in ens_avg_csvs:
-        ens_avg_df = pd.read_csv(ens_avg_csv[0], header=0)
+        ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         # the first column of porperty_df is used to extract
         # the information about the property and the space it
         # belongs to.
         # columns in ens_avg_df are ensemble long names
-        ens_long_name = ens_avg_df.columns[0].split('-')[0]
+        ens_long_name = ens_avg.columns[0].split('-')[0]
         property_info = parser(
             ens_long_name,
             geometry,
@@ -1382,16 +1388,20 @@ def space_hists(
         )
         # Column names wihtout 'ensemble_long' name
         # See the explanantion in doc about column names.
-        col_names = [col for col in ens_avg_df.columns if col != 'bin_center']
+        col_names = [col for col in ens_avg.columns if col != 'bin_center']
         col_names = {col: "-".join(col.split('-')[1:]) for col in col_names}
-        col_names['bin_center'] = 'bin_center'
-        ens_avg_df = pd.read_csv(ens_avg_csv[0])
+        col_names['bin_center'] = property_ + '-bin_center'
         if bin_center is not None:
-            ens_avg_df['bin_center'] = bin_center.tolist()
-        ens_avg_df.rename(columns=col_names, inplace=True)
+            ens_avg['bin_center'] = bin_center.tolist()
+        ens_avg.rename(columns=col_names, inplace=True)
+        if normalize is True:
+            ens_avg[property_+'-norm'] = \
+                ens_avg[property_+'-mean'] / ens_avg[property_+'-mean'].sum()
         for attr_name in physical_attrs:
-            ens_avg_df[attr_name] = getattr(property_info, attr_name)
-        property_db.append(ens_avg_df)
+            ens_avg[attr_name] = getattr(property_info, attr_name)
+        ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
+            round_up_nearest, args=[divisor, round_to])
+        property_db.append(ens_avg)
     property_db = pd.concat(property_db, axis=0)
     property_db.reset_index(inplace=True, drop=True)
     if is_save is not False:
