@@ -525,10 +525,21 @@ def nonscalar_time_series(
                     geometry,
                     group
                 )
+            # Cleaning process on "clustersHistTFoci":
+            # See `polyphys.analyze.clusters.count_clusters` for why we have to
+            # drop the first item and what it means.
+            # See `polyphys.probe.prober.trans_fuci_bug` for how
+            # `count_clusters` applied.
+            if property_ == 'clustersHistT':
+                wholes = {
+                    whole_name: whole_array[:, 1:]
+                    for whole_name, whole_array in wholes.items()
+                }
             # Time-averaging process:
-            wholes = {whole_name: np.mean(whole_array, axis=avg_axis)
-                      for whole_name, whole_array in wholes.items()
-                      }
+            wholes = {
+                whole_name: np.mean(whole_array, axis=avg_axis)
+                for whole_name, whole_array in wholes.items()
+            }
             ensembles = ensemble(
                     property_ + species,
                     wholes,
