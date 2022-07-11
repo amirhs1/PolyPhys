@@ -692,7 +692,11 @@ def ensemble(
 
     edge_wholes:  dict of np.ndarray, default None
         A dictionary in which keys are 'whole' names and values are bin_edges.
-        This option is used if `wholes` are histograms.
+        This option is used if `wholes` are histograms. Since the bin edges (
+        and thus bin centers) are the same for all the "whole" histogram in an
+        ensemble, it is written just once as a column to the final "ensemble"
+        dataframe. `edge_wholes` is meaningful if "vector" `whole_type` is
+        used.
     save_to : str, default None
         An/a absolute/relative path of a directory to which outputs are saved.
 
@@ -717,7 +721,7 @@ def ensemble(
             'whole',
             ispath=False
         )
-        ens_name = getattr(w_info, 'ensemble')
+        ens_name = getattr(w_info, 'ensemble_long')
         if not bool(ensembles):  # is ens_names empty or not?
             ensembles[ens_name] = {w_name: w_arr}
         elif ens_name not in ensembles.keys():
@@ -1099,38 +1103,71 @@ def parents_stamps(
 
 
 def unique_property(
-    filepathes: str,
+    filepath: str,
     prop_idx: int,
-    ext: str,
+    extensions: List[str],
     drop_properties: Optional[List[str]] = None,
     sep: Optional[str] = "-"
-) -> list:
-    """Finds unique physical properties by spliting filenames given by
-    'filepathes'
+) -> Tuple[List[str], List[str]]:
+    """Finds unique physical properties and physical property-measures by
+    spliting filenames given by the glob-friendly 'filepath'.
+
+    A measure refers to some measurement done on a physical property.
+
+    A physcial property-measure is defined as a measurement done on a physical;
+    for instance, "gyrT-acf" means the auto-correlation function of the radius
+    of gyration.
+
+    Parameters
+    ----------
+    filepath: str
+        The globe-friendly filepath.
+    prop_idx: int
+        The index after which a property name or property-measure name starts.
+    extensions: list of ext
+        The extensions that comes after "property" or "property-measure" name
+        such as "-ensAvg", "-ens", or "-whole"
+        This is different from a file's extensions/format such as "csv" or
+        "npy".
+    drop_properties: list of str, default None
+        The proeprties that should be ignored.
+    sep: str, default "-"
+        The seperator between a "property" and its "measure".
+
+    Return
+    ------
+    uniq_props: list of str
+        A sorted liste of unique physcial properties.
+    uniq_prop_measures: list of str
+        A sorted list of unique property-measures.
     """
-    uniq_props_stats = glob(filepathes)
-    uniq_props_stats = list(
-        set(
-            [sep.join(
-                property_.split("/")[-1].split(ext)[0].split(sep)[prop_idx:]
-                ) for property_ in uniq_props_stats]
+    props_measures = glob(filepath)
+    uniq_prop_measures = []
+    for ext in extensions:
+        prop_measure_per_ext = list(
+            set(
+                [sep.join(
+                    prop.split("/")[-1].split(ext)[0].split(sep)[prop_idx:]
+                    ) for prop in props_measures]
+                )
             )
-        )
+        uniq_prop_measures.extend(prop_measure_per_ext)
     for drop_property in drop_properties:
         try:
-            uniq_props_stats.remove(drop_property)
+            uniq_prop_measures.remove(drop_property)
         except ValueError:
             print(
                 f"'{drop_property}' is not among unique properties."
                 )
-    uniq_props = list(
-        set(
-            [property_.split(sep)[0] for property_ in uniq_props_stats]
+    uniq_props = set(
+            [property_.split(sep)[0] for property_ in uniq_prop_measures]
             )
-        )
-    uniq_props_stats.sort()
+    uniq_prop_measures = set(uniq_prop_measures)
+    uniq_prop_measures = list(uniq_prop_measures.difference(uniq_props))
+    uniq_props = list(uniq_props)
+    uniq_prop_measures.sort()
     uniq_props.sort()
-    return uniq_props, uniq_props_stats
+    return uniq_props, uniq_prop_measures
 
 
 def space_tseries(
@@ -1142,9 +1179,9 @@ def space_tseries(
     species: str,
     group: str,
     geometry: str,
-    is_save: bool = False
+    is_save: Optional[bool] = False
 ) -> pd.DataFrame:
-    """Takes the `property_path` to the 'ensAvg' files of a given `property_`
+    """Takes the `property_path` to 'ensAvg' time series of a given `property_`
     in a given space `input_database`,  adds the `physical_attrs` of interest
     as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
     dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
@@ -1153,7 +1190,7 @@ def space_tseries(
     In each 'ensemble-averaged' dataframe, there are 3 columns with this name
     pattern:
 
-    column name = 'long_ensemble-group-porperty_[-measure]-stat'
+    column name = '[long_ensemble]-[porperty_][-measure]-[stat]'
 
     where '[-measure]' is a physical measurement such as the auto correlation
     function (AFC) done on the physical 'property_'. [...] means this keyword
@@ -1215,18 +1252,16 @@ def space_tseries(
         )
         # Column names wihtout 'ensemble_long' name
         # See the explanantion in doc abbut column names.
-        col_names = ["-".join(col[1:]) for col in
-                     list(
-                         ens_avg_df.columns.str.split(
-                             pat='-', expand=False
-                             )
-                         )
-                     ]
-        ens_avg_df = pd.read_csv(
-            ens_avg_csv[0],
-            names=col_names,
-            skiprows=[0]
-        )
+        col_names = {
+            col: "-".join(col[1:]) for col in list(
+                ens_avg_df.columns.str.split(
+                    pat='-',
+                    expand=False
+                    )
+                )
+        }
+        ens_avg_df = pd.read_csv(ens_avg_csv[0])
+        ens_avg_df.rename(columns=col_names, inplace=True)
         ens_avg_df.reset_index(inplace=True)
         ens_avg_df.rename(columns={'index': 'time'}, inplace=True)
         ens_avg_df['time'] = ens_avg_df['time'] * property_info.dt
@@ -1243,6 +1278,130 @@ def space_tseries(
             group='bug'
             )
         space = save_to_space.split("/")[-2].split("-")[0]
-        output = "-".join([space, species, property_]) + "-space.csv"
+        output = "-".join([space, group, property_]) + "-space.csv"
+        property_db.to_csv(save_to_space + output, index=False)
+    return property_db
+
+
+def space_hists(
+    input_database: str,
+    property_: str,
+    parser: Callable,
+    hierarchy: str,
+    physical_attrs: List[str],
+    species: str,
+    group: str,
+    geometry: str,
+    bin_center: Optional[np.ndarray] = None,
+    is_save: Optional[bool] = False
+) -> pd.DataFrame:
+    """Takes the `property_path` to 'ensAvg' time series of a given `property_`
+    in a given space `input_database`,  adds the `physical_attrs` of interest
+    as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
+    dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
+    in pandas's lingo,
+
+    In each 'ensemble-averaged' dataframe, there are 4 columns with this name
+    pattern:
+
+    column name = '[long_ensemble]-[porperty_][-measure]-[stat]'
+
+    , and sometimes
+
+    column name = 'bin_center'
+
+    where '[-measure]' is a physical measurement such as the auto correlation
+    function (AFC) done on the physical 'property_'. [...] means this keyword
+    in the column name can be optional. the 'stat' keyword is either 'mean',
+    'ver', or 'sem'. If the 'bin_center' presents as a column in a
+    'ensemble_averaged' dataframe, then it is inferred; otherwise, it should be
+    passed to the function. See `bin_center` kw argument below.
+
+    Parameters
+    ----------
+    property_path: str
+        Path to the the timeseries of the physical property of interest.
+    property_: str
+        Name of the physical property of interest.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
+    property_pattern: str
+        The pattern by which the filenames of timeseries are started with; for
+        instance, "N*" means files start with "N"
+    attributes: list of str
+        The physical attributes that will added as new columns to the
+        concatenated timeseries.
+    species: {'Mon', 'Crd', 'Foci'}
+        The species of particles.
+    group: {'bug', 'all'}
+        The type of the particle group.
+    geometry : {'biaxial', 'slit', 'box'}
+        The shape of the simulation box.
+    single_space:
+        Whether the all-in-one file is for all the timeseries properties of a
+        single space or all the space in a project.
+    bin_center: numpy array, default None
+        The bin centers. The argument should be given if the 'bin_center' is
+        not in the ensemble-averaged dataframe and the same array of bin
+        centers is used in all different ensemble-averaged dataframes. This is
+        the case for "clustersHistTFoci" or "bondsHistTFoci" properties, but
+        not for "zHistMon" or "rHistCrd".
+    is_save : bool, default False
+        whether to save output to file or not.
+
+    Return
+    ------
+    all_in_one: pandas.DataFrame
+        a dataframe in which all the timeseries are concatenated along `orient`
+        of interest, and "properties and attributes" of interest are added to
+        it as the new columns.
+
+    Requirenents
+    ------------
+    PolyPhys, Pandas
+    """
+    invalid_keyword(species, ['Mon', 'Crd', 'Foci'])
+    property_ext = "-" + property_ + "-ensAvg.csv"
+    ens_avg_csvs = glob(input_database + hierarchy + property_ext)
+    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
+    property_db = []
+    for ens_avg_csv in ens_avg_csvs:
+        ens_avg_df = pd.read_csv(ens_avg_csv[0], header=0)
+        # the first column of porperty_df is used to extract
+        # the information about the property and the space it
+        # belongs to.
+        # columns in ens_avg_df are ensemble long names
+        ens_long_name = ens_avg_df.columns[0].split('-')[0]
+        property_info = parser(
+            ens_long_name,
+            geometry,
+            group,
+            'ensemble_long',
+            ispath=False
+        )
+        # Column names wihtout 'ensemble_long' name
+        # See the explanantion in doc about column names.
+        col_names = [col for col in ens_avg_df.columns if col != 'bin_center']
+        col_names = {col: "-".join(col.split('-')[1:]) for col in col_names}
+        col_names['bin_center'] = 'bin_center'
+        ens_avg_df = pd.read_csv(ens_avg_csv[0])
+        if bin_center is not None:
+            ens_avg_df['bin_center'] = bin_center.tolist()
+        ens_avg_df.rename(columns=col_names, inplace=True)
+        for attr_name in physical_attrs:
+            ens_avg_df[attr_name] = getattr(property_info, attr_name)
+        property_db.append(ens_avg_df)
+    property_db = pd.concat(property_db, axis=0)
+    property_db.reset_index(inplace=True, drop=True)
+    if is_save is not False:
+        save_to_space = database_path(
+            input_database,
+            'analysis',
+            stage='space',
+            group='bug'
+            )
+        space = save_to_space.split("/")[-2].split("-")[0]
+        output = "-".join([space, group, property_]) + "-space.csv"
         property_db.to_csv(save_to_space + output, index=False)
     return property_db

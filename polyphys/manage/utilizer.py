@@ -21,8 +21,8 @@ def round_down_first_non_zero(x: float) -> float:
         return round(np.floor(x/non_zero)*non_zero, int(abs(exponent)))
 
 
-def round_up_nearest(dividend: float, diviser: float) -> float:
-    """rounds up the floating-point number dividend by the diviser.
+def round_up_nearest(dividend: float, diviser: float, round_to: int) -> float:
+    """rounds up `dividend` by `diviser` up to `round_to` significatn digits.
 
     Parameters
     ----------
@@ -30,10 +30,12 @@ def round_up_nearest(dividend: float, diviser: float) -> float:
         The number should be rounded up.
     diviser: float
         The number used as the diviser.
+    round_to: int
+        The nuumber of the significatn digits.
 
     Return
     ------
     float:
         The rounded number which is divisable by the divisor.
     """
-    return np.round(dividend / diviser) * diviser
+    return np.round(np.round(dividend / diviser) * diviser, round_to)
