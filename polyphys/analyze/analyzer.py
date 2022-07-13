@@ -1,7 +1,6 @@
 from typing import (
     Callable,
     List,
-    NewType,
     Tuple,
     Optional,
     Union
@@ -15,6 +14,7 @@ from ..manage.organizer import (
     database_path,
     whole_from_file,
     whole_from_segment,
+    whole_from_distMat_t,
     ensemble,
     ensemble_avg,
     children_stamps,
@@ -24,16 +24,12 @@ from .distributions import distributions_generator
 from .correlations import acf_generator
 import numpy as np
 import pandas as pd
-
-PropertyT = NewType('PropertyT', str)
-SpeciesT = NewType('SpeciesT', str)
-GroupT = NewType('GroupT', str)
-DirectionT = NewType('DirectionT', str)
-AxisT = NewType('AxisT', int)
-
-TimeSeriesT = Tuple[PropertyT, SpeciesT, GroupT]
-NonScalarTimeSeriesT = Tuple[PropertyT, SpeciesT, GroupT, AxisT]
-HistogramT = Tuple[DirectionT, SpeciesT, GroupT]
+from ..manage.typer import (
+    TimeSeriesT,
+    HistogramT,
+    NonScalarHistT,
+    NonScalarMatT
+)
 
 
 def time_series(
@@ -440,8 +436,8 @@ def nonscalar_time_series(
     geometry: str,
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
-    nonscalar_hist_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
-    nonscalar_mat_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
+    nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
+    nonscalar_mat_t_properties: Optional[List[NonScalarMatT]] = None
 ) -> None:
     """Runs overs all 'segment' `observations` of each of
     "NonScalarTimeSeriesT" types in a given 'geometry', takes time average over
@@ -567,55 +563,70 @@ def nonscalar_time_series(
                     save_to=save_to_ens_avg
             )
     if nonscalar_mat_t_properties is not None:
-        for property_, species, group, avg_axis in nonscalar_mat_t_properties:
-            tseries = sort_filenames(
-                    observations,
-                    fmts=['-' + property_ + species + '.npy']
-                )
-            if is_segment is True:
-                wholes = whole_from_segment(
-                    property_ + species,
-                    tseries,
-                    parser,
-                    geometry,
-                    group,
-                    'tseries',
-                    save_to=save_to_whole
-                )
-            else:
-                wholes = whole_from_file(
-                    tseries,
-                    parser,
-                    geometry,
-                    group
-                )
-            # Time-averaging process:
-            wholes = {whole_name: np.mean(whole_array, axis=avg_axis)
-                      for whole_name, whole_array in wholes.items()
-                      }
+        for property_, species, group in nonscalar_mat_t_properties:
+            whole_paths = sort_filenames(
+                observations,
+                fmts=['-' + property_ + species + '.npy']
+            )
+            wholes_hists, wholes_rdfs, wholes_tseries = whole_from_distMat_t(
+                whole_paths,
+                parser,
+                geometry,
+                group
+            )
             # changing property_ name after averaging:
             property_old = property_
-            property_ = ''.join(property_.split('T'))
+            property_ = 'pairDistHist'
             warnings.warn(
                 f"property name '{property_old}' changed to"
                 f"'{property_}' after averaginv over time.",
                 UserWarning
             )
-            ensembles = ensemble(
-                    property_ + species,
-                    wholes,
+            # For 'dataframe' whole_type, we directly get the ensemble-averaged
+            # proeprties.
+            _ = ensemble(
+                    property_ + species + '-ensAvg',
+                    wholes_hists,
                     parser,
                     geometry,
                     group,
-                    'matrix',
-                    save_to=save_to_ens
+                    'dataframe',
+                    save_to=save_to_ens_avg
             )
-            _ = ensemble_avg(
-                    property_ + species,
-                    ensembles,
+            # changing property_ name after averaging:
+            property_old = property_
+            property_ = 'pairDistRdf'
+            warnings.warn(
+                f"property name '{property_old}' changed to"
+                f"'{property_}' after averaginv over time.",
+                UserWarning
+            )
+            # For 'dataframe' whole_type, we directly get the ensemble-averaged
+            # proeprties.
+            _ = ensemble(
+                    property_ + species + '-ensAvg',
+                    wholes_rdfs,
+                    parser,
                     geometry,
                     group,
-                    'ndarray',
+                    'dataframe',
+                    save_to=save_to_ens_avg
+            )
+            property_ = 'pairDistT'
+            warnings.warn(
+                f"property name '{property_old}' changed to"
+                f"'{property_}' after averaginv over time.",
+                UserWarning
+            )
+            # For 'dataframe' whole_type, we directly get the ensemble-averaged
+            # proeprties.
+            _ = ensemble(
+                    property_ + species + '-ensAvg',
+                    wholes_tseries,
+                    parser,
+                    geometry,
+                    group,
+                    'dataframe',
                     save_to=save_to_ens_avg
             )
 
@@ -630,8 +641,8 @@ def analyze_bug(
     acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
     hist_properties: Optional[List[HistogramT]] = None,
     rho_phi_hist_properties: Optional[List[HistogramT]] = None,
-    nonscalar_hist_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
-    nonscalar_mat_t_properties: Optional[List[NonScalarTimeSeriesT]] = None,
+    nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
+    nonscalar_mat_t_properties: Optional[List[NonScalarMatT]] = None,
     nlags: int = 7000,
     alpha: float = 0.05
 ) -> None:

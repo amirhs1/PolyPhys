@@ -4,10 +4,12 @@ trajectory (or ensemble) clusters.
 Below, different algorithms found in literature are implemented in scientific
 Python.
 """
-from typing import Tuple, Optional
+from typing import Dict, List, Tuple, Optional
 from itertools import combinations
 import numpy as np
+import pandas as pd
 import numpy.linalg as npla
+from ..manage.typer import TransFociParser
 
 
 def apply_pbc(
@@ -375,3 +377,226 @@ def count_clusters(contacts: np.ndarray) -> np.ndarray:
     # or larger than 2.
     np.put(cluster_list, cluster_sizes, cluster_counts)
     return cluster_list
+
+
+def foci_info(
+    genomic_pos: np.ndarray,
+    nmon_large: int,
+    nmon_small: int,
+) -> np.ndarray:
+    """Generates a dictionany of the information about all the possible pairs
+    of large monomers in a circular/ring heterogenous polymner composed of two
+    different monomer types (small and large monomers).
+
+    This information is an array of shape(n_pairs,3) where the first two
+    columns are the pair index along the backbone (a.k.a genomic position), the
+    2nd one is the genomic distance (i.e. the minimum number of genomic indices
+    between a pair in a circular polymer).
+
+    Parameters
+    ----------
+    genomic_pos: np.ndaaray
+        A vector of size `nmon_large` that contains the genomic position of
+        large monomers
+    nmon_large: int
+        Number of large monomers
+    nmon_large: int
+        Number of small monomers
+
+    Return
+    ------
+    pair_info: np.ndarray
+        An array of shape(n_pairs,3) that contains the genomic indices, and
+        genomic distance of each pair.
+    """
+    nmon = nmon_small + nmon_large
+    pairs = np.array(list(combinations(range(nmon_large), 2)), dtype=np.int)
+    genomic_idx = np.choose(pairs, genomic_pos)
+    genomic_dist = np.diff(genomic_idx, axis=1)
+    # Applying the topological contrain on the genmoic distance, i. e. finding
+    # minimum distance between a pair on a circle.
+    # the pair is inclusive, so their difference is one unit more than the
+    # actual number of genomic units between them, thus sabtracting by 1.0.
+    genomic_dist = np.minimum.reduce((nmon-genomic_dist, genomic_dist)) - 1.0
+    pair_info = np.concatenate(
+        (genomic_idx, genomic_dist),
+        axis=1
+        )
+    return pair_info
+
+
+def v_histogram(
+    data: np.ndarray,
+    bins: int,
+    range: Tuple[float, float],
+    **kwargs
+) -> np.ndarray:
+    """Vectorizes `n.histogram` so it can be mapped to a collection of data
+    with different `nbins` and `range` kwargs. The `range` is divided into
+    `nbins` bins, so there are `nbins` equal bins.
+
+    Parameters
+    ----------
+    data: np.ndarray
+        1D array-like input data
+    bins: int
+        Number of bins
+    range: float
+        The lower and upper range of bins.
+
+    Return
+    ------
+    hist: np.ndarray
+        The frequencies of `data` in bins.
+    """
+    hist, _ = np.histogram(data, bins=bins, range=range, **kwargs)
+    return hist
+
+
+def foci_rdf(
+    hist: np.ndarray,
+    bin_centers: np.ndarray,
+    binsize: float
+) -> np.ndarray:
+    """Compute the radial distribution function to find the center of a
+    particle in a pair given position at a radial distance r from the center of
+    the other particle in that pair.
+
+    Parameters
+    ----------
+    hist: np.ndaaray
+       The frequencies of particles in bins with equal size.
+    bin_centers
+        The positions of bin centers along the radial direction.
+    binsize: float
+        Size of each bin
+
+    Return
+    ------
+    rdf: np.ndarray
+        The rdf in bins with equal size.
+    """
+    rdf = hist / (bin_centers**2 * 4 * np.pi * binsize)
+    rdf = rdf / np.sum(rdf)  # normalization
+    return rdf
+
+
+def foci_histogram(
+    tags: List[str],
+    pairs_info: np.ndarray,
+    pairs_dist: np.ndarray,
+    binsize: float
+) -> Dict[str, np.ndarray]:
+    """Generates histograms of pair distances, use the same number of bins and
+    the same bin range for all pairs.
+
+    The lower bin range is 0 while the upper one is the maximum pf the maximum
+    physical distances between any pairs.
+
+    Parameters
+    ----------
+    tags: list of str
+        A list that contains pair names.
+    pairs_info: np.ndarray
+        An array of shape(n_pairs,3) that contains the genomic indices, and
+        genomic distance.
+    pairs_dist: np.ndarray
+        An array of shape (n_pairs, n_frames) that contains the time series
+        of each pair distances.
+    binsize: float
+        Size of each bin
+
+    Return
+    ------
+    pair_hists: dict
+        A dictionary in which the keys are pair tags and the values of pair
+        histograms. There is also extra key named 'bin_center' which contains
+        the center of bins.
+    pair_hists: dict
+        A dictionary in which the keys are pair tags and the values of pair
+        rdfs. There is also extra key named 'bin_center' which contains
+        the center of bins.
+    """
+    n_pairs = pairs_info.shape[0]
+    # the maximum pair distance used as upper limit of histogram range in all
+    # pair histogram. This value is rounded to be a multiple of binsize.
+    upper_range = np.ceil(pairs_dist.max() / binsize)
+    max_range = (0, upper_range)
+    max_bins = np.ceil((max_range[1] - max_range[0]) / binsize).astype(np.int)
+    pairs_range = [max_range] * n_pairs
+    pairs_bins = [max_bins] * n_pairs
+    bin_edges = np.arange(max_range[0], max_range[1] + binsize, binsize)
+    bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
+
+    hists = list(map(v_histogram, pairs_dist, pairs_bins, pairs_range))
+    hist_tags = ['pairDistHistFoci-' + tag for tag in tags]
+    pair_hists = dict(zip(hist_tags, hists))
+    pair_hists['bin_center'] = bin_centers
+    pairs_bin_centers = [bin_centers] * n_pairs
+    pairs_binsizes = [binsize] * n_pairs
+    rdfs = list(map(foci_rdf, hists, pairs_bin_centers, pairs_binsizes))
+    rdf_tags = ['pairDistRdfFoci-' + tag for tag in tags]
+    pair_rdfs = dict(zip(rdf_tags, rdfs))
+    pair_rdfs['bin_center'] = bin_centers
+    return pair_hists, pair_rdfs
+
+
+def whole_distMat_foci(
+    whole_path: str,
+    whole_info: TransFociParser
+) -> Tuple[
+    Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]
+]:
+    """Generates time series and histograms of foci distances from distance
+    matrix of (large) monomers.
+
+    A foci is a pair of large monomer. The ditance matrix is upper-triangular
+    matrix containing all the spatial distances between any possible foci of
+    large monomers.
+
+    Parameters
+    ----------
+    whole_path: str
+        Path to a "whole" diatance matrix.
+    whole_info: PolyPhysParser
+        A PolyPhysParser object contains information about a "whole" simulation
+
+    Return
+    ------
+    pairs_hists: dict
+        A dataframe in which the columns are pair tags and the values of pair
+        histograms. There is also extra column named 'bin_center' that contains
+        the center of bins.
+    pairs_hists: dict
+        A dataframe in which the columns are pair tags and the values of pair
+        rdfs. There is also extra column named 'bin_center' that contains
+        the center of bins.
+    piars_tseries: dict
+        A dataframe in which the columns are pair tags and the values of pair
+        timeseries.
+    """
+    whole = np.load(whole_path)
+    dmon_small = whole_info.dmon_small
+    nmon_large = whole_info.nmon_large
+    nmon_small = whole_info.nmon_small
+    diagonal_idxs = np.diag_indices(nmon_large)
+    genomic_pos = whole[0, diagonal_idxs[0], diagonal_idxs[1]]
+    pairs_info = foci_info(genomic_pos, nmon_large, nmon_small)
+    tags = list(
+        map(
+            lambda x: "loc{0}loc{1}genDist{2}".format(x[0], x[1], x[2]),
+            pairs_info[:, :3]
+        )
+    )
+    triu_indices = np.triu_indices(nmon_large, k=1)
+    pairs_dist = whole[:, triu_indices[0], triu_indices[1]].T
+    binsize = 0.5 * dmon_small
+    pair_hists, pair_rdfs = foci_histogram(
+        tags, pairs_info, pairs_dist, binsize
+    )
+    pair_hists = pd.DataFrame.from_dict(pair_hists)
+    pair_rdfs = pd.DataFrame.from_dict(pair_rdfs)
+    tseries_tags = ['pairDistTFoci-' + tag for tag in tags]
+    pair_tseries = dict(zip(tseries_tags, pairs_dist))
+    pair_tseries = pd.DataFrame.from_dict(pair_tseries)
+    return pair_hists, pair_rdfs, pair_tseries
