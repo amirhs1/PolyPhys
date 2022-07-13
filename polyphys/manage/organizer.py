@@ -217,6 +217,9 @@ import numpy as np
 import pandas as pd
 import warnings
 
+from ..manage.typer import EnsembleT
+from ..analyze.clusters import whole_distMat_foci
+
 from .utilizer import round_up_nearest
 
 
@@ -581,11 +584,11 @@ def whole_from_file(
 ) -> Dict[str, np.ndarray]:
     """Loads `whole` numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their pathes
-    `wholepathes`.
+    `whole_paths`.
 
     Parameters
     ----------
-    observations : list of tuples
+    whole_paths : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
     parser: Callable
@@ -617,21 +620,80 @@ def whole_from_file(
             group,
             'whole'
         )
-        whole_name = getattr(whole_info, 'lineage_name')
+        whole_name = getattr(whole_info, 'whole')
         wholes[whole_name] = np.load(whole_path[0])
     return wholes
 
 
-def ensemble_from_vectors(
-    ens: Dict[str, np.ndarray]
+def whole_from_distMat_t(
+    whole_paths: List[Tuple[str]],
+    parser: Callable,
+    geometry: str,
+    group: str,
+) -> Dict[str, np.ndarray]:
+    """Loads `whole` 2D numpy arrays for a given physical property of the
+    particle `group` in the `geometry` of interest from their pathes
+    `whole_pathes`.
+
+    Parameters
+    ----------
+    whole_paths : list of tuples
+        List of tuples where each tuple at least has one member (the path to
+        a csv file for the `property_`).
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
+    geometry : {'biaxial', 'slit', 'box'}
+        Shape of the simulation box.
+    group: {'bug', 'all'}
+        Type of the particle group.
+
+    Return
+    ------
+    siblings: dict of np.ndarray
+        Dict of siblings where keys are 'whole' names (str) and values
+        are whole data (arrays).
+
+    Notes
+    -----
+    Please see the 'organizer' documentation for definitions
+    of 'geomtery', and 'group', and the definitons of their keywords.
+    """
+    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(group, ['bug', 'all'])
+    wholes_hists = {}
+    wholes_rdfs = {}
+    wholes_tseries = {}
+    for whole_path in whole_paths:
+        whole_info = parser(
+            whole_path[0],
+            geometry,
+            group,
+            'whole'
+        )
+        whole_hists, whole_rdfs, whole_tseries = whole_distMat_foci(
+            whole_path[0],
+            whole_info
+        )
+        whole_name = getattr(whole_info, 'whole')
+        wholes_hists[whole_name] = whole_hists
+        wholes_rdfs[whole_name] = whole_rdfs
+        wholes_tseries[whole_name] = whole_tseries
+    return wholes_hists, wholes_rdfs, wholes_tseries
+
+
+def ens_from_vec(
+    ens: EnsembleT,
 ) -> Tuple[str, pd.DataFrame]:
     """create an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy vector or 1D array.
 
     Parameters
     ----------
-    ens: dict of np.ndarray
-        A dictionary of the wholes' names and arrays in an ensembles.
+    ens: tuple of np.ndarray
+        A tuple in which the first element is an ensemble name and the second
+        one is a dictionary in which  keys are whole names and values are
+        whole-type data.
 
     Return
     ------
@@ -640,15 +702,18 @@ def ensemble_from_vectors(
     return (ens[0], pd.DataFrame.from_dict(ens[1], orient='columns'))
 
 
-def ensemble_from_matrix(ens: Dict[str, np.ndarray]) -> Tuple[str, np.ndarray]:
+def ens_from_mat(
+    ens: EnsembleT,
+) -> Tuple[str, np.ndarray]:
     """create an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy vector or 1D array.
 
     Parameters
     ----------
-    ens: dict of np.ndarray
-        A dictionary of the wholes' names and arrays in an ensembles.
-
+    ens: tuple of np.ndarray
+        A tuple in which the first element is an ensemble name and the second
+        one is a dictionary in which  keys are whole names and values are
+        whole-type data.
     Return
     ------
     A tuple of ensemble name and its assocaited dataframe.
@@ -656,9 +721,49 @@ def ensemble_from_matrix(ens: Dict[str, np.ndarray]) -> Tuple[str, np.ndarray]:
     return (ens[0], np.stack(list(ens[1].values()), axis=0))
 
 
+def ens_from_df(
+    ens: EnsembleT,
+) -> Tuple[str, pd.DataFrame]:
+    """creates an "ensemble" dataframe from a dictionary of wholes where
+    each "whole" is a pandas dataframe.
+
+    In each "whole" dataframe, headers are "elements" of a "matrix" or 2D
+    quantity and columns are the values of a given property.
+
+    A "whole" dataframe is of two types: "histogram" or "timeseries". A "whole"
+    "histogram" dataframe has an additional header "bin_center" that contains
+    the values of bin centers.
+
+    There is a stark difference between ensembles of "vectors" and "matrices"
+    whole types and ensembles of "dataframe" whole type. In the former, the
+    headers in an "esnemble" dataframe are "whole" names and the columns are
+    the values of a given properies. In the later, the headers in an "ensemble"
+    dataframe are "elements" of a matrix and the columns are the values of
+    "elements", each averaged over all the "whole" dataframes.
+
+    Note
+    ----
+    It is assumed that performing "mean" (see below) over other headers than
+    "element" headers does not change those headers. "bin_center" header is an
+    example of such mean-invariant headers.
+
+    Parameters
+    ----------
+    ens: tuple of np.ndarray
+        A tuple in which the first element is an ensemble name and the second
+        one is a dictionary in which  keys are whole names and values are
+        whole-type data.
+
+    Return
+    ------
+    A tuple of ensemble name and its assocaited dataframe.
+    """
+    return (ens[0], pd.concat(list(ens[1].values())).groupby(level=0).mean())
+
+
 def ensemble(
     property_: str,
-    wholes: Dict[str, np.ndarray],
+    wholes: Dict[str, Union[np.ndarray, pd.DataFrame]],
     parser: Callable,
     geometry: str,
     group: str,
@@ -668,6 +773,26 @@ def ensemble(
 ) -> Dict[str, Union[pd.DataFrame, np.ndarray]]:
     """Generates ensembles from `wholes` for the physical property `property_`
     of a particle `group` in a `geometry` of interest.
+
+    The `whole_type` can be "vector" or "1D" numpy array, "matrix" or "2D"
+    numpy array, or "dataframe". The "dataframe" `whole_type` are "whole"
+    dataframe in which the headers are elements of a matrix and the columns
+    are either the values of that elements over time (a "timeseries"
+    "dataframe" `whole_type`) or a meausrement on values; for instance, the
+    measurement can be histograming/counting. For such a "histogram"
+    "dataframe" `whole_type`, there is an edditional header that is
+    "bin_center". The length of "timeseries" "whole" "dataframe" is equal to
+    the number of time frames while the length of "histogram" "whole"
+    "dataframe" is equal to the number of bins.
+
+    There is a stark difference between ensembles of "vectors" and "matrices"
+    whole types and ensembles of "dataframe" whole type. In the former, the
+    headers in an "esnemble" dataframe are "whole" names and the columns are
+    the values of a given properies. In the later, the headers in an "ensemble"
+    dataframe are "elements" of a matrix and the columns are the values of
+    "elements", each averaged over all the "whole" dataframes; as a result,
+    ensembles of "dataframe" `whole-type` are ensemble-averaged and do not any
+    any further steps.
 
     Parameters
     ----------
@@ -692,6 +817,10 @@ def ensemble(
         'matrix':
             A numpy 2D array; for example, the gyration matrix.
 
+        'dataframe':
+            A pandas dataframe; for example, the pair distances of a group of
+            monomers.
+
     edge_wholes:  dict of np.ndarray, default None
         A dictionary in which keys are 'whole' names and values are bin_edges.
         This option is used if `wholes` are histograms. Since the bin edges (
@@ -712,7 +841,7 @@ def ensemble(
     # Averging over ensembles with simailar initial paramters
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     invalid_keyword(group, ['bug', 'all'])
-    invalid_keyword(whole_type, ['vector', 'matrix'])
+    invalid_keyword(whole_type, ['vector', 'matrix', 'dataframe'])
     ensembles = {}
     bin_centers = {}
     for w_name, w_arr in wholes.items():
@@ -736,12 +865,16 @@ def ensemble(
             )
     whole_types = {
         "vector": {
-            "mapping_func": ensemble_from_vectors,
+            "mapping_func": ens_from_vec,
             "ext": "csv"
         },
         "matrix": {
-            "mapping_func": ensemble_from_matrix,
+            "mapping_func": ens_from_mat,
             "ext": "npy"
+        },
+        "dataframe": {
+            "mapping_func": ens_from_df,
+            "ext": "csv"
         }
     }
     ensembles = dict(
@@ -838,7 +971,7 @@ def ens_avg_from_ndarray(
 
 def ensemble_avg(
     property_: str,
-    ensembles: Dict[str, pd.DataFrame],
+    ensembles: Dict[str, Union[pd.DataFrame, np.ndarray]],
     geometry: str,
     group: str,
     ens_type: str,
@@ -907,9 +1040,8 @@ def ensemble_avg(
         }
     }
     for ens, ens_data in ensembles.items():
-        ens_property = ens + '-' + property_
         ens_avg = ens_types[ens_type]["ens_avg_func"](
-           ens_property,
+           property_,
            ens_data,
            exclude
         )
@@ -1240,24 +1372,13 @@ def space_tseries(
     property_db = []
     for ens_avg_csv in ens_avg_csvs:
         ens_avg_df = pd.read_csv(ens_avg_csv[0], header=0)
-        # the first column of porperty_df is used to extract
-        # the information about the property and the space it
-        # belongs to.
-        # columns in ens_avg_df are ensemble long names
-        ens_long_name = ens_avg_df.columns[0].split('-')[0]
         property_info = parser(
-            ens_long_name,
+            ens_avg_csv[0],
             geometry,
             group,
             'ensemble_long',
-            ispath=False
+            ispath=True
         )
-        # Column names wihtout 'ensemble_long' name
-        # See the explanantion in doc abbut column names.
-        col_names = {
-            col: "-".join(col.split('-')[1:]) for col in ens_avg_df.columns
-        }
-        ens_avg_df.rename(columns=col_names, inplace=True)
         ens_avg_df.reset_index(inplace=True)
         ens_avg_df.rename(columns={'index': 'time'}, inplace=True)
         ens_avg_df['time'] = ens_avg_df['time'] * property_info.dt
@@ -1374,26 +1495,17 @@ def space_hists(
     property_db = []
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        # the first column of porperty_df is used to extract
-        # the information about the property and the space it
-        # belongs to.
-        # columns in ens_avg_df are ensemble long names
-        ens_long_name = ens_avg.columns[0].split('-')[0]
         property_info = parser(
-            ens_long_name,
+            ens_avg_csv[0],
             geometry,
             group,
             'ensemble_long',
-            ispath=False
+            ispath=True
         )
-        # Column names wihtout 'ensemble_long' name
-        # See the explanantion in doc about column names.
-        col_names = [col for col in ens_avg.columns if col != 'bin_center']
-        col_names = {col: "-".join(col.split('-')[1:]) for col in col_names}
-        col_names['bin_center'] = property_ + '-bin_center'
         if bin_center is not None:
             ens_avg['bin_center'] = bin_center.tolist()
-        ens_avg.rename(columns=col_names, inplace=True)
+        ens_avg['bin_center_norm'] = \
+            ens_avg['bin_center'] / ens_avg['bin_center'].max()
         if normalize is True:
             ens_avg[property_+'-norm'] = \
                 ens_avg[property_+'-mean'] / ens_avg[property_+'-mean'].sum()
