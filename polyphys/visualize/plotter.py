@@ -1686,3 +1686,301 @@ def p_hist_allInOne_project(
     output = "-".join(['equilPlot', project, y_prop, x_prop, hue_attr])
     tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
     plt.close()
+
+
+def p_pairDist_allInOne_project_lineStyle(
+    data: pd.DataFrame,
+    project: str,
+    project_title: str,
+    x_prop,
+    y_prop,
+    hue_attr: str,
+    style_attr: str,
+    style_order: list,
+    col_attr: str,
+    prop_specs: Dict[str, Dict[str, str]],
+    attr_titles: Dict[str, str],
+    legend_labels,
+    col_wrap: int = 3,
+    height: float = 3,
+    aspect: float = 1.618,  # golden ratio
+    color_palette: str = 'rocket_r',
+    plot_context: Optional[str] = 'paper',
+    font_scale: int = 2,
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        },
+    save_to: str = "./",
+    axes_style: Optional[str] = 'ticks',
+    font_family: Optional[str] = 'Times New Roman',
+    ext: str = "pdf",
+    facet_kws: dict = {
+        'sharey': False, 'sharex': False, 'legend_out': True
+        },
+    fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
+    alpha: float = 1.0,
+    move_legend_kws: Optional[dict] = None,
+    **kwargs
+):
+    """Plots the time series of a physical `property_` in a given `space` for
+    all the values of a given `hue_attr` (different colors) and all the values
+    of a given `col_attr` (different subplots).
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        The input dataset
+    project: str
+        The timeseries-like property used for y-axis.
+    project_title: str
+        The formatted name of the project.
+    x_prop: str
+        The time-series index-like property.
+    y_prop: str
+        The time-series-like property
+    hue_attr: str
+        The categorial-like attribute used for coloring curves.
+    style_attr: str
+        The categorial-like attribute used for line size.
+    style_attr: list
+        The order of categorial-like attribute used for line size.
+    col_attr: str
+        The categorial-like attribute used for seting number of sub-plots.
+    prop_specs: dict of str
+        The formatted details of the `y_prop`.
+    attr_titles:
+        The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
+    col_wrap: int, default 2
+        The number of sub-figure columns
+    height: float, default 3
+        The height of each sub-figure.
+    aspect: float, default 1.618
+        The ratio of width to height.
+    color_palette: str, default 'rocket_r'
+        The color palette`
+    plot_context: str, default 'paper'
+        Set seaborn plooting context
+    font_scale: float, default 2
+        The scaling factor for fonts.
+    rc_params: dict, default {
+                               'mathtext.default': 'regular',
+                               'text.usetex': True
+                               }
+        The rc parameters.
+    axes_style: str, default 'ticks',
+        The seabonr axes style.
+    font_family: str, default 'Times New Roman'
+        The seaborn font family
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+    figsize: tuple, default (12,6)
+        The size of the figure.
+    leg_ncol: int, default 1
+        The number of columns in the legend.
+    facet_kws: dict, default {
+        'sharey': False, 'sharex': False, 'legend_out': True
+        }
+        kwargs passed to FaceGrid.
+    fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
+        The kwargs passed to `FacetGrid.fig.suptitle`
+    move_legend_kws: dict, deafult None
+        kwargs pass to seaborn.move_legend
+    alpha: float, default 1,
+        The transparency of curves
+    kwargs:
+        kwargs passed to relplot.
+
+    Requirements
+    ------------
+    Matplotlib, Seaborn, Pandas
+    """
+    sns.set_theme(
+        context=plot_context,
+        style=axes_style,
+        palette=color_palette,
+        font=font_family,
+        font_scale=font_scale,
+        rc=rc_params
+    )
+    tseries_grid = sns.relplot(
+        data=data,
+        x=x_prop,
+        y=y_prop,
+        col=col_attr,
+        hue=hue_attr,
+        style=style_attr,
+        style_order=style_order,
+        kind='line',
+        height=height,
+        aspect=aspect,
+        palette=color_palette,
+        col_wrap=col_wrap,
+        facet_kws=facet_kws,
+        alpha=alpha,
+        ci=None,
+        **kwargs
+    )
+    for idx, new_label in enumerate(legend_labels):
+        tseries_grid._legend.texts[idx].set_text(new_label)
+    tseries_grid.set_ylabels(prop_specs[hue_attr]['symbol'])
+    tseries_grid.set_xlabels(attr_titles[x_prop])
+    tseries_grid.set_titles(attr_titles[col_attr] + r"$={col_name}$")
+    tseries_grid.fig.suptitle(project_title, **fig_title_kws)
+    tseries_grid.tight_layout(w_pad=1)
+    output = "-".join(
+        ["equilPlot", project, hue_attr, col_attr, style_attr, 'lineStyle']
+    )
+    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
+    sns.move_legend(tseries_grid, loc='center right', **move_legend_kws)
+    plt.close()
+
+
+def p_pairDist_allInOne_project_colStyle(
+    data: pd.DataFrame,
+    project: str,
+    project_title: str,
+    x_prop,
+    y_prop,
+    hue_attr: str,
+    col_attr: str,
+    row_attr: str,
+    prop_specs: Dict[str, Dict[str, str]],
+    attr_titles: Dict[str, str],
+    legend_labels,
+    height: float = 3,
+    aspect: float = 1.618,  # golden ratio
+    color_palette: str = 'rocket_r',
+    plot_context: Optional[str] = 'paper',
+    font_scale: int = 2,
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        },
+    save_to: str = "./",
+    axes_style: Optional[str] = 'ticks',
+    font_family: Optional[str] = 'Times New Roman',
+    ext: str = "pdf",
+    facet_kws: dict = {
+        'sharey': False, 'sharex': False, 'legend_out': True
+        },
+    move_legend_kws: Optional[dict] = None,
+    alpha: float = 1.0,
+    fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
+    **kwargs
+):
+    """Plots the time series of a physical `property_` in a given `space` for
+    all the values of a given `hue_attr` (different colors) and all the values
+    of a given `col_attr` (different subplots).
+
+    Parameters
+    ----------
+    data: pd.DataFrame
+        The input dataset
+    project: str
+        The timeseries-like property used for y-axis.
+    project_title: str
+        The formatted name of the project.
+    x_prop: str
+        The time-series index-like property.
+    y_prop: str
+        The time-series-like property
+    hue_attr: str
+        The categorial-like attribute used for coloring curves.
+    col_attr: str
+        The categorial-like attribute used for seting number of cols.
+    row_attr: str
+        The categorial-like attribute used for seting number of rows.
+    prop_specs: dict of str
+        The formatted details of the `y_prop`.
+    attr_titles:
+        The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
+    height: float, default 3
+        The height of each sub-figure.
+    aspect: float, default 1.618
+        The ratio of width to height.
+    color_palette: str, default 'rocket_r'
+        The color palette`
+    plot_context: str, default 'paper'
+        Set seaborn plooting context
+    font_scale: float, default 2
+        The scaling factor for fonts.
+    rc_params: dict, default {
+                               'mathtext.default': 'regular',
+                               'text.usetex': True
+                               }
+        The rc parameters.
+    ylabel_pad: float, default 30,
+        The y-axis lavble pad,
+    axes_style: str, default 'ticks',
+        The seabonr axes style.
+    font_family: str, default 'Times New Roman'
+        The seaborn font family
+    ext: str, default 'pdf'
+        The format of the output file.
+    save_to : str, default './'
+        An/a absolute/relative path of a directory to which outputs are saved.
+    figsize: tuple, default (12,6)
+        The size of the figure.
+    leg_ncol: int, default 1
+        The number of columns in the legend.
+    facet_kws: dict, default {
+        'sharey': False, 'sharex': False, 'legend_out': True
+        }
+        kwargs passed to FaceGrid.
+    fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
+        The kwargs passed to `FacetGrid.fig.suptitle`
+    move_legend_kws: dict, deafult None
+        kwargs pass to seaborn.move_legend
+    alpha: float, default 1,
+        The transparency of curves
+    kwargs:
+        kwargs passed to relplot.
+
+    Requirements
+    ------------
+    Matplotlib, Seaborn, Pandas
+    """
+    sns.set_theme(
+        context=plot_context,
+        style=axes_style,
+        palette=color_palette,
+        font=font_family,
+        font_scale=font_scale,
+        rc=rc_params
+    )
+    tseries_grid = sns.relplot(
+        data=data,
+        x=x_prop,
+        y=y_prop,
+        col=col_attr,
+        row=row_attr,
+        hue=hue_attr,
+        kind='line',
+        height=height,
+        aspect=aspect,
+        palette=color_palette,
+        facet_kws=facet_kws,
+        alpha=alpha,
+        ci=None,
+        **kwargs
+    )
+    for idx, new_label in enumerate(legend_labels[1:]):
+        tseries_grid._legend.texts[idx].set_text(new_label)
+    tseries_grid.set_ylabels(prop_specs[hue_attr]['symbol'])
+    tseries_grid.set_xlabels(attr_titles[x_prop])
+    tseries_grid.set_titles(
+        attr_titles[row_attr] + r"$={row_name}$" +
+        " | " + attr_titles[col_attr] + r"$={col_name}$"
+        )
+    tseries_grid.legend.set_title(legend_labels[0])
+    tseries_grid.fig.suptitle(project_title, **fig_title_kws)
+    tseries_grid.tight_layout(w_pad=1)
+    output = "-".join(
+        ["equilPlot", project, hue_attr, col_attr, row_attr, 'colStyle']
+    )
+    sns.move_legend(tseries_grid, loc='center right', **move_legend_kws)
+    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
+    plt.close()
