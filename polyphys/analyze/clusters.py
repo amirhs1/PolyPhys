@@ -520,7 +520,7 @@ def foci_histogram(
     n_pairs = pairs_info.shape[0]
     # the maximum pair distance used as upper limit of histogram range in all
     # pair histogram. This value is rounded to be a multiple of binsize.
-    upper_range = np.ceil(pairs_dist.max() / binsize)
+    upper_range = np.ceil(pairs_dist.max() / binsize) * binsize
     max_range = (0, upper_range)
     max_bins = np.ceil((max_range[1] - max_range[0]) / binsize).astype(np.int)
     pairs_range = [max_range] * n_pairs
