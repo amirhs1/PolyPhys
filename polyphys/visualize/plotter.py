@@ -1155,7 +1155,7 @@ def p_tseries_space(
     col_wrap: Optional[int] = 1,
     share_x: Optional[str] = True,
     share_y: Optional[str] = True,
-    fig_title_kw: Optional[Dict[str, str]] = {'x': 0.5, 'y': 1.0},
+    fig_title_kws: Optional[Dict[str, str]] = {'x': 0.5, 'y': 1.0},
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
     ext: Optional[str] = 'pdf',
@@ -1225,7 +1225,7 @@ def p_tseries_space(
         Whether to share x-axis limit or not.
     share_y: {None, bool, 'col'}, default True
         Whether to share y-axis limit or not.
-    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+    fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
     ext: str, default 'pdf'
         The format of the output file.
@@ -1264,7 +1264,7 @@ def p_tseries_space(
         titles[col_attr]+r"$={col_name}$")
     tseries_grid.tight_layout(w_pad=1)
     tseries_grid._legend.set_title(titles[hue_attr])
-    tseries_grid.fig.suptitle(space_title, **fig_title_kw)
+    tseries_grid.fig.suptitle(space_title, **fig_title_kws)
     output = "-".join(["tseries", project, property_, space]) + "." + ext
     tseries_grid.savefig(save_to + output, bbox_inches='tight')
     plt.close()
@@ -1279,7 +1279,7 @@ def p_tseries_allInOne_space(
     hue_attr: str,
     col_attr: str,
     prop_specs: Dict[str, Dict[str, str]],
-    attr_titles: Dict[str, str],
+    attr_labels: Dict[str, str],
     col_wrap: int = 3,
     height: float = 3,
     aspect: float = 1.618,  # golden ratio
@@ -1295,10 +1295,10 @@ def p_tseries_allInOne_space(
     font_family: Optional[str] = 'Times New Roman',
     save_to: str = "./",
     ext: str = "pdf",
-    facet_kw: dict = {
+    facet_kws: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
-    fig_title_kw: dict = {'x': 0.5, 'y': 1.0},
+    fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
     **kwargs
 ):
     """Plots the time series of a physical `property_` in a given `space` for
@@ -1323,7 +1323,7 @@ def p_tseries_allInOne_space(
         The categorial-like attribute used for seting number of sub-plots.
     prop_specs: dict of str
         The formatted details of the `y_prop`.
-    attr_titles:
+    attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
     col_wrap: int, default 3
         The number of sub-figure columns
@@ -1356,11 +1356,11 @@ def p_tseries_allInOne_space(
         The size of the figure.
     leg_ncol: int, default 1
         The number of columns in the legend.
-    facet_kw: dict, default {
+    facet_kws: dict, default {
         'sharey': False, 'sharex': False, 'legend_out': True
         }
         kwargs passed to FaceGrid.
-    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+    fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
     kwargs:
         kwargs passed to relplot.
@@ -1391,16 +1391,16 @@ def p_tseries_allInOne_space(
         legend='full',
         kind='line',
         ci=None,
-        facet_kws=facet_kw,
+        facet_kws=facet_kws,
         **kwargs
     )
     tseries_grid.set_axis_labels(
-        attr_titles[x_prop],
+        attr_labels[x_prop],
         prop_specs[y_prop]['symbol']
     )
-    tseries_grid.set_titles(attr_titles[col_attr] + r"$={col_name}$")
-    tseries_grid.legend.set_title(attr_titles[hue_attr])
-    tseries_grid.fig.suptitle(project_title, **fig_title_kw)
+    tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
+    tseries_grid.legend.set_title(attr_labels[hue_attr])
+    tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
     output = "-".join(["tseries", project, y_prop, hue_attr, col_attr])
     tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
@@ -1409,7 +1409,6 @@ def p_tseries_allInOne_space(
 
 def p_equil_allInOne_project(
     data: pd.DataFrame,
-    project: str,
     project_title: str,
     x_prop,
     y_prop,
@@ -1417,7 +1416,7 @@ def p_equil_allInOne_project(
     col_attr: str,
     marker: str,
     prop_specs: Dict[str, Dict[str, str]],
-    attr_titles: Dict[str, str],
+    attr_labels: Dict[str, str],
     col_wrap: int = 3,
     height: float = 3,
     aspect: float = 1.618,  # golden ratio
@@ -1429,16 +1428,16 @@ def p_equil_allInOne_project(
         'text.usetex': True
         },
     ylabel_pad: Optional[float] = 30,
-    save_to: str = "./",
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
-    ext: str = "pdf",
-    facet_kw: dict = {
+    facet_kws: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
-    fig_title_kw: dict = {'x': 0.5, 'y': 1.0},
+    fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
+    loc: str = 'center right',
+    move_legend_kws: Optional[dict] = None,
     **kwargs
-):
+) -> sns.FacetGrid:
     """Plots the time series of a physical `property_` in a given `space` for
     all the values of a given `hue_attr` (different colors) and all the values
     of a given `col_attr` (different subplots).
@@ -1463,7 +1462,7 @@ def p_equil_allInOne_project(
         The shape of marker.
     prop_specs: dict of str
         The formatted details of the `y_prop`.
-    attr_titles:
+    attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
     col_wrap: int, default 2
         The number of sub-figure columns
@@ -1496,14 +1495,21 @@ def p_equil_allInOne_project(
         The size of the figure.
     leg_ncol: int, default 1
         The number of columns in the legend.
-    facet_kw: dict, default {
+    facet_kws: dict, default {
         'sharey': False, 'sharex': False, 'legend_out': True
         }
         kwargs passed to FaceGrid.
-    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+    loc: str, default 'center right
+        Location of the legend
+    fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
     kwargs:
         kwargs passed to relplot.
+
+    Return
+    ------
+    tseries_grid: sns.FacetGrid
+        The FacetGrid plot.
 
     Requirements
     ------------
@@ -1530,7 +1536,7 @@ def p_equil_allInOne_project(
         aspect=aspect,
         palette=color_palette,
         col_wrap=col_wrap,
-        facet_kws=facet_kw,
+        facet_kws=facet_kws,
         marker=marker,
         **kwargs
     )
@@ -1541,15 +1547,12 @@ def p_equil_allInOne_project(
             labelpad=ylabel_pad
         )
         ax.set_title(None)
-    tseries_grid.set_xlabels(attr_titles[x_prop])
-    tseries_grid.legend.set_title(attr_titles[hue_attr])
-    tseries_grid.fig.suptitle(project_title, **fig_title_kw)
+    tseries_grid.set_xlabels(attr_labels[x_prop])
+    tseries_grid.legend.set_title(attr_labels[hue_attr])
+    tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
-    output = "-".join(
-        ["equilPlot", project, 'chainMeasures', x_prop, hue_attr]
-    )
-    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
-    plt.close()
+    sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
+    return tseries_grid
 
 
 def p_hist_allInOne_project(
@@ -1561,7 +1564,7 @@ def p_hist_allInOne_project(
     hue_attr: str,
     col_attr: str,
     prop_specs: Dict[str, Dict[str, str]],
-    attr_titles: Dict[str, str],
+    attr_labels: Dict[str, str],
     kind: Optional[str] = 'point',
     col_wrap: Optional[int] = 3,
     height: Optional[float] = 3,
@@ -1577,10 +1580,12 @@ def p_hist_allInOne_project(
     font_family: Optional[str] = 'Times New Roman',
     save_to: Optional[str] = "./",
     ext: Optional[str] = "pdf",
-    facet_kw: Optional[dict] = {
+    facet_kws: Optional[dict] = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
-    fig_title_kw: Optional[dict] = {'x': 0.5, 'y': 1.0},
+    fig_title_kws: Optional[dict] = {'x': 0.5, 'y': 1.0},
+    loc: str = 'center right',
+    move_legend_kws: Optional[dict] = None,
     **kwargs
 ):
     """Plots the time series of a physical `property_` in a given `space` for
@@ -1607,7 +1612,7 @@ def p_hist_allInOne_project(
         The kind of catplot.
     prop_specs: dict of str
         The formatted details of the `y_prop`.
-    attr_titles:
+    attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
     col_wrap: int, default 2
         The number of sub-figure columns
@@ -1638,12 +1643,16 @@ def p_hist_allInOne_project(
         The size of the figure.
     leg_ncol: int, default 1
         The number of columns in the legend.
-    facet_kw: dict, default {
+    facet_kws: dict, default {
         'sharey': False, 'sharex': False, 'legend_out': True
         }
         kwargs passed to FaceGrid.
-    fig_title_kw: dict, default {'x': 0.5, 'y': 1.0}
+    fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
+    loc: str, default 'center right
+        Location of the legend
+    move_legend_kws: dict, deafult None
+        kwargs pass to seaborn.move_legend
     kwargs:
         kwargs passed to relplot.
 
@@ -1672,17 +1681,18 @@ def p_hist_allInOne_project(
         aspect=aspect,
         palette=color_palette,
         col_wrap=col_wrap,
-        facet_kws=facet_kw,
+        facet_kws=facet_kws,
         **kwargs
     )
     tseries_grid.set_axis_labels(
-        attr_titles[x_prop],
+        attr_labels[x_prop],
         prop_specs[y_prop]['symbol']
     )
-    tseries_grid.set_titles(attr_titles[col_attr] + r"$={col_name}$")
-    tseries_grid.legend.set_title(attr_titles[hue_attr])
-    tseries_grid.fig.suptitle(project_title, **fig_title_kw)
+    tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
+    tseries_grid.legend.set_title(attr_labels[hue_attr])
+    tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
+    sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
     output = "-".join(['equilPlot', project, y_prop, x_prop, hue_attr])
     tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
     plt.close()
@@ -1699,7 +1709,7 @@ def p_pairDist_allInOne_project_lineStyle(
     style_order: list,
     col_attr: str,
     prop_specs: Dict[str, Dict[str, str]],
-    attr_titles: Dict[str, str],
+    attr_labels: Dict[str, str],
     legend_labels,
     col_wrap: int = 3,
     height: float = 3,
@@ -1720,6 +1730,7 @@ def p_pairDist_allInOne_project_lineStyle(
         },
     fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
     alpha: float = 1.0,
+    loc: str = 'center right',
     move_legend_kws: Optional[dict] = None,
     **kwargs
 ):
@@ -1749,7 +1760,7 @@ def p_pairDist_allInOne_project_lineStyle(
         The categorial-like attribute used for seting number of sub-plots.
     prop_specs: dict of str
         The formatted details of the `y_prop`.
-    attr_titles:
+    attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
     col_wrap: int, default 2
         The number of sub-figure columns
@@ -1786,6 +1797,8 @@ def p_pairDist_allInOne_project_lineStyle(
         kwargs passed to FaceGrid.
     fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
+    loc: str, default 'center right
+        Location of the legend
     move_legend_kws: dict, deafult None
         kwargs pass to seaborn.move_legend
     alpha: float, default 1,
@@ -1826,15 +1839,15 @@ def p_pairDist_allInOne_project_lineStyle(
     for idx, new_label in enumerate(legend_labels):
         tseries_grid._legend.texts[idx].set_text(new_label)
     tseries_grid.set_ylabels(prop_specs[hue_attr]['symbol'])
-    tseries_grid.set_xlabels(attr_titles[x_prop])
-    tseries_grid.set_titles(attr_titles[col_attr] + r"$={col_name}$")
+    tseries_grid.set_xlabels(attr_labels[x_prop])
+    tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
     output = "-".join(
         ["equilPlot", project, hue_attr, col_attr, style_attr, 'lineStyle']
     )
     tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
-    sns.move_legend(tseries_grid, loc='center right', **move_legend_kws)
+    sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
     plt.close()
 
 
@@ -1848,7 +1861,7 @@ def p_pairDist_allInOne_project_colStyle(
     col_attr: str,
     row_attr: str,
     prop_specs: Dict[str, Dict[str, str]],
-    attr_titles: Dict[str, str],
+    attr_labels: Dict[str, str],
     legend_labels,
     height: float = 3,
     aspect: float = 1.618,  # golden ratio
@@ -1866,6 +1879,7 @@ def p_pairDist_allInOne_project_colStyle(
     facet_kws: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
+    loc: str = 'center right',
     move_legend_kws: Optional[dict] = None,
     alpha: float = 1.0,
     fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
@@ -1895,7 +1909,7 @@ def p_pairDist_allInOne_project_colStyle(
         The categorial-like attribute used for seting number of rows.
     prop_specs: dict of str
         The formatted details of the `y_prop`.
-    attr_titles:
+    attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
     height: float, default 3
         The height of each sub-figure.
@@ -1930,6 +1944,8 @@ def p_pairDist_allInOne_project_colStyle(
         'sharey': False, 'sharex': False, 'legend_out': True
         }
         kwargs passed to FaceGrid.
+    loc: str, default 'center right
+        Location of the legend
     fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
     move_legend_kws: dict, deafult None
@@ -1970,10 +1986,10 @@ def p_pairDist_allInOne_project_colStyle(
     for idx, new_label in enumerate(legend_labels[1:]):
         tseries_grid._legend.texts[idx].set_text(new_label)
     tseries_grid.set_ylabels(prop_specs[hue_attr]['symbol'])
-    tseries_grid.set_xlabels(attr_titles[x_prop])
+    tseries_grid.set_xlabels(attr_labels[x_prop])
     tseries_grid.set_titles(
-        attr_titles[row_attr] + r"$={row_name}$" +
-        " | " + attr_titles[col_attr] + r"$={col_name}$"
+        attr_labels[row_attr] + r"$={row_name}$" +
+        " | " + attr_labels[col_attr] + r"$={col_name}$"
         )
     tseries_grid.legend.set_title(legend_labels[0])
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
@@ -1981,6 +1997,6 @@ def p_pairDist_allInOne_project_colStyle(
     output = "-".join(
         ["equilPlot", project, hue_attr, col_attr, row_attr, 'colStyle']
     )
-    sns.move_legend(tseries_grid, loc='center right', **move_legend_kws)
+    sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
     tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
     plt.close()
