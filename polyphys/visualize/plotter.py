@@ -1557,7 +1557,6 @@ def p_equil_allInOne_project(
 
 def p_hist_allInOne_project(
     data: pd.DataFrame,
-    project: str,
     project_title: str,
     x_prop,
     y_prop,
@@ -1578,8 +1577,6 @@ def p_hist_allInOne_project(
         },
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
-    save_to: Optional[str] = "./",
-    ext: Optional[str] = "pdf",
     facet_kws: Optional[dict] = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
@@ -1596,8 +1593,6 @@ def p_hist_allInOne_project(
     ----------
     data: pd.DataFrame
         The input dataset
-    project: str
-        The timeseries-like property used for y-axis.
     project_title: str
         The formatted name of the project.
     x_prop: str
@@ -1635,10 +1630,6 @@ def p_hist_allInOne_project(
         The seabonr axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
-    ext: str, default 'pdf'
-        The format of the output file.
-    save_to : str, default './'
-        An/a absolute/relative path of a directory to which outputs are saved.
     figsize: tuple, default (12,6)
         The size of the figure.
     leg_ncol: int, default 1
@@ -1693,9 +1684,7 @@ def p_hist_allInOne_project(
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
     sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
-    output = "-".join(['equilPlot', project, y_prop, x_prop, hue_attr])
-    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
-    plt.close()
+    return tseries_grid
 
 
 def p_pairDist_allInOne_project_lineStyle(
