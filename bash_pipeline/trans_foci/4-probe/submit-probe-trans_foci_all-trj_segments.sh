@@ -11,8 +11,8 @@ parallel --record-env
 
 # Load python and generate your venv
 module load StdEnv/2020 python/3.9
-virtualenv --no-download $SLURM_TMPDIR/env
-source $SLURM_TMPDIR/env/bin/activate
+virtualenv --no-download "${SLURM_TMPDIR}"/env
+source "$SLURM_TMPDIR"/env/bin/activate
 pip install --no-index --upgrade pip
 pip install --no-index matplotlib
 pip install --no-index DateTime
@@ -22,22 +22,22 @@ pip install --no-index pandas
 pip install --no-index seaborn
 pip install --no-index sympy
 pip install --no-index statsmodels
-pip install --no-index MDAnalysis==2.0.0
+pip install --no-index MDAnalysis==2.2.0
 
 # Create a function to execute your job
 exe(){
 dir=${1}
-file=$(echo $dir | cut -d / -f 1)
-(cd ${file} && python probe-all_in_one.py > ${file}-python_out-probe-all_in_one.txt)
+file=$(echo "$dir" | cut -d / -f 1)
+(cd "${file}" && python probe-trans_foci_all-trj_segments.py > "${file}"-probe-trans_foci_all-trj_segments.txt)
 }
 
-echo "Starting run at: `date`"
+echo "Starting run at: $(date)"
 
 # Run GNU Parallel
 #export the function
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-all_in_one.txt ::: N*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-trans_foci_all-trj_segments.txt ::: eps*/
 
-echo "Program glost_launch finished with exit code $? at: `date`"
+echo "Program glost_launch finished with exit code $? at: $(date)"
