@@ -1567,7 +1567,7 @@ def trans_foci_all(
     sim_info = TransFoci(
         trajectory,
         geometry,
-        'bug',
+        'all',
         lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group

@@ -1,6 +1,11 @@
 # How to use GNU Parallel to run **probe** scripts in the **trj**   directory
 
-**Caution**: Sometimes instead of **ns#nl#al#D#ac#-___** pattern, you have **ns#nl#al#D#ac#phic#-___** pattern.
+**Caution:** Sometimes instead of **ns#nl#al#D#ac#-___** pattern, you have **ns#nl#al#D#ac#phic#-___** pattern.
+
+**Caution:** Update the *PROBING_PACKAGE* with running the following commands Go to the *$HOME/github/PROBING_PACKAGE*:
+    1. Run **git pull git@github.com:amirhs1/PROBING_PACKAGE.git master** to pull from repository.
+    2. Enter the **passcode** for **Graham** cluster.
+    3. Run **rsync -axvH --no-g --no-p --exclude='.*' PROBING_PACKAGE /destination** to copy directory, excluding hidden files.
 
 1. If there are two trajectory directories (**ns#nl#al#D#ac#-trjs** and **ns#nl#al#D#ac#-trjs_cont**), move all the trajectory files in **ns#nl#al#D#ac#-trjs_cont** to ***ns#nl#al#D#ac#-trjs** and create as single directory **ns#nl#al#D#ac#-all_trjs**; otherwise, go to the directory with pattern **ns#nl#al#D#ac#-trjs**.
 2. Run **probe_runfiles.sh** to copy run files from **PolyPhys** to **ns#nl#al#D#ac#-all_trjs** directory.
@@ -15,4 +20,5 @@
 8. Run the **sbatch-probe_all_in_one.sh**, **sbatch-probe_all_trj_segments.sh**, or **sbatch-probe_all_bug_segments.sh** file.
 9. After the run finsihed, check slurm file and change its name to **ns#nl#al#D#ac#-probe-slurm_report-probe_all_in_one.out**, **ns#nl#al#D#ac#-probe-slurm_report-probe_all_trj_segments.out**, **ns#nl#al#D#ac#-probe-slurm_report-probe_all_bug_segments.out**, or the like.
 **TODO:** this step can be combined with the next one in as if-statement or switch statement.
-10. Run **create_probe_directories.sh** to create a new directory **ns#nl#al#D#ac#-probe** and move all the **csv**, **npy**, or **txt** files to their corresponding simulation directories.
+10. Run [create_probe_directories.sh](./create_probe_directories.sh) to create a new directory **ns#nl#al#D#ac#-probe** and move all the **csv**, **npy**, or **txt** files to their corresponding simulation directories.
+**CAUTION:** Use [create_probe_directories-next_probes.sh](./create_probe_directories-next_probes.sh) if this is NOT the first time you run a probe.
