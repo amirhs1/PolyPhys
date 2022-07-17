@@ -697,7 +697,7 @@ def fixedsize_bins(
     _lmax = np.asarray(lmax, dtype=np.float_)
     _length = _lmax - _lmin
     if bin_type == 'ordinary':
-        n_bins = np.ceil(_length / _delta).astype(np.int_)  # number of bins
+        n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)  # excess length
         # add half of the excess to each end:
         _lmin = _lmin - dl
@@ -709,7 +709,7 @@ def fixedsize_bins(
             range=(_lmin, _lmax)
         )
     elif bin_type == 'nonnegative':
-        n_bins = np.ceil(_length / _delta).astype(np.int_)
+        n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)
         _lmin = _lmin - dl
         _lmax = _lmax + dl
@@ -723,9 +723,9 @@ def fixedsize_bins(
             range=(_lmin, _lmax)
         )
     elif bin_type == 'periodic':  # Assuming that the _length=period:
-        n_bins = np.ceil(_length / _delta).astype(np.int_)  # number of bins
+        n_bins = int(np.ceil(_length / _delta))
         print(
-            f" number of bins '{n_bins}'"
+            f"Number of bins '{n_bins}'"
             " is more than or equal to the acutal number of bins in "
             f"'periodic' bin type since the 'period=lmax-min={_length}'"
             f"and '{_delta}'"
