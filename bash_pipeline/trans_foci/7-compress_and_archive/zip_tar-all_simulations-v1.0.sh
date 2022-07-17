@@ -8,16 +8,14 @@ report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
 touch "$report"
 for directory in eps*/; do
 
-    echo "${directory} >> ${report}"
+    echo "${directory}" >> "${report}"
     dir=${directory::-1}
     zipdir=$dir"-zip" 
     mkdir "${zipdir}"
     echo "$dir"
-    gzip -vrk "${directory}" >> "${report}"
+    gzip -vrk "${dir}" >> "${report}"
     cd "$directory" || exit
-        mv restarts restarts_old
-
-        cd restarts_old || exit
+        cd restarts || exit
             mkdir restarts_zip
             mv ./*.gz restarts_zip
             mv restarts_zip ..
@@ -26,6 +24,7 @@ for directory in eps*/; do
         mv restarts_zip ../"${zipdir}"/
         mv ./*.gz ../"${zipdir}"/
     cd ..
+
     project=${dir}.tar
-    tar -cvf "${project} ${zipdir}" >> "${report}"
+    tar -cvkf "${project}" "${zipdir}" >> "${report}"
 done
