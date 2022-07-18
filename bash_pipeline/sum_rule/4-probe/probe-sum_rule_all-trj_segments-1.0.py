@@ -21,7 +21,7 @@ all_topo = all_topo[0][0]
 max_segment_id = len(all_trjs)
 # analyzig all files
 # it is assumed that the all trjs are numbers from 1 to max_segment_id
-for all_trj in all_trjs[:1]:
+for all_trj in all_trjs:
     trj_info = SumRule(
         all_trj,
         geometry=geometry,
