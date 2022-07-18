@@ -112,5 +112,6 @@ appengine-generated/
 # ignore all . files and . folders
 *.png
 *.pdf
+*.eps
 # test data directory
 test_data/

@@ -1141,9 +1141,7 @@ def p_tseries_space(
     hue_attr: str,
     col_attr: str,
     space_df: pd.DataFrame,
-    space: str,
     space_title: str,
-    project: str,
     properties_specs: Dict[str, Dict[str, str]],
     titles: Dict[str, str],
     x_property: Optional[str] = 'time',
@@ -1158,9 +1156,7 @@ def p_tseries_space(
     fig_title_kws: Optional[Dict[str, str]] = {'x': 0.5, 'y': 1.0},
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
-    ext: Optional[str] = 'pdf',
-    save_to: Optional[str] = './'
-):
+) -> sns.FacetGrid:
     """Plots the time series of a physical `property_` in a given `space` for
     all the values of a given `hue_attr` (different colors) and all the values
     of a given `col_attr` (different subplots).
@@ -1175,12 +1171,8 @@ def p_tseries_space(
         The categorial-like property used for creating a grid of sub-plots.
     space_df: pd.DataFrame
         The `space` data set
-    space: str
-        The name of `space`
     space_title: str
         The formatted name of `space`.
-    project: str
-        The name of a project.
     properties_specs: dict
         A dictionary in which the keys are 'name', 'symbol', 'color', and
         the like and the values are the spcific values of these
@@ -1227,10 +1219,11 @@ def p_tseries_space(
         Whether to share y-axis limit or not.
     fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
-    ext: str, default 'pdf'
-        The format of the output file.
-    save_to : str, default './'
-        An/a absolute/relative path of a directory to which outputs are saved.
+
+    Return
+    ------
+    tseries_grid: sns.FacetGrid
+        A FacetGrid plot.
 
     Requirements
     ------------
@@ -1265,14 +1258,11 @@ def p_tseries_space(
     tseries_grid.tight_layout(w_pad=1)
     tseries_grid._legend.set_title(titles[hue_attr])
     tseries_grid.fig.suptitle(space_title, **fig_title_kws)
-    output = "-".join(["tseries", project, property_, space]) + "." + ext
-    tseries_grid.savefig(save_to + output, bbox_inches='tight')
-    plt.close()
+    return tseries_grid
 
 
 def p_tseries_allInOne_space(
     data: pd.DataFrame,
-    project: str,
     project_title: str,
     x_prop,
     y_prop,
@@ -1293,14 +1283,12 @@ def p_tseries_allInOne_space(
     font_scale: int = 2,
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
-    save_to: str = "./",
-    ext: str = "pdf",
     facet_kws: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
     fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
     **kwargs
-):
+) -> sns.FacetGrid:
     """Plots the time series of a physical `property_` in a given `space` for
     all the values of a given `hue_attr` (different colors) and all the values
     of a given `col_attr` (different subplots).
@@ -1309,8 +1297,6 @@ def p_tseries_allInOne_space(
     ----------
     data: pd.DataFrame
         The input dataset
-    project: str
-        The name of the project.
     project_title: str
         The formatted name of the project.
     x_prop: str
@@ -1348,10 +1334,6 @@ def p_tseries_allInOne_space(
         The seabonr axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
-    ext: str, default 'pdf'
-        The format of the output file.
-    save_to : str, default './'
-        An/a absolute/relative path of a directory to which outputs are saved.
     figsize: tuple, default (12,6)
         The size of the figure.
     leg_ncol: int, default 1
@@ -1364,6 +1346,11 @@ def p_tseries_allInOne_space(
         The kwargs passed to `FacetGrid.fig.suptitle`
     kwargs:
         kwargs passed to relplot.
+
+    Return
+    ------
+    tseries_grid: sns.FacetGrid
+        A FacetGrid plot.
 
     Requirements
     ------------
@@ -1402,9 +1389,7 @@ def p_tseries_allInOne_space(
     tseries_grid.legend.set_title(attr_labels[hue_attr])
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
-    output = "-".join(["tseries", project, y_prop, hue_attr, col_attr])
-    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
-    plt.close()
+    return tseries_grid
 
 
 def p_equil_allInOne_project(
@@ -1509,7 +1494,7 @@ def p_equil_allInOne_project(
     Return
     ------
     tseries_grid: sns.FacetGrid
-        The FacetGrid plot.
+        A FacetGrid plot.
 
     Requirements
     ------------
@@ -1582,9 +1567,10 @@ def p_hist_allInOne_project(
         },
     fig_title_kws: Optional[dict] = {'x': 0.5, 'y': 1.0},
     loc: str = 'center right',
+    legend_style: str = 'full',
     move_legend_kws: Optional[dict] = None,
     **kwargs
-):
+) -> sns.FacetGrid:
     """Plots the time series of a physical `property_` in a given `space` for
     all the values of a given `hue_attr` (different colors) and all the values
     of a given `col_attr` (different subplots).
@@ -1642,10 +1628,17 @@ def p_hist_allInOne_project(
         The kwargs passed to `FacetGrid.fig.suptitle`
     loc: str, default 'center right
         Location of the legend
+    legend_style: str
+        One of `seaborn.catplot` legend keywords.
     move_legend_kws: dict, deafult None
         kwargs pass to seaborn.move_legend
     kwargs:
         kwargs passed to relplot.
+
+    Return
+    ------
+    tseries_grid: sns.FacetGrid
+        A FacetGrid plot.
 
     Requirements
     ------------
@@ -1672,6 +1665,7 @@ def p_hist_allInOne_project(
         aspect=aspect,
         palette=color_palette,
         col_wrap=col_wrap,
+        legend=legend_style,
         facet_kws=facet_kws,
         **kwargs
     )
@@ -1680,16 +1674,17 @@ def p_hist_allInOne_project(
         prop_specs[y_prop]['symbol']
     )
     tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
-    tseries_grid.legend.set_title(attr_labels[hue_attr])
+    if legend_style is not False:
+        tseries_grid.legend.set_title(attr_labels[hue_attr])
+        sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
-    sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
+    
     return tseries_grid
 
 
 def p_pairDist_allInOne_project_lineStyle(
     data: pd.DataFrame,
-    project: str,
     project_title: str,
     x_prop,
     y_prop,
@@ -1710,10 +1705,8 @@ def p_pairDist_allInOne_project_lineStyle(
         'mathtext.default': 'regular',
         'text.usetex': True
         },
-    save_to: str = "./",
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
-    ext: str = "pdf",
     facet_kws: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
@@ -1722,7 +1715,7 @@ def p_pairDist_allInOne_project_lineStyle(
     loc: str = 'center right',
     move_legend_kws: Optional[dict] = None,
     **kwargs
-):
+) -> sns.FacetGrid:
     """Plots the time series of a physical `property_` in a given `space` for
     all the values of a given `hue_attr` (different colors) and all the values
     of a given `col_attr` (different subplots).
@@ -1731,8 +1724,6 @@ def p_pairDist_allInOne_project_lineStyle(
     ----------
     data: pd.DataFrame
         The input dataset
-    project: str
-        The timeseries-like property used for y-axis.
     project_title: str
         The formatted name of the project.
     x_prop: str
@@ -1772,10 +1763,6 @@ def p_pairDist_allInOne_project_lineStyle(
         The seabonr axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
-    ext: str, default 'pdf'
-        The format of the output file.
-    save_to : str, default './'
-        An/a absolute/relative path of a directory to which outputs are saved.
     figsize: tuple, default (12,6)
         The size of the figure.
     leg_ncol: int, default 1
@@ -1794,6 +1781,11 @@ def p_pairDist_allInOne_project_lineStyle(
         The transparency of curves
     kwargs:
         kwargs passed to relplot.
+
+    Return
+    ------
+    tseries_grid: sns.FacetGrid
+        A FacetGrid plot.
 
     Requirements
     ------------
@@ -1832,17 +1824,12 @@ def p_pairDist_allInOne_project_lineStyle(
     tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
-    output = "-".join(
-        ["equilPlot", project, hue_attr, col_attr, style_attr, 'lineStyle']
-    )
-    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
     sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
-    plt.close()
+    return tseries_grid
 
 
 def p_pairDist_allInOne_project_colStyle(
     data: pd.DataFrame,
-    project: str,
     project_title: str,
     x_prop,
     y_prop,
@@ -1861,10 +1848,8 @@ def p_pairDist_allInOne_project_colStyle(
         'mathtext.default': 'regular',
         'text.usetex': True
         },
-    save_to: str = "./",
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
-    ext: str = "pdf",
     facet_kws: dict = {
         'sharey': False, 'sharex': False, 'legend_out': True
         },
@@ -1873,7 +1858,7 @@ def p_pairDist_allInOne_project_colStyle(
     alpha: float = 1.0,
     fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
     **kwargs
-):
+) -> sns.FacetGrid:
     """Plots the time series of a physical `property_` in a given `space` for
     all the values of a given `hue_attr` (different colors) and all the values
     of a given `col_attr` (different subplots).
@@ -1882,8 +1867,6 @@ def p_pairDist_allInOne_project_colStyle(
     ----------
     data: pd.DataFrame
         The input dataset
-    project: str
-        The timeseries-like property used for y-axis.
     project_title: str
         The formatted name of the project.
     x_prop: str
@@ -1921,10 +1904,6 @@ def p_pairDist_allInOne_project_colStyle(
         The seabonr axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
-    ext: str, default 'pdf'
-        The format of the output file.
-    save_to : str, default './'
-        An/a absolute/relative path of a directory to which outputs are saved.
     figsize: tuple, default (12,6)
         The size of the figure.
     leg_ncol: int, default 1
@@ -1943,6 +1922,11 @@ def p_pairDist_allInOne_project_colStyle(
         The transparency of curves
     kwargs:
         kwargs passed to relplot.
+
+    Return
+    ------
+    tseries_grid: sns.FacetGrid
+        A FacetGrid plot.
 
     Requirements
     ------------
@@ -1983,9 +1967,5 @@ def p_pairDist_allInOne_project_colStyle(
     tseries_grid.legend.set_title(legend_labels[0])
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
-    output = "-".join(
-        ["equilPlot", project, hue_attr, col_attr, row_attr, 'colStyle']
-    )
     sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
-    tseries_grid.savefig(save_to + output + "." + ext, bbox_inches='tight')
-    plt.close()
+    return tseries_grid
