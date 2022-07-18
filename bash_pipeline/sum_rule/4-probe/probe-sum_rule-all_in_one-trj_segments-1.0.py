@@ -21,7 +21,7 @@ bug_topo = bug_topo[0][0]
 max_segment_id = len(bug_trjs)
 # analyzig all files
 # it is assumed that the all trjs are numbers from 1 to max_segment_id
-for bug_trj in bug_trjs[:1]:
+for bug_trj in bug_trjs:
     trj_info = SumRule(
         bug_trj,
         geometry=geometry,
@@ -60,7 +60,7 @@ all_topo = all_topo[0][0]
 max_segment_id = len(all_trjs)
 # analyzig all files
 # it is assumed that the all trjs are numbers from 1 to max_segment_id
-for all_trj in all_trjs[:1]:
+for all_trj in all_trjs:
     trj_info = SumRule(
         all_trj,
         geometry=geometry,
