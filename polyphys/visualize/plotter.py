@@ -1268,7 +1268,7 @@ def p_tseries_allInOne_space(
     y_prop,
     hue_attr: str,
     col_attr: str,
-    prop_specs: Dict[str, Dict[str, str]],
+    prop_labels: Dict[str, Dict[str, str]],
     attr_labels: Dict[str, str],
     col_wrap: int = 3,
     height: float = 3,
@@ -1307,7 +1307,7 @@ def p_tseries_allInOne_space(
         The categorial-like attribute used for coloring curves.
     col_attr: str
         The categorial-like attribute used for seting number of sub-plots.
-    prop_specs: dict of str
+    prop_labels: dict of str
         The formatted details of the `y_prop`.
     attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
@@ -1383,7 +1383,7 @@ def p_tseries_allInOne_space(
     )
     tseries_grid.set_axis_labels(
         attr_labels[x_prop],
-        prop_specs[y_prop]['symbol']
+        prop_labels[y_prop]['symbol']
     )
     tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
     tseries_grid.legend.set_title(attr_labels[hue_attr])
@@ -1399,8 +1399,9 @@ def p_equil_allInOne_project(
     y_prop,
     hue_attr: str,
     col_attr: str,
+    col_order: List[str],
     marker: str,
-    prop_specs: Dict[str, Dict[str, str]],
+    prop_labels: Dict[str, Dict[str, str]],
     attr_labels: Dict[str, str],
     col_wrap: int = 3,
     height: float = 3,
@@ -1443,9 +1444,12 @@ def p_equil_allInOne_project(
         The categorial-like attribute used for coloring curves.
     col_attr: str
         The categorial-like attribute used for seting number of sub-plots.
+    col_order: lost of str
+        The order of categorial-like attribute used for seting number of
+        sub-plots.
     marker: str
         The shape of marker.
-    prop_specs: dict of str
+    prop_labels: dict of str
         The formatted details of the `y_prop`.
     attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
@@ -1513,6 +1517,7 @@ def p_equil_allInOne_project(
         x=x_prop,
         y=y_prop,
         col=col_attr,
+        col_order=col_order,
         hue=hue_attr,
         kind='line',
         markers=True,
@@ -1525,9 +1530,9 @@ def p_equil_allInOne_project(
         marker=marker,
         **kwargs
     )
-    for ax, property_ in zip(tseries_grid.axes.flat, prop_specs):
+    for ax, prop in zip(tseries_grid.axes.flat, col_order):
         ax.set_ylabel(
-            prop_specs[property_]["symbol"],
+            prop_labels[prop]["symbol"],
             rotation=0,
             labelpad=ylabel_pad
         )
@@ -1547,7 +1552,7 @@ def p_hist_allInOne_project(
     y_prop,
     hue_attr: str,
     col_attr: str,
-    prop_specs: Dict[str, Dict[str, str]],
+    prop_labels: Dict[str, Dict[str, str]],
     attr_labels: Dict[str, str],
     kind: Optional[str] = 'point',
     col_wrap: Optional[int] = 3,
@@ -1591,7 +1596,7 @@ def p_hist_allInOne_project(
         The categorial-like attribute used for seting number of sub-plots.
     kind: str, default 'point'.
         The kind of catplot.
-    prop_specs: dict of str
+    prop_labels: dict of str
         The formatted details of the `y_prop`.
     attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
@@ -1671,7 +1676,7 @@ def p_hist_allInOne_project(
     )
     tseries_grid.set_axis_labels(
         attr_labels[x_prop],
-        prop_specs[y_prop]['symbol']
+        prop_labels[y_prop]['symbol']
     )
     tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
     if legend_style is not False:
@@ -1679,7 +1684,6 @@ def p_hist_allInOne_project(
         sns.move_legend(tseries_grid, loc=loc, **move_legend_kws)
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
     tseries_grid.tight_layout(w_pad=1)
-    
     return tseries_grid
 
 
@@ -1692,7 +1696,7 @@ def p_pairDist_allInOne_project_lineStyle(
     style_attr: str,
     style_order: list,
     col_attr: str,
-    prop_specs: Dict[str, Dict[str, str]],
+    prop_labels: Dict[str, Dict[str, str]],
     attr_labels: Dict[str, str],
     legend_labels,
     col_wrap: int = 3,
@@ -1738,7 +1742,7 @@ def p_pairDist_allInOne_project_lineStyle(
         The order of categorial-like attribute used for line size.
     col_attr: str
         The categorial-like attribute used for seting number of sub-plots.
-    prop_specs: dict of str
+    prop_labels: dict of str
         The formatted details of the `y_prop`.
     attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
@@ -1819,7 +1823,7 @@ def p_pairDist_allInOne_project_lineStyle(
     )
     for idx, new_label in enumerate(legend_labels):
         tseries_grid._legend.texts[idx].set_text(new_label)
-    tseries_grid.set_ylabels(prop_specs[hue_attr]['symbol'])
+    tseries_grid.set_ylabels(prop_labels[hue_attr]['symbol'])
     tseries_grid.set_xlabels(attr_labels[x_prop])
     tseries_grid.set_titles(attr_labels[col_attr] + r"$={col_name}$")
     tseries_grid.fig.suptitle(project_title, **fig_title_kws)
@@ -1835,8 +1839,10 @@ def p_pairDist_allInOne_project_colStyle(
     y_prop,
     hue_attr: str,
     col_attr: str,
+    col_order: list,
     row_attr: str,
-    prop_specs: Dict[str, Dict[str, str]],
+    row_order: list,
+    prop_labels: Dict[str, Dict[str, str]],
     attr_labels: Dict[str, str],
     legend_labels,
     height: float = 3,
@@ -1877,9 +1883,15 @@ def p_pairDist_allInOne_project_colStyle(
         The categorial-like attribute used for coloring curves.
     col_attr: str
         The categorial-like attribute used for seting number of cols.
+    col_order: list
+        The order of categorial-like attribute used for seting number of
+        cols.
     row_attr: str
         The categorial-like attribute used for seting number of rows.
-    prop_specs: dict of str
+    row_order: list
+        The order of categorial-like attribute used for setting number of
+        rows.
+    prop_labels: dict of str
         The formatted details of the `y_prop`.
     attr_labels:
         The formatted titles of the `prop_x`, `hue_attr`, and `col_attr`.
@@ -1945,7 +1957,9 @@ def p_pairDist_allInOne_project_colStyle(
         x=x_prop,
         y=y_prop,
         col=col_attr,
+        col_order=col_order,
         row=row_attr,
+        row_order=row_order,
         hue=hue_attr,
         kind='line',
         height=height,
@@ -1958,7 +1972,7 @@ def p_pairDist_allInOne_project_colStyle(
     )
     for idx, new_label in enumerate(legend_labels[1:]):
         tseries_grid._legend.texts[idx].set_text(new_label)
-    tseries_grid.set_ylabels(prop_specs[hue_attr]['symbol'])
+    tseries_grid.set_ylabels(prop_labels[hue_attr]['symbol'])
     tseries_grid.set_xlabels(attr_labels[x_prop])
     tseries_grid.set_titles(
         attr_labels[row_attr] + r"$={row_name}$" +
