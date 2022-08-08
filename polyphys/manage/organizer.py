@@ -226,7 +226,8 @@ from .utilizer import round_up_nearest
 def camel_case_split(
     word: str
 ) -> List[str]:
-    """split a camleCase or CamelCase `str` to its constituent sub-strings.
+    """
+    Splits a camleCase or CamelCase `str` to its constituent sub-strings.
 
     Parameters
     ----------
@@ -247,8 +248,9 @@ def camel_case_split(
 def isfloat(
     string: str
 ) -> Union[float, str]:
-    """convert `string` to float if possible, otherwise returns the
-        original string.
+    """
+    Converts `string` to float if possible, otherwise returns the original
+    string.
 
     Parameters
     ----------
@@ -270,7 +272,8 @@ def isfloat(
 def sort_by_alphanumeric(
     alphanumeric: str
 ) -> List[Union[int, str, float]]:
-    """split an `alphanumeric` into words and integers.
+    """
+    Split an `alphanumeric` into words and integers.
 
     Parameters
     ----------
@@ -294,7 +297,8 @@ def sort_filenames(
     fmts: List[str] = ['data', 'lammpstrj'],
     report: bool = False
 ) -> List[str]:
-    """return an alphanumerically sorted list of strings.
+    """
+    Returns an alphanumerically sorted list of strings.
 
 
     Groups `fnames` with the same names into tuples where the length of
@@ -340,7 +344,8 @@ def invalid_keyword(
     keyword: str,
     valid_keywords: List[str]
 ) -> None:
-    """raise an error if `keyowrd` is not in `valid_keywords`.
+    """
+    Raises an error if `keyowrd` is not in `valid_keywords`.
 
     Parameters
     ----------
@@ -364,7 +369,8 @@ def save_parent(
     group: str = 'bug',
     ext: str = 'csv',
 ) -> None:
-    """save the `data` to memory as a file with extension `ext`.
+    """
+    Saves the `data` to memory as a file with extension `ext`.
 
     Parameters
     ----------
@@ -394,7 +400,8 @@ def database_path(
     stage: Optional[str] = None,
     group: Optional[str] = None
 ) -> str:
-    """create a `stage` directory for a `group` at a given `phase` in
+    """
+    Creates a `stage` directory for a `group` at a given `phase` in
     a `phase` directory. If the directory exists, raises error, and
     return the path of the existing directory. If the `phase`
     directory does not exist, `new_directory` creates it.
@@ -478,7 +485,8 @@ def whole_from_segment(
     relation: str,
     save_to: Optional[str] = None
 ) -> Dict[str, np.ndarray]:
-    """generates `whole` array for `property_` of the particle `group` in the
+    """
+    Generates `whole` array for `property_` of the particle `group` in the
     `geometry` of interest from its `segments`.
 
     Parameters
@@ -582,7 +590,8 @@ def whole_from_file(
     geometry: str,
     group: str,
 ) -> Dict[str, np.ndarray]:
-    """Loads `whole` numpy arrays for a given physical property of the
+    """
+    Loads `whole` numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their pathes
     `whole_paths`.
 
@@ -631,7 +640,8 @@ def whole_from_distMat_t(
     geometry: str,
     group: str,
 ) -> Dict[str, np.ndarray]:
-    """Loads `whole` 2D numpy arrays for a given physical property of the
+    """
+    Loads `whole` 2D numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their pathes
     `whole_pathes`.
 
@@ -661,7 +671,7 @@ def whole_from_distMat_t(
     """
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     invalid_keyword(group, ['bug', 'all'])
-    wholes_hists = {}
+    wholes_freqs = {}
     wholes_rdfs = {}
     wholes_tseries = {}
     for whole_path in whole_paths:
@@ -671,21 +681,22 @@ def whole_from_distMat_t(
             group,
             'whole'
         )
-        whole_hists, whole_rdfs, whole_tseries = whole_distMat_foci(
+        whole_freqs, whole_rdfs, whole_tseries = whole_distMat_foci(
             whole_path[0],
             whole_info
         )
         whole_name = getattr(whole_info, 'whole')
-        wholes_hists[whole_name] = whole_hists
+        wholes_freqs[whole_name] = whole_freqs
         wholes_rdfs[whole_name] = whole_rdfs
         wholes_tseries[whole_name] = whole_tseries
-    return wholes_hists, wholes_rdfs, wholes_tseries
+    return wholes_freqs, wholes_rdfs, wholes_tseries
 
 
 def ens_from_vec(
     ens: EnsembleT,
 ) -> Tuple[str, pd.DataFrame]:
-    """create an "ensemble" dataframe from a dictionary of wholes where
+    """
+    Creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy vector or 1D array.
 
     Parameters
@@ -705,7 +716,8 @@ def ens_from_vec(
 def ens_from_mat(
     ens: EnsembleT,
 ) -> Tuple[str, np.ndarray]:
-    """create an "ensemble" dataframe from a dictionary of wholes where
+    """
+    creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy vector or 1D array.
 
     Parameters
@@ -724,7 +736,8 @@ def ens_from_mat(
 def ens_from_df(
     ens: EnsembleT,
 ) -> Tuple[str, pd.DataFrame]:
-    """creates an "ensemble" dataframe from a dictionary of wholes where
+    """
+    creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a pandas dataframe.
 
     In each "whole" dataframe, headers are "elements" of a "matrix" or 2D
@@ -908,7 +921,8 @@ def ens_avg_from_df(
     ens_data: pd.DataFrame,
     exclude: List[str]
 ) -> Tuple[str, pd.DataFrame]:
-    """Creates an "ensAvg" dataframe from a "ensemble" dataframe. The columns
+    """
+    Creates an "ensAvg" dataframe from a "ensemble" dataframe. The columns
     in the "ensemble" dataframe `ens_data` are the "whole" data and any other
     variable/data given by `exclude`; for instance, if the ensembles is a
     histogram, then there is "bin_center" column in addition to the "whole"
@@ -941,7 +955,8 @@ def ens_avg_from_ndarray(
     ens_data: np.ndarray,
     exclude: List[str]
 ) -> Dict[str, np.ndarray]:
-    """Creates an "ensAvg" matrix from a "ensemble" matrix. The first axis of
+    """
+    Creates an "ensAvg" matrix from a "ensemble" matrix. The first axis of
     the "ensemble" matrix (axis=0 in numpy lingo) contains the whole matrices
     and statsitical measurements are performed on this axis.
 
@@ -978,7 +993,8 @@ def ensemble_avg(
     exclude: list = ['bin_center'],
     save_to: str = None
 ) -> Dict[str, pd.DataFrame]:
-    """perform averaging over the "whole" data in each "ensemble" data in the
+    """
+    Performa averaging over the "whole" data in each "ensemble" data in the
     `ensembles` of the physical property `property_` of a particle `group`, if
     that columns is a valid 'whole' simulation name, not a `exclude` columns.
 
@@ -1071,7 +1087,8 @@ def children_stamps(
     lineage: str,
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
-    """generates a dataset of the phyiscal attributes and equilibrium
+    """
+    Generates a dataset of the phyiscal attributes and equilibrium
     (time-averaged) physical properties of all the `lineage` simulations of a
     particle `group` in a 'space' in a `geometry`.
 
@@ -1130,7 +1147,8 @@ def parents_stamps(
     properties: Optional[Dict[str, Callable]] = None,
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
-    """perform merging/ensemble-averaging over all the 'segment/'whole'
+    """
+    Performs merging/ensemble-averaging over all the 'segment/'whole'
     simulation stamps in a 'space' in a given `geometry` for a given
     `group` basedon the given `lineage`.
 
@@ -1138,11 +1156,11 @@ def parents_stamps(
     ----------
     stamps: DataFrame
         Dataframe of all the simulation stamps in the `group` in a space.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : str in {'biaxial', 'slit', 'box'}
         Shape of the simulation box
-    group: {'bug', 'all'}
+    group: str in {'bug', 'all'}
         Type of the particle group.
-    lineage: {('segment', 'whole'}
+    lineage: str in  {'segment', 'whole'}
         Lineage type of children's stamps.
     properties: dict of str
         A dictionary in which the keys are properties such as the time-
@@ -1179,7 +1197,7 @@ def parents_stamps(
             f"'lineage_name' and '{lineage}'"
             " columns are not among in stamps column:"
             f"'{stamps_cols}', they are probably removed in"
-            "a previous call of 'parents_stamps' function."
+            " a previous call of 'parents_stamps' function."
         )
     # aggregation dictionary: See Note above.
     agg_funcs = dict()
@@ -1243,7 +1261,8 @@ def unique_property(
     drop_properties: Optional[List[str]] = None,
     sep: Optional[str] = "-"
 ) -> Tuple[List[str], List[str]]:
-    """Finds unique physical properties and physical property-measures by
+    """
+    Finds unique physical properties and physical property-measures by
     spliting filenames given by the glob-friendly 'filepath'.
 
     A measure refers to some measurement done on a physical property.
@@ -1310,12 +1329,12 @@ def space_tseries(
     parser: Callable,
     hierarchy: str,
     physical_attrs: List[str],
-    species: str,
     group: str,
     geometry: str,
     is_save: Optional[bool] = False
 ) -> pd.DataFrame:
-    """Takes the `property_path` to 'ensAvg' time series of a given `property_`
+    """
+    Takes the `property_path` to 'ensAvg' time series of a given `property_`
     in a given space `input_database`,  adds the `physical_attrs` of interest
     as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
     dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
@@ -1346,11 +1365,9 @@ def space_tseries(
     attributes: list of str
         The physical attributes that will added as new columns to the
         concatenated timeseries.
-    species: {'Mon', 'Crd', 'Foci'}
-        The species of particles.
-    group: {'bug', 'all'}
+    group: str in {'bug', 'all'}
         The type of the particle group.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : str in {'biaxial', 'slit', 'box'}
         The shape of the simulation box.
     single_space:
         Whether the all-in-one file is for all the timeseries properties of a
@@ -1365,7 +1382,6 @@ def space_tseries(
         of interest, and "properties and attributes" of interest are added to
         it as the new columns.
     """
-    invalid_keyword(species, ['Mon', 'Crd', 'Foci'])
     property_ext = "-" + property_ + "-ensAvg.csv"
     ens_avg_csvs = glob(input_database + hierarchy + property_ext)
     ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
@@ -1406,16 +1422,17 @@ def space_hists(
     parser: Callable,
     hierarchy: str,
     physical_attrs: List[str],
-    species: str,
     group: str,
     geometry: str,
     bin_center: Optional[np.ndarray] = None,
-    normalize: Optional[bool] = False,
+    normalize: Optional[str] = 'simple',
+    normalize_idx: Optional[int] = 0,
     divisor: Optional[float] = 0.025,
     round_to: Optional[int] = 3,
     is_save: Optional[bool] = False
 ) -> pd.DataFrame:
-    """Takes the `property_path` to 'ensAvg' time series of a given `property_`
+    """
+    Takes the `property_path` to 'ensAvg' time series of a given `property_`
     in a given space `input_database`,  adds the `physical_attrs` of interest
     as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
     dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
@@ -1452,8 +1469,8 @@ def space_hists(
     attributes: list of str
         The physical attributes that will added as new columns to the
         concatenated timeseries.
-    species: {'Mon', 'Crd', 'Foci'}
-        The species of particles.
+    species: str in {'Mon', 'Crd', 'Foci'}
+        The type of species.
     group: {'bug', 'all'}
         The type of the particle group.
     geometry : {'biaxial', 'slit', 'box'}
@@ -1467,8 +1484,11 @@ def space_hists(
         centers is used in all different ensemble-averaged dataframes. This is
         the case for "clustersHistTFoci" or "bondsHistTFoci" properties, but
         not for "zHistMon" or "rHistCrd".
-    normalize: bool, default False
-        Whether normalize hists or not.
+    normalize: str in {'simple', 'r', 'z', 'theta'}
+        Whether normalize freqs or not.
+    normalize_idx: int, default 0
+        The range over which the normalizing factor is built. This option is
+        used for 'r', 'z', and 'theta' options in `normalize`.
     divisor: float, default 0.025
         The step by which the values of "phi_c_bulk" attribute are rounded.
     round_to: int, default 3
@@ -1488,7 +1508,7 @@ def space_hists(
     ------------
     PolyPhys, Pandas
     """
-    invalid_keyword(species, ['Mon', 'Crd', 'Foci'])
+    invalid_keyword(normalize, ['simple', 'r', 'z', 'theta'])
     property_ext = "-" + property_ + "-ensAvg.csv"
     ens_avg_csvs = glob(input_database + hierarchy + property_ext)
     ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
@@ -1504,11 +1524,58 @@ def space_hists(
         )
         if bin_center is not None:
             ens_avg['bin_center'] = bin_center.tolist()
-        ens_avg['bin_center_norm'] = \
+        ens_avg['bin_center-norm'] = \
             ens_avg['bin_center'] / ens_avg['bin_center'].max()
-        if normalize is True:
-            ens_avg[property_+'-norm'] = \
-                ens_avg[property_+'-mean'] / ens_avg[property_+'-mean'].sum()
+        if normalize == 'r':
+            normalizer = ens_avg.loc[normalize_idx, property_+'-mean'].min()
+            if normalizer != 0:
+                ens_avg[property_+'-norm'] = \
+                    ens_avg[property_+'-mean'] / normalizer
+            else:
+                raise ValueError(
+                    "The minimum of frequencies over this range: "
+                    f"'{normalize_idx}' is 'zero', use another range."
+                )
+        elif normalize == 'z':
+            normalizer = ens_avg.loc[normalize_idx, property_+'-mean'].mean()
+            if normalizer != 0:
+                ens_avg[property_+'-norm'] = \
+                    ens_avg[property_+'-mean'] / normalizer
+            else:
+                raise ValueError(
+                    "The mean of frequencies over this range: "
+                    f"'{normalize_idx}' is 'zero', use another range."
+                )
+        elif normalize == 'theta':
+            warnings.warn(
+                "Normalization method for"
+                " 'theta' direction is not implemented yet."
+                " For now, 'theta' method is the same as 'simple' method.",
+                UserWarning
+                )
+            normalizer = ens_avg[property_+'-mean'].sum()
+            if normalizer != 0:
+                ens_avg[property_+'-norm'] = \
+                    ens_avg[property_+'-mean'] / normalizer
+            else:
+                warnings.warn(
+                    "All the frequencies are zero, so all the normalized"
+                    " frequerncies are set to zero.",
+                    UserWarning
+                )
+                ens_avg[property_+'-norm'] = 0
+        else:  # normalize == 'simple'
+            normalizer = ens_avg[property_+'-mean'].sum()
+            if normalizer != 0:
+                ens_avg[property_+'-norm'] = \
+                    ens_avg[property_+'-mean'] / normalizer
+            else:
+                warnings.warn(
+                    "All the frequencies are zero, so all the normalized"
+                    " frequerncies are set to zero.",
+                    UserWarning
+                )
+                ens_avg[property_+'-norm'] = 0
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(property_info, attr_name)
         ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
@@ -1521,7 +1588,7 @@ def space_hists(
             input_database,
             'analysis',
             stage='space',
-            group='bug'
+            group=group
             )
         space = save_to_space.split("/")[-2].split("-")[0]
         output = "-".join([space, group, property_]) + "-space.csv"
