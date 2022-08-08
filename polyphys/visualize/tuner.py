@@ -284,6 +284,21 @@ def marker_handler(attributes, markers, color='black', **kwargs):
     return handles
 
 
+def marker_ls_handler(
+    attributes, linestyles, markers, color='black', **kwargs):
+    """creates handles for matplotlib legend functions based on the markers and
+    linestyles. It recieves a list  physical attributes and a list of
+    linewidths (the two list have the same size) and returns a list of
+    handles.
+    """
+    handles = []
+    for attr, ls, marker in zip(attributes, linestyles, markers):
+        mline = mpl.lines.Line2D(
+            [], [],  ls=ls, marker=marker, label=attr, color=color, **kwargs)
+        handles.append(mline)
+    return handles
+
+
 def truncated_colormap(
     cmap: mplc.Colormap,
     min_value: float = 0.0,
