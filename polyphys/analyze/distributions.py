@@ -21,6 +21,8 @@ from polyphys.manage.parser import SumRule, TransFoci
 import warnings
 
 ParserT = Union[SumRule, TransFoci]
+FreqDataT = Dict[str, np.ndarray]
+EdgeDataT = Dict[str, np.ndarray]
 
 
 def spherical_segment(
@@ -136,16 +138,37 @@ class Distribution(object):
     hist_info: ParserT
     integrand: Optional[Callable] = None
     normalized: bool = False
-    """NOT FINISHED YET. Generates a Probability Distribution Function from
-    a given histgrams by taking into account the sizes of multi-dimentional
-    bins.
+    """
+    UNFINISHED Generates a Probability Distribution Function (PDF) from a given
+    frequencies `hist_data` by taking into account the sizes of
+    multi-dimentional bins.
+
 
     Parameters
     ----------
+    histogram: polyphys.distributions.HistData
+        A dataframe or array or path to of 1D histogram data.
+    ensemble-averaged or group simulation in which the index is the bin
+    centers, the names of the columns are the name of simulations in an
+    ensemble or the name of ensemble-averaged group or the name of
+    simulation group, the columns are the frequenies of partilces of the
+    type of interest (see radius_type) in each of the bins, and the number
+    of columns is the number of simulations in a ensemble, one in an
+    ensemble-averaged group, or the number of ensmebles (=the number of
+    ensemble-averaged) groups an a simulations group.
+    properties (pandas dataframe): the properties of each simulation/
+    ensemble-averaged simulation/ensemble-averaged simulations of the
+    simualtions/ensemble-averaged simulation/ensemble-averaged simulations
+    in a ensemble/ensemble-averged group/simulation group.
+    raduis_type (str): name of the column in the properties in which the size
+    (or diameter) of the particles are tabled. The particle type is the same
+    for all the particles that their frequencies are counted in histogram.
+    geometry (str): the shape of the simulation box
+    direction (str): the direction of interest in the geometry of interest.
 
     Attributes
     ----------
-    self.histogram:
+    self.frequnecies:
         histogram
     self.centers (numppy array):
         the centers of the bins: the index of histogram
@@ -162,7 +185,7 @@ class Distribution(object):
         normalized: bool = False,
     ):
         if isinstance(hists, np.ndarray):
-            self.histogram = hists
+            self.frequnecies = hists
         else:
             raise ValueError(
                 f"'{hists}'"
@@ -203,57 +226,57 @@ class Distribution(object):
 
 
 class SpatialDistribution(object):
-    hist_data: np.ndarray
+    freq: np.ndarray
     edges: np.ndarray
     hist_info: ParserT
     radius_attr: str
     geometry: str = 'biaxial'
     direction: str = 'r'
     normalized: bool = False
-    """computes the local number density of any type of particle and the
-    local volume fraction of bead (spheres) in 1D (cylinder with the
-    periodic boundary condition (PBC) along the longitudinal axis (z axis)),
-    2D (slit with the PBC along the x and y axes (radial direction)), and 3D
-    (cube with the PBC along x, y, and z axes (spheric)).
+    """
+    Computes the local number density of any species and the local volume
+    fraction of spherical species in 1D (cylinder with the periodic boundary
+    condition (PBC) along the longitudinal axis (z axis)), 2D (slit with the
+    PBC along the x and y axes (radial direction)), and 3D (cube with the PBC
+    along x, y, and z axes (spheric)).
 
-    Parameters:
-    histogram (pandas dataframe): a dataframe of an ensemble or
-    ensemble-averaged or group simulation in which the index is the bin
-    centers, the names of the columns are the name of simulations in an
-    ensemble or the name of ensemble-averaged group or the name of
-    simulation group, the columns are the frequenies of partilces of the
-    type of interest (see radius_type) in each of the bins, and the number
-    of columns is the number of simulations in a ensemble, one in an
-    ensemble-averaged group, or the number of ensmebles (=the number of
-    ensemble-averaged) groups an a simulations group.
-    properties (pandas dataframe): the properties of each simulation/
-    ensemble-averaged simulation/ensemble-averaged simulations of the
-    simualtions/ensemble-averaged simulation/ensemble-averaged simulations
-    in a ensemble/ensemble-averged group/simulation group.
-    raduis_type (str): name of the column in the properties in which the size
-    (or diameter) of the particles are tabled. The particle type is the same
-    for all the particles that their frequencies are counted in histogram.
-    geometry (str): the shape of the simulation box
-    direction (str): the direction of interest in the geometry of interest.
+    The radius of the species is needed for compute local volume fraction.
+
+    To-do List
+    ----------
+    Vectorize the for-loops.
+
+    Parameters
+    ----------
+    freq: np.ndarray
+        A 1D  array of frequencies in bins.
+    edge: np.ndarray
+        A 1D array of the bin edge where `len(edge)=len(freq)`.
+    hist_info: ParserT
+        A ParserT object that contains information about the system to which
+        `freq` belongs.
+    raduis_attr: str
+        The name of an attribute of `hist_info` that contains the radius of the
+        species to which `freq` belongs.
+    geometry: str t
+        The shape of the simulation box
+    direction: str
+        The direction of interest in the `geometry` of interest.
 
     Attributes
     ----------
-    self.histogram:
-        histogram
+    self.frequencies:
+        Frequencies in different bins
     self.centers (numppy array):
-        the centers of the bins: the index of histogram
+        The centers of the bins: the index of histogram
     self.geometry:
-        geometry
+        The shape of the simulation box
     self.direction:
         direction
     self.radius_type:
         raduis_type
     self.r_bead:
         radius of particle for whihch distribution are calculated.
-    self.short_name_rho:
-        the short name of number density distribution
-    self.short_name_phi:
-        the short name of volume fraction distribution
     self.r_bead:
         the radius of the particles that their type is set by
         raduis_type
@@ -264,12 +287,12 @@ class SpatialDistribution(object):
     self.rho (pandas dataframe):
         the dataframe of the local number
         densities which has the same index, number of columns and names of
-        columns as self.histogram. However, the column values are the local
+        columns as self.frequnecies. However, the column values are the local
         number densities.
     self.phi (pandas dataframe):
         the dataframe of the local volume
         fractions which has the same index, number of columns and names of
-        columns as self.histogram. However, the column values are the local
+        columns as self.frequnecies. However, the column values are the local
         volume fractions.
     self.bounds: numpy.ndarray
         Indices of the lower and upper boundaries of a bead that resides at
@@ -407,7 +430,7 @@ class SpatialDistribution(object):
 
     def __init__(
         self,
-        hist_data: np.ndarray,
+        frequencies: np.ndarray,
         edges: np.ndarray,
         hist_info: ParserT,
         radius_attr: str,
@@ -415,11 +438,11 @@ class SpatialDistribution(object):
         direction: str = 'r',
         normalized: bool = False,
     ):
-        if isinstance(hist_data, np.ndarray):
-            self.histogram = hist_data
+        if isinstance(frequencies, np.ndarray):
+            self.frequnecies = frequencies
         else:
             raise ValueError(
-                f"'{hist_data}'"
+                f"'{frequencies}'"
                 " is not a numpy.ndarray.")
         if isinstance(edges, np.ndarray):
             self.edges = edges
@@ -431,6 +454,8 @@ class SpatialDistribution(object):
             raise ValueError(
                 f"'{edges}'"
                 " is not a numpy.ndarray.")
+        self.hist_info = hist_info
+        self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
         if geometry in self._directions.keys():
             self.geometry = geometry
         else:
@@ -450,16 +475,10 @@ class SpatialDistribution(object):
                 "is not a valid direction for "
                 f"'{self.geometry}' geometry. Please select one of "
                 f"{directions_string} directions.")
-        self.hist_info = hist_info
-        self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
         self.normalized = normalized
-        self.short_name_rho = \
-            self._fullnames[self.geometry][self.direction]+'Rho'
-        self.short_name_phi = \
-            self._fullnames[self.geometry][self.direction]+'Phis'
-        self._vol_shares_type()
         self._set_args()
         self._number_density()
+        self._vol_shares_type()
         self._volume_fraction()
         if self.normalized is True:
             # the sum of rho is not equal to the bulk number density when r
@@ -473,10 +492,66 @@ class SpatialDistribution(object):
             # arises from the way we descritize the local number desnity.
             self.phi = self.phi / self.phi.sum()
 
+    def _set_args(self):
+        """
+        sets the arguments for the integrads along different directions
+        in different geometries.
+        """
+        self._args = {
+            'box': {
+                'r': (1, ),
+                # For concentric spherical shells, the constant, i.e. 1,
+                # is redundant and merely defined to make the use of args
+                # parameter of scipi.integral.quad function consistent among
+                # integrands.
+                'theta': (self.hist_info.lcyl, ),
+                # In a box cubic or free space, the radius of the space
+                # is half of the length of simulation box.
+                'phi': (self.hist_info.lcyl, ),
+                # In a box cubic or free space, the radius of the space
+                # is half of the length of simulation box.
+            },
+            'slit': {
+                'r': (self.hist_info.lcyl, ),
+                'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
+                'z': (self.hist_info.dcyl, )
+            },
+            'biaxial': {
+                'r': (self.hist_info.lcyl, ),
+                'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
+                'z': (self.hist_info.dcyl, )
+            }
+        }
+
+    def _number_density(self):
+        """
+        Calculates the local number density along the given direction in
+        the given geometry.
+
+        Notes
+        -----
+        The number density in each simulation is an average over the number
+        densities collected every X time steps, so there are N=L/X
+        measurements of the local number desnity in each simulation where L
+        is total number of time steps in the simulation; for instance, in
+        the cylindrical sum rule project X=5000 and the total number of
+        time steps is 7*10^7, so N=14001.
+        """
+        integrand = self._integrands[self.geometry][self.direction]
+        arguments = self._args[self.geometry][self.direction]
+        bin_vols = np.array([integrate.quad(
+            integrand,
+            self.edges[idx],
+            self.edges[idx] + self.bin_size,
+            args=arguments)[0] for idx in range(len(self.edges[:-1]))
+        ])
+        # histogram[col_name] and bin_vols have the same size, so:
+        self.rho = self.frequnecies / bin_vols
+
     def _consecutive_bounds(self):
         """
-        finds the indices of smallest and largest bin edges by which a
-        bead, that resides at the center of that bin, intersects in a
+        Finds the indices of smallest and largest bin edges by which a
+        sphere, that resides at the center of that bin, intersects in a
         'consecutive' bin scheme.
 
         Attributes
@@ -487,19 +562,19 @@ class SpatialDistribution(object):
             each center, the following four varaibles are used to
             generate `self.bounds`:
 
-            leftmost:
+            leftmost: int
                 The value of the center of the bin in which the leftmost
                 boundary of a bead is located.
 
-            left_bound:
+            left_bound: int
                 The index of the 'smaller' edge of the bin in which the
                 leftmost boundary of a bead is located.
 
-            rightmost:
+            rightmost: int
                 The value of the center of the bin in which the rightmost
                 boundary of a bead is located.
 
-            right_bound:
+            right_bound: int
                 The index of the 'smaller' edge of the bin in which the
                 rightmost boundary of a bead is located.
         """
@@ -537,13 +612,9 @@ class SpatialDistribution(object):
 
     def _consecutive_vol_shares(self):
         """
-        computes the portion of the volume of a bead (a sphere) in each of
-        the consecutive disk-like bins by which the bead intersects along
-        the longitudinal direction with the PBC in a cylindrical geometry.
-
-        To-do List
-        ----------
-        Vectorize the for-loops.
+        Computes the portion of the volume of a sphere in each of the
+        consecutive disk-like bins by which the bead intersects along the
+        longitudinal direction with the PBC in a cylindrical geometry.
 
         Attributes
         ----------
@@ -618,7 +689,7 @@ class SpatialDistribution(object):
 
     def _concentric_bounds(self):
         """
-        finds the indices of smallest and largest bin edges by which a
+        Finds the indices of smallest and largest bin edges by which a
         bead, that resides at the center of that bin, intersects in a
         'concentric' bin.
 
@@ -661,14 +732,10 @@ class SpatialDistribution(object):
 
     def _concentric_vol_shares(self):
         """
-        computes the portion of the volume of a bead in each of
+        Computes the portion of the volume of a bead in each of
         the conncentric cylindrical-shell-like or spherical-shell-like
         bins by which the bead intersects along the radial direction in
         a cylindrical geometry.
-
-        To-do List
-        ----------
-        Vectorize the for-loops.
 
         Notes
         -----
@@ -730,73 +797,9 @@ class SpatialDistribution(object):
                 f" is not defined in the {self.direction} direction."
                 )
 
-    def _set_args(self):
-        """
-        sets the arguments for the integrads along different directions
-        in different geometries.
-        """
-        self._args = {
-            'box': {
-                'r': (1, ),
-                # For concentric spherical shells, the constant, i.e. 1,
-                # is redundant and merely defined to make the use of args
-                # parameter of scipi.integral.quad function consistent among
-                # integrands.
-                'theta': (self.hist_info.lcyl, ),
-                # In a box cubic or free space, the radius of the space
-                # is half of the length of simulation box.
-                'phi': (self.hist_info.lcyl, ),
-                # In a box cubic or free space, the radius of the space
-                # is half of the length of simulation box.
-            },
-            'slit': {
-                'r': (self.hist_info.lcyl, ),
-                'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
-                'z': (self.hist_info.dcyl, )
-            },
-            'biaxial': {
-                'r': (self.hist_info.lcyl, ),
-                'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
-                'z': (self.hist_info.dcyl, )
-            }
-        }
-
-    def _number_density(self):
-        """
-        calculates the local number density along the given direction in
-        the given geometry.
-
-        If `self.normalized=True`, the the local number density is
-        normalized to give the area under the curve equal to one.
-
-        Parameters
-        ----------
-        col_name: the name of column for which the number density is
-        calculated.
-
-        Notes
-        -----
-        The number density in each simulation is an average over the number
-        densities collected every X time steps, so there are N=L/X
-        measurements of the local number desnity in each simulation where L
-        is total number of time steps in the simulation; for instance, in
-        the cylindrical sum rule project X=5000 and the total number of
-        time steps is 7*10^7, so N=14001.
-        """
-        integrand = self._integrands[self.geometry][self.direction]
-        arguments = self._args[self.geometry][self.direction]
-        bin_vols = np.array([integrate.quad(
-            integrand,
-            self.edges[idx],
-            self.edges[idx] + self.bin_size,
-            args=arguments)[0] for idx in range(len(self.edges[:-1]))
-        ])
-        # histogram[col_name] and bin_vols have the same size, so:
-        self.rho = self.histogram / bin_vols
-
     def _volume_fraction(self):
         """
-        computes the local volume fraction along the direction of interest
+        Computes the local volume fraction along the direction of interest
         in the given goemetry.
 
         Notes
@@ -805,7 +808,7 @@ class SpatialDistribution(object):
         volume fraction is normalized to give the integral of the local
         volume fraction  along the direction of interest in the region of
         interest. (See the explnation for the `_number_density` method and
-        `Distribution` class).
+        `SpatialDistribution` class).
         """
         n_centers = len(self.rho)
         self.phi = np.zeros(n_centers)
@@ -815,8 +818,8 @@ class SpatialDistribution(object):
 
 
 def distributions_generator(
-    wholes: Dict[str, np.ndarray],
-    bin_edges: Dict[str, np.ndarray],
+    freqs: FreqDataT,
+    bin_edges: EdgeDataT,
     group: str,
     species: str,
     geometry: str,
@@ -826,58 +829,30 @@ def distributions_generator(
     normalized: bool = False
 ) -> Tuple[Dict, Dict]:
     """
-    generates the local number density (rho) and volume fraction (phi)
-    of the bead_name woth bead_type column name in properties
-    dataframe along the direction of interest in the geometry of interest.
-
-    Caution:
-    For the sumrule problem in the cylindrical goemetry, a simulation group
-    is a collection of simulations that all have the same values for the
-    number of monomers, the diameter of cylinder, and the size of crowders
-    (assuming size of monomers is 1). An ensemble (usually with M number of
-    simulations) is a collection of themodynamically-equivalent simulations
-    that all have the same values for the number of monomers, the diameter
-    of cylinder, the size of crowders, and the same number of crowders
-    (assuming size of monomers is 1).  In standard statitatical mechanical
-    approach, an ensmeble is equivalent a simulation, but here we used it
-    to reffer to all the thermodynamically-equivalent simulations.
-    In an ensemble-average simulation group, each ensemble is replaced with
-    the average of all its simulation, so if we have M simulation in an
-    ensemble and P ensembles in a group, then we have M*P simulations in a
-    simulation group and P ensemble-averaged simulations in a
-    ensemble-averaged simulation group.
+    Generates the local number densities (rho) and volume fractions (phi).
 
     Parameters
     ----------
-    histogram: dict
-        A dictionary of an ensemble or ensemble-averaged or group
-        simulation in which the keys are the name of ensembles/
-        ensemble-averaged groups/groups and the keys of the histogram
-        dataframes. The names of the columns in each dataframe are the name of
-        simulations in an ensemble or the name of ensemble-averaged group or
-        the name of simulation group, the columns are the frequenies of
-        partilces of the type of interest (see radius_type) in each of the
-        bins, and the number of columns is the number of simulations in a
-        ensemble, one in an ensemble-averaged group, or the number of
-        ensmebles (=the number of ensemble-averaged) groups an a simulations
-        group.
-    properties: pd.dataframe
-        The properties of each simulation/ensemble-averaged
-        simulation/ensemble-averaged simulations of the
-        simualtions/ensemble-averaged simulation/ensemble-averaged simulations
-        in a ensemble/ensemble-averged group/simulation group.
-    raduis_type: str
-        the name of the column in the properties in which the size (or
-        diameter) of the particles are tabled. The particle type is the same
-        for all the particles that their frequencies are counted in histogram.
-    geometry: str
-        the shape of the simulation box
-    direction: str
-        the direction of interest in the geometry of interest.
-    bead_name: the name of paticle type.
+    freqs: dict
+        A dictionary in which the keys are the filenames and values are 1D
+        frequencies.
+    bin_edges:
+        A dictionary in which the keys are the filenames and values are 1D
+        bin edges. A 1D array of the bin edge where `len(edge)=len(freq)`.
+    group: str in {'bug', 'all'}
+        The type of the particle group.
+    species: str in {'Mon', 'Crd', 'Foci'}
+        The species of particles.
+    geometry : str in {'biaxial', 'slit', 'box'}
+        The shape of the simulation box.
+    direction: str in {'azimuthal', 'polar', 'radial', 'longitudinal'}
+        The direction of interest in the `geometry` of interest.
     parser: Callable
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepathes to infer information about a file.
+    raduis_attr: str
+        The name of an attribute of `hist_info` that contains the radius of the
+        species to which `freq` belongs.
     save_to: str
         path to which the output saved.
     normalized: bool
@@ -886,19 +861,27 @@ def distributions_generator(
     Return
     ------
     densities: dict
-       A dictionary in which the keys are 'whole' names and
-       the values are the local number densities.
+        A dictionary in which the keys are 'whole' names and the values are the
+        local number densities.
     vol_fractions: dict
-    A dictionary in which the keys are 'whole' names and
-       the values are the local volume fractions.
+        A dictionary in which the keys are 'whole' names and the values are the
+        local volume fractions.
     """
     densities = {}
     vol_fractions = {}
+    parser_name = parser.__name__
     radius_attrs = {
-        'Mon': 'dmon',
-        'Crd':  'dcrowd'
+        'SumRule': {
+            'Mon': 'dmon',
+            'Crd':  'dcrowd'
+        },
+        'TransFoci': {
+            'Mon': 'dmon_small',
+            'Crd': 'dcrowd',
+            'Foci': 'dmon_large'
+        }
     }
-    for whole, histogram in wholes.items():
+    for whole, freq in freqs.items():
         whole_info = parser(
             whole,
             geometry,
@@ -907,10 +890,10 @@ def distributions_generator(
             ispath=False
         )
         distributions = SpatialDistribution(
-            histogram,
+            freq,
             bin_edges[whole],
             whole_info,
-            radius_attr=radius_attrs[species],
+            radius_attr=radius_attrs[parser_name][species],
             geometry=geometry,
             direction=direction,
             normalized=normalized
@@ -920,10 +903,12 @@ def distributions_generator(
         if save_to is not None:
             filename = whole + '-' + group + '-' + direction
             np.save(
-                filename + 'Rho' + species + '.npy', distributions.rho
+                save_to + filename + 'Rho' + species + '.npy',
+                distributions.rho
             )
             np.save(
-                filename + 'Phi' + species + '.npy', distributions.phi
+                save_to + filename + 'Phi' + species + '.npy',
+                distributions.phi
             )
     return densities, vol_fractions
 
@@ -952,7 +937,8 @@ def entropic_energy(histo_collections, beta=1.0):
 
 
 def looping_p(histo_collections, bin_edges, Rmax, Rmin):
-    """looping entropy P_L is defined as the integral from Rmin to Rmax over
+    """
+    Looping entropy P_L is defined as the integral from Rmin to Rmax over
     P(R)*4pi*R^2*dR; since P(R)*4pi*R^2 is equivalent to hitso_collection[i]
     for the bin between bin_edges[i] and bin_edges[i+1] we have
     P_L = integral from Rmin to Rmax over P(R)*4pi*R^2*dR ~ sum from Rmin

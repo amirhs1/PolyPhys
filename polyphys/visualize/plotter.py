@@ -1400,7 +1400,7 @@ def p_equil_allInOne_project(
     hue_attr: str,
     col_attr: str,
     col_order: List[str],
-    marker: str,
+    markers: List[str],
     prop_labels: Dict[str, Dict[str, str]],
     attr_labels: Dict[str, str],
     col_wrap: int = 3,
@@ -1443,7 +1443,7 @@ def p_equil_allInOne_project(
     hue_attr: str
         The categorial-like attribute used for coloring curves.
     col_attr: str
-        The categorial-like attribute used for seting number of sub-plots.
+        The categorial-like attribute used for setting number of sub-plots.
     col_order: lost of str
         The order of categorial-like attribute used for seting number of
         sub-plots.
@@ -1520,14 +1520,12 @@ def p_equil_allInOne_project(
         col_order=col_order,
         hue=hue_attr,
         kind='line',
-        markers=True,
-        ls="-",
+        markers=markers,
         height=height,
         aspect=aspect,
         palette=color_palette,
         col_wrap=col_wrap,
         facet_kws=facet_kws,
-        marker=marker,
         **kwargs
     )
     for ax, prop in zip(tseries_grid.axes.flat, col_order):
