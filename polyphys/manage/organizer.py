@@ -1425,8 +1425,7 @@ def space_hists(
     group: str,
     geometry: str,
     bin_center: Optional[np.ndarray] = None,
-    normalize: Optional[str] = 'simple',
-    normalize_idx: Optional[int] = 0,
+    normalize: Optional[bool] = False,
     divisor: Optional[float] = 0.025,
     round_to: Optional[int] = 3,
     is_save: Optional[bool] = False
@@ -1463,14 +1462,12 @@ def space_hists(
     parser: Callable
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    property_pattern: str
+    hierarchy: str
         The pattern by which the filenames of timeseries are started with; for
         instance, "N*" means files start with "N"
-    attributes: list of str
+    phys_attrs: list of str
         The physical attributes that will added as new columns to the
         concatenated timeseries.
-    species: str in {'Mon', 'Crd', 'Foci'}
-        The type of species.
     group: {'bug', 'all'}
         The type of the particle group.
     geometry : {'biaxial', 'slit', 'box'}
@@ -1484,11 +1481,8 @@ def space_hists(
         centers is used in all different ensemble-averaged dataframes. This is
         the case for "clustersHistTFoci" or "bondsHistTFoci" properties, but
         not for "zHistMon" or "rHistCrd".
-    normalize: str in {'simple', 'r', 'z', 'theta'}
+    normalize: bool, default False
         Whether normalize freqs or not.
-    normalize_idx: int, default 0
-        The range over which the normalizing factor is built. This option is
-        used for 'r', 'z', and 'theta' options in `normalize`.
     divisor: float, default 0.025
         The step by which the values of "phi_c_bulk" attribute are rounded.
     round_to: int, default 3
@@ -1508,7 +1502,6 @@ def space_hists(
     ------------
     PolyPhys, Pandas
     """
-    invalid_keyword(normalize, ['simple', 'r', 'z', 'theta'])
     property_ext = "-" + property_ + "-ensAvg.csv"
     ens_avg_csvs = glob(input_database + hierarchy + property_ext)
     ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
@@ -1526,45 +1519,7 @@ def space_hists(
             ens_avg['bin_center'] = bin_center.tolist()
         ens_avg['bin_center-norm'] = \
             ens_avg['bin_center'] / ens_avg['bin_center'].max()
-        if normalize == 'r':
-            normalizer = ens_avg.loc[normalize_idx, property_+'-mean'].min()
-            if normalizer != 0:
-                ens_avg[property_+'-norm'] = \
-                    ens_avg[property_+'-mean'] / normalizer
-            else:
-                raise ValueError(
-                    "The minimum of frequencies over this range: "
-                    f"'{normalize_idx}' is 'zero', use another range."
-                )
-        elif normalize == 'z':
-            normalizer = ens_avg.loc[normalize_idx, property_+'-mean'].mean()
-            if normalizer != 0:
-                ens_avg[property_+'-norm'] = \
-                    ens_avg[property_+'-mean'] / normalizer
-            else:
-                raise ValueError(
-                    "The mean of frequencies over this range: "
-                    f"'{normalize_idx}' is 'zero', use another range."
-                )
-        elif normalize == 'theta':
-            warnings.warn(
-                "Normalization method for"
-                " 'theta' direction is not implemented yet."
-                " For now, 'theta' method is the same as 'simple' method.",
-                UserWarning
-                )
-            normalizer = ens_avg[property_+'-mean'].sum()
-            if normalizer != 0:
-                ens_avg[property_+'-norm'] = \
-                    ens_avg[property_+'-mean'] / normalizer
-            else:
-                warnings.warn(
-                    "All the frequencies are zero, so all the normalized"
-                    " frequerncies are set to zero.",
-                    UserWarning
-                )
-                ens_avg[property_+'-norm'] = 0
-        else:  # normalize == 'simple'
+        if normalize is True:
             normalizer = ens_avg[property_+'-mean'].sum()
             if normalizer != 0:
                 ens_avg[property_+'-norm'] = \
@@ -1592,5 +1547,194 @@ def space_hists(
             )
         space = save_to_space.split("/")[-2].split("-")[0]
         output = "-".join([space, group, property_]) + "-space.csv"
+        property_db.to_csv(save_to_space + output, index=False)
+    return property_db
+
+
+def normalize_z(
+    ens: pd.DataFrame, norm_direction: bool = True
+) -> pd.DataFrame:
+    max_per_ens = ens.max(axis=0)
+    if max_per_ens.all():
+        normalized = ens / max_per_ens  # normalize each ensemble by its max
+    # If system is symmetric with respect to z=0, then an average can be
+    # applied with respect to absolut size of bin centers.
+        if norm_direction is True:
+            ens_nonneg = normalized.loc[0:, :]  # index or bin_center or z >= 0
+            ens_neg = normalized.loc[:0, :]  # index or bin_center or z < 0
+            ens_neg.index = -1 * ens_neg.index
+            ens_neg.sort_index(inplace=True)
+            if len(ens_nonneg) != len(ens_neg):
+                warnings.warn(
+                    "'nonneg' and 'neg' dataframes ara not equal in size, "
+                    "some 'nan' rows emerge when  they are averaged.",
+                    UserWarning
+                )
+            normalized = 0.5 * (ens_nonneg + ens_neg)
+    else:
+        warnings.warn(
+            "All the frequencies are zero, so all the normalized"
+            " frequerncies are set to zero.",
+            UserWarning
+        )
+        normalized = ens.copy()
+        normalized.loc[:, :] = 0
+    return normalized
+
+
+def normalize_r(ens: pd.DataFrame, method: str = 'first') -> pd.DataFrame:
+    if method == 'first':
+        max_per_ens = ens.iloc[0, :]
+    elif method == 'max':
+        max_per_ens = ens.max(axis=0)
+    else:
+        raise NotImplementedError(
+            "Choose either 'first' or 'max' method."
+        )
+    if max_per_ens.all():
+        normalized = ens / max_per_ens
+    else:
+        warnings.warn(
+            "All the frequencies are zero, so all the normalized"
+            " frequerncies are set to zero.",
+            UserWarning
+        )
+        normalized = ens.copy()
+        normalized.loc[:, :] = 0
+    return normalized
+
+
+def space_sum_rule(
+    input_database: str,
+    property_: str,
+    parser: Callable,
+    hierarchy: str,
+    physical_attrs: List[str],
+    species: str,
+    size_attr: str,
+    group: str,
+    geometry: str,
+    direction: str,
+    divisor: Optional[float] = 0.025,
+    round_to: Optional[int] = 3,
+    is_save: Optional[bool] = False
+) -> pd.DataFrame:
+    """
+    Takes the `property_path` to 'ensAvg' time series of a given `property_`
+    in a given space `input_database`,  adds the `physical_attrs` of interest
+    as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
+    dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
+    in pandas's lingo,
+
+    In each 'ensemble-averaged' dataframe, there are 4 columns with this name
+    pattern:
+
+    column name = '[long_ensemble]-[porperty_][-measure]-[stat]'
+
+    , and sometimes
+
+    column name = 'bin_center'
+
+    where '[-measure]' is a physical measurement such as the auto correlation
+    function (AFC) done on the physical 'property_'. [...] means this keyword
+    in the column name can be optional. the 'stat' keyword is either 'mean',
+    'ver', or 'sem'. If the 'bin_center' presents as a column in a
+    'ensemble_averaged' dataframe, then it is inferred; otherwise, it should
+    be passed to the function. See `bin_center` kw argument below.
+
+    Issues
+    ------
+    Currently, `direction` is only defined for 'biaxial' goemtery.
+
+    Parameters
+    ----------
+    property_path: str
+        Path to the the timeseries of the physical property of interest.
+    property_: str
+        Name of the physical property of interest.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
+    hierarchy: str
+        The pattern by which the filenames of timeseries are started with; for
+        instance, "N*" means files start with "N"
+    phys_attrs: list of str
+        The physical attributes that will added as new columns to the
+        concatenated timeseries.
+    species: {'Mon', 'Crd', 'Foci', 'Dna'}
+        The species of the particles in a group.
+            'Mon': Monomers or small monomers
+            'Crd': Crowders
+            'Foci': Large monomers
+            'Dna': Small and large monomers
+    size_attr: str
+        The attribute of the `parser` object that is the size (diameter) of
+        species.
+    group: {'bug', 'all'}
+        The type of the particle group.
+    geometry : {'biaxial', 'slit', 'box'}
+        The shape of the simulation box.
+    direction: {'r', 'z'}
+        The direction along which operation is done.
+    divisor: float, default 0.025
+        The step by which the values of "phi_c_bulk" attribute are rounded.
+    round_to: int, default 3
+        The number of significant decimal digits in the values of "phi_c_bulk"
+        attribute.
+    is_save : bool, default False
+        whether to save output to file or not.
+
+    Return
+    ------
+    all_in_one: pandas.DataFrame
+        a dataframe in which all the timeseries are concatenated along `orient`
+        of interest, and "properties and attributes" of interest are added to
+        it as the new columns.
+
+    Requirenents
+    ------------
+    PolyPhys, Pandas
+    """
+    normalizer = {
+        'r': normalize_r,
+        'z': normalize_z
+    }
+    property_ext = "-" + group + "-" + direction + property_ + species + ".csv"
+    ens_csvs = glob(input_database + hierarchy + property_ext)
+    ens_csvs = sort_filenames(ens_csvs, fmts=[property_ext])
+    property_db = []
+    # ens_csvs is a list of tuples, each has one member.
+    for ens_csv in ens_csvs:
+        ens = pd.read_csv(ens_csv[0], header=0, index_col=8)
+        property_info = parser(
+            ens_csv[0],
+            geometry,
+            group,
+            'ensemble_long',
+            ispath=True
+        )
+        ens_norm = normalizer[direction](ens)
+        ens_norm.reset_index(inplace=True)
+        scaler = getattr(property_info, size_attr)
+        ens_norm = ens_norm / scaler
+        ens_norm.rename(columns={'index': 'bin_center'}, inplace=True)
+        ens_norm['bin_center-norm'] = \
+            ens_norm['bin_center'] / ens_norm['bin_center'].max()
+        for attr_name in physical_attrs:
+            ens_norm[attr_name] = getattr(property_info, attr_name)
+        ens_norm['phi_c_bulk_round'] = ens_norm['phi_c_bulk'].apply(
+            round_up_nearest, args=[divisor, round_to])
+        property_db.append(ens_norm)
+    property_db = pd.concat(property_db, axis=0)
+    property_db.reset_index(inplace=True, drop=True)
+    if is_save is not False:
+        save_to_space = database_path(
+            input_database,
+            'analysis',
+            stage='space',
+            group=group
+            )
+        space = save_to_space.split("/")[-2].split("-")[0]
+        output = "-".join([space, group, property_, species]) + "-space.csv"
         property_db.to_csv(save_to_space + output, index=False)
     return property_db
