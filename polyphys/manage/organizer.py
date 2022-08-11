@@ -1557,6 +1557,7 @@ def normalize_z(
     max_per_ens = ens.max(axis=0)
     if max_per_ens.all():
         normalized = ens / max_per_ens  # normalize each ensemble by its max
+        normalized['normalizer'] = max_per_ens
     # If system is symmetric with respect to z=0, then an average can be
     # applied with respect to absolut size of bin centers.
         if norm_direction is True:
@@ -1574,11 +1575,12 @@ def normalize_z(
     else:
         warnings.warn(
             "All the frequencies are zero, so all the normalized"
-            " frequerncies are set to zero.",
+            " frequerncies are set to 0.",
             UserWarning
         )
         normalized = ens.copy()
         normalized.loc[:, :] = 0
+        normalized['normalizer'] = 0
     return normalized
 
 
@@ -1593,6 +1595,7 @@ def normalize_r(ens: pd.DataFrame, method: str = 'first') -> pd.DataFrame:
         )
     if max_per_ens.all():
         normalized = ens / max_per_ens
+        normalized['normalizer'] = max_per_ens
     else:
         warnings.warn(
             "All the frequencies are zero, so all the normalized"
@@ -1601,6 +1604,7 @@ def normalize_r(ens: pd.DataFrame, method: str = 'first') -> pd.DataFrame:
         )
         normalized = ens.copy()
         normalized.loc[:, :] = 0
+        normalized['normalizer'] = 0
     return normalized
 
 
@@ -1700,6 +1704,7 @@ def space_sum_rule(
         'z': normalize_z
     }
     property_ext = "-" + group + "-" + direction + property_ + species + ".csv"
+    prefix = property_ + "_" + species
     ens_csvs = glob(input_database + hierarchy + property_ext)
     ens_csvs = sort_filenames(ens_csvs, fmts=[property_ext])
     property_db = []
@@ -1714,10 +1719,35 @@ def space_sum_rule(
             ispath=True
         )
         ens_norm = normalizer[direction](ens)
+        ens_names = list(ens_norm.columns)
+        ens_names.remove('normalizer')
         ens_norm.reset_index(inplace=True)
-        scaler = getattr(property_info, size_attr)
-        ens_norm = ens_norm / scaler
-        ens_norm.rename(columns={'index': 'bin_center'}, inplace=True)
+        if property_ == 'Phi':
+            scaler = getattr(property_info, size_attr)
+            ens_norm['scaler'] = scaler
+            ens_norm[ens_names] = ens_norm[ens_names] / scaler
+        elif property_ == 'Rho':
+            scaler = getattr(property_info, size_attr)
+            ens_norm['scaler'] = scaler
+            ens_norm[ens_names] = ens_norm[ens_names] * scaler**2
+        else:
+            raise NotImplementedError(
+                "Sum rule's scaler is only defined for "
+                "'rho' (density) or 'phi' (volume fraction) properties."
+            )
+        ens_norm['ensAvg-mean'] = ens_norm[ens_names].mean(axis=1)
+        ens_norm['ensAvg-var'] = ens_norm[ens_names].var(axis=1)
+        ens_norm['ensAvg-sem'] = ens_norm[ens_names].sem(axis=1)
+        new_ens_cols = {
+            col: prefix + '_ens_' + str(i+1) for i, col in enumerate(ens_names)
+        }
+        new_ens_cols['ensAvg-mean'] = prefix + '_ensAvg-mean'
+        new_ens_cols['ensAvg-var'] = prefix + '_ensAvg-var'
+        new_ens_cols['ensAvg-sem'] = prefix + '_ensAvg-sem'
+        new_ens_cols['normalizer'] = prefix + '-normalizer'
+        new_ens_cols['index'] = 'bin_center'
+        new_ens_cols['scaler'] = prefix + '-scaler'
+        ens_norm.rename(columns=new_ens_cols, inplace=True)
         ens_norm['bin_center-norm'] = \
             ens_norm['bin_center'] / ens_norm['bin_center'].max()
         for attr_name in physical_attrs:
@@ -1735,6 +1765,7 @@ def space_sum_rule(
             group=group
             )
         space = save_to_space.split("/")[-2].split("-")[0]
-        output = "-".join([space, group, property_, species]) + "-space.csv"
+        output = "-".join([space, group, property_, species])
+        output += "-normalizedRescaled-space.csv"
         property_db.to_csv(save_to_space + output, index=False)
     return property_db
