@@ -14,7 +14,7 @@ The following step are need if the ablove approach does not work - See the [arch
 2. Check and (if needed) fix **....all.data** files via running **fix_PairIJ_all_data_files_v---.sh**. This bash script fixes some lines in the **all** data (topology) files, so they can be read by **MDAnalysis** package. This step can be dropped if the bug/issue in **MDAnalysis** is resolved.
 3. copy **___nc0___ens1.all.data** to **data_template-biaxial-bug-N___D___L___.data**.
 4. Go to the *$HOME/github/sumrule_pipeline*:
-    1. Run **git pull git@github.com:amirhs1/sumrule_pipeline.git main** to pull from repository.
+    1. Run **git pull git@github.com:amirhs1/polyphys.git master*** to pull from repository.
     2. Enter the **passcode** for **Graham** cluster.
     3. Run **rsync -axvH --no-g --no-p --exclude='.*' PACKAGE_NAME /destination** to copy directory, excluding hidden files.
 
