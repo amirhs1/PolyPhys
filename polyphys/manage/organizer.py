@@ -1331,6 +1331,8 @@ def space_tseries(
     physical_attrs: List[str],
     group: str,
     geometry: str,
+    divisor: Optional[float] = 0.025,
+    round_to: Optional[int] = 3,
     is_save: Optional[bool] = False
 ) -> pd.DataFrame:
     """
@@ -1369,9 +1371,11 @@ def space_tseries(
         The type of the particle group.
     geometry : str in {'biaxial', 'slit', 'box'}
         The shape of the simulation box.
-    single_space:
-        Whether the all-in-one file is for all the timeseries properties of a
-        single space or all the space in a project.
+    divisor: float, default 0.025
+        The step by which the values of "phi_c_bulk" attribute are rounded.
+    round_to: int, default 3
+        The number of significant decimal digits in the values of "phi_c_bulk"
+        attribute.
     is_save : bool, default False
         whether to save output to file or not.
 
@@ -1387,7 +1391,7 @@ def space_tseries(
     ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
     property_db = []
     for ens_avg_csv in ens_avg_csvs:
-        ens_avg_df = pd.read_csv(ens_avg_csv[0], header=0)
+        ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = parser(
             ens_avg_csv[0],
             geometry,
@@ -1395,12 +1399,14 @@ def space_tseries(
             'ensemble_long',
             ispath=True
         )
-        ens_avg_df.reset_index(inplace=True)
-        ens_avg_df.rename(columns={'index': 'time'}, inplace=True)
-        ens_avg_df['time'] = ens_avg_df['time'] * property_info.dt
+        ens_avg.reset_index(inplace=True)
+        ens_avg.rename(columns={'index': 'time'}, inplace=True)
+        ens_avg['time'] = ens_avg['time'] * property_info.dt
         for attr_name in physical_attrs:
-            ens_avg_df[attr_name] = getattr(property_info, attr_name)
-        property_db.append(ens_avg_df)
+            ens_avg[attr_name] = getattr(property_info, attr_name)
+        ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
+            round_up_nearest, args=[divisor, round_to])
+        property_db.append(ens_avg)
     property_db = pd.concat(property_db, axis=0)
     property_db.reset_index(inplace=True, drop=True)
     if is_save is not False:
@@ -1552,60 +1558,102 @@ def space_hists(
 
 
 def normalize_z(
-    ens: pd.DataFrame, norm_direction: bool = True
+    prop: str,
+    ens_avg: pd.DataFrame, norm_direction: bool = True
 ) -> pd.DataFrame:
-    max_per_ens = ens.max(axis=0)
-    if max_per_ens.all():
-        normalized = ens / max_per_ens  # normalize each ensemble by its max
-        normalized['normalizer'] = max_per_ens
-    # If system is symmetric with respect to z=0, then an average can be
-    # applied with respect to absolut size of bin centers.
-        if norm_direction is True:
-            ens_nonneg = normalized.loc[0:, :]  # index or bin_center or z >= 0
-            ens_neg = normalized.loc[:0, :]  # index or bin_center or z < 0
-            ens_neg.index = -1 * ens_neg.index
-            ens_neg.sort_index(inplace=True)
-            if len(ens_nonneg) != len(ens_neg):
-                warnings.warn(
-                    "'nonneg' and 'neg' dataframes ara not equal in size, "
-                    "some 'nan' rows emerge when  they are averaged.",
-                    UserWarning
-                )
-            normalized = 0.5 * (ens_nonneg + ens_neg)
-    else:
-        warnings.warn(
-            "All the frequencies are zero, so all the normalized"
-            " frequerncies are set to 0.",
-            UserWarning
-        )
-        normalized = ens.copy()
-        normalized.loc[:, :] = 0
-        normalized['normalizer'] = 0
-    return normalized
+    """Normalizes the ensemble-average local distribution `ens_avg` of `prop`
+    along z direction in cylindrical geometry by the maximum value of the
+    `ens_avg`, and takes average over the absolute values of bin centers along
+    z direction if `norm_direction` is `True`.
 
+    Parameters
+    ----------
+    prop: str
+        Name of the physical property.
+    ens_avg: pd.DataFrame
+        Ensemble-average local distribution.
+    norm_direction: bool, default True
+        Whether averaging over absolute values of bin_centers or not.
 
-def normalize_r(ens: pd.DataFrame, method: str = 'first') -> pd.DataFrame:
-    if method == 'first':
-        max_per_ens = ens.iloc[0, :]
-    elif method == 'max':
-        max_per_ens = ens.max(axis=0)
-    else:
-        raise NotImplementedError(
-            "Choose either 'first' or 'max' method."
-        )
-    if max_per_ens.all():
-        normalized = ens / max_per_ens
-        normalized['normalizer'] = max_per_ens
+    Return
+    ------
+    ens_avg: pd.DataFrame
+        Normalized ensemble-average local distribution.
+    """
+    ens_avg_max = ens_avg[prop+'-scale'].max()
+    ens_avg[prop+'-normalizer'] = ens_avg_max
+    if ens_avg_max != 0:
+        ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
     else:
         warnings.warn(
             "All the frequencies are zero, so all the normalized"
             " frequerncies are set to zero.",
             UserWarning
         )
-        normalized = ens.copy()
-        normalized.loc[:, :] = 0
-        normalized['normalizer'] = 0
-    return normalized
+        ens_avg[prop+'-norm'] = 0
+    # If system is symmetric with respect to z=0, then an average can be
+    # applied with respect to absolut size of bin centers.
+    if norm_direction is True:
+        ens_nonneg = ens_avg.loc[0:, :]  # index or bin_center or z >= 0
+        ens_neg = ens_avg.loc[:0, :]  # index or bin_center or z < 0
+        ens_neg.index = -1 * ens_neg.index
+        ens_neg.sort_index(inplace=True)
+        if len(ens_nonneg) != len(ens_neg):
+            warnings.warn(
+                "'nonneg' and 'neg' dataframes ara not equal in size, "
+                "some 'nan' rows emerge when  they are averaged.",
+                UserWarning
+            )
+        ens_avg = 0.5 * (ens_nonneg + ens_neg)
+    return ens_avg
+
+
+def normalize_r(
+    prop: str,
+    ens_avg: pd.DataFrame,
+    method: str = 'first'
+) -> pd.DataFrame:
+    """Normalizes the ensemble-average local distribution `ens_avg` of `prop`
+    along r direction in cylindrical geometry by the `method` chosen for the
+    value of thr normalizer.
+
+    Parameters
+    ----------
+    prop: str
+        Name of the physical property.
+    ens_avg: pd.DataFrame
+        Ensemble-average local distribution.
+    method: {'first', 'max'}, default True
+        Normalization method
+        'first':
+            Normalizing by the first value of `ens_avg`.
+        'max':
+            Normalizing by the maximum of `ens_avg`.
+
+    Return
+    ------
+    ens_avg: pd.DataFrame
+        Normalized ensemble-average local distribution.
+    """
+    if method == 'first':
+        ens_avg_max = ens_avg[prop+'-scale'].values[0]
+    elif method == 'max':
+        ens_avg_max = ens_avg[prop+'-scale'].max()
+    else:
+        raise NotImplementedError(
+            "Choose either 'first' or 'max' method."
+        )
+    ens_avg[prop+'-normalizer'] = ens_avg_max
+    if ens_avg_max != 0:
+        ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
+    else:
+        warnings.warn(
+            "All the frequencies are zero, so all the normalized"
+            " frequerncies are set to zero.",
+            UserWarning
+        )
+        ens_avg[prop+'-norm'] = 0
+    return ens_avg
 
 
 def space_sum_rule(
@@ -1623,12 +1671,11 @@ def space_sum_rule(
     round_to: Optional[int] = 3,
     is_save: Optional[bool] = False
 ) -> pd.DataFrame:
-    """
-    Takes the `property_path` to 'ensAvg' time series of a given `property_`
-    in a given space `input_database`,  adds the `physical_attrs` of interest
-    as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
-    dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
-    in pandas's lingo,
+    """Takes the `property_path` to 'ensAvg' local distribution of a given
+    `property_` in a given space `input_database`, normalize and scale that
+    distribution, adds the `physical_attrs` of interest as the new columns to
+    each 'ensAvg' distribution, and merges all the 'ensAvg' distributions into
+    one 'space' dataframe along the 0 (or 'row' or 'index') in pandas's lingo,
 
     In each 'ensemble-averaged' dataframe, there are 4 columns with this name
     pattern:
@@ -1703,58 +1750,47 @@ def space_sum_rule(
         'r': normalize_r,
         'z': normalize_z
     }
-    property_ext = "-" + group + "-" + direction + property_ + species + ".csv"
-    prefix = property_ + "_" + species
-    ens_csvs = glob(input_database + hierarchy + property_ext)
-    ens_csvs = sort_filenames(ens_csvs, fmts=[property_ext])
+    property_ext = "-" + group + "-" + direction + property_ + species
+    property_ext += "-ensAvg.csv"
+    prop = direction + property_ + species  # full name of physical property
+    ens_avg_csvs = glob(input_database + hierarchy + property_ext)
+    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
     property_db = []
     # ens_csvs is a list of tuples, each has one member.
-    for ens_csv in ens_csvs:
-        ens = pd.read_csv(ens_csv[0], header=0, index_col=8)
+    for ens_avg_csv in ens_avg_csvs:
+        ens_avg = pd.read_csv(ens_avg_csv[0], header=0, index_col=0)
         property_info = parser(
-            ens_csv[0],
+            ens_avg_csv[0],
             geometry,
             group,
             'ensemble_long',
             ispath=True
         )
-        ens_norm = normalizer[direction](ens)
-        ens_names = list(ens_norm.columns)
-        ens_names.remove('normalizer')
-        ens_norm.reset_index(inplace=True)
         if property_ == 'Phi':
             scaler = getattr(property_info, size_attr)
-            ens_norm['scaler'] = scaler
-            ens_norm[ens_names] = ens_norm[ens_names] / scaler
+            ens_avg[prop+'-scaler'] = scaler
+            ens_avg[prop+'-scale'] = ens_avg[prop+'-mean'] / scaler
         elif property_ == 'Rho':
             scaler = getattr(property_info, size_attr)
-            ens_norm['scaler'] = scaler
-            ens_norm[ens_names] = ens_norm[ens_names] * scaler**2
+            ens_avg[prop+'-scaler'] = scaler**2
+            ens_avg[prop+'-scale'] = ens_avg[prop+'-mean'] * scaler**2
         else:
             raise NotImplementedError(
                 "Sum rule's scaler is only defined for "
                 "'rho' (density) or 'phi' (volume fraction) properties."
             )
-        ens_norm['ensAvg-mean'] = ens_norm[ens_names].mean(axis=1)
-        ens_norm['ensAvg-var'] = ens_norm[ens_names].var(axis=1)
-        ens_norm['ensAvg-sem'] = ens_norm[ens_names].sem(axis=1)
-        new_ens_cols = {
-            col: prefix + '_ens_' + str(i+1) for i, col in enumerate(ens_names)
-        }
-        new_ens_cols['ensAvg-mean'] = prefix + '_ensAvg-mean'
-        new_ens_cols['ensAvg-var'] = prefix + '_ensAvg-var'
-        new_ens_cols['ensAvg-sem'] = prefix + '_ensAvg-sem'
-        new_ens_cols['normalizer'] = prefix + '-normalizer'
-        new_ens_cols['index'] = 'bin_center'
-        new_ens_cols['scaler'] = prefix + '-scaler'
-        ens_norm.rename(columns=new_ens_cols, inplace=True)
-        ens_norm['bin_center-norm'] = \
-            ens_norm['bin_center'] / ens_norm['bin_center'].max()
+        ens_avg = normalizer[direction](prop, ens_avg)
+        ens_avg[prop+'-sumrule_constant'] = \
+            ens_avg[prop+'-normalizer'] / ens_avg[prop+'-scaler']
+        ens_avg.reset_index(inplace=True)
+        ens_avg.rename(columns={'index': 'bin_center'}, inplace=True)
+        ens_avg['bin_center-norm'] = \
+            ens_avg['bin_center'] / ens_avg['bin_center'].max()
         for attr_name in physical_attrs:
-            ens_norm[attr_name] = getattr(property_info, attr_name)
-        ens_norm['phi_c_bulk_round'] = ens_norm['phi_c_bulk'].apply(
+            ens_avg[attr_name] = getattr(property_info, attr_name)
+        ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
             round_up_nearest, args=[divisor, round_to])
-        property_db.append(ens_norm)
+        property_db.append(ens_avg)
     property_db = pd.concat(property_db, axis=0)
     property_db.reset_index(inplace=True, drop=True)
     if is_save is not False:
