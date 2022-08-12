@@ -1,3 +1,4 @@
+# use this scripts if there are several "all" trjs.
 from glob import glob
 from polyphys.manage import organizer
 from polyphys.probe import prober
