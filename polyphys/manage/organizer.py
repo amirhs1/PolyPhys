@@ -1557,7 +1557,7 @@ def space_hists(
     return property_db
 
 
-def normalize_z(
+def normalize_z_incorrect(
     prop: str,
     ens_avg: pd.DataFrame, norm_direction: bool = True
 ) -> pd.DataFrame:
@@ -1582,6 +1582,7 @@ def normalize_z(
     """
     ens_avg_max = ens_avg[prop+'-scale'].max()
     ens_avg[prop+'-normalizer'] = ens_avg_max
+    print(ens_avg_max)
     if ens_avg_max != 0:
         ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
     else:
@@ -1606,6 +1607,79 @@ def normalize_z(
             )
         ens_avg = 0.5 * (ens_nonneg + ens_neg)
     return ens_avg
+
+
+def normalize_z(
+    prop: str,
+    ens_avg: pd.DataFrame, norm_direction: bool = True
+) -> pd.DataFrame:
+    """Normalizes the ensemble-average local distribution `ens_avg` of `prop`
+    along z direction in cylindrical geometry by the maximum value of the
+    `ens_avg`, and takes average over the absolute values of bin centers along
+    z direction if `norm_direction` is `True`.
+
+    Parameters
+    ----------
+    prop: str
+        Name of the physical property.
+    ens_avg: pd.DataFrame
+        Ensemble-average local distribution.
+    norm_direction: bool, default True
+        Whether averaging over absolute values of bin_centers or not.
+
+    Return
+    ------
+    ens_sum: pd.DataFrame
+        Normalized ensemble-average local distribution.
+    """
+    ens_avg_max = ens_avg[prop+'-scale'].max()
+    ens_avg[prop+'-normalizer'] = ens_avg_max
+    print(ens_avg_max)
+    if ens_avg_max != 0:
+        ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
+    else:
+        warnings.warn(
+            "All the frequencies are zero, so all the normalized"
+            " frequerncies are set to zero.",
+            UserWarning
+        )
+        ens_avg[prop+'-norm'] = 0
+    # If system is symmetric with respect to z=0, then an average can be
+    # applied with respect to absolut size of bin centers.
+    if norm_direction is True:
+        ens_pos = pd.DataFrame(columns=ens_avg.columns)
+        ens_neg = pd.DataFrame(columns=ens_avg.columns)
+        df_len = ens_avg.shape[0]
+        if df_len % 2 == 0:
+            # index or bin_center or z >= 0:
+            ens_pos = ens_avg.iloc[df_len//2:, :].copy()
+            ens_pos.reset_index(inplace=True, drop=True)
+            # index or bin_center or z < 0:
+            ens_neg = ens_avg.iloc[:df_len//2, :].copy()
+            ens_neg.index = -1 * ens_neg.index
+            ens_neg.sort_index(inplace=True)
+            ens_neg.reset_index(inplace=True, drop=True)
+            ens_neg['bin_center'] = -1 * ens_neg['bin_center']
+            # averaging over |z|>0:
+            ens_sum = 0.5 * (ens_pos + ens_neg)
+        else:
+            # index or bin_center or z > 0
+            ens_pos = ens_avg.iloc[df_len//2+1:, :].copy()
+            ens_pos.reset_index(inplace=True, drop=True)
+            # index or bin_center or z < 0
+            ens_neg = ens_avg.iloc[:df_len//2, :].copy()
+            ens_neg.index = -1 * ens_neg.index
+            ens_neg.sort_index(inplace=True)
+            ens_neg.reset_index(inplace=True, drop=True)
+            ens_neg['bin_center'] = -1 * ens_neg['bin_center']
+            # averaging over |z|>0:
+            ens_sum = 0.5 * (ens_pos + ens_neg)
+            # index or bin_center or z = 0
+            ens_sum.set_index('bin_center', inplace=True)
+            ens_sum.loc[0, :] = ens_avg.loc[df_len//2, :]
+            ens_sum.sort_index(inplace=True)
+            ens_sum.reset_index(inplace=True)
+    return ens_sum
 
 
 def normalize_r(
@@ -1758,7 +1832,7 @@ def space_sum_rule(
     property_db = []
     # ens_csvs is a list of tuples, each has one member.
     for ens_avg_csv in ens_avg_csvs:
-        ens_avg = pd.read_csv(ens_avg_csv[0], header=0, index_col=0)
+        ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = parser(
             ens_avg_csv[0],
             geometry,
@@ -1766,6 +1840,7 @@ def space_sum_rule(
             'ensemble_long',
             ispath=True
         )
+        print(property_info.ensemble_long)
         if property_ == 'Phi':
             scaler = getattr(property_info, size_attr)
             ens_avg[prop+'-scaler'] = scaler
@@ -1782,8 +1857,6 @@ def space_sum_rule(
         ens_avg = normalizer[direction](prop, ens_avg)
         ens_avg[prop+'-sumrule_constant'] = \
             ens_avg[prop+'-normalizer'] / ens_avg[prop+'-scaler']
-        ens_avg.reset_index(inplace=True)
-        ens_avg.rename(columns={'index': 'bin_center'}, inplace=True)
         ens_avg['bin_center-norm'] = \
             ens_avg['bin_center'] / ens_avg['bin_center'].max()
         for attr_name in physical_attrs:
