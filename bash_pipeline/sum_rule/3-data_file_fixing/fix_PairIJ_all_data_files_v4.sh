@@ -1,4 +1,6 @@
 #!/bin/bash
+# Use this file for the first time when the data and trj files are not
+# organized in directories.
 # fix the 'all' data files with coreecting the number of crowders.
 # pattern of the currentname (parent directory): N*D*ac*-trjs
 currentname=$(pwd | rev | cut -d / -f 1 | rev) #report name
@@ -7,7 +9,7 @@ temp=$( echo "${name}" | grep -Eo '[a-zA-Z\-]+|[0-9\.]+')
 # This part is different between different projects
 ac=$(echo "${temp}" | sed '6q;d') # position of "ac" in the pattern is 6
 echo "crowders size:" "${ac}"
-for datafile in eps*.all.data; do
+for datafile in N*.all.data; do
     echo "${datafile}"
     # the sed command below (s)ubstitute the line starts with
     # "PairIJ Coeffs" with the "Pair Coeffs # lj_cut"
@@ -19,7 +21,7 @@ for datafile in eps*.all.data; do
     sed -i "s/^PairIJ Coeffs.*/Pair Coeffs # lj_cut/" "${datafile}"
 done
 echo "report:"
-for datafile in eps*.all.data;do
+for datafile in N*.all.data;do
     echo "${datafile}"
     # Check the Pair info line with new pattern is in the file
     grep -n -E "Pair Coeffs" "${datafile}"
