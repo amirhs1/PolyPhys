@@ -1634,7 +1634,6 @@ def normalize_z(
     """
     ens_avg_max = ens_avg[prop+'-scale'].max()
     ens_avg[prop+'-normalizer'] = ens_avg_max
-    print(ens_avg_max)
     if ens_avg_max != 0:
         ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
     else:
@@ -1840,7 +1839,6 @@ def space_sum_rule(
             'ensemble_long',
             ispath=True
         )
-        print(property_info.ensemble_long)
         if property_ == 'Phi':
             scaler = getattr(property_info, size_attr)
             ens_avg[prop+'-scaler'] = scaler
@@ -1854,6 +1852,8 @@ def space_sum_rule(
                 "Sum rule's scaler is only defined for "
                 "'rho' (density) or 'phi' (volume fraction) properties."
             )
+        ens_avg[prop+'-scale-normalized_curve'] = \
+            ens_avg[prop+'-scale'] / ens_avg[prop+'-scale'].sum()
         ens_avg = normalizer[direction](prop, ens_avg)
         ens_avg[prop+'-sumrule_constant'] = \
             ens_avg[prop+'-normalizer'] / ens_avg[prop+'-scaler']
@@ -1861,6 +1861,24 @@ def space_sum_rule(
             ens_avg['bin_center'] / ens_avg['bin_center'].max()
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(property_info, attr_name)
+        ens_avg['temp'] = (
+            (ens_avg['dcyl'] % ens_avg['dcrowd']) /
+            (ens_avg['dcrowd'])
+            )
+        ens_avg['bin_center-dcrowd'] = (
+            2 * ens_avg['bin_center'] / ens_avg['dcrowd']
+            )
+        ens_avg['bin_center-dcrowd-recentered'] = (
+            ens_avg['bin_center-dcrowd'] - ens_avg['temp']
+            )
+        ens_avg['bin_center-recentered-norm'] = (
+            ens_avg['bin_center'] - (ens_avg['dcyl'] % ens_avg['dcrowd'])
+            )
+        ens_avg['bin_center-recentered-norm'] = (
+            ens_avg['bin_center-recentered-norm'] /
+            ens_avg['bin_center-recentered-norm'].max()
+            )
+        ens_avg.drop(columns=['temp'], inplace=True)
         ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
             round_up_nearest, args=[divisor, round_to])
         property_db.append(ens_avg)
