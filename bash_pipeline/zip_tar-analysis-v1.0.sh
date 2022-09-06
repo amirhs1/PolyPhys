@@ -6,14 +6,8 @@
 # nohup ... &  command.
 report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
 touch "$report"
-for dir in eps*/; do
+for dir in N*/; do
     echo "$dir"
     echo "${dir}" >> "${report}"
-#    sim=${dir::-1}
-#    zipdir=${sim}"-zip"
-#    mkdir "${zipdir}"
-    gzip -vr "${dir}" >> "${report}"
-#    mv ./${dir}*.gz ./${zipdir}
-#    project=${zipdir}.tar.gz
-#    tar -czvf ${project} ${zipdir} >> "${report}"
+    tar -cvkzf "${dir}.tar.gz" "${dir}"
 done
