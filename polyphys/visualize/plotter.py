@@ -1379,7 +1379,6 @@ def p_tseries_allInOne_space(
         kind='line',
         ci=None,
         facet_kws=facet_kws,
-        **kwargs
     )
     tseries_grid.set_axis_labels(
         attr_labels[x_prop],
