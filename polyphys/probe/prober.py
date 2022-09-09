@@ -626,6 +626,7 @@ def fixedsize_bins(
     lmin: float,
     lmax: float,
     bin_type: str = 'ordinary',
+    save_edge: Optional[bool] = True,
     save_to: Optional[str] = None,
 ) -> dict:
     """Generates arrays of bins and histograms, ensuring that the `bin_size`
@@ -673,8 +674,10 @@ def fixedsize_bins(
             therefore, if 'period' is not a multiple of `bin_size`, then an
             array of bin_edges is used; otherwise, n_bins is used.
 
+    save_edge: bool, default True
+        Whether save edges as boy to memeory or not.
     save_to : str, default None
-        Whether save outputs to memory as csv files or not.
+        Whether save outputs to memory as npy files or not.
 
     Return
     ------
@@ -741,7 +744,8 @@ def fixedsize_bins(
         invalid_keyword(bin_type, bin_types)
     hist_collectors *= 0
     hist_collectors_std = hist_collectors.copy()
-    np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
+    if save_edge is True:
+        np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
     results = {
         'n_bins': n_bins,
         'bin_edges': bin_edges,
@@ -1917,20 +1921,20 @@ def sum_rule_all_histdd(
     print("\n" + sim_name + " is analyzing...")
     # dict of bin edges:
     bin_edges = {
-        'rEdge': {
+        'xEdge': {
             'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
-            'lmin': 0,
+            'lmin': -0.5 * sim_info.dcyl,
+            'lmax': 0.5 * sim_info.dcyl
+            },
+        'yEdge': {
+            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.dcyl,
             'lmax': 0.5 * sim_info.dcyl
             },
         'zEdge': {
             'bin_size':  0.5 * min(sim_info.dmon, sim_info.dcrowd),
             'lmin': -0.5 * sim_info.lcyl,
             'lmax': 0.5 * sim_info.lcyl
-            },
-        'thetaEdge': {
-            'bin_size':  np.pi / 36,
-            'lmin': -1 * np.pi,
-            'lmax': np.pi
             }
         }
     # LJ time difference between two consecutive frames:
@@ -1957,23 +1961,42 @@ def sum_rule_all_histdd(
     crds = cell.select_atoms('resid 0')  # crowders
     bug = cell.select_atoms('resid 1')  # the chain or monomers
     # bin edges and histograms in different directions:
-    # radial (shown by rho) direction of the cylindrical coordinate system
-    rho_hist_crd_info = fixedsize_bins(
+    # x direction of the cylindrical coordinate system
+    x_hist_crd_info = fixedsize_bins(
         sim_name,
-        'rEdgeCrd',
-        bin_edges['rEdge']['bin_size'],
-        bin_edges['rEdge']['lmin'],
-        bin_edges['rEdge']['lmax'],
-        bin_type='nonnegative',
+        'xEdgeCrd',
+        bin_edges['xEdge']['bin_size'],
+        bin_edges['xEdge']['lmin'],
+        bin_edges['xEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
-    rho_hist_mon_info = fixedsize_bins(
+    x_hist_mon_info = fixedsize_bins(
         sim_name,
-        'rEdgeMon',
-        bin_edges['rEdge']['bin_size'],
-        bin_edges['rEdge']['lmin'],
-        bin_edges['rEdge']['lmax'],
-        bin_type='nonnegative',
+        'xEdgeMon',
+        bin_edges['xEdge']['bin_size'],
+        bin_edges['xEdge']['lmin'],
+        bin_edges['xEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # y direction of the cylindrical coordinate system
+    y_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'yEdgeCrd',
+        bin_edges['yEdge']['bin_size'],
+        bin_edges['yEdge']['lmin'],
+        bin_edges['yEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    y_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'yEdgeMon',
+        bin_edges['yEdge']['bin_size'],
+        bin_edges['yEdge']['lmin'],
+        bin_edges['yEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cylindrical coordinate system
@@ -1995,150 +2018,121 @@ def sum_rule_all_histdd(
         bin_type='ordinary',
         save_to=save_to
     )
-    # theta of the cylindrical coordinate system
-    theta_hist_crd_info = fixedsize_bins(
-        sim_name,
-        'thetaEdgeCrd',
-        bin_edges['thetaEdge']['bin_size'],
-        bin_edges['thetaEdge']['lmin'],
-        bin_edges['thetaEdge']['lmax'],
-        bin_type='periodic',
-        save_to=save_to
-    )  # in radians
-    theta_hist_mon_info = fixedsize_bins(
-        sim_name,
-        'thetaEdgeMon',
-        bin_edges['thetaEdge']['bin_size'],
-        bin_edges['thetaEdge']['lmin'],
-        bin_edges['thetaEdge']['lmax'],
-        bin_type='periodic',
-        save_to=save_to
-    )  # in radians
     # check if any of the histograms are empty or not.
     if any([
-            rho_hist_mon_info['collector'].any() != 0,
-            rho_hist_crd_info['collector'].any() != 0,
+            x_hist_mon_info['collector'].any() != 0,
+            x_hist_crd_info['collector'].any() != 0,
+            x_hist_mon_info['collector_std'].any() != 0,
+            x_hist_crd_info['collector_std'].any() != 0,
+            y_hist_mon_info['collector'].any() != 0,
+            y_hist_crd_info['collector'].any() != 0,
+            y_hist_mon_info['collector_std'].any() != 0,
+            y_hist_crd_info['collector_std'].any() != 0,
             z_hist_mon_info['collector'].any() != 0,
             z_hist_crd_info['collector'].any() != 0,
-            theta_hist_mon_info['collector'].any() != 0,
-            theta_hist_crd_info['collector'].any() != 0,
-            rho_hist_mon_info['collector_std'].any() != 0,
-            rho_hist_crd_info['collector_std'].any() != 0,
             z_hist_mon_info['collector_std'].any() != 0,
             z_hist_crd_info['collector_std'].any() != 0,
-            theta_hist_mon_info['collector_std'].any() != 0,
-            theta_hist_crd_info['collector_std'].any() != 0
             ]):
         raise ValueError(
             "One of the histogram collectors is not empty!")
+    # 3D hist
+    hist_crd_info_3d = {
+        'n_bins': (
+            x_hist_crd_info['n_bins'],
+            y_hist_crd_info['n_bins'],
+            z_hist_crd_info['n_bins']
+            ),
+        'bin_edges': np.array([
+            x_hist_crd_info['bin_edges'],
+            y_hist_crd_info['bin_edges'],
+            z_hist_crd_info['bin_edges']
+            ]),
+        'collector': np.array([
+            x_hist_crd_info['collector'],
+            y_hist_crd_info['collector'],
+            z_hist_crd_info['collector']
+            ]),
+        'collector_std': np.array([
+            x_hist_crd_info['collector_std'],
+            y_hist_crd_info['collector_std'],
+            z_hist_crd_info['collector_std']
+            ]),
+        'range': (
+            x_hist_crd_info['range'],
+            y_hist_crd_info['range'],
+            z_hist_crd_info['range']
+        )
+    }
+    hist_mon_info_3d = {
+        'n_bins': (
+            x_hist_mon_info['n_bins'],
+            y_hist_mon_info['n_bins'],
+            z_hist_mon_info['n_bins']
+            ),
+        'bin_edges': np.array([
+            x_hist_mon_info['bin_edges'],
+            y_hist_mon_info['bin_edges'],
+            z_hist_mon_info['bin_edges']
+            ]),
+        'collector': np.array([
+            x_hist_mon_info['collector'],
+            y_hist_mon_info['collector'],
+            z_hist_mon_info['collector']
+            ]),
+        'collector_std': np.array([
+            x_hist_mon_info['collector_std'],
+            y_hist_mon_info['collector_std'],
+            z_hist_mon_info['collector_std']
+            ]),
+        'range': (
+            x_hist_mon_info['range'],
+            y_hist_mon_info['range'],
+            z_hist_mon_info['range']
+        )
+    }
     for _ in sliced_trj:
-        # histogram in r direction
+        # histogram in 3 dimesional space
         # crds
-        pos_rho = np.linalg.norm(crds.positions[:, :2], axis=1)
-        pos_z = crds.positions[:, 2]
-        frame_hist, _ = np.histogram2d(
-            pos_rho,
-            bins=(rho_hist_crd_info['bin_edges'], z_hist_crd_info['bin_edges']),
-            range=rho_hist_crd_info['range']
+        frame_hist, _ = np.histogramdd(
+            crds.positions,
+            bins=(x_hist_crd_info['bin_edges'],
+                  y_hist_crd_info['bin_edges'],
+                  z_hist_crd_info['bin_edges']),
+            range=(x_hist_crd_info['range'],
+                   y_hist_crd_info['range'],
+                   z_hist_crd_info['range'])
         )
-        z_hist_crd_info['collector'] += frame_hist
-        z_hist_crd_info['collector_std'] += np.square(frame_hist)
-        rho_hist_crd_info['collector'] += frame_hist
-        rho_hist_crd_info['collector_std'] += np.square(frame_hist)
+        hist_crd_info_3d['collector'] += frame_hist
+        hist_crd_info_3d['collector_std'] += np.square(frame_hist)
         # bug
-        pos_rho = np.linalg.norm(bug.positions[:, :2], axis=1)
-        frame_hist, _ = np.histogram(
-            pos_rho,
-            bins=rho_hist_mon_info['bin_edges'],
-            range=rho_hist_mon_info['range']
+        frame_hist, _ = np.histogramdd(
+            bug.positions,
+            bins=(x_hist_mon_info['bin_edges'],
+                  y_hist_mon_info['bin_edges'],
+                  z_hist_mon_info['bin_edges']),
+            range=(x_hist_mon_info['range'],
+                   y_hist_mon_info['range'],
+                   z_hist_mon_info['range'])
         )
-        rho_hist_mon_info['collector'] += frame_hist
-        rho_hist_mon_info['collector_std'] += np.square(frame_hist)
-        # histogram in z direction
-        # crds
-        # bug
-        pos_z = bug.positions[:, 2]
-        frame_hist, _ = np.histogram(
-            pos_z,
-            bins=z_hist_mon_info['bin_edges'],
-            range=z_hist_mon_info['range']
-        )
-        z_hist_mon_info['collector'] += frame_hist
-        z_hist_mon_info['collector_std'] += np.square(frame_hist)
-        # histogram in theta
-        # crds
-        theta = np.arctan2(
-            crds.positions[:, 1],
-            crds.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
-        frame_hist, _ = np.histogram(
-            theta,
-            bins=theta_hist_crd_info['bin_edges'],
-            range=theta_hist_crd_info['range']
-        )
-        theta_hist_crd_info['collector'] += frame_hist
-        theta_hist_crd_info['collector_std'] += np.square(frame_hist)
-        # bug
-        theta = np.arctan2(
-            bug.positions[:, 1],
-            bug.positions[:, 0]
-        )  # in radian
-        frame_hist, _ = np.histogram(
-            theta,
-            bins=theta_hist_mon_info['bin_edges'],
-            range=theta_hist_mon_info['range']
-        )
-        theta_hist_mon_info['collector'] += frame_hist
-        theta_hist_mon_info['collector_std'] += np.square(frame_hist)
+        hist_mon_info_3d['collector'] += frame_hist
+        hist_mon_info_3d['collector_std'] += np.square(frame_hist)
 
     lastname = 'Crd'
     np.save(
-        save_to + sim_name + '-rHist' + lastname + '.npy',
-        rho_hist_crd_info['collector']
+        save_to + sim_name + '-3dHist' + lastname + '.npy',
+        hist_crd_info_3d['collector']
     )
     np.save(
-        save_to + sim_name + '-rHistStd' + lastname + '.npy',
-        rho_hist_crd_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-zHist' + lastname + '.npy',
-        z_hist_crd_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-zHistStd' + lastname + '.npy',
-        z_hist_crd_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHist' + lastname + '.npy',
-        theta_hist_crd_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHistStd' + lastname + '.npy',
-        theta_hist_crd_info['collector_std']
+        save_to + sim_name + '-3dHistStd' + lastname + '.npy',
+        hist_crd_info_3d['collector_std']
     )
     lastname = 'Mon'
     np.save(
-        save_to + sim_name + '-rHist' + lastname + '.npy',
-        rho_hist_mon_info['collector']
+        save_to + sim_name + '-3dHist' + lastname + '.npy',
+        hist_mon_info_3d['collector']
     )
     np.save(
-        save_to + sim_name + '-rHistStd' + lastname + '.npy',
-        rho_hist_mon_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-zHist' + lastname + '.npy',
-        z_hist_mon_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-zHistStd' + lastname + '.npy',
-        z_hist_mon_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHist' + lastname + '.npy',
-        theta_hist_mon_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHistStd' + lastname + '.npy',
-        theta_hist_mon_info['collector_std']
+        save_to + sim_name + '-3dHistStd' + lastname + '.npy',
+        hist_mon_info_3d['collector_std']
     )
     print('done.')
