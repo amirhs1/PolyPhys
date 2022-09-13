@@ -43,7 +43,7 @@ def set_facet_grid_legend(
         text.set_text(label)
 
 
-def color_patcher(colors):
+def color_patcher(colors, alpha=1.0):
     """return color patches for legend.
 
     Parameters:
@@ -54,7 +54,7 @@ def color_patcher(colors):
     """
     color_patches = []
     for kwargs in mpl.cycler(color=colors):
-        color_patches.append(mpl.patches.Patch(**kwargs))
+        color_patches.append(mpl.patches.Patch(**kwargs, alpha=alpha))
     return color_patches
 
 
