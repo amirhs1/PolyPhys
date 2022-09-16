@@ -873,6 +873,7 @@ def sum_rule_bug(
         n_frames = cell.trajectory.n_frames
     # selecting atom groups
     bug = cell.select_atoms('resid 1')  # the polymer
+    trans_size_t = []
     fsd_t = np.empty(0)
     rflory_t = np.empty(0)
     gyr_t = np.empty(0)
@@ -881,6 +882,7 @@ def sum_rule_bug(
     shape_parameter_t = np.empty(0)
     for _ in sliced_trj:
         # various measures of chain size
+        trans_size_t.append(transverse_size(bug))
         fsd_t = np.append(fsd_t, np.array([fsd(bug.positions)]), axis=0)
         gyr_t = np.append(gyr_t, np.array([bug.radius_of_gyration()]), axis=0)
         rms = end_to_end(bug.positions)
@@ -901,7 +903,7 @@ def sum_rule_bug(
             np.array([bug.shape_parameter(pbc=False)]),
             axis=0
         )
-
+    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
     np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
     np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
     np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
@@ -1556,12 +1558,13 @@ def trans_fuci_bug(
     bug = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
     # defining collectors
     # -bug:
-    fsd_t = np.empty(0)
-    rflory_t = np.empty(0)
-    gyr_t = np.empty(0)
+    trans_size_t = []
+    fsd_t = []
+    rflory_t = []
+    gyr_t = []
     principal_axes_t = np.empty([0, 3, 3])
-    asphericity_t = np.empty(0)
-    shape_parameter_t = np.empty(0)
+    asphericity_t = []
+    shape_parameter_t = []
     # -foci:
     foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
     dir_contacts_t = np.empty(
@@ -1572,26 +1575,18 @@ def trans_fuci_bug(
     for _ in sliced_trj:
         # bug:
         # -various measures of chain size
-        fsd_t = np.append(fsd_t, np.array([fsd(bug.positions)]), axis=0)
-        gyr_t = np.append(gyr_t, np.array([bug.radius_of_gyration()]), axis=0)
-        rms = end_to_end(bug.positions)
-        rflory_t = np.append(rflory_t, np.array([rms]), axis=0)
+        trans_size_t.append(transverse_size(bug))
+        fsd_t.append(fsd(bug.positions))
+        gyr_t.append(bug.radius_of_gyration())
+        rflory_t.append(end_to_end(bug.positions))
         # -shape parameters:
-        asphericity_t = np.append(
-            asphericity_t,
-            np.array([bug.asphericity(pbc=False, unwrap=False)]),
-            axis=0
-        )
+        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
         principal_axes_t = np.append(
             principal_axes_t,
             np.array([bug.principal_axes(pbc=False)]),
             axis=0
         )
-        shape_parameter_t = np.append(
-            shape_parameter_t,
-            np.array([bug.shape_parameter(pbc=False)]),
-            axis=0
-        )
+        shape_parameter_t.append(bug.shape_parameter(pbc=False))
         # foci:
         dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
         foci_pair_dist = np.triu(dist_sq_mat, 1)
@@ -1612,12 +1607,15 @@ def trans_fuci_bug(
         clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
     # Saving collectors to memory
     # -bug
-    np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
-    np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
-    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
-    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
+    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
+    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
+    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
+    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
+    np.save(save_to + sim_name + '-asphericityTMon.npy',
+            np.array(asphericity_t)
+            )
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
     # -foci
     np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
     np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
