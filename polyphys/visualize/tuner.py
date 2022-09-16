@@ -242,6 +242,19 @@ def change_legend_name(line, legend_names, **kwargs):
         new_name.set_text(line)
 
 
+def color_handler(attributes, colors, **kwargs):
+    """creates handles for matplotlib legend functions based on the
+    line styles. It recieves a list  physical attributes and a list of
+    linestyles (the two list have the same size) and returns a list of
+    handles.
+    """
+    handles = []
+    for attr, color in zip(attributes, colors):
+        mline = mpl.patches.Patch(label=attr, color=color, **kwargs)
+        handles.append(mline)
+    return handles
+
+
 def ls_handler(attributes, linstyles, color='black', lw=2, **kwargs):
     """creates handles for matplotlib legend functions based on the
     line styles. It recieves a list  physical attributes and a list of
@@ -285,7 +298,12 @@ def marker_handler(attributes, markers, color='black', **kwargs):
 
 
 def marker_ls_handler(
-    attributes, linestyles, markers, color='black', **kwargs):
+    attributes,
+    linestyles,
+    markers,
+    color='black',
+    **kwargs
+) -> list:
     """creates handles for matplotlib legend functions based on the markers and
     linestyles. It recieves a list  physical attributes and a list of
     linewidths (the two list have the same size) and returns a list of
