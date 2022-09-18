@@ -217,7 +217,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from ..manage.typer import EnsembleT
+from ..manage.typer import EdgeT, EnsembleT
 from ..analyze.clusters import whole_distMat_foci
 
 from .utilizer import round_up_nearest
@@ -386,12 +386,18 @@ def save_parent(
         Type of the particle group.
     ext: {'csv', 'npy'}, defualt 'csv'
     """
-    invalid_keyword(ext, ['csv', 'npy'])
+    invalid_keyword(ext, ['csv', 'npy', 'dict_of_npy'])
     filename = "-".join([name, group, property_])
     if ext == 'csv':
         data.to_csv(save_to + filename + ".csv", index=False)
-    else:
+    elif ext == 'npy':
         np.save(save_to + filename + ".npy", data)
+    else:  # dict of np.ndarray
+        for prop_, prop_data in data.items():
+            _, prop_measure = prop_.split('-')
+            np.save(
+               save_to + filename + "-" + prop_measure + ".npy", prop_data
+               )
 
 
 def database_path(
@@ -507,9 +513,9 @@ def whole_from_segment(
         Relation between segments and wholes:
 
         'hisotgram'
-            Child is a histogram-like 'segment' file, so the children of
-            a parent should be sum horizontally (along "axis=0" in
-            numpy's lingo,).
+            Child is a N-dimensional histogram-like 'segment' file, so the
+            children of a parent should be sum along "axis=0" in numpy's lingo.
+            In 2-dimensional space, a histogram has a (x_nbins, y_nbins) shape.
 
         'tseries'
             Child is a time-series-like 'segment' file, so the children of
@@ -590,8 +596,7 @@ def whole_from_file(
     geometry: str,
     group: str,
 ) -> Dict[str, np.ndarray]:
-    """
-    Loads `whole` numpy arrays for a given physical property of the
+    """Loads `whole` numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their pathes
     `whole_paths`.
 
@@ -692,6 +697,15 @@ def whole_from_distMat_t(
     return wholes_freqs, wholes_rdfs, wholes_tseries
 
 
+def ens_from_bin_edge(
+    ens: EdgeT,
+) -> Tuple[str, pd.DataFrame]:
+    """
+    Not written yet
+    """
+    return (ens[0], np.unique(list(ens[1].values())))
+
+
 def ens_from_vec(
     ens: EnsembleT,
 ) -> Tuple[str, pd.DataFrame]:
@@ -713,12 +727,12 @@ def ens_from_vec(
     return (ens[0], pd.DataFrame.from_dict(ens[1], orient='columns'))
 
 
-def ens_from_mat(
+def ens_from_mat_T(
     ens: EnsembleT,
 ) -> Tuple[str, np.ndarray]:
     """
     creates an "ensemble" dataframe from a dictionary of wholes where
-    each "whole" is a numpy vector or 1D array.
+    each "whole" is a numpy 2D array.
 
     Parameters
     ----------
@@ -793,7 +807,7 @@ def ensemble(
     are either the values of that elements over time (a "timeseries"
     "dataframe" `whole_type`) or a meausrement on values; for instance, the
     measurement can be histograming/counting. For such a "histogram"
-    "dataframe" `whole_type`, there is an edditional header that is
+    "dataframe" `whole_type`, there is an additional header that is
     "bin_center". The length of "timeseries" "whole" "dataframe" is equal to
     the number of time frames while the length of "histogram" "whole"
     "dataframe" is equal to the number of bins.
@@ -833,6 +847,8 @@ def ensemble(
         'dataframe':
             A pandas dataframe; for example, the pair distances of a group of
             monomers.
+        'bin_edge':
+            A bin_edge 1D array.
 
     edge_wholes:  dict of np.ndarray, default None
         A dictionary in which keys are 'whole' names and values are bin_edges.
@@ -854,7 +870,7 @@ def ensemble(
     # Averging over ensembles with simailar initial paramters
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     invalid_keyword(group, ['bug', 'all'])
-    invalid_keyword(whole_type, ['vector', 'matrix', 'dataframe'])
+    invalid_keyword(whole_type, ['vector', 'matrix', 'dataframe', 'bin_edge'])
     ensembles = {}
     bin_centers = {}
     for w_name, w_arr in wholes.items():
@@ -882,12 +898,16 @@ def ensemble(
             "ext": "csv"
         },
         "matrix": {
-            "mapping_func": ens_from_mat,
+            "mapping_func": ens_from_mat_T,
             "ext": "npy"
         },
         "dataframe": {
             "mapping_func": ens_from_df,
             "ext": "csv"
+        },
+        "bin_edge": {
+            "mapping_func": ens_from_bin_edge,
+            "ext": "npy"
         }
     }
     ensembles = dict(
@@ -948,6 +968,17 @@ def ens_avg_from_df(
     ens_data[ens_property + '-sem'] = ens_data[wholes].sem(axis=1, ddof=1)
     ens_data.drop(columns=wholes, inplace=True)
     return ens_data
+
+
+def ens_avg_from_bin_edge(
+    ens_property: str,
+    ens_data: np.ndarray,
+    exclude: List[str]
+) -> Dict[str, np.ndarray]:
+    """
+    Not written yet
+    """
+    return np.unique(ens_data)
 
 
 def ens_avg_from_ndarray(
@@ -1043,7 +1074,7 @@ def ensemble_avg(
     # Averging over ensembles with simailar initial paramters
     invalid_keyword(group, ['bug', 'all'])
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
-    invalid_keyword(ens_type, ['dataframe', 'ndarray'])
+    invalid_keyword(ens_type, ['dataframe', 'ndarray', 'bin_edge'])
     ens_avgs = {}
     ens_types = {
         "dataframe": {
@@ -1052,6 +1083,10 @@ def ensemble_avg(
         },
         "ndarray": {
             "ens_avg_func": ens_avg_from_ndarray,
+            "ext": "dict_of_npy"
+        },
+        "bin_edge": {
+            "ens_avg_func": ens_avg_from_bin_edge,
             "ext": "npy"
         }
     }
