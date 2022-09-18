@@ -17,6 +17,8 @@ TimeSeriesT = Tuple[PropertyT, SpeciesT, GroupT]
 NonScalarHistT = Tuple[PropertyT, SpeciesT, GroupT, AxisT]
 NonScalarMatT = Tuple[PropertyT, SpeciesT, GroupT]
 HistogramT = Tuple[DirectionT, SpeciesT, GroupT]
+EdgeT = Union[Tuple[DirectionT, SpeciesT, GroupT],
+              Tuple[DirectionT, GroupT]]
 
 TransFociParser = Type[TransFoci]
 SumRuleParser = Type[SumRule]

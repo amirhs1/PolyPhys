@@ -28,7 +28,8 @@ from ..manage.typer import (
     TimeSeriesT,
     HistogramT,
     NonScalarHistT,
-    NonScalarMatT
+    NonScalarMatT,
+    EdgeT
 )
 
 
@@ -73,10 +74,10 @@ def time_series(
         Absolute or relative path of the directories to which wholes,
         ensembles, and ensemble-aveages are saved.
     tseries_properties: list of HistogramT
-        A list of tumple where each tumple has three members: the property
+        A list of tuples where each tuple has three members: the property
         name, species, and group of a 'time-series' property.
     acf_tseries_properties: list of HistogramT
-        A list of tumple where each tumple has three members: the property
+        A list of tuples where each tuple has three members: the property
         name, species, and group of a 'time-series' property. For
         `cls_tseries_properties`, the the auto correlation function (AFC) is
         also computed.
@@ -215,6 +216,8 @@ def histograms(
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
     hist_properties: Optional[List[HistogramT]] = None,
+    hist2d_properties: Optional[List[HistogramT]] = None,
+    hist2d_edges: Optional[List[EdgeT]] = None,
     rho_phi_hist_properties: Optional[List[HistogramT]] = None
 ) -> None:
     """Runs various statistical analyses on `observations` of
@@ -246,13 +249,19 @@ def histograms(
         Absolute or relative path of the directories to which wholes,
         ensembles, and ensemble-aveages are saved.
     rho_phi_hist_properties: list of HistogramT, default None
-        A list of tumple where each tumple has four members: the direction,
+        A list of tuples where each tuple has four members: the direction,
         direction long name, species, and group of a 'histogram' property.
         These histogram properties are then used to calculate the local
         number density and volume fraction.
     hist_properties: list of HistogramT default None
-        A list of tumple where each tumple has three members: the direction,
+        A list of tuples where each tuple has three members: the direction,
         species, and group of a 'histogram' property.
+    hist2d_properties: list of HistogramT default None
+        A list of tuples where each tuple has three members: the direction,
+        species, and group of a 'histogram' property.
+    hist2d_edges: list of HistogramT default None
+        A list of tuples where each tuple has three members: the direction,
+        species, and group of a 'edge' property.
     """
     invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
@@ -281,7 +290,7 @@ def histograms(
                     save_to=save_to_whole
                 )
                 edge_wholes = whole_from_segment(
-                    direction + 'Hist' + species,
+                    direction + 'Edge' + species,
                     edges,
                     parser,
                     geometry,
@@ -389,7 +398,7 @@ def histograms(
                     save_to=save_to_whole
                 )
                 edge_wholes = whole_from_segment(
-                    direction + 'Hist' + species,
+                    direction + 'Edge' + species,
                     edges,
                     parser,
                     geometry,
@@ -426,6 +435,86 @@ def histograms(
                 geometry,
                 group,
                 'dataframe',
+                save_to=save_to_ens_avg
+            )
+    if hist2d_properties is not None:
+        for direction, species, group in hist2d_properties:
+            hists = sort_filenames(
+                observations,
+                fmts=[direction + 'Hist' + species + '.npy']
+            )
+            if is_segment is True:
+                wholes = whole_from_segment(
+                    direction + 'Hist' + species,
+                    hists,
+                    parser,
+                    geometry,
+                    group,
+                    'histogram',
+                    save_to=save_to_whole
+                )
+            else:
+                wholes = whole_from_file(
+                    hists,
+                    parser,
+                    geometry,
+                    group
+                )
+            ensembles = ensemble(
+                direction + 'Hist' + species,
+                wholes,
+                parser,
+                geometry,
+                group,
+                'matrix',
+                save_to=save_to_ens
+            )
+            _ = ensemble_avg(
+                direction + 'Hist' + species,
+                ensembles,
+                geometry,
+                group,
+                'ndarray',
+                save_to=save_to_ens_avg
+            )
+    if hist2d_edges is not None:
+        for direction, group in hist2d_edges:
+            edges = sort_filenames(
+                observations,
+                fmts=[direction + 'Edge' + '.npy']
+            )
+            if is_segment is True:
+                edge_wholes = whole_from_segment(
+                    direction + 'Edge',
+                    edges,
+                    parser,
+                    geometry,
+                    group,
+                    'bin_edge',
+                    save_to=save_to_whole
+                )
+            else:
+                edge_wholes = whole_from_file(
+                    edges,
+                    parser,
+                    geometry,
+                    group
+                )
+            ensembles = ensemble(
+                direction + 'Edge',
+                edge_wholes,
+                parser,
+                geometry,
+                group,
+                'bin_edge',
+                save_to=save_to_ens
+            )
+            _ = ensemble_avg(
+                direction + 'Edge',
+                ensembles,
+                geometry,
+                group,
+                'bin_edge',
                 save_to=save_to_ens_avg
             )
 
@@ -684,7 +773,7 @@ def analyze_bug(
         the particletype, and the last one is `group` type. These physical
         properties are all of the time-series form.
     acf_tseries_properties: list of TimeSeriesT, default None
-        A list of tumple where each tumple has three members: the property
+        A list of tuples where each tuple has three members: the property
         name, species, and group of a 'time-series' property. For
         `cls_tseries_properties`, the the auto correlation function (AFC) is
         also computed.
@@ -836,6 +925,8 @@ def analyze_all(
     tseries_properties: Optional[List[TimeSeriesT]] = None,
     acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
     hist_properties: Optional[List[HistogramT]] = None,
+    hist2d_properties: Optional[List[HistogramT]] = None,
+    hist2d_edges: Optional[List[EdgeT]] = None,
     rho_phi_hist_properties: Optional[List[HistogramT]] = None,
     nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
     nonscalar_mat_t_properties: Optional[List[NonScalarMatT]] = None,
@@ -880,7 +971,7 @@ def analyze_all(
         the particletype, and the last one is `group` type. These physical
         properties are all of the time-series form.
     acf_tseries_properties: list of TimeSeriesT, default None
-        A list of tumple where each tumple has three members: the property
+        A list of tuples where each tuple has three members: the property
         name, species, and group of a 'time-series' property. For
         `cls_tseries_properties`, the the auto correlation function (AFC) is
         also computed.
@@ -889,6 +980,16 @@ def analyze_all(
         first string is the name of a physical property, the second one is
         the particletype, and the last one is `group` type. These physical
         properties are all of the histogram form.
+    hist2d_properties: list of HistogramT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the 2D-histogram form.
+    hist2d_edges: list of EdgeT, default None
+        A list of tuples in which each tuple has two string members. The
+        first string is the name of a physical property, and the second one is
+        `group` type. These physical properties are all of the histogram edge
+        form.
     rho_phi_hist_properties: list of HistogramT, default None
         A list of tuples in which each tuple has three string members. The
         first string is the name of a physical property, the second one is
@@ -961,6 +1062,24 @@ def analyze_all(
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             hist_properties=hist_properties,
+        )
+    if hist2d_properties is not None:
+        histograms(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            hist2d_properties=hist2d_properties,
+        )
+    if hist2d_edges is not None:
+        histograms(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            hist2d_edges=hist2d_edges,
         )
     if rho_phi_hist_properties is not None:
         histograms(
