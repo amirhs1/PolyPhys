@@ -916,6 +916,174 @@ def analyze_bug(
         )
 
 
+def analyze_bug_trans_size(
+    input_database: str,
+    hierarchy: str,
+    parser: Callable,
+    geometry: str,
+    is_segment: bool,
+    tseries_properties: Optional[List[TimeSeriesT]] = None,
+    acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
+    hist_properties: Optional[List[HistogramT]] = None,
+    rho_phi_hist_properties: Optional[List[HistogramT]] = None,
+    nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
+    nonscalar_mat_t_properties: Optional[List[NonScalarMatT]] = None,
+    nlags: int = 7000,
+    alpha: float = 0.05
+) -> None:
+    """read in the 'probe' observations of the 'group' particles based on the
+    `hierarchy` of directories and files from the `input_database` path to the
+    'probe' phase of a 'space' and creates the 'analysis' phase at that parent
+    directory of the 'probe' of that 'space', infers 'space' names from
+    `input_database` path and creates a 'space' directories at various stages
+    in the 'analysis' directory for both 'bug' and 'all' groups.
+
+    `tseries_properties`, `hists_properties`, `rho_phi_hists_properties` are
+    list of tuples in which each tuple has three string members. The first
+    string is the name of a physical property, the second one is the particle
+    type, and the last one is `group` type.
+
+    Parameters
+    ----------
+    input_database: str
+        Path to the input_database; a 'space' directory at a given 'phase'.
+    hierarchy: str
+        Hierarchy of the directories and files within the `input_database`;
+        for instance, "/N*/N*" means files that starts with "N" and are
+        located in directories starting with "N".
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
+    geometry : {'biaxial', 'slit', 'box'}
+        Shape of the simulation box.
+    is_segment: bool
+        Whether `observations` are 'segment' (True) or 'whole' (False)
+    nonscalar_properties: list of TimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of nonscalar form.
+    tseries_properties: list of TimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the time-series form.
+    acf_tseries_properties: list of TimeSeriesT, default None
+        A list of tuples where each tuple has three members: the property
+        name, species, and group of a 'time-series' property. For
+        `cls_tseries_properties`, the the auto correlation function (AFC) is
+        also computed.
+    hist_properties: list of HistogramT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the histogram form.
+    rho_phi_hist_properties: list of HistogramT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the histogram form; however, in contrast to
+        `hists_properties`, the local number denisty and volume fraction of
+        `rho_phi_hists_properties` are also calculated.
+    nonscalar_hist_t_properties: list of NonScalarTimeSeriesT, default None
+        A list of tuples in which each tuple has four string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, the third one is `group` type, and the last one
+        is the axis over which the. These physical
+        properties are all of nonscalar form.
+    nonscalar_mat_t_properties: list of NonScalarTimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of nonscalar form.
+    nlags: int, default 7000
+        Maximum lag in the auto correlation function (AFC).
+    alpha: float, default 0.05
+        If a number is given, the confidence intervals for the given level
+        are returned. For instance if alpha=.05, 95 % confidence intervals
+        are returned where the standard deviation is computed according to
+        Bartlett”s formula.
+    """
+    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    observations = glob(input_database + hierarchy)
+    if observations == []:
+        raise ValueError(
+            "File not found in "
+            f"'{input_database + hierarchy}'"
+            )
+    # 'bug' save_to paths:
+    save_to_ens = database_path(
+        input_database, 'analysis', stage='ens', group='bug'
+    )
+    save_to_ens_avg = database_path(
+        input_database, 'analysis', stage='ensAvg', group='bug'
+    )
+
+    if is_segment is True:
+        save_to_whole = database_path(
+            input_database, 'analysis', stage='wholeSim', group='bug'
+        )
+    else:
+        save_to_whole = None
+    # physical properties
+    if tseries_properties is not None:
+        time_series(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            tseries_properties=tseries_properties,
+        )
+    if acf_tseries_properties is not None:
+        time_series(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            acf_tseries_properties=acf_tseries_properties,
+            nlags=nlags,
+            alpha=alpha
+        )
+    if hist_properties is not None:
+        histograms(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            hist_properties=hist_properties,
+        )
+    if rho_phi_hist_properties is not None:
+        histograms(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            rho_phi_hist_properties=rho_phi_hist_properties,
+        )
+    if nonscalar_hist_t_properties is not None:
+        nonscalar_time_series(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            nonscalar_hist_t_properties=nonscalar_hist_t_properties,
+        )
+    if nonscalar_mat_t_properties is not None:
+        nonscalar_time_series(
+            observations,
+            parser,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            nonscalar_mat_t_properties=nonscalar_mat_t_properties,
+        )
+
+
 def analyze_all(
     input_database: str,
     hierarchy: str,
