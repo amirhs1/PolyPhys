@@ -525,7 +525,7 @@ def end_to_end(positions):
 
 
 def transverse_size(atomgroup: mda.AtomGroup) -> float:
-    """Measures the transverse size of a linear polymer, in the frame of
+    """Measures the mean transverse size of a linear polymer, in the frame of
     reference located at the polymer's center of geometry.
 
     Parameters
@@ -543,7 +543,7 @@ def transverse_size(atomgroup: mda.AtomGroup) -> float:
     transverse_pos = atomgroup.positions[:, :2]  # x,y not z
     transverse_pos = transverse_pos - np.mean(transverse_pos, axis=0)
     # times by 2, so we have the diameter not radius:
-    return 2 * max(np.linalg.norm(transverse_pos, axis=1))
+    return 2 * np.mean(np.linalg.norm(transverse_pos, axis=1))
 
 
 def max_distance(positions):
@@ -1484,7 +1484,7 @@ def sum_rule_bug_transverse_size(
     else:
         trans_size.run()
     radial_size = trans_size.results['timeseries']
-    np.save(save_to + sim_name + '-transSizeMon.npy', radial_size)
+    np.save(save_to + sim_name + '-transSizeTMon.npy', radial_size)
     print('done.')
 
 
@@ -1693,7 +1693,7 @@ def trans_fuci_bug_transverse_size(
     else:
         trans_size.run()
     radial_size = trans_size.results['timeseries']
-    np.save(save_to + sim_name + '-transSizeMon.npy', radial_size)
+    np.save(save_to + sim_name + '-transSizeTMon.npy', radial_size)
     print('done.')
 
 
