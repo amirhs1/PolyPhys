@@ -6,8 +6,9 @@
 # nohup ... &  command.
 report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
 touch "$report"
-for dir in N*/; do
-    echo "$dir"
+for dir in N*-bug-*/; do
+    sim=$(echo "$dir" | cut -d / -f 1)
+    echo "$sim"
     echo "${dir}" >> "${report}"
-    tar -cvkzf "${dir}.tar.gz" "${dir}"
+    tar -cvkzf "${sim}.tar.gz" "${dir}"
 done
