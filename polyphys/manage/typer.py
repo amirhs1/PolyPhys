@@ -1,9 +1,8 @@
-from .parser import TransFoci, SumRule
+from .parser import TransFoci, SumRule, TransFociCubic
 from typing import Type, Union, Tuple, Dict, NewType
 
 import numpy as np
 import pandas as pd
-
 
 PropertyT = NewType('PropertyT', str)
 SpeciesT = NewType('SpeciesT', str)
@@ -20,9 +19,10 @@ HistogramT = Tuple[DirectionT, SpeciesT, GroupT]
 EdgeT = Union[Tuple[DirectionT, SpeciesT, GroupT],
               Tuple[DirectionT, GroupT]]
 
+TransFociCubicParser = Type[TransFociCubic]
 TransFociParser = Type[TransFoci]
 SumRuleParser = Type[SumRule]
-PholyPhysParser = Union[TransFociParser, SumRuleParser]
+PolyPhysParser = Union[TransFociParser, SumRuleParser, TransFociCubicParser]
 
 EnsWholes = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
 EnsembleT = Tuple[EnsembleName, EnsWholes]

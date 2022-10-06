@@ -4,6 +4,7 @@ from MDAnalysis.analysis.base import AnalysisFromFunction
 import numpy as np
 import pandas as pd
 import os
+from polyphys.manage.typer import PolyPhysParser
 from polyphys.manage.parser import SumRule, TransFoci
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters
@@ -1493,6 +1494,7 @@ def trans_fuci_bug(
     trajectory: str,
     geometry: str,
     lineage: str,
+    parser: Optional[PolyPhysParser] = TransFoci,
     save_to: str = './',
     continuous: bool = False
 ) -> None:
@@ -1526,7 +1528,7 @@ def trans_fuci_bug(
             UserWarning
         )
     print("Setting the name of analyze file...")
-    sim_info = TransFoci(
+    sim_info = parser(
         trajectory,
         geometry,
         'bug',
@@ -1633,6 +1635,7 @@ def trans_fuci_bug_transverse_size(
     geometry: str,
     lineage: str,
     save_to: str = './',
+    parser: Optional[PolyPhysParser] = TransFoci,
     continuous: bool = False
 ) -> None:
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
@@ -1665,7 +1668,7 @@ def trans_fuci_bug_transverse_size(
             UserWarning
         )
     print("Setting the name of analyze file...")
-    sim_info = TransFoci(
+    sim_info = parser(
         trajectory,
         geometry,
         'bug',
@@ -1703,6 +1706,7 @@ def trans_foci_all(
     geometry: str,
     lineage: str,
     save_to: str = "./",
+    parser: Optional[PolyPhysParser] = TransFoci,
     continuous: Optional[bool] = False
 ) -> None:
     """Runs various analyses on a `lineage` simulation of an 'all' atom
@@ -1736,7 +1740,7 @@ def trans_foci_all(
             UserWarning
         )
     print("Setting the name of analyze file...")
-    sim_info = TransFoci(
+    sim_info = parser(
         trajectory,
         geometry,
         'all',
@@ -2744,6 +2748,7 @@ def trans_foci_all_histdd(
     geometry: str,
     lineage: str,
     save_to: str = "./",
+    parser: tran
     continuous: Optional[bool] = False
 ) -> None:
     """Runs various analyses on a `lineage` simulation of an 'all' atom
@@ -2775,7 +2780,7 @@ def trans_foci_all_histdd(
             "Please ensure the "
             f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...\n")
-    sim_info = TransFoci(
+    sim_info = parser(
         trajectory,
         geometry,
         'all',
