@@ -1,6 +1,6 @@
 #!/bin/bash
 # This part is different between different projects
-for dir in eps*.ring/; do
+for dir in ns*.ring/; do
     echo "$dir"
     cd "$dir" || exit
     name=${dir:0:-1}
@@ -16,4 +16,5 @@ for dir in eps*.ring/; do
     echo "report:"
     # Check the Pair info line with new pattern is in the file
     grep -n -E "Pair Coeffs" "${datafile}"
+    cd ..
 done
