@@ -1,11 +1,15 @@
 from glob import glob
 from polyphys.manage import organizer
 from polyphys.probe import prober
-from polyphys.manage.parser import TransFoci
+from polyphys.manage.parser import TransFoci, TransFociCubic
 
 
 # analyzig all files
-geometry = 'biaxial'
+geometry = 'cubic'
+parsers = {
+    'biaxial': TransFoci,
+    'cubic': TransFociCubic
+}
 group = 'all'
 topo_lineage = 'whole'
 lineage = 'segment'
@@ -26,7 +30,8 @@ for all_trj in all_trjs:
         all_trj,
         geometry=geometry,
         group=group,
-        lineage=topo_lineage
+        lineage=topo_lineage,
+        parser=parsers[geometry]
     )
     # all the frames in the last segment are probed:
     if trj_info.segment_id == max_segment_id:
@@ -41,5 +46,6 @@ for all_trj in all_trjs:
             geometry,
             lineage,
             save_to=save_to,
+            parser=parsers[geometry],
             continuous=True
         )

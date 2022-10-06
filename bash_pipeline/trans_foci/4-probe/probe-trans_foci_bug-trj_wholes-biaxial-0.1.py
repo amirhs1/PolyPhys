@@ -1,9 +1,14 @@
 from glob import glob
 from polyphys.manage import organizer
 from polyphys.probe import prober
+from polyphys.manage.parser import TransFoci, TransFociCubic
 
 # analyzing bug files.
 geometry = 'biaxial'
+parsers = {
+    'biaxial': TransFoci,
+    'cubic': TransFociCubic
+}
 group = 'bug'
 lineage = 'whole'
 save_to = './'
@@ -18,5 +23,6 @@ for (bug_topo, bug_trj) in bug_pairs:
         bug_trj,
         lineage,
         geometry,
+        parser=parsers[geometry],
         save_to=save_to
     )
