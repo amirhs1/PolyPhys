@@ -4,8 +4,8 @@ from MDAnalysis.analysis.base import AnalysisFromFunction
 import numpy as np
 import pandas as pd
 import os
-from polyphys.manage.typer import PolyPhysParser
-from polyphys.manage.parser import SumRule, TransFoci
+from polyphys.manage.typer import ParserT
+from polyphys.manage.parser import SumRule, TransFoci, TransFociCyl
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters
 import warnings
@@ -1489,12 +1489,147 @@ def sum_rule_bug_transverse_size(
     print('done.')
 
 
-def trans_fuci_bug(
+def trans_fuci_bug_cyl(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    the `geometry` of interest.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = TransFociCyl(
+        trajectory,
+        'bug',
+        lineage
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cluster_cutoff = sim_info.dmon_large + sim_info.dcrowd
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+        n_frames = cell.trajectory.n_frames - 1
+    else:
+        sliced_trj = cell.trajectory
+        n_frames = cell.trajectory.n_frames
+    # selecting atom groups
+    foci = cell.select_atoms('type 2')  # the foci
+    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
+    # defining collectors
+    # -bug:
+    trans_size_t = []
+    fsd_t = []
+    rflory_t = []
+    gyr_t = []
+    principal_axes_t = np.empty([0, 3, 3])
+    asphericity_t = []
+    shape_parameter_t = []
+    # -foci:
+    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
+    dir_contacts_t = np.empty(
+        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
+    )
+    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
+    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
+    for _ in sliced_trj:
+        # bug:
+        # -various measures of chain size
+        trans_size_t.append(transverse_size(bug))
+        fsd_t.append(fsd(bug.positions))
+        gyr_t.append(bug.radius_of_gyration())
+        rflory_t.append(end_to_end(bug.positions))
+        # -shape parameters:
+        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
+        principal_axes_t = np.append(
+            principal_axes_t,
+            np.array([bug.principal_axes(pbc=False)]),
+            axis=0
+        )
+        shape_parameter_t.append(bug.shape_parameter(pbc=False))
+        # foci:
+        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
+        foci_pair_dist = np.triu(dist_sq_mat, 1)
+        foci_pair_dist = np.sqrt(foci_pair_dist)
+        # keep atom ids on the diag
+        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
+        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
+        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
+        dir_contacts_t = np.append(
+            dir_contacts_t,
+            np.array([dir_contacts]),
+            axis=0
+        )
+        bonds_stat = clusters.count_bonds(dir_contacts)
+        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        contacts = clusters.contact_matrix(dir_contacts)
+        clusters_stat = clusters.count_clusters(contacts)
+        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+    # Saving collectors to memory
+    # -bug
+    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
+    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
+    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
+    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
+    np.save(save_to + sim_name + '-asphericityTMon.npy',
+            np.array(asphericity_t)
+            )
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    # -foci
+    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
+    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
+    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
+    # Simulation stamps:
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
+    print('done.')
+
+
+def trans_fuci_bug_cubic(
     topology: str,
     trajectory: str,
     geometry: str,
     lineage: str,
-    parser: Optional[PolyPhysParser] = TransFoci,
+    parser: Optional[ParserT] = TransFoci,
     save_to: str = './',
     continuous: bool = False
 ) -> None:
@@ -1635,7 +1770,7 @@ def trans_fuci_bug_transverse_size(
     geometry: str,
     lineage: str,
     save_to: str = './',
-    parser: Optional[PolyPhysParser] = TransFoci,
+    parser: Optional[ParserT] = TransFoci,
     continuous: bool = False
 ) -> None:
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
@@ -1706,7 +1841,7 @@ def trans_foci_all(
     geometry: str,
     lineage: str,
     save_to: str = "./",
-    parser: Optional[PolyPhysParser] = TransFoci,
+    parser: Optional[ParserT] = TransFoci,
     continuous: Optional[bool] = False
 ) -> None:
     """Runs various analyses on a `lineage` simulation of an 'all' atom
@@ -2748,7 +2883,6 @@ def trans_foci_all_histdd(
     geometry: str,
     lineage: str,
     save_to: str = "./",
-    parser: tran
     continuous: Optional[bool] = False
 ) -> None:
     """Runs various analyses on a `lineage` simulation of an 'all' atom
@@ -2780,7 +2914,7 @@ def trans_foci_all_histdd(
             "Please ensure the "
             f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...\n")
-    sim_info = parser(
+    sim_info = TransFoci(
         trajectory,
         geometry,
         'all',
