@@ -474,17 +474,17 @@ class SumRuleCyl(ParserBase):
     """
     _groups = ['bug', 'all']
     _lineage_attributes = {
-        'segment': {
+        'segment': {  # dcyl twice of r
             'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump', 'ensemble_id': 'ens', 'segment_id': 'j'
         },
-        'whole': {
+        'whole': {  # dcyl twice of r
             'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump', 'ensemble_id': 'ens'
         },
-        'ensemble_long': {
+        'ensemble_long': {  # dcyl twice of r
             'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump'
@@ -883,7 +883,7 @@ class TransFociCyl(ParserBase):
     """
     _groups = ['bug', 'all']
     _lineage_attributes = {
-        'segment': {
+        'segment': {  # dcyl twice of r
             'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
@@ -891,7 +891,7 @@ class TransFociCyl(ParserBase):
             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
             'ensemble_id': 'ens', 'segment_id': 'j'
             },
-        'whole': {
+        'whole': {  # dcyl twice of r
             'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
@@ -899,7 +899,7 @@ class TransFociCyl(ParserBase):
             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
             'ensemble_id': 'ens'
             },
-        'ensemble_long': {
+        'ensemble_long': {  # dcyl twice of r
             'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
@@ -907,7 +907,7 @@ class TransFociCyl(ParserBase):
             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'
             },
         'ensemble': {
-            'dcyl': 'r', 'dmon_large': 'al', 'nmon_large': 'nl',
+            'dcyl': 'D', 'dmon_large': 'al', 'nmon_large': 'nl',
             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc'
             },
         'space': {
@@ -1290,25 +1290,22 @@ class TransFociCubic(ParserBase):
     """
     _groups = ['bug', 'all']
     _lineage_attributes = {
-        'segment': {
-                'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-                'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-                'lcyl': 'lz',
-                'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-                'ensemble_id': 'ens', 'segment_id': 'j'
-            },
-        'whole': {
+        'segment': {  # lcube twice of l
             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+            'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+            'ensemble_id': 'ens', 'segment_id': 'j'
+            },
+        'whole': {  # lcube twice of l
+            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
+            'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
             'ensemble_id': 'ens'
             },
-        'ensemble_long': {
+        'ensemble_long': {  # lcube twice of l
             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'
+            'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'
             },
         'ensemble': {
             'dmon_large': 'al', 'nmon_large': 'nl',
@@ -1321,19 +1318,19 @@ class TransFociCubic(ParserBase):
     }
     _physical_attributes = {
         'segment': [
-            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'
+            'dmon_small', 'mmon_small', 'mcrowd', 'eps_others',
             'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
         ],
         'whole': [
-            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'
+            'dmon_small', 'mmon_small', 'mcrowd', 'eps_others',
             'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
         ],
         'ensemble_long': [
-            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'
+            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othesr',
             'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
         ],
-        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'],
-        'space': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_othes']
+        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_others'],
+        'space': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_others']
     }
 
     def __init__(
