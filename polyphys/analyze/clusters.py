@@ -9,7 +9,7 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 import numpy.linalg as npla
-from ..manage.typer import TransFociParser
+from ..manage.typer import TransFociT
 
 
 def apply_pbc(
@@ -543,7 +543,7 @@ def foci_histogram(
 
 def whole_distMat_foci(
     whole_path: str,
-    whole_info: TransFociParser
+    whole_info: TransFociT
 ) -> Tuple[
     Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]
 ]:
@@ -558,8 +558,8 @@ def whole_distMat_foci(
     ----------
     whole_path: str
         Path to a "whole" diatance matrix.
-    whole_info: PolyPhysParser
-        A PolyPhysParser object contains information about a "whole" simulation
+    whole_info: TransFociT
+        A TransFociT object contains information about a "whole" simulation
 
     Return
     ------

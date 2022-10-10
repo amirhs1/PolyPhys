@@ -217,7 +217,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from ..manage.typer import EdgeT, EnsembleT
+from ..manage.typer import EdgeT, EnsembleT, ParserT
 from ..analyze.clusters import whole_distMat_foci
 
 from .utilizer import round_up_nearest
@@ -485,7 +485,7 @@ def database_path(
 def whole_from_segment(
     property_: str,
     segments: List[Tuple[str]],
-    parser: Callable,
+    parser: ParserT,
     geometry: str,
     group: str,
     relation: str,
@@ -502,8 +502,8 @@ def whole_from_segment(
     children : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: Callable
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+    parser: ParserT
+        A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}
         Shape of the simulation box.
@@ -555,9 +555,9 @@ def whole_from_segment(
     for segment in segments:
         segment_info = parser(
             segment[0],
+            'segment',
             geometry,
-            group,
-            'segment'
+            group
         )
         whole_name = getattr(segment_info, 'whole')
         child_arr = np.load(segment[0])
@@ -592,7 +592,7 @@ def whole_from_segment(
 
 def whole_from_file(
     whole_paths: List[Tuple[str]],
-    parser: Callable,
+    parser: ParserT,
     geometry: str,
     group: str,
 ) -> Dict[str, np.ndarray]:
@@ -605,7 +605,7 @@ def whole_from_file(
     whole_paths : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}
@@ -630,9 +630,9 @@ def whole_from_file(
     for whole_path in whole_paths:
         whole_info = parser(
             whole_path[0],
+            'whole',
             geometry,
-            group,
-            'whole'
+            group
         )
         whole_name = getattr(whole_info, 'whole')
         wholes[whole_name] = np.load(whole_path[0])
@@ -641,7 +641,7 @@ def whole_from_file(
 
 def whole_from_distMat_t(
     whole_paths: List[Tuple[str]],
-    parser: Callable,
+    parser: ParserT,
     geometry: str,
     group: str,
 ) -> Dict[str, np.ndarray]:
@@ -655,7 +655,7 @@ def whole_from_distMat_t(
     whole_paths : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}
@@ -682,9 +682,9 @@ def whole_from_distMat_t(
     for whole_path in whole_paths:
         whole_info = parser(
             whole_path[0],
+            'whole',
             geometry,
-            group,
-            'whole'
+            group
         )
         whole_freqs, whole_rdfs, whole_tseries = whole_distMat_foci(
             whole_path[0],
@@ -791,7 +791,7 @@ def ens_from_df(
 def ensemble(
     property_: str,
     wholes: Dict[str, Union[np.ndarray, pd.DataFrame]],
-    parser: Callable,
+    parser: ParserT,
     geometry: str,
     group: str,
     whole_type: str,
@@ -828,7 +828,7 @@ def ensemble(
     wholes : dict of np.ndarray
         A dictionary in which keys are 'whole' names and values are data
         (1D array).
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}
@@ -876,9 +876,9 @@ def ensemble(
     for w_name, w_arr in wholes.items():
         w_info = parser(
             w_name,
+            'whole',
             geometry,
             group,
-            'whole',
             ispath=False
         )
         ens_name = getattr(w_info, 'ensemble_long')
@@ -1041,7 +1041,7 @@ def ensemble_avg(
         number of columns is equal to or more than the number of
         children of that parent. Columns' names are the children' names and
         the names given by `exclude`.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     geometry : {'biaxial', 'slit', 'box'}
@@ -1361,7 +1361,7 @@ def unique_property(
 def space_tseries(
     input_database: str,
     property_: str,
-    parser: Callable,
+    parser: ParserT,
     hierarchy: str,
     physical_attrs: List[str],
     group: str,
@@ -1393,7 +1393,7 @@ def space_tseries(
         Path to the the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     property_pattern: str
@@ -1429,10 +1429,9 @@ def space_tseries(
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = parser(
             ens_avg_csv[0],
-            geometry,
-            group,
             'ensemble_long',
-            ispath=True
+            geometry,
+            group
         )
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={'index': 'time'}, inplace=True)
@@ -1460,7 +1459,7 @@ def space_tseries(
 def space_hists(
     input_database: str,
     property_: str,
-    parser: Callable,
+    parser: ParserT,
     hierarchy: str,
     physical_attrs: List[str],
     group: str,
@@ -1500,7 +1499,7 @@ def space_hists(
         Path to the the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     hierarchy: str
@@ -1551,10 +1550,9 @@ def space_hists(
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = parser(
             ens_avg_csv[0],
-            geometry,
-            group,
             'ensemble_long',
-            ispath=True
+            geometry,
+            group
         )
         if bin_center is not None:
             ens_avg['bin_center'] = bin_center.tolist()
@@ -1767,7 +1765,7 @@ def normalize_r(
 def space_sum_rule(
     input_database: str,
     property_: str,
-    parser: Callable,
+    parser: ParserT,
     hierarchy: str,
     physical_attrs: List[str],
     species: str,
@@ -1811,7 +1809,7 @@ def space_sum_rule(
         Path to the the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     hierarchy: str
@@ -1869,10 +1867,9 @@ def space_sum_rule(
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = parser(
             ens_avg_csv[0],
-            geometry,
-            group,
             'ensemble_long',
-            ispath=True
+            geometry,
+            group
         )
         if property_ == 'Phi':
             scaler = getattr(property_info, size_attr)

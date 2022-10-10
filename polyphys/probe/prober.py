@@ -1,11 +1,11 @@
-from typing import Callable, Optional, Tuple, Dict, Type
+from typing import Optional, Tuple, Dict
 import MDAnalysis as mda
 from MDAnalysis.analysis.base import AnalysisFromFunction
 import numpy as np
 import pandas as pd
 import os
 from polyphys.manage.typer import ParserT
-from polyphys.manage.parser import SumRule, TransFoci, TransFociCyl
+from polyphys.manage.parser import SumRuleCyl, TransFociCyl, TransFociCubic
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters
 import warnings
@@ -15,7 +15,8 @@ def log_stat(
     logpath: str,
     save_to: str = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Parses a LAMMPS log file loacted at the `logpath` to extract the
+    """
+    Parses a LAMMPS log file loacted at the `logpath` to extract the
     performance information about a simulation in a given project.
 
     Parameters
@@ -137,13 +138,14 @@ def log_stat(
 
 def thermo_multi(
     logpath: str,
-    parser: Callable,
-    geometry,
-    group,
-    lineage,
+    parser: ParserT,
+    geometry: str,
+    group: str,
+    lineage: str,
     save_to: str = None
 ) -> pd.DataFrame:
-    """Parses a LAMMPS `log` file written with "multi" thermo style to extract
+    """
+    Parses a LAMMPS `log` file written with "multi" thermo style to extract
     the thermodynamic data about a simulation.
 
     The thermodyanmic information can be related to multiple "run" commands in
@@ -249,7 +251,8 @@ def thermo_one_and_custom(
     logpath: str,
     save_to: str = None
 ) -> pd.DataFrame:
-    """Parses a LAMMPS `log` file written with "one" or "custom" thermo styles
+    """
+    Parses a LAMMPS `log` file written with "one" or "custom" thermo styles
     to extractthe thermodynamic data about a simulation.
 
     The thermodyanmic information can be related to multiple "run" commands in
@@ -309,13 +312,14 @@ def thermo_one_and_custom(
 
 def thermo_one(
     logpath: str,
-    parser: Callable,
-    geometry,
-    group,
-    lineage,
+    parser: ParserT,
+    geometry: str,
+    group: str,
+    lineage: str,
     save_to: str = None
 ) -> pd.DataFrame:
-    """Parses a LAMMPS `log` file written with "one" or "custom" thermo styles
+    """
+    Parses a LAMMPS `log` file written with "one" or "custom" thermo styles
     to extractthe thermodynamic data about a simulation.
 
     The thermodyanmic information can be related to multiple "run" commands in
@@ -394,11 +398,12 @@ def thermo_one(
 
 def stamps_report_with_measures(
     report_name: str,
-    sim_info: Type[SumRule],
+    sim_info: ParserT,
     n_frames: int,
     measures: Dict[str, float],
 ) -> None:
-    """Writes a summary of stamps (properties and attributes) of a simulation
+    """
+    Writes a summary of stamps (properties and attributes) of a simulation
     to file.
 
     `stamps_report` generates a dataset called `report_name` of the
@@ -410,7 +415,7 @@ def stamps_report_with_measures(
     ----------
     report_name: str
         Name of the report.
-    sim_info: SumRule object
+    sim_info: ParserT
         A SumRule object that contains information about the name, parents,
         and physical attributes of a simulation.
     n_frames: int
@@ -440,8 +445,13 @@ def stamps_report_with_measures(
         report.write(f"{n_frames}")
 
 
-def stamps_report(report_name, sim_info, n_frames):
-    """Writes a summary of stamps (properties and attributes) of a simulation
+def stamps_report(
+    report_name: str,
+    sim_info: ParserT,
+    n_frames: int
+) -> None:
+    """
+    Writes a summary of stamps (properties and attributes) of a simulation
     to file.
 
     `stamps_report` generates a dataset called `report_name` of the
@@ -453,7 +463,7 @@ def stamps_report(report_name, sim_info, n_frames):
     ----------
     report_name: str
         Name of the report.
-    sim_info: SumRule object
+    sim_info: ParserT
         A SumRule object that contains information about the name, parents,
         and physical attributes of a simulation.
     n_frames: int
@@ -476,8 +486,9 @@ def stamps_report(report_name, sim_info, n_frames):
         report.write(f"{n_frames}")
 
 
-def simple_stats(property_name, array):
-    """Measures the mean, standard deviation, variance, and standard error
+def simple_stats(property_name, array) -> dict:
+    """
+    Measures the mean, standard deviation, variance, and standard error
     of the mean (sem) for an array.
 
     Parameters
@@ -501,8 +512,9 @@ def simple_stats(property_name, array):
     return stat
 
 
-def end_to_end(positions):
-    """Measures the end-to-end distance of a linear polymer, in the frame of
+def end_to_end(positions) -> np.floating:
+    """
+    Measures the end-to-end distance of a linear polymer, in the frame of
     reference located at the polymer's center of geometry.
 
     `positions` is sorted by atom id, so the end-to-end distance is simply
@@ -525,8 +537,9 @@ def end_to_end(positions):
     return np.linalg.norm(positions)
 
 
-def transverse_size(atomgroup: mda.AtomGroup) -> float:
-    """Measures the mean transverse size of a linear polymer, in the frame of
+def transverse_size(atomgroup: mda.AtomGroup) -> np.floating:
+    """
+    Measures the mean transverse size of a linear polymer, in the frame of
     reference located at the polymer's center of geometry.
 
     Parameters
@@ -547,8 +560,9 @@ def transverse_size(atomgroup: mda.AtomGroup) -> float:
     return 2 * np.mean(np.linalg.norm(transverse_pos, axis=1))
 
 
-def max_distance(positions):
-    """Measures the maximum distance in each of the three Cartesian direction,
+def max_distance(positions: np.ndarray) -> np.NDArray:
+    """
+    Measures the maximum distance in each of the three Cartesian direction,
     in the frame of reference located at the polymer's center of geometry.
 
     The maximum distance is computed by subtracting the max and min of all
@@ -575,9 +589,10 @@ def max_distance(positions):
 
 def fsd(
     positions: np.ndarray,
-    axis=2
+    axis: int = 2
 ) -> np.ndarray:
-    """Calculates the average size/diameter of a polymer confined in a
+    """
+    Calculates the average size/diameter of a polymer confined in a
     cylindrical geometry based on the farthermost distance concept.
 
     fsd stands for Feret's statistical diameter: other names are the mean
@@ -611,8 +626,16 @@ def fsd(
     return positions
 
 
-def bin_create(sim_name, edge_name, bin_size, lmin, lmax, save_to):
-    """Generates arrays of bins and histograms
+def bin_create(
+    sim_name: str,
+    edge_name: str,
+    bin_size: float,
+    lmin: float,
+    lmax: float,
+    save_to: str
+) -> tuple[np.NDArray[np.floating], np.NDArray[np.int16]]:
+    """
+    Generates arrays of bins and histograms
 
     Parameters
     ----------
@@ -653,7 +676,8 @@ def fixedsize_bins(
     save_edge: Optional[bool] = True,
     save_to: Optional[str] = None,
 ) -> dict:
-    """Generates arrays of bins and histograms, ensuring that the `bin_size`
+    """
+    Generates arrays of bins and histograms, ensuring that the `bin_size`
     guaranteed. To achieve this, it extend the `lmin` and `lmax` limits.
 
     To-do List
@@ -781,7 +805,8 @@ def fixedsize_bins(
 
 
 def frame_2d_hist(positions: np.ndarray, hist_info: dict) -> np.ndarray:
-    """Calculate the histogram of `positions` along r direction.
+    """
+    Calculate the histogram of `positions` along r direction.
 
     Parameters
     ----------
@@ -803,15 +828,51 @@ def frame_2d_hist(positions: np.ndarray, hist_info: dict) -> np.ndarray:
     return frame_hist
 
 
-def sum_rule_bug(
+def write_hists(
+    hist_infos: Dict[str, Dict[str, dict]],
+    sim_name: str,
+    save_to: str,
+    std: bool = False
+) -> None:
+    """
+    Writes histogram per species per direction to file.
+
+    Parameters
+    ----------
+    hist_infos : Dict[str, Dict[str, dict]]
+        A dict of dicts that contains the information about direction, species,
+         and histgrams.
+    sim_nae: str
+        The name of simulation file to which the `hist_infos` belongs.
+    save_to: str
+        The absolute/relative path of a directory to which outputs are saved.
+    std : bool, default False
+        _description_, by default False
+    """
+    for dir_ in hist_infos.keys():
+        for species, hist in hist_infos[dir_].items():
+            np.save(
+                save_to + sim_name + '-' + dir_ + species + '.npy',
+                hist['collector']
+            )
+            if std is True:
+                np.save(
+                    save_to + sim_name + '-' + dir_ + 'Std' + species + '.npy',
+                    hist['collector_std']
+                )
+        # end of loop
+    # end of loop
+
+
+def sum_rule_bug_cyl(
     topology: str,
     trajectory: str,
-    geometry: str,
     lineage: str,
     save_to: str = './',
     continuous: bool = False
 ) -> None:
-    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    """
+    Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
     Note
@@ -828,8 +889,6 @@ def sum_rule_bug(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
     lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str, default './'
@@ -847,11 +906,11 @@ def sum_rule_bug(
             "Please ensure the "
             f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...")
-    sim_info = SumRule(
+    sim_info = SumRuleCyl(
         trajectory,
-        geometry,
+        lineage,
+        'cylindrical',
         'bug',
-        lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -917,15 +976,15 @@ def sum_rule_bug(
     print('done.')
 
 
-def sum_rule_bug_flory_hist(
+def sum_rule_bug_cyl_flory_hist(
     topology: str,
     trajectory: str,
-    geometry: str,
     lineage: str,
     save_to: str = './',
     continuous: bool = False
 ) -> None:
-    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    """
+    Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
     Note
@@ -942,8 +1001,6 @@ def sum_rule_bug_flory_hist(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
     lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str, default './'
@@ -961,11 +1018,11 @@ def sum_rule_bug_flory_hist(
             "Please ensure the "
             f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...")
-    sim_info = SumRule(
+    sim_info = SumRuleCyl(
         trajectory,
-        geometry,
-        'bug',
-        lineage
+        lineage,
+        'cylindrical',
+        'bug'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -1069,14 +1126,14 @@ def sum_rule_bug_flory_hist(
 
 
 # noinspection PyUnresolvedReferences
-def sum_rule_bug_rmsd(
+def sum_rule_bug_cyl_rmsd(
     topology: str,
     trajectory: str,
-    geometry: str,
     lineage: str,
     save_to: str = './'
 ) -> None:
-    """Computes the rmsd of a 'segment simulation of a 'bug' atom group in the
+    """
+    Computes the rmsd of a 'segment simulation of a 'bug' atom group in the
     `geometry` of interest, and then saves the output to the `save_to`
     directory.
 
@@ -1096,11 +1153,11 @@ def sum_rule_bug_rmsd(
     save_to: str, default './'
         The absolute/relative path of a directory to which output is saved.
     """
-    sim_info = SumRule(
+    sim_info = SumRuleCyl(
         trajectory,
-        geometry,
-        'bug',
-        lineage
+        lineage,
+        'cylindrical',
+        'bug'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print(f"Doing RMSD analysis on {sim_name} ...\n")
@@ -1131,17 +1188,18 @@ def sum_rule_bug_rmsd(
         select='resid 1'
     ).run()
     np.save(save_to + sim_name + '-rmsdMatrixMon.npy', matrix.dist_matrix)
+    print('done.')
 
 
-def sum_rule_all(
+def sum_rule_all_cyl_hist1d(
     topology: str,
     trajectory: str,
-    geometry: str,
     lineage: str,
     save_to: str = "./",
     continuous: Optional[bool] = False
 ) -> None:
-    """Runs various analyses on a `lineage` simulation of an 'all' atom
+    """
+    Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
 
@@ -1151,8 +1209,6 @@ def sum_rule_all(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
     lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str
@@ -1170,11 +1226,11 @@ def sum_rule_all(
             "Please ensure the "
             f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...\n")
-    sim_info = SumRule(
+    sim_info = SumRuleCyl(
         trajectory,
-        geometry,
-        'all',
-        lineage
+        lineage,
+        'cylindrical',
+        'all'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -1221,7 +1277,7 @@ def sum_rule_all(
     bug = cell.select_atoms('resid 1')  # the chain or monomers
     # bin edges and histograms in different directions:
     # radial direction of the cylindrical coordinate system
-    rho_hist_crd_info = fixedsize_bins(
+    r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
         bin_edges['rEdge']['bin_size'],
@@ -1230,7 +1286,7 @@ def sum_rule_all(
         bin_type='nonnegative',
         save_to=save_to
     )
-    rho_hist_mon_info = fixedsize_bins(
+    r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
         bin_edges['rEdge']['bin_size'],
@@ -1279,14 +1335,14 @@ def sum_rule_all(
     )  # in radians
     # check if any of the histograms are empty or not.
     if any([
-            rho_hist_mon_info['collector'].any() != 0,
-            rho_hist_crd_info['collector'].any() != 0,
+            r_hist_mon_info['collector'].any() != 0,
+            r_hist_crd_info['collector'].any() != 0,
             z_hist_mon_info['collector'].any() != 0,
             z_hist_crd_info['collector'].any() != 0,
             theta_hist_mon_info['collector'].any() != 0,
             theta_hist_crd_info['collector'].any() != 0,
-            rho_hist_mon_info['collector_std'].any() != 0,
-            rho_hist_crd_info['collector_std'].any() != 0,
+            r_hist_mon_info['collector_std'].any() != 0,
+            r_hist_crd_info['collector_std'].any() != 0,
             z_hist_mon_info['collector_std'].any() != 0,
             z_hist_crd_info['collector_std'].any() != 0,
             theta_hist_mon_info['collector_std'].any() != 0,
@@ -1297,23 +1353,23 @@ def sum_rule_all(
     for _ in sliced_trj:
         # histogram in r direction
         # crds
-        pos_rho = np.linalg.norm(crds.positions[:, :2], axis=1)
+        pos_r = np.linalg.norm(crds.positions[:, :2], axis=1)
         frame_hist, _ = np.histogram(
-            pos_rho,
-            bins=rho_hist_crd_info['bin_edges'],
-            range=rho_hist_crd_info['range']
+            pos_r,
+            bins=r_hist_crd_info['bin_edges'],
+            range=r_hist_crd_info['range']
         )
-        rho_hist_crd_info['collector'] += frame_hist
-        rho_hist_crd_info['collector_std'] += np.square(frame_hist)
+        r_hist_crd_info['collector'] += frame_hist
+        r_hist_crd_info['collector_std'] += np.square(frame_hist)
         # bug
-        pos_rho = np.linalg.norm(bug.positions[:, :2], axis=1)
+        pos_r = np.linalg.norm(bug.positions[:, :2], axis=1)
         frame_hist, _ = np.histogram(
-            pos_rho,
-            bins=rho_hist_mon_info['bin_edges'],
-            range=rho_hist_mon_info['range']
+            pos_r,
+            bins=r_hist_mon_info['bin_edges'],
+            range=r_hist_mon_info['range']
         )
-        rho_hist_mon_info['collector'] += frame_hist
-        rho_hist_mon_info['collector_std'] += np.square(frame_hist)
+        r_hist_mon_info['collector'] += frame_hist
+        r_hist_mon_info['collector_std'] += np.square(frame_hist)
         # histogram in z direction
         # crds
         pos_z = crds.positions[:, 2]
@@ -1358,1214 +1414,28 @@ def sum_rule_all(
         )
         theta_hist_mon_info['collector'] += frame_hist
         theta_hist_mon_info['collector_std'] += np.square(frame_hist)
-
-    lastname = 'Crd'
-    np.save(
-        save_to + sim_name + '-rHist' + lastname + '.npy',
-        rho_hist_crd_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-rHistStd' + lastname + '.npy',
-        rho_hist_crd_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-zHist' + lastname + '.npy',
-        z_hist_crd_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-zHistStd' + lastname + '.npy',
-        z_hist_crd_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHist' + lastname + '.npy',
-        theta_hist_crd_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHistStd' + lastname + '.npy',
-        theta_hist_crd_info['collector_std']
-    )
-    lastname = 'Mon'
-    np.save(
-        save_to + sim_name + '-rHist' + lastname + '.npy',
-        rho_hist_mon_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-rHistStd' + lastname + '.npy',
-        rho_hist_mon_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-zHist' + lastname + '.npy',
-        z_hist_mon_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-zHistStd' + lastname + '.npy',
-        z_hist_mon_info['collector_std']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHist' + lastname + '.npy',
-        theta_hist_mon_info['collector']
-    )
-    np.save(
-        save_to + sim_name + '-thetaHistStd' + lastname + '.npy',
-        theta_hist_mon_info['collector_std']
-    )
-    print('done.')
-
-
-def sum_rule_bug_transverse_size(
-    topology: str,
-    trajectory: str,
-    geometry: str,
-    lineage: str,
-    save_to: str = './',
-    continuous: bool = False
-) -> None:
-    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
-    the `geometry` of interest.
-
-    Note
-    ----
-    The probability of the end-to-end distance or gyration radius or any other
-    chain/polymer-level property can later be computed from applying histogram
-    functions to the time-series of the property, thus they are not measured
-    directyl from the trajectories and "sum_rule_bug_flory_hist" function can
-    be deleted.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str, default './'
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory
-        segments or not.
-    """
-    if (lineage == 'segment') & (continuous is False):
-        print(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.")
-    print("Setting the name of analyze file...")
-    sim_info = SumRule(
-        trajectory,
-        geometry,
-        'bug',
-        lineage
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon * np.sqrt(sim_info.mmon * sim_info.eps_others) \
-        # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt)
-    # selecting atom groups
-    bug = cell.select_atoms('resid 1')  # the polymer
-    #  selecting atom groups
-    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and big mons
-    trans_size = AnalysisFromFunction(transverse_size, cell.trajectory, bug)
-    #  slicing trajectory based the continuous condition
-    if continuous:
-        trans_size.run(stop=-1)
-    else:
-        trans_size.run()
-    radial_size = trans_size.results['timeseries']
-    np.save(save_to + sim_name + '-transSizeTMon.npy', radial_size)
-    print('done.')
-
-
-def trans_fuci_bug_cyl(
-    topology: str,
-    trajectory: str,
-    lineage: str,
-    save_to: str = './',
-    continuous: bool = False
-) -> None:
-    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
-    the `geometry` of interest.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str, default './'
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory
-        segments or not.
-    """
-    if (lineage == 'segment') & (continuous is False):
-        warnings.warn(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.",
-            UserWarning
-        )
-    print("Setting the name of analyze file...")
-    sim_info = TransFociCyl(
-        trajectory,
-        'bug',
-        lineage
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon_small * np.sqrt(
-        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cluster_cutoff = sim_info.dmon_large + sim_info.dcrowd
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt
-        )
-    # slicing trajectory based the continuous condition
-    if continuous:
-        sliced_trj = cell.trajectory[0: -1]
-        n_frames = cell.trajectory.n_frames - 1
-    else:
-        sliced_trj = cell.trajectory
-        n_frames = cell.trajectory.n_frames
-    # selecting atom groups
-    foci = cell.select_atoms('type 2')  # the foci
-    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
-    # defining collectors
-    # -bug:
-    trans_size_t = []
-    fsd_t = []
-    rflory_t = []
-    gyr_t = []
-    principal_axes_t = np.empty([0, 3, 3])
-    asphericity_t = []
-    shape_parameter_t = []
-    # -foci:
-    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
-    dir_contacts_t = np.empty(
-        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
-    )
-    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
-    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
-    for _ in sliced_trj:
-        # bug:
-        # -various measures of chain size
-        trans_size_t.append(transverse_size(bug))
-        fsd_t.append(fsd(bug.positions))
-        gyr_t.append(bug.radius_of_gyration())
-        rflory_t.append(end_to_end(bug.positions))
-        # -shape parameters:
-        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
-        principal_axes_t = np.append(
-            principal_axes_t,
-            np.array([bug.principal_axes(pbc=False)]),
-            axis=0
-        )
-        shape_parameter_t.append(bug.shape_parameter(pbc=False))
-        # foci:
-        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
-        foci_pair_dist = np.triu(dist_sq_mat, 1)
-        foci_pair_dist = np.sqrt(foci_pair_dist)
-        # keep atom ids on the diag
-        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
-        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
-        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
-        dir_contacts_t = np.append(
-            dir_contacts_t,
-            np.array([dir_contacts]),
-            axis=0
-        )
-        bonds_stat = clusters.count_bonds(dir_contacts)
-        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
-        contacts = clusters.contact_matrix(dir_contacts)
-        clusters_stat = clusters.count_clusters(contacts)
-        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
-    # Saving collectors to memory
-    # -bug
-    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
-    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
-    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
-    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
-    np.save(save_to + sim_name + '-asphericityTMon.npy',
-            np.array(asphericity_t)
-            )
-    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
-    # -foci
-    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
-    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
-    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
-    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
-    # Simulation stamps:
-    outfile = save_to + sim_name + "-stamps.csv"
-    stamps_report(outfile, sim_info, n_frames)
-    print('done.')
-
-
-def trans_fuci_bug_cubic(
-    topology: str,
-    trajectory: str,
-    geometry: str,
-    lineage: str,
-    parser: Optional[ParserT] = TransFoci,
-    save_to: str = './',
-    continuous: bool = False
-) -> None:
-    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
-    the `geometry` of interest.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str, default './'
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory
-        segments or not.
-    """
-    if (lineage == 'segment') & (continuous is False):
-        warnings.warn(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.",
-            UserWarning
-        )
-    print("Setting the name of analyze file...")
-    sim_info = parser(
-        trajectory,
-        geometry,
-        'bug',
-        lineage
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon_small * np.sqrt(
-        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cluster_cutoff = sim_info.dmon_large + sim_info.dcrowd
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt
-        )
-    # slicing trajectory based the continuous condition
-    if continuous:
-        sliced_trj = cell.trajectory[0: -1]
-        n_frames = cell.trajectory.n_frames - 1
-    else:
-        sliced_trj = cell.trajectory
-        n_frames = cell.trajectory.n_frames
-    # selecting atom groups
-    foci = cell.select_atoms('type 2')  # the foci
-    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
-    # defining collectors
-    # -bug:
-    trans_size_t = []
-    fsd_t = []
-    rflory_t = []
-    gyr_t = []
-    principal_axes_t = np.empty([0, 3, 3])
-    asphericity_t = []
-    shape_parameter_t = []
-    # -foci:
-    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
-    dir_contacts_t = np.empty(
-        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
-    )
-    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
-    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
-    for _ in sliced_trj:
-        # bug:
-        # -various measures of chain size
-        trans_size_t.append(transverse_size(bug))
-        fsd_t.append(fsd(bug.positions))
-        gyr_t.append(bug.radius_of_gyration())
-        rflory_t.append(end_to_end(bug.positions))
-        # -shape parameters:
-        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
-        principal_axes_t = np.append(
-            principal_axes_t,
-            np.array([bug.principal_axes(pbc=False)]),
-            axis=0
-        )
-        shape_parameter_t.append(bug.shape_parameter(pbc=False))
-        # foci:
-        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
-        foci_pair_dist = np.triu(dist_sq_mat, 1)
-        foci_pair_dist = np.sqrt(foci_pair_dist)
-        # keep atom ids on the diag
-        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
-        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
-        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
-        dir_contacts_t = np.append(
-            dir_contacts_t,
-            np.array([dir_contacts]),
-            axis=0
-        )
-        bonds_stat = clusters.count_bonds(dir_contacts)
-        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
-        contacts = clusters.contact_matrix(dir_contacts)
-        clusters_stat = clusters.count_clusters(contacts)
-        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
-    # Saving collectors to memory
-    # -bug
-    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
-    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
-    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
-    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
-    np.save(save_to + sim_name + '-asphericityTMon.npy',
-            np.array(asphericity_t)
-            )
-    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
-    # -foci
-    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
-    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
-    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
-    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
-    # Simulation stamps:
-    outfile = save_to + sim_name + "-stamps.csv"
-    stamps_report(outfile, sim_info, n_frames)
-    print('done.')
-
-
-def trans_fuci_bug_transverse_size(
-    topology: str,
-    trajectory: str,
-    geometry: str,
-    lineage: str,
-    save_to: str = './',
-    parser: Optional[ParserT] = TransFoci,
-    continuous: bool = False
-) -> None:
-    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
-    the `geometry` of interest.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str, default './'
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory
-        segments or not.
-    """
-    if (lineage == 'segment') & (continuous is False):
-        warnings.warn(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.",
-            UserWarning
-        )
-    print("Setting the name of analyze file...")
-    sim_info = parser(
-        trajectory,
-        geometry,
-        'bug',
-        lineage
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon_small * np.sqrt(
-        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt
-        )
-    #  selecting atom groups
-    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and big mons
-    trans_size = AnalysisFromFunction(transverse_size, cell.trajectory, bug)
-    #  slicing trajectory based the continuous condition
-    if continuous:
-        trans_size.run(stop=-1)
-    else:
-        trans_size.run()
-    radial_size = trans_size.results['timeseries']
-    np.save(save_to + sim_name + '-transSizeTMon.npy', radial_size)
-    print('done.')
-
-
-def trans_foci_all(
-    topology: str,
-    trajectory: str,
-    geometry: str,
-    lineage: str,
-    save_to: str = "./",
-    parser: Optional[ParserT] = TransFoci,
-    continuous: Optional[bool] = False
-) -> None:
-    """Runs various analyses on a `lineage` simulation of an 'all' atom
-    group in the `geometry` of interest, and saves a variety of
-    outputs (mostly in the csv format) to the `save_to` directory.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory
-        segments or not.
-    """
-    if (lineage == 'segment') & (continuous is False):
-        warnings.warn(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.",
-            UserWarning
-        )
-    print("Setting the name of analyze file...")
-    sim_info = parser(
-        trajectory,
-        geometry,
-        'all',
-        lineage
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # dict of bin edges:
-    bin_edges = {
-        'rEdge': {
-            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
-            'lmin': 0,
-            'lmax': 0.5 * sim_info.dcyl
-            },
-        'zEdge': {
-            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
-            'lmin': -0.5 * sim_info.lcyl,
-            'lmax': 0.5 * sim_info.lcyl
-            },
-        'thetaEdge': {
-            'bin_size':  np.pi / 36,
-            'lmin': -1 * np.pi,
-            'lmax': np.pi
-            }
-        }
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon_small * np.sqrt(
-        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
-    lj_nstep = sim_info.adump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cell = mda.Universe(
-        topology, trajectory,
-        topology_format='DATA',
-        format='LAMMPSDUMP',
-        lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z",
-        dt=sim_real_dt
-        )
-    # slicing trajectory based the continuous condition
-    if continuous:
-        sliced_trj = cell.trajectory[0: -1]
-    else:
-        sliced_trj = cell.trajectory
-    # selecting atom groups
-    dna = cell.select_atoms('type 1')  # small monomers
-    foci = cell.select_atoms('type 2')  # large monomers
-    bug = cell.select_atoms('resid 1')  # the polymer
-    crds = cell.select_atoms('resid 0')  # crowders
-    # bin edges and histograms in different directions:
-    # radial direction of the cylindrical coordinate system
-    rho_hist_crd_info = fixedsize_bins(
-        sim_name,
-        'rEdgeCrd',
-        bin_edges['rEdge']['bin_size'],
-        bin_edges['rEdge']['lmin'],
-        bin_edges['rEdge']['lmax'],
-        bin_type='nonnegative',
-        save_to=save_to
-    )
-    rho_hist_foci_info = fixedsize_bins(
-        sim_name,
-        'rEdgeFoci',
-        bin_edges['rEdge']['bin_size'],
-        bin_edges['rEdge']['lmin'],
-        bin_edges['rEdge']['lmax'],
-        bin_type='nonnegative',
-        save_to=save_to
-    )
-    rho_hist_dna_info = fixedsize_bins(
-        sim_name,
-        'rEdgeDna',
-        bin_edges['rEdge']['bin_size'],
-        bin_edges['rEdge']['lmin'],
-        bin_edges['rEdge']['lmax'],
-        bin_type='nonnegative',
-        save_to=save_to
-    )
-    rho_hist_mon_info = fixedsize_bins(
-        sim_name,
-        'rEdgeMon',
-        bin_edges['rEdge']['bin_size'],
-        bin_edges['rEdge']['lmin'],
-        bin_edges['rEdge']['lmax'],
-        bin_type='nonnegative',
-        save_to=save_to
-    )
-    # z direction of the cylindrical coordinate system
-    z_hist_crd_info = fixedsize_bins(
-        sim_name,
-        'zEdgeCrd',
-        bin_edges['zEdge']['bin_size'],
-        bin_edges['zEdge']['lmin'],
-        bin_edges['zEdge']['lmax'],
-        bin_type='ordinary',
-        save_to=save_to
-    )
-    z_hist_foci_info = fixedsize_bins(
-        sim_name,
-        'zEdgeFoci',
-        bin_edges['zEdge']['bin_size'],
-        bin_edges['zEdge']['lmin'],
-        bin_edges['zEdge']['lmax'],
-        bin_type='ordinary',
-        save_to=save_to
-    )
-    z_hist_dna_info = fixedsize_bins(
-        sim_name,
-        'zEdgeDna',
-        bin_edges['zEdge']['bin_size'],
-        bin_edges['zEdge']['lmin'],
-        bin_edges['zEdge']['lmax'],
-        bin_type='ordinary',
-        save_to=save_to
-    )
-    z_hist_mon_info = fixedsize_bins(
-        sim_name,
-        'zEdgeMon',
-        bin_edges['zEdge']['bin_size'],
-        bin_edges['zEdge']['lmin'],
-        bin_edges['zEdge']['lmax'],
-        bin_type='ordinary',
-        save_to=save_to
-    )
-    # theta of the cylindrical coordinate system
-    theta_hist_crd_info = fixedsize_bins(
-        sim_name,
-        'thetaEdgeCrd',
-        bin_edges['thetaEdge']['bin_size'],
-        bin_edges['thetaEdge']['lmin'],
-        bin_edges['thetaEdge']['lmax'],
-        bin_type='periodic',
-        save_to=save_to
-        )  # in radians
-    theta_hist_foci_info = fixedsize_bins(
-        sim_name,
-        'thetaEdgeFoci',
-        bin_edges['thetaEdge']['bin_size'],
-        bin_edges['thetaEdge']['lmin'],
-        bin_edges['thetaEdge']['lmax'],
-        bin_type='periodic',
-        save_to=save_to
-        )  # in radians
-    theta_hist_dna_info = fixedsize_bins(
-        sim_name,
-        'thetaEdgeDna',
-        bin_edges['thetaEdge']['bin_size'],
-        bin_edges['thetaEdge']['lmin'],
-        bin_edges['thetaEdge']['lmax'],
-        bin_type='periodic',
-        save_to=save_to
-        )  # in radians
-    theta_hist_mon_info = fixedsize_bins(
-        sim_name,
-        'thetaEdgeMon',
-        bin_edges['thetaEdge']['bin_size'],
-        bin_edges['thetaEdge']['lmin'],
-        bin_edges['thetaEdge']['lmax'],
-        bin_type='periodic',
-        save_to=save_to
-        )  # in radians
-    # check if any of the histograms are empty or not.
-    if any([
-            rho_hist_crd_info['collector'].any() != 0,
-            rho_hist_foci_info['collector'].any() != 0,
-            rho_hist_dna_info['collector'].any() != 0,
-            rho_hist_mon_info['collector'].any() != 0,
-            z_hist_crd_info['collector'].any() != 0,
-            z_hist_foci_info['collector'].any() != 0,
-            z_hist_dna_info['collector'].any() != 0,
-            z_hist_mon_info['collector'].any() != 0,
-            theta_hist_crd_info['collector'].any() != 0,
-            theta_hist_foci_info['collector'].any() != 0,
-            theta_hist_dna_info['collector'].any() != 0,
-            theta_hist_mon_info['collector'].any() != 0,
-            rho_hist_crd_info['collector_std'].any() != 0,
-            rho_hist_foci_info['collector_std'].any() != 0,
-            rho_hist_dna_info['collector_std'].any() != 0,
-            rho_hist_mon_info['collector_std'].any() != 0,
-            z_hist_crd_info['collector_std'].any() != 0,
-            z_hist_foci_info['collector_std'].any() != 0,
-            z_hist_dna_info['collector_std'].any() != 0,
-            z_hist_mon_info['collector_std'].any() != 0,
-            theta_hist_crd_info['collector_std'].any() != 0,
-            theta_hist_foci_info['collector_std'].any() != 0,
-            theta_hist_dna_info['collector_std'].any() != 0,
-            theta_hist_mon_info['collector_std'].any() != 0
-            ]):
-        raise ValueError(
-            "One of the histogram collectors is not empty!")
-    # bin edges and histograms in different directions:
-    # x direction of the cartesian coordinate system
-    x_hist_info = fixedsize_bins(
-        sim_name,
-        'xEdge',
-        bin_edges['xEdge']['bin_size'],
-        bin_edges['xEdge']['lmin'],
-        bin_edges['xEdge']['lmax'],
-        bin_type='ordinary',
-        save_to=save_to
-    )
-    # y direction of the cartesian coordinate system
-    y_hist_info = fixedsize_bins(
-        sim_name,
-        'yEdge',
-        bin_edges['yEdge']['bin_size'],
-        bin_edges['yEdge']['lmin'],
-        bin_edges['yEdge']['lmax'],
-        bin_type='ordinary',
-        save_to=save_to
-    )
-    # z direction of the cartesian coordinate system
-    z_hist_info = fixedsize_bins(
-        sim_name,
-        'zEdge',
-        bin_edges['zEdge']['bin_size'],
-        bin_edges['zEdge']['lmin'],
-        bin_edges['zEdge']['lmax'],
-        bin_type='ordinary',
-        save_to=save_to
-    )
-    # check if any of the histograms are empty or not.
-    if any([
-            x_hist_info['collector'].any() != 0,
-            x_hist_info['collector_std'].any() != 0,
-            y_hist_info['collector'].any() != 0,
-            y_hist_info['collector_std'].any() != 0,
-            z_hist_info['collector'].any() != 0,
-            z_hist_info['collector_std'].any() != 0,
-            ]):
-        raise ValueError(
-            "One of the histogram collectors is not empty!")
-    # 2D hists
-    # crd
-    # # xy
-    hist_crd_info_xy = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            y_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            y_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            y_hist_info['range']
-        ]
-    }
-    hist_crd_info_xy['collector'] = np.zeros(hist_crd_info_xy['n_bins'])
-    hist_crd_info_xy['collector'] *= 0
-    # # xz
-    hist_crd_info_xz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_crd_info_xz['collector'] = np.zeros(hist_crd_info_xz['n_bins'])
-    hist_crd_info_xz['collector'] *= 0
-    # # yz
-    hist_crd_info_yz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_crd_info_yz['collector'] = np.zeros(hist_crd_info_yz['n_bins'])
-    hist_crd_info_yz['collector'] *= 0
-    # mon
-    # # xy
-    hist_mon_info_xy = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            y_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            y_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            y_hist_info['range']
-        ]
-    }
-    hist_mon_info_xy['collector'] = np.zeros(hist_mon_info_xy['n_bins'])
-    hist_mon_info_xy['collector'] *= 0
-    # # xz
-    hist_mon_info_xz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_mon_info_xz['collector'] = np.zeros(hist_mon_info_xz['n_bins'])
-    hist_mon_info_xz['collector'] *= 0
-    # # yz
-    hist_mon_info_yz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_mon_info_yz['collector'] = np.zeros(hist_mon_info_yz['n_bins'])
-    hist_mon_info_yz['collector'] *= 0
-    # foci
-    # # xy
-    hist_foci_info_xy = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            y_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            y_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            y_hist_info['range']
-        ]
-    }
-    hist_foci_info_xy['collector'] = np.zeros(hist_foci_info_xy['n_bins'])
-    hist_foci_info_xy['collector'] *= 0
-    # # xz
-    hist_foci_info_xz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_foci_info_xz['collector'] = np.zeros(hist_foci_info_xz['n_bins'])
-    hist_foci_info_xz['collector'] *= 0
-    # # yz
-    hist_foci_info_yz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_foci_info_yz['collector'] = np.zeros(hist_foci_info_yz['n_bins'])
-    hist_foci_info_yz['collector'] *= 0
-    # dna
-    # # xy
-    hist_dna_info_xy = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            y_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            y_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            y_hist_info['range']
-        ]
-    }
-    hist_dna_info_xy['collector'] = np.zeros(hist_dna_info_xy['n_bins'])
-    hist_dna_info_xy['collector'] *= 0
-    # # xz
-    hist_dna_info_xz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_dna_info_xz['collector'] = np.zeros(hist_dna_info_xz['n_bins'])
-    hist_dna_info_xz['collector'] *= 0
-    # # yz
-    hist_dna_info_yz = {
-        'n_bins': (
-            x_hist_info['n_bins'],
-            z_hist_info['n_bins']
-        ),
-        'bin_edges': [
-            x_hist_info['bin_edges'],
-            z_hist_info['bin_edges']
-        ],
-        'range': [
-            x_hist_info['range'],
-            z_hist_info['range']
-        ]
-    }
-    hist_dna_info_yz['collector'] = np.zeros(hist_dna_info_yz['n_bins'])
-    hist_dna_info_yz['collector'] *= 0
-    for _ in sliced_trj:
-        # histogram in r direction
-        # crds
-        pos_rho = np.linalg.norm(crds.positions[:, :2], axis=1)
-        pos_hist = frame_2d_hist(pos_rho, rho_hist_crd_info)
-        rho_hist_crd_info['collector'] += pos_hist
-        rho_hist_crd_info['collector_std'] += np.square(pos_hist)
-        # foci
-        pos_rho = np.linalg.norm(foci.positions[:, :2], axis=1)
-        pos_hist = frame_2d_hist(pos_rho, rho_hist_foci_info)
-        rho_hist_foci_info['collector'] += pos_hist
-        rho_hist_foci_info['collector_std'] += np.square(pos_hist)
-        # dna
-        pos_rho = np.linalg.norm(dna.positions[:, :2], axis=1)
-        pos_hist = frame_2d_hist(pos_rho, rho_hist_dna_info)
-        rho_hist_dna_info['collector'] += pos_hist
-        rho_hist_dna_info['collector_std'] += np.square(pos_hist)
-        # bug
-        pos_rho = np.linalg.norm(bug.positions[:, :2], axis=1)
-        pos_hist = frame_2d_hist(pos_rho, rho_hist_mon_info)
-        rho_hist_mon_info['collector'] += pos_hist
-        rho_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # histogram in z direction
-        # crds
-        pos_z = crds.positions[:, 2]
-        pos_hist = frame_2d_hist(pos_z, z_hist_crd_info)
-        z_hist_crd_info['collector'] += pos_hist
-        z_hist_crd_info['collector_std'] += np.square(pos_hist)
-        # foci
-        pos_z = foci.positions[:, 2]
-        pos_hist = frame_2d_hist(pos_z, z_hist_foci_info)
-        z_hist_foci_info['collector'] += pos_hist
-        z_hist_foci_info['collector_std'] += np.square(pos_hist)
-        # dna
-        pos_z = dna.positions[:, 2]
-        pos_hist = frame_2d_hist(pos_z, z_hist_dna_info)
-        z_hist_dna_info['collector'] += pos_hist
-        z_hist_dna_info['collector_std'] += np.square(pos_hist)
-        # bug
-        pos_z = bug.positions[:, 2]
-        pos_hist = frame_2d_hist(pos_z, z_hist_mon_info)
-        z_hist_mon_info['collector'] += pos_hist
-        z_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # histogram in theta
-        # crds
-        theta = np.arctan2(
-            crds.positions[:, 1],
-            crds.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
-        pos_hist = frame_2d_hist(theta, theta_hist_crd_info)
-        theta_hist_crd_info['collector'] += pos_hist
-        theta_hist_crd_info['collector_std'] += np.square(pos_hist)
-        # foci
-        theta = np.arctan2(
-            foci.positions[:, 1],
-            foci.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
-        pos_hist = frame_2d_hist(theta, theta_hist_foci_info)
-        theta_hist_foci_info['collector'] += pos_hist
-        theta_hist_foci_info['collector_std'] += np.square(pos_hist)
-        # dna
-        theta = np.arctan2(
-            dna.positions[:, 1],
-            dna.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
-        pos_hist = frame_2d_hist(theta, theta_hist_dna_info)
-        theta_hist_dna_info['collector'] += pos_hist
-        theta_hist_dna_info['collector_std'] += np.square(pos_hist)
-        # bug
-        theta = np.arctan2(
-            bug.positions[:, 1],
-            bug.positions[:, 0]
-            )  # in radians betwene [-np.pi, np.pi]
-        pos_hist = frame_2d_hist(theta, theta_hist_mon_info)
-        theta_hist_mon_info['collector'] += pos_hist
-        theta_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # histogram in 2 dimesional space
-        # crds
-        # # xy
-        frame_hist, _, _ = np.histogram2d(
-            crds.positions[:, 0],
-            crds.positions[:, 1],
-            bins=hist_crd_info_xy['bin_edges'],
-            range=hist_crd_info_xy['range'],
-        )
-        hist_crd_info_xy['collector'] += frame_hist
-        # # xz
-        frame_hist, _, _ = np.histogram2d(
-            crds.positions[:, 0],
-            crds.positions[:, 2],
-            bins=hist_crd_info_xz['bin_edges'],
-            range=hist_crd_info_xz['range'],
-        )
-        hist_crd_info_xz['collector'] += frame_hist
-        # # yz
-        frame_hist, _, _ = np.histogram2d(
-            crds.positions[:, 1],
-            crds.positions[:, 2],
-            bins=hist_crd_info_yz['bin_edges'],
-            range=hist_crd_info_yz['range'],
-        )
-        hist_crd_info_yz['collector'] += frame_hist
-        # bug
-        # # xy
-        frame_hist, _, _ = np.histogram2d(
-            bug.positions[:, 0],
-            bug.positions[:, 1],
-            bins=hist_mon_info_xy['bin_edges'],
-            range=hist_mon_info_xy['range'],
-        )
-        hist_mon_info_xy['collector'] += frame_hist
-        # # xz
-        frame_hist, _, _ = np.histogram2d(
-            bug.positions[:, 0],
-            bug.positions[:, 2],
-            bins=hist_mon_info_xz['bin_edges'],
-            range=hist_mon_info_xz['range'],
-        )
-        hist_mon_info_xz['collector'] += frame_hist
-        # # yz
-        frame_hist, _, _ = np.histogram2d(
-            bug.positions[:, 1],
-            bug.positions[:, 2],
-            bins=hist_mon_info_yz['bin_edges'],
-            range=hist_mon_info_yz['range'],
-        )
-        hist_mon_info_yz['collector'] += frame_hist
-        # foci
-        # # xy
-        frame_hist, _, _ = np.histogram2d(
-            foci.positions[:, 0],
-            foci.positions[:, 1],
-            bins=hist_foci_info_xy['bin_edges'],
-            range=hist_foci_info_xy['range'],
-        )
-        hist_foci_info_xy['collector'] += frame_hist
-        # # xz
-        frame_hist, _, _ = np.histogram2d(
-            foci.positions[:, 0],
-            foci.positions[:, 2],
-            bins=hist_foci_info_xz['bin_edges'],
-            range=hist_foci_info_xz['range'],
-        )
-        hist_foci_info_xz['collector'] += frame_hist
-        # # yz
-        frame_hist, _, _ = np.histogram2d(
-            foci.positions[:, 1],
-            foci.positions[:, 2],
-            bins=hist_foci_info_yz['bin_edges'],
-            range=hist_foci_info_yz['range'],
-        )
-        hist_foci_info_yz['collector'] += frame_hist
-        # dna
-        # # xy
-        frame_hist, _, _ = np.histogram2d(
-            dna.positions[:, 0],
-            dna.positions[:, 1],
-            bins=hist_dna_info_xy['bin_edges'],
-            range=hist_dna_info_xy['range'],
-        )
-        hist_dna_info_xy['collector'] += frame_hist
-        # # xz
-        frame_hist, _, _ = np.histogram2d(
-            dna.positions[:, 0],
-            dna.positions[:, 2],
-            bins=hist_dna_info_xz['bin_edges'],
-            range=hist_dna_info_xz['range'],
-        )
-        hist_dna_info_xz['collector'] += frame_hist
-        # # yz
-        frame_hist, _, _ = np.histogram2d(
-            dna.positions[:, 1],
-            dna.positions[:, 2],
-            bins=hist_dna_info_yz['bin_edges'],
-            range=hist_dna_info_yz['range'],
-        )
-        hist_dna_info_yz['collector'] += frame_hist
     # end of loop
-    atom_groups = ['Crd', 'Foci', 'Dna', 'Mon']
-    rho_hist_infos = [
-        rho_hist_crd_info,
-        rho_hist_foci_info,
-        rho_hist_dna_info,
-        rho_hist_mon_info
-        ]
-    z_hist_infos = [
-        z_hist_crd_info,
-        z_hist_foci_info,
-        z_hist_dna_info,
-        z_hist_mon_info
-        ]
-    theta_hist_infos = [
-        theta_hist_crd_info,
-        theta_hist_foci_info,
-        theta_hist_dna_info,
-        theta_hist_mon_info
-        ]
-    prop_name = '-rHist'
-    for ag, hist_info in zip(atom_groups, rho_hist_infos):
-        np.save(
-            save_to + sim_name + prop_name + ag + '.npy',
-            hist_info['collector']
-            )
-    prop_name = '-zHist'
-    for ag, hist_info in zip(atom_groups, z_hist_infos):
-        np.save(
-            save_to + sim_name + prop_name + ag + '.npy',
-            hist_info['collector']
-            )
-    prop_name = '-thetaHist'
-    atom_groups = ['Crd', 'Foci', 'Dna', 'Mon']
-    hist_infos = {
-        'xyHist': [
-            hist_crd_info_xy,
-            hist_foci_info_xy,
-            hist_dna_info_xy,
-            hist_mon_info_xy
-        ],
-        'xzHist': [
-            hist_crd_info_xz,
-            hist_foci_info_xz,
-            hist_dna_info_xz,
-            hist_mon_info_xz
-        ],
-        'yzHist': [
-            hist_crd_info_yz,
-            hist_foci_info_yz,
-            hist_dna_info_yz,
-            hist_mon_info_yz
-        ]
+    hist_1d_groups = {
+        'rHist': {
+            'Crd': r_hist_crd_info,
+            'Mon': r_hist_mon_info
+        },
+        'zHist': {
+            'Crd': z_hist_crd_info,
+            'Mon': z_hist_mon_info
+        },
+        'thetaHist': {
+            'Crd': theta_hist_crd_info,
+            'Mon': theta_hist_mon_info
+        }
     }
-    for ag, hist_info in zip(atom_groups, theta_hist_infos):
-        np.save(
-            save_to + sim_name + prop_name + ag + '.npy',
-            hist_info['collector']
-            )
-    for hist_plane in ['xyHist', 'xzHist', 'yzHist']:
-        for ag, ag_hist in zip(atom_groups, hist_infos[hist_plane]):
-            np.save(
-                save_to + sim_name + '-' + hist_plane + ag + '.npy',
-                ag_hist['collector']
-            )
+    write_hists(hist_1d_groups, sim_name, save_to, std=True)
     print('done.')
 
 
-def sum_rule_all_histdd(
+def sum_rule_all_cyl_hist2d(
     topology: str,
     trajectory: str,
-    geometry: str,
     lineage: str,
     save_to: str = "./",
     continuous: Optional[bool] = False
@@ -2580,8 +1450,6 @@ def sum_rule_all_histdd(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
     lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str
@@ -2599,11 +1467,11 @@ def sum_rule_all_histdd(
             "Please ensure the "
             f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...\n")
-    sim_info = SumRule(
+    sim_info = SumRuleCyl(
         trajectory,
-        geometry,
+        lineage,
+        'cylindrical',
         'all',
-        lineage
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -2847,40 +1715,559 @@ def sum_rule_all_histdd(
             range=hist_mon_info_yz['range'],
         )
         hist_mon_info_yz['collector'] += frame_hist
-
-    lastname = 'Crd'
-    np.save(
-        save_to + sim_name + '-xyHist' + lastname + '.npy',
-        hist_crd_info_xy['collector']
-    )
-    np.save(
-        save_to + sim_name + '-xzHist' + lastname + '.npy',
-        hist_crd_info_xz['collector']
-    )
-    np.save(
-        save_to + sim_name + '-yzHist' + lastname + '.npy',
-        hist_crd_info_yz['collector']
-    )
-    lastname = 'Mon'
-    np.save(
-        save_to + sim_name + '-xyHist' + lastname + '.npy',
-        hist_mon_info_xy['collector']
-    )
-    np.save(
-        save_to + sim_name + '-xzHist' + lastname + '.npy',
-        hist_mon_info_xz['collector']
-    )
-    np.save(
-        save_to + sim_name + '-yzHist' + lastname + '.npy',
-        hist_mon_info_yz['collector']
-    )
+    # end of loop
+    hist_2d_groups = {
+        'xyHist': {
+            'Crd': hist_crd_info_xy,
+            'Mon': hist_mon_info_xy
+        },
+        'xzHist': {
+            'Crd': hist_crd_info_xz,
+            'Mon': hist_mon_info_xz
+        },
+        'yzHist': {
+            'Crd': hist_crd_info_yz,
+            'Mon': hist_mon_info_yz
+        }
+    }
+    write_hists(hist_2d_groups, sim_name, save_to, std=False)
     print('done.')
 
 
-def trans_foci_all_histdd(
+def trans_fuci_bug_cyl(
     topology: str,
     trajectory: str,
-    geometry: str,
+    lineage: str,
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    the `geometry` of interest.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = TransFociCyl(
+        trajectory,
+        lineage,
+        'cylindrical'
+        'bug'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cluster_cutoff = sim_info.dmon_large + sim_info.dcrowd
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+        n_frames = cell.trajectory.n_frames - 1
+    else:
+        sliced_trj = cell.trajectory
+        n_frames = cell.trajectory.n_frames
+    # selecting atom groups
+    foci = cell.select_atoms('type 2')  # the foci
+    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
+    # defining collectors
+    # -bug:
+    trans_size_t = []
+    fsd_t = []
+    rflory_t = []
+    gyr_t = []
+    principal_axes_t = np.empty([0, 3, 3])
+    asphericity_t = []
+    shape_parameter_t = []
+    # -foci:
+    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
+    dir_contacts_t = np.empty(
+        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
+    )
+    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
+    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
+    for _ in sliced_trj:
+        # bug:
+        # -various measures of chain size
+        trans_size_t.append(transverse_size(bug))
+        fsd_t.append(fsd(bug.positions))
+        gyr_t.append(bug.radius_of_gyration())
+        rflory_t.append(end_to_end(bug.positions))
+        # -shape parameters:
+        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
+        principal_axes_t = np.append(
+            principal_axes_t,
+            np.array([bug.principal_axes(pbc=False)]),
+            axis=0
+        )
+        shape_parameter_t.append(bug.shape_parameter(pbc=False))
+        # foci:
+        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
+        foci_pair_dist = np.triu(dist_sq_mat, 1)
+        foci_pair_dist = np.sqrt(foci_pair_dist)
+        # keep atom ids on the diag
+        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
+        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
+        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
+        dir_contacts_t = np.append(
+            dir_contacts_t,
+            np.array([dir_contacts]),
+            axis=0
+        )
+        bonds_stat = clusters.count_bonds(dir_contacts)
+        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        contacts = clusters.contact_matrix(dir_contacts)
+        clusters_stat = clusters.count_clusters(contacts)
+        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+    # Saving collectors to memory
+    # -bug
+    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
+    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
+    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
+    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
+    np.save(save_to + sim_name + '-asphericityTMon.npy',
+            np.array(asphericity_t)
+            )
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    # -foci
+    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
+    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
+    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
+    # Simulation stamps:
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
+    print('done.')
+
+
+def trans_fuci_bug_cyl_transverse_size(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    the `geometry` of interest.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = TransFociCyl(
+        trajectory,
+        lineage,
+        'cylindrical',
+        'bug'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt
+        )
+    #  selecting atom groups
+    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and big mons
+    trans_size = AnalysisFromFunction(transverse_size, cell.trajectory, bug)
+    #  slicing trajectory based the continuous condition
+    if continuous:
+        trans_size.run(stop=-1)
+    else:
+        trans_size.run()
+    radial_size = trans_size.results['timeseries']
+    np.save(save_to + sim_name + '-transSizeTMon.npy', radial_size)
+    print('done.')
+
+
+def trans_foci_all_cyl_hist1d(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = "./",
+    continuous: Optional[bool] = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of an 'all' atom
+    group in the `geometry` of interest, and saves a variety of
+    outputs (mostly in the csv format) to the `save_to` directory.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = TransFociCyl(
+        trajectory,
+        lineage,
+        'cylindrical',
+        'all'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # dict of bin edges:
+    bin_edges = {
+        'rEdge': {
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.dcyl
+            },
+        'zEdge': {
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcyl,
+            'lmax': 0.5 * sim_info.lcyl
+            },
+        'thetaEdge': {
+            'bin_size':  np.pi / 36,
+            'lmin': -1 * np.pi,
+            'lmax': np.pi
+            }
+        }
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.adump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cell = mda.Universe(
+        topology, trajectory,
+        topology_format='DATA',
+        format='LAMMPSDUMP',
+        lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z",
+        dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+    else:
+        sliced_trj = cell.trajectory
+    # selecting atom groups
+    dna = cell.select_atoms('type 1')  # small monomers
+    foci = cell.select_atoms('type 2')  # large monomers
+    bug = cell.select_atoms('resid 1')  # the polymer
+    crds = cell.select_atoms('resid 0')  # crowders
+    # bin edges and histograms in different directions:
+    # radial direction of the cylindrical coordinate system
+    r_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'rEdgeCrd',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_foci_info = fixedsize_bins(
+        sim_name,
+        'rEdgeFoci',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_dna_info = fixedsize_bins(
+        sim_name,
+        'rEdgeDna',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'rEdgeMon',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    # z direction of the cylindrical coordinate system
+    z_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'zEdgeCrd',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    z_hist_foci_info = fixedsize_bins(
+        sim_name,
+        'zEdgeFoci',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    z_hist_dna_info = fixedsize_bins(
+        sim_name,
+        'zEdgeDna',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    z_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'zEdgeMon',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # theta of the cylindrical coordinate system
+    theta_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeCrd',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    theta_hist_foci_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeFoci',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    theta_hist_dna_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeDna',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    theta_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeMon',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    # check if any of the histograms are empty or not.
+    if any([
+            r_hist_crd_info['collector'].any() != 0,
+            r_hist_foci_info['collector'].any() != 0,
+            r_hist_dna_info['collector'].any() != 0,
+            r_hist_mon_info['collector'].any() != 0,
+            z_hist_crd_info['collector'].any() != 0,
+            z_hist_foci_info['collector'].any() != 0,
+            z_hist_dna_info['collector'].any() != 0,
+            z_hist_mon_info['collector'].any() != 0,
+            theta_hist_crd_info['collector'].any() != 0,
+            theta_hist_foci_info['collector'].any() != 0,
+            theta_hist_dna_info['collector'].any() != 0,
+            theta_hist_mon_info['collector'].any() != 0,
+            r_hist_crd_info['collector_std'].any() != 0,
+            r_hist_foci_info['collector_std'].any() != 0,
+            r_hist_dna_info['collector_std'].any() != 0,
+            r_hist_mon_info['collector_std'].any() != 0,
+            z_hist_crd_info['collector_std'].any() != 0,
+            z_hist_foci_info['collector_std'].any() != 0,
+            z_hist_dna_info['collector_std'].any() != 0,
+            z_hist_mon_info['collector_std'].any() != 0,
+            theta_hist_crd_info['collector_std'].any() != 0,
+            theta_hist_foci_info['collector_std'].any() != 0,
+            theta_hist_dna_info['collector_std'].any() != 0,
+            theta_hist_mon_info['collector_std'].any() != 0
+            ]):
+        raise ValueError(
+            "One of the histogram collectors is not empty!")
+    for _ in sliced_trj:
+        # histogram in r direction
+        # crds
+        pos_r = np.linalg.norm(crds.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_crd_info)
+        r_hist_crd_info['collector'] += pos_hist
+        r_hist_crd_info['collector_std'] += np.square(pos_hist)
+        # foci
+        pos_r = np.linalg.norm(foci.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_foci_info)
+        r_hist_foci_info['collector'] += pos_hist
+        r_hist_foci_info['collector_std'] += np.square(pos_hist)
+        # dna
+        pos_r = np.linalg.norm(dna.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_dna_info)
+        r_hist_dna_info['collector'] += pos_hist
+        r_hist_dna_info['collector_std'] += np.square(pos_hist)
+        # bug
+        pos_r = np.linalg.norm(bug.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_mon_info)
+        r_hist_mon_info['collector'] += pos_hist
+        r_hist_mon_info['collector_std'] += np.square(pos_hist)
+        # histogram in z direction
+        # crds
+        pos_z = crds.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_crd_info)
+        z_hist_crd_info['collector'] += pos_hist
+        z_hist_crd_info['collector_std'] += np.square(pos_hist)
+        # foci
+        pos_z = foci.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_foci_info)
+        z_hist_foci_info['collector'] += pos_hist
+        z_hist_foci_info['collector_std'] += np.square(pos_hist)
+        # dna
+        pos_z = dna.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_dna_info)
+        z_hist_dna_info['collector'] += pos_hist
+        z_hist_dna_info['collector_std'] += np.square(pos_hist)
+        # bug
+        pos_z = bug.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_mon_info)
+        z_hist_mon_info['collector'] += pos_hist
+        z_hist_mon_info['collector_std'] += np.square(pos_hist)
+        # histogram in theta
+        # crds
+        theta = np.arctan2(
+            crds.positions[:, 1],
+            crds.positions[:, 0]
+        )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_crd_info)
+        theta_hist_crd_info['collector'] += pos_hist
+        theta_hist_crd_info['collector_std'] += np.square(pos_hist)
+        # foci
+        theta = np.arctan2(
+            foci.positions[:, 1],
+            foci.positions[:, 0]
+        )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_foci_info)
+        theta_hist_foci_info['collector'] += pos_hist
+        theta_hist_foci_info['collector_std'] += np.square(pos_hist)
+        # dna
+        theta = np.arctan2(
+            dna.positions[:, 1],
+            dna.positions[:, 0]
+        )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_dna_info)
+        theta_hist_dna_info['collector'] += pos_hist
+        theta_hist_dna_info['collector_std'] += np.square(pos_hist)
+        # bug
+        theta = np.arctan2(
+            bug.positions[:, 1],
+            bug.positions[:, 0]
+            )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_mon_info)
+        theta_hist_mon_info['collector'] += pos_hist
+        theta_hist_mon_info['collector_std'] += np.square(pos_hist)
+    # end of loop
+    hist_1d_groups = {
+        'rHist': {
+            'Crd': r_hist_crd_info,
+            'Mon': r_hist_mon_info,
+            'Foci': r_hist_foci_info,
+            'Dna': r_hist_dna_info
+        },
+        'zHist': {
+            'Crd': z_hist_crd_info,
+            'Mon': z_hist_mon_info,
+            'Foci': z_hist_foci_info,
+            'Dna': z_hist_dna_info
+        },
+        'thetaHist': {
+            'Crd': theta_hist_crd_info,
+            'Mon': theta_hist_mon_info,
+            'Foci': theta_hist_foci_info,
+            'Dna': theta_hist_dna_info
+        }
+    }
+    write_hists(hist_1d_groups, sim_name, save_to, std=True)
+    print('done.')
+
+
+def trans_foci_all_cyl_hist2d(
+    topology: str,
+    trajectory: str,
     lineage: str,
     save_to: str = "./",
     continuous: Optional[bool] = False
@@ -2914,11 +2301,11 @@ def trans_foci_all_histdd(
             "Please ensure the "
             f"'{trajectory}' is NOT part of a sequence of trajectories.")
     print("Setting the name of analyze file...\n")
-    sim_info = TransFoci(
+    sim_info = TransFociCyl(
         trajectory,
-        geometry,
-        'all',
-        lineage
+        lineage,
+        'cylindrical',
+        'all'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -3318,31 +2705,1397 @@ def trans_foci_all_histdd(
             range=hist_dna_info_yz['range'],
         )
         hist_dna_info_yz['collector'] += frame_hist
-    atom_groups = ['Crd', 'Foci', 'Dna', 'Mon']
-    hist_infos = {
-        'xyHist': [
-            hist_crd_info_xy,
-            hist_foci_info_xy,
-            hist_dna_info_xy,
-            hist_mon_info_xy
+    # end of loop
+    hist_2d_groups = {
+        'xyHist': {
+            'Crd': hist_crd_info_xy,
+            'Mon': hist_mon_info_xy,
+            'Foci': hist_foci_info_xy,
+            'Dna': hist_dna_info_xy
+        },
+        'xzHist': {
+            'Crd': hist_crd_info_xz,
+            'Mon': hist_mon_info_xz,
+            'Foci': hist_foci_info_xz,
+            'Dna': hist_dna_info_xz
+        },
+        'yzHist': {
+            'Crd': hist_crd_info_yz,
+            'Mon': hist_mon_info_yz,
+            'Foci': hist_foci_info_yz,
+            'Dna': hist_dna_info_yz
+        }
+    }
+    write_hists(hist_2d_groups, sim_name, save_to, std=False)
+    print('done.')
+
+
+def trans_foci_all_cyl(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = "./",
+    continuous: Optional[bool] = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of an 'all' atom
+    group in the `geometry` of interest, and saves a variety of
+    outputs (mostly in the csv format) to the `save_to` directory.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = TransFociCyl(
+        trajectory,
+        lineage,
+        'cylindrical',
+        'all'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # dict of bin edges:
+    bin_edges = {
+        'rEdge': {
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.dcyl
+            },
+        'zEdge': {
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcyl,
+            'lmax': 0.5 * sim_info.lcyl
+            },
+        'thetaEdge': {
+            'bin_size':  np.pi / 36,
+            'lmin': -1 * np.pi,
+            'lmax': np.pi
+            }
+        }
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.adump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cell = mda.Universe(
+        topology, trajectory,
+        topology_format='DATA',
+        format='LAMMPSDUMP',
+        lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z",
+        dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+    else:
+        sliced_trj = cell.trajectory
+    # selecting atom groups
+    dna = cell.select_atoms('type 1')  # small monomers
+    foci = cell.select_atoms('type 2')  # large monomers
+    bug = cell.select_atoms('resid 1')  # the polymer
+    crds = cell.select_atoms('resid 0')  # crowders
+    # bin edges and histograms in different directions:
+    # radial direction of the cylindrical coordinate system
+    r_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'rEdgeCrd',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_foci_info = fixedsize_bins(
+        sim_name,
+        'rEdgeFoci',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_dna_info = fixedsize_bins(
+        sim_name,
+        'rEdgeDna',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'rEdgeMon',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    # z direction of the cylindrical coordinate system
+    z_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'zEdgeCrd',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    z_hist_foci_info = fixedsize_bins(
+        sim_name,
+        'zEdgeFoci',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    z_hist_dna_info = fixedsize_bins(
+        sim_name,
+        'zEdgeDna',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    z_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'zEdgeMon',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # theta of the cylindrical coordinate system
+    theta_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeCrd',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    theta_hist_foci_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeFoci',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    theta_hist_dna_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeDna',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    theta_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'thetaEdgeMon',
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
+        save_to=save_to
+        )  # in radians
+    # check if any of the histograms are empty or not.
+    if any([
+            r_hist_crd_info['collector'].any() != 0,
+            r_hist_foci_info['collector'].any() != 0,
+            r_hist_dna_info['collector'].any() != 0,
+            r_hist_mon_info['collector'].any() != 0,
+            z_hist_crd_info['collector'].any() != 0,
+            z_hist_foci_info['collector'].any() != 0,
+            z_hist_dna_info['collector'].any() != 0,
+            z_hist_mon_info['collector'].any() != 0,
+            theta_hist_crd_info['collector'].any() != 0,
+            theta_hist_foci_info['collector'].any() != 0,
+            theta_hist_dna_info['collector'].any() != 0,
+            theta_hist_mon_info['collector'].any() != 0,
+            r_hist_crd_info['collector_std'].any() != 0,
+            r_hist_foci_info['collector_std'].any() != 0,
+            r_hist_dna_info['collector_std'].any() != 0,
+            r_hist_mon_info['collector_std'].any() != 0,
+            z_hist_crd_info['collector_std'].any() != 0,
+            z_hist_foci_info['collector_std'].any() != 0,
+            z_hist_dna_info['collector_std'].any() != 0,
+            z_hist_mon_info['collector_std'].any() != 0,
+            theta_hist_crd_info['collector_std'].any() != 0,
+            theta_hist_foci_info['collector_std'].any() != 0,
+            theta_hist_dna_info['collector_std'].any() != 0,
+            theta_hist_mon_info['collector_std'].any() != 0
+            ]):
+        raise ValueError(
+            "One of the histogram collectors is not empty!")
+    # bin edges and histograms in different directions:
+    # x direction of the cartesian coordinate system
+    x_hist_info = fixedsize_bins(
+        sim_name,
+        'xEdge',
+        bin_edges['xEdge']['bin_size'],
+        bin_edges['xEdge']['lmin'],
+        bin_edges['xEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # y direction of the cartesian coordinate system
+    y_hist_info = fixedsize_bins(
+        sim_name,
+        'yEdge',
+        bin_edges['yEdge']['bin_size'],
+        bin_edges['yEdge']['lmin'],
+        bin_edges['yEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # z direction of the cartesian coordinate system
+    z_hist_info = fixedsize_bins(
+        sim_name,
+        'zEdge',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # check if any of the histograms are empty or not.
+    if any([
+            x_hist_info['collector'].any() != 0,
+            x_hist_info['collector_std'].any() != 0,
+            y_hist_info['collector'].any() != 0,
+            y_hist_info['collector_std'].any() != 0,
+            z_hist_info['collector'].any() != 0,
+            z_hist_info['collector_std'].any() != 0,
+            ]):
+        raise ValueError(
+            "One of the histogram collectors is not empty!")
+    # 2D hists
+    # crd
+    # # xy
+    hist_crd_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
         ],
-        'xzHist': [
-            hist_crd_info_xz,
-            hist_foci_info_xz,
-            hist_dna_info_xz,
-            hist_mon_info_xz
-        ],
-        'yzHist': [
-            hist_crd_info_yz,
-            hist_foci_info_yz,
-            hist_dna_info_yz,
-            hist_mon_info_yz
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
         ]
     }
-    for hist_plane in ['xyHist', 'xzHist', 'yzHist']:
-        for ag, ag_hist in zip(atom_groups, hist_infos[hist_plane]):
-            np.save(
-                save_to + sim_name + '-' + hist_plane + ag + '.npy',
-                ag_hist['collector']
+    hist_crd_info_xy['collector'] = np.zeros(hist_crd_info_xy['n_bins'])
+    hist_crd_info_xy['collector'] *= 0
+    # # xz
+    hist_crd_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_crd_info_xz['collector'] = np.zeros(hist_crd_info_xz['n_bins'])
+    hist_crd_info_xz['collector'] *= 0
+    # # yz
+    hist_crd_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_crd_info_yz['collector'] = np.zeros(hist_crd_info_yz['n_bins'])
+    hist_crd_info_yz['collector'] *= 0
+    # mon
+    # # xy
+    hist_mon_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
+        ]
+    }
+    hist_mon_info_xy['collector'] = np.zeros(hist_mon_info_xy['n_bins'])
+    hist_mon_info_xy['collector'] *= 0
+    # # xz
+    hist_mon_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_mon_info_xz['collector'] = np.zeros(hist_mon_info_xz['n_bins'])
+    hist_mon_info_xz['collector'] *= 0
+    # # yz
+    hist_mon_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_mon_info_yz['collector'] = np.zeros(hist_mon_info_yz['n_bins'])
+    hist_mon_info_yz['collector'] *= 0
+    # foci
+    # # xy
+    hist_foci_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
+        ]
+    }
+    hist_foci_info_xy['collector'] = np.zeros(hist_foci_info_xy['n_bins'])
+    hist_foci_info_xy['collector'] *= 0
+    # # xz
+    hist_foci_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_foci_info_xz['collector'] = np.zeros(hist_foci_info_xz['n_bins'])
+    hist_foci_info_xz['collector'] *= 0
+    # # yz
+    hist_foci_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_foci_info_yz['collector'] = np.zeros(hist_foci_info_yz['n_bins'])
+    hist_foci_info_yz['collector'] *= 0
+    # dna
+    # # xy
+    hist_dna_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
+        ]
+    }
+    hist_dna_info_xy['collector'] = np.zeros(hist_dna_info_xy['n_bins'])
+    hist_dna_info_xy['collector'] *= 0
+    # # xz
+    hist_dna_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_dna_info_xz['collector'] = np.zeros(hist_dna_info_xz['n_bins'])
+    hist_dna_info_xz['collector'] *= 0
+    # # yz
+    hist_dna_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_dna_info_yz['collector'] = np.zeros(hist_dna_info_yz['n_bins'])
+    hist_dna_info_yz['collector'] *= 0
+    for _ in sliced_trj:
+        # histogram in r direction
+        # crds
+        pos_r = np.linalg.norm(crds.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_crd_info)
+        r_hist_crd_info['collector'] += pos_hist
+        r_hist_crd_info['collector_std'] += np.square(pos_hist)
+        # foci
+        pos_r = np.linalg.norm(foci.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_foci_info)
+        r_hist_foci_info['collector'] += pos_hist
+        r_hist_foci_info['collector_std'] += np.square(pos_hist)
+        # dna
+        pos_r = np.linalg.norm(dna.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_dna_info)
+        r_hist_dna_info['collector'] += pos_hist
+        r_hist_dna_info['collector_std'] += np.square(pos_hist)
+        # bug
+        pos_r = np.linalg.norm(bug.positions[:, :2], axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_mon_info)
+        r_hist_mon_info['collector'] += pos_hist
+        r_hist_mon_info['collector_std'] += np.square(pos_hist)
+        # histogram in z direction
+        # crds
+        pos_z = crds.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_crd_info)
+        z_hist_crd_info['collector'] += pos_hist
+        z_hist_crd_info['collector_std'] += np.square(pos_hist)
+        # foci
+        pos_z = foci.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_foci_info)
+        z_hist_foci_info['collector'] += pos_hist
+        z_hist_foci_info['collector_std'] += np.square(pos_hist)
+        # dna
+        pos_z = dna.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_dna_info)
+        z_hist_dna_info['collector'] += pos_hist
+        z_hist_dna_info['collector_std'] += np.square(pos_hist)
+        # bug
+        pos_z = bug.positions[:, 2]
+        pos_hist = frame_2d_hist(pos_z, z_hist_mon_info)
+        z_hist_mon_info['collector'] += pos_hist
+        z_hist_mon_info['collector_std'] += np.square(pos_hist)
+        # histogram in theta
+        # crds
+        theta = np.arctan2(
+            crds.positions[:, 1],
+            crds.positions[:, 0]
+        )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_crd_info)
+        theta_hist_crd_info['collector'] += pos_hist
+        theta_hist_crd_info['collector_std'] += np.square(pos_hist)
+        # foci
+        theta = np.arctan2(
+            foci.positions[:, 1],
+            foci.positions[:, 0]
+        )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_foci_info)
+        theta_hist_foci_info['collector'] += pos_hist
+        theta_hist_foci_info['collector_std'] += np.square(pos_hist)
+        # dna
+        theta = np.arctan2(
+            dna.positions[:, 1],
+            dna.positions[:, 0]
+        )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_dna_info)
+        theta_hist_dna_info['collector'] += pos_hist
+        theta_hist_dna_info['collector_std'] += np.square(pos_hist)
+        # bug
+        theta = np.arctan2(
+            bug.positions[:, 1],
+            bug.positions[:, 0]
+            )  # in radians betwene [-np.pi, np.pi]
+        pos_hist = frame_2d_hist(theta, theta_hist_mon_info)
+        theta_hist_mon_info['collector'] += pos_hist
+        theta_hist_mon_info['collector_std'] += np.square(pos_hist)
+        # histogram in 2 dimesional space
+        # crds
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            crds.positions[:, 0],
+            crds.positions[:, 1],
+            bins=hist_crd_info_xy['bin_edges'],
+            range=hist_crd_info_xy['range'],
+        )
+        hist_crd_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            crds.positions[:, 0],
+            crds.positions[:, 2],
+            bins=hist_crd_info_xz['bin_edges'],
+            range=hist_crd_info_xz['range'],
+        )
+        hist_crd_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            crds.positions[:, 1],
+            crds.positions[:, 2],
+            bins=hist_crd_info_yz['bin_edges'],
+            range=hist_crd_info_yz['range'],
+        )
+        hist_crd_info_yz['collector'] += frame_hist
+        # bug
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            bug.positions[:, 0],
+            bug.positions[:, 1],
+            bins=hist_mon_info_xy['bin_edges'],
+            range=hist_mon_info_xy['range'],
+        )
+        hist_mon_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            bug.positions[:, 0],
+            bug.positions[:, 2],
+            bins=hist_mon_info_xz['bin_edges'],
+            range=hist_mon_info_xz['range'],
+        )
+        hist_mon_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            bug.positions[:, 1],
+            bug.positions[:, 2],
+            bins=hist_mon_info_yz['bin_edges'],
+            range=hist_mon_info_yz['range'],
+        )
+        hist_mon_info_yz['collector'] += frame_hist
+        # foci
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            foci.positions[:, 0],
+            foci.positions[:, 1],
+            bins=hist_foci_info_xy['bin_edges'],
+            range=hist_foci_info_xy['range'],
+        )
+        hist_foci_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            foci.positions[:, 0],
+            foci.positions[:, 2],
+            bins=hist_foci_info_xz['bin_edges'],
+            range=hist_foci_info_xz['range'],
+        )
+        hist_foci_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            foci.positions[:, 1],
+            foci.positions[:, 2],
+            bins=hist_foci_info_yz['bin_edges'],
+            range=hist_foci_info_yz['range'],
+        )
+        hist_foci_info_yz['collector'] += frame_hist
+        # dna
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            dna.positions[:, 0],
+            dna.positions[:, 1],
+            bins=hist_dna_info_xy['bin_edges'],
+            range=hist_dna_info_xy['range'],
+        )
+        hist_dna_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            dna.positions[:, 0],
+            dna.positions[:, 2],
+            bins=hist_dna_info_xz['bin_edges'],
+            range=hist_dna_info_xz['range'],
+        )
+        hist_dna_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            dna.positions[:, 1],
+            dna.positions[:, 2],
+            bins=hist_dna_info_yz['bin_edges'],
+            range=hist_dna_info_yz['range'],
+        )
+        hist_dna_info_yz['collector'] += frame_hist
+    # end of loop
+    hist_1d_groups = {
+        'rHist': {
+            'Crd': r_hist_crd_info,
+            'Mon': r_hist_mon_info,
+            'Foci': r_hist_foci_info,
+            'Dna': r_hist_dna_info
+        },
+        'zHist': {
+            'Crd': z_hist_crd_info,
+            'Mon': z_hist_mon_info,
+            'Foci': z_hist_foci_info,
+            'Dna': z_hist_dna_info
+        },
+        'thetaHist': {
+            'Crd': theta_hist_crd_info,
+            'Mon': theta_hist_mon_info,
+            'Foci': theta_hist_foci_info,
+            'Dna': theta_hist_dna_info
+        }
+    }
+    write_hists(hist_1d_groups, sim_name, save_to, std=True)
+    hist_2d_groups = {
+        'xyHist': {
+            'Crd': hist_crd_info_xy,
+            'Mon': hist_mon_info_xy,
+            'Foci': hist_foci_info_xy,
+            'Dna': hist_dna_info_xy
+        },
+        'xzHist': {
+            'Crd': hist_crd_info_xz,
+            'Mon': hist_mon_info_xz,
+            'Foci': hist_foci_info_xz,
+            'Dna': hist_dna_info_xz
+        },
+        'yzHist': {
+            'Crd': hist_crd_info_yz,
+            'Mon': hist_mon_info_yz,
+            'Foci': hist_foci_info_yz,
+            'Dna': hist_dna_info_yz
+        }
+    }
+    write_hists(hist_2d_groups, sim_name, save_to, std=False)
+    print('done.')
+
+
+def trans_fuci_bug_cubic(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    the `geometry` of interest.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = TransFociCubic(
+        trajectory,
+        lineage,
+        'cubic',
+        'bug'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cluster_cutoff = sim_info.dmon_large + sim_info.dcrowd
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+        n_frames = cell.trajectory.n_frames - 1
+    else:
+        sliced_trj = cell.trajectory
+        n_frames = cell.trajectory.n_frames
+    # selecting atom groups
+    foci = cell.select_atoms('type 2')  # the foci
+    bug = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
+    # defining collectors
+    # -bug:
+    rflory_t = []
+    gyr_t = []
+    principal_axes_t = np.empty([0, 3, 3])
+    asphericity_t = []
+    shape_parameter_t = []
+    # -foci:
+    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
+    dir_contacts_t = np.empty(
+        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
+    )
+    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
+    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
+    for _ in sliced_trj:
+        # bug:
+        # -various measures of chain size
+        gyr_t.append(bug.radius_of_gyration())
+        rflory_t.append(end_to_end(bug.positions))
+        # -shape parameters:
+        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
+        principal_axes_t = np.append(
+            principal_axes_t,
+            np.array([bug.principal_axes(pbc=False)]),
+            axis=0
+        )
+        shape_parameter_t.append(bug.shape_parameter(pbc=False))
+        # foci:
+        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
+        foci_pair_dist = np.triu(dist_sq_mat, 1)
+        foci_pair_dist = np.sqrt(foci_pair_dist)
+        # keep atom ids on the diag
+        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
+        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
+        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
+        dir_contacts_t = np.append(
+            dir_contacts_t,
+            np.array([dir_contacts]),
+            axis=0
+        )
+        bonds_stat = clusters.count_bonds(dir_contacts)
+        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        contacts = clusters.contact_matrix(dir_contacts)
+        clusters_stat = clusters.count_clusters(contacts)
+        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+    # Saving collectors to memory
+    # -bug
+    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
+    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
+    np.save(save_to + sim_name + '-asphericityTMon.npy',
+            np.array(asphericity_t)
             )
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    # -foci
+    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
+    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
+    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
+    # Simulation stamps:
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
+    print('done.')
+
+
+def trans_foci_all_cubic(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = "./",
+    continuous: Optional[bool] = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of an 'all' atom
+    group in the `geometry` of interest, and saves a variety of
+    outputs (mostly in the csv format) to the `save_to` directory.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = TransFociCubic(
+        trajectory,
+        lineage,
+        'cylindrical',
+        'all'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # dict of bin edges:
+    bin_edges = {
+        'rEdge': {  # edges for distance r from the box center
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.lcube
+            },
+        'lEdge': {  # edges in cartesian coordinates
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcube,
+            'lmax': 0.5 * sim_info.lcube
+            },
+        }
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon_small * np.sqrt(
+        sim_info.mmon_small * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.adump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cell = mda.Universe(
+        topology, trajectory,
+        topology_format='DATA',
+        format='LAMMPSDUMP',
+        lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z",
+        dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+    else:
+        sliced_trj = cell.trajectory
+    # selecting atom groups
+    dna = cell.select_atoms('type 1')  # small monomers
+    foci = cell.select_atoms('type 2')  # large monomers
+    bug = cell.select_atoms('resid 1')  # the polymer
+    crds = cell.select_atoms('resid 0')  # crowders
+    # bin edges and histograms in different directions:
+    # distance from the box center
+    r_hist_crd_info = fixedsize_bins(
+        sim_name,
+        'rEdgeCrd',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_foci_info = fixedsize_bins(
+        sim_name,
+        'rEdgeFoci',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_dna_info = fixedsize_bins(
+        sim_name,
+        'rEdgeDna',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    r_hist_mon_info = fixedsize_bins(
+        sim_name,
+        'rEdgeMon',
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
+        save_to=save_to
+    )
+    # check if any of the histograms are empty or not.
+    if any([
+            r_hist_crd_info['collector'].any() != 0,
+            r_hist_foci_info['collector'].any() != 0,
+            r_hist_dna_info['collector'].any() != 0,
+            r_hist_mon_info['collector'].any() != 0,
+            r_hist_crd_info['collector_std'].any() != 0,
+            r_hist_foci_info['collector_std'].any() != 0,
+            r_hist_dna_info['collector_std'].any() != 0,
+            r_hist_mon_info['collector_std'].any() != 0,
+            ]):
+        raise ValueError(
+            "One of the histogram collectors is not empty!")
+    # bin edges and histograms in different directions:
+    # x direction of the cartesian coordinate system
+    x_hist_info = fixedsize_bins(
+        sim_name,
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # y direction of the cartesian coordinate system
+    y_hist_info = fixedsize_bins(
+        sim_name,
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # z direction of the cartesian coordinate system
+    z_hist_info = fixedsize_bins(
+        sim_name,
+        'zEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
+        save_to=save_to
+    )
+    # check if any of the histograms are empty or not.
+    if any([
+            x_hist_info['collector'].any() != 0,
+            x_hist_info['collector_std'].any() != 0,
+            y_hist_info['collector'].any() != 0,
+            y_hist_info['collector_std'].any() != 0,
+            z_hist_info['collector'].any() != 0,
+            z_hist_info['collector_std'].any() != 0,
+            ]):
+        raise ValueError(
+            "One of the histogram collectors is not empty!")
+    # 2D hists
+    # crd
+    # # xy
+    hist_crd_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
+        ]
+    }
+    hist_crd_info_xy['collector'] = np.zeros(hist_crd_info_xy['n_bins'])
+    hist_crd_info_xy['collector'] *= 0
+    # # xz
+    hist_crd_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_crd_info_xz['collector'] = np.zeros(hist_crd_info_xz['n_bins'])
+    hist_crd_info_xz['collector'] *= 0
+    # # yz
+    hist_crd_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_crd_info_yz['collector'] = np.zeros(hist_crd_info_yz['n_bins'])
+    hist_crd_info_yz['collector'] *= 0
+    # mon
+    # # xy
+    hist_mon_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
+        ]
+    }
+    hist_mon_info_xy['collector'] = np.zeros(hist_mon_info_xy['n_bins'])
+    hist_mon_info_xy['collector'] *= 0
+    # # xz
+    hist_mon_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_mon_info_xz['collector'] = np.zeros(hist_mon_info_xz['n_bins'])
+    hist_mon_info_xz['collector'] *= 0
+    # # yz
+    hist_mon_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_mon_info_yz['collector'] = np.zeros(hist_mon_info_yz['n_bins'])
+    hist_mon_info_yz['collector'] *= 0
+    # foci
+    # # xy
+    hist_foci_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
+        ]
+    }
+    hist_foci_info_xy['collector'] = np.zeros(hist_foci_info_xy['n_bins'])
+    hist_foci_info_xy['collector'] *= 0
+    # # xz
+    hist_foci_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_foci_info_xz['collector'] = np.zeros(hist_foci_info_xz['n_bins'])
+    hist_foci_info_xz['collector'] *= 0
+    # # yz
+    hist_foci_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_foci_info_yz['collector'] = np.zeros(hist_foci_info_yz['n_bins'])
+    hist_foci_info_yz['collector'] *= 0
+    # dna
+    # # xy
+    hist_dna_info_xy = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            y_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            y_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            y_hist_info['range']
+        ]
+    }
+    hist_dna_info_xy['collector'] = np.zeros(hist_dna_info_xy['n_bins'])
+    hist_dna_info_xy['collector'] *= 0
+    # # xz
+    hist_dna_info_xz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_dna_info_xz['collector'] = np.zeros(hist_dna_info_xz['n_bins'])
+    hist_dna_info_xz['collector'] *= 0
+    # # yz
+    hist_dna_info_yz = {
+        'n_bins': (
+            x_hist_info['n_bins'],
+            z_hist_info['n_bins']
+        ),
+        'bin_edges': [
+            x_hist_info['bin_edges'],
+            z_hist_info['bin_edges']
+        ],
+        'range': [
+            x_hist_info['range'],
+            z_hist_info['range']
+        ]
+    }
+    hist_dna_info_yz['collector'] = np.zeros(hist_dna_info_yz['n_bins'])
+    hist_dna_info_yz['collector'] *= 0
+    for _ in sliced_trj:
+        # histogram in r direction
+        # crds
+        pos_r = np.linalg.norm(crds.positions, axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_crd_info)
+        r_hist_crd_info['collector'] += pos_hist
+        r_hist_crd_info['collector_std'] += np.square(pos_hist)
+        # foci
+        pos_r = np.linalg.norm(foci.positions, axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_foci_info)
+        r_hist_foci_info['collector'] += pos_hist
+        r_hist_foci_info['collector_std'] += np.square(pos_hist)
+        # dna
+        pos_r = np.linalg.norm(dna.positions, axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_dna_info)
+        r_hist_dna_info['collector'] += pos_hist
+        r_hist_dna_info['collector_std'] += np.square(pos_hist)
+        # bug
+        pos_r = np.linalg.norm(bug.positions, axis=1)
+        pos_hist = frame_2d_hist(pos_r, r_hist_mon_info)
+        r_hist_mon_info['collector'] += pos_hist
+        r_hist_mon_info['collector_std'] += np.square(pos_hist)
+        # histogram in 2 dimesional space
+        # crds
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            crds.positions[:, 0],
+            crds.positions[:, 1],
+            bins=hist_crd_info_xy['bin_edges'],
+            range=hist_crd_info_xy['range'],
+        )
+        hist_crd_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            crds.positions[:, 0],
+            crds.positions[:, 2],
+            bins=hist_crd_info_xz['bin_edges'],
+            range=hist_crd_info_xz['range'],
+        )
+        hist_crd_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            crds.positions[:, 1],
+            crds.positions[:, 2],
+            bins=hist_crd_info_yz['bin_edges'],
+            range=hist_crd_info_yz['range'],
+        )
+        hist_crd_info_yz['collector'] += frame_hist
+        # bug
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            bug.positions[:, 0],
+            bug.positions[:, 1],
+            bins=hist_mon_info_xy['bin_edges'],
+            range=hist_mon_info_xy['range'],
+        )
+        hist_mon_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            bug.positions[:, 0],
+            bug.positions[:, 2],
+            bins=hist_mon_info_xz['bin_edges'],
+            range=hist_mon_info_xz['range'],
+        )
+        hist_mon_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            bug.positions[:, 1],
+            bug.positions[:, 2],
+            bins=hist_mon_info_yz['bin_edges'],
+            range=hist_mon_info_yz['range'],
+        )
+        hist_mon_info_yz['collector'] += frame_hist
+        # foci
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            foci.positions[:, 0],
+            foci.positions[:, 1],
+            bins=hist_foci_info_xy['bin_edges'],
+            range=hist_foci_info_xy['range'],
+        )
+        hist_foci_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            foci.positions[:, 0],
+            foci.positions[:, 2],
+            bins=hist_foci_info_xz['bin_edges'],
+            range=hist_foci_info_xz['range'],
+        )
+        hist_foci_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            foci.positions[:, 1],
+            foci.positions[:, 2],
+            bins=hist_foci_info_yz['bin_edges'],
+            range=hist_foci_info_yz['range'],
+        )
+        hist_foci_info_yz['collector'] += frame_hist
+        # dna
+        # # xy
+        frame_hist, _, _ = np.histogram2d(
+            dna.positions[:, 0],
+            dna.positions[:, 1],
+            bins=hist_dna_info_xy['bin_edges'],
+            range=hist_dna_info_xy['range'],
+        )
+        hist_dna_info_xy['collector'] += frame_hist
+        # # xz
+        frame_hist, _, _ = np.histogram2d(
+            dna.positions[:, 0],
+            dna.positions[:, 2],
+            bins=hist_dna_info_xz['bin_edges'],
+            range=hist_dna_info_xz['range'],
+        )
+        hist_dna_info_xz['collector'] += frame_hist
+        # # yz
+        frame_hist, _, _ = np.histogram2d(
+            dna.positions[:, 1],
+            dna.positions[:, 2],
+            bins=hist_dna_info_yz['bin_edges'],
+            range=hist_dna_info_yz['range'],
+        )
+        hist_dna_info_yz['collector'] += frame_hist
+    # end of loop
+    hist_1d_groups = {
+        'rHist': {
+            'Crd': r_hist_crd_info,
+            'Mon': r_hist_mon_info,
+            'Foci': r_hist_foci_info,
+            'Dna': r_hist_dna_info
+        }
+    }
+    write_hists(hist_1d_groups, sim_name, save_to, std=True)
+    hist_2d_groups = {
+        'xyHist': {
+            'Crd': hist_crd_info_xy,
+            'Mon': hist_mon_info_xy,
+            'Foci': hist_foci_info_xy,
+            'Dna': hist_dna_info_xy
+        },
+        'xzHist': {
+            'Crd': hist_crd_info_xz,
+            'Mon': hist_mon_info_xz,
+            'Foci': hist_foci_info_xz,
+            'Dna': hist_dna_info_xz
+        },
+        'yzHist': {
+            'Crd': hist_crd_info_yz,
+            'Mon': hist_mon_info_yz,
+            'Foci': hist_foci_info_yz,
+            'Dna': hist_dna_info_yz
+        }
+    }
+    write_hists(hist_2d_groups, sim_name, save_to, std=False)
     print('done.')

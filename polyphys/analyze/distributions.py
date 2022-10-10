@@ -17,12 +17,8 @@ Currently, tehe following distribution are implemeted:
 from typing import Callable, Dict, Tuple, Optional, Union
 import numpy as np
 import scipy.integrate as integrate
-from polyphys.manage.parser import SumRule, TransFoci
 import warnings
-
-ParserT = Union[SumRule, TransFoci]
-FreqDataT = Dict[str, np.ndarray]
-EdgeDataT = Dict[str, np.ndarray]
+from ..manage.typer import ParserT, FreqDataT, EdgeDataT
 
 
 def spherical_segment(
@@ -1416,7 +1412,7 @@ def distributions_generator(
     species: str,
     geometry: str,
     direction: str,
-    parser: Callable,
+    parser: ParserT,
     save_to: Optional[str] = None,
     normalized: bool = False
 ) -> Tuple[Dict, Dict]:
@@ -1439,7 +1435,7 @@ def distributions_generator(
         The shape of the simulation box.
     direction: str in {'azimuthal', 'polar', 'radial', 'longitudinal'}
         The direction of interest in the `geometry` of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepathes to infer information about a file.
     raduis_attr: str
@@ -1476,9 +1472,9 @@ def distributions_generator(
     for whole, freq in freqs.items():
         whole_info = parser(
             whole,
+            'whole',
             geometry,
             group,
-            'whole',
             ispath=False
         )
         distributions = SpatialDistribution(
