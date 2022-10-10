@@ -14,6 +14,7 @@ TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
 class ParserTemplate(ABC):
     name: str
     lineage: Optional[str] = None
+    
     ispath: Optional[bool] = True
     """
     parses a `lineage_name` to extract information about the 'lineage' oftrj
@@ -101,6 +102,7 @@ class ParserTemplate(ABC):
         self,
         name: str,
         lineage: Optional[str] = None,
+        
         ispath: Optional[bool] = True,
     ) -> None:
         self.filepath: str = name
