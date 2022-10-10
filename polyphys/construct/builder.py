@@ -5,7 +5,8 @@ from typing import (
     Union
 )
 from polyphys.manage.organizer import invalid_keyword
-from polyphys.manage.parser import SumRule
+from polyphys.manage.parser import SumRuleCyl
+from polyphys.manage.typer import ParserT
 
 
 def parse_lammps_trj(
@@ -70,7 +71,8 @@ def parse_lammps_data_string_style(
     file of a given `kind`.
 
     Issues:
-    Currently the data reader converts all the words in a line into float but this not correct for some items see: https://docs.lammps.org/read_data.html
+    Currently the data reader converts all the words in a line into float but
+    this not correct for some items see: https://docs.lammps.org/read_data.html
 
     Check the issue with image flags.
 
@@ -217,6 +219,7 @@ def bug_data_file_generator(
     trjs: List[str],
     geometry: str = 'biaixal',
     lineage: str = 'whole',
+    parser: ParserT = SumRuleCyl,
     save_to: str = './'
 ) -> None:
     """generate conjugate LAMMPS data files based on `data_template` for
@@ -242,6 +245,9 @@ def bug_data_file_generator(
         Shape of the simulation box
     lineage: {'segment', 'whole'}, default 'whole'
         Lineage type of children' stamps
+    parser: ParserT
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
     save_to : str, default './'
         Absolute or relative path of a directory to which outputs are saved.
 
@@ -287,11 +293,11 @@ def bug_data_file_generator(
                 f"The '{trj}'"
                 " is not LAMMPS trajectroy file."
             )
-        trj_info = SumRule(
+        trj_info = parser(
+            lineage,
             trj,
-            geometry=geometry,
-            group='bug',
-            lineage=lineage
+            geometry,
+            'bug',
         )
         bug_data_name = save_to + trj_info.whole + '.bug.data'
         with open(data_template, 'r') as data_in,\
