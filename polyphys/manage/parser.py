@@ -10,25 +10,34 @@ TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
 TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
 
 
-class ParserTemplate(object):
+class ParserTemplate(ABC):
     name: str
+    lineage: str
     geometry: str
     group: str
-    lineage: str
-    ispath: bool = True
+    ispath: bool
     """
     parses a `lineage_name` to extract information about the 'lineage' oftrj
     that 'lineage_name', based on the following 'lineage' patterns:
+
+    To-do List
+    ----------
+    1. This class can be split to 4 classes in the following order of
+    inheritance: parent->child: space -> ensemble -> whole -> segment.
+    2. Using @attribute for attributes to get, set, or delete them.
+    3. self.dcyl is set by self.dwall and self-dwall is 1.0 by default.
+    4. Can have as many as monomer types and properties as we like.
+    5. Define the following parameters:
+        topology: {'linear', 'ring'},
+            Polymer topology
+        homogeneity: {'homopolymer', 'heteropolymer', 'copolymer'}, defualt
+        'homopolymer'
+            Polymer homogeneity.
 
     Parameters
     ----------
     name: str
         Name that is parsed for extracting information.
-    geometry : {'cylindrical', 'slit', 'cubic'}
-        Shape of the simulation box.
-    group: {'bug', 'all'}
-        Type of the particle group. 'bug' is used for a single polymer.
-        'all' is used for all the particles/atoms in the system.
     lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
         'space'}
         Type of the lineage of the name.
@@ -37,55 +46,54 @@ class ParserTemplate(object):
 
     Attributes
     ----------
-    geometry : {'cylindrical', 'slit', 'cubic'}
-        Shape of the simulation box.
-    group: {'bug', 'all'}
-        Type of the particle group.  'bug' is used for a single polymer.
-        'all' is used for all the particles/atoms in the system.
-    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
-        'space'}, default whole
-        Type of the lineage of the name.
     pathname: str, default "N/A"
         Equal to `name` if `name` is a filepath, otherwise "N/A".
     filename: str
         Name of a the file referred to by `name` if `name` is a filepath,
         otherwise the `name` itself.
-    lineage_name: str,
+    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
+        'space'}, default whole
+        Type of the lineage of the name.
+    geometry : {'cylindrical', 'slit', 'cubic'}
+        Shape of the simulation box.
+    group: {'bug', 'all'}
+        Type of the particle group.  'bug' is used for a single polymer.
+        'all' is used for all the particles/atoms in the system.
+    lineage_name: str
         The unique name of type extracted from self.fullname
+    ispath: bool
+        Whether a `name` is a filename or a filepath.
 
     Class Attributes
     ----------------
-    _geometries: list of str
-        Possible geometries of a simulation box
-    _groups: list of str
-        Possible groups of the `SumRule` project.
-    _lineage_attributes: dict of dict
-        a dictionary of `lineage` names. For each `lineage`, a dictionary
-        maps the keywords of physical attributes in that lineage to their
-        corresponding attributes in `SumRule` class.
-    _lineage_private_attributes: dict of lists
-        a dictionary of `lineage` names. For each `lineage`, a list of
-        class attributes that are NOT "N/A" or np.nan is created that can be
-        used in the simulation/experiment/run report files (called
-        "*-properties.csv")
+    _lineage_attributes: dict of None
+        A dictionary of `lineage` names. For each `lineage`, a dictionary
+        maps the keywords of physical attributes in that `lineage` of a project
+        to their corresponding attributes in the project's associated parser
+        class.
+    _physical_attributes: dict of None
+        A dictionary of `lineage` names. For each `lineage`, a list of parser
+        attributes that either are defined or have default values for the
+        `lineage` in the class.
+    _genealogy: dict of lists
+        A dictionary of `lineage` names. For each `lineage`, a list is defined
+        that contains the parent-like lineage attirbutes of that `lineage`.
     """
-    _geometries = ['cylindrical', 'slit', 'cubic']
-    _groups = ['bug', 'all']
-    _lineage_attributes = {
+    _lineage_attributes: dict[str, None] = {
         'segment': None,
         'whole': None,
         'ensemble_long': None,
         'ensemble': None,
         'space': None
     }
-    _physical_attributes = {
+    _physical_attributes: dict[str, None] = {
         'segment': None,
         'whole': None,
         'ensemble_long': None,
         'ensemble': None,
         'space': None
     }
-    _genealogy = {
+    _genealogy: dict[str, list[str]] = {
         'segment': [
             'lineage_name', 'segment', 'whole', 'ensemble_long', 'ensemble',
             'space'
@@ -107,58 +115,28 @@ class ParserTemplate(object):
     def __init__(
         self,
         name: str,
+        lineage: str,
         geometry: str,
         group: str,
-        lineage: str,
-        ispath: bool = True
-    ):
-        if geometry in self._geometries:
-            self.geometry = geometry
-        else:
-            geometries_string = "'" + "', '".join(
-                self._geometries) + "'"
-            raise ValueError(
-                f"'{geometry}' "
-                "is not a valid geometry. Please select one of "
-                f"{geometries_string} geometries.")
-        if group in self._groups:
-            self.group = group
-        else:
-            groups_string = "'" + "', '".join(
-                self._groups) + "'"
-            raise ValueError(
-                f"'{group}' "
-                "is not a valid particle group. Please select one of "
-                f"{groups_string} groups.")
-        if lineage in self._lineage_attributes.keys():
-            self.lineage = lineage
-        else:
-            types_string = "'" + "', '".join(
-                self._lineage_attributes.keys()) + "'"
-            raise ValueError(
-                f"'{type}' "
-                "is not a valid name type. Please select one of "
-                f"{types_string} types.")
-        if ispath:
-            self.filepath = name
+        ispath,
+    ) -> None:
+        self.filepath = name
+        self.filename = None
+        self._lineage = lineage
+
+        self._geometry = geometry
+        self._group = group
+        self._ispath = ispath
+        if self.ispath is True:
             self.filename, _ = os.path.splitext(self.filepath)
-            self.filename = self.filename.split("/")[-1]
+            self.filename: str = self.filename.split("/")[-1]
         else:
-            self.filepath = "N/A"
             self.filename = name
+            self.filepath = "N/A"
         self._find_lineage_name()
-        self._initiate_attributes()
-        self._parse_lineage_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._bulk_attributes()
-        self.attributes = list(
-            self._lineage_attributes[self.lineage].keys()
-            ) + self._physical_attributes[self.lineage]
-        self.genealogy = self._genealogy[self.lineage]
 
     def __str__(self) -> str:
-        observation = f"""
+        observation: str = f"""
         Observation:
             Name: '{self.filename}',
             Geometry: '{self._geometry},
@@ -174,7 +152,44 @@ class ParserTemplate(object):
             f" lineage '{self._lineage}')"
         )
 
-    def _find_lineage_name(self):
+    @property
+    def lineage(self) -> str:
+        """
+        gets the current `lineage`.
+
+        Returns
+        -------
+        str
+            returns the current `lineage`.
+        """
+        return self._lineage
+
+    @lineage.setter
+    def _set_lineage(self, lineage: str) -> None:
+        """
+        checks and set the `lineage` of a given name.
+
+        Parameters
+        ----------
+        lineage : str
+            Type of the lineage of a filename or name.
+
+        Raises
+        ------
+        ValueError
+            Riases if the atom `lineage` is invalid.
+        """
+        if lineage in self._lineage_attributes.keys():
+            self._lineage = lineage
+        else:
+            types_string: str = "'" + "', '".join(
+                self._lineage_attributes.keys()) + "'"
+            raise ValueError(
+                f"'{type}' "
+                "is not a valid name type. Please select one of "
+                f"{types_string} types.")
+
+    def _find_lineage_name(self) -> None:
         """
         parses the unique lineage_name (the first substring of filename
         and/or the segment keyword middle substring) of a filename.
@@ -184,26 +199,102 @@ class ParserTemplate(object):
             # a 'whole' lineage used in 'probe' or 'analyze' phases
             # so its lineage_name is either ended by 'group' keyword or "-".
             # these two combined below:
-            self.lineage_name = \
-                self.filename.split("." + self.group)[0].split("-")[0]
+            self.lineage_name: str = \
+                self.filename.split("." + self._group)[0].split("-")[0]
         else:  # 'ensemble' or 'space' lineages
             self.lineage_name = self.filename.split('-')[0]
 
-    def _initiate_attributes(self):
+    @property
+    def ispath(self) -> bool:
+        """
+        gets the current `ispath`.
+
+        Returns
+        -------
+        str
+            returns the current `ispath`.
+        """
+        return self._ispath
+
+    @property
+    def geometry(self) -> str:
+        """
+        gets the current `geometry`.
+
+        Returns
+        -------
+        str
+            returns the current `geometry`.
+        """
+        return self._geometry
+
+    @geometry.setter
+    @abstractmethod
+    def _set_geometry(self, geometry: str) -> None:
+        """
+        checks and sets the `geometry` of a given name.
+
+        Parameters
+        ----------
+        geometry : str
+            Shape of the simulation box.
+
+        Raises
+        ------
+        ValueError
+            Riases if the atom `geometry` is invalid.
+        """
+        pass
+
+    @property
+    def group(self) -> str:
+        """
+        gets the current `group`.
+
+        Returns
+        -------
+        str
+            returns the current `group`.
+        """
+        return self._group
+
+    @group.setter
+    @abstractmethod
+    def _set_group(self, group: str) -> None:
+        """
+        checks and sets the `group` of a given name.
+
+        Parameters
+        ----------
+        group : str
+            Type of the particle group. 'bug' is used for a single polymer.
+            'all' is used for all the particles/atoms in the system.
+
+        Raises
+        ------
+        ValueError
+            Riases if the atom `group` is invalid.
+        """
+        pass
+
+    @abstractmethod
+    def _initiate_attributes(self) -> None:
         """
         defines and initiates the class attributes based on the physical
         attributes defined for the project.
         """
         pass
 
-    def _parse_lineage_name(self):
+    @abstractmethod
+    def _parse_lineage_name(self) -> None:
         """
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
         pass
 
-    def _set_parents(self):
+    @abstractmethod
+    def _set_parents(self) -> None:
         """
         set to parent names for a lineage_name based on it lineage.
 
@@ -219,7 +310,8 @@ class ParserTemplate(object):
         """
         pass
 
-    def _bulk_attributes(self):
+    @abstractmethod
+    def _bulk_attributes(self) -> None:
         """
         computes some physical attributes of a lineage based on its
         primary attributes.
