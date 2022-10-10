@@ -1232,6 +1232,8 @@ class TransFociCubic(ParserBase):
         Mass of a large monomer. Its associated keyword is 'ml'.
     lcubic: float, np.nan
         Side of the cubic simulation box.
+    eps_others: float, default 1.0
+        Unit of the LJ interaction strength
     ncrowd: int, np.nan
         number of crowders. Its associated keyword is 'nc'.
     ensemble_id: int, np.nan
@@ -1319,19 +1321,19 @@ class TransFociCubic(ParserBase):
     }
     _physical_attributes = {
         'segment': [
-            'dmon_small', 'mmon_small', 'mcrowd',
+            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'
             'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
         ],
         'whole': [
-            'dmon_small', 'mmon_small', 'mcrowd',
+            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'
             'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
         ],
         'ensemble_long': [
-            'dmon_small', 'mmon_small', 'mcrowd',
+            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'
             'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
         ],
-        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
-        'space': ['dmon_small', 'mmon_small', 'mcrowd']
+        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_othes'],
+        'space': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_othes']
     }
 
     def __init__(
@@ -1427,6 +1429,7 @@ class TransFociCubic(ParserBase):
         self.bdump = np.nan
         self.adump = np.nan
         # cubic attributes
+        self.eps_others = 1.0
         self.lcube = np.nan
 
     def _parse_lineage_name(self) -> None:
