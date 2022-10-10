@@ -1,22 +1,21 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import os
 import re
-from typing import Any, TypeVar
+from typing import TypeVar
 import warnings
 # This for Python 3.9
 TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
 TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
 
 
-class ParserTemplate(ABC):
+class ParserTemplate(object):
     name: str
-    lineage: str
     geometry: str
     group: str
-    ispath: bool
+    lineage: str
+    ispath: bool = True
     """
     parses a `lineage_name` to extract information about the 'lineage' oftrj
     that 'lineage_name', based on the following 'lineage' patterns:
@@ -25,6 +24,11 @@ class ParserTemplate(ABC):
     ----------
     name: str
         Name that is parsed for extracting information.
+    geometry : {'cylindrical', 'slit', 'cubic'}
+        Shape of the simulation box.
+    group: {'bug', 'all'}
+        Type of the particle group. 'bug' is used for a single polymer.
+        'all' is used for all the particles/atoms in the system.
     lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
         'space'}
         Type of the lineage of the name.
@@ -33,54 +37,55 @@ class ParserTemplate(ABC):
 
     Attributes
     ----------
-    pathname: str, default "N/A"
-        Equal to `name` if `name` is a filepath, otherwise "N/A".
-    filename: str
-        Name of a the file referred to by `name` if `name` is a filepath,
-        otherwise the `name` itself.
-    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
-        'space'}, default whole
-        Type of the lineage of the name.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     group: {'bug', 'all'}
         Type of the particle group.  'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
-    lineage_name: str
+    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
+        'space'}, default whole
+        Type of the lineage of the name.
+    pathname: str, default "N/A"
+        Equal to `name` if `name` is a filepath, otherwise "N/A".
+    filename: str
+        Name of a the file referred to by `name` if `name` is a filepath,
+        otherwise the `name` itself.
+    lineage_name: str,
         The unique name of type extracted from self.fullname
-    ispath: bool
-        Whether a `name` is a filename or a filepath.
 
     Class Attributes
     ----------------
-    _lineage_attributes: dict of None
-        A dictionary of `lineage` names. For each `lineage`, a dictionary
-        maps the keywords of physical attributes in that `lineage` of a project
-        to their corresponding attributes in the project's associated parser
-        class.
-    _physical_attributes: dict of None
-        A dictionary of `lineage` names. For each `lineage`, a list of parser
-        attributes that either are defined or have default values for the
-        `lineage` in the class.
-    _genealogy: dict of lists
-        A dictionary of `lineage` names. For each `lineage`, a list is defined
-        that contains the parent-like lineage attirbutes of that `lineage`.
+    _geometries: list of str
+        Possible geometries of a simulation box
+    _groups: list of str
+        Possible groups of the `SumRule` project.
+    _lineage_attributes: dict of dict
+        a dictionary of `lineage` names. For each `lineage`, a dictionary
+        maps the keywords of physical attributes in that lineage to their
+        corresponding attributes in `SumRule` class.
+    _lineage_private_attributes: dict of lists
+        a dictionary of `lineage` names. For each `lineage`, a list of
+        class attributes that are NOT "N/A" or np.nan is created that can be
+        used in the simulation/experiment/run report files (called
+        "*-properties.csv")
     """
-    _lineage_attributes: dict[str, None] = {
+    _geometries = ['cylindrical', 'slit', 'cubic']
+    _groups = ['bug', 'all']
+    _lineage_attributes = {
         'segment': None,
         'whole': None,
         'ensemble_long': None,
         'ensemble': None,
         'space': None
     }
-    _physical_attributes: dict[str, None] = {
+    _physical_attributes = {
         'segment': None,
         'whole': None,
         'ensemble_long': None,
         'ensemble': None,
         'space': None
     }
-    _genealogy: dict[str, list[str]] = {
+    _genealogy = {
         'segment': [
             'lineage_name', 'segment', 'whole', 'ensemble_long', 'ensemble',
             'space'
@@ -102,28 +107,58 @@ class ParserTemplate(ABC):
     def __init__(
         self,
         name: str,
-        lineage: str,
         geometry: str,
         group: str,
-        ispath,
-    ) -> None:
-        self.filepath = name
-        self.filename = None
-        self._lineage = lineage
-
-        self._geometry = geometry
-        self._group = group
-        self._ispath = ispath
-        if self.ispath is True:
-            self.filename, _ = os.path.splitext(self.filepath)
-            self.filename: str = self.filename.split("/")[-1]
+        lineage: str,
+        ispath: bool = True
+    ):
+        if geometry in self._geometries:
+            self.geometry = geometry
         else:
-            self.filename = name
+            geometries_string = "'" + "', '".join(
+                self._geometries) + "'"
+            raise ValueError(
+                f"'{geometry}' "
+                "is not a valid geometry. Please select one of "
+                f"{geometries_string} geometries.")
+        if group in self._groups:
+            self.group = group
+        else:
+            groups_string = "'" + "', '".join(
+                self._groups) + "'"
+            raise ValueError(
+                f"'{group}' "
+                "is not a valid particle group. Please select one of "
+                f"{groups_string} groups.")
+        if lineage in self._lineage_attributes.keys():
+            self.lineage = lineage
+        else:
+            types_string = "'" + "', '".join(
+                self._lineage_attributes.keys()) + "'"
+            raise ValueError(
+                f"'{type}' "
+                "is not a valid name type. Please select one of "
+                f"{types_string} types.")
+        if ispath:
+            self.filepath = name
+            self.filename, _ = os.path.splitext(self.filepath)
+            self.filename = self.filename.split("/")[-1]
+        else:
             self.filepath = "N/A"
+            self.filename = name
         self._find_lineage_name()
+        self._initiate_attributes()
+        self._parse_lineage_name()
+        self._set_parents()
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
+            self._bulk_attributes()
+        self.attributes = list(
+            self._lineage_attributes[self.lineage].keys()
+            ) + self._physical_attributes[self.lineage]
+        self.genealogy = self._genealogy[self.lineage]
 
     def __str__(self) -> str:
-        observation: str = f"""
+        observation = f"""
         Observation:
             Name: '{self.filename}',
             Geometry: '{self._geometry},
@@ -139,44 +174,7 @@ class ParserTemplate(ABC):
             f" lineage '{self._lineage}')"
         )
 
-    @property
-    def lineage(self) -> str:
-        """
-        gets the current `lineage`.
-
-        Returns
-        -------
-        str
-            returns the current `lineage`.
-        """
-        return self._lineage
-
-    @lineage.setter
-    def _set_lineage(self, lineage: str) -> None:
-        """
-        checks and set the `lineage` of a given name.
-
-        Parameters
-        ----------
-        lineage : str
-            Type of the lineage of a filename or name.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `lineage` is invalid.
-        """
-        if lineage in self._lineage_attributes.keys():
-            self._lineage = lineage
-        else:
-            types_string: str = "'" + "', '".join(
-                self._lineage_attributes.keys()) + "'"
-            raise ValueError(
-                f"'{type}' "
-                "is not a valid name type. Please select one of "
-                f"{types_string} types.")
-
-    def _find_lineage_name(self) -> None:
+    def _find_lineage_name(self):
         """
         parses the unique lineage_name (the first substring of filename
         and/or the segment keyword middle substring) of a filename.
@@ -186,102 +184,26 @@ class ParserTemplate(ABC):
             # a 'whole' lineage used in 'probe' or 'analyze' phases
             # so its lineage_name is either ended by 'group' keyword or "-".
             # these two combined below:
-            self.lineage_name: str = \
-                self.filename.split("." + self._group)[0].split("-")[0]
+            self.lineage_name = \
+                self.filename.split("." + self.group)[0].split("-")[0]
         else:  # 'ensemble' or 'space' lineages
             self.lineage_name = self.filename.split('-')[0]
 
-    @property
-    def ispath(self) -> bool:
-        """
-        gets the current `ispath`.
-
-        Returns
-        -------
-        str
-            returns the current `ispath`.
-        """
-        return self._ispath
-
-    @property
-    def geometry(self) -> str:
-        """
-        gets the current `geometry`.
-
-        Returns
-        -------
-        str
-            returns the current `geometry`.
-        """
-        return self._geometry
-
-    @geometry.setter
-    @abstractmethod
-    def _set_geometry(self, geometry: str) -> None:
-        """
-        checks and sets the `geometry` of a given name.
-
-        Parameters
-        ----------
-        geometry : str
-            Shape of the simulation box.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `geometry` is invalid.
-        """
-        pass
-
-    @property
-    def group(self) -> str:
-        """
-        gets the current `group`.
-
-        Returns
-        -------
-        str
-            returns the current `group`.
-        """
-        return self._group
-
-    @group.setter
-    @abstractmethod
-    def _set_group(self, group: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        group : str
-            Type of the particle group. 'bug' is used for a single polymer.
-            'all' is used for all the particles/atoms in the system.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `group` is invalid.
-        """
-        pass
-
-    @abstractmethod
-    def _initiate_attributes(self) -> None:
+    def _initiate_attributes(self):
         """
         defines and initiates the class attributes based on the physical
         attributes defined for the project.
         """
         pass
 
-    @abstractmethod
-    def _parse_lineage_name(self) -> None:
+    def _parse_lineage_name(self):
         """
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
         pass
 
-    @abstractmethod
-    def _set_parents(self) -> None:
+    def _set_parents(self):
         """
         set to parent names for a lineage_name based on it lineage.
 
@@ -297,8 +219,7 @@ class ParserTemplate(ABC):
         """
         pass
 
-    @abstractmethod
-    def _bulk_attributes(self) -> None:
+    def _bulk_attributes(self):
         """
         computes some physical attributes of a lineage based on its
         primary attributes.
@@ -467,7 +388,9 @@ class SumRule(ParserTemplate):
         used in the simulation/experiment/run report files (called
         "*-properties.csv")
     """
-    _lineage_attributes: dict[str, dict[str, str]] = {
+    _geometries = ['cylindrical', 'slit', 'cubic']
+    _groups = ['bug', 'all']
+    _lineage_attributes = {
         'segment': {
             'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
@@ -490,7 +413,7 @@ class SumRule(ParserTemplate):
             'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac'
         }
     }
-    _physical_attributes: dict[str, dict[str, str]] = {
+    _physical_attributes = {
         'segment': [
             'dmon', 'mmon', 'eps_others', 'mcrowd', 'dwall', 'phi_m_bulk',
             'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
@@ -510,7 +433,7 @@ class SumRule(ParserTemplate):
             'dmon', 'mmon', 'eps_others', 'mcrowd', 'dwall'
         ]
     }
-    _genealogy: dict[str, list[str]] = {
+    _genealogy = {
         'segment': [
             'lineage_name', 'segment', 'whole', 'ensemble_long',
             'ensemble', 'space'
@@ -742,6 +665,7 @@ class SumRule(ParserTemplate):
 
 class TransFoci(ParserTemplate):
     name: str
+    geometry: str
     group: str
     lineage: str
     ispath: bool = True
@@ -851,8 +775,8 @@ class TransFoci(ParserTemplate):
         Mass of a large monomer. Its associated keyword is 'ml'.
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
-        from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
+        from either 'r' keyword (radius of the cylindrical confinement; a cylinder
+        with open ends) or 'D' keyword (size of that confinement. Following
         LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
         domain over which x and y cartesian coordiantes are defined in the
         'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
@@ -933,6 +857,7 @@ class TransFoci(ParserTemplate):
         used in the simulation/experiment/run report files (called
         "*-properties.csv")
     """
+    _geometries = ['cylindrical', 'slit', 'cubic']
     _groups = ['bug', 'all']
     _lineage_attributes = {
         'bixial': {
@@ -1037,6 +962,24 @@ class TransFoci(ParserTemplate):
             'space': ['dmon_small', 'mmon_small', 'mcrowd']
         }
     }
+    _genealogy = {
+        'segment': [
+            'lineage_name', 'segment', 'whole', 'ensemble_long', 'ensemble',
+            'space'
+        ],
+        'whole': [
+            'lineage_name', 'whole', 'ensemble_long', 'ensemble', 'space'
+        ],
+        'ensemble_long': [
+            'lineage_name', 'ensemble_long', 'ensemble', 'space',
+        ],
+        'ensemble': [
+            'lineage_name', 'ensemble', 'space'
+        ],
+        'space': [
+            'lineage_name', 'space'
+        ]
+    }
 
     def __init__(
         self,
@@ -1046,11 +989,82 @@ class TransFoci(ParserTemplate):
         lineage: str,
         ispath: bool = True
     ):
-        super(TransFoci).__init__(name,
-                                  lineage=lineage,
-                                  geometry=geometry,
-                                  group=group,
-                                  ispath=ispath)
+        if geometry in self._geometries:
+            self.geometry = geometry
+        else:
+            geometries_string = "'" + "', '".join(
+                self._geometries) + "'"
+            raise ValueError(
+                f"'{geometry}' "
+                "is not a valid geometry. Please select one of "
+                f"{geometries_string} geometries.")
+        if group in self._groups:
+            self.group = group
+        else:
+            groups_string = "'" + "', '".join(
+                self._groups) + "'"
+            raise ValueError(
+                f"'{group}' "
+                "is not a valid particle group. Please select one of "
+                f"{groups_string} groups.")
+        if lineage in self._lineage_attributes[self.geometry].keys():
+            self.lineage = lineage
+        else:
+            types_string = "'" + "', '".join(
+                self._lineage_attributes[self.geometry].keys()) + "'"
+            raise ValueError(
+                f"'{type}' "
+                "is not a valid name type. Please select one of "
+                f"{types_string} types.")
+        if ispath:
+            self.filepath = name
+            self.filename, _ = os.path.splitext(self.filepath)
+            self.filename = self.filename.split("/")[-1]
+        else:
+            self.filepath = "N/A"
+            self.filename = name
+        self._find_lineage_name()
+        self._initiate_attributes()
+        self._parse_lineage_name()
+        self._set_parents()
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
+            self._bulk_attributes()
+        self.attributes = list(
+            self._lineage_attributes[self.geometry][self.lineage].keys()
+            ) + self._physical_attributes[self.lineage][self.geometry]
+        self.genealogy = self._genealogy[self.lineage]
+
+    def __str__(self) -> str:
+        observation = f"""
+        Observation:
+            Name: '{self.filename}',
+            Geometry: '{self.geometry},
+            Group: '{self.group}',
+            Lineage: '{self.lineage}'
+        """
+        return observation
+
+    def __repr__(self) -> str:
+        return (
+            f"Observation('{self.filename}' in geometry" +
+            f" '{self.geometry}' from group '{self.group}' with" +
+            f" lineage '{self.lineage}')"
+        )
+
+    def _find_lineage_name(self):
+        """
+        parses the unique lineage_name (the first substring of filename
+        and/or the segment keyword middle substring) of a filename.
+        """
+        if self.lineage in ['segment', 'whole']:
+            # a 'segment' lineage only used in 'probe' phase
+            # a 'whole' lineage used in 'probe' or 'analyze' phases
+            # so its lineage_name is either ended by 'group' keyword or "-".
+            # these two combined below:
+            self.lineage_name = \
+                self.filename.split("." + self.group)[0].split("-")[0]
+        else:  # 'ensemble' or 'space' lineages
+            self.lineage_name = self.filename.split('-')[0]
 
     def _initiate_attributes(self):
         """
@@ -1076,14 +1090,46 @@ class TransFoci(ParserTemplate):
         self.rho_m_bulk = np.nan
         self.phi_c_bulk = np.nan
         self.rho_c_bulk = np.nan
+        # cylindrical attributes
+        self.lcyl = np.nan
+        self.dwall = 1.0
+        self.eps_others = 1.0
+        self.dcyl = np.nan
+        self.epsilon_small = np.nan
+        self.epsilon_large = np.nan
 
-    @abstractmethod
     def _parse_lineage_name(self):
         """
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        pass
+        str_lineages = re.compile(r'([a-zA-Z\-]+)')
+        words = str_lineages.split(self.lineage_name)
+        attributes_float = [
+            'dmon_large', 'dcyl', 'lcyl', 'epsilon_small', 'epsilon_large',
+            'mmon_large', 'dcrowd', 'dt']
+        for attr_name, attr_keyword in \
+                self._lineage_attributes[self.lineage].items():
+            try:
+                attr_value = words[words.index(attr_keyword)+1]
+                if attr_name in attributes_float:
+                    attr_value = float(attr_value)
+                else:
+                    attr_value = int(float(attr_value))
+                if attr_keyword == 'lz':
+                    attr_value = 2 * attr_value
+                if attr_keyword == 'r':
+                    attr_value = 2 * attr_value - self.dwall
+                setattr(self, attr_name, attr_value)
+            except ValueError:
+                print(
+                    f"'{attr_keyword}'"
+                    " attribute keyword is not in "
+                    f"'{self.lineage_name}'"
+                    " lineage name. Please check whether "
+                    f"'{self.filename}'"
+                    " is valid name or not.")
+        setattr(self, 'nmon', self.nmon_large + self.nmon_small)
 
     def _set_parents(self):
         """
@@ -1142,7 +1188,7 @@ class TransFoci(ParserTemplate):
             self.ensemble_long = self.lineage_name.split('ens')[0]
             self.whole = self.lineage_name.split(".j")[0]
             self.segment = self.lineage_name
-
+    
     def _bulk_attributes(self):
         """
         computes some physical attributes of a lineage based on its
@@ -1159,7 +1205,7 @@ class TransFoci(ParserTemplate):
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
 
 
-class TransFociOrginal(ParserTemplate):
+class TransFociBixial(object):
     name: str
     geometry: str
     group: str
@@ -1271,8 +1317,8 @@ class TransFociOrginal(ParserTemplate):
         Mass of a large monomer. Its associated keyword is 'ml'.
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
-        from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
+        from either 'r' keyword (radius of the cylindrical confinement; a cylinder
+        with open ends) or 'D' keyword (size of that confinement. Following
         LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
         domain over which x and y cartesian coordiantes are defined in the
         'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
@@ -1701,462 +1747,6 @@ class TransFociOrginal(ParserTemplate):
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
 
 
-class TransFociCyl(ParserTemplate):
-    name: str
-    lineage: str
-    geometry: str
-    group: str
-    ispath: bool = True
-    """
-    parses a `lineage_name` to extract information about the 'lineage' oftrj
-    that 'lineage_name', based on the following 'lineage' patterns:
-
-    geomtery: 'cylindrical':
-        segment: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#j#.ring
-            One of multiple chunks of a complete simulation or measurement.
-        whole: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.ring
-            A complete simulation or measurement; a collection of 'segments'.
-        ensemble_long: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#.ring
-            Long name of an ensemble.
-        ensemble: ns#nl#al#D#ac#nc#
-            A collection of 'wholes' (complete simulations) that differs only
-            in their initial conditions (e.g., random number seed).
-        space: ns#nl#al#D#ac#
-            A collection of ensembles with a unique set of all the input
-            parameters except number of crowders (nc).
-
-    geomtery: 'cubic':
-        segment: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#j#.ring
-            One of multiple chunks of a complete simulation or measurement.
-        whole: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#j#.ring
-            A complete simulation or measurement; a collection of 'segments'.
-        ensemble_long: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
-            Long name of an ensemble.
-        ensemble: ns#nl#al#ac#nc#
-            N#D#ac#nc#
-            A collection of 'wholes' (complete simulations) that differs only
-            in their initial conditions (e.g., random number seed).
-        space: ns#nl#al#ac#
-            A collection of ensembles with a unique set of all the input
-            parameters except number of crowders (nc).
-
-    In the above lineages, the keywords are attributes where their values
-    (shown by "#" sign) are float or integer number. If a lineage does not
-    have an attribute, then the value of that attribute is set to numpy.nan.
-    These are the attributes with "numpy.nan" values for different lineages:
-    whole: 'j'
-    ensemble_long: 'ens', and 'j'
-    ensemble: 'ens', 'j', 'lz', 'dt', 'bdump', 'adump', and 'ml'
-    space: 'ens' , 'j', 'lz', 'dt', 'bdump', 'adump', 'ml', and 'nc'
-
-    There are some difference between the keywords of physical attributes and
-    their associated attributes in the `TransFuci` class. Below, the these two
-    types of attributes are explained.
-
-    To-do List
-    ----------
-    1. This class can be split to 4 classes in the following order of
-    inheritance: parent->child: space -> ensemble -> whole -> segment.
-    2. Using @attribute for attributes to get, set, or delete them.
-    3. self.dcyl is set by self.dwall and self-dwall is 1.0 by default.
-    4. Can have as many as monomer types and properties as we like.
-    5. Define the following parameters:
-        topology: {'linear', 'ring'},
-            Polymer topology
-        homogeneity: {'homopolymer', 'heteropolymer', 'copolymer'}, defualt
-        'homopolymer'
-            Polymer homogeneity.
-
-    Parameters
-    ----------
-    name: str
-        Name that is parsed for extracting information.
-    geometry : {'cylindrical', 'slit', 'cubic'}
-        Shape of the simulation box.
-    group: {'bug', 'all'}
-        Type of the particle group. 'bug' is used for a single polymer.
-        'all' is used for all the particles/atoms in the system.
-    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
-        'space'}
-        Type of the lineage of the name.
-    ispath: bool, default True
-        Whether the name is a filepath or a simple name.
-
-    Attributes
-    ----------
-    geometry : {'cylindrical', 'slit', 'cubic'}
-        Shape of the simulation box.
-    group: {'bug', 'all'}
-        Type of the particle group.  'bug' is used for a single polymer.
-        'all' is used for all the particles/atoms in the system.
-    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
-        'space'}, default whole
-        Type of the lineage of the name.
-    pathname: str, default "N/A"
-        Equal to `name` if `name` is a filepath, otherwise "N/A".
-    filename: str
-        Name of a the file referred to by `name` if `name` is a filepath,
-        otherwise the `name` itself.
-    lineage_name: str,
-        The unique name of type extracted from self.fullname
-    dmon_small: float, default 1.0
-        Size (diameter) of a monomer
-    dmon_large: float, np.nan
-        Size (diameter) of a large monomer. Its associated keyword is 'al'.
-    nmon_large: int, np.nan
-        number of large monomers. Its associated keyword is 'nl'.
-    nmon_small: int, np.nan
-        number of small monomers. Its associated keyword is 'ns'.
-    nmon: int, np.nan
-        Total number of monomers.
-    mmon_large: float, default np.nan
-        Mass of a large monomer. Its associated keyword is 'ml'.
-    dcyl: float, np.nan
-        Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
-        from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
-        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
-        domain over which x and y cartesian coordiantes are defined in the
-        'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
-        inculsive is the domain over which z cartesian coordiante is defined
-        in the 'slit' geometry. It is important to note that `dcyl` is
-        different from the size defined in LAMMPS input file if the
-        wall-forming particle are defined; in this case:
-            `self.dcyl` = LAMMPS.dcyl - `self.dwall`
-        Hence, `dcyl` is defined differenty in different parser classes in
-        this module.
-    lcyl: float, np.nan
-        Length of the cylindrical confinement along z axis (the periodic,
-        direction), inferred from 'lz' keyword (half of the length of the
-        cylindrical confinement along z axis.
-    epsilon_s: float, np.nan
-        Wall-small-monomer LJ interaction strength. Its associated keyword is
-        'epss' keyword.
-    epsilon_l: float, np.nan
-        Wall-large-monomer LJ interaction strength. Its associated keyword is
-        'espl' keyword.
-    ncrowd: int, np.nan
-        number of crowders. Its associated keyword is 'nc'.
-    ensemble_id: int, np.nan
-        The ensemble number of a 'whole' simulation in an ensemble.
-    segment_id: int, np.nan
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a whole file.
-    dt: float, np.nan
-        Simulation timestep. Its associated keyword is 'dt'.
-    bdump: int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
-    adump: int, default np.nan
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
-    mmon_small: float, default 1.0
-        Mass of a small monomer
-    eps_others: float, default 1.0
-        Other LJ interaction strengths
-    mcrowd: float, default 1.0
-        Mass of a crowder
-    dwall: float, default 1.0
-        Wall-forming particles diameter
-    space: str
-        A space's name
-    ensemble: str or "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long: str or "N/A"
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole: str or "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment: str or "N/A"
-        A segment's name if applicable, otherwise "N/A"
-    self.rho_m_bulk: float, default np.nan
-        Bulk number density fraction of monomers
-    self.phi_m_bulk: float, default np.nan
-        Bulk volume fraction of monomers
-    self.rho_c_bulk: float, default np.nan
-        Bulk number density fraction of crowders
-    self.phi_c_bulk: float, default np.nan
-        Bulk volume fraction of crowders
-
-    Class Attributes
-    ----------------
-    _geometries: list of str
-        Possible geometries of a simulation box
-    _groups: list of str
-        Possible groups of the `SumRule` project.
-    _lineage_attributes: dict of dict
-        a dictionary of `lineage` names. For each `lineage`, a dictionary
-        maps the keywords of physical attributes in that lineage to their
-        corresponding attributes in `SumRule` class.
-    _lineage_private_attributes: dict of lists
-        a dictionary of `lineage` names. For each `lineage`, a list of
-        class attributes that are NOT "N/A" or np.nan is created that can be
-        used in the simulation/experiment/run report files (called
-        "*-properties.csv")
-    """
-    _groups: list[str] = ['bug', 'all']
-    _lineage_attributes: dict[str, dict[str, str]] = {
-        'segment': {
-            'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-            'ensemble_id': 'ens', 'segment_id': 'j'
-            },
-        'whole': {
-            'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-            'ensemble_id': 'ens'
-            },
-        'ensemble_long': {
-            'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'
-            },
-        'ensemble': {
-            'dcyl': 'r', 'dmon_large': 'al', 'nmon_large': 'nl',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc'
-            },
-        'space': {
-            'dcyl': 'D', 'dmon_large': 'al', 'nmon_large': 'nl',
-            'nmon_small': 'ns', 'dcrowd': 'ac'
-            }
-    }
-    _physical_attributes: dict[str, list[str]] = {
-        'segment': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
-        ],
-        'whole': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
-        ],
-        'ensemble_long': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
-        ],
-        'ensemble': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall'
-        ],
-        'space': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall'
-        ]
-    }
-
-    def __init__(
-        self,
-        name: str,
-        lineage: str,
-        geometry: str,
-        group: str,
-        ispath: bool = True
-    ) -> None:
-        super().__init__(name, lineage=lineage, ispath=ispath)
-        self._set_geometry(geometry)
-        self._set_group(group)
-        self._initiate_attributes()
-        self._parse_lineage_name()
-        self._set_parents()
-        self.attributes: Any = list(
-            self._lineage_attributes[self.lineage].keys()
-            ) + self._physical_attributes[self.lineage]
-        self.genealogy: list[str] = super()._genealogy[self.lineage]
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._bulk_attributes()
-
-    def _set_geometry(self, geometry: str) -> None:
-        """
-        checks and sets the `geometry` of a given name.
-
-        Parameters
-        ----------
-        geometry : str
-            Shape of the simulation box.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `geometry` is invalid.
-        """
-        if geometry == 'cylindrical':
-            self.geometry = geometry
-        else:
-            raise ValueError(
-                f"'{geometry}' "
-                "is not 'cylindrical'. This 'TransFociCyl' is used for "
-                f"'cylindrical' geometries.")
-
-    def _set_group(self, group: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        group : str
-            Type of the particle group. 'bug' is used for a single polymer.
-            'all' is used for all the particles/atoms in the system.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `group` is invalid.
-        """
-        if group in self._groups:
-            self.group = group
-        else:
-            groups_string = "'" + "', '".join(
-                self._groups) + "'"
-            raise ValueError(
-                f"'{group}' "
-                "is not a valid particle group. Please select one of "
-                f"{groups_string} groups.")
-
-    def _initiate_attributes(self) -> None:
-        """
-        defines and initiates the class attributes based on the physical
-        attributes defined for the project.
-        """
-        self.dmon_small = 1.0
-        self.dmon_large = np.nan
-        self.nmon_small = np.nan
-        self.nmon_large = np.nan
-        self.nmon = np.nan
-        self.dcrowd = np.nan
-        self.ncrowd = np.nan
-        self.ensemble_id = np.nan
-        self.segment_id = np.nan
-        self.dt = np.nan
-        self.bdump = np.nan
-        self.adump = np.nan
-        self.mmon_small = 1.0
-        self.mmon_large = np.nan
-        self.mcrowd = 1.0
-        self.phi_m_bulk = np.nan
-        self.rho_m_bulk = np.nan
-        self.phi_c_bulk = np.nan
-        self.rho_c_bulk = np.nan
-        # cylindrical attributes
-        self.lcyl = np.nan
-        self.dwall = 1.0
-        self.eps_others = 1.0
-        self.dcyl = np.nan
-        self.epsilon_small = np.nan
-        self.epsilon_large = np.nan
-
-    def _parse_lineage_name(self) -> None:
-        """
-        parses a lineage_name based on a list of keywords of physical
-        attributes.
-        """
-        str_lineages = re.compile(r'([a-zA-Z\-]+)')
-        words = str_lineages.split(self.lineage_name)
-        attributes_float = [
-            'dmon_large', 'dcyl', 'lcyl', 'epsilon_small', 'epsilon_large',
-            'mmon_large', 'dcrowd', 'dt']
-        for attr_name, attr_keyword in \
-                self._lineage_attributes[self.lineage].items():
-            try:
-                attr_value = words[words.index(attr_keyword)+1]
-                if attr_name in attributes_float:
-                    attr_value = float(attr_value)
-                else:
-                    attr_value = int(float(attr_value))
-                if attr_keyword == 'lz':
-                    attr_value = 2 * attr_value
-                if attr_keyword == 'r':
-                    attr_value = 2 * attr_value - self.dwall
-                setattr(self, attr_name, attr_value)
-            except ValueError:
-                print(
-                    f"'{attr_keyword}'"
-                    " attribute keyword is not in "
-                    f"'{self.lineage_name}'"
-                    " lineage name. Please check whether "
-                    f"'{self.filename}'"
-                    " is valid name or not.")
-        setattr(self, 'nmon', self.nmon_large + self.nmon_small)
-
-    def _set_parents(self) -> None:
-        """
-        set to parent names for a lineage_name based on it lineage.
-
-        The following map is used for setting relationships:
-
-            'segment': A child of 'whole' lineage.
-            'whole': A child of 'ensemble' lineage.
-            'ensemble': Achild of 'space' lineage.
-            'space': The root of other lineages.
-
-        It is assumed that 'nc' is the last attribute shortkey in a
-        lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
-        """
-        convention_warning = (
-            "It is assumed that 'nc' is the last attribute" +
-            " shortkey in a lineage_name of types:" +
-            " 'ensemble', 'ensemble_long', 'whole', 'segment'."
-        )
-        space_name = 'ns' + str(self.nmon_small) + 'nl' + \
-            str(self.nmon_large) + 'al' + str(self.dmon_large) + \
-            'D' + str(self.dcyl) + 'ac' + str(self.dcrowd)
-        ensemble_name = space_name + 'nc' + str(self.ncrowd)
-        if self.lineage == 'space':
-            self.space = self.lineage_name
-            self.ensemble = "N/A"
-            self.ensemble_long = "N/A"
-            self.whole = "N/A"
-            self.segment = "N/A"
-        elif self.lineage == 'ensemble':
-            self.space = self.lineage_name.split('nc')[0]
-            warnings.warn(convention_warning, UserWarning)
-            self.ensemble = self.lineage_name
-            self.ensemble_long = "N/A"
-            self.whole = "N/A"
-            self.segment = "N/A"
-        elif self.lineage == 'ensemble_long':
-            self.space = space_name
-            self.ensemble = ensemble_name
-            warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name
-            self.whole = "N/A"
-            self.segment = "N/A"
-        elif self.lineage == 'whole':
-            self.space = space_name
-            self.ensemble = ensemble_name
-            warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
-            self.whole = self.lineage_name
-            self.segment = "N/A"
-        else:
-            self.space = space_name
-            self.ensemble = ensemble_name
-            warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
-            self.whole = self.lineage_name.split(".j")[0]
-            self.segment = self.lineage_name
-
-    def _bulk_attributes(self):
-        """
-        computes some physical attributes of a lineage based on its
-        primary attributes.
-        """
-        vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
-        vol_mon_s = np.pi * self.dmon_small**3 / 6
-        vol_mon_l = np.pi * self.dmon_large**3 / 6
-        self.rho_m_bulk = self.nmon / vol_cell
-        self.phi_m_bulk = (vol_mon_s * self.nmon_small +
-                           vol_mon_l * self.nmon_large) / vol_cell
-        vol_crowd = np.pi * self.dcrowd**3 / 6
-        self.rho_c_bulk = self.ncrowd / vol_cell
-        self.phi_c_bulk = self.rho_c_bulk * vol_crowd
-
-
 class TransFociCubic(object):
     name: str
     geometry: str
@@ -2269,8 +1859,8 @@ class TransFociCubic(object):
         Mass of a large monomer. Its associated keyword is 'ml'.
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
-        from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
+        from either 'r' keyword (radius of the cylindrical confinement; a cylinder
+        with open ends) or 'D' keyword (size of that confinement. Following
         LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
         domain over which x and y cartesian coordiantes are defined in the
         'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
@@ -2713,8 +2303,8 @@ class FloryChain(object):
     ----------
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
-        from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
+        from either 'r' keyword (radius of the cylindrical confinement; a cylinder
+        with open ends) or 'D' keyword (size of that confinement. Following
         LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
         domain over which x and y cartesian coordiantes are defined in the
         'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
@@ -2962,11 +2552,11 @@ class LammpsDataTemplate(object):
         files, 'geometry' is the geoemtery of the space, 'group' is the name of
         file group, 'N" is the number of monomers, 'D' is the diameter (size)
         of the cylinder, and 'L' is the length of cylinder. This template is
-        for 'cylindrical' and 'slit' geomteries. It is important to note that
-        the system is peroidic along z direction with range [-L/2,L/2]
-        inclusive in the 'cylindrical' geoemtry while it is periodic along x
-        and y directions both with the same range [-D/2,D/2] in the 'slit'
-        geometry. Here, x, y, and z are cartesian coordinates.
+        for 'cylindrical' and 'slit' geomteries. It is important to note that the
+        system is peroidic along z direction with range [-L/2,L/2] inclusive
+        in the 'cylindrical' geoemtry while it is periodic along x and y directions
+        both with the same range [-D/2,D/2] in the 'slit' geometry. Here, x, y,
+        and z are cartesian coordinates.
 
      2. 'data_template-geometry-group-N#L#'
 
@@ -2997,10 +2587,10 @@ class LammpsDataTemplate(object):
     nmon: int, np.nan
         Number of monomers. Its associated keyword is 'N'.
     dcyl: float, np.nan
-        Size (or diameter) of the cylindrical (cylindrical) confinement,
-        inferred from 'D' keyword keyword. Cuation: The size of cylindrical
-        confinement is defined based on the LAMMPS' tango, so it is different
-        from the size defined in other parsers defined in this module.
+        Size (or diameter) of the cylindrical (cylindrical) confinement, inferred
+        from 'D' keyword keyword. Cuation: The size of cylindrical confinement
+        is defined based on the LAMMPS' tango, so it is different from the size
+        defined in other parsers defined in this module.
 
     Class Attributes
     ----------------
