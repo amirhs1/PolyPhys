@@ -22,7 +22,7 @@ EdgeT = Union[Tuple[DirectionT, SpeciesT, GroupT],
 TransFociCubicParser = Type[TransFociCubic]
 TransFociParser = Type[TransFoci]
 SumRuleParser = Type[SumRule]
-PolyPhysParser = Union[TransFociParser, SumRuleParser, TransFociCubicParser]
+ParserT = Union[TransFociParser, SumRuleParser, TransFociCubicParser]
 
 EnsWholes = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
 EnsembleT = Tuple[EnsembleName, EnsWholes]
