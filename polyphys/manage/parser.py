@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 import re
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 import warnings
 # This for Python 3.9
 TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
@@ -13,25 +13,13 @@ TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
 
 class ParserTemplate(ABC):
     name: str
-    lineage: Optional[str] = None
-    ispath: Optional[bool] = True
+    lineage: str
+    geometry: str
+    group: str
+    ispath: bool
     """
     parses a `lineage_name` to extract information about the 'lineage' oftrj
     that 'lineage_name', based on the following 'lineage' patterns:
-
-    To-do List
-    ----------
-    1. This class can be split to 4 classes in the following order of
-    inheritance: parent->child: space -> ensemble -> whole -> segment.
-    2. Using @attribute for attributes to get, set, or delete them.
-    3. self.dcyl is set by self.dwall and self-dwall is 1.0 by default.
-    4. Can have as many as monomer types and properties as we like.
-    5. Define the following parameters:
-        topology: {'linear', 'ring'},
-            Polymer topology
-        homogeneity: {'homopolymer', 'heteropolymer', 'copolymer'}, defualt
-        'homopolymer'
-            Polymer homogeneity.
 
     Parameters
     ----------
@@ -114,15 +102,18 @@ class ParserTemplate(ABC):
     def __init__(
         self,
         name: str,
-        lineage: Optional[str] = None,
-        ispath: Optional[bool] = True,
+        lineage: str,
+        geometry: str,
+        group: str,
+        ispath,
     ) -> None:
-        self.filepath: str = name
-        self.filename: str = None
-        self.lineage: str = None
-        self.geometry: str = None
-        self.group: str = None
-        self.ispath: bool = ispath
+        self.filepath = name
+        self.filename = None
+        self._lineage = lineage
+
+        self._geometry = geometry
+        self._group = group
+        self._ispath = ispath
         if self.ispath is True:
             self.filename, _ = os.path.splitext(self.filepath)
             self.filename: str = self.filename.split("/")[-1]
@@ -135,17 +126,17 @@ class ParserTemplate(ABC):
         observation: str = f"""
         Observation:
             Name: '{self.filename}',
-            Geometry: '{self.geometry},
-            Group: '{self.group}',
-            Lineage: '{self.lineage}'
+            Geometry: '{self._geometry},
+            Group: '{self._group}',
+            Lineage: '{self._lineage}'
         """
         return observation
 
     def __repr__(self) -> str:
         return (
             f"Observation('{self.filename}' in geometry" +
-            f" '{self.geometry}' from group '{self.group}' with" +
-            f" lineage '{self.lineage}')"
+            f" '{self._geometry}' from group '{self._group}' with" +
+            f" lineage '{self._lineage}')"
         )
 
     @property
@@ -158,7 +149,7 @@ class ParserTemplate(ABC):
         str
             returns the current `lineage`.
         """
-        return self.lineage
+        return self._lineage
 
     @lineage.setter
     def _set_lineage(self, lineage: str) -> None:
@@ -176,7 +167,7 @@ class ParserTemplate(ABC):
             Riases if the atom `lineage` is invalid.
         """
         if lineage in self._lineage_attributes.keys():
-            self.lineage = lineage
+            self._lineage = lineage
         else:
             types_string: str = "'" + "', '".join(
                 self._lineage_attributes.keys()) + "'"
@@ -190,13 +181,13 @@ class ParserTemplate(ABC):
         parses the unique lineage_name (the first substring of filename
         and/or the segment keyword middle substring) of a filename.
         """
-        if self.lineage in ['segment', 'whole']:
+        if self._lineage in ['segment', 'whole']:
             # a 'segment' lineage only used in 'probe' phase
             # a 'whole' lineage used in 'probe' or 'analyze' phases
             # so its lineage_name is either ended by 'group' keyword or "-".
             # these two combined below:
             self.lineage_name: str = \
-                self.filename.split("." + self.group)[0].split("-")[0]
+                self.filename.split("." + self._group)[0].split("-")[0]
         else:  # 'ensemble' or 'space' lineages
             self.lineage_name = self.filename.split('-')[0]
 
@@ -210,7 +201,7 @@ class ParserTemplate(ABC):
         str
             returns the current `ispath`.
         """
-        return self.ispath
+        return self._ispath
 
     @property
     def geometry(self) -> str:
@@ -222,7 +213,7 @@ class ParserTemplate(ABC):
         str
             returns the current `geometry`.
         """
-        return self.geometry
+        return self._geometry
 
     @geometry.setter
     @abstractmethod
@@ -252,7 +243,7 @@ class ParserTemplate(ABC):
         str
             returns the current `group`.
         """
-        return self.group
+        return self._group
 
     @group.setter
     @abstractmethod
