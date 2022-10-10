@@ -9,11 +9,12 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 import statsmodels.tsa.stattools as tsas
-from polyphys.manage.organizer import (
+from ..manage.organizer import (
     invalid_keyword,
     save_parent,
     sort_filenames
 )
+from ..manage.typer import ParserT
 
 
 def acf_of_wholes(
@@ -306,7 +307,7 @@ def fit_wholes(
     property_: str,
     func_name: str,
     property_pattern: str,
-    parser: Callable,
+    parser: ParserT,
     x_type: str = 'index',
     scale: str = None,
     length: int = 50000,
@@ -341,7 +342,7 @@ def fit_wholes(
         Function fit to the data
     property_pattern: str
         The pattern by which the filenames of timeseries are started with.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
     x_type: {'index', 'time'}, default 'index'
@@ -423,9 +424,9 @@ def fit_wholes(
             whole_name = col.split('-')[0]
             whole_info = parser(
                 whole_name,
+                'whole',
                 'biaxial',
                 'bug',
-                'whole',
                 ispath=False
             )
             whole_data = [whole_name]
@@ -500,7 +501,7 @@ def fit_exp_wholes(
     space_path: str,
     property_: str,
     fit_func: Callable,
-    parser: Callable,
+    parser: ParserT,
     geometry: str,
     group: str,
     alpha: float,
@@ -566,9 +567,9 @@ def fit_exp_wholes(
             whole_name = col.split('-')[0]
             whole_info = parser(
                 whole_name,
-                geometry=geometry,
-                group=group,
-                lineage='whole',
+                'whole',
+                geometry,
+                group,
                 ispath=False
             )
             whole_data = []  # contains fiiting info of a whole
