@@ -505,7 +505,7 @@ def whole_from_segment(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     group: {'bug', 'all'}
         Type of the particle group.
@@ -541,7 +541,7 @@ def whole_from_segment(
     Please see the 'organizer' documentation for definitions
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'all'])
     invalid_keyword(relation, ['histogram', 'tseries', 'bin_edge'])
     mapping_func = {
@@ -608,7 +608,7 @@ def whole_from_file(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     group: {'bug', 'all'}
         Type of the particle group.
@@ -624,7 +624,7 @@ def whole_from_file(
     Please see the 'organizer' documentation for definitions
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'all'])
     wholes = {}
     for whole_path in whole_paths:
@@ -658,7 +658,7 @@ def whole_from_distMat_t(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     group: {'bug', 'all'}
         Type of the particle group.
@@ -674,7 +674,7 @@ def whole_from_distMat_t(
     Please see the 'organizer' documentation for definitions
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'all'])
     wholes_freqs = {}
     wholes_rdfs = {}
@@ -831,7 +831,7 @@ def ensemble(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
     group: {'bug', 'all'}
         The type of the particle group.
@@ -868,7 +868,7 @@ def ensemble(
         that ensemble.
     """
     # Averging over ensembles with simailar initial paramters
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'all'])
     invalid_keyword(whole_type, ['vector', 'matrix', 'dataframe', 'bin_edge'])
     ensembles = {}
@@ -1044,7 +1044,7 @@ def ensemble_avg(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
     group: {'bug', 'all'}
         Type of the particle group.
@@ -1073,7 +1073,7 @@ def ensemble_avg(
     """
     # Averging over ensembles with simailar initial paramters
     invalid_keyword(group, ['bug', 'all'])
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(ens_type, ['dataframe', 'ndarray', 'bin_edge'])
     ens_avgs = {}
     ens_types = {
@@ -1191,7 +1191,7 @@ def parents_stamps(
     ----------
     stamps: DataFrame
         Dataframe of all the simulation stamps in the `group` in a space.
-    geometry : str in {'biaxial', 'slit', 'box'}
+    geometry : str in {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box
     group: str in {'bug', 'all'}
         Type of the particle group.
@@ -1219,7 +1219,7 @@ def parents_stamps(
     stamps_avg: pd.DataFrame
         Dataframe of all the parents stamps in the `group` in a space.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'all'])
     invalid_keyword(lineage, ['segment', 'whole'])
     # attributes, properties and genealogy:
@@ -1404,7 +1404,7 @@ def space_tseries(
         concatenated timeseries.
     group: str in {'bug', 'all'}
         The type of the particle group.
-    geometry : str in {'biaxial', 'slit', 'box'}
+    geometry : str in {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
     divisor: float, default 0.025
         The step by which the values of "phi_c_bulk" attribute are rounded.
@@ -1510,7 +1510,7 @@ def space_hists(
         concatenated timeseries.
     group: {'bug', 'all'}
         The type of the particle group.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
     single_space:
         Whether the all-in-one file is for all the timeseries properties of a
@@ -1801,7 +1801,7 @@ def space_sum_rule(
 
     Issues
     ------
-    Currently, `direction` is only defined for 'biaxial' goemtery.
+    Currently, `direction` is only defined for 'cylindrical' goemtery.
 
     Parameters
     ----------
@@ -1829,7 +1829,7 @@ def space_sum_rule(
         species.
     group: {'bug', 'all'}
         The type of the particle group.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
     direction: {'r', 'z'}
         The direction along which operation is done.
