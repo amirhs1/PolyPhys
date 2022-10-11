@@ -67,7 +67,7 @@ def time_series(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     is_segment: bool
         Whether `observations` are 'segment' or 'whole'
@@ -90,7 +90,7 @@ def time_series(
         are returned where the standard deviation is computed according to
         Bartlett”s formula.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
     if tseries_properties is not None:
         for property_, species, group in tseries_properties:
@@ -240,7 +240,7 @@ def histograms(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}, default biaxial
+    geometry : {'cylindrical', 'slit', 'cubic'}, default cylindrical
         Shape of the simulation box.
     is_segment: bool, default False
         Whether `observations` are 'segment' or 'whole'
@@ -256,7 +256,7 @@ def histograms(
         A list of tuples where each tuple has three members: the direction,
         species, and group of a 'histogram' property.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
     # Histograms:
     # Two types of histograms with and without rhos and phis:
@@ -462,7 +462,7 @@ def histograms_2d(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}, default biaxial
+    geometry : {'cylindrical', 'slit', 'cubic'}, default cylindrical
         Shape of the simulation box.
     is_segment: bool, default False
         Whether `observations` are 'segment' or 'whole'
@@ -476,7 +476,7 @@ def histograms_2d(
         A list of tuples where each tuple has three members: the direction,
         species, and group of a 'edge' property.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
     if hist2d_properties is not None:
         for direction, species, group in hist2d_properties:
@@ -608,7 +608,7 @@ def nonscalar_time_series(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     is_segment: bool
         Whether `observations` are 'segment' or 'whole'
@@ -628,7 +628,7 @@ def nonscalar_time_series(
         properties are all of nonscalar form.
     """
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     if nonscalar_hist_t_properties is not None:
         for property_, species, group, avg_axis in nonscalar_hist_t_properties:
             tseries = sort_filenames(
@@ -799,7 +799,7 @@ def analyze_bug(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     is_segment: bool
         Whether `observations` are 'segment' (True) or 'whole' (False)
@@ -849,7 +849,7 @@ def analyze_bug(
         are returned where the standard deviation is computed according to
         Bartlett”s formula.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     observations = glob(input_database + hierarchy)
     if observations == []:
         raise ValueError(
@@ -995,7 +995,7 @@ def analyze_bug_trans_size(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     is_segment: bool
         Whether `observations` are 'segment' (True) or 'whole' (False)
@@ -1045,7 +1045,7 @@ def analyze_bug_trans_size(
         are returned where the standard deviation is computed according to
         Bartlett”s formula.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     observations = glob(input_database + hierarchy)
     if observations == []:
         raise ValueError(
@@ -1165,7 +1165,7 @@ def analyze_all(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
-    geometry : {'biaxial', 'slit', 'box'}
+    geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     is_segment: bool
         Whether `observations` are 'segment' (True) or 'whole' (False)
@@ -1225,7 +1225,7 @@ def analyze_all(
         are returned where the standard deviation is computed according to
         Bartlett”s formula.
     """
-    invalid_keyword(geometry, ['biaxial', 'slit', 'box'])
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     observations = glob(input_database + hierarchy)
     if observations == []:
         raise ValueError(
