@@ -13,7 +13,7 @@ else
 fi
 echo "Trajectory directory: $trjdir"
 mkdir "$trjdir"
-for dir in al*[1-8].ring/; do
+for dir in eps*[1-8].ring/; do
     echo "$dir"
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"
@@ -22,7 +22,7 @@ for dir in al*[1-8].ring/; do
     cp "$fname".all.data ../"$trjdir"/"$fname"/
     cp log.lammps  "$fname".log 
     mv "$fname".log ../"$trjdir"/"$fname"/
-    for gzfile in ns*.all.lammpstrj.gz;do 
+    for gzfile in eps*.all.lammpstrj.gz;do 
             gzip -dk "$gzfile"
             allfile=${gzfile[*]:0: -3}
             mv "$allfile" ../"$trjdir"/"$fname"/
@@ -33,4 +33,4 @@ done
 rundir=run_files-${name}
 mkdir "$rundir"
 mv ./*.data ./*.lmp ./*.sh "$rundir"
-cp ../PolyPhys/bash_pipeline/trans_foci/4-probe/cubic/probe_runfiles-cubic.sh ./"${trjdir}"/
+cp ../PolyPhys/bash_pipeline/trans_foci/4-probe/cyl/probe_runfiles-cyl.sh ./"${trjdir}"/
