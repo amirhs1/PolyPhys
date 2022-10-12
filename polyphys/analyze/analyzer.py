@@ -1423,16 +1423,17 @@ def error_calc_block(
 
 
 def ensemble_measure(ensemble_db: str, measure: Callable) -> pd.DataFrame:
-    """Applies `measure_func` column-wise (axis=0) on the "whole" columns in
+    """
+    applies `measure_func` column-wise (axis=0) on the "whole" columns in
     an "ensemble" dataframe of a given property.
 
     Parameters
     ----------
     ensemble_db: str
-    Path to the "ensemble" dataframe of a given property,
+        Path to the "ensemble" dataframe of a given property,
 
     measure_func: Callable
-    The applying function
+        The applying function
 
     Return
     ------
