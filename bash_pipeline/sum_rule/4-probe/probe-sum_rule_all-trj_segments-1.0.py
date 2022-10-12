@@ -2,10 +2,9 @@
 from glob import glob
 from polyphys.manage import organizer
 from polyphys.probe import prober
-from polyphys.manage.parser import SumRule
+from polyphys.manage.parser import SumRuleCyl
 
 
-geometry = 'biaxial'
 group = 'all'
 topo_lineage = 'whole'
 lineage = 'segment'
@@ -23,22 +22,14 @@ max_segment_id = len(all_trjs)
 # analyzig all files
 # it is assumed that the all trjs are numbers from 1 to max_segment_id
 for all_trj in all_trjs:
-    trj_info = SumRule(
-        all_trj,
-        geometry=geometry,
-        group=group,
-        lineage=topo_lineage
-    )
+    trj_info = SumRuleCyl(all_trj, topo_lineage, 'cylindrical', group)
     # all the frames in the last segment are probed:
     if trj_info.segment_id == max_segment_id:
-        prober.sum_rule_all(
-            all_topo, all_trj, geometry, lineage, save_to=save_to
-        )
+        prober.sum_rule_all_cyl(all_topo, all_trj, lineage, save_to=save_to)
     else:
-        prober.sum_rule_all(
+        prober.sum_rule_all_cyl(
             all_topo,
             all_trj,
-            geometry,
             lineage,
             save_to=save_to,
             continuous=True

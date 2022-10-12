@@ -13,7 +13,7 @@ else
 fi
 echo "Trajectory directory: $trjdir"
 mkdir "$trjdir"
-for dir in ns*[1-8].ring/; do
+for dir in al*[1-8].ring/; do
     echo "$dir"
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"
@@ -33,4 +33,4 @@ done
 rundir=run_files-${name}
 mkdir "$rundir"
 mv ./*.data ./*.lmp ./*.sh "$rundir"
-cp ../PolyPhys/bash_pipline/trans_foci/4-probe/probe_runfiles.sh ./"${trjdir}"/
+cp ../PolyPhys/bash_pipeline/trans_foci/4-probe/cubic/probe_runfiles-cubic.sh ./"${trjdir}"/
