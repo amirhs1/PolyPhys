@@ -3951,7 +3951,6 @@ def trans_fuci_bug_cubic(
     bug = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
     # defining collectors
     # -bug:
-    rflory_t = []
     gyr_t = []
     principal_axes_t = np.empty([0, 3, 3])
     asphericity_t = []
@@ -3967,7 +3966,6 @@ def trans_fuci_bug_cubic(
         # bug:
         # -various measures of chain size
         gyr_t.append(bug.radius_of_gyration())
-        rflory_t.append(end_to_end(bug.positions))
         # -shape parameters:
         asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
         principal_axes_t = np.append(
@@ -3996,7 +3994,6 @@ def trans_fuci_bug_cubic(
         clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
     # Saving collectors to memory
     # -bug
-    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
     np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
     np.save(save_to + sim_name + '-asphericityTMon.npy',
             np.array(asphericity_t)
