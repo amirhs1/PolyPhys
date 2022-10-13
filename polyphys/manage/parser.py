@@ -116,11 +116,10 @@ class ParserBase(ABC):
         self.filepath = name
         self.filename = None
         self._lineage = lineage
-
         self._geometry = geometry
         self._group = group
         self._ispath = ispath
-        if self.ispath is True:
+        if self._ispath is True:
             self.filename, _ = os.path.splitext(self.filepath)
             self.filename: str = self.filename.split("/")[-1]
         else:
@@ -208,6 +207,18 @@ class ParserBase(ABC):
             returns the current `ispath`.
         """
         return self._ispath
+
+    @ispath.setter
+    def _set_ispath(self, ispath: bool) -> None:
+        """
+        checks and sets the `ispath` of a given name.
+
+        Parameters
+        ----------
+        ispath : bool
+            Shape of the simulation box.
+        """
+        self._ispath = ispath
 
     @property
     def geometry(self) -> str:
