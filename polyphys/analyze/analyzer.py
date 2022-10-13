@@ -698,67 +698,109 @@ def nonscalar_time_series(
                 observations,
                 fmts=['-' + property_ + species + '.npy']
             )
-            wholes_hists, wholes_rdfs, wholes_tseries = whole_from_distMat_t(
-                whole_paths,
-                parser,
-                geometry,
-                group
-            )
             # changing property_ name after averaging:
-            property_old = property_
-            property_ = 'pairDistHist'
-            warnings.warn(
-                f"property name '{property_old}' changed to"
-                f"'{property_}' after averaginv over time.",
-                UserWarning
-            )
-            # For 'dataframe' whole_type, we directly get the ensemble-averaged
-            # proeprties.
-            _ = ensemble(
-                    property_ + species + '-ensAvg',
-                    wholes_hists,
-                    parser,
-                    geometry,
-                    group,
-                    'dataframe',
-                    save_to=save_to_ens_avg
-            )
-            # changing property_ name after averaging:
-            property_old = property_
-            property_ = 'pairDistRdf'
-            warnings.warn(
-                f"property name '{property_old}' changed to"
-                f"'{property_}' after averaginv over time.",
-                UserWarning
-            )
-            # For 'dataframe' whole_type, we directly get the ensemble-averaged
-            # proeprties.
-            _ = ensemble(
-                    property_ + species + '-ensAvg',
-                    wholes_rdfs,
-                    parser,
-                    geometry,
-                    group,
-                    'dataframe',
-                    save_to=save_to_ens_avg
-            )
-            property_ = 'pairDistT'
-            warnings.warn(
-                f"property name '{property_old}' changed to"
-                f"'{property_}' after averaginv over time.",
-                UserWarning
-            )
-            # For 'dataframe' whole_type, we directly get the ensemble-averaged
-            # proeprties.
-            _ = ensemble(
-                    property_ + species + '-ensAvg',
-                    wholes_tseries,
-                    parser,
-                    geometry,
-                    group,
-                    'dataframe',
-                    save_to=save_to_ens_avg
-            )
+            if property_ == 'distMatT':
+                wholes_hists, wholes_rdfs, wholes_tseries = \
+                    whole_from_distMat_t(
+                        whole_paths,
+                        parser,
+                        geometry,
+                        group
+                        )
+                property_old = property_
+                property_ = 'pairDistHist'
+                warnings.warn(
+                    f"property name '{property_old}' changed to"
+                    f"'{property_}' after averaginv over time.",
+                    UserWarning
+                )
+                # For 'dataframe' whole_type, we directly get the
+                # ensemble-averaged proeprties.
+                _ = ensemble(
+                        property_ + species + '-ensAvg',
+                        wholes_hists,
+                        parser,
+                        geometry,
+                        group,
+                        'dataframe',
+                        save_to=save_to_ens_avg
+                )
+                # changing property_ name after averaging:
+                property_old = property_
+                property_ = 'pairDistRdf'
+                warnings.warn(
+                    f"property name '{property_old}' changed to"
+                    f"'{property_}' after averaginv over time.",
+                    UserWarning
+                )
+                # For 'dataframe' whole_type, we directly get the
+                # ensemble-averaged proeprties.
+                _ = ensemble(
+                        property_ + species + '-ensAvg',
+                        wholes_rdfs,
+                        parser,
+                        geometry,
+                        group,
+                        'dataframe',
+                        save_to=save_to_ens_avg
+                )
+                property_ = 'pairDistT'
+                warnings.warn(
+                    f"property name '{property_old}' changed to"
+                    f"'{property_}' after averaginv over time.",
+                    UserWarning
+                )
+                # For 'dataframe' whole_type, we directly get the
+                # ensemble-averaged proeprties.
+                _ = ensemble(
+                        property_ + species + '-ensAvg',
+                        wholes_tseries,
+                        parser,
+                        geometry,
+                        group,
+                        'dataframe',
+                        save_to=save_to_ens_avg
+                )
+            else:  # example: the matrix principalTMon
+                tseries = sort_filenames(
+                    observations,
+                    fmts=['-' + property_ + species + '.npy']
+                )
+                if is_segment is True:
+                    wholes = whole_from_segment(
+                        property_ + species,
+                        tseries,
+                        parser,
+                        geometry,
+                        group,
+                        'tseries',
+                        save_to=save_to_whole
+                    )
+                else:
+                    wholes = whole_from_file(
+                        tseries,
+                        parser,
+                        geometry,
+                        group
+                    )
+                # changing property_ name after averaging:
+                ensembles = ensemble(
+                        property_ + species,
+                        wholes,
+                        parser,
+                        geometry,
+                        group,
+                        'matrix',
+                        save_to=save_to_ens
+                )
+                _ = ensemble_avg(
+                        property_ + species,
+                        ensembles,
+                        geometry,
+                        group,
+                        'ndarray',
+                        save_to=save_to_ens_avg
+                )
 
 
 def analyze_bug(
