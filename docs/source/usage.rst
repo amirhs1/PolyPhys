@@ -17,6 +17,6 @@ To use Lumache, first install it using pip:
 Creating recipes
 ----------------
 
-To probe a pair of topology and trajectory files of the *bug* atom group, you can use the ``polyphys.probe.prober.trans_fuci_bug()`` function:
+To probe a pair of topology and trajectory files of the *bug* atom group, you can use the ``polyphys.probe.prober.trans_fuci_bug_cyl()`` function:
 
 .. autofunction:: polyphys.probe.prober.trans_fuci_bug
