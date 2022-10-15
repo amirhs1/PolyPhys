@@ -1,0 +1,517 @@
+Simulation name: 20190809_article5_various_dumps
+
+
+Run name: N80nc40800ens1lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 1
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 61831.1 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 139735.412 tau/day, 808.654 timesteps/s
+77.8% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2109.2     | 4372.4     | 6898.3     |3205.8 |  7.07
+Bond    | 9.0972     | 16.603     | 34.268     | 199.1 |  0.03
+Neigh   | 22271      | 22708      | 23259      | 199.4 | 36.73
+Comm    | 17019      | 19397      | 21658      | 995.6 | 31.37
+Output  | 458.86     | 485.37     | 598.95     | 122.8 |  0.78
+Modify  | 11003      | 12874      | 14529      | 907.8 | 20.82
+Other   |            | 1978       |            |       |  3.20
+
+Nlocal:    1277.5 ave 1949 max 682 min
+Histogram: 16 0 0 0 0 0 0 1 6 9
+Nghost:    4574.56 ave 5879 max 3321 min
+Histogram: 8 8 0 0 0 0 0 4 4 8
+Neighs:    7719.22 ave 12304 max 3536 min
+Histogram: 16 0 0 0 0 0 0 1 6 9
+
+Total # of neighbors = 247015
+Ave neighs/atom = 6.04244
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688714
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i1
+Total wall time: 17:32:54
+
+
+3. Created files:
+total 98766122
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 09:30 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 71961480569 Oct  3 09:26 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi def-byha  9246213444 Oct  3 09:30 all.dynamic.i1_scaled.lammpstrj
+-rw-r-----  1 amirhsi def-byha 70550476490 Oct  3 09:30 all.i1.lammpstrj
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 09:30 archive
+-rwxr-x---  1 amirhsi def-byha        4775 Oct  3 09:30 cylinder_atom.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:30 data.chain.80
+-rw-r-----  1 amirhsi def-byha        4947 Oct  3 09:30 input.lmp
+-rw-r-----  1 amirhsi def-byha      393425 Oct  3 09:22 log.lammps
+-rw-r-----  1 amirhsi def-byha      387019 Oct  3 09:22 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:30 restart_after_sampling.i1
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:26 restart_before_sampling.i1
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:22 slurm-18343818.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:30 submit.sh
+
+
+
+
+Run name: N80nc40800ens2lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 2
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 77532.7 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 111436.796 tau/day, 644.889 timesteps/s
+73.3% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2118.6     | 4394.3     | 7005.9     |3209.6 |  5.67
+Bond    | 9.0848     | 16.555     | 34.106     | 193.0 |  0.02
+Neigh   | 22366      | 22845      | 23510      | 226.9 | 29.46
+Comm    | 18627      | 21613      | 24647      |1023.4 | 27.88
+Output  | 7643.2     | 10853      | 14007      |2138.7 | 14.00
+Modify  | 11869      | 15764      | 21294      |2248.5 | 20.33
+Other   |            | 2048       |            |       |  2.64
+
+Nlocal:    1277.5 ave 1931 max 688 min
+Histogram: 16 0 0 0 0 0 0 0 6 10
+Nghost:    4581.09 ave 5884 max 3274 min
+Histogram: 8 8 0 0 0 0 0 2 6 8
+Neighs:    7725.03 ave 12209 max 3570 min
+Histogram: 16 0 0 0 0 0 0 0 6 10
+
+Total # of neighbors = 247201
+Ave neighs/atom = 6.04699
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688521
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i2
+Total wall time: 21:56:07
+
+
+3. Created files:
+total 54763899
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 09:33 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 29443250304 Oct  3 09:32 all.dynamic.i2.lammpstrj.gz
+-rw-r-----  1 amirhsi def-byha 28868168288 Oct  3 09:33 all.i2.lammpstrj.gz
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 09:33 archive
+-rwxr-x---  1 amirhsi def-byha        4779 Oct  3 09:33 cylinder_atom_gz.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:33 data.chain.80
+-rw-r-----  1 amirhsi def-byha        4952 Oct  3 09:33 input.lmp
+-rw-r-----  1 amirhsi def-byha      393434 Oct  3 09:30 log.lammps
+-rw-r-----  1 amirhsi def-byha      387826 Oct  3 09:30 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:33 restart_after_sampling.i2
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:32 restart_before_sampling.i2
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:30 slurm-18343820.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:33 submit.sh
+
+
+
+
+Run name: N80nc40800ens3lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 3
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 64440.7 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 134076.854 tau/day, 775.908 timesteps/s
+76.5% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2021.6     | 4288.9     | 6643.7     |3194.7 |  6.66
+Bond    | 9.1441     | 15.233     | 30.421     | 186.4 |  0.02
+Neigh   | 22493      | 23069      | 23625      | 223.6 | 35.80
+Comm    | 18696      | 20866      | 24058      | 905.3 | 32.38
+Output  | 426.86     | 448.31     | 550.99     | 110.8 |  0.70
+Modify  | 11151      | 13787      | 16771      |1260.5 | 21.40
+Other   |            | 1965       |            |       |  3.05
+
+Nlocal:    1277.5 ave 1920 max 680 min
+Histogram: 16 0 0 0 0 0 0 0 4 12
+Nghost:    4607.59 ave 5915 max 3358 min
+Histogram: 8 8 0 0 0 0 0 0 8 8
+Neighs:    7722.16 ave 12073 max 3661 min
+Histogram: 16 0 0 0 0 0 0 0 4 12
+
+Total # of neighbors = 247109
+Ave neighs/atom = 6.04474
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688856
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i3
+Total wall time: 18:16:12
+
+
+3. Created files:
+total 96870845
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 09:40 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 70956948278 Oct  3 09:36 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi def-byha 69565121602 Oct  3 09:40 all.i3.lammpstrj
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 09:33 archive
+-rwxr-x---  1 amirhsi def-byha        4839 Oct  3 09:33 cylinder_atom_no_scaled.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:33 data.chain.80
+-rw-r-----  1 amirhsi def-byha        5009 Oct  3 09:33 input.lmp
+-rw-r-----  1 amirhsi def-byha      393488 Oct  3 09:33 log.lammps
+-rw-r-----  1 amirhsi def-byha      387020 Oct  3 09:33 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:40 restart_after_sampling.i3
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:36 restart_before_sampling.i3
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:33 slurm-18343823.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:33 submit.sh
+
+
+
+
+Run name: N80nc40800ens4lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 4
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 56845.3 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 151991.518 tau/day, 879.581 timesteps/s
+78.1% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2086.4     | 4250.7     | 6718       |3169.2 |  7.48
+Bond    | 9.1613     | 14.813     | 29.469     | 173.6 |  0.03
+Neigh   | 21273      | 21857      | 23592      | 334.1 | 38.45
+Comm    | 13609      | 16990      | 20858      |1517.1 | 29.89
+Output  | 410.39     | 428.53     | 516.59     |  95.1 |  0.75
+Modify  | 10122      | 11682      | 14114      | 929.3 | 20.55
+Other   |            | 1623       |            |       |  2.86
+
+Nlocal:    1277.5 ave 1933 max 683 min
+Histogram: 16 0 0 0 0 0 0 0 6 10
+Nghost:    4571.81 ave 5881 max 3258 min
+Histogram: 7 9 0 0 0 0 0 4 4 8
+Neighs:    7728.59 ave 12159 max 3570 min
+Histogram: 16 0 0 0 0 0 0 0 7 9
+
+Total # of neighbors = 247315
+Ave neighs/atom = 6.04978
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688777
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i4
+Total wall time: 16:07:06
+
+
+3. Created files:
+total 96870756
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 09:48 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 70956515706 Oct  3 09:45 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi def-byha 69564671230 Oct  3 09:48 all.i4.lammpstrj
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 09:48 archive
+-rwxr-x---  1 amirhsi def-byha        4855 Oct  3 09:48 cylinder_atom_no_scaled_yes_pbc.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:48 data.chain.80
+-rw-r-----  1 amirhsi def-byha        5025 Oct  3 09:48 input.lmp
+-rw-r-----  1 amirhsi def-byha      393504 Oct  3 09:40 log.lammps
+-rw-r-----  1 amirhsi def-byha      387020 Oct  3 09:40 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:48 restart_after_sampling.i4
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:45 restart_before_sampling.i4
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:40 slurm-18343825.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:48 submit.sh
+
+
+
+
+Run name: N80nc40800ens5lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 5
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 72833.8 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 118626.188 tau/day, 686.494 timesteps/s
+72.8% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2112.1     | 4242.9     | 6703.3     |3159.3 |  5.83
+Bond    | 9.6415     | 14.671     | 28.464     | 173.0 |  0.02
+Neigh   | 22354      | 22864      | 23736      | 259.6 | 31.39
+Comm    | 14661      | 17313      | 20571      |1418.8 | 23.77
+Output  | 8188.1     | 11443      | 14777      |2189.3 | 15.71
+Modify  | 10983      | 14961      | 19332      |2089.6 | 20.54
+Other   |            | 1996       |            |       |  2.74
+
+Nlocal:    1277.5 ave 1934 max 664 min
+Histogram: 16 0 0 0 0 0 0 0 5 11
+Nghost:    4584.97 ave 5883 max 3292 min
+Histogram: 8 8 0 0 0 0 0 1 7 8
+Neighs:    7716.88 ave 12213 max 3500 min
+Histogram: 16 0 0 0 0 0 0 0 6 10
+
+Total # of neighbors = 246940
+Ave neighs/atom = 6.04061
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688976
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i5
+Total wall time: 20:36:29
+
+
+3. Created files:
+total 57634583
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 09:50 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 30511205323 Oct  3 09:49 all.dynamic.i5.lammpstrj.gz
+-rw-r-----  1 amirhsi def-byha 29915383220 Oct  3 09:50 all.i5.lammpstrj.gz
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 09:50 archive
+-rwxr-x---  1 amirhsi def-byha        4844 Oct  3 09:50 cylinder_atom_gz_no_scaled.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:50 data.chain.80
+-rw-r-----  1 amirhsi def-byha        5013 Oct  3 09:50 input.lmp
+-rw-r-----  1 amirhsi def-byha      393497 Oct  3 09:48 log.lammps
+-rw-r-----  1 amirhsi def-byha      387829 Oct  3 09:48 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:50 restart_after_sampling.i5
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:49 restart_before_sampling.i5
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:48 slurm-18343827.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:50 submit.sh
+-rw-r-----  1 amirhsi def-byha  1287806976 Oct  3 09:50 w=20
+
+
+
+
+Run name: N80nc40800ens6lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 6
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 74712.2 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 115643.816 tau/day, 669.235 timesteps/s
+72.9% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2055.9     | 4251.3     | 6711.4     |3219.3 |  5.69
+Bond    | 9.1149     | 14.507     | 30.008     | 183.2 |  0.02
+Neigh   | 21814      | 22515      | 23902      | 335.5 | 30.14
+Comm    | 15775      | 18730      | 22057      |1373.0 | 25.07
+Output  | 8443.1     | 11817      | 15290      |2242.7 | 15.82
+Modify  | 11417      | 15468      | 20127      |2160.4 | 20.70
+Other   |            | 1916       |            |       |  2.57
+
+Nlocal:    1277.5 ave 1923 max 685 min
+Histogram: 16 0 0 0 0 0 0 0 5 11
+Nghost:    4572.28 ave 5860 max 3336 min
+Histogram: 8 8 0 0 0 0 0 1 7 8
+Neighs:    7730.19 ave 12104 max 3565 min
+Histogram: 16 0 0 0 0 0 0 0 6 10
+
+Total # of neighbors = 247366
+Ave neighs/atom = 6.05103
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688820
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i6
+Total wall time: 21:08:35
+
+
+3. Created files:
+total 56750151
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 09:53 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 30511284780 Oct  3 09:52 all.dynamic.i6.lammpstrj.gz
+-rw-r-----  1 amirhsi def-byha 29915267872 Oct  3 09:53 all.i6.lammpstrj.gz
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 09:53 archive
+-rwxr-x---  1 amirhsi def-byha        4856 Oct  3 09:53 cylinder_atom_gz_no_scaled_pbc_yes.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:53 data.chain.80
+-rw-r-----  1 amirhsi def-byha        5031 Oct  3 09:53 input.lmp
+-rw-r-----  1 amirhsi def-byha      393513 Oct  3 09:50 log.lammps
+-rw-r-----  1 amirhsi def-byha      387825 Oct  3 09:50 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:53 restart_after_sampling.i6
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:52 restart_before_sampling.i6
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:50 slurm-18343830.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:53 submit.sh
+
+
+
+
+Run name: N80nc40800ens7lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 7
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 61818.9 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 139763.190 tau/day, 808.815 timesteps/s
+77.1% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2024.8     | 4270       | 6728.3     |3196.9 |  6.91
+Bond    | 9.2274     | 14.899     | 29.604     | 185.1 |  0.02
+Neigh   | 22615      | 23416      | 24336      | 350.1 | 37.88
+Comm    | 16460      | 19567      | 22244      |1180.7 | 31.65
+Output  | 421.11     | 443.41     | 537.97     | 104.4 |  0.72
+Modify  | 9941.6     | 12121      | 13505      | 843.1 | 19.61
+Other   |            | 1987       |            |       |  3.21
+
+Nlocal:    1277.5 ave 1940 max 659 min
+Histogram: 16 0 0 0 0 0 0 0 5 11
+Nghost:    4575.25 ave 5896 max 3363 min
+Histogram: 8 8 0 0 0 0 0 7 1 8
+Neighs:    7716.34 ave 12280 max 3322 min
+Histogram: 16 0 0 0 0 0 0 1 4 11
+
+Total # of neighbors = 246923
+Ave neighs/atom = 6.04019
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688652
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i7
+Total wall time: 17:31:37
+
+
+3. Created files:
+total 80116655
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 09:58 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 59004066277 Oct  3 09:55 all.dynamic.i7.xyz
+-rw-r-----  1 amirhsi def-byha 57846842191 Oct  3 09:58 all.i7.xyz
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 09:58 archive
+-rwxr-x---  1 amirhsi def-byha        4760 Oct  3 09:58 cylinder_xyz.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:58 data.chain.80
+-rw-r-----  1 amirhsi def-byha        4933 Oct  3 09:58 input.lmp
+-rw-r-----  1 amirhsi def-byha      393399 Oct  3 09:53 log.lammps
+-rw-r-----  1 amirhsi def-byha      387021 Oct  3 09:53 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:58 restart_after_sampling.i7
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:55 restart_before_sampling.i7
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:53 slurm-18343832.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:58 submit.sh
+
+
+
+
+Run name: N80nc40800ens8lz51.0r3.0epsilonsig0.3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40800
+variable lz equal 51.0
+variable i equal 8
+variable r equal 3.0
+
+
+2. Run summary:
+Loop time of 75709.4 on 32 procs for 50000000 steps with 40880 atoms
+
+Performance: 114120.620 tau/day, 660.420 timesteps/s
+73.5% CPU use with 32 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 2091.4     | 4413.8     | 7349       |3400.4 |  5.83
+Bond    | 9.9263     | 17.046     | 39.305     | 216.9 |  0.02
+Neigh   | 22705      | 23320      | 24139      | 292.8 | 30.80
+Comm    | 17697      | 19958      | 21863      | 859.2 | 26.36
+Output  | 7544.6     | 10486      | 13534      |1788.3 | 13.85
+Modify  | 12687      | 15551      | 20027      |1608.8 | 20.54
+Other   |            | 1963       |            |       |  2.59
+
+Nlocal:    1277.5 ave 1930 max 667 min
+Histogram: 16 0 0 0 0 0 0 0 5 11
+Nghost:    4585.5 ave 5878 max 3344 min
+Histogram: 8 8 0 0 0 0 0 1 7 8
+Neighs:    7728.47 ave 12245 max 3675 min
+Histogram: 16 0 0 0 0 0 0 0 5 11
+
+Total # of neighbors = 247311
+Ave neighs/atom = 6.04968
+Ave special neighs/atom = 0.00386497
+Neighbor list builds = 4688879
+Dangerous builds = 0
+write_restart    ./restart_after_sampling.i${i}
+write_restart    ./restart_after_sampling.i8
+Total wall time: 21:24:07
+
+
+3. Created files:
+total 46933098
+drwxr-s---  3 amirhsi def-byha        4096 Oct  3 10:00 .
+drwxr-s--- 10 amirhsi def-byha        4096 Oct 15 15:49 ..
+-rw-r-----  1 amirhsi def-byha 25231990740 Oct  3 09:59 all.dynamic.i8.xyz.gz
+-rw-r-----  1 amirhsi def-byha 24740556105 Oct  3 09:59 all.i8.xyz.gz
+drwxr-s---  2 amirhsi def-byha        4096 Oct  3 10:00 archive
+-rwxr-x---  1 amirhsi def-byha        4766 Oct  3 09:59 cylinder_xyz_gz.lmp
+-rwxr-x---  1 amirhsi def-byha        6753 Oct  3 09:59 data.chain.80
+-rw-r-----  1 amirhsi def-byha        4939 Oct  3 10:00 input.lmp
+-rw-r-----  1 amirhsi def-byha      393408 Oct  3 09:58 log.lammps
+-rw-r-----  1 amirhsi def-byha      387826 Oct  3 09:58 output.txt
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:59 restart_after_sampling.i8
+-rw-r-----  1 amirhsi def-byha     4254006 Oct  3 09:59 restart_before_sampling.i8
+-rw-r-----  1 amirhsi def-byha         400 Oct  3 09:58 slurm-18343833.out
+-rwxr-x---  1 amirhsi def-byha         981 Oct  3 09:59 submit.sh
+
+
+
+

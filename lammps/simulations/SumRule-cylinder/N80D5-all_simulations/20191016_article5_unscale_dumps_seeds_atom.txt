@@ -1,0 +1,1483 @@
+Simulation name: 20191016_article5_unscale_dumps_seeds_atom
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc0ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 1
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0483623 -0.073923475    20.417923    21.896886  0.038802181 
+50820000    1.0153931 -0.078929756     20.54041    21.965531 0.0092963581 
+50830000    1.0004534  -0.11012509     20.44541    21.817207 0.0014822147 
+50840000   0.89230872 -0.061327691    20.474889    21.735293 0.0041481354 
+50850000   0.89164148 -0.084043262    20.540387    21.777088 -0.0085599691 
+50860000     0.868063 -0.066521605    20.397433    21.616729  0.025662692 
+50870000    0.9769416 -0.091886778    20.571897    21.927105 0.0042553379 
+50880000    1.1210114 -0.068154208    20.439488    22.031832  0.057807161 
+50890000    1.0085169 -0.057470053    20.484305      21.9207  0.019691601 
+50900000    1.3118871    -0.106768    20.553029    22.389494  0.036776825 
+50910000    0.9771221 -0.041002619    20.572738    21.979098 -0.0086009869 
+50920000    1.1379744  -0.11028723    20.433581    22.008918   0.03165288 
+50930000    1.0879874 -0.046041911    20.590925    22.156464 -0.012906856 
+50940000   0.99233117  -0.14345442    20.372745    21.699181 0.0037442001 
+50950000   0.89652071 -0.085222053    20.398236    21.640986 -0.022143356 
+50960000    1.1096795  -0.11302559    20.551428    22.082115 0.0090518893 
+50970000    1.0295245 -0.086876171    20.460807    21.898914  0.025836476 
+50980000   0.83886989 -0.068280193    20.327851    21.502147 0.0072646372 
+50990000    1.2137533  -0.12109184    20.552671    22.229451 -0.0098777754 
+51000000   0.97240752 -0.072680651    20.443835    21.811533   0.02045533 
+Loop time of 257.273 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.1
+Total wall time: 0:44:10
+
+
+3. Created files:
+total 278528
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 00:54 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2788367 Oct 17 00:11 all.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi  13931128 Oct 17 00:15 all.i1.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13931836 Oct 17 00:20 all.i1.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13939037 Oct 17 00:24 all.i1.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13937783 Oct 17 00:28 all.i1.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13935773 Oct 17 00:33 all.i1.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13938213 Oct 17 00:37 all.i1.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13935982 Oct 17 00:41 all.i1.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13937905 Oct 17 00:46 all.i1.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13934395 Oct 17 00:50 all.i1.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13937361 Oct 17 00:54 all.i1.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2788367 Oct 17 00:11 bug.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi 139334295 Oct 17 00:54 bug.i1.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399460 Oct 17 00:54 log.lammps
+-rw-r-----  1 amirhsi amirhsi    389994 Oct 17 00:54 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:54 restart_after.1
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:11 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 00:54 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 00:54 slurm-20701773.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc0ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 2
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.1242651 -0.011895315    20.396703    22.050125  0.014941888 
+50820000    1.2300553 -0.034727561    20.551363    22.338655  0.022392419 
+50830000    1.0018468  -0.13390327    20.526408     21.87649 -0.017830477 
+50840000     1.099095 -0.022598076    20.499237    22.104673 -0.027043808 
+50850000    1.0633251 -0.042051019    20.463944    21.996943  0.010235448 
+50860000    1.0949221  -0.03047777    20.566502    22.157877  0.025040574 
+50870000   0.91761499  -0.15797392    20.405989    21.607232 -0.019557361 
+50880000    1.1329942 -0.074807182    20.558192    22.161633  0.015330538 
+50890000    1.0158121 -0.054579992    20.360281    21.810372 0.0077171976 
+50900000    1.0324074 -0.062437381    20.507368    21.974184 -0.054216235 
+50910000   0.93797364 -0.074064616    20.392765    21.708074 -0.010266751 
+50920000    1.0303881 -0.056928272     20.41905    21.888384  0.010616642 
+50930000    0.8296877 -0.039556883    20.437272     21.62669  0.037278284 
+50940000   0.87617318  -0.17225569    20.585755    21.711331 -0.008960736 
+50950000   0.95466536  -0.12251294    20.447991    21.739576 0.0066844217 
+50960000   0.90548987   -0.0947523    20.574148    21.820652 -0.0016564063 
+50970000    1.0660137 -0.087056122    20.458647    21.950623    0.0111368 
+50980000   0.93470029  -0.10857684    20.559732     21.83568 -0.014608822 
+50990000    1.1045111  -0.10340716    20.464481    21.997131  0.023461615 
+51000000   0.98690268 -0.067072704    20.483922    21.878698 -0.015766182 
+Loop time of 271.085 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.2
+Total wall time: 0:45:56
+
+
+3. Created files:
+total 278524
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 00:56 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2787764 Oct 17 00:11 all.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi  13932280 Oct 17 00:16 all.i2.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13932375 Oct 17 00:20 all.i2.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13935989 Oct 17 00:25 all.i2.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13937753 Oct 17 00:29 all.i2.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13933376 Oct 17 00:34 all.i2.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13937613 Oct 17 00:38 all.i2.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13938085 Oct 17 00:43 all.i2.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13937618 Oct 17 00:47 all.i2.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13937035 Oct 17 00:52 all.i2.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13937971 Oct 17 00:56 all.i2.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2787764 Oct 17 00:11 bug.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi 139334969 Oct 17 00:56 bug.i2.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399428 Oct 17 00:56 log.lammps
+-rw-r-----  1 amirhsi amirhsi    389962 Oct 17 00:56 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:56 restart_after.2
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:11 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 00:56 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 00:56 slurm-20701776.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc0ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 3
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0538426 -0.059949401    20.482717    21.983772 -0.026454473 
+50820000     1.115221 -0.071255931    20.441931    22.022596  0.057555665 
+50830000    1.0949295 -0.031722705    20.561415    22.151557 -0.018730286 
+50840000    1.1190795 -0.044005821    20.460906    22.074536  0.035183477 
+50850000    1.0292757 -0.072326418    20.472289    21.924577  0.026111699 
+50860000    1.0711796 -0.071636121    20.545046    22.060095 -0.019148597 
+50870000    1.0075924  -0.04288096    20.379041    21.828657   0.01051512 
+50880000    1.0009501  -0.06590232    20.482536    21.899291 -0.019009906 
+50890000   0.87569308 -0.085545814    20.458141    21.669715 0.0028643119 
+50900000    1.1643543  -0.06090264    20.546735    22.210532  0.033167864 
+50910000    1.0485638  -0.10337916    20.406911    21.856717 0.0071943195 
+50920000    1.1214699 -0.088119936    20.556272    22.129329 0.0090637152 
+50930000    1.0064438 -0.059787118    20.538423     21.96943  0.035571311 
+50940000   0.96200901 -0.039314564    20.552969     21.93863 -0.025700611 
+50950000     1.141719 -0.080060534    20.425051    22.036162 -0.0038162396 
+50960000    1.1317191 -0.068618531    20.417669    22.025409  0.019604897 
+50970000   0.96073782 -0.049569162    20.604693    21.978216 0.0041538775 
+50980000   0.98423369 -0.098636111    20.426285    21.785545  0.021980163 
+50990000     1.220026 -0.071166528    20.425715    22.161712  0.028672548 
+51000000   0.93969024 -0.013649299    20.455797    21.834064 -0.020096849 
+Loop time of 265.964 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.3
+Total wall time: 0:45:03
+
+
+3. Created files:
+total 278552
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 00:55 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2789398 Oct 17 00:11 all.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi  13931829 Oct 17 00:15 all.i3.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13933673 Oct 17 00:20 all.i3.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13937711 Oct 17 00:24 all.i3.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13937030 Oct 17 00:29 all.i3.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13938731 Oct 17 00:33 all.i3.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13937116 Oct 17 00:38 all.i3.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13937505 Oct 17 00:42 all.i3.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13937485 Oct 17 00:46 all.i3.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13939223 Oct 17 00:51 all.i3.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13937518 Oct 17 00:55 all.i3.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2789398 Oct 17 00:11 bug.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi 139342794 Oct 17 00:55 bug.i3.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399440 Oct 17 00:55 log.lammps
+-rw-r-----  1 amirhsi amirhsi    389974 Oct 17 00:55 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:55 restart_after.3
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:11 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 00:55 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 00:55 slurm-20701778.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc0ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 4
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.1210847 -0.062968404     20.53379    22.131428 -0.012000208 
+50820000   0.98822972 -0.088901486    20.624864    21.999778  0.046480782 
+50830000   0.90440148 -0.047541244    20.521707    21.813811 -0.002055242 
+50840000    1.0090326  -0.10146469    20.347397    21.740562 0.0069336558 
+50850000    0.8943759 -0.022709824    20.558315      21.8604 -0.042450543 
+50860000   0.93326419 -0.079737117    20.472969     21.77563 0.0093638363 
+50870000    1.0878204 -0.091388141    20.636998    22.156944 -0.0092422723 
+50880000     0.971604 -0.038952082    20.534391    21.934627 -0.020809413 
+50890000    1.0120606 -0.066845291    20.499987    21.932256   0.02177542 
+50900000    1.0591213 -0.054762052    20.389452    21.903513 -0.019763774 
+50910000    1.0877733  -0.04174553    20.515311     22.08483  0.011724921 
+50920000   0.95940393 -0.039550079    20.309855    21.691422  0.014820085 
+50930000   0.99444471  -0.13417889    20.428808     21.76765 -0.0015746024 
+50940000    1.0105539  -0.10176012    20.538912    21.934035  0.024680499 
+50950000    1.1105751 -0.097583489    20.315091    21.862547  0.015597445 
+50960000    0.9968816 -0.035156423    20.448796     21.89027  0.030870891 
+50970000   0.91965824  -0.04683156    20.550762    21.866175  0.035952725 
+50980000    0.8466291 -0.068593328    20.362653    21.548129 -0.012197032 
+50990000   0.92515865 -0.050252766    20.376079    21.696218  0.031691876 
+51000000    1.0555672 -0.027083388    20.364222    21.900698 0.00094143282 
+Loop time of 162.215 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.4
+Total wall time: 0:27:46
+
+
+3. Created files:
+total 278520
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 00:38 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2787798 Oct 17 00:11 all.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi  13930999 Oct 17 00:13 all.i4.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13932235 Oct 17 00:16 all.i4.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13935015 Oct 17 00:19 all.i4.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13936961 Oct 17 00:22 all.i4.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13936560 Oct 17 00:24 all.i4.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13935795 Oct 17 00:27 all.i4.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13937125 Oct 17 00:30 all.i4.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13936334 Oct 17 00:33 all.i4.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13935636 Oct 17 00:35 all.i4.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13937069 Oct 17 00:38 all.i4.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2787798 Oct 17 00:11 bug.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi 139328641 Oct 17 00:38 bug.i4.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399491 Oct 17 00:38 log.lammps
+-rw-r-----  1 amirhsi amirhsi    390025 Oct 17 00:38 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:38 restart_after.4
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:11 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 00:38 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 00:38 slurm-20701779.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc68850ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 68850
+variable lz equal 51.0
+variable i equal 1
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0042686  -0.22630591  0.024049646    1.3041248    38.667366 
+50820000   0.99684343   -0.2271204   0.02397351    1.2920966    38.675283 
+50830000   0.99725578  -0.22755789  0.023976124    1.2922802    38.509693 
+50840000     1.003482  -0.22709426  0.024236346    1.3023432    38.480342 
+50850000    1.0031028  -0.22782441  0.024014258    1.3008222    38.833743 
+50860000    1.0005477  -0.22394188  0.023847684    1.3007056    38.668524 
+50870000    1.0037507  -0.22939926  0.023918792    1.3001237    38.816232 
+50880000    1.0034523  -0.22445571  0.024225315    1.3049262    38.830763 
+50890000   0.99687794   -0.2238263  0.023898142    1.2953671    38.311455 
+50900000    1.0003845  -0.22791247  0.023926974    1.2965695    38.518274 
+50910000   0.99901725  -0.22915283  0.024019385    1.2933707    38.561661 
+50920000   0.99827872  -0.22817081  0.024076504    1.2933021    38.608215 
+50930000   0.99502667  -0.23022485  0.023924862    1.2862184    38.762154 
+50940000    1.0013367  -0.22743266  0.024290645    1.2988412    38.778156 
+50950000   0.99571877  -0.22544968  0.023783107    1.2918899    38.351561 
+50960000     1.004753  -0.22925267  0.023762058    1.3016171    38.457976 
+50970000   0.99483324  -0.22709522  0.023815772    1.2889488    38.430369 
+50980000    1.0004704  -0.22508568  0.023934587    1.2995327    38.628282 
+50990000     0.998909   -0.2266293  0.024184387    1.2958969    38.581513 
+51000000   0.99991061  -0.22420767  0.023853289    1.2994898    38.566827 
+Loop time of 13822.8 on 32 procs for 5000000 steps with 68930 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.1
+Total wall time: 39:20:51
+
+
+3. Created files:
+total 117405568
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 15:37 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2356821190 Oct 17 01:07 all.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi 11771520217 Oct 17 05:00 all.i1.j01.trj
+-rw-r-----  1 amirhsi amirhsi 11770899230 Oct 17 08:51 all.i1.j02.trj
+-rw-r-----  1 amirhsi amirhsi 11770620276 Oct 17 12:39 all.i1.j03.trj
+-rw-r-----  1 amirhsi amirhsi 11770819117 Oct 17 16:35 all.i1.j04.trj
+-rw-r-----  1 amirhsi amirhsi 11770279398 Oct 17 20:30 all.i1.j05.trj
+-rw-r-----  1 amirhsi amirhsi 11771048459 Oct 18 00:21 all.i1.j06.trj
+-rw-r-----  1 amirhsi amirhsi 11771219378 Oct 18 04:09 all.i1.j07.trj
+-rw-r-----  1 amirhsi amirhsi 11770708361 Oct 18 07:58 all.i1.j08.trj
+-rw-r-----  1 amirhsi amirhsi 11770665735 Oct 18 11:47 all.i1.j09.trj
+-rw-r-----  1 amirhsi amirhsi 11771272574 Oct 18 15:37 all.i1.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2782548 Oct 17 01:07 bug.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi   139258441 Oct 18 15:37 bug.i1.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398616 Oct 18 15:37 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389138 Oct 18 15:37 output.txt
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 18 15:37 restart_after.1
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 17 01:07 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 15:37 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 15:37 slurm-20701784.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc68850ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 68850
+variable lz equal 51.0
+variable i equal 2
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0032488  -0.22748971  0.023712686    1.3010743    38.590926 
+50820000    1.0022238  -0.22963504  0.023881085      1.29756    38.624019 
+50830000   0.99941274  -0.22494145  0.024061041    1.2982169    38.517277 
+50840000   0.99888804  -0.22548757  0.024256945    1.2970797    38.510378 
+50850000   0.99999082  -0.22921886  0.023842166    1.2945878    38.598897 
+50860000   0.99992028  -0.22689444  0.024017147    1.2969814    38.610368 
+50870000   0.99590314  -0.22491486  0.023740586    1.2926588     38.04115 
+50880000    1.0079838  -0.22480578  0.024127747    1.3112757    38.505845 
+50890000    1.0001122  -0.22406599  0.023846159    1.2999267    38.635284 
+50900000    1.0035987  -0.22530476  0.023968473      1.30404    38.747622 
+50910000   0.99667474  -0.22799178  0.023949789    1.2909484    38.814646 
+50920000    1.0008697  -0.22628672  0.023877906    1.2988739    38.590245 
+50930000   0.99679001  -0.22390948  0.023770914    1.2950248    38.152352 
+50940000    1.0054984   -0.2256806  0.023986736    1.3065319    38.596959 
+50950000   0.99630982  -0.22464112  0.024015792    1.2938177    38.344255 
+50960000   0.99951871  -0.22570288  0.023889169    1.2974426    38.696466 
+50970000    0.9973566  -0.22927017  0.023958148    1.2907012     38.70593 
+50980000    1.0021938  -0.22394214  0.024295389    1.3036221    38.957871 
+50990000    1.0008077  -0.22805398  0.023903512    1.2970393    38.307406 
+51000000   0.99431061  -0.22656787  0.023948007    1.2888244    38.370252 
+Loop time of 13856.6 on 32 procs for 5000000 steps with 68930 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.2
+Total wall time: 39:25:34
+
+
+3. Created files:
+total 117404044
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 15:42 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2356908775 Oct 17 01:09 all.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi 11771142093 Oct 17 05:12 all.i2.j01.trj
+-rw-r-----  1 amirhsi amirhsi 11770508895 Oct 17 09:09 all.i2.j02.trj
+-rw-r-----  1 amirhsi amirhsi 11770704917 Oct 17 12:58 all.i2.j03.trj
+-rw-r-----  1 amirhsi amirhsi 11770925130 Oct 17 16:53 all.i2.j04.trj
+-rw-r-----  1 amirhsi amirhsi 11770382462 Oct 17 20:46 all.i2.j05.trj
+-rw-r-----  1 amirhsi amirhsi 11770792125 Oct 18 00:32 all.i2.j06.trj
+-rw-r-----  1 amirhsi amirhsi 11770676532 Oct 18 04:18 all.i2.j07.trj
+-rw-r-----  1 amirhsi amirhsi 11770742040 Oct 18 08:04 all.i2.j08.trj
+-rw-r-----  1 amirhsi amirhsi 11770709178 Oct 18 11:51 all.i2.j09.trj
+-rw-r-----  1 amirhsi amirhsi 11770740463 Oct 18 15:42 all.i2.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2779723 Oct 17 01:09 bug.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi   139335870 Oct 18 15:42 bug.i2.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398607 Oct 18 15:42 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389129 Oct 18 15:42 output.txt
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 18 15:42 restart_after.2
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 17 01:09 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 15:42 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 15:42 slurm-20701787.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc68850ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 68850
+variable lz equal 51.0
+variable i equal 3
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0053526  -0.22945023  0.023903295    1.3024601    38.825171 
+50820000    1.0012666  -0.22822889   0.02389319    1.2975425    38.781809 
+50830000    1.0066468  -0.22578517  0.023823261    1.3079864    38.853734 
+50840000    1.0004039  -0.22624061  0.024067375    1.2984109    38.631304 
+50850000   0.99845634  -0.23205344  0.023782989    1.2893923    38.494254 
+50860000    1.0035015   -0.2302398  0.023942144    1.2989327    38.968625 
+50870000   0.99931587  -0.22512517  0.024152238    1.2979791    38.501282 
+50880000    1.0023722  -0.22536353  0.023886283    1.3020593    38.449672 
+50890000   0.99571062  -0.22863087  0.024054626     1.288968    38.790742 
+50900000   0.99919716  -0.22636116  0.024054956    1.2964678    38.376624 
+50910000    1.0044369  -0.22798293  0.023988927    1.3026394    38.544299 
+50920000   0.99855524  -0.22222445  0.023948006    1.2995347    38.413096 
+50930000    1.0002701  -0.22476135  0.024077377    1.2996994    38.810497 
+50940000    1.0028448  -0.22468841  0.023894882    1.3034519    38.589238 
+50950000    1.0003422  -0.22890292  0.023843159    1.2954317    38.341804 
+50960000    1.0006946  -0.22448317   0.02389116     1.300428    38.365894 
+50970000   0.99923545  -0.22670851  0.023788915    1.2959118    38.661602 
+50980000   0.99252243  -0.22413824  0.023977984    1.2886018     38.36565 
+50990000   0.99526755  -0.22984575  0.023973162    1.2870071    38.401631 
+51000000    1.0028764  -0.22484269   0.02396795    1.3034181    38.465374 
+Loop time of 14349.6 on 32 procs for 5000000 steps with 68930 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.3
+Total wall time: 39:50:56
+
+
+3. Created files:
+total 117407352
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 16:07 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2356681716 Oct 17 01:11 all.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi 11771267017 Oct 17 05:03 all.i3.j01.trj
+-rw-r-----  1 amirhsi amirhsi 11771127557 Oct 17 08:53 all.i3.j02.trj
+-rw-r-----  1 amirhsi amirhsi 11771432068 Oct 17 12:43 all.i3.j03.trj
+-rw-r-----  1 amirhsi amirhsi 11771665646 Oct 17 16:35 all.i3.j04.trj
+-rw-r-----  1 amirhsi amirhsi 11771099454 Oct 17 20:28 all.i3.j05.trj
+-rw-r-----  1 amirhsi amirhsi 11770733632 Oct 18 00:22 all.i3.j06.trj
+-rw-r-----  1 amirhsi amirhsi 11770823426 Oct 18 04:15 all.i3.j07.trj
+-rw-r-----  1 amirhsi amirhsi 11770446928 Oct 18 08:11 all.i3.j08.trj
+-rw-r-----  1 amirhsi amirhsi 11770946892 Oct 18 12:08 all.i3.j09.trj
+-rw-r-----  1 amirhsi amirhsi 11771541613 Oct 18 16:07 all.i3.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2789042 Oct 17 01:11 bug.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi   139183010 Oct 18 16:07 bug.i3.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398622 Oct 18 16:07 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389144 Oct 18 16:07 output.txt
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 18 16:07 restart_after.3
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 17 01:11 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 16:07 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 16:07 slurm-20701800.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.2nc68850ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 68850
+variable lz equal 51.0
+variable i equal 4
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.99682169  -0.22630323  0.023696993    1.2926046    38.322276 
+50820000   0.99777423  -0.22694488  0.023713516    1.2934083    38.569956 
+50830000    1.0014962  -0.22538367  0.024070794    1.3009096    38.773908 
+50840000   0.99369534  -0.23019543  0.023849706    1.2841757    38.534847 
+50850000   0.99849145  -0.22601704  0.023777708    1.2954761    38.479845 
+50860000    1.0015227  -0.22709141  0.024005754    1.2991767    38.944115 
+50870000    1.0017802  -0.22491091  0.023807182    1.3015448    38.764021 
+50880000    1.0026844  -0.22500212  0.023701093    1.3027037    38.864893 
+50890000    1.0048905  -0.22831426    0.0237905    1.3027901    38.568777 
+50900000   0.99532492   -0.2278394  0.023843153    1.2889695    38.881091 
+50910000    1.0008433  -0.22616826  0.024143528    1.2992184     38.85309 
+50920000   0.99747563  -0.22520424  0.023947856    1.2949354    38.519087 
+50930000    1.0048179  -0.22800108  0.024029086     1.303233    38.808882 
+50940000    1.0049812  -0.22345834  0.023898404    1.3078901    38.363049 
+50950000    1.0031407  -0.22782504  0.023853067    1.3007172    38.685231 
+50960000   0.99867336   -0.2271988  0.023952549    1.2947421    38.684527 
+50970000   0.99718626  -0.22593857  0.023841967    1.2936611    38.611941 
+50980000   0.99629133  -0.22448245  0.023854745    1.2937876    38.594183 
+50990000    1.0013451  -0.22769223  0.023681355     1.297985     38.52601 
+51000000    1.0009216  -0.22737851  0.024212462    1.2981946    38.452102 
+Loop time of 14237.1 on 32 procs for 5000000 steps with 68930 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.4
+Total wall time: 40:24:49
+
+
+3. Created files:
+total 117405052
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 16:41 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2357057572 Oct 17 01:08 all.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi 11770546286 Oct 17 05:09 all.i4.j01.trj
+-rw-r-----  1 amirhsi amirhsi 11770651087 Oct 17 09:09 all.i4.j02.trj
+-rw-r-----  1 amirhsi amirhsi 11770497225 Oct 17 13:06 all.i4.j03.trj
+-rw-r-----  1 amirhsi amirhsi 11771187057 Oct 17 17:06 all.i4.j04.trj
+-rw-r-----  1 amirhsi amirhsi 11771135596 Oct 17 21:06 all.i4.j05.trj
+-rw-r-----  1 amirhsi amirhsi 11770822938 Oct 18 01:04 all.i4.j06.trj
+-rw-r-----  1 amirhsi amirhsi 11771135833 Oct 18 05:00 all.i4.j07.trj
+-rw-r-----  1 amirhsi amirhsi 11771218273 Oct 18 08:53 all.i4.j08.trj
+-rw-r-----  1 amirhsi amirhsi 11770524245 Oct 18 12:44 all.i4.j09.trj
+-rw-r-----  1 amirhsi amirhsi 11770548384 Oct 18 16:41 all.i4.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2774673 Oct 17 01:08 bug.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi   139286706 Oct 18 16:41 bug.i4.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398611 Oct 18 16:41 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389133 Oct 18 16:41 output.txt
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 18 16:41 restart_after.4
+-rw-r-----  1 amirhsi amirhsi     7171206 Oct 17 01:08 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 16:41 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 16:41 slurm-20701802.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc0ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 1
+variable r equal 3.0
+
+
+2. Run summary:
+50810000     1.104237 -0.050542637    20.331488    21.916596  0.014357664 
+50820000   0.81681972 -0.093635063    20.393186    21.509465 -0.00044839604 
+50830000   0.87640026 -0.052937151    20.374844    21.620075 -0.0011082519 
+50840000    1.0241122 -0.054253065    20.446832    21.909545  0.001202035 
+50850000   0.95723521 -0.051492934    20.545622    21.912034  0.017907955 
+50860000     1.042501  -0.10773058    20.392912    21.829386 0.0057088495 
+50870000   0.89619222  -0.10218595    20.577615    21.802914 -0.050213476 
+50880000    1.0752304  0.011237173    20.432006    22.035928  0.049515606 
+50890000   0.87439043 -0.050228062    20.519312    21.764275  0.028219129 
+50900000   0.91197282 -0.038795455    20.429809    21.741873 -0.0039752827 
+50910000    1.0138017 -0.053472931    20.418236    21.866457  0.014078963 
+50920000     1.108511  -0.10004731    20.350202    21.892136  0.026386893 
+50930000   0.90126524 -0.091822525    20.276747    21.519923 -0.0017240798 
+50940000     1.054214 -0.074180431    20.514988    22.002362  0.046430136 
+50950000   0.95897591 -0.067896672     20.54972    21.902306 -0.018670513 
+50960000    1.0581776 -0.063686701     20.35061    21.854348  0.055596967 
+50970000   0.91894764 -0.0062615213    20.421467    21.776397  0.014224594 
+50980000   0.94367281  -0.12919516    20.577645    21.846266  0.023285144 
+50990000    1.1570076 -0.079622813     20.34602    21.980214  0.063223602 
+51000000   0.86449526 -0.092389344     20.36088    21.549024  0.051093835 
+Loop time of 251.477 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.1
+Total wall time: 0:42:44
+
+
+3. Created files:
+total 278520
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 00:59 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2785734 Oct 17 00:17 all.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi  13931976 Oct 17 00:21 all.i1.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13933005 Oct 17 00:25 all.i1.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13935063 Oct 17 00:30 all.i1.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13935421 Oct 17 00:34 all.i1.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13938607 Oct 17 00:38 all.i1.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13935691 Oct 17 00:42 all.i1.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13936068 Oct 17 00:46 all.i1.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13936013 Oct 17 00:51 all.i1.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13936029 Oct 17 00:55 all.i1.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13935816 Oct 17 00:59 all.i1.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2785734 Oct 17 00:17 bug.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi 139328629 Oct 17 00:59 bug.i1.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399483 Oct 17 00:59 log.lammps
+-rw-r-----  1 amirhsi amirhsi    390013 Oct 17 00:59 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:59 restart_after.1
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:17 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 00:59 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 00:59 slurm-20701805.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc0ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 2
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.97433146 -0.040118628    20.516352    21.919462 -0.010261664 
+50820000   0.94833857 -0.059466275    20.476327    21.821587 -0.0060651093 
+50830000    1.0259746 -0.069029175    20.447327    21.898023 -0.0022285168 
+50840000    1.0251444 -0.032848649    20.522907    22.008553 0.0081979359 
+50850000   0.92453196 -0.0080837086    20.380918    21.742297 -0.0077485387 
+50860000   0.90871127 -0.032209967    20.551695    21.865514  0.027092867 
+50870000    1.0017838 -0.050519736     20.33432    21.767692  0.046252284 
+50880000    1.0115832  -0.14752741    20.331725    21.682605  0.019727549 
+50890000    1.0043381 -0.077427778    20.398376    21.808624  0.011170964 
+50900000     1.032046 -0.050037929    20.388077    21.866757  0.046710954 
+50910000   0.82111983  -0.08388873    20.514803    21.647198  0.012362583 
+50920000   0.91364248 -0.035972479    20.460387    21.777748 -0.036530585 
+50930000   0.97895457 -0.057986728    20.488126    21.880216  0.010212696 
+50940000     1.002728 -0.075817412    20.502247     21.91172  0.035914085 
+50950000    1.0923739 -0.073887151    20.478519    22.022711 0.0031373681 
+50960000    1.2239812 -0.086850797    20.535062    22.261234 -0.021873788 
+50970000    1.0281605 -0.074147948    20.460735     21.90955  0.017333229 
+50980000   0.97793092  -0.11049851    20.469972    21.808033 0.0063507911 
+50990000   0.91780647 -0.057849093    20.365241    21.666893  -0.01090118 
+51000000   0.95252237 -0.095052752    20.284736    21.600607  0.041179069 
+Loop time of 163.288 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.2
+Total wall time: 0:27:45
+
+
+3. Created files:
+total 278532
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 00:44 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2788637 Oct 17 00:17 all.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi  13931223 Oct 17 00:20 all.i2.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13930099 Oct 17 00:22 all.i2.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13936506 Oct 17 00:25 all.i2.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13938234 Oct 17 00:28 all.i2.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13938311 Oct 17 00:30 all.i2.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13935682 Oct 17 00:33 all.i2.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13937172 Oct 17 00:36 all.i2.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13938951 Oct 17 00:39 all.i2.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13940348 Oct 17 00:41 all.i2.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13935473 Oct 17 00:44 all.i2.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2788637 Oct 17 00:17 bug.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi 139336884 Oct 17 00:44 bug.i2.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399461 Oct 17 00:44 log.lammps
+-rw-r-----  1 amirhsi amirhsi    389991 Oct 17 00:44 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:44 restart_after.2
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:17 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 00:44 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 00:44 slurm-20701808.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc0ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 3
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0157763 -0.060091862    20.490353     21.93488 -0.019786416 
+50820000   0.98394865 -0.051094937    20.490807    21.897186 -0.017431985 
+50830000   0.96171832 -0.092935148    20.559959    21.891569  0.019450324 
+50840000   0.98876131  -0.03730851    20.470302    21.897596 0.0098238918 
+50850000   0.84664614 -0.016956581    20.503375    21.740513   0.06038627 
+50860000    1.0856544 -0.048244389    20.450823    22.010705  -0.02948946 
+50870000   0.97452455 -0.094677521    20.483656    21.832493 -0.00081146878 
+50880000   0.88468201 -0.044946887    20.242456    21.507945  0.044409578 
+50890000   0.99196511 -0.065014355    20.475854    21.880188 0.0048417983 
+50900000   0.91847268  -0.07800861    20.304469    21.586948 -0.0014465556 
+50910000    1.0267603  -0.09013701    20.358685    21.789437 -0.0012962326 
+50920000   0.92777256 -0.069416135    20.536716    21.841563  0.012238313 
+50930000    1.0774012 -0.072659369    20.440298    21.963539 -0.034150719 
+50940000   0.78082213 -0.039595092    20.616576    21.733573 -0.022239823 
+50950000    1.0280699 -0.090179599     20.45539    21.888039 -0.023930241 
+50960000    0.9709577  -0.01077676    20.477277    21.904731  0.032054745 
+50970000    1.1914656 -0.054790371     20.41403    22.124098 0.0030463193 
+50980000    1.1205063   -0.1071525    20.413543    21.966141  0.041191683 
+50990000    1.0121902 -0.086148802    20.523316    21.936474 -0.0028734119 
+51000000   0.84743665 -0.056752032    20.434264    21.632777 -0.029409155 
+Loop time of 149.142 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.3
+Total wall time: 0:25:18
+
+
+3. Created files:
+total 278528
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 00:42 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2787305 Oct 17 00:17 all.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi  13930548 Oct 17 00:19 all.i3.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13934165 Oct 17 00:22 all.i3.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13937773 Oct 17 00:24 all.i3.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13936273 Oct 17 00:27 all.i3.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13936324 Oct 17 00:29 all.i3.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13937162 Oct 17 00:32 all.i3.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13937353 Oct 17 00:34 all.i3.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13936172 Oct 17 00:37 all.i3.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13937339 Oct 17 00:39 all.i3.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13936588 Oct 17 00:42 all.i3.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2787305 Oct 17 00:17 bug.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi 139334612 Oct 17 00:42 bug.i3.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399496 Oct 17 00:42 log.lammps
+-rw-r-----  1 amirhsi amirhsi    390026 Oct 17 00:42 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:42 restart_after.3
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:17 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 00:42 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 00:42 slurm-20701809.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc0ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 51.0
+variable i equal 4
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.1580499  -0.11229471    20.433794    22.036861 0.0072445343 
+50820000    1.0405718 -0.069372639    20.482891    21.954866  0.013957034 
+50830000    1.0980318 -0.061969478    20.630558    22.195048 -0.010597503 
+50840000   0.96846268 -0.086589225    20.635664     21.98361   0.01137386 
+50850000    1.0365837 -0.069161625    20.460264    21.926542 -0.022309582 
+50860000    1.1394216 -0.049386371     20.63427    22.272652  0.017824204 
+50870000    1.0321388 -0.053185989    20.608793    22.084462 -0.022665449 
+50880000   0.99271923 -0.039949875    20.596516    22.027031   -0.0194971 
+50890000     1.008179  -0.10451416    20.446263    21.835114  0.034681434 
+50900000     1.082172 -0.033290861     20.48224    22.051917  0.026458723 
+50910000    1.0394292 -0.069710096    20.609264    22.079208 -0.015238784 
+50920000    1.1683254 -0.071825986    20.426273    22.085029 -0.00065107606 
+50930000    1.0617885 -0.050714102    20.411921    21.933982  0.023478465 
+50940000    1.0130222  -0.11466861    20.609941    21.995811 -0.021800844 
+50950000   0.85500941  -0.10145573    20.498845    21.663872  0.033388589 
+50960000   0.95438505  -0.10629715    20.513401    21.820787 0.0057818016 
+50970000   0.88972978  -0.11386867    20.483873    21.687917  0.023886052 
+50980000    1.1150879  -0.10201531    20.640029    22.189738 0.0062448817 
+50990000    1.1212777 -0.061865146    20.377025    21.976053  0.040554619 
+51000000    1.0478925  -0.09038097    20.617782    22.079592 0.0044723011 
+Loop time of 274.25 on 8 procs for 5000000 steps with 80 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.4
+Total wall time: 0:46:16
+
+
+3. Created files:
+total 278528
+drwxr-x---  3 amirhsi amirhsi      4096 Oct 17 01:03 .
+drwxr-xr-x 22 amirhsi amirhsi      4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi   2788080 Oct 17 00:17 all.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi  13932983 Oct 17 00:22 all.i4.j01.trj
+-rw-r-----  1 amirhsi amirhsi  13933444 Oct 17 00:26 all.i4.j02.trj
+-rw-r-----  1 amirhsi amirhsi  13935905 Oct 17 00:31 all.i4.j03.trj
+-rw-r-----  1 amirhsi amirhsi  13938660 Oct 17 00:35 all.i4.j04.trj
+-rw-r-----  1 amirhsi amirhsi  13937715 Oct 17 00:40 all.i4.j05.trj
+-rw-r-----  1 amirhsi amirhsi  13938587 Oct 17 00:44 all.i4.j06.trj
+-rw-r-----  1 amirhsi amirhsi  13936834 Oct 17 00:49 all.i4.j07.trj
+-rw-r-----  1 amirhsi amirhsi  13937303 Oct 17 00:53 all.i4.j08.trj
+-rw-r-----  1 amirhsi amirhsi  13937617 Oct 17 00:58 all.i4.j09.trj
+-rw-r-----  1 amirhsi amirhsi  13934100 Oct 17 01:03 all.i4.j10.trj
+-rw-r-----  1 amirhsi amirhsi   2788080 Oct 17 00:17 bug.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi 139338099 Oct 17 01:03 bug.i4.trj
+-rwxr-x---  1 amirhsi amirhsi      6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4891 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi    399449 Oct 17 01:03 log.lammps
+-rw-r-----  1 amirhsi amirhsi    389979 Oct 17 01:03 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 01:03 restart_after.4
+-rw-r-----  1 amirhsi amirhsi     10614 Oct 17 00:17 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi      4096 Oct 17 01:03 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Oct 17 01:03 slurm-20701810.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc20400ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 20400
+variable lz equal 51.0
+variable i equal 1
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0055663  -0.24067287  0.080677373    1.3482804    11.575769 
+50820000    1.0090842  -0.22901306  0.079785042    1.3643244    11.706535 
+50830000   0.99713427   -0.2279237  0.079418255    1.3471229    11.680928 
+50840000   0.99932655  -0.23279762  0.080622546    1.3467416    11.675227 
+50850000   0.99971615  -0.23438887  0.080233731    1.3453459    11.761742 
+50860000    1.0011265  -0.23188675  0.079746174    1.3494758    11.514919 
+50870000   0.99836105  -0.22947822  0.079845774     1.347836    11.735308 
+50880000   0.99904263  -0.23299795  0.079611499    1.3451043    11.634189 
+50890000   0.99803058   -0.2369591  0.080669348     1.340683    11.587451 
+50900000    1.0052836  -0.23239218  0.080553315    1.3560129    11.596773 
+50910000    1.0070632  -0.24022701  0.080017064    1.3503111    11.586142 
+50920000    1.0036719  -0.23113387  0.080379443    1.3546799    11.669625 
+50930000   0.99607999  -0.23046627  0.079585477    1.3431662    11.697104 
+50940000   0.99953759  -0.23247922  0.079775379    1.3465293    11.572757 
+50950000    1.0024736  -0.23106715  0.079616912    1.3521867    11.523772 
+50960000    1.0026649  -0.23001004  0.080323492    1.3542374     11.55266 
+50970000    1.0000482  -0.23765055  0.079961994    1.3423104    11.685208 
+50980000   0.99748573  -0.23327388  0.079792355     1.342674    11.784192 
+50990000   0.99677431   -0.2283685  0.079214927    1.3459349    11.603333 
+51000000   0.99765472  -0.23154338  0.079574727    1.3444404     11.68966 
+Loop time of 2991.12 on 16 procs for 5000000 steps with 20480 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.1
+Total wall time: 8:39:30
+
+
+3. Created files:
+total 34614532
+drwxr-x---  3 amirhsi amirhsi       4096 Oct 18 11:29 .
+drwxr-xr-x 22 amirhsi amirhsi       4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  692958004 Oct 17 00:33 all.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi 3460544987 Oct 17 01:24 all.i1.j01.trj
+-rw-r-----  1 amirhsi amirhsi 3460498132 Oct 17 02:15 all.i1.j02.trj
+-rw-r-----  1 amirhsi amirhsi 3460361386 Oct 17 03:06 all.i1.j03.trj
+-rw-r-----  1 amirhsi amirhsi 3460512772 Oct 17 03:59 all.i1.j04.trj
+-rw-r-----  1 amirhsi amirhsi 3460585075 Oct 17 04:50 all.i1.j05.trj
+-rw-r-----  1 amirhsi amirhsi 3460665447 Oct 17 05:41 all.i1.j06.trj
+-rw-r-----  1 amirhsi amirhsi 3460441915 Oct 17 06:31 all.i1.j07.trj
+-rw-r-----  1 amirhsi amirhsi 3460567365 Oct 17 07:22 all.i1.j08.trj
+-rw-r-----  1 amirhsi amirhsi 3460427459 Oct 17 08:12 all.i1.j09.trj
+-rw-r-----  1 amirhsi amirhsi 3460591665 Oct 17 09:02 all.i1.j10.trj
+-rw-r-----  1 amirhsi amirhsi    2773478 Oct 17 00:33 bug.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi  139145890 Oct 17 09:02 bug.i1.trj
+-rwxr-x---  1 amirhsi amirhsi       6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi     398623 Oct 17 09:02 log.lammps
+-rw-r-----  1 amirhsi amirhsi     389141 Oct 17 09:02 output.txt
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 09:02 restart_after.1
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 00:33 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Oct 17 09:02 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Oct 17 09:02 slurm-20701811.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc20400ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 20400
+variable lz equal 51.0
+variable i equal 2
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.99268037  -0.23683343  0.080130423    1.3322448    11.740704 
+50820000   0.99562194  -0.23327429  0.080550129    1.3406358     11.66145 
+50830000    1.0063629  -0.23432586  0.080064945    1.3552098    11.751792 
+50840000    1.0031359  -0.23382649   0.07971943    1.3505233    11.533867 
+50850000   0.99847075  -0.24397898  0.079614064    1.3332681    11.620963 
+50860000   0.99425405  -0.23291187   0.07982868    1.3382251    11.543742 
+50870000    1.0097667  -0.22686447  0.080304813    1.3680165    11.563203 
+50880000   0.99850538  -0.22942232  0.080289808    1.3485524    11.561662 
+50890000   0.99645271  -0.23342493  0.080080154    1.3412613    11.685447 
+50900000    0.9972806  -0.23175935  0.080240926    1.3443294    11.741612 
+50910000    1.0016941   -0.2349055  0.080189482    1.3477518    11.608362 
+50920000    1.0024125  -0.23021967  0.080062895    1.3533886    11.679294 
+50930000   0.99543646  -0.23242684  0.080088254    1.3407432    11.635877 
+50940000   0.99735856  -0.23032183  0.079979157    1.3456221    11.662464 
+50950000    1.0009246  -0.23555891   0.08019741    1.3459521    11.602593 
+50960000    1.0062465   -0.2321349  0.079948649    1.3571097    11.654012 
+50970000   0.98781673  -0.23268414  0.079412948    1.3283816     11.64083 
+50980000   0.99422353  -0.23795527  0.080002157    1.3333094    11.587619 
+50990000    1.0021073  -0.23030704  0.079989448      1.35277    11.661555 
+51000000    1.0003228  -0.23288768  0.079994529    1.3475178    11.837876 
+Loop time of 2837.64 on 16 procs for 5000000 steps with 20480 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.2
+Total wall time: 8:07:11
+
+
+3. Created files:
+total 34613912
+drwxr-x---  3 amirhsi amirhsi       4096 Oct 17 08:29 .
+drwxr-xr-x 22 amirhsi amirhsi       4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  692973579 Oct 17 00:32 all.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi 3460462314 Oct 17 01:20 all.i2.j01.trj
+-rw-r-----  1 amirhsi amirhsi 3460567089 Oct 17 02:08 all.i2.j02.trj
+-rw-r-----  1 amirhsi amirhsi 3460472967 Oct 17 02:57 all.i2.j03.trj
+-rw-r-----  1 amirhsi amirhsi 3460447478 Oct 17 03:45 all.i2.j04.trj
+-rw-r-----  1 amirhsi amirhsi 3460415730 Oct 17 04:33 all.i2.j05.trj
+-rw-r-----  1 amirhsi amirhsi 3460450038 Oct 17 05:20 all.i2.j06.trj
+-rw-r-----  1 amirhsi amirhsi 3460437007 Oct 17 06:08 all.i2.j07.trj
+-rw-r-----  1 amirhsi amirhsi 3460469152 Oct 17 06:55 all.i2.j08.trj
+-rw-r-----  1 amirhsi amirhsi 3460367498 Oct 17 07:42 all.i2.j09.trj
+-rw-r-----  1 amirhsi amirhsi 3460376753 Oct 17 08:29 all.i2.j10.trj
+-rw-r-----  1 amirhsi amirhsi    2771101 Oct 17 00:32 bug.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi  139228191 Oct 17 08:29 bug.i2.trj
+-rwxr-x---  1 amirhsi amirhsi       6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi     398623 Oct 17 08:29 log.lammps
+-rw-r-----  1 amirhsi amirhsi     389141 Oct 17 08:29 output.txt
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 08:29 restart_after.2
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 00:32 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Oct 17 08:29 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Oct 17 08:29 slurm-20701812.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc20400ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 20400
+variable lz equal 51.0
+variable i equal 3
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.99517864  -0.23407066  0.079871378    1.3384958    11.424073 
+50820000    1.0034069  -0.23471744  0.080009155    1.3503286    11.801657 
+50830000   0.99050561   -0.2312913  0.079681189    1.3340758    11.550031 
+50840000    1.0056753  -0.23533461  0.080005222    1.3531099    11.678951 
+50850000    1.0004009  -0.23129636  0.079651861    1.3488835    11.754769 
+50860000     1.011554  -0.23229686  0.079941723    1.3649018    11.870804 
+50870000   0.99825792  -0.23576378  0.079975691    1.3415257    11.674403 
+50880000    1.0036137  -0.23761913  0.079653136    1.3473811    11.782992 
+50890000    1.0023698  -0.23635214  0.079743461    1.3468726    11.526881 
+50900000   0.99886011  -0.23648303   0.07954267    1.3412767    11.666596 
+50910000    1.0025591  -0.23385537  0.080033842    1.3499437    11.435918 
+50920000   0.99559999  -0.23619248  0.079561222    1.3366958    11.718962 
+50930000   0.98533889  -0.23618082  0.080218553    1.3219739    11.510918 
+50940000    1.0059781  -0.23176236   0.08008997     1.357221    11.760386 
+50950000    1.0018126  -0.23651288  0.080066214    1.3461989    11.637476 
+50960000    1.0008252  -0.22890029  0.080174883    1.3524391    11.791216 
+50970000   0.99760876  -0.23068523  0.079677935    1.3453328    11.610517 
+50980000    1.0016494  -0.22925198  0.079889462    1.3530382    11.509566 
+50990000    1.0084463   -0.2351519  0.080256575    1.3577002    11.743456 
+51000000   0.99716939  -0.23595678  0.080101261    1.3398255    11.628301 
+Loop time of 3176.99 on 16 procs for 5000000 steps with 20480 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.3
+Total wall time: 9:20:07
+
+
+3. Created files:
+total 34614280
+drwxr-x---  3 amirhsi amirhsi       4096 Oct 17 09:42 .
+drwxr-xr-x 22 amirhsi amirhsi       4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  692919148 Oct 17 00:34 all.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi 3460566976 Oct 17 01:29 all.i3.j01.trj
+-rw-r-----  1 amirhsi amirhsi 3460529609 Oct 17 02:25 all.i3.j02.trj
+-rw-r-----  1 amirhsi amirhsi 3460594987 Oct 17 03:20 all.i3.j03.trj
+-rw-r-----  1 amirhsi amirhsi 3460522346 Oct 17 04:17 all.i3.j04.trj
+-rw-r-----  1 amirhsi amirhsi 3460410700 Oct 17 05:12 all.i3.j05.trj
+-rw-r-----  1 amirhsi amirhsi 3460495418 Oct 17 06:07 all.i3.j06.trj
+-rw-r-----  1 amirhsi amirhsi 3460483760 Oct 17 07:01 all.i3.j07.trj
+-rw-r-----  1 amirhsi amirhsi 3460353733 Oct 17 07:55 all.i3.j08.trj
+-rw-r-----  1 amirhsi amirhsi 3460491510 Oct 17 08:49 all.i3.j09.trj
+-rw-r-----  1 amirhsi amirhsi 3460482512 Oct 17 09:42 all.i3.j10.trj
+-rw-r-----  1 amirhsi amirhsi    2778249 Oct 17 00:34 bug.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi  139175886 Oct 17 09:42 bug.i3.trj
+-rwxr-x---  1 amirhsi amirhsi       6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi     398615 Oct 17 09:42 log.lammps
+-rw-r-----  1 amirhsi amirhsi     389133 Oct 17 09:42 output.txt
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 09:42 restart_after.3
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 00:34 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Oct 17 09:42 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Oct 17 09:42 slurm-20701813.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc20400ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 20400
+variable lz equal 51.0
+variable i equal 4
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.99823225  -0.23253947  0.079583346    1.3443191    11.698386 
+50820000    1.0044866  -0.23529205  0.079759116    1.3511234    11.643749 
+50830000    1.0043841  -0.23696187  0.079568046    1.3491088    11.772993 
+50840000   0.99176482  -0.23664503  0.079746538    1.3306761    11.613712 
+50850000    1.0043423  -0.22929208  0.080135072    1.3572829    11.598007 
+50860000   0.99920351  -0.23170973   0.07990946    1.3469318    11.742751 
+50870000   0.99653741  -0.23772395  0.079860836      1.33687    11.759853 
+50880000    1.0072114  -0.23155741  0.079930206    1.3591162     11.46391 
+50890000   0.99852439  -0.23141645  0.080489827    1.3467868    11.713445 
+50900000    1.0000623   -0.2268213  0.079523103    1.3527219    11.732317 
+50910000    1.0099942  -0.23865636  0.079790044     1.356051    11.735519 
+50920000   0.99632257  -0.23566241  0.079667386    1.3384159    11.702517 
+50930000    0.9897419  -0.23177807  0.079416954    1.3321792    11.627233 
+50940000    1.0089338  -0.23443945   0.08018388    1.3590713    11.851257 
+50950000   0.99890457  -0.23711797  0.079430338    1.3405961    11.655073 
+50960000    1.0099635  -0.23563057  0.079694467    1.3589351    11.624636 
+50970000   0.99431969  -0.23099849  0.079834335    1.3402426    11.587729 
+50980000    1.0052259  -0.23599613  0.080382884     1.352152    11.967427 
+50990000   0.99128602  -0.23453284  0.080137659    1.3324612    11.569446 
+51000000   0.99603225  -0.24206609  0.079871259    1.3317806    11.614949 
+Loop time of 3316.55 on 16 procs for 5000000 steps with 20480 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.4
+Total wall time: 9:34:07
+
+
+3. Created files:
+total 34614164
+drwxr-x---  3 amirhsi amirhsi       4096 Oct 17 09:56 .
+drwxr-xr-x 22 amirhsi amirhsi       4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  692915780 Oct 17 00:34 all.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi 3460490208 Oct 17 01:29 all.i4.j01.trj
+-rw-r-----  1 amirhsi amirhsi 3460440625 Oct 17 02:26 all.i4.j02.trj
+-rw-r-----  1 amirhsi amirhsi 3460422250 Oct 17 03:22 all.i4.j03.trj
+-rw-r-----  1 amirhsi amirhsi 3460508630 Oct 17 04:18 all.i4.j04.trj
+-rw-r-----  1 amirhsi amirhsi 3460442746 Oct 17 05:15 all.i4.j05.trj
+-rw-r-----  1 amirhsi amirhsi 3460473603 Oct 17 06:12 all.i4.j06.trj
+-rw-r-----  1 amirhsi amirhsi 3460522734 Oct 17 07:08 all.i4.j07.trj
+-rw-r-----  1 amirhsi amirhsi 3460509680 Oct 17 08:05 all.i4.j08.trj
+-rw-r-----  1 amirhsi amirhsi 3460512148 Oct 17 09:01 all.i4.j09.trj
+-rw-r-----  1 amirhsi amirhsi 3460508793 Oct 17 09:56 all.i4.j10.trj
+-rw-r-----  1 amirhsi amirhsi    2777220 Oct 17 00:34 bug.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi  139188328 Oct 17 09:56 bug.i4.trj
+-rwxr-x---  1 amirhsi amirhsi       6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi     398622 Oct 17 09:56 log.lammps
+-rw-r-----  1 amirhsi amirhsi     389140 Oct 17 09:56 output.txt
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 09:56 restart_after.4
+-rw-r-----  1 amirhsi amirhsi    2132278 Oct 17 00:34 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Oct 17 09:56 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Oct 17 09:56 slurm-20701814.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc61200ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 61200
+variable lz equal 51.0
+variable i equal 1
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.99965877   -1.1490175  0.029038415   0.37948457    162.75328 
+50820000    1.0038758   -1.1502399  0.029372084   0.38492125    162.79734 
+50830000   0.99532341   -1.1453134   0.02907538   0.37672277    162.63891 
+50840000   0.99980228   -1.1441662  0.029507772   0.38502056    163.09195 
+50850000    1.0053881   -1.1408969  0.029469625   0.39663028     163.3239 
+50860000   0.99744414   -1.1488599  0.028607245   0.37588915    162.85187 
+50870000    1.0006636   -1.1424584  0.029179132   0.38769165    163.51334 
+50880000   0.99747828   -1.1446502  0.029209852   0.38075262    163.02315 
+50890000    1.0022188   -1.1416171  0.029458871   0.39114538    163.52601 
+50900000    1.0026835   -1.1511851  0.029075706   0.38189134    162.78266 
+50910000   0.99443991   -1.1357333  0.028572651   0.38447491     163.5085 
+50920000   0.99784582   -1.1511349  0.028897026   0.37450638    162.61568 
+50930000   0.99432112   -1.1464002  0.029332245   0.37438936    162.93172 
+50940000    1.0007716   -1.1419209  0.029815382    0.3890273    162.80576 
+50950000   0.99713688   -1.1460134   0.02879036   0.37845786     162.5045 
+50960000   0.99721706   -1.1447598  0.029770324   0.38081165    162.98044 
+50970000    1.0000091   -1.1421841  0.029294628   0.38709967      163.177 
+50980000   0.99862762   -1.1474761  0.029374513   0.37981541    162.67559 
+50990000   0.99492073   -1.1462171  0.029186312   0.37532598    162.59664 
+51000000   0.99743178   -1.1361856   0.02917906   0.38911673    163.70012 
+Loop time of 13609.1 on 32 procs for 5000000 steps with 61280 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.1
+Total wall time: 38:25:17
+
+
+3. Created files:
+total 104268880
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 14:42 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2092903432 Oct 17 00:59 all.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi 10452583625 Oct 17 04:43 all.i1.j01.trj
+-rw-r-----  1 amirhsi amirhsi 10452475828 Oct 17 08:29 all.i1.j02.trj
+-rw-r-----  1 amirhsi amirhsi 10452026506 Oct 17 12:13 all.i1.j03.trj
+-rw-r-----  1 amirhsi amirhsi 10452177118 Oct 17 15:59 all.i1.j04.trj
+-rw-r-----  1 amirhsi amirhsi 10452083519 Oct 17 19:46 all.i1.j05.trj
+-rw-r-----  1 amirhsi amirhsi 10451811446 Oct 17 23:34 all.i1.j06.trj
+-rw-r-----  1 amirhsi amirhsi 10451871459 Oct 18 03:20 all.i1.j07.trj
+-rw-r-----  1 amirhsi amirhsi 10451989088 Oct 18 07:08 all.i1.j08.trj
+-rw-r-----  1 amirhsi amirhsi 10452178130 Oct 18 10:55 all.i1.j09.trj
+-rw-r-----  1 amirhsi amirhsi 10452005224 Oct 18 14:42 all.i1.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2792862 Oct 17 00:59 bug.dynamic.i1.trj
+-rw-r-----  1 amirhsi amirhsi   140644320 Oct 18 14:42 bug.i1.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398617 Oct 18 14:42 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389135 Oct 18 14:42 output.txt
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 18 14:42 restart_after.1
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 17 00:59 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 14:42 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 14:42 slurm-20701816.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc61200ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 61200
+variable lz equal 51.0
+variable i equal 2
+variable r equal 3.0
+
+
+2. Run summary:
+50810000    1.0021467   -1.1476905  0.029132048   0.38463713    163.27822 
+50820000    1.0010676   -1.1483695  0.029670818   0.38287822    163.30891 
+50830000   0.99793974   -1.1501301  0.029289037   0.37604412    162.80955 
+50840000    1.0013212    -1.136406  0.029927777   0.39547904    163.71886 
+50850000    1.0010878   -1.1401334  0.029611728    0.3910855    163.34293 
+50860000     1.003244   -1.1451825  0.029349345    0.3890083    163.24964 
+50870000   0.99931625    -1.145541  0.029265342   0.38267424    163.34425 
+50880000   0.99572938   -1.1441688  0.029841207    0.3792421    162.57441 
+50890000     1.004482   -1.1419768  0.029559811   0.39428139    163.52454 
+50900000    0.9993537   -1.1428394  0.029506081   0.38567275    162.81677 
+50910000   0.99691517   -1.1444566  0.029077894   0.37996961    162.65185 
+50920000   0.99657034   -1.1375832  0.029732553   0.38698048    162.77129 
+50930000    1.0010569   -1.1427874  0.029364842    0.3881383    163.38293 
+50940000    1.0031759    -1.151121  0.029458433   0.38307668    162.82856 
+50950000    1.0009906    -1.148605  0.029370448   0.38222688    162.01889 
+50960000   0.99623619   -1.1442468  0.029469906     0.379553    162.63521 
+50970000    1.0007458   -1.1439941  0.029328956   0.38642904    162.55761 
+50980000     1.002209   -1.1343137  0.029525903   0.39850113    164.14239 
+50990000   0.99389567   -1.1505016  0.029646814   0.36996436    162.72327 
+51000000      1.00319   -1.1420849  0.029042434   0.39171802    162.90666 
+Loop time of 10238.5 on 32 procs for 5000000 steps with 61280 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.2
+Total wall time: 28:56:50
+
+
+3. Created files:
+total 104275336
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 05:19 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2093054191 Oct 17 00:54 all.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi 10451865869 Oct 17 03:45 all.i2.j01.trj
+-rw-r-----  1 amirhsi amirhsi 10452933533 Oct 17 06:34 all.i2.j02.trj
+-rw-r-----  1 amirhsi amirhsi 10453096551 Oct 17 09:23 all.i2.j03.trj
+-rw-r-----  1 amirhsi amirhsi 10452618942 Oct 17 12:12 all.i2.j04.trj
+-rw-r-----  1 amirhsi amirhsi 10452742380 Oct 17 15:02 all.i2.j05.trj
+-rw-r-----  1 amirhsi amirhsi 10452538457 Oct 17 17:53 all.i2.j06.trj
+-rw-r-----  1 amirhsi amirhsi 10452972230 Oct 17 20:44 all.i2.j07.trj
+-rw-r-----  1 amirhsi amirhsi 10452605656 Oct 17 23:36 all.i2.j08.trj
+-rw-r-----  1 amirhsi amirhsi 10453066967 Oct 18 02:28 all.i2.j09.trj
+-rw-r-----  1 amirhsi amirhsi 10453645083 Oct 18 05:19 all.i2.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2795981 Oct 17 00:54 bug.dynamic.i2.trj
+-rw-r-----  1 amirhsi amirhsi   140223339 Oct 18 05:19 bug.i2.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398620 Oct 18 05:19 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389138 Oct 18 05:19 output.txt
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 18 05:19 restart_after.2
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 17 00:54 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 05:19 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 05:19 slurm-20701819.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc61200ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 61200
+variable lz equal 51.0
+variable i equal 3
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.99541929   -1.1503504  0.029070905   0.37182506    162.89002 
+50820000   0.99538013   -1.1521404  0.029278636   0.37018405    162.08617 
+50830000     0.997616   -1.1409733  0.029369686   0.38479593    162.65738 
+50840000    1.0016654   -1.1524648  0.029564716   0.37957346    163.00824 
+50850000    1.0065942   -1.1418285  0.029388633   0.39742678    163.43047 
+50860000    1.0000493   -1.1415214  0.029586894   0.38811494    163.50775 
+50870000    1.0033653   -1.1482169  0.029086964   0.38589341    162.52757 
+50880000    1.0019451   -1.1403123  0.029224163   0.39180492    163.46762 
+50890000    1.0005233   -1.1403154   0.02921484   0.38965985    163.79506 
+50900000   0.99612973   -1.1464096  0.028845328   0.37660591    162.69409 
+50910000    1.0030188   -1.1429486  0.029332707    0.3908877    162.68542 
+50920000     1.001641   -1.1498308  0.029473635    0.3820799    162.05878 
+50930000   0.99957749   -1.1430238  0.028938473   0.38525648    162.72525 
+50940000   0.99845752    -1.149354  0.029510163   0.37781802    162.56497 
+50950000   0.99850363   -1.1482751  0.030024054      0.37948    162.85563 
+50960000   0.99684492   -1.1455596  0.029576075   0.37925949    162.72246 
+50970000    1.0000602   -1.1411029  0.029210042   0.38817296    163.21671 
+50980000    1.0042485   -1.1512072  0.029553232   0.38469424    162.76751 
+50990000    0.9960236   -1.1411144  0.029257746   0.38215434    162.85312 
+51000000    1.0002795   -1.1405958  0.029137466   0.38893634    162.86589 
+Loop time of 11031.8 on 32 procs for 5000000 steps with 61280 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.3
+Total wall time: 30:59:30
+
+
+3. Created files:
+total 104264128
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 07:22 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2092828902 Oct 17 00:57 all.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi 10451286112 Oct 17 04:12 all.i3.j01.trj
+-rw-r-----  1 amirhsi amirhsi 10450908827 Oct 17 07:13 all.i3.j02.trj
+-rw-r-----  1 amirhsi amirhsi 10452026587 Oct 17 10:12 all.i3.j03.trj
+-rw-r-----  1 amirhsi amirhsi 10451943912 Oct 17 13:14 all.i3.j04.trj
+-rw-r-----  1 amirhsi amirhsi 10451770346 Oct 17 16:18 all.i3.j05.trj
+-rw-r-----  1 amirhsi amirhsi 10451746576 Oct 17 19:23 all.i3.j06.trj
+-rw-r-----  1 amirhsi amirhsi 10452094907 Oct 17 22:22 all.i3.j07.trj
+-rw-r-----  1 amirhsi amirhsi 10451257010 Oct 18 01:19 all.i3.j08.trj
+-rw-r-----  1 amirhsi amirhsi 10451674410 Oct 18 04:18 all.i3.j09.trj
+-rw-r-----  1 amirhsi amirhsi 10451251682 Oct 18 07:22 all.i3.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2803197 Oct 17 00:57 bug.dynamic.i3.trj
+-rw-r-----  1 amirhsi amirhsi   141089757 Oct 18 07:22 bug.i3.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398625 Oct 18 07:22 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389143 Oct 18 07:22 output.txt
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 18 07:22 restart_after.3
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 17 00:57 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 07:22 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 07:22 slurm-20701826.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.0lz51.0sig0.3nc61200ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 61200
+variable lz equal 51.0
+variable i equal 4
+variable r equal 3.0
+
+
+2. Run summary:
+50810000   0.99977581   -1.1489904  0.029410033   0.38005892     162.5533 
+50820000   0.99794372   -1.1519551  0.029518852   0.37445486    162.81963 
+50830000   0.99447464   -1.1442415  0.029267884   0.37671404    162.62808 
+50840000   0.99571813   -1.1426059  0.028717495   0.37966437    162.97841 
+50850000   0.99607604    -1.154224  0.028982024   0.36884766    162.89523 
+50860000    1.0020931   -1.1433964  0.029640156   0.38935883    163.09383 
+50870000   0.99954283   -1.1443666  0.029623646   0.38454686    163.31997 
+50880000   0.99734294   -1.1434664  0.029777046   0.38230068    162.69638 
+50890000   0.99917779   -1.1471717  0.029781927   0.38135247    162.34552 
+50900000    1.0041003   -1.1447316  0.029195908   0.39059021    163.54194 
+50910000    1.0003125   -1.1412192  0.028644686   0.38786976    162.76895 
+50920000    1.0039397   -1.1475151   0.02942751    0.3877973    162.76672 
+50930000   0.99540894   -1.1436227  0.029025638   0.37849194    163.10732 
+50940000   0.99598612   -1.1370969  0.029535368   0.38639332    163.44007 
+50950000    1.0027671   -1.1462219  0.029706089   0.38761036    162.86836 
+50960000    1.0011193   -1.1457886  0.029642688   0.38550848    163.39881 
+50970000    1.0010113   -1.1411071  0.029383027   0.38976834    163.42211 
+50980000   0.99824837   -1.1492181  0.029208332   0.37733832    162.45108 
+50990000   0.99710197   -1.1566614  0.029671634   0.36863876    162.29225 
+51000000     1.002342   -1.1546032  0.029405024    0.3782903    162.21043 
+Loop time of 10465.9 on 32 procs for 5000000 steps with 61280 atoms
+
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.4
+Total wall time: 29:16:33
+
+
+3. Created files:
+total 104270596
+drwxr-x---  3 amirhsi amirhsi        4096 Oct 18 05:39 .
+drwxr-xr-x 22 amirhsi amirhsi        4096 Oct 18 16:45 ..
+-rw-r-----  1 amirhsi amirhsi  2092884497 Oct 17 00:55 all.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi 10451271808 Oct 17 03:48 all.i4.j01.trj
+-rw-r-----  1 amirhsi amirhsi 10451118229 Oct 17 06:41 all.i4.j02.trj
+-rw-r-----  1 amirhsi amirhsi 10452317114 Oct 17 09:33 all.i4.j03.trj
+-rw-r-----  1 amirhsi amirhsi 10452876087 Oct 17 12:24 all.i4.j04.trj
+-rw-r-----  1 amirhsi amirhsi 10452252718 Oct 17 15:16 all.i4.j05.trj
+-rw-r-----  1 amirhsi amirhsi 10452491184 Oct 17 18:10 all.i4.j06.trj
+-rw-r-----  1 amirhsi amirhsi 10452441531 Oct 17 21:02 all.i4.j07.trj
+-rw-r-----  1 amirhsi amirhsi 10452557808 Oct 17 23:53 all.i4.j08.trj
+-rw-r-----  1 amirhsi amirhsi 10452690241 Oct 18 02:44 all.i4.j09.trj
+-rw-r-----  1 amirhsi amirhsi 10453101240 Oct 18 05:39 all.i4.j10.trj
+-rw-r-----  1 amirhsi amirhsi     2798496 Oct 17 00:55 bug.dynamic.i4.trj
+-rw-r-----  1 amirhsi amirhsi   140506695 Oct 18 05:39 bug.i4.trj
+-rwxr-x---  1 amirhsi amirhsi        6753 Oct 17 00:07 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4895 Oct 17 00:07 input.lmp
+-rw-r-----  1 amirhsi amirhsi      398621 Oct 18 05:39 log.lammps
+-rw-r-----  1 amirhsi amirhsi      389139 Oct 18 05:39 output.txt
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 18 05:39 restart_after.4
+-rw-r-----  1 amirhsi amirhsi     6375606 Oct 17 00:55 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi        4096 Oct 18 05:39 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Oct 18 05:39 slurm-20701831.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Oct 17 00:07 submit.sh
+
+
+
+

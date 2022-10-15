@@ -1,0 +1,149 @@
+# Description: A computational study of the compaction of a linear chain by crowders in free space (cubic simulation box). 
+# Please see this article: https://pubs.rsc.org/en/content/articlelanding/2016/sm/c6sm01924b#!divAbstract
+
+# Amir: I used R_F=1.1 {N}^{\frac{3}{5}} to estimate the end-to-end size of the chain by theory (Flory radius), then I used 3 times this value as the size of the simulation box. For N=50, R_f=12a where a=1, and l (size od the cubic box) is 36a.
+# Chanil: Looks good to me
+
+# Amir: For: L=36, diameter of crowder=a_c=sig2=0.3, and p\phi_c=volume fraction of crowders=0.15, number of crowders=n_crowd=495036. If I want to have \phi_c=0.3 then n_crowder=990072!!! Are there values for number of crowders correct. I used n_crowd=(\phi_c*V_{simulation box})/v_{crowder}. For a_c=0.2 it is even more!
+# Chanil: Correct - but with crowders, chain end-to-end distance R will be smaller. Go ahead with L=36 and phic = 0.15 (yeah, it will be slow), and observe small R, and adjust your box size with that smaller R for bigger phic (> 0.15)
+# Chanil: Also, please note that box size ~ 3 time bigger than R is just my observation. if you are sure that there is no interaction with its mirror image, you can use smaller box size. Please feel free to run the simulation with some sub-optimal parameter, and adjust the parameter later if you think the parameters you used are not good enough. You do not need to run the simulation with perfect parameters when you validate your idea.
+
+#------------------------------------------
+#--------------------- Variables defined by command-line tools ---------------------
+#------------------------------------------
+
+#List of variables and their names defined by command line method. Their description and the step they will be used in are described in next sections:
+#variable ${in_filename} 
+#variable ${i} # i is the seed for random number generator. You may want to run many SAME simulations for ensemble average.
+# Chanil: please note that, you need to use different i for different ensemble. Also, please note that you need to use different i when you RESTART your simulation with a snapshot.
+
+#variable ${l} # size of the simulation box
+#variable ${n_crowd} # Number of crowders
+#variable ${sig2} # diameter of a crowder
+
+#--------------------- (1) Initialization ---------------------
+units   lj # Lennard-Jones units.
+dimension   3 # 3 dimensional simulation.
+boundary    p p p # Periodic (p) in all directions 
+atom_style  bond
+             
+#--------------------- (2) Neighbor Lists ---------------------
+#Amir: I checked the log files of my simulation, and realized that for n_crowd=35000, and run=50000000, 60% of simulation time spent for modifying and 15% of it spent for neighbouring.
+# Chanil: Not sure about this, but modify in time profile means time required for fix/compute/...?
+ 
+neighbor        0.2 bin 
+neigh_modify    delay 0 every 1 check yes one 300 page 3000
+
+#--------------------- (3) Processors Communications ---------------------
+
+#--------------------- (4) Atom Definition ---------------------
+
+#---------- Read input file ----------
+read_data   data.chain.50 
+
+#---------- Reshape simulation box/Define simulation box   ----------
+change_box  all x final -${l} ${l} y final -${l} ${l} z final -${l} ${l} boundary p p p units box 
+region  cubicshell block INF INF INF INF INF INF units box 
+
+#---------- Create atoms ----------
+
+#Amir: The seed changes for each ensemble of a set of input parameters. I remembered you told me that for rerunning a simulation used i+1000*j as the seed. 
+# Chanil: yes, use different randseed every time you run something. Any number which has been never used in the previous simulations.
+# Chanil: However, you can use any randseed below - it will not matter practically, since it is a randseed for initial atom "positions". Randseed for dynamics should be different.
+
+variable    randseed equal ${i}+1000 
+create_atoms 2 random ${n_crowd} ${randseed} cubicshell units box
+#---------- Group atoms ----------
+group   bug type 1 
+group   crowd type 2
+
+#---------- Define atoms masses ----------
+mass 1 1.0
+mass 2 1.0
+
+#---------- Set velocity of the chain ----------
+#----- Define a temperature compute for the chain -----
+compute mobile bug temp 
+
+#----- Set velocity for the chain -----
+velocity   bug create 1.0 ${randseed} temp mobile 
+
+#--------------------- (5) Interatomic/molecular Potential ---------------------
+#---------- Lennard-Jones potential among all particles ----------
+#---------- (6-a) Variables ----------
+variable sig1 equal 1.0
+variable sig12 equal (${sig1}+${sig2})/2
+
+# Amir: Below, we stimated 2^(1/6); is not it a source of error? is not better to use a more accurate estimation?
+# Chanil: You mean the accuracy (the number of digits)? I do not think it will cause significant amount of error, but feel free to add more digits.
+# Chanil: If what you mean is a justification if 2^(1/6), find "WCA potential"
+
+variable cutoff11 equal ${sig1}*1.12246
+variable cutoff12 equal ((${sig1}+${sig2})/2.0)*1.12246
+variable cutoff22 equal ${sig2}*1.12246
+
+pair_style      lj/cut 1.12246 
+#Pair coefficient:   type-i  type-j (i should always be smaller than j) epsilon=1 sigma=(a_i+a_j)/2   cutoff=((sig_i+sig_j)/2)*2^(1/6) 
+pair_coeff      1 1 1.0 ${sig1}  ${cutoff11}§
+pair_coeff      1 2 1.0 ${sig12} ${cutoff12}
+pair_coeff      2 2 1.0 ${sig2}  ${cutoff22}
+
+#---------- FENE potential among the chain's monomers ----------
+# The FENE potential only exist among the monomers consisitng the chain
+
+# Amir: Does the FENE potential only exist among the monomers?  
+# Chanil: Yes. it is "bonding" potential, like spring which cannot be extended more than a certain value
+
+variable    sig1_fene equal 1.5*${sig1}
+variable    k1_fene equal  30/(${sig1}*${sig1})
+
+bond_style  fene
+
+#Bond coefficient:  type-i  K=(30*epsilon)/((a_i+a_j_^2)   R_0=1.5*((a_i+a_j)/2 )   epsilon=1    sigma=(a_i+a_j)/2
+bond_coeff  1 ${k1_fene}  ${sig1_fene}    1.0 ${sig1}
+
+#---------- Weighting coefficient for bonded atoms with pairwise interactions (Example,LJ interaction of two monomers in a chain) ----------
+special_bonds   fene
+
+#--------------------- (6) Settings ---------------------
+#---------- Equilibration/Method of integration of equation of motion ----------
+#Microcanonical ensamble:
+fix     F_nve all nve/limit 0.01 
+#Brownian dynamics for all particles 
+fix     F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+
+# Amir: Is the following command needed in free space? or it is only needed for the cylindrical coordinate system to keep the chian at z=0
+# Chanil: Even for a cylindrical coordinate, you do not NEED this. This fix is just for a convenience of calculation. Without this, it will be quite annoying for you to write code for post-processing. Imagine your chain randomly DRIFT in your PBC box, going back and forth over PBC boundary... The command below doesn't alter the physics of your simulation with Langevin thermostat. It's just to see the system at the center of mass of the chain
+
+fix     F_recenter bug recenter NULL NULL 0.0 shift all units box 
+
+#--------------------- (7) Run a simulation ---------------------
+
+#---------- Equilibration run ----------
+timestep 0.01 
+thermo 1000  
+# Amir: I want to have some snapshots before the equilibrium.
+# Amir: Besides the real  coordinates, the scaled coordinates  are also dumped to the output file
+# Amir: Is is a good idea to use the gz compressed file type or h5md?
+# Chanil: You can use whatever format that works the best for you. If you do not want a scaled coords, just remove xs ys zs. If the bottleneck of your simulation is I/O, compressed format will be considered good
+# Amir: for example:
+# dump	D_all_dynamic all custom 1000 all.dynamic.${i}.lammpstrj.gz id type x y z xs ys zs
+# or
+# dump D_h5md_all all h5md 1000 dump_h5md.h5 position image
+dump	D_all_dynamic all custom 1000 all.dynamic.${i}.lammpstrj id type x y z xs ys zs
+
+run	10000 
+write_restart    restart_after_equi.${i}  
+#Wiping out commands
+unfix F_nve
+unfix F_recenter 
+
+#---------- After equilibration (Data gathering run)
+fix	F_nve all nve 
+# Amir: The same as above
+fix	F_recenter bug recenter NULL NULL 0.0 shift all units box 
+
+timestep    0.002 
+dump	D_all all custom 1000 all.${i}.lammpstrj id type x y z xs ys zs 
+restart	10000  archive/restart.${i} 
+run	50000

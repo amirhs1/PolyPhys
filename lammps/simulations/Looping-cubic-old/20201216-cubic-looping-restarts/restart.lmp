@@ -1,0 +1,66 @@
+#Simulation name: N50l24.0sig0.3nc97785ens2
+
+#---------- Read restart file ----------
+read_restart    restart.2.39000000
+
+
+#Defining input parameters:
+variable i equal 2
+variable l equal 24.0
+variable randseed equal 5031
+variable sig3 equal 0.3
+variable n_bug equal 50
+variable n_crowd equal 97785
+
+#--------------------- (3) Neighbor Lists ---------------------
+neighbor		0.2 bin
+neigh_modify	delay 0 every 1 check yes one 300 page 3000
+
+#--------------------- (5) Atom Definition ---------------------
+#---------- Reshape simulation box/Define simulation box   ----------
+change_box  all x final -${l} ${l} y final -${l} ${l} z final -${l} ${l} boundary p p p units box 
+region  cubicshell block INF INF INF INF INF INF units box 
+
+#--------------------- (6) Interatomic/molecular Potential ---------------------
+#---------- Lennard-Jones potential among all particles ----------
+#---------- (6-a) Variables ----------
+#variable sig1 equal 1.0
+#variable sig2 equal 4.0
+#variable sig12 equal (${sig1}+${sig2})/2
+#variable sig13 equal (${sig1}+${sig3})/2
+#variable sig23 equal (${sig2}+${sig3})/2
+
+#variable cutoff11 equal ${sig1}*1.12246205
+#variable cutoff12 equal ((${sig1}+${sig2})/2.0)*1.12246205
+#variable cutoff22 equal ${sig2}*1.12246205
+#variable cutoff13 equal ((${sig1}+${sig3})/2.0)*1.12246205
+#variable cutoff23 equal ((${sig2}+${sig3})/2.0)*1.12246205
+#variable cutoff33 equal ${sig3}*1.12246205
+
+
+
+#Brownian dynamics for all particles 
+fix     F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+
+#---------- After equilibration (Data gathering run)
+fix F_nve all nve
+fix F_recenter bug recenter NULL NULL 0.0 shift all units box
+
+
+timestep    0.002
+thermo 10000
+
+
+dump	 D_bug bug atom  2000 bug.i${i}.restart.lammpstrj
+dump_modify D_bug scale no
+dump	 D_all all atom 20000 all.i${i}.restart.lammpstrj.gz
+dump_modify D_all scale no pad 2
+
+restart 1000000  ./restarts/restart.${i}
+
+run 10002
+
+undump D_all
+undump D_bug
+write_data all.n${n_bug}.nc${n_crowd}.restart.data
+write_restart    ./restart_after.i${i}

@@ -1,0 +1,43 @@
+#Simulation name: N80epsilon5.0r3.0lz35.5sig0.2nc67934ens3
+
+read_restart	restart.1.160000
+
+variable r equal 3.0
+variable lz equal 35.5
+
+change_box  all x final -${r} ${r} y final -${r} ${r} z final -${lz} ${lz} boundary f f p units box
+region  cylshell cylinder z 0.0 0.0 ${r} INF INF units box
+
+variable randseed equal 1073
+
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+
+variable sig1 equal 1.0
+variable sig12 equal (${sig1}+${sig2})/2
+variable cutoff11 equal ${sig1}*1.12246
+variable cutoff12 equal ((${sig1}+${sig2})/2.0)*1.12246
+
+neighbor		0.2 bin
+neigh_modify	delay 0 every 1 check yes one 300 page 3000
+
+fix     F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+
+fix     F_wall1 bug wall/region cylshell lj126 ${epsilon1} ${sig1} ${cutoff11} # Interaction between the lateral wall and the monomers.
+fix     F_wall2 crowd wall/region cylshell lj126 1.0 ${sig12}  ${cutoff12} # Interaction between the lateral wall and the crowders.
+
+fix		F_nve all nve
+fix		F_recenter bug recenter NULL NULL 0.0 shift all units box
+
+timestep    0.002
+thermo 5000
+
+dump	 D_bug bug atom  1000 bug.i3.restart.lammpstrj
+dump_modify D_bug scale no
+dump	 D_all all atom  1000 bug.i3.j10.restart.lammpstrj
+dump_modify D_all scale no
+restart 10000  ./restart.new.i$i
+run	90000
+undump D_all
+undump D_bug
+write_restart    ./restart_after

@@ -1,0 +1,1 @@
+./run_pc_cylinder.sh: line 15:   924 Bus error: 10           lmp_serial -v in_filename data.chain.80 -v i 1 -v r 3 -v lz 52 -v sig2 0.3 -v n_crowd 1000 -v epsilon1 5.0 -v fname in.loop -in in.loop

@@ -1,0 +1,3555 @@
+Simulation name: 20200124_article5_d7
+
+
+Run name: N80epsilon5.0r3.5lz13.5sig0.2nc41472ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 41472
+variable lz equal 13.5
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 223.04     | 443.31     | 736.56     | 924.5 |  4.22
+Bond    | 0.91443    | 1.5613     | 2.9494     |  56.6 |  0.01
+Neigh   | 6512.1     | 6598.8     | 6688       |  62.2 | 62.89
+Comm    | 1773.9     | 2010.8     | 2278.3     | 337.2 | 19.16
+Output  | 15.981     | 17.694     | 25.974     |  44.6 |  0.17
+Modify  | 1085.3     | 1224.6     | 1349.5     | 213.7 | 11.67
+Other   |            | 196.3      |            |       |  1.87
+
+Nlocal:    1298.5 ave 1986 max 643 min
+Histogram: 3 13 0 0 0 1 2 4 0 9
+Nghost:    5118.56 ave 7173 max 3087 min
+Histogram: 4 4 8 0 0 2 6 0 0 8
+Neighs:    11052.6 ave 18507 max 5187 min
+Histogram: 9 7 0 0 0 2 3 2 5 4
+
+Total # of neighbors = 353683
+Ave neighs/atom = 8.51182
+Ave special neighs/atom = 0.00380246
+Neighbor list builds = 466928
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 30:43:24
+
+
+3. Created files:
+total 70244264
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1408281088 Jan 24 12:12 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037788644 Jan 24 15:19 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036262448 Jan 24 18:37 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036871707 Jan 24 21:54 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037877272 Jan 25 00:48 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7035934372 Jan 25 03:43 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036389823 Jan 25 06:37 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037697009 Jan 25 09:31 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037118176 Jan 25 12:26 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7035857114 Jan 25 15:21 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037265593 Jan 25 18:16 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2806024 Jan 24 12:12 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  140297435 Jan 25 18:16 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409413 Jan 25 18:16 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399790 Jan 25 18:16 output.txt
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 25 18:16 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 24 12:12 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 18:16 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 18:16 slurm-26777808.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz13.5sig0.2nc41472ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 41472
+variable lz equal 13.5
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 232.87     | 440.56     | 739.45     | 936.5 |  4.12
+Bond    | 0.96404    | 1.5102     | 2.9759     |  56.7 |  0.01
+Neigh   | 6483.3     | 6553       | 6616.8     |  57.4 | 61.27
+Comm    | 1999.1     | 2212.1     | 2511.9     | 303.6 | 20.68
+Output  | 16.053     | 18.272     | 27.183     |  52.3 |  0.17
+Modify  | 1051.1     | 1280.3     | 1485.7     | 308.9 | 11.97
+Other   |            | 188.8      |            |       |  1.77
+
+Nlocal:    1298.5 ave 1994 max 737 min
+Histogram: 16 0 0 0 0 2 1 3 2 8
+Nghost:    5124.31 ave 7173 max 3134 min
+Histogram: 4 4 8 0 0 0 8 0 0 8
+Neighs:    11058.7 ave 18266 max 5569 min
+Histogram: 11 5 0 0 1 1 4 0 4 6
+
+Total # of neighbors = 353877
+Ave neighs/atom = 8.51649
+Ave special neighs/atom = 0.00380246
+Neighbor list builds = 466995
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 31:04:59
+
+
+3. Created files:
+total 70248312
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1409547894 Jan 24 12:12 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037056676 Jan 24 15:21 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036977463 Jan 24 18:31 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037648854 Jan 24 21:47 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036634126 Jan 25 00:46 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037344750 Jan 25 03:44 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037093255 Jan 25 06:43 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037033547 Jan 25 09:41 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037970623 Jan 25 12:40 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036886111 Jan 25 15:39 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037433405 Jan 25 18:37 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2776525 Jan 24 12:12 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  140197219 Jan 25 18:37 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409411 Jan 25 18:37 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399788 Jan 25 18:37 output.txt
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 25 18:37 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 24 12:12 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 18:37 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 18:37 slurm-26777810.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz13.5sig0.2nc41472ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 41472
+variable lz equal 13.5
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 232.56     | 445.38     | 767.18     | 928.7 |  4.29
+Bond    | 0.94202    | 1.5893     | 3.0927     |  55.0 |  0.02
+Neigh   | 6308.7     | 6364.5     | 6431       |  50.4 | 61.37
+Comm    | 1841.4     | 2076.4     | 2323.5     | 259.4 | 20.02
+Output  | 15.934     | 17.846     | 27.336     |  50.1 |  0.17
+Modify  | 1044.6     | 1253.2     | 1452.6     | 298.0 | 12.08
+Other   |            | 212.5      |            |       |  2.05
+
+Nlocal:    1298.5 ave 1997 max 625 min
+Histogram: 4 12 0 0 0 0 3 2 2 9
+Nghost:    5103.09 ave 7181 max 3255 min
+Histogram: 7 1 8 0 0 3 5 0 0 8
+Neighs:    11060 ave 18239 max 5074 min
+Histogram: 8 8 0 0 0 0 5 1 4 6
+
+Total # of neighbors = 353920
+Ave neighs/atom = 8.51752
+Ave special neighs/atom = 0.00380246
+Neighbor list builds = 466999
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 31:00:56
+
+
+3. Created files:
+total 70249336
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1408215437 Jan 24 12:12 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037352967 Jan 24 15:36 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7038057416 Jan 24 19:15 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037904565 Jan 24 22:26 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037702191 Jan 25 01:18 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037021562 Jan 25 04:11 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037186764 Jan 25 07:03 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036892235 Jan 25 09:55 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036995461 Jan 25 12:48 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037032200 Jan 25 15:40 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7038349947 Jan 25 18:33 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2807607 Jan 24 12:12 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  140123217 Jan 25 18:33 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409412 Jan 25 18:33 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399789 Jan 25 18:33 output.txt
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 25 18:33 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 24 12:12 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 18:33 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 18:33 slurm-26777811.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz13.5sig0.2nc41472ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 41472
+variable lz equal 13.5
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 236.34     | 443.14     | 751.24     | 919.3 |  4.25
+Bond    | 0.92653    | 1.5516     | 2.9618     |  56.2 |  0.01
+Neigh   | 6454.1     | 6502.4     | 6557.5     |  46.6 | 62.39
+Comm    | 1831.2     | 2055.6     | 2337.2     | 297.3 | 19.72
+Output  | 15.633     | 17.479     | 25.855     |  46.9 |  0.17
+Modify  | 1037.9     | 1219       | 1490.8     | 293.9 | 11.70
+Other   |            | 183.8      |            |       |  1.76
+
+Nlocal:    1298.5 ave 1996 max 730 min
+Histogram: 16 0 0 0 0 1 3 2 2 8
+Nghost:    5080.78 ave 7193 max 3112 min
+Histogram: 5 3 8 0 0 3 5 0 0 8
+Neighs:    11078.5 ave 18547 max 5640 min
+Histogram: 15 1 0 0 0 2 4 2 3 5
+
+Total # of neighbors = 354512
+Ave neighs/atom = 8.53177
+Ave special neighs/atom = 0.00380246
+Neighbor list builds = 466921
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 30:37:24
+
+
+3. Created files:
+total 70247292
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1408546028 Jan 24 12:18 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7038928479 Jan 24 15:29 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037566209 Jan 24 18:42 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036688569 Jan 24 21:55 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037012807 Jan 25 00:50 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036573486 Jan 25 03:45 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037138484 Jan 25 06:39 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036578478 Jan 25 09:33 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037729984 Jan 25 12:27 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7037279458 Jan 25 15:22 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 7036532308 Jan 25 18:16 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2800084 Jan 24 12:18 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  140180937 Jan 25 18:16 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409401 Jan 25 18:16 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399778 Jan 25 18:16 output.txt
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 25 18:16 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    4323894 Jan 24 12:18 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 18:16 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 18:16 slurm-26777813.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz18.0sig0.3nc25404ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 25404
+variable lz equal 18.0
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 558.54     | 637.79     | 707.62     | 168.7 | 13.26
+Bond    | 0.90345    | 1.8976     | 3.2432     |  65.4 |  0.04
+Neigh   | 1974.4     | 1984.5     | 1999.8     |  19.5 | 41.26
+Comm    | 913.2      | 1047.8     | 1176.4     | 244.2 | 21.79
+Output  | 13.085     | 14.443     | 19.752     |  39.4 |  0.30
+Modify  | 873.5      | 992.79     | 1104.3     | 186.4 | 20.64
+Other   |            | 130        |            |       |  2.70
+
+Nlocal:    1592.75 ave 1685 max 1429 min
+Histogram: 1 0 4 0 0 3 0 0 1 7
+Nghost:    3115.38 ave 3452 max 2771 min
+Histogram: 6 2 0 0 0 0 0 0 0 8
+Neighs:    11711.9 ave 13306 max 10502 min
+Histogram: 2 3 0 1 4 0 3 2 0 1
+
+Total # of neighbors = 187390
+Ave neighs/atom = 7.35324
+Ave special neighs/atom = 0.00619997
+Neighbor list builds = 453684
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 14:58:39
+
+
+3. Created files:
+total 42927424
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  859546269 Jan 24 12:19 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4295534517 Jan 24 13:50 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4295212615 Jan 24 15:30 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4295603244 Jan 24 16:59 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294953901 Jan 24 18:34 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294307968 Jan 24 20:08 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294364771 Jan 24 21:40 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294997619 Jan 24 23:00 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294321451 Jan 25 00:20 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294665519 Jan 25 01:41 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4295270029 Jan 25 03:01 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2805392 Jan 24 12:19 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  139804713 Jan 25 03:01 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409425 Jan 25 03:01 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399804 Jan 25 03:01 output.txt
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 25 03:01 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 24 12:19 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 03:01 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 03:01 slurm-26777814.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz18.0sig0.3nc25404ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 25404
+variable lz equal 18.0
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 565.42     | 637.98     | 722.99     | 162.3 | 12.21
+Bond    | 0.9354     | 1.8652     | 2.9511     |  60.0 |  0.04
+Neigh   | 1968.3     | 1979.6     | 1998.2     |  23.3 | 37.88
+Comm    | 1155.6     | 1352.8     | 1507.1     | 292.9 | 25.88
+Output  | 13.58      | 14.951     | 20.314     |  39.5 |  0.29
+Modify  | 904.43     | 1062.1     | 1253.7     | 299.2 | 20.32
+Other   |            | 177.3      |            |       |  3.39
+
+Nlocal:    1592.75 ave 1687 max 1449 min
+Histogram: 2 0 3 1 1 0 1 0 1 7
+Nghost:    3098.38 ave 3427 max 2703 min
+Histogram: 3 5 0 0 0 0 0 0 0 8
+Neighs:    11735.2 ave 13219 max 10107 min
+Histogram: 1 2 1 1 3 1 1 3 1 2
+
+Total # of neighbors = 187764
+Ave neighs/atom = 7.36792
+Ave special neighs/atom = 0.00619997
+Neighbor list builds = 453562
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 16:59:43
+
+
+3. Created files:
+total 42925364
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  859590994 Jan 24 12:21 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294565618 Jan 24 14:15 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294601405 Jan 24 16:03 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4295008746 Jan 24 17:55 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4295201639 Jan 24 19:57 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294622278 Jan 24 21:43 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294004406 Jan 24 23:11 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4295186322 Jan 25 00:39 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294319705 Jan 25 02:07 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294772330 Jan 25 03:35 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294613837 Jan 25 05:02 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2799232 Jan 24 12:21 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  139994345 Jan 25 05:02 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409411 Jan 25 05:02 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399790 Jan 25 05:02 output.txt
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 25 05:02 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 24 12:21 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 05:02 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 05:02 slurm-26777815.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz18.0sig0.3nc25404ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 25404
+variable lz equal 18.0
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 502.7      | 561.9      | 621.37     | 147.7 | 12.85
+Bond    | 0.54032    | 1.2309     | 2.482      |  54.2 |  0.03
+Neigh   | 1760.5     | 1783.4     | 1805.5     |  35.1 | 40.78
+Comm    | 888.3      | 1028.5     | 1174.2     | 244.7 | 23.52
+Output  | 11.555     | 12.464     | 16.486     |  32.2 |  0.29
+Modify  | 782.92     | 898.23     | 990.46     | 183.9 | 20.54
+Other   |            | 87.41      |            |       |  2.00
+
+Nlocal:    1592.75 ave 1675 max 1443 min
+Histogram: 3 0 1 0 1 2 1 0 0 8
+Nghost:    3099.44 ave 3431 max 2742 min
+Histogram: 5 3 0 0 0 0 0 0 0 8
+Neighs:    11751.4 ave 13080 max 9945 min
+Histogram: 2 1 0 1 0 3 1 5 1 2
+
+Total # of neighbors = 188022
+Ave neighs/atom = 7.37804
+Ave special neighs/atom = 0.00619997
+Neighbor list builds = 453655
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 14:27:49
+
+
+3. Created files:
+total 42923860
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  859730316 Jan 24 12:18 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294878093 Jan 24 13:42 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294768066 Jan 24 15:11 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294095783 Jan 24 16:31 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294962725 Jan 24 18:06 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294163091 Jan 24 19:53 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294483965 Jan 24 21:37 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294139973 Jan 24 22:51 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294834083 Jan 25 00:04 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294473364 Jan 25 01:17 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294343516 Jan 25 02:30 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2796069 Jan 24 12:18 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  140069783 Jan 25 02:30 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409403 Jan 25 02:30 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399782 Jan 25 02:30 output.txt
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 25 02:30 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 24 12:18 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 02:30 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 02:30 slurm-26777817.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz18.0sig0.3nc25404ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 25404
+variable lz equal 18.0
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 580.71     | 637.97     | 711.39     | 152.4 | 13.64
+Bond    | 0.90254    | 1.8152     | 2.9876     |  61.8 |  0.04
+Neigh   | 1976.6     | 1989.7     | 2002       |  17.2 | 42.56
+Comm    | 862.76     | 984.1      | 1096       | 231.7 | 21.05
+Output  | 12.744     | 13.846     | 18.918     |  37.9 |  0.30
+Modify  | 853.71     | 937.36     | 1038.8     | 172.7 | 20.05
+Other   |            | 110.8      |            |       |  2.37
+
+Nlocal:    1592.75 ave 1686 max 1432 min
+Histogram: 2 0 2 1 1 1 1 0 1 7
+Nghost:    3105.75 ave 3441 max 2743 min
+Histogram: 4 4 0 0 0 0 0 0 0 8
+Neighs:    11725.8 ave 13131 max 10088 min
+Histogram: 1 0 3 3 1 0 2 3 1 2
+
+Total # of neighbors = 187612
+Ave neighs/atom = 7.36195
+Ave special neighs/atom = 0.00619997
+Neighbor list builds = 453595
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 14:13:31
+
+
+3. Created files:
+total 42922492
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  859714972 Jan 24 12:24 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294678991 Jan 24 13:50 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294672758 Jan 24 15:13 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294351674 Jan 24 16:34 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294287013 Jan 24 18:01 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294617869 Jan 24 19:27 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294305061 Jan 24 21:02 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294264380 Jan 24 22:27 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294506662 Jan 24 23:46 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4293985841 Jan 25 01:04 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4294014249 Jan 25 02:22 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2794530 Jan 24 12:24 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  140141407 Jan 25 02:22 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409412 Jan 25 02:22 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399791 Jan 25 02:22 output.txt
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 25 02:22 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    2652694 Jan 24 12:24 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 02:22 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 02:22 slurm-26777818.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz27.6sig0.3nc34960ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 34960
+variable lz equal 27.6
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 693.24     | 768.54     | 849.83     | 150.8 | 13.51
+Bond    | 0.89998    | 1.8617     | 3.0257     |  61.9 |  0.03
+Neigh   | 2575.6     | 2588.2     | 2599.4     |  14.7 | 45.49
+Comm    | 851.41     | 972.36     | 1095.1     | 245.1 | 17.09
+Output  | 16.687     | 17.966     | 24.229     |  40.1 |  0.32
+Modify  | 1152       | 1218.9     | 1291.1     | 110.6 | 21.43
+Other   |            | 121.2      |            |       |  2.13
+
+Nlocal:    2190 ave 2289 max 2054 min
+Histogram: 1 3 1 2 0 0 1 0 3 5
+Nghost:    3833.75 ave 4113 max 3528 min
+Histogram: 5 3 0 0 0 0 0 0 0 8
+Neighs:    14567.7 ave 16088 max 13124 min
+Histogram: 1 2 1 3 2 1 2 2 0 2
+
+Total # of neighbors = 233083
+Ave neighs/atom = 6.65191
+Ave special neighs/atom = 0.00450913
+Neighbor list builds = 464065
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 16:38:25
+
+
+3. Created files:
+total 59166328
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1186001744 Jan 24 12:30 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925575293 Jan 24 14:11 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925124395 Jan 24 15:52 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925008587 Jan 24 17:33 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924739793 Jan 24 19:16 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924695540 Jan 24 20:51 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925028544 Jan 24 22:27 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924771778 Jan 25 00:02 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924903843 Jan 25 01:37 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924741797 Jan 25 03:12 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925055820 Jan 25 04:47 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2797527 Jan 24 12:30 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  139586721 Jan 25 04:47 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409410 Jan 25 04:47 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399783 Jan 25 04:47 output.txt
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 25 04:47 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 24 12:30 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 04:47 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 04:47 slurm-26777820.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz27.6sig0.3nc34960ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 34960
+variable lz equal 27.6
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 699.78     | 766.37     | 836.3      | 143.7 | 12.27
+Bond    | 0.9526     | 1.8343     | 3.0075     |  62.6 |  0.03
+Neigh   | 2647.4     | 2670.4     | 2696.4     |  27.3 | 42.74
+Comm    | 1174.9     | 1343       | 1528.5     | 282.7 | 21.50
+Output  | 17.624     | 19.217     | 26.147     |  43.9 |  0.31
+Modify  | 1150.2     | 1296.8     | 1428.9     | 214.4 | 20.76
+Other   |            | 150        |            |       |  2.40
+
+Nlocal:    2190 ave 2298 max 2007 min
+Histogram: 1 1 1 1 2 1 1 0 4 4
+Nghost:    3840.56 ave 4121 max 3545 min
+Histogram: 6 0 2 0 0 0 0 0 1 7
+Neighs:    14577.6 ave 16083 max 13106 min
+Histogram: 1 1 2 4 1 1 2 1 1 2
+
+Total # of neighbors = 233242
+Ave neighs/atom = 6.65645
+Ave special neighs/atom = 0.00450913
+Neighbor list builds = 463904
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 19:27:10
+
+
+3. Created files:
+total 59166440
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1185919903 Jan 24 12:31 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925137492 Jan 24 14:38 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924987225 Jan 24 16:47 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924923950 Jan 24 19:03 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924723272 Jan 24 21:06 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925213195 Jan 24 22:53 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925004465 Jan 25 00:38 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924879714 Jan 25 02:23 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924985037 Jan 25 04:07 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925148684 Jan 25 05:51 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924850555 Jan 25 07:35 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2801874 Jan 24 12:31 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  139558181 Jan 25 07:35 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409407 Jan 25 07:35 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399780 Jan 25 07:35 output.txt
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 25 07:35 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 24 12:31 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 07:35 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 07:35 slurm-26777822.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz27.6sig0.3nc34960ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 34960
+variable lz equal 27.6
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 700.42     | 771.97     | 839.87     | 137.9 | 13.03
+Bond    | 0.92183    | 1.9099     | 3.1321     |  64.2 |  0.03
+Neigh   | 2493.9     | 2516.8     | 2537.2     |  23.3 | 42.47
+Comm    | 1068.7     | 1201       | 1339.3     | 234.7 | 20.27
+Output  | 17.054     | 18.405     | 25.147     |  42.6 |  0.31
+Modify  | 1142.7     | 1270       | 1369.1     | 166.4 | 21.43
+Other   |            | 146.2      |            |       |  2.47
+
+Nlocal:    2190 ave 2294 max 2072 min
+Histogram: 4 1 1 1 0 0 1 2 3 3
+Nghost:    3832.12 ave 4156 max 3471 min
+Histogram: 2 3 3 0 0 0 0 0 2 6
+Neighs:    14565.6 ave 16336 max 13235 min
+Histogram: 1 3 2 3 0 3 2 0 0 2
+
+Total # of neighbors = 233049
+Ave neighs/atom = 6.65094
+Ave special neighs/atom = 0.00450913
+Neighbor list builds = 463868
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 18:12:29
+
+
+3. Created files:
+total 59165376
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1185855548 Jan 24 12:37 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924545378 Jan 24 14:35 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925353285 Jan 24 16:26 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924378627 Jan 24 18:25 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924628396 Jan 24 20:26 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925677127 Jan 24 22:12 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924961018 Jan 24 23:51 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924902096 Jan 25 01:30 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924826562 Jan 25 03:09 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924854881 Jan 25 04:48 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924629406 Jan 25 06:27 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2804957 Jan 24 12:37 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  139639825 Jan 25 06:27 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409406 Jan 25 06:27 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399779 Jan 25 06:27 output.txt
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 25 06:27 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 24 12:37 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 06:27 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 06:27 slurm-26777824.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz27.6sig0.3nc34960ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 34960
+variable lz equal 27.6
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 703.61     | 774.25     | 862.48     | 155.4 | 12.50
+Bond    | 0.98883    | 1.9848     | 3.2672     |  62.4 |  0.03
+Neigh   | 2547.2     | 2561.5     | 2582.8     |  21.2 | 41.35
+Comm    | 1189.9     | 1365.4     | 1552.3     | 273.1 | 22.04
+Output  | 17.682     | 19.822     | 27.979     |  51.7 |  0.32
+Modify  | 1156.1     | 1312.3     | 1440.8     | 209.1 | 21.19
+Other   |            | 159.1      |            |       |  2.57
+
+Nlocal:    2190 ave 2306 max 2005 min
+Histogram: 1 0 1 2 2 1 1 1 5 2
+Nghost:    3842.38 ave 4135 max 3512 min
+Histogram: 5 2 1 0 0 0 0 0 1 7
+Neighs:    14597.2 ave 16006 max 13199 min
+Histogram: 3 1 0 2 1 3 0 4 0 2
+
+Total # of neighbors = 233555
+Ave neighs/atom = 6.66538
+Ave special neighs/atom = 0.00450913
+Neighbor list builds = 463943
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 18:57:24
+
+
+3. Created files:
+total 59165048
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1186147965 Jan 24 12:36 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924900331 Jan 24 14:38 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924833080 Jan 24 16:34 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924994918 Jan 24 18:43 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925184132 Jan 24 20:45 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924403109 Jan 24 22:34 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924193272 Jan 25 00:17 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5925080261 Jan 25 02:01 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924912357 Jan 25 03:45 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924607033 Jan 25 05:28 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5924940401 Jan 25 07:12 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2787825 Jan 24 12:36 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  139724032 Jan 25 07:12 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409408 Jan 25 07:12 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399781 Jan 25 07:12 output.txt
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 25 07:12 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    3646518 Jan 24 12:36 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 07:12 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 07:12 slurm-26777825.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz29.25sig0.2nc78624ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 78624
+variable lz equal 29.25
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 401.08     | 820.37     | 1599.5     |1301.8 |  3.87
+Bond    | 1.1507     | 2.2343     | 4.5161     |  71.9 |  0.01
+Neigh   | 13070      | 13233      | 13390      |  83.9 | 62.46
+Comm    | 3710.3     | 4199.8     | 4884.8     | 438.7 | 19.82
+Output  | 30.826     | 34.533     | 50.451     |  66.3 |  0.16
+Modify  | 1898.4     | 2544.4     | 3208.8     | 750.2 | 12.01
+Other   |            | 352.2      |            |       |  1.66
+
+Nlocal:    2459.5 ave 3641 max 1398 min
+Histogram: 16 0 0 0 0 0 0 1 6 9
+Nghost:    7992.56 ave 10665 max 5447 min
+Histogram: 8 8 0 0 0 0 0 8 0 8
+Neighs:    17812.8 ave 28692 max 9476 min
+Histogram: 16 0 0 0 0 0 1 4 7 4
+
+Total # of neighbors = 570010
+Ave neighs/atom = 7.24245
+Ave special neighs/atom = 0.00200752
+Neighbor list builds = 481583
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 57:32:50
+
+
+3. Created files:
+total 133406724
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2678761620 Jan 24 12:57 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376433547 Jan 24 19:45 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377217821 Jan 25 01:31 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376180653 Jan 25 06:57 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376492124 Jan 25 12:16 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377074297 Jan 25 17:32 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377126401 Jan 25 22:55 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376882596 Jan 26 04:12 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377622945 Jan 26 09:31 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377691001 Jan 26 15:18 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377606110 Jan 26 21:11 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2761136 Jan 24 12:57 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   139101785 Jan 26 21:11 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4885 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409456 Jan 26 21:11 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399829 Jan 26 21:11 output.txt
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 26 21:11 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 24 12:57 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 26 21:11 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 26 21:11 slurm-26777826.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz29.25sig0.2nc78624ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 78624
+variable lz equal 29.25
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 396.24     | 768.24     | 1219.5     |1210.9 |  4.12
+Bond    | 1.0682     | 1.7679     | 3.542      |  59.7 |  0.01
+Neigh   | 11890      | 11981      | 12091      |  66.6 | 64.19
+Comm    | 2978.7     | 3372.2     | 3815.9     | 361.6 | 18.07
+Output  | 29.705     | 32.821     | 51.151     |  67.3 |  0.18
+Modify  | 1821.8     | 2227.1     | 2650.4     | 406.5 | 11.93
+Other   |            | 281.3      |            |       |  1.51
+
+Nlocal:    2459.5 ave 3669 max 1286 min
+Histogram: 15 1 0 0 0 0 0 2 3 11
+Nghost:    7963.16 ave 10654 max 5307 min
+Histogram: 5 11 0 0 0 0 0 7 1 8
+Neighs:    17845.8 ave 29247 max 8244 min
+Histogram: 10 6 0 0 0 0 2 3 7 4
+
+Total # of neighbors = 571065
+Ave neighs/atom = 7.25586
+Ave special neighs/atom = 0.00200752
+Neighbor list builds = 481594
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 55:18:30
+
+
+3. Created files:
+total 133407988
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2678657221 Jan 24 12:53 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377921359 Jan 24 19:32 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376516080 Jan 25 01:10 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377925022 Jan 25 06:24 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13378016875 Jan 25 11:39 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376334025 Jan 25 16:55 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377644431 Jan 25 22:10 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376658936 Jan 26 03:22 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377295636 Jan 26 08:35 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376589632 Jan 26 13:46 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376891763 Jan 26 18:57 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2763226 Jan 24 12:53 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   139057119 Jan 26 18:57 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4885 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409451 Jan 26 18:57 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399824 Jan 26 18:57 output.txt
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 26 18:57 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 24 12:53 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 26 18:57 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 26 18:57 slurm-26777827.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz29.25sig0.2nc78624ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 78624
+variable lz equal 29.25
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 388.84     | 773.15     | 1282.2     |1243.0 |  3.65
+Bond    | 0.98711    | 1.7428     | 3.3484     |  59.0 |  0.01
+Neigh   | 12444      | 12581      | 12742      |  87.9 | 59.36
+Comm    | 3997.5     | 4751.6     | 5379.1     | 521.6 | 22.42
+Output  | 332.56     | 335.66     | 352.81     |  20.1 |  1.58
+Modify  | 1816.8     | 2469.3     | 3152       | 764.0 | 11.65
+Other   |            | 280.6      |            |       |  1.32
+
+Nlocal:    2459.5 ave 3636 max 1374 min
+Histogram: 16 0 0 0 0 0 0 1 6 9
+Nghost:    7957.69 ave 10588 max 5454 min
+Histogram: 8 8 0 0 0 0 0 8 0 8
+Neighs:    17818 ave 28367 max 9032 min
+Histogram: 16 0 0 0 0 0 0 5 7 4
+
+Total # of neighbors = 570177
+Ave neighs/atom = 7.24457
+Ave special neighs/atom = 0.00200752
+Neighbor list builds = 481647
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 61:45:19
+
+
+3. Created files:
+total 133402352
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2677764670 Jan 24 13:02 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376055370 Jan 24 20:21 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376501434 Jan 25 02:22 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376141331 Jan 25 08:08 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376361224 Jan 25 14:03 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377166690 Jan 25 20:12 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377040116 Jan 26 02:09 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377256775 Jan 26 07:56 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376808693 Jan 26 13:42 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376862573 Jan 26 19:30 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376535116 Jan 27 01:24 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2787237 Jan 24 13:02 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   139204258 Jan 27 01:24 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4885 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409445 Jan 27 01:24 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399818 Jan 27 01:24 output.txt
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 27 01:24 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 24 13:02 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 27 01:24 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 27 01:24 slurm-26777829.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz29.25sig0.2nc78624ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 78624
+variable lz equal 29.25
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 323.37     | 625.15     | 993.99     |1140.1 |  4.22
+Bond    | 0.80928    | 1.5571     | 3.5592     |  62.5 |  0.01
+Neigh   | 8914.2     | 9031.4     | 9126.2     |  74.3 | 60.98
+Comm    | 2550.9     | 2962       | 3315.7     | 389.0 | 20.00
+Output  | 25.904     | 28.265     | 40.396     |  51.3 |  0.19
+Modify  | 1721       | 1917.4     | 2136.4     | 237.8 | 12.95
+Other   |            | 244.2      |            |       |  1.65
+
+Nlocal:    2459.5 ave 3644 max 1382 min
+Histogram: 16 0 0 0 0 0 0 0 8 8
+Nghost:    7974.72 ave 10615 max 5513 min
+Histogram: 8 8 0 0 0 0 0 8 0 8
+Neighs:    17823.8 ave 28552 max 9319 min
+Histogram: 16 0 0 0 0 0 0 5 6 5
+
+Total # of neighbors = 570361
+Ave neighs/atom = 7.24691
+Ave special neighs/atom = 0.00200752
+Neighbor list builds = 481656
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 42:41:56
+
+
+3. Created files:
+total 133405228
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2678595540 Jan 24 12:32 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13377524814 Jan 24 16:51 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376679839 Jan 24 21:38 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376940255 Jan 25 01:37 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376180346 Jan 25 05:38 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13375905865 Jan 25 09:43 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376808672 Jan 25 13:51 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13378486366 Jan 25 17:58 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376908127 Jan 25 22:06 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376929231 Jan 26 02:13 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13376556747 Jan 26 06:20 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2765385 Jan 24 12:32 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   139138556 Jan 26 06:20 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4885 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409445 Jan 26 06:20 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399818 Jan 26 06:20 output.txt
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 26 06:20 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi     8187702 Jan 24 12:32 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 26 06:20 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 26 06:20 slurm-26777830.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz36.6sig0.3nc40162ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40162
+variable lz equal 36.6
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 198.28     | 386.7      | 612.46     | 887.4 |  6.81
+Bond    | 0.89569    | 1.5146     | 3.0653     |  55.8 |  0.03
+Neigh   | 2115.6     | 2179.8     | 2242.8     |  82.8 | 38.41
+Comm    | 1504.6     | 1738.1     | 2040.8     | 321.6 | 30.62
+Output  | 15.905     | 17.643     | 26.69      |  47.5 |  0.31
+Modify  | 931.81     | 1186.9     | 1451.6     | 397.4 | 20.91
+Other   |            | 164.8      |            |       |  2.90
+
+Nlocal:    1257.56 ave 1853 max 716 min
+Histogram: 16 0 0 0 0 0 0 1 5 10
+Nghost:    3948.53 ave 5224 max 2790 min
+Histogram: 11 5 0 0 0 0 0 2 6 8
+Neighs:    7326.28 ave 11795 max 3737 min
+Histogram: 16 0 0 0 0 0 1 4 6 5
+
+Total # of neighbors = 234441
+Ave neighs/atom = 5.82578
+Ave special neighs/atom = 0.00392625
+Neighbor list builds = 469573
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 17:02:29
+
+
+3. Created files:
+total 68019200
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1364100527 Jan 24 12:11 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813997326 Jan 24 13:58 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813771118 Jan 24 15:42 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813620987 Jan 24 17:30 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813531669 Jan 24 19:16 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813492909 Jan 24 20:59 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813696621 Jan 24 22:34 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813719692 Jan 25 00:09 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813647088 Jan 25 01:43 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813678657 Jan 25 03:18 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813616181 Jan 25 04:53 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2771603 Jan 24 12:11 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138623651 Jan 25 04:53 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409450 Jan 25 04:53 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399823 Jan 25 04:53 output.txt
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 25 04:53 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 24 12:11 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 04:53 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 04:53 slurm-26777831.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz36.6sig0.3nc40162ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40162
+variable lz equal 36.6
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 197.84     | 388.89     | 639.75     | 895.1 |  6.79
+Bond    | 0.97038    | 1.5531     | 4.0752     |  61.8 |  0.03
+Neigh   | 2194.3     | 2232.2     | 2283.8     |  66.3 | 38.96
+Comm    | 1499.2     | 1741.3     | 2044.2     | 312.5 | 30.39
+Output  | 17.146     | 19.332     | 28.631     |  51.0 |  0.34
+Modify  | 1006.1     | 1164.5     | 1352.9     | 274.4 | 20.33
+Other   |            | 181.4      |            |       |  3.17
+
+Nlocal:    1257.56 ave 1848 max 718 min
+Histogram: 16 0 0 0 0 0 0 2 3 11
+Nghost:    3973.62 ave 5169 max 2712 min
+Histogram: 6 10 0 0 0 0 0 0 8 8
+Neighs:    7331.5 ave 11626 max 3775 min
+Histogram: 16 0 0 0 0 0 1 2 6 7
+
+Total # of neighbors = 234608
+Ave neighs/atom = 5.82993
+Ave special neighs/atom = 0.00392625
+Neighbor list builds = 469470
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 18:06:02
+
+
+3. Created files:
+total 68019028
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1363875441 Jan 24 12:06 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813578062 Jan 24 14:07 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813573278 Jan 24 16:02 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813641554 Jan 24 18:01 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813576301 Jan 24 20:05 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6814072943 Jan 24 21:53 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813960433 Jan 24 23:29 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813873879 Jan 25 01:04 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813654644 Jan 25 02:39 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813515224 Jan 25 04:15 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813358774 Jan 25 05:50 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2785017 Jan 24 12:06 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138618929 Jan 25 05:50 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409450 Jan 25 05:50 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399823 Jan 25 05:50 output.txt
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 25 05:50 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 24 12:06 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 05:50 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 05:50 slurm-26777832.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz36.6sig0.3nc40162ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40162
+variable lz equal 36.6
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 195.9      | 392.5      | 662.74     | 921.0 |  6.29
+Bond    | 0.90352    | 1.5855     | 3.3278     |  59.7 |  0.03
+Neigh   | 2160.4     | 2269.7     | 2343.9     | 108.1 | 36.40
+Comm    | 1703.5     | 1968.6     | 2374.8     | 333.0 | 31.57
+Output  | 17.536     | 19.794     | 29.418     |  52.6 |  0.32
+Modify  | 983.5      | 1383.8     | 1650.9     | 441.2 | 22.19
+Other   |            | 200.1      |            |       |  3.21
+
+Nlocal:    1257.56 ave 1859 max 700 min
+Histogram: 16 0 0 0 0 0 0 1 3 12
+Nghost:    3960.56 ave 5192 max 2723 min
+Histogram: 6 10 0 0 0 0 0 0 8 8
+Neighs:    7336.38 ave 11748 max 3579 min
+Histogram: 16 0 0 0 0 0 0 4 6 6
+
+Total # of neighbors = 234764
+Ave neighs/atom = 5.83381
+Ave special neighs/atom = 0.00392625
+Neighbor list builds = 469474
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 19:13:36
+
+
+3. Created files:
+total 68020024
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1364123522 Jan 24 12:13 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813646887 Jan 24 14:11 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813470602 Jan 24 16:06 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813765843 Jan 24 18:15 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813887268 Jan 24 20:26 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813741661 Jan 24 22:19 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813144178 Jan 25 00:05 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6814015449 Jan 25 01:50 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6814401629 Jan 25 03:35 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6814020462 Jan 25 05:20 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813549017 Jan 25 07:04 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2769242 Jan 24 12:13 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138562245 Jan 25 07:04 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409454 Jan 25 07:04 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399827 Jan 25 07:04 output.txt
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 25 07:04 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 24 12:13 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 07:04 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 07:04 slurm-26777833.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz36.6sig0.3nc40162ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 40162
+variable lz equal 36.6
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 198.28     | 390.65     | 613.18     | 877.9 |  6.91
+Bond    | 0.92999    | 1.5887     | 3.269      |  56.5 |  0.03
+Neigh   | 2199.3     | 2235.7     | 2288.3     |  57.3 | 39.55
+Comm    | 1480.9     | 1702.8     | 1928.7     | 304.2 | 30.12
+Output  | 16.409     | 18.388     | 26.582     |  47.0 |  0.33
+Modify  | 984.29     | 1121.9     | 1292.6     | 252.7 | 19.85
+Other   |            | 181.4      |            |       |  3.21
+
+Nlocal:    1257.56 ave 1849 max 715 min
+Histogram: 16 0 0 0 0 0 0 0 6 10
+Nghost:    3942.78 ave 5173 max 2803 min
+Histogram: 10 6 0 0 0 0 0 2 6 8
+Neighs:    7337.22 ave 11566 max 3654 min
+Histogram: 16 0 0 0 0 0 0 2 6 8
+
+Total # of neighbors = 234791
+Ave neighs/atom = 5.83448
+Ave special neighs/atom = 0.00392625
+Neighbor list builds = 469617
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 18:00:08
+
+
+3. Created files:
+total 68018540
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1364042899 Jan 24 12:12 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813461994 Jan 24 14:07 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813507577 Jan 24 16:02 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813575208 Jan 24 18:00 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813477684 Jan 24 20:08 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813684547 Jan 24 21:58 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813680839 Jan 24 23:33 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813740329 Jan 25 01:08 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813379861 Jan 25 02:42 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813636426 Jan 25 04:16 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 6813957593 Jan 25 05:50 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2774982 Jan 24 12:12 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138662079 Jan 25 05:50 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409460 Jan 25 05:50 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399833 Jan 25 05:50 output.txt
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 25 05:50 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    4187654 Jan 24 12:12 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 05:50 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 05:50 slurm-26777834.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz38.5sig0.3nc33981ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 33981
+variable lz equal 38.5
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 346.77     | 396.48     | 456.41     | 172.5 |  9.02
+Bond    | 0.5909     | 1.3001     | 2.2939     |  55.4 |  0.03
+Neigh   | 1683.5     | 1706.4     | 1728.5     |  35.4 | 38.82
+Comm    | 995.11     | 1082.7     | 1169.9     | 147.3 | 24.63
+Output  | 14.651     | 15.695     | 20.29      |  32.2 |  0.36
+Modify  | 1002.5     | 1100.3     | 1182.4     | 157.7 | 25.04
+Other   |            | 92.26      |            |       |  2.10
+
+Nlocal:    2128.81 ave 2200 max 2025 min
+Histogram: 3 1 1 1 0 1 0 2 2 5
+Nghost:    3565.56 ave 3721 max 3384 min
+Histogram: 2 5 1 0 0 0 0 0 1 7
+Neighs:    10115.6 ave 11110 max 8952 min
+Histogram: 1 1 0 2 4 0 3 2 2 1
+
+Total # of neighbors = 161849
+Ave neighs/atom = 4.75174
+Ave special neighs/atom = 0.00463874
+Neighbor list builds = 469251
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 16:19:47
+
+
+3. Created files:
+total 57516996
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1152938070 Jan 24 12:31 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759444922 Jan 24 14:01 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759391444 Jan 24 15:34 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759581190 Jan 24 17:32 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759648866 Jan 24 21:10 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759266124 Jan 24 22:25 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759588245 Jan 24 23:40 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759697541 Jan 25 00:54 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759448026 Jan 25 02:07 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759545981 Jan 25 03:21 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759619812 Jan 25 04:34 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2776621 Jan 24 12:31 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138371490 Jan 25 04:34 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409405 Jan 25 04:34 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399778 Jan 25 04:34 output.txt
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 25 04:34 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 24 12:31 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 04:34 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 04:34 slurm-26777835.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz38.5sig0.3nc33981ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 33981
+variable lz equal 38.5
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 474.43     | 521.95     | 570.88     | 117.4 | 10.22
+Bond    | 0.92686    | 1.9008     | 3.246      |  63.3 |  0.04
+Neigh   | 1934.1     | 1952       | 1968.7     |  25.4 | 38.21
+Comm    | 1099.4     | 1246       | 1376.9     | 235.8 | 24.39
+Output  | 17.118     | 18.808     | 25.931     |  45.8 |  0.37
+Modify  | 1105.8     | 1217.2     | 1320.2     | 168.6 | 23.82
+Other   |            | 151.2      |            |       |  2.96
+
+Nlocal:    2128.81 ave 2226 max 1969 min
+Histogram: 2 1 0 0 2 0 3 2 3 3
+Nghost:    3572 ave 3738 max 3387 min
+Histogram: 2 5 1 0 0 0 0 2 1 5
+Neighs:    10114.6 ave 11389 max 8991 min
+Histogram: 1 0 3 3 2 3 1 1 1 1
+
+Total # of neighbors = 161833
+Ave neighs/atom = 4.75127
+Ave special neighs/atom = 0.00463874
+Neighbor list builds = 469237
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 15:55:00
+
+
+3. Created files:
+total 57516040
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1153025327 Jan 24 12:39 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759314911 Jan 24 14:18 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759511181 Jan 24 15:56 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759259759 Jan 24 17:36 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759456156 Jan 24 19:22 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759609436 Jan 24 21:08 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759252435 Jan 24 22:33 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759325979 Jan 24 23:59 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759585211 Jan 25 01:25 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759503750 Jan 25 02:50 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759258780 Jan 25 04:15 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2768898 Jan 24 12:39 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138472327 Jan 25 04:15 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409422 Jan 25 04:15 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399795 Jan 25 04:15 output.txt
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 25 04:15 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 24 12:39 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 04:15 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 04:15 slurm-26777837.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz38.5sig0.3nc33981ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 33981
+variable lz equal 38.5
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 491.32     | 526.3      | 569.81     |  98.3 |  9.94
+Bond    | 0.96214    | 2.0204     | 4.0456     |  73.9 |  0.04
+Neigh   | 1928.6     | 1950.5     | 1969.6     |  30.1 | 36.84
+Comm    | 1220.1     | 1368.5     | 1519.8     | 239.0 | 25.85
+Output  | 17.918     | 19.847     | 26.941     |  46.0 |  0.37
+Modify  | 1148.9     | 1269.9     | 1395.3     | 186.4 | 23.98
+Other   |            | 157.7      |            |       |  2.98
+
+Nlocal:    2128.81 ave 2235 max 1985 min
+Histogram: 2 1 1 1 1 1 1 3 2 3
+Nghost:    3580.75 ave 3740 max 3353 min
+Histogram: 2 3 0 0 3 0 0 0 1 7
+Neighs:    10141.2 ave 11318 max 8985 min
+Histogram: 1 2 1 1 4 1 3 1 0 2
+
+Total # of neighbors = 162259
+Ave neighs/atom = 4.76378
+Ave special neighs/atom = 0.00463874
+Neighbor list builds = 469315
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 16:16:01
+
+
+3. Created files:
+total 57517576
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1153158714 Jan 24 12:40 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759561817 Jan 24 14:22 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759594165 Jan 24 16:04 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759510534 Jan 24 17:47 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759611822 Jan 24 19:32 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759519083 Jan 24 21:14 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759634358 Jan 24 22:43 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759558684 Jan 25 00:11 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759600850 Jan 25 01:40 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759455134 Jan 25 03:08 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759625694 Jan 25 04:36 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2759835 Jan 24 12:40 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138333623 Jan 25 04:36 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409434 Jan 25 04:36 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399807 Jan 25 04:36 output.txt
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 25 04:36 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 24 12:40 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 04:36 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 04:36 slurm-26777839.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz38.5sig0.3nc33981ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 33981
+variable lz equal 38.5
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 473.44     | 517.41     | 560.97     | 105.7 |  9.92
+Bond    | 0.85985    | 1.9109     | 3.2041     |  63.1 |  0.04
+Neigh   | 1873.2     | 1890.8     | 1906.1     |  26.1 | 36.27
+Comm    | 1168.1     | 1328.4     | 1501.2     | 256.2 | 25.48
+Output  | 17.699     | 19.512     | 26.686     |  45.9 |  0.37
+Modify  | 1133.9     | 1288.3     | 1425.7     | 210.1 | 24.71
+Other   |            | 167.2      |            |       |  3.21
+
+Nlocal:    2128.81 ave 2232 max 1947 min
+Histogram: 2 0 0 0 2 1 2 3 5 1
+Nghost:    3544.75 ave 3745 max 3328 min
+Histogram: 3 0 4 1 0 0 0 2 3 3
+Neighs:    10116.8 ave 11203 max 8565 min
+Histogram: 1 0 0 2 2 3 2 3 2 1
+
+Total # of neighbors = 161868
+Ave neighs/atom = 4.7523
+Ave special neighs/atom = 0.00463874
+Neighbor list builds = 469286
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 16:39:19
+
+
+3. Created files:
+total 57516712
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1153120794 Jan 24 12:40 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759486328 Jan 24 14:27 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759500011 Jan 24 16:11 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759597831 Jan 24 18:08 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759696927 Jan 24 20:03 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759544289 Jan 24 21:45 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759355916 Jan 24 23:12 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759329900 Jan 25 00:39 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759439843 Jan 25 02:06 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759568052 Jan 25 03:33 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 5759215114 Jan 25 05:00 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2762952 Jan 24 12:40 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138414441 Jan 25 05:00 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409432 Jan 25 05:00 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399805 Jan 25 05:00 output.txt
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 25 05:00 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    3544702 Jan 24 12:40 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 05:00 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 05:00 slurm-26777840.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz40.5sig0.2nc77760ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 77760
+variable lz equal 40.5
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 296.78     | 582.61     | 925.52     |1110.4 |  3.52
+Bond    | 0.95259    | 1.6974     | 3.5717     |  62.8 |  0.01
+Neigh   | 8996       | 9110.8     | 9228       |  77.1 | 54.99
+Comm    | 3420.5     | 4063.2     | 4807.4     | 610.5 | 24.53
+Output  | 29.721     | 33.244     | 48.957     |  62.4 |  0.20
+Modify  | 1793.7     | 2475.9     | 3289.7     | 804.3 | 14.94
+Other   |            | 299.4      |            |       |  1.81
+
+Nlocal:    2432.5 ave 3594 max 1297 min
+Histogram: 16 0 0 0 0 0 0 0 5 11
+Nghost:    7556.56 ave 9813 max 5248 min
+Histogram: 8 8 0 0 0 0 0 0 8 8
+Neighs:    12586.3 ave 20163 max 6399 min
+Histogram: 15 1 0 0 0 0 0 2 10 4
+
+Total # of neighbors = 402762
+Ave neighs/atom = 5.17423
+Ave special neighs/atom = 0.0020298
+Neighbor list builds = 485078
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 50:16:18
+
+
+3. Created files:
+total 131950976
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2648754095 Jan 24 13:01 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231284564 Jan 24 19:17 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231081056 Jan 25 00:20 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231375459 Jan 25 04:57 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231350780 Jan 25 09:35 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230562171 Jan 25 14:21 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231081709 Jan 25 19:17 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231500707 Jan 26 00:28 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231278598 Jan 26 05:00 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230389666 Jan 26 09:30 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230725697 Jan 26 14:07 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2769998 Jan 24 13:01 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   138291214 Jan 26 14:07 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409434 Jan 26 14:07 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399811 Jan 26 14:07 output.txt
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 26 14:07 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 24 13:01 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 26 14:07 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 26 14:07 slurm-26777841.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz40.5sig0.2nc77760ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 77760
+variable lz equal 40.5
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 292.17     | 598.38     | 1018.2     |1150.7 |  3.41
+Bond    | 0.89619    | 1.7684     | 3.9862     |  64.8 |  0.01
+Neigh   | 9936.7     | 10091      | 10209      |  95.7 | 57.47
+Comm    | 3487.7     | 3973.7     | 4620.8     | 448.2 | 22.63
+Output  | 31.519     | 35.696     | 55.24      |  74.5 |  0.20
+Modify  | 1869.8     | 2534.9     | 3038.2     | 815.4 | 14.44
+Other   |            | 322.9      |            |       |  1.84
+
+Nlocal:    2432.5 ave 3596 max 1332 min
+Histogram: 16 0 0 0 0 0 0 1 5 10
+Nghost:    7573.81 ave 9916 max 5270 min
+Histogram: 8 8 0 0 0 0 0 0 8 8
+Neighs:    12578.6 ave 20023 max 6563 min
+Histogram: 16 0 0 0 0 0 0 3 6 7
+
+Total # of neighbors = 402515
+Ave neighs/atom = 5.17106
+Ave special neighs/atom = 0.0020298
+Neighbor list builds = 485153
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 52:03:08
+
+
+3. Created files:
+total 131949624
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2649017888 Jan 24 13:07 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230710930 Jan 24 19:30 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231317647 Jan 25 00:45 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230709325 Jan 25 05:34 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230967693 Jan 25 10:26 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231780549 Jan 25 15:15 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230989346 Jan 25 20:22 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230551533 Jan 26 01:22 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230184868 Jan 26 06:19 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230519348 Jan 26 11:01 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231180781 Jan 26 15:53 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2760629 Jan 24 13:07 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   138367976 Jan 26 15:53 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409423 Jan 26 15:53 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399800 Jan 26 15:53 output.txt
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 26 15:53 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 24 13:07 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 26 15:53 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 26 15:53 slurm-26777844.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz40.5sig0.2nc77760ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 77760
+variable lz equal 40.5
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 297.05     | 593.26     | 1017.8     |1132.2 |  3.68
+Bond    | 0.91814    | 1.8929     | 4.482      |  74.0 |  0.01
+Neigh   | 9609.7     | 9706       | 9808.5     |  73.5 | 60.29
+Comm    | 2908       | 3182.6     | 3463.4     | 268.7 | 19.77
+Output  | 30.333     | 33.565     | 50.609     |  65.2 |  0.21
+Modify  | 1999.8     | 2278.2     | 2680.6     | 364.9 | 14.15
+Other   |            | 304.2      |            |       |  1.89
+
+Nlocal:    2432.5 ave 3607 max 1325 min
+Histogram: 16 0 0 0 0 0 0 0 5 11
+Nghost:    7555.5 ave 9874 max 5199 min
+Histogram: 8 8 0 0 0 0 0 0 8 8
+Neighs:    12587.2 ave 19976 max 6516 min
+Histogram: 16 0 0 0 0 0 0 4 5 7
+
+Total # of neighbors = 402792
+Ave neighs/atom = 5.17461
+Ave special neighs/atom = 0.0020298
+Neighbor list builds = 485060
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 47:10:58
+
+
+3. Created files:
+total 131949412
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2648893058 Jan 24 13:07 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230944835 Jan 24 18:41 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230273894 Jan 24 23:44 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230746821 Jan 25 04:01 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231499199 Jan 25 08:18 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230381899 Jan 25 12:42 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230898584 Jan 25 17:03 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231044815 Jan 25 21:43 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230651542 Jan 26 02:13 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230876401 Jan 26 06:39 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231502589 Jan 26 11:07 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2765179 Jan 24 13:07 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   138365886 Jan 26 11:07 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409434 Jan 26 11:07 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399811 Jan 26 11:07 output.txt
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 26 11:07 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 24 13:07 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 26 11:07 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 26 11:07 slurm-26777845.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz40.5sig0.2nc77760ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 77760
+variable lz equal 40.5
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 296.41     | 586.14     | 917.8      |1104.6 |  3.65
+Bond    | 1.0393     | 1.8024     | 4.015      |  69.3 |  0.01
+Neigh   | 9486.9     | 9622       | 9750.7     |  86.2 | 59.87
+Comm    | 2886.9     | 3335.9     | 3804.9     | 425.1 | 20.76
+Output  | 28.959     | 32.428     | 48.34      |  63.9 |  0.20
+Modify  | 1775.8     | 2192       | 2822.8     | 621.8 | 13.64
+Other   |            | 300.3      |            |       |  1.87
+
+Nlocal:    2432.5 ave 3607 max 1327 min
+Histogram: 16 0 0 0 0 0 0 0 7 9
+Nghost:    7541.69 ave 9937 max 5261 min
+Histogram: 8 8 0 0 0 0 0 0 8 8
+Neighs:    12572.5 ave 19491 max 6427 min
+Histogram: 16 0 0 0 0 0 0 1 8 7
+
+Total # of neighbors = 402319
+Ave neighs/atom = 5.16854
+Ave special neighs/atom = 0.0020298
+Neighbor list builds = 485091
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 46:15:47
+
+
+3. Created files:
+total 131949704
+drwxr-x---  3 amirhsi amirhsi        4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi       12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  2648929923 Jan 24 13:06 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230600841 Jan 24 18:03 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231054727 Jan 24 22:54 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231523716 Jan 25 03:19 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230558402 Jan 25 07:42 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231623468 Jan 25 12:04 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231013896 Jan 25 16:26 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13229842746 Jan 25 20:54 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230943895 Jan 26 01:23 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13231038428 Jan 26 05:50 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 13230911197 Jan 26 10:18 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi     2764380 Jan 24 13:06 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   138355109 Jan 26 10:18 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi        6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi        4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi      409419 Jan 26 10:18 log.lammps
+-rw-r-----  1 amirhsi amirhsi      399796 Jan 26 10:18 output.txt
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 26 10:18 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi     8097846 Jan 24 13:06 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi        4096 Jan 26 10:18 restarts
+-rw-r-----  1 amirhsi amirhsi         400 Jan 26 10:18 slurm-26777847.out
+-rwxr-x---  1 amirhsi amirhsi        1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc0ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.62415    | 0.66829    | 0.72036    |   3.3 |  0.42
+Bond    | 1.3556     | 1.3942     | 1.4523     |   2.6 |  0.87
+Neigh   | 4.5608     | 5.1635     | 5.7701     |  15.7 |  3.21
+Comm    | 78.748     | 87.578     | 96.91      |  56.4 | 54.40
+Output  | 0.995      | 1.0612     | 1.2923     |   8.7 |  0.66
+Modify  | 29.496     | 39.594     | 49.024     |  90.2 | 24.60
+Other   |            | 25.52      |            |       | 15.85
+
+Nlocal:    10 ave 13 max 5 min
+Histogram: 1 0 1 0 0 1 0 2 2 1
+Nghost:    22.25 ave 30 max 18 min
+Histogram: 2 1 1 0 2 1 0 0 0 1
+Neighs:    3.5 ave 7 max 1 min
+Histogram: 1 1 0 2 0 3 0 0 0 1
+
+Total # of neighbors = 28
+Ave neighs/atom = 0.35
+Ave special neighs/atom = 1.975
+Neighbor list builds = 325692
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 0:27:30
+
+
+3. Created files:
+total 276528
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2768593 Jan 24 11:33 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13829283 Jan 24 11:35 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13831267 Jan 24 11:38 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13831710 Jan 24 11:41 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833707 Jan 24 11:44 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836343 Jan 24 11:46 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836192 Jan 24 11:49 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834845 Jan 24 11:52 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836703 Jan 24 11:54 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13832686 Jan 24 11:57 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13837816 Jan 24 12:00 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2768593 Jan 24 11:33 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138315717 Jan 24 12:00 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410106 Jan 24 12:00 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400501 Jan 24 12:00 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 12:00 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:33 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 12:00 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 12:00 slurm-26777848.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc0ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.64171    | 0.68228    | 0.79583    |   5.8 |  0.40
+Bond    | 1.3109     | 1.3596     | 1.579      |   7.2 |  0.80
+Neigh   | 4.6535     | 5.2509     | 5.9466     |  17.8 |  3.08
+Comm    | 81.674     | 92.811     | 106.71     |  77.5 | 54.46
+Output  | 1.1174     | 1.1914     | 1.4791     |  10.1 |  0.70
+Modify  | 29.803     | 43.614     | 54.871     | 112.3 | 25.59
+Other   |            | 25.5       |            |       | 14.97
+
+Nlocal:    10 ave 12 max 7 min
+Histogram: 1 0 1 0 1 0 1 0 2 2
+Nghost:    25.75 ave 31 max 22 min
+Histogram: 2 0 2 0 0 1 2 0 0 1
+Neighs:    3.375 ave 5 max 1 min
+Histogram: 1 0 0 0 0 3 0 3 0 1
+
+Total # of neighbors = 27
+Ave neighs/atom = 0.3375
+Ave special neighs/atom = 1.975
+Neighbor list builds = 325653
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 0:29:11
+
+
+3. Created files:
+total 276552
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2770367 Jan 24 11:33 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13831723 Jan 24 11:36 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13832581 Jan 24 11:39 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13837489 Jan 24 11:41 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833473 Jan 24 11:44 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835957 Jan 24 11:47 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836524 Jan 24 11:50 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833923 Jan 24 11:53 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13838373 Jan 24 11:56 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833586 Jan 24 11:59 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835687 Jan 24 12:01 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2770367 Jan 24 11:33 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138324462 Jan 24 12:01 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410035 Jan 24 12:01 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400430 Jan 24 12:01 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 12:01 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:33 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 12:01 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 12:01 slurm-26777851.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc0ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.69774    | 0.74198    | 0.82223    |   4.2 |  0.28
+Bond    | 1.307      | 1.3854     | 1.4851     |   5.2 |  0.52
+Neigh   | 4.8307     | 7.8379     | 9.6891     |  58.5 |  2.94
+Comm    | 137        | 155.53     | 181.9      | 108.3 | 58.40
+Output  | 1.4462     | 1.5226     | 1.8275     |   9.5 |  0.57
+Modify  | 33.174     | 64.211     | 88.167     | 211.8 | 24.11
+Other   |            | 35.08      |            |       | 13.17
+
+Nlocal:    10 ave 15 max 6 min
+Histogram: 3 0 0 0 1 1 1 0 1 1
+Nghost:    26.5 ave 34 max 18 min
+Histogram: 1 0 0 2 0 1 2 0 1 1
+Neighs:    4.625 ave 9 max 0 min
+Histogram: 1 1 1 1 0 0 1 1 0 2
+
+Total # of neighbors = 37
+Ave neighs/atom = 0.4625
+Ave special neighs/atom = 1.975
+Neighbor list builds = 325566
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 0:45:07
+
+
+3. Created files:
+total 276532
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2768909 Jan 24 11:33 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13830959 Jan 24 11:38 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13830491 Jan 24 11:42 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13837079 Jan 24 11:46 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833592 Jan 24 11:51 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13832951 Jan 24 11:55 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13837175 Jan 24 12:00 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833496 Jan 24 12:04 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835513 Jan 24 12:09 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833679 Jan 24 12:13 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836616 Jan 24 12:17 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2768909 Jan 24 11:33 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138316703 Jan 24 12:17 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410075 Jan 24 12:17 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400470 Jan 24 12:17 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 12:17 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:33 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 12:17 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 12:17 slurm-26777853.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc0ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.63478    | 0.66938    | 0.72523    |   3.8 |  0.45
+Bond    | 1.3143     | 1.3818     | 1.5458     |   6.7 |  0.93
+Neigh   | 4.3433     | 5.0215     | 5.6581     |  17.1 |  3.36
+Comm    | 71.44      | 79.916     | 88.46      |  54.7 | 53.53
+Output  | 1.2752     | 1.3411     | 1.6014     |   8.6 |  0.90
+Modify  | 27.489     | 37.159     | 46.368     |  90.4 | 24.89
+Other   |            | 23.82      |            |       | 15.95
+
+Nlocal:    10 ave 18 max 5 min
+Histogram: 3 1 1 0 0 0 1 0 1 1
+Nghost:    22.5 ave 25 max 15 min
+Histogram: 1 0 0 0 0 1 0 0 1 5
+Neighs:    2.75 ave 5 max 1 min
+Histogram: 1 0 4 0 0 1 0 0 0 2
+
+Total # of neighbors = 22
+Ave neighs/atom = 0.275
+Ave special neighs/atom = 1.975
+Neighbor list builds = 324651
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 0:25:25
+
+
+3. Created files:
+total 276540
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2770743 Jan 24 11:33 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13831195 Jan 24 11:35 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13830037 Jan 24 11:38 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834060 Jan 24 11:40 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833204 Jan 24 11:43 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834631 Jan 24 11:45 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13838288 Jan 24 11:48 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836490 Jan 24 11:50 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834377 Jan 24 11:53 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836856 Jan 24 11:55 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836341 Jan 24 11:58 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2770743 Jan 24 11:33 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138320562 Jan 24 11:58 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410127 Jan 24 11:58 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400522 Jan 24 11:58 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:58 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:33 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 11:58 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 11:58 slurm-26777855.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc51840ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 51840
+variable lz equal 45.0
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 129.99     | 252.89     | 395.42     | 727.7 |  3.37
+Bond    | 0.92761    | 1.5862     | 3.2681     |  59.2 |  0.02
+Neigh   | 3489.9     | 3556.3     | 3639.6     |  81.4 | 47.37
+Comm    | 1872.7     | 2044.3     | 2236.8     | 223.6 | 27.23
+Output  | 20.763     | 23.253     | 35.353     |  57.6 |  0.31
+Modify  | 1186       | 1431.4     | 1656.8     | 305.8 | 19.07
+Other   |            | 197.3      |            |       |  2.63
+
+Nlocal:    1622.5 ave 2434 max 861 min
+Histogram: 16 0 0 0 0 0 0 0 7 9
+Nghost:    4991.12 ave 6492 max 3511 min
+Histogram: 11 5 0 0 0 0 0 0 8 8
+Neighs:    5038.03 ave 7925 max 2357 min
+Histogram: 16 0 0 0 0 0 0 1 8 7
+
+Total # of neighbors = 161217
+Ave neighs/atom = 3.1051
+Ave special neighs/atom = 0.00304314
+Neighbor list builds = 480045
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 22:54:47
+
+
+3. Created files:
+total 87884624
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1763421661 Jan 24 12:32 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807784062 Jan 24 15:02 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807771989 Jan 24 17:36 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807423825 Jan 24 20:12 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808060170 Jan 24 22:29 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807846047 Jan 25 00:34 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807737015 Jan 25 02:38 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807343566 Jan 25 04:43 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807821852 Jan 25 06:48 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808075122 Jan 25 08:52 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807637059 Jan 25 10:57 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2762473 Jan 24 12:32 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138337853 Jan 25 10:57 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409410 Jan 25 10:57 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399793 Jan 25 10:57 output.txt
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 25 10:57 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 24 12:32 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 10:57 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 10:57 slurm-26777857.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc51840ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 51840
+variable lz equal 45.0
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 126.35     | 259.87     | 420.14     | 743.6 |  3.27
+Bond    | 0.95061    | 1.6232     | 3.114      |  57.1 |  0.02
+Neigh   | 3657.9     | 3737.7     | 3821.6     |  82.4 | 47.01
+Comm    | 1955.7     | 2178.1     | 2440.6     | 272.7 | 27.40
+Output  | 20.846     | 23.692     | 41.208     |  74.8 |  0.30
+Modify  | 1210.8     | 1521       | 1808.2     | 386.9 | 19.13
+Other   |            | 228.1      |            |       |  2.87
+
+Nlocal:    1622.5 ave 2413 max 882 min
+Histogram: 16 0 0 0 0 0 0 0 7 9
+Nghost:    4965.12 ave 6515 max 3506 min
+Histogram: 9 7 0 0 0 0 0 3 5 8
+Neighs:    5015.47 ave 8073 max 2426 min
+Histogram: 15 1 0 0 0 0 0 4 7 5
+
+Total # of neighbors = 160495
+Ave neighs/atom = 3.0912
+Ave special neighs/atom = 0.00304314
+Neighbor list builds = 479924
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 24:14:00
+
+
+3. Created files:
+total 87886440
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1763419943 Jan 24 12:36 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807679524 Jan 24 15:26 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807263663 Jan 24 18:10 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807730208 Jan 24 21:02 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807959915 Jan 24 23:17 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808124947 Jan 25 01:26 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807947407 Jan 25 03:35 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808263356 Jan 25 05:45 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808199873 Jan 25 07:54 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807935722 Jan 25 10:04 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808358361 Jan 25 12:16 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2761478 Jan 24 12:36 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138224210 Jan 25 12:16 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409416 Jan 25 12:16 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399799 Jan 25 12:16 output.txt
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 25 12:16 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 24 12:36 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 12:16 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 12:16 slurm-26777859.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc51840ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 51840
+variable lz equal 45.0
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 126.07     | 252.63     | 412.41     | 756.1 |  3.44
+Bond    | 0.95693    | 1.5423     | 3.1032     |  58.1 |  0.02
+Neigh   | 3452.7     | 3512.6     | 3589.8     |  75.1 | 47.80
+Comm    | 1834.4     | 1973.9     | 2105.6     | 182.3 | 26.86
+Output  | 20.563     | 23.135     | 35.771     |  59.2 |  0.31
+Modify  | 1215.3     | 1379.9     | 1547.3     | 244.3 | 18.78
+Other   |            | 204.8      |            |       |  2.79
+
+Nlocal:    1622.5 ave 2432 max 900 min
+Histogram: 16 0 0 0 0 0 0 2 3 11
+Nghost:    4998.28 ave 6507 max 3532 min
+Histogram: 9 7 0 0 0 0 0 0 8 8
+Neighs:    5036.75 ave 7934 max 2497 min
+Histogram: 15 1 0 0 0 0 0 4 4 8
+
+Total # of neighbors = 161176
+Ave neighs/atom = 3.10431
+Ave special neighs/atom = 0.00304314
+Neighbor list builds = 479985
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 22:56:35
+
+
+3. Created files:
+total 87886060
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1763391223 Jan 24 12:30 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808424111 Jan 24 15:06 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808193379 Jan 24 17:52 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808044918 Jan 24 20:29 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808101574 Jan 24 22:47 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807247250 Jan 25 00:49 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807324041 Jan 25 02:52 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807741449 Jan 25 04:53 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807859204 Jan 25 06:55 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807900255 Jan 25 08:56 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808255193 Jan 25 10:59 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2764504 Jan 24 12:30 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138239178 Jan 25 10:59 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409423 Jan 25 10:59 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399806 Jan 25 10:59 output.txt
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 25 10:59 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 24 12:30 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 10:59 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 10:59 slurm-26777862.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.2nc51840ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.2
+variable n_crowd equal 51840
+variable lz equal 45.0
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 128.67     | 250.6      | 399.57     | 730.7 |  2.85
+Bond    | 0.98108    | 1.4637     | 2.6879     |  51.6 |  0.02
+Neigh   | 3488.7     | 3600.8     | 3713.3     | 136.8 | 40.97
+Comm    | 2307.1     | 2797.4     | 3255.9     | 588.8 | 31.83
+Output  | 21.467     | 24.057     | 35.223     |  59.6 |  0.27
+Modify  | 1365.4     | 1841.4     | 2411.4     | 797.8 | 20.95
+Other   |            | 273.6      |            |       |  3.11
+
+Nlocal:    1622.5 ave 2400 max 906 min
+Histogram: 16 0 0 0 0 0 0 1 4 11
+Nghost:    4987.53 ave 6486 max 3540 min
+Histogram: 14 2 0 0 0 0 0 0 7 9
+Neighs:    5034.41 ave 8105 max 2424 min
+Histogram: 15 1 0 0 0 0 1 2 9 4
+
+Total # of neighbors = 161101
+Ave neighs/atom = 3.10287
+Ave special neighs/atom = 0.00304314
+Neighbor list builds = 480142
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 28:01:55
+
+
+3. Created files:
+total 87885572
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 27 08:29 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi 1763466025 Jan 24 12:37 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807640859 Jan 24 15:46 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807977016 Jan 24 19:16 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807814425 Jan 24 22:09 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807970798 Jan 25 00:42 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807941126 Jan 25 03:13 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807584397 Jan 25 05:43 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807940192 Jan 25 08:09 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8808310001 Jan 25 10:36 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807692378 Jan 25 13:38 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 8807583842 Jan 25 16:04 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2761567 Jan 24 12:37 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138292272 Jan 25 16:04 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409409 Jan 25 16:04 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399792 Jan 25 16:04 output.txt
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 25 16:04 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    5402166 Jan 24 12:37 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 16:04 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 16:04 slurm-26777864.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc0ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.60673    | 0.66102    | 0.76561    |   5.4 |  0.39
+Bond    | 1.3145     | 1.3958     | 1.49       |   4.9 |  0.83
+Neigh   | 4.4841     | 5.0833     | 5.7694     |  18.0 |  3.04
+Comm    | 80.068     | 91.401     | 105.03     |  77.5 | 54.62
+Output  | 0.99417    | 1.0605     | 1.2971     |   8.9 |  0.63
+Modify  | 28.803     | 42.591     | 53.889     | 113.8 | 25.45
+Other   |            | 25.16      |            |       | 15.03
+
+Nlocal:    10 ave 17 max 4 min
+Histogram: 1 1 0 2 1 1 0 1 0 1
+Nghost:    23 ave 30 max 14 min
+Histogram: 1 0 0 1 0 2 1 2 0 1
+Neighs:    5.25 ave 14 max 0 min
+Histogram: 2 2 1 0 0 0 1 1 0 1
+
+Total # of neighbors = 42
+Ave neighs/atom = 0.525
+Ave special neighs/atom = 1.975
+Neighbor list builds = 325357
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 0:28:34
+
+
+3. Created files:
+total 276520
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2767264 Jan 24 11:33 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13827352 Jan 24 11:36 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833630 Jan 24 11:38 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13832421 Jan 24 11:41 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836495 Jan 24 11:44 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833351 Jan 24 11:47 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833761 Jan 24 11:50 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835498 Jan 24 11:52 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836115 Jan 24 11:55 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834168 Jan 24 11:58 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13838463 Jan 24 12:01 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2767264 Jan 24 11:33 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138316413 Jan 24 12:01 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410141 Jan 24 12:01 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400532 Jan 24 12:01 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 12:01 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:33 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 12:01 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 12:01 slurm-26777866.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc0ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.63274    | 0.70368    | 0.79385    |   6.6 |  0.32
+Bond    | 1.3414     | 1.438      | 1.6425     |   8.2 |  0.65
+Neigh   | 4.4766     | 6.3342     | 7.8795     |  51.5 |  2.87
+Comm    | 112.11     | 125.81     | 141.36     |  85.3 | 57.04
+Output  | 1.2549     | 1.3303     | 1.6216     |   9.8 |  0.60
+Modify  | 34.579     | 51.976     | 69.54      | 165.6 | 23.56
+Other   |            | 32.99      |            |       | 14.96
+
+Nlocal:    10 ave 22 max 3 min
+Histogram: 1 2 0 2 0 2 0 0 0 1
+Nghost:    20.875 ave 24 max 16 min
+Histogram: 1 2 0 0 0 0 0 0 3 2
+Neighs:    2.75 ave 8 max 0 min
+Histogram: 2 1 1 2 0 0 1 0 0 1
+
+Total # of neighbors = 22
+Ave neighs/atom = 0.275
+Ave special neighs/atom = 1.975
+Neighbor list builds = 325279
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 0:37:36
+
+
+3. Created files:
+total 276512
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2769382 Jan 24 11:33 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13827796 Jan 24 11:37 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13829660 Jan 24 11:40 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833590 Jan 24 11:44 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833630 Jan 24 11:48 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834833 Jan 24 11:51 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834576 Jan 24 11:55 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835529 Jan 24 11:59 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13831916 Jan 24 12:02 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834985 Jan 24 12:06 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835254 Jan 24 12:10 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2769382 Jan 24 11:33 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138306972 Jan 24 12:10 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410137 Jan 24 12:10 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400528 Jan 24 12:10 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 12:10 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:33 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 12:10 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 12:10 slurm-26777867.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc0ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.6239     | 0.68376    | 0.74467    |   4.4 |  0.42
+Bond    | 1.3041     | 1.4552     | 1.921      |  15.7 |  0.90
+Neigh   | 4.5479     | 5.0308     | 5.4929     |  13.4 |  3.11
+Comm    | 77.892     | 88.334     | 99.453     |  68.0 | 54.54
+Output  | 1.0407     | 1.1072     | 1.3463     |   8.8 |  0.68
+Modify  | 28.787     | 40.106     | 50.561     | 101.1 | 24.76
+Other   |            | 25.23      |            |       | 15.58
+
+Nlocal:    10 ave 17 max 6 min
+Histogram: 3 1 0 1 0 0 2 0 0 1
+Nghost:    23.375 ave 26 max 19 min
+Histogram: 1 1 0 0 0 1 0 2 1 2
+Neighs:    3.375 ave 8 max 0 min
+Histogram: 1 0 3 2 0 0 0 0 1 1
+
+Total # of neighbors = 27
+Ave neighs/atom = 0.3375
+Ave special neighs/atom = 1.975
+Neighbor list builds = 324880
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 0:27:40
+
+
+3. Created files:
+total 276532
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2770029 Jan 24 11:33 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13829697 Jan 24 11:36 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13827269 Jan 24 11:38 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836025 Jan 24 11:41 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13832724 Jan 24 11:44 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836005 Jan 24 11:46 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836770 Jan 24 11:49 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13837388 Jan 24 11:52 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834568 Jan 24 11:54 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834637 Jan 24 11:57 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835536 Jan 24 12:00 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2770029 Jan 24 11:33 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138315666 Jan 24 12:00 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410025 Jan 24 12:00 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400416 Jan 24 12:00 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 12:00 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:33 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 12:00 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 12:00 slurm-26777870.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc0ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 0
+variable lz equal 45.0
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.64952    | 0.67318    | 0.7131     |   2.1 |  0.41
+Bond    | 1.309      | 1.3493     | 1.4133     |   2.8 |  0.82
+Neigh   | 4.5577     | 5.2038     | 5.8504     |  16.7 |  3.16
+Comm    | 80.048     | 89.156     | 98.47      |  56.6 | 54.20
+Output  | 1.3437     | 1.4165     | 1.6809     |   8.6 |  0.86
+Modify  | 31.04      | 40.656     | 49.897     |  86.5 | 24.72
+Other   |            | 26.03      |            |       | 15.83
+
+Nlocal:    10 ave 15 max 3 min
+Histogram: 1 1 0 0 1 1 0 1 1 2
+Nghost:    24.875 ave 29 max 21 min
+Histogram: 1 0 3 0 0 1 0 1 1 1
+Neighs:    3.25 ave 9 max 0 min
+Histogram: 1 0 2 3 1 0 0 0 0 1
+
+Total # of neighbors = 26
+Ave neighs/atom = 0.325
+Ave special neighs/atom = 1.975
+Neighbor list builds = 325185
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 0:27:57
+
+
+3. Created files:
+total 276524
+drwxr-x---  3 amirhsi amirhsi      4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi     12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi   2768653 Jan 24 11:39 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13828957 Jan 24 11:42 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13831196 Jan 24 11:44 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13833994 Jan 24 11:47 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13834765 Jan 24 11:50 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13832496 Jan 24 11:52 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13835125 Jan 24 11:55 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13832618 Jan 24 11:58 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836521 Jan 24 12:01 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836584 Jan 24 12:03 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  13836832 Jan 24 12:06 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi   2768653 Jan 24 11:39 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 138314149 Jan 24 12:06 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi      6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi      4880 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi    410098 Jan 24 12:06 log.lammps
+-rw-r-----  1 amirhsi amirhsi    400489 Jan 24 12:06 output.txt
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 12:06 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi     10614 Jan 24 11:39 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi      4096 Jan 24 12:06 restarts
+-rw-r-----  1 amirhsi amirhsi       400 Jan 24 12:06 slurm-26777882.out
+-rwxr-x---  1 amirhsi amirhsi      1024 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc13307ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 13307
+variable lz equal 45.0
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 78.775     | 84.41      | 88.381     |  31.7 |  3.61
+Bond    | 0.88272    | 1.7104     | 2.5513     |  57.1 |  0.07
+Neigh   | 407.76     | 439.52     | 469.63     |  89.1 | 18.79
+Comm    | 833.82     | 905.76     | 984.17     | 151.6 | 38.73
+Output  | 29.155     | 35.803     | 50.102     |  83.2 |  1.53
+Modify  | 587.14     | 677.72     | 766.18     | 200.7 | 28.98
+Other   |            | 194        |            |       |  8.30
+
+Nlocal:    836.688 ave 888 max 771 min
+Histogram: 2 1 0 1 3 2 2 0 3 2
+Nghost:    1389.94 ave 1504 max 1278 min
+Histogram: 1 4 2 1 0 0 1 3 3 1
+Neighs:    1304.12 ave 1465 max 1115 min
+Histogram: 1 1 0 3 3 1 3 1 0 3
+
+Total # of neighbors = 20866
+Ave neighs/atom = 1.55868
+Ave special neighs/atom = 0.0118025
+Neighbor list builds = 455703
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 6:16:20
+
+
+3. Created files:
+total 22370496
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  446767571 Jan 24 12:33 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231621596 Jan 24 13:12 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231487093 Jan 24 13:47 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231637072 Jan 24 14:20 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231608786 Jan 24 14:54 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231589825 Jan 24 15:39 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231581909 Jan 24 16:11 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231544942 Jan 24 16:49 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231591759 Jan 24 17:29 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231584247 Jan 24 18:04 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231611829 Jan 24 18:43 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2765301 Jan 24 12:33 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138256212 Jan 24 18:43 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409374 Jan 24 18:43 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399753 Jan 24 18:43 output.txt
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 18:43 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 12:33 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 24 18:43 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 24 18:48 slurm-26777895.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc13307ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 13307
+variable lz equal 45.0
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 84.839     | 89.736     | 95.663     |  35.2 |  3.51
+Bond    | 0.96619    | 1.9494     | 3.1494     |  60.6 |  0.08
+Neigh   | 414.72     | 436.09     | 457.4      |  84.4 | 17.05
+Comm    | 763.68     | 860.47     | 953.34     | 193.5 | 33.64
+Output  | 311.82     | 322.76     | 477.95     | 223.0 | 12.62
+Modify  | 632.41     | 740.21     | 848.08     | 235.9 | 28.94
+Other   |            | 106.6      |            |       |  4.17
+
+Nlocal:    836.688 ave 882 max 773 min
+Histogram: 1 1 0 1 1 5 0 3 3 1
+Nghost:    1396.62 ave 1474 max 1303 min
+Histogram: 1 2 1 3 1 0 1 2 1 4
+Neighs:    1311.38 ave 1417 max 1173 min
+Histogram: 3 0 0 2 1 0 3 3 2 2
+
+Total # of neighbors = 20982
+Ave neighs/atom = 1.56734
+Ave special neighs/atom = 0.0118025
+Neighbor list builds = 455514
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 6:29:54
+
+
+3. Created files:
+total 22370732
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  446790572 Jan 24 12:40 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231566274 Jan 24 13:17 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231548519 Jan 24 13:52 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231740669 Jan 24 14:28 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231598400 Jan 24 15:05 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231619064 Jan 24 15:44 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231644643 Jan 24 16:20 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231632963 Jan 24 17:01 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231622943 Jan 24 17:41 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231623454 Jan 24 18:20 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231570887 Jan 24 19:02 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2760875 Jan 24 12:40 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138176618 Jan 24 19:02 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409370 Jan 24 19:02 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399749 Jan 24 19:02 output.txt
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 19:02 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 12:40 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 24 19:02 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 24 19:02 slurm-26777897.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc13307ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 13307
+variable lz equal 45.0
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 78.585     | 83.54      | 87.826     |  29.8 |  4.44
+Bond    | 0.88848    | 1.682      | 2.5283     |  56.0 |  0.09
+Neigh   | 404.23     | 422.36     | 437.93     |  58.0 | 22.44
+Comm    | 598.75     | 685.92     | 791.02     | 203.5 | 36.44
+Output  | 44.39      | 45.258     | 48.311     |  14.3 |  2.40
+Modify  | 458.53     | 556.83     | 629.24     | 201.8 | 29.58
+Other   |            | 86.86      |            |       |  4.61
+
+Nlocal:    836.688 ave 884 max 757 min
+Histogram: 1 0 2 2 1 0 1 3 3 3
+Nghost:    1388.19 ave 1507 max 1314 min
+Histogram: 5 3 0 0 0 2 3 2 0 1
+Neighs:    1309.56 ave 1445 max 1151 min
+Histogram: 1 1 1 2 1 4 1 2 1 2
+
+Total # of neighbors = 20953
+Ave neighs/atom = 1.56518
+Ave special neighs/atom = 0.0118025
+Neighbor list builds = 455725
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 5:38:40
+
+
+3. Created files:
+total 22370600
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  446791707 Jan 24 12:44 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231566009 Jan 24 13:27 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231582602 Jan 24 13:57 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231619364 Jan 24 14:28 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231610478 Jan 24 14:59 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231597251 Jan 24 15:30 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231543256 Jan 24 16:01 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231608688 Jan 24 16:30 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231614862 Jan 24 17:05 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231596931 Jan 24 17:46 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231640470 Jan 24 18:17 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2760096 Jan 24 12:44 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138231368 Jan 24 18:17 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409370 Jan 24 18:17 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399749 Jan 24 18:17 output.txt
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 18:17 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 12:44 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 24 18:17 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 24 18:17 slurm-26777899.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc13307ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 13307
+variable lz equal 45.0
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 78.937     | 84.642     | 89.973     |  33.0 |  4.52
+Bond    | 0.88347    | 1.6844     | 2.5936     |  56.2 |  0.09
+Neigh   | 394.83     | 401.7      | 410.72     |  26.6 | 21.43
+Comm    | 602.77     | 700.42     | 770.36     | 175.9 | 37.37
+Output  | 15.462     | 16.239     | 19.327     |  21.7 |  0.87
+Modify  | 487.48     | 554.84     | 647.55     | 193.8 | 29.60
+Other   |            | 114.9      |            |       |  6.13
+
+Nlocal:    836.688 ave 888 max 776 min
+Histogram: 1 1 1 2 2 2 2 2 1 2
+Nghost:    1388.44 ave 1489 max 1303 min
+Histogram: 5 1 2 0 0 1 0 2 4 1
+Neighs:    1318.5 ave 1465 max 1196 min
+Histogram: 3 2 2 1 1 2 0 1 1 3
+
+Total # of neighbors = 21096
+Ave neighs/atom = 1.57586
+Ave special neighs/atom = 0.0118025
+Neighbor list builds = 455671
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 5:30:36
+
+
+3. Created files:
+total 22370692
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  446784650 Jan 24 12:44 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231634055 Jan 24 13:19 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231597859 Jan 24 13:49 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231590684 Jan 24 14:19 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231635429 Jan 24 14:50 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231592974 Jan 24 15:30 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231572554 Jan 24 16:01 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231618866 Jan 24 16:30 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231609542 Jan 24 17:03 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231618405 Jan 24 17:38 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 2231622171 Jan 24 18:09 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2765254 Jan 24 12:44 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138212792 Jan 24 18:09 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409374 Jan 24 18:09 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399753 Jan 24 18:09 output.txt
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 18:09 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    1394606 Jan 24 12:44 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 24 18:09 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 24 18:09 slurm-26777904.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc26412ens1
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 26412
+variable lz equal 45.0
+variable i equal 1
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 260.09     | 285.14     | 321.01     |  88.7 |  7.66
+Bond    | 1.0197     | 2.0635     | 3.4562     |  66.2 |  0.06
+Neigh   | 1160.1     | 1168.8     | 1183.3     |  22.2 | 31.39
+Comm    | 1024.4     | 1129.1     | 1254.8     | 220.1 | 30.32
+Output  | 14.126     | 15.938     | 21.501     |  41.9 |  0.43
+Modify  | 871.95     | 976.01     | 1071.4     | 193.8 | 26.21
+Other   |            | 146.6      |            |       |  3.94
+
+Nlocal:    1655.75 ave 1726 max 1536 min
+Histogram: 2 0 0 2 1 1 2 2 3 3
+Nghost:    2727.38 ave 2872 max 2525 min
+Histogram: 1 2 1 2 1 1 0 1 4 3
+Neighs:    5226.12 ave 5851 max 4691 min
+Histogram: 1 1 4 0 4 1 2 2 0 1
+
+Total # of neighbors = 83618
+Ave neighs/atom = 3.15635
+Ave special neighs/atom = 0.00596406
+Neighbor list builds = 467391
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i1
+Total wall time: 11:11:08
+
+
+3. Created files:
+total 44653088
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  894523125 Jan 24 12:54 all.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468260815 Jan 24 13:59 all.i1.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468476600 Jan 24 15:03 all.i1.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468336400 Jan 24 16:06 all.i1.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468437744 Jan 24 17:12 all.i1.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468314480 Jan 24 18:19 all.i1.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468194315 Jan 24 19:31 all.i1.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468241316 Jan 24 20:40 all.i1.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468226112 Jan 24 21:46 all.i1.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468184240 Jan 24 22:47 all.i1.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468130720 Jan 24 23:49 all.i1.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2767147 Jan 24 12:54 bug.dynamic.i1.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138160357 Jan 24 23:49 bug.i1.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409379 Jan 24 23:49 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399758 Jan 24 23:49 output.txt
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 24 23:49 restart_after.i1
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 24 12:54 restart_before.i1
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 24 23:49 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 24 23:49 slurm-26777905.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc26412ens2
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 26412
+variable lz equal 45.0
+variable i equal 2
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 262.82     | 280.23     | 301.64     |  68.1 |  7.70
+Bond    | 0.95916    | 1.8147     | 2.7614     |  59.9 |  0.05
+Neigh   | 1104.9     | 1118.8     | 1132.4     |  28.3 | 30.73
+Comm    | 975.55     | 1074.9     | 1189.7     | 195.6 | 29.52
+Output  | 14.012     | 15.35      | 20.905     |  39.6 |  0.42
+Modify  | 892.28     | 998.09     | 1089       | 177.4 | 27.41
+Other   |            | 151.5      |            |       |  4.16
+
+Nlocal:    1655.75 ave 1765 max 1539 min
+Histogram: 1 0 2 2 2 3 3 1 1 1
+Nghost:    2712.25 ave 2875 max 2541 min
+Histogram: 3 4 1 0 0 0 0 0 4 4
+Neighs:    5240.75 ave 5836 max 4761 min
+Histogram: 3 0 2 1 3 3 1 2 0 1
+
+Total # of neighbors = 83852
+Ave neighs/atom = 3.16518
+Ave special neighs/atom = 0.00596406
+Neighbor list builds = 467149
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i2
+Total wall time: 12:07:07
+
+
+3. Created files:
+total 44652500
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  894604930 Jan 24 12:56 all.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468047599 Jan 24 14:12 all.i2.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468099133 Jan 24 15:29 all.i2.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468255932 Jan 24 16:39 all.i2.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468237660 Jan 24 18:00 all.i2.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468173240 Jan 24 19:22 all.i2.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468211766 Jan 24 20:32 all.i2.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468256493 Jan 24 21:44 all.i2.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468148343 Jan 24 22:44 all.i2.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468419678 Jan 24 23:45 all.i2.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468182710 Jan 25 00:45 all.i2.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2758060 Jan 24 12:56 bug.dynamic.i2.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138263509 Jan 25 00:45 bug.i2.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409402 Jan 25 00:45 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399781 Jan 25 00:45 output.txt
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 25 00:45 restart_after.i2
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 24 12:56 restart_before.i2
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 00:45 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 00:45 slurm-26777908.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc26412ens3
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 26412
+variable lz equal 45.0
+variable i equal 3
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 261.12     | 281.64     | 304.97     |  70.8 |  7.72
+Bond    | 0.99613    | 1.8839     | 3.0176     |  61.6 |  0.05
+Neigh   | 1133.6     | 1147.8     | 1162.7     |  28.5 | 31.47
+Comm    | 956.01     | 1057.2     | 1182       | 210.2 | 28.98
+Output  | 14.038     | 15.623     | 21.468     |  42.3 |  0.43
+Modify  | 876.7      | 993.13     | 1083.2     | 186.3 | 27.23
+Other   |            | 150.4      |            |       |  4.12
+
+Nlocal:    1655.75 ave 1750 max 1555 min
+Histogram: 2 1 2 0 0 3 3 3 1 1
+Nghost:    2711.75 ave 2875 max 2562 min
+Histogram: 2 4 1 1 0 0 2 2 3 1
+Neighs:    5244.12 ave 6003 max 4668 min
+Histogram: 1 1 3 3 2 3 1 1 0 1
+
+Total # of neighbors = 83906
+Ave neighs/atom = 3.16722
+Ave special neighs/atom = 0.00596406
+Neighbor list builds = 467259
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i3
+Total wall time: 12:07:44
+
+
+3. Created files:
+total 44652376
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  894484538 Jan 24 12:56 all.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468125342 Jan 24 14:09 all.i3.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468192235 Jan 24 15:27 all.i3.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468178114 Jan 24 16:33 all.i3.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468349784 Jan 24 17:57 all.i3.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468223106 Jan 24 19:21 all.i3.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4467971252 Jan 24 20:31 all.i3.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468270671 Jan 24 21:44 all.i3.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468156798 Jan 24 22:45 all.i3.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468238886 Jan 24 23:45 all.i3.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468288976 Jan 25 00:46 all.i3.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2773166 Jan 24 12:56 bug.dynamic.i3.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138274835 Jan 25 00:46 bug.i3.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409408 Jan 25 00:46 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399787 Jan 25 00:46 output.txt
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 25 00:46 restart_after.i3
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 24 12:56 restart_before.i3
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 00:46 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 00:46 slurm-26777910.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+
+Run name: N80epsilon5.0r3.5lz45.0sig0.3nc26412ens4
+1.Inputs:
+variable epsilon1 equal 5.0
+variable sig2 equal 0.3
+variable n_crowd equal 26412
+variable lz equal 45.0
+variable i equal 4
+variable r equal 3.5
+
+
+2. Run summary:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 260.73     | 283.43     | 304.29     |  84.8 |  7.75
+Bond    | 0.96492    | 1.9424     | 2.9446     |  59.5 |  0.05
+Neigh   | 1129.8     | 1152.4     | 1172.8     |  39.2 | 31.49
+Comm    | 961.22     | 1085.4     | 1239.6     | 219.6 | 29.66
+Output  | 14.34      | 15.83      | 21.108     |  39.1 |  0.43
+Modify  | 856.55     | 984.78     | 1097.1     | 188.5 | 26.91
+Other   |            | 135.6      |            |       |  3.71
+
+Nlocal:    1655.75 ave 1739 max 1575 min
+Histogram: 2 1 2 2 1 2 1 2 0 3
+Nghost:    2737.06 ave 2870 max 2590 min
+Histogram: 3 1 3 1 0 0 0 3 0 5
+Neighs:    5239.88 ave 5950 max 4706 min
+Histogram: 1 2 2 2 4 1 2 1 0 1
+
+Total # of neighbors = 83838
+Ave neighs/atom = 3.16465
+Ave special neighs/atom = 0.00596406
+Neighbor list builds = 467124
+Dangerous builds = 0
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	jump input.lmp dump_loop 
+#After this loop, the systems evolves 5.1*10E7 timesteps
+undump D_bug
+write_restart    ./restart_after.i${i}
+write_restart    ./restart_after.i4
+Total wall time: 11:23:10
+
+
+3. Created files:
+total 44652488
+drwxr-x---  3 amirhsi amirhsi       4096 Jan 25 11:06 .
+drwxr-x--- 50 amirhsi amirhsi      12288 Feb 28 16:31 ..
+-rw-r-----  1 amirhsi amirhsi  894566938 Jan 24 13:01 all.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468149298 Jan 24 14:06 all.i4.j01.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468193130 Jan 24 15:10 all.i4.j02.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468168181 Jan 24 16:12 all.i4.j03.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468307631 Jan 24 17:28 all.i4.j04.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468117483 Jan 24 18:37 all.i4.j05.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468154626 Jan 24 19:46 all.i4.j06.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468154209 Jan 24 20:54 all.i4.j07.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468239972 Jan 24 22:05 all.i4.j08.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468304520 Jan 24 23:06 all.i4.j09.lammpstrj
+-rw-r-----  1 amirhsi amirhsi 4468269922 Jan 25 00:07 all.i4.j10.lammpstrj
+-rw-r-----  1 amirhsi amirhsi    2762508 Jan 24 13:01 bug.dynamic.i4.lammpstrj
+-rw-r-----  1 amirhsi amirhsi  138253091 Jan 25 00:07 bug.i4.lammpstrj
+-rwxr-x---  1 amirhsi amirhsi       6753 Jan 24 11:28 data.chain.80
+-rw-r-----  1 amirhsi amirhsi       4884 Jan 24 11:28 input.lmp
+-rw-r-----  1 amirhsi amirhsi     409400 Jan 25 00:07 log.lammps
+-rw-r-----  1 amirhsi amirhsi     399779 Jan 25 00:07 output.txt
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 25 00:07 restart_after.i4
+-rw-r-----  1 amirhsi amirhsi    2757526 Jan 24 13:01 restart_before.i4
+drwxr-x---  2 amirhsi amirhsi       4096 Jan 25 00:07 restarts
+-rw-r-----  1 amirhsi amirhsi        400 Jan 25 00:07 slurm-26777911.out
+-rwxr-x---  1 amirhsi amirhsi       1032 Jan 24 11:28 submit.sh
+
+
+
+

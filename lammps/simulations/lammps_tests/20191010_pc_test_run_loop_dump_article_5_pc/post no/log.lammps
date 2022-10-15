@@ -1,0 +1,523 @@
+LAMMPS (7 Aug 2019)
+# Type: 3-d LJ polymer simulation
+# Description: A computational study of the compaction of a linear polymeric chain by spherical crowders in a cylindrical confinement.
+
+#------------------------------------------
+#--------------------- (1) Variables defined by command-line tools ---------------------
+#------------------------------------------
+
+#List of variables and their names defined by command line method. Their description and the step they will be used in are described in next sections:
+#variable ${in_filename}
+#variable ${i} # i is the seed for the RNG.
+#variable ${r} # the radius of the cylinder.
+#variable ${lz} # the length of the cylinder in the longitudinal direction z
+#variable ${sig2} # diameter of a crowder
+#variable ${n_crowd} # Number of the crowders
+#variable ${epsilon1} # the strength of the LJ potential of the wall built on the lateral surface of the cylinder.
+
+#------------------------------------------
+#--------------------- (2) Initialization ---------------------
+#------------------------------------------
+units   lj # Lennard-Jones units.
+dimension   3 # 3 dimensional simulation.
+boundary    f f p # Periodic (p) in z direction but non-periodic and fixed (f) in x and y directions.
+atom_style  bond
+
+#------------------------------------------
+#--------------------- (3) Neighbor Lists ---------------------
+#------------------------------------------
+
+neighbor        0.2 bin
+neigh_modify    delay 0 every 1 check yes one 300 page 3000
+
+#------------------------------------------
+#--------------------- (4) Processors Communications ---------------------
+#------------------------------------------
+
+
+#------------------------------------------
+#--------------------- (5) Atom Definition ---------------------
+#------------------------------------------
+
+#---------- Read input file ----------
+read_data   ${in_filename}
+read_data   data.chain.80
+  orthogonal box = (-4.1 -4.1 -5.03) to (4.1 4.1 5.88713)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  80 atoms
+  reading velocities ...
+  80 velocities
+  scanning bonds ...
+  1 = max bonds/atom
+  reading bonds ...
+  79 bonds
+  2 = max # of 1-2 neighbors
+  2 = max # of 1-3 neighbors
+  4 = max # of 1-4 neighbors
+  6 = max # of special neighbors
+  special bonds CPU = 9.60827e-05 secs
+  read_data CPU = 0.00176883 secs
+
+#---------- Reshape simulation box/Define simulation box   ----------
+change_box  all x final -${r} ${r} y final -${r} ${r} z final -${lz} ${lz} boundary f f p units box
+change_box  all x final -3 ${r} y final -${r} ${r} z final -${lz} ${lz} boundary f f p units box
+change_box  all x final -3 3 y final -${r} ${r} z final -${lz} ${lz} boundary f f p units box
+change_box  all x final -3 3 y final -3 ${r} z final -${lz} ${lz} boundary f f p units box
+change_box  all x final -3 3 y final -3 3 z final -${lz} ${lz} boundary f f p units box
+change_box  all x final -3 3 y final -3 3 z final -52 ${lz} boundary f f p units box
+change_box  all x final -3 3 y final -3 3 z final -52 52 boundary f f p units box
+  orthogonal box = (-3 -4.1 -5.03) to (3 4.1 5.88713)
+  orthogonal box = (-3 -3 -5.03) to (3 3 5.88713)
+  orthogonal box = (-3 -3 -52) to (3 3 52)
+region  cylshell cylinder z 0.0 0.0 ${r} INF INF units box
+region  cylshell cylinder z 0.0 0.0 3 INF INF units box
+
+#---------- Create atoms ----------
+variable    randseed equal ${i}+1000
+variable    randseed equal 1+1000
+create_atoms	2 random ${n_crowd} ${randseed} cylshell units box
+create_atoms	2 random 1000 ${randseed} cylshell units box
+create_atoms	2 random 1000 1001 cylshell units box
+Created 1000 atoms
+  create_atoms CPU = 0.000789165 secs
+
+#---------- Group atoms ----------
+group   bug type 1
+80 atoms in group bug
+group   crowd type 2
+1000 atoms in group crowd
+
+#---------- Define atoms masses ----------
+mass 1 1.0
+mass 2 1.0
+
+#---------- Set velocity of the chain ----------
+#----- Define a temperature compute for the chain and use to set velocity for the chain -----
+compute mobile bug temp
+velocity   bug create 1.0 ${randseed} temp mobile
+velocity   bug create 1.0 1001 temp mobile
+
+#------------------------------------------
+#--------------------- (6) Interatomic/molecular Potential ---------------------
+#------------------------------------------
+
+#---------- Lennard-Jones potential among all particles ----------
+#---------- (6-a) Variables ----------
+variable sig1 equal 1.0
+variable sig12 equal (${sig1}+${sig2})/2
+variable sig12 equal (1+${sig2})/2
+variable sig12 equal (1+0.3)/2
+variable cutoff11 equal ${sig1}*1.12246
+variable cutoff11 equal 1*1.12246
+variable cutoff12 equal ((${sig1}+${sig2})/2.0)*1.12246
+variable cutoff12 equal ((1+${sig2})/2.0)*1.12246
+variable cutoff12 equal ((1+0.3)/2.0)*1.12246
+variable cutoff22 equal ${sig2}*1.12246
+variable cutoff22 equal 0.3*1.12246
+
+pair_style      lj/cut 1.12246 # Cutoff distance = 2^(1/6) = 1.12246. For each pair, this cutoff is multiplied by sig_{ij} to give the real cutoff for each pair.
+
+#Pair coefficient:   type-i  type-j (i should always be smaller than j) epsilon=1 sigma=(a_i+a_j)/2   cutoff=((sig_i+sig_j)/2)*2^(1/6)
+pair_coeff      1 1 1.0 ${sig1}  ${cutoff11}
+pair_coeff      1 1 1.0 1  ${cutoff11}
+pair_coeff      1 1 1.0 1  1.12246
+pair_coeff      1 2 1.0 ${sig12} ${cutoff12}
+pair_coeff      1 2 1.0 0.65 ${cutoff12}
+pair_coeff      1 2 1.0 0.65 0.729599
+pair_coeff      2 2 1.0 ${sig2}  ${cutoff22}
+pair_coeff      2 2 1.0 0.3  ${cutoff22}
+pair_coeff      2 2 1.0 0.3  0.336738
+
+#---------- FENE potential among the chain's monomers ----------
+#---------- (6-b) Variables ----------
+variable    sig1_fene equal 1.5*${sig1}
+variable    sig1_fene equal 1.5*1
+variable    k1_fene equal  30/(${sig1}*${sig1})
+variable    k1_fene equal  30/(1*${sig1})
+variable    k1_fene equal  30/(1*1)
+
+bond_style  fene
+
+#Bond coefficient:  type-i  K=(30*epsilon)/((a_i+a_j_^2)   R_0=1.5*((a_i+a_j)/2 )   epsilon=1    sigma=(a_i+a_j)/2
+bond_coeff  1 ${k1_fene}  ${sig1_fene}    1.0 ${sig1}
+bond_coeff  1 30  ${sig1_fene}    1.0 ${sig1}
+bond_coeff  1 30  1.5    1.0 ${sig1}
+bond_coeff  1 30  1.5    1.0 1
+
+#---------- Weighting coefficient for bonded atoms with pairwise interactions (Example,LJ interaction of two monomers in a chain) ----------
+special_bonds   fene
+  2 = max # of 1-2 neighbors
+  6 = max # of special neighbors
+  special bonds CPU = 0.000406981 secs
+
+
+#------------------------------------------
+#--------------------- (7) Settings ---------------------
+#------------------------------------------
+
+#---------- Equilibration/Method of integration of equation of motion ----------
+# Microcanonical ensamble:
+fix     F_nve all nve/limit 0.01
+
+#---------- Brownian dynamics for all particles ----------
+fix     F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+fix     F_langevin all langevin 1.0 1.0 10.0 1001
+
+#---------- Lennard-Jones potential between the lateral wall and each type of particles ----------
+fix     F_wall1 bug wall/region cylshell lj126 ${epsilon1} ${sig1} ${cutoff11} # Interaction between the lateral wall and the monomers.
+fix     F_wall1 bug wall/region cylshell lj126 5.0 ${sig1} ${cutoff11} 
+fix     F_wall1 bug wall/region cylshell lj126 5.0 1 ${cutoff11} 
+fix     F_wall1 bug wall/region cylshell lj126 5.0 1 1.12246 
+fix     F_wall2 crowd wall/region cylshell lj126 1.0 ${sig12}  ${cutoff12} # Interaction between the lateral wall and the crowders.
+fix     F_wall2 crowd wall/region cylshell lj126 1.0 0.65  ${cutoff12} 
+fix     F_wall2 crowd wall/region cylshell lj126 1.0 0.65  0.729599 
+
+fix     F_recenter bug recenter NULL NULL 0.0 shift all units box
+
+
+#------------------------------------------
+#--------------------- (8) Run a simulation ---------------------
+#------------------------------------------
+
+#---------- Equilibration run (Dynamic phase)
+timestep 0.01
+
+thermo 10000
+dump	 D_all_dynamic all custom 1000 all.dynamic.${i}.lammpstrj id type x y z xs ys zs
+dump	 D_all_dynamic all custom 1000 all.dynamic.1.lammpstrj id type x y z xs ys zs
+dump D_bug_image bug image 5000 ./images/img_*_bug.jpg type type axes yes 0.3 0.05
+dump D_all_image all image 5000 ./images/img_*_all.jpg type type axes yes 0.3 0.05
+dump_modify D_bug_image first yes pad 8
+dump_modify D_all_image first yes pad 8
+run 10000
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 300, page size: 3000
+  master list distance cutoff = 1.32246
+  ghost atom cutoff = 1.32246
+  binsize = 0.66123, bins = 10 10 158
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 5.978 | 5.978 | 5.978 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0  0.073215941    10199.665    1969.4123    12169.187    14062.029 
+   10000   0.19013077  -0.01932436    1.4824317    1.7480394  0.042213607 
+Loop time of 1.19023 on 1 procs for 10000 steps with 1080 atoms
+
+Performance: 7259096.020 tau/day, 8401.732 timesteps/s
+97.1% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.062715   | 0.062715   | 0.062715   |   0.0 |  5.27
+Bond    | 0.01878    | 0.01878    | 0.01878    |   0.0 |  1.58
+Neigh   | 0.25276    | 0.25276    | 0.25276    |   0.0 | 21.24
+Comm    | 0.014455   | 0.014455   | 0.014455   |   0.0 |  1.21
+Output  | 0.06272    | 0.06272    | 0.06272    |   0.0 |  5.27
+Modify  | 0.73719    | 0.73719    | 0.73719    |   0.0 | 61.94
+Other   |            | 0.04161    |            |       |  3.50
+
+Nlocal:    1080 ave 1080 max 1080 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    29 ave 29 max 29 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    244 ave 244 max 244 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 244
+Ave neighs/atom = 0.225926
+Ave special neighs/atom = 0.146296
+Neighbor list builds = 984
+Dangerous builds = 1
+write_restart    ./restart_before.${i}
+write_restart    ./restart_before.1
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+
+# Wiping out commands
+undump D_all_dynamic
+unfix F_nve
+unfix F_recenter
+
+#---------- After equilibration (Data gathering run)
+#Reset some settings
+fix        F_nve all nve
+fix        F_recenter bug recenter NULL NULL 0.0 shift all units box
+
+timestep    0.002
+
+#dump	 D_all all custom 1000 all.${i}.lammpstrj id type x y z xs ys zs
+variable j loop 10 #Having 10 roughly 7GB-size dump files
+	label dump_loop
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j1.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j1.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+   10000   0.19013077  -0.01932436    1.4824317    1.7480394  0.042213607 
+   20000   0.97538721 -0.029426776    1.5117427    2.9440421   0.27223699 
+   30000    1.0213411 -0.021762176    1.5149923    3.0238233   0.30943228 
+   40000   0.99672633 -0.019553342    1.5157298    2.9898816   0.30849387 
+   50000   0.98169202 -0.027291842    1.5177527    2.9616354   0.29783325 
+   60000   0.97481426 -0.018477904    1.5159886    2.9583782    0.2895003 
+Loop time of 6.80332 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j2.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j2.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+   60000   0.97481426 -0.018477904    1.5159886    2.9583782    0.2895003 
+   70000   0.98290198 -0.024088199    1.5202136    2.9691132   0.27375823 
+   80000   0.96397834 -0.020769965    1.5175375    2.9413961   0.28730944 
+   90000   0.95943648 -0.026442194    1.5188102    2.9301902   0.32576866 
+  100000    1.0061994 -0.026713229    1.5082214    2.9894098   0.31177949 
+  110000    1.0484752 -0.024656982    1.5088966    3.0554962   0.30622897 
+Loop time of 6.91557 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j3.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j3.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  110000    1.0484752 -0.024656982    1.5088966    3.0554962   0.30622897 
+  120000    1.0270692 -0.020438117    1.5186717    3.0374109   0.28474733 
+  130000   0.99448211 -0.024099081    1.5104493    2.9766921    0.3226203 
+  140000    1.0161566 -0.017929526    1.5118492    3.0167432   0.25064021 
+  150000    1.0247518 -0.022261407    1.5108761    3.0243191   0.30031978 
+  160000     1.010091 -0.015674538    1.5124536    3.0105126   0.25772937 
+Loop time of 7.42303 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j4.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j4.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  160000     1.010091 -0.015674538    1.5124536    3.0105126   0.25772937 
+  170000   0.98524519 -0.014400995    1.5146269    2.9767253   0.29538223 
+  180000    1.0027438 -0.022341095    1.5038169    2.9841987   0.31193106 
+  190000   0.99151907 -0.022814809    1.5260456    2.9891323   0.30886061 
+  200000    1.0235632 -0.025804105     1.517516    3.0256351   0.29119172 
+  210000     1.023907 -0.023457843    1.5148477    3.0258283   0.26545398 
+Loop time of 7.3235 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j5.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j5.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  210000     1.023907 -0.023457843    1.5148477    3.0258283   0.26545398 
+  220000   0.96961913 -0.013875463    1.5203136    2.9595201   0.25248927 
+  230000   0.98703509  -0.01362954    1.5184852    2.9840374   0.28797828 
+  240000    1.0069688 -0.025766667    1.5165953    2.9998832   0.27932843 
+  250000    1.0012916 -0.014726201    1.5083518    2.9941724   0.30746545 
+  260000   0.99084677 -0.0079186487     1.517301    2.9942764   0.30026771 
+Loop time of 8.34095 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j6.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j6.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  260000   0.99084677 -0.0079186487     1.517301    2.9942764   0.30026771 
+  270000    1.0031486 -0.014786809    1.5045553    2.9930982   0.30916423 
+  280000    1.0027934 -0.015566672    1.5239088    3.0111395   0.25521677 
+  290000   0.97960571 -0.012713236    1.5126177    2.9679525   0.31330732 
+  300000    1.0155612 -0.023803003     1.511552    3.0096803   0.30426945 
+  310000   0.96135122 -0.019108611    1.5108291    2.9324121   0.25938002 
+Loop time of 7.70012 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j7.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j7.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  310000   0.96135122 -0.019108611    1.5108291    2.9324121   0.25938002 
+  320000    1.0140055 -0.017351687    1.5099518       3.0122   0.29098129 
+  330000    1.0530239 -0.018749189    1.5109507    3.0702747   0.33101226 
+  340000   0.98041984 -0.028060504    1.5167681    2.9579757   0.30203377 
+  350000   0.99089153 -0.024156895      1.52495    2.9857541   0.26180311 
+  360000     1.004582 -0.024267356    1.5132444    2.9944548   0.24113242 
+Loop time of 7.99498 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j8.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j8.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  360000     1.004582 -0.024267356    1.5132444    2.9944548   0.24113242 
+  370000   0.97806514 -0.020893135    1.5132517    2.9580978    0.2872607 
+  380000    1.0277686 -0.017788209    1.5160353    3.0384726   0.27252494 
+  390000    1.0021119 -0.016509802    1.5193006    3.0045668   0.25764352 
+  400000   0.99911427 -0.020060395    1.5131858    2.9904091   0.28502303 
+  410000    1.0512138 -0.016107647    1.5092269    3.0684799   0.31273763 
+Loop time of 7.04741 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j9.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j9.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  410000    1.0512138 -0.016107647    1.5092269    3.0684799   0.31273763 
+  420000    1.0524383 -0.024073521    1.5143054    3.0674277    0.2940629 
+  430000    1.0146405 -0.015133947     1.513316    3.0187336   0.30282349 
+  440000    1.0350076  -0.02312442    1.5141521    3.0421016   0.33857691 
+  450000    0.9875991 -0.017904688    1.5084335    2.9705558    0.3087179 
+  460000    1.0145695 -0.017973035    1.5271045    3.0295766   0.29956996 
+Loop time of 6.33704 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+	dump	 D_bug bug atom  1000 bug.i${i}.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j${j}.lmptrj
+	dump	 D_bug bug atom  1000 bug.i1.j10.lmptrj
+	dump_modify D_bug scale no pbc yes
+	dump	 D_crowd crowd atom 1000 crowd.i${i}.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j${j}.lmptrj
+	dump	 D_crowd crowd atom 1000 crowd.i1.j10.lmptrj
+	dump_modify D_crowd scale no pbc yes
+	restart 10000  ./restarts/restart_during.${i}
+	restart 10000  ./restarts/restart_during.1
+	run	50000 post no
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Per MPI rank memory allocation (min/avg/max) = 8.328 | 8.328 | 8.328 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+  460000    1.0145695 -0.017973035    1.5271045    3.0295766   0.29956996 
+  470000   0.98073252 -0.016699081     1.519602    2.9726396   0.24196449 
+  480000   0.95660246 -0.023603979    1.5243128    2.9342839   0.30540528 
+  490000    1.0542209 -0.021798905    1.5160507     3.074119   0.29647108 
+  500000   0.94751957 -0.015092954    1.5148911    2.9197615   0.32820696 
+  510000    1.0053165 -0.022447946    1.5141023    2.9982328   0.29467998 
+Loop time of 6.3898 on 1 procs for 50000 steps with 1080 atoms
+
+	undump D_bug
+	undump D_crowd
+	next j
+	jump input_loop.lmp dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+#After this loop, the systems evolves 5.1*10E7 timesteps
+
+write_restart    ./restart_after.${i}
+write_restart    ./restart_after.1
+WARNING: Communication cutoff 1.32246 is shorter than a bond length based estimate of 1.655. This may lead to errors. (../comm.cpp:685)
+Total wall time: 0:01:13
