@@ -1,5 +1,5 @@
 #!/bin/bash
-for dir in N*_res/;do
+for dir in esp*_res/;do
     comdir=$(echo "$dir" | cut -d _ -f 1)
     echo "$comdir"
     cd "$dir" || exit
