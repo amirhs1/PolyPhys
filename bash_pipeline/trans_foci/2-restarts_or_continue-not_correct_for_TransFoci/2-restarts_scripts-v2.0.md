@@ -18,7 +18,7 @@ Follow these instructions to restart a crashed simulation; the main idea is to f
     d. Set the **neighbor** and **nieghbor_modify** before **read_restart** command.
     e. **no processor** related command is allowed in a restart job.
     f. the **fix wall** command.
-    g. the **run** and **timestep** commands.
+    g. the **run** command.
     h. the **dump**, **dump_modify**, and **undump** commands, espcailly those used in the loop over **dump** and **run**.
     i. check **write_data**.
       **Caution: Use the appropriate retart-input-....lmp files; see the explanation in each file.**
@@ -27,7 +27,7 @@ Follow these instructions to restart a crashed simulation; the main idea is to f
 7. Copy **submit.sh** file to restart directories and edit each submit file individually in the directories
    1. **Caution:**Change the name of lammps input file in the submit script to **restart.lmp**.
 8. Run **loop_on_sbatch_restart.sh** to do the restart simulations.
-9. Copy **all___.lammpstrj.gz** files, **bug___.lammpstrj**, and **log.lammps** to the **complete** directories, using **copy_files_from_res_example.sh** script as a template.10. Go to each **complete** directory and do the following steps and run **restart_bug_trj_merger.sh** in each complete folder or run it as a loop.
+9. Copy **all___.lammpstrj.gz** filesi, check **j** value, **bug___.lammpstrj**, and **log.lammps** to the **complete** directories, using **copy_files_from_res_example.sh** script as a template.10. Go to each **complete** directory and do the following steps and run **restart_bug_trj_merger.sh** in each complete folder or run it as a loop.
 
 ## Step 2: Generating a complete simulation directory: See *merge_outputs* directory
 

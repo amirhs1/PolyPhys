@@ -22,7 +22,7 @@ for dir in al*[1-8].ring/; do
     cp "$fname".all.data ../"$trjdir"/"$fname"/
     cp log.lammps  "$fname".log 
     mv "$fname".log ../"$trjdir"/"$fname"/
-    for gzfile in ns*.all.lammpstrj.gz;do 
+    for gzfile in al*.all.lammpstrj.gz;do 
             gzip -dk "$gzfile"
             allfile=${gzfile[*]:0: -3}
             mv "$allfile" ../"$trjdir"/"$fname"/
