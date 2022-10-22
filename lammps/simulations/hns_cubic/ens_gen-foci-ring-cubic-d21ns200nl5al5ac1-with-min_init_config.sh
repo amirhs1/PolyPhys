@@ -1,67 +1,62 @@
 #!/bin/bash
-#			n_small	 l	a_crowd	n_crowd		randseed	run_dt 		b_dump 	a_dump 	a_large n_large m_large
-P[${#P[@]}]="200	47	1		0			17000		0.005		2000	5000	5 		5		125"
-P[${#P[@]}]="200	47	1		39458		17010		0.005		2000	5000	5 		5		125"
-P[${#P[@]}]="200	47	1		79315		17020		0.005		2000	5000	5 		5		125"
-P[${#P[@]}]="200	47	1		118973		17030		0.005		2000	5000	5 		5		125"
+#			 N		epsilon_hns_mon	n_hns	a_crowd	n_crowd		m_crowd	l	randseed_group	run_dt 	n_dump 	a_dump 	
+P[${#P[@]}]="200	29				36		2		17000		8		25	2000		0.005	2000 	5000"
 
 ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 #ens='1' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 
 for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
 	for ((j=0; j<${#P[@]}; j++ )); do
-		n_small=$(echo "${P[$j]}" | awk '{print $1}') # number of small monomers
-		l=$(echo "${P[$j]}" | awk '{print $2}') # range of x, y or z from -l to l
-		sig3=$(echo "${P[$j]}" | awk '{print $3}') # crowder size
-		n_crowd=$(echo "${P[$j]}" | awk '{print $4}')
-		randseed_group=$(echo "${P[$j]}" | awk '{print $5}')
-		run_dt=$(echo "${P[$j]}" | awk '{print $6}')
-		bug_dump=$(echo "${P[$j]}" | awk '{print $7}')
-		all_dump=$(echo "${P[$j]}" | awk '{print $8}')
-		sig2=$(echo "${P[$j]}" | awk '{print $9}') # big monomer size
-		n_big=$(echo "${P[$j]}" | awk '{print $10}') # number of big monomers
-		m_big=$(echo "${P[$j]}" | awk '{print $11}')
-		dirname=ns${n_small}nl${n_big}al${sig2}ml${m_big}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring
-
+		N=$(echo "${P[$j]}" | awk '{print $1}') # number of monomers
+		eps_hm=$(echo "${P[$j]}" | awk '{print $2}')
+		n_hns=$(echo "${P[$j]}" | awk '{print $3}')
+		sig4=$(echo "${P[$j]}" | awk '{print $4}') # sizeo of crowders
+		n_crowd=$(echo "${P[$j]}" | awk '{print $5}')
+		m_crowd=$(echo "${P[$j]}" | awk '{print $6}')
+		l=$(echo "${P[$j]}" | awk '{print $7}') # range of x, y or z from -l to l
+		randseed_group=$(echo "${P[$j]}" | awk '{print $8}')
+		run_dt=$(echo "${P[$j]}" | awk '{print $9}') # integration time delta 
+		nucleoid_dump=$(echo "${P[$j]}" | awk '{print $10}')
+		all_dump=$(echo "${P[$j]}" | awk '{print $11}')
+		dirname=N${N}epshm${eps_hm}nh${n_hns}ac${sig4}nc${n_crowd}mc${m_crowd}l${l}dt${run_dt}ndump${nucleoid_dump}adump${all_dump}ens${i}
 		# modifying foci-ring-cylinder-init_config_minimize-harmonic.lmp
 		cp foci-ring-cubic-init_config_minimize-harmonic.lmp input.lmp
-
-		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable nucleoid_dump equal ${nucleoid_dump}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable randseed equal $((i+randseed_group))" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable n_small equal ${n_small}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable i equal $i" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable l equal ${l}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable m_crowd equal ${m_crowd}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_crowd equal ${n_crowd}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable sig3 equal ${sig3}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable sig2 equal ${sig2}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable mass2 equal ${m_big}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable bug_dump equal ${bug_dump}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable a_crowd equal ${sig4}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable n_hns equal ${n_hns}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable eps_hm equal ${eps_hm}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable nmon equal ${N}" | cat - input.lmp > temp && mv temp input.lmp
 		echo '# Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
 
 		# rename the input.lmp to min_init_config.lmp
 		mv input.lmp minimize_initial_config.lmp
 
-		if [ $((n_crowd+n_small+n_big)) -ge 25000 ]; then
+		if [ $((N+n_hns+n_crowd)) -ge 25000 ]; then
 			cp foci-ring-cubic-ac_equal-cores_equal_more_8.lmp input.lmp
 		else
 			cp foci-ring-cubic-ac_equal-cores_less_8.lmp input.lmp
 		fi
 
-		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable nucleoid_dump equal ${nucleoid_dump}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable randseed equal $((i+randseed_group))" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable n_small equal ${n_small}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable i equal $i" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable l equal ${l}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable m_crowd equal ${m_crowd}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_crowd equal ${n_crowd}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable sig3 equal ${sig3}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable sig2 equal ${sig2}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable mass2 equal ${m_big}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable bug_dump equal ${bug_dump}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
-		echo '#Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable a_crowd equal ${sig4}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable n_hns equal ${n_hns}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable eps_hm equal ${eps_hm}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable nmon equal ${N}" | cat - input.lmp > temp && mv temp input.lmp
+		echo '# Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
 
 		[[ -d "${dirname}" ]] || mkdir "${dirname}"
 		mv minimize_initial_config.lmp "${dirname}"
@@ -69,17 +64,17 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		cp ./*.data initial_config.data
 		mv initial_config.data "${dirname}"
 
-		N=$((n_big+n_small))
-		if [ $((n_crowd+N)) -ne ${N} ]; 
+		N_no_crowd=$((N+n_hns))
+		if [ $((n_crowd+N_no_crowd)) -ne ${N_no_crowd} ]; 
 		then
 			if [ $((n_crowd+N)) -le 5000 ]; 
 			then
 				cp submit_cpu4_le5000.sh submit.sh && mv submit.sh "$dirname"
-			elif [ $((n_crowd+N)) -gt 5000 ] && [ $((n_crowd+N)) -le 15000 ]; then
+			elif [ $((n_crowd+N_no_crowd)) -gt 5000 ] && [ $((n_crowd+N_no_crowd)) -le 15000 ]; then
 				cp submit_cpu4_gt5000_le15000.sh submit.sh && mv submit.sh "${dirname}"
-			elif [ $((n_crowd+N)) -gt 15000 ] && [ $((n_crowd+N)) -le 30000 ]; then
+			elif [ $((n_crowd+N_no_crowd)) -gt 15000 ] && [ $((n_crowd+N_no_crowd)) -le 30000 ]; then
 				cp submit_cpu8_gt15000_le30000.sh submit.sh && mv submit.sh "${dirname}"
-			elif [ $((n_crowd+N)) -gt 30000 ] && [ $((n_crowd+N)) -le 75000 ]; then
+			elif [ $((n_crowd+N_no_crowd)) -gt 30000 ] && [ $((n_crowd+N_no_crowd)) -le 75000 ]; then
 				cp submit_cpu16_gt30000_le75000.sh submit.sh && mv submit.sh "${dirname}"
 			else
 				cp submit_cpu32_gt75000_le200000.sh submit.sh && mv submit.sh "${dirname}"
