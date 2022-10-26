@@ -1,9 +1,9 @@
 #!/bin/bash
 #			 N		epsilon_hns_mon	n_hns	a_crowd	n_crowd		m_crowd	l	randseed_group	run_dt 	n_dump 	a_dump 	
-P[${#P[@]}]="200	29				36		2		17000		8		25	2000		0.005	2000 	5000"
+P[${#P[@]}]="200	29				36		2		5969		8		25	1000		0.005	2000 	5000"
 
-ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
-#ens='1' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
+#ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
+ens='2' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 
 for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
 	for ((j=0; j<${#P[@]}; j++ )); do
@@ -20,7 +20,7 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		all_dump=$(echo "${P[$j]}" | awk '{print $11}')
 		dirname=N${N}epshm${eps_hm}nh${n_hns}ac${sig4}nc${n_crowd}mc${m_crowd}l${l}dt${run_dt}ndump${nucleoid_dump}adump${all_dump}ens${i}
 		# modifying foci-ring-cylinder-init_config_minimize-harmonic.lmp
-		cp foci-ring-cubic-init_config_minimize-harmonic.lmp input.lmp
+		cp hns-cubic_v4.lmp input.lmp
 		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable nucleoid_dump equal ${nucleoid_dump}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp
@@ -29,40 +29,16 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		echo "variable l equal ${l}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable m_crowd equal ${m_crowd}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_crowd equal ${n_crowd}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable a_crowd equal ${sig4}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable sig4 equal ${sig4}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_hns equal ${n_hns}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable eps_hm equal ${eps_hm}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable nmon equal ${N}" | cat - input.lmp > temp && mv temp input.lmp
-		echo '# Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
-
-		# rename the input.lmp to min_init_config.lmp
-		mv input.lmp minimize_initial_config.lmp
-
-		if [ $((N+n_hns+n_crowd)) -ge 25000 ]; then
-			cp foci-ring-cubic-ac_equal-cores_equal_more_8.lmp input.lmp
-		else
-			cp foci-ring-cubic-ac_equal-cores_less_8.lmp input.lmp
-		fi
-
-		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable nucleoid_dump equal ${nucleoid_dump}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable randseed equal $((i+randseed_group))" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable i equal $i" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable l equal ${l}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable m_crowd equal ${m_crowd}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable n_crowd equal ${n_crowd}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable a_crowd equal ${sig4}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable n_hns equal ${n_hns}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable eps_hm equal ${eps_hm}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable nmon equal ${N}" | cat - input.lmp > temp && mv temp input.lmp
+		echo "variable N equal ${N}" | cat - input.lmp > temp && mv temp input.lmp
 		echo '# Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
 
 		[[ -d "${dirname}" ]] || mkdir "${dirname}"
-		mv minimize_initial_config.lmp "${dirname}"
 		mv input.lmp "${dirname}"
-		cp ./*.data initial_config.data
-		mv initial_config.data "${dirname}"
+	
+		cp ./nucleoid_crowders.data "./${dirname}/"
 
 		N_no_crowd=$((N+n_hns))
 		if [ $((n_crowd+N_no_crowd)) -ne ${N_no_crowd} ]; 

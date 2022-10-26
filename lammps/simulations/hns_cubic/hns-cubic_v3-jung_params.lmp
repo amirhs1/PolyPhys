@@ -27,13 +27,12 @@ processors 1 1 * # should be before read_data or create_box or change_box
 #--------------------- Atom Definition ---------------------
 
 #---------- Read input file ----------
-read_data   nucleoid_crowders.data nocoeff
-
+read_data nucleoid_crowders.data nocoeff
 #--------------------- Neighbor Lists ---------------------
 # Verlet list, linked-cell binsize, and communication ghost cutoff: vskin and gskin
 variable vskin equal 0.9 # v stands for Verlet
 #variable gfactor equal 0.5 # g stanf for ghost
-neighbor ${vskin} bin #multi # using different ghost cutoffs  
+neighbor ${vskin} multi # using different ghost cutoffs  
 neigh_modify    delay 0 every 1 check yes one 10000 page 1000000
 #neigh_modify collection/type 3 1 2 3 # 1: small mons, 2: large mons, 3: crowders
 ## Communication settings
