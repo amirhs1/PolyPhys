@@ -1,9 +1,13 @@
 #!/bin/bash
 #			n_small	 l	a_crowd	n_crowd		randseed	run_dt 		b_dump 	a_dump 	a_large n_large m_large
-P[${#P[@]}]="200	47	1		0			17000		0.005		2000	5000	5 		5		125"
-P[${#P[@]}]="200	47	1		39458		17010		0.005		2000	5000	5 		5		125"
-P[${#P[@]}]="200	47	1		79315		17020		0.005		2000	5000	5 		5		125"
-P[${#P[@]}]="200	47	1		118973		17030		0.005		2000	5000	5 		5		125"
+P[${#P[@]}]="400	62	1		0			21000		0.005		2000	5000	5 		5		125"
+P[${#P[@]}]="400	45	1		139229		21010		0.005		2000	5000	5 		5		125"
+P[${#P[@]}]="400	42	1		169798		21020		0.005		2000	5000	5 		5		125"
+P[${#P[@]}]="400	42	1		226397		21030		0.005		2000	5000	5 		5		125"
+P[${#P[@]}]="400	55	1		0			22000		0.005		2000	5000	3 		5		27"
+P[${#P[@]}]="400	45	1		139229		22010		0.005		2000	5000	3 		5		27"
+P[${#P[@]}]="400	42	1		169798		22020		0.005		2000	5000	3 		5		27"
+P[${#P[@]}]="400	42	1		226397		22030		0.005		2000	5000	3 		5		27"
 
 ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 #ens='1' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
@@ -21,7 +25,7 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		sig2=$(echo "${P[$j]}" | awk '{print $9}') # big monomer size
 		n_big=$(echo "${P[$j]}" | awk '{print $10}') # number of big monomers
 		m_big=$(echo "${P[$j]}" | awk '{print $11}')
-		dirname=ns${n_small}nl${n_big}al${sig2}ml${m_big}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring
+		dirname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring
 
 		# modifying foci-ring-cylinder-init_config_minimize-harmonic.lmp
 		cp foci-ring-cubic-init_config_minimize-harmonic.lmp input.lmp
@@ -38,16 +42,11 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable bug_dump equal ${bug_dump}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
-		echo '# Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
+		echo '#Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
 
 		# rename the input.lmp to min_init_config.lmp
 		mv input.lmp minimize_initial_config.lmp
-
-		if [ $((n_crowd+n_small+n_big)) -ge 25000 ]; then
-			cp foci-ring-cubic-ac_equal-cores_equal_more_8.lmp input.lmp
-		else
-			cp foci-ring-cubic-ac_equal-cores_less_8.lmp input.lmp
-		fi
+		cp foci-ring-cubic-ac_equal.lmp input.lmp
 
 		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable randseed equal $((i+randseed_group))" | cat - input.lmp > temp && mv temp input.lmp
@@ -81,8 +80,12 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 				cp submit_cpu8_gt15000_le30000.sh submit.sh && mv submit.sh "${dirname}"
 			elif [ $((n_crowd+N)) -gt 30000 ] && [ $((n_crowd+N)) -le 75000 ]; then
 				cp submit_cpu16_gt30000_le75000.sh submit.sh && mv submit.sh "${dirname}"
+			elif [ $((n_crowd+N)) -gt 75000 ] && [ $((n_crowd+N)) -le 150000 ]; then
+				cp submit_cpu32_gt75000_le150000.sh submit.sh && mv submit.sh "${dirname}"
+			elif [ $((n_crowd+N)) -gt 150000 ] && [ $((n_crowd+N)) -le 200000 ]; then
+				cp submit_cpu32_gt150000_le200000.sh submit.sh && mv submit.sh "${dirname}"
 			else
-				cp submit_cpu32_gt75000_le200000.sh submit.sh && mv submit.sh "${dirname}"
+				cp submit_cpu32_gt200000_le250000.sh submit.sh && mv submit.sh "${dirname}"
 			fi
 		else
 			cp submit_nocrowd_8hrs.sh submit.sh && mv submit.sh "${dirname}"

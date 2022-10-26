@@ -13,6 +13,10 @@ import warnings
 
 def log_stat(
     logpath: str,
+    parser: ParserT,
+    geometry: str,
+    group: str,
+    lineage: str,
     save_to: str = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
@@ -40,6 +44,13 @@ def log_stat(
     """
     logname, _ = os.path.splitext(logpath)
     logname = logname.split("/")[-1]
+    log_info = parser(
+        logname,
+        geometry=geometry,
+        group=group,
+        lineage=lineage,
+        ispath=False
+    )
     run_stat = {
         "log_name": [],
         "loop_id": [],
@@ -71,7 +82,7 @@ def log_stat(
         "n_cores": [],
         "n_atoms": [],
         "wall_time": []
-    }
+    } 
     with open(logpath, 'r') as logfile:
         lines = logfile.readlines()
         # neigh_modify delay every check page one
@@ -126,6 +137,9 @@ def log_stat(
                 words = line.split()
                 # total wall time:
                 wall_time_stat['wall_time'].append(words[-1])
+                for lineage_name in log_info.genealogy:
+                    attr_value = getattr(log_info, lineage_name)
+                    wall_time_stat[lineage_name] = attr_value
         run_stat = pd.DataFrame.from_dict(run_stat)
         run_stat['filename'] = logname
         wall_time_stat = pd.DataFrame.from_dict(wall_time_stat)
@@ -358,6 +372,7 @@ def thermo_one(
                     if line.startswith("Loop time of "):
                         break
                     try:
+                        #print(line)
                         words = [float(i) for i in line.strip().split()]
                         thermo["Step"].append(int(words[0]))  # Step
                         thermo["Temp"].append(float(words[1]))  # Temp
@@ -365,9 +380,12 @@ def thermo_one(
                         thermo["E_mol"].append(float(words[3]))  # E_mol
                         thermo["TotEng"].append(float(words[4]))  # TotEng
                         thermo["Press"].append(float(words[5]))  # Press
-                    except ValueError:
+                    #except (ValueError, IndexError) as error:
+                    except ValueError as error:
                         # Some text has snuck into the thermo output,
                         # this text is ignored.
+                        #print(error)
+                        #print(line)
                         pass
                     line = logfile.readline()
             else:

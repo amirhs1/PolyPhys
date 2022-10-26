@@ -1,5 +1,5 @@
 #!/bin/bash
-for directory in N*/; do
+for directory in al*/; do
    cd "${directory}" || exit
    sbatch submit.sh
    sleep 5

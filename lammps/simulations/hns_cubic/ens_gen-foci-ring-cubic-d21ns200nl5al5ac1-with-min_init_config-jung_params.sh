@@ -3,7 +3,7 @@
 P[${#P[@]}]="200	29				36		2		5969		8		25	1000		0.005	2000 	5000"
 
 #ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
-ens='2' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
+ens='1' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 
 for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
 	for ((j=0; j<${#P[@]}; j++ )); do
@@ -20,7 +20,7 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		all_dump=$(echo "${P[$j]}" | awk '{print $11}')
 		dirname=N${N}epshm${eps_hm}nh${n_hns}ac${sig4}nc${n_crowd}mc${m_crowd}l${l}dt${run_dt}ndump${nucleoid_dump}adump${all_dump}ens${i}
 		# modifying foci-ring-cylinder-init_config_minimize-harmonic.lmp
-		cp hns-cubic_v4.lmp input.lmp
+		cp hns-cubic_v4-jung_params.lmp input.lmp
 		echo "variable all_dump equal ${all_dump}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable nucleoid_dump equal ${nucleoid_dump}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable run_dt equal ${run_dt}" | cat - input.lmp > temp && mv temp input.lmp

@@ -13,7 +13,7 @@ else
 fi
 echo "Trajectory directory: $trjdir"
 mkdir "$trjdir"
-for dir in N*[1-8]/; do
+for dir in al*[1-8].ring/; do
     echo "$dir"
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"
