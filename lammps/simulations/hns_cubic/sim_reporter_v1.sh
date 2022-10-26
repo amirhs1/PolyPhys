@@ -18,7 +18,7 @@ else
 fi
 echo "Simulation name: $rname" > "$rname".txt # name of the report file
 echo -e "\n" >> "$rname".txt
-for dir in ns*[1-8].ring/; do
+for dir in N*[1-8]/; do
     cd "$dir" || exit
     simname=$(echo "$dir" | cut -d / -f 1)
     echo "$simname"

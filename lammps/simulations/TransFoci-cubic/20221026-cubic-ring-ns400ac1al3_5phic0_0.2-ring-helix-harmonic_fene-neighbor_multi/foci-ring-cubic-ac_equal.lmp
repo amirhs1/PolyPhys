@@ -1,0 +1,167 @@
+
+#---------- (1) Variables ----------
+# LJ inter-species sigma: sigma_ij
+# 1: small monomer, 2: large monomer, 3: crowder
+variable sig1 equal 1.0
+variable sig12 equal (${sig1}+${sig2})/2
+variable sig13 equal (${sig1}+${sig3})/2
+variable sig23 equal (${sig2}+${sig3})/2
+
+# LJ inter-sepcies r_cutoff: r_cutoff_ij
+variable ljRcut equal 1.12246205 # lj/cutoff distance: 2^(1/6)
+variable cutoff11 equal ${sig1}*${ljRcut}
+variable cutoff12 equal ((${sig1}+${sig2})/2.0)*${ljRcut}
+variable cutoff13 equal ((${sig1}+${sig3})/2.0)*${ljRcut}
+variable cutoff22 equal ${sig2}*${ljRcut}
+variable cutoff23 equal ((${sig2}+${sig3})/2.0)*${ljRcut}
+variable cutoff33 equal ${sig3}*${ljRcut}
+
+#--------------------- (2) Initialization ---------------------
+units   lj # Lennard-Jones units.
+dimension   3 # 3 dimensional simulation.
+boundary    p p p # Periodic (p) in z direction; fixed (f) in x and y ones.
+atom_style  bond
+
+#--------------------- (4) Processors Communications ---------------------
+#processors 1 1 * # should be before read_data or create_box or change_box
+#--------------------- (5) Atom Definition ---------------------
+
+#---------- Read input file ----------
+read_data   minimized.initial.config.data nocoeff
+
+#--------------------- (3) Neighbor Lists ---------------------
+variable vskin equal 0.3 # v stands for Verlet
+neighbor ${vskin} multi # using different ghost cutoffs  
+neigh_modify    delay 0 every 1 check yes
+neigh_modify collection/type 3 1 2 3 # 1: small mons, 2: large mons, 3: crowders
+## Communication settings
+# ghost cutoff = neighbor cutoff = pairwise force cutoff + vskin
+# cutoff/multi(=Rcut) overrides ghost cutoff only if former is larger 
+# than later; please see below for cutoff/multi setting.
+# Whithout "multi" option in "neighbor":
+# ghost cutoff = max(neighbor cutoff) = max(pairwise force cutoff) + vskin # So we have:
+# ghost cutoff = max(neighbor cutoff) = cutoffLL + vskin
+# By changing to "multi" and setting communication/ghosy cutoff accordingly,
+# we have:
+variable gRcut1 equal ${cutoff11}+${vskin} # ghost cutoff: small monomer
+variable gRcut2 equal ${cutoff22}+${vskin} # ghost cutoff: large monomer 
+variable gRcut3 equal ${cutoff33}+${vskin} # ghost cutoff: crowders
+comm_modify mode multi cutoff/multi 1 ${gRcut1} cutoff/multi 2 ${gRcut2} cutoff/multi 3 ${gRcut3}
+
+#---------- Reshape simulation box/Define simulation box   ----------
+change_box  all x final -${l} ${l} y final -${l} ${l} z final -${l} ${l} boundary p p p units box 
+region  cubicshell block INF INF INF INF INF INF units box 
+
+#---------- Create atoms ----------
+create_atoms 3 random ${n_crowd} ${randseed} cubicshell units box
+
+#---------- Group atoms ----------
+group bug_small type 1
+group bug_big type 2
+group bug type 1 2
+group crowd type 3
+
+#---------- Define atoms masses ----------
+mass 1 1.0
+mass 2 ${mass2}
+mass 3 1.0
+
+#---------- Set velocity of the chain ----------
+#----- Define a temperature compute for the chain and use to set velocity for the chain -----
+compute mobile bug temp
+
+#--------------------- (6) Interatomic/molecular Potential ---------------------
+#---------- Lennard-Jones potential among all particles ----------
+pair_style lj/cut ${ljRcut}
+## mixing rule between different species
+#similar to:#pair_modify mix arithmetic 
+#Pair coefficient:   type-i  type-j (i should always be smaller than j) epsilon=1 sigma=(a_i+a_j)/2   cutoff=((sig_i+sig_j)/2)*2^(1/6)
+pair_coeff 1 1 1.0 ${sig1}  ${cutoff11}
+pair_coeff 1 2 1.0 ${sig12} ${cutoff12}
+pair_coeff 1 3 1.0 ${sig13}  ${cutoff13}
+pair_coeff 2 2 1.0 ${sig2}  ${cutoff22}
+pair_coeff 2 3 1.0 ${sig23}  ${cutoff23}
+pair_coeff 3 3 1.0 ${sig3}  ${cutoff33}
+
+#---------- FENE potential among the chain's monomers ----------
+bond_style  fene
+
+# FENE inter-species max bond and spring constant: r_bond_ij and k_ij
+# lengths measured in unit sigma=sig1=1.0
+# energies measured in unit epsilon=1.0
+# k_ij=(30*epsilon_11)/((a_i+a_j)^2) 
+# k_11=k_0=30
+# R_0_ij=1.5*((a_i+a_j)/2 )
+# R_0_11=R_0=1.5*sig1
+
+variable sig11fene equal 1.5*${sig1}
+variable sig12fene equal 1.5*${sig1}*(${sig12}/${sig1})
+variable k11fene equal 30/(${sig1}*${sig1}) # epsilon is 1.0 so dropped from nomenator
+variable k12fene equal (30/(${sig1}*${sig1}))*((${sig1}/${sig12})^2) # epsilon is 1.0 so dropped from nomenator
+#i k_ij=(30*epsilon_11)/((a_i+a_j)^2) R_0_ij=1.5*((a_i+a_j)/2 )   epsilon=1    sigma=(a_i+a_j)/2
+bond_coeff 1 ${k11fene} ${sig11fene} 1.0 ${sig1}
+bond_coeff 2 ${k12fene} ${sig12fene} 1.0 ${sig12}
+
+#---------- Weighting coefficient for bonded atoms with pairwise interactions (Example,LJ interaction of two monomers in a chain) ----------
+special_bonds   fene
+
+#--------------------- (7) Settings ---------------------
+#---------- Equilibration/Method of integration of equation of motion ----------
+#---------- Brownian dynamics for all particles ----------
+fix F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+
+#--------------------- (8) Run a simulation ---------------------
+#---------- Equilibration phase - part 1 with fix/nve
+#---------- Equilibration/Method of integration of equation of motion ----------
+# Microcanonical ensamble:
+fix F_nve all nve/limit 0.01
+fix F_recenter bug recenter 0.0 0.0 0.0 shift all units box
+thermo 10000
+thermo_style multi
+timestep 0.02
+run 1000000
+write_restart ./restart_before.i${i}.part1
+# Wiping out commands
+unfix F_nve
+unfix F_recenter
+
+#---------- Equilibration phase - part 2 with fix nve
+# Microcanonical ensamble:
+fix F_nve all nve
+fix F_recenter bug recenter 0.0 0.0 0.0 shift all units box
+thermo 10000
+thermo_style multi
+timestep 0.01
+run 2000000
+write_restart ./restart_before.i${i}.part2
+# Wiping out commands
+unfix F_nve
+unfix F_recenter
+
+#---------- Production phase
+#Reset some settings
+fix F_nve all nve
+fix F_recenter bug recenter 0.0 0.0 0.0 shift all units box
+
+timestep ${run_dt}
+
+
+#dump D_bug bug custom  ${bug_dump} bug.i${i}.lammpstrj id type x y z vx vy vz
+dump D_bug bug atom  ${bug_dump} al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring.bug.lammpstrj
+dump_modify D_bug scale no
+#dump D_bug_unwrap bug custom  ${bug_dump} bug.unwrap.i${i}.lammpstrj id type xu yu zu vx vy vz
+
+variable fname string input.lmp
+variable j loop 20 pad 
+	label dump_loop
+	dump D_all all atom ${all_dump} al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.j${j}.ring.all.lammpstrj.gz
+	dump_modify D_all scale no pad 2
+	restart 1000000 ./restarts/restart.${i}
+	run	5000000
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+undump D_bug
+#undump D_bug_unwrap
+write_data al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring.all.data pair ij
+write_restart ./restart_after.i${i}
