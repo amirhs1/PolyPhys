@@ -1,5 +1,7 @@
 # How to restart or continue a simulation in LAMMPS
 
+**CAUTION:** RENAME the **for** before running the scripts.
+
 ## Step 1: Restarting a simulation: See *restart_simulations* directory
 
 Follow these instructions to restart a crashed simulation; the main idea is to find the *restart* file that is written at the closest time step to the crashed time step or the starting time step of the crashed loop.

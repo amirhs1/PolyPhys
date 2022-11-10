@@ -15,7 +15,7 @@
 module --force purge
 module load StdEnv/2020  intel/2020.1.217  openmpi/4.0.3   lammps-omp/20210929
 
-echo "Starting run at: `date`"
+echo "Starting run at: $(date)"
 
 lmp_exec=lmp
 lmp_input="minimize_initial_config.lmp"
@@ -29,5 +29,5 @@ lmp_output="output.txt"
 
 srun ${lmp_exec} < ${lmp_input} > ${lmp_output}
 
-echo "Program finished with exit code $? at: `date`"
+echo "Program finished with exit code $? at: $(date)"
 
