@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=8
 #SBATCH --mem=24G      						# memory; default unit is megabytes.
 #SBATCH --time=03-00:00                	# Total time needed for this job. --time (DD-HH:MM) or -t 0-01:00;  Check the manual of sbatch
-#SBATCH --account=def-byha 					# The user/account holder who use this computecanada project. you can use -a instead of --acount
+#SBATCH --account=rrg-byha 					# The user/account holder who use this computecanada project. you can use -a instead of --acount
 #SBATCH --mail-user=mr.a.h.saadeghi@gmail.com 	# The mail address for notifications about submitted job
 #SBATCH --mail-type=ALL 					# Set the types of notifications which will be emailed.
 # Load the module:
