@@ -1,6 +1,9 @@
 #!/bin/bash
 # This part is different between different projects
-for dir in eps*.ring/; do
+#for dir in al*.ring/; do # TransFociCub
+#for dir in eps*.ring/; do # TransFociCyl
+#for dir in N*[1-8]/; do # HnsCub
+for dir in N*[1-8]/; do # SumRuleCyl
     echo "$dir"
     cd "$dir" || exit
     name=${dir:0:-1}
