@@ -28,7 +28,7 @@ pip install --no-index MDAnalysis==2.2.0
 exe(){
 dir=${1}
 file=$(echo "$dir" | cut -d / -f 1)
-(cd "${file}" && python probe-trans_foci_cubic-all_in_one-bug_wholes.py > "${file}"-probe-trans_foci_cubic-all_in_one-bug_wholes.txt)
+(cd "${file}" && python probe-trans_foci_cub-all_in_one-bug_wholes.py > "${file}"-probe-trans_foci_cub-all_in_one-bug_wholes.txt)
 }
 
 echo "Starting run at: $(date)"
@@ -38,6 +38,6 @@ echo "Starting run at: $(date)"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-trans_foci_cubic-all_in_one-bug_wholes.txt ::: al*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-trans_foci_cub-all_in_one-bug_wholes.txt ::: al*/
 
 echo "Program glost_launch finished with exit code $? at: $(date)"
