@@ -4,8 +4,8 @@ echo "If there is a number the same as the timestep of interest, this script doe
 read -rp "Enter ens number > " i
 read -rp "Enter dump step > " dumpStep
 read -rp "Enter total number of monomers > " nMon
-incompleteFile=$(echo "al*ens$i.ring.bug.lammpstrj")
-restartFile=$(echo "al*ens$i.ring.bug.restart.lammpstrj")
+incompleteFile=$(echo "N*ens$i.ring.nucleoid.lammpstrj")
+restartFile=$(echo "N*ens$i.ring.nucleoid.restart.lammpstrj")
 lastStep="$(head -n 2 $restartFile | tail -n 1)"
 splitStep=$(("${lastStep}"+"$dumpStep"))
 echo "timestep to split: $splitStep"
