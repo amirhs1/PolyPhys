@@ -1,4 +1,4 @@
-from .parser import TransFociCyl, SumRuleCyl, TransFociCubic
+from .parser import TransFociCyl, SumRuleCyl, TransFociCub, HnsCub
 from typing import Type, Union, Tuple, Dict, NewType
 
 import numpy as np
@@ -19,11 +19,12 @@ HistogramT = Tuple[DirectionT, SpeciesT, GroupT]
 EdgeT = Union[Tuple[DirectionT, SpeciesT, GroupT],
               Tuple[DirectionT, GroupT]]
 
-TransFociCubicT = Type[TransFociCubic]
+TransFociCubT = Type[TransFociCub]
 TransFociCylT = Type[TransFociCyl]
-TransFociT = Union[TransFociCylT, TransFociCubicT]
+TransFociT = Union[TransFociCylT, TransFociCubT]
 SumRuleCylT = Type[SumRuleCyl]
-ParserT = Union[TransFociCylT, SumRuleCylT, TransFociCubicT]
+HnsCubT = Type[HnsCub]
+ParserT = Union[TransFociCylT, SumRuleCylT, TransFociCubT, HnsCubT]
 
 EnsWholes = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
 EnsembleT = Tuple[EnsembleName, EnsWholes]

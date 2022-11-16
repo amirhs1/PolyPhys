@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 import os
 from polyphys.manage.typer import ParserT
-from polyphys.manage.parser import SumRuleCyl, TransFociCyl, TransFociCubic
+from polyphys.manage.parser import SumRuleCyl, TransFociCyl, \
+    TransFociCub, HnsCub
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters
 import warnings
@@ -82,7 +83,7 @@ def log_stat(
         "n_cores": [],
         "n_atoms": [],
         "wall_time": []
-    } 
+    }
     with open(logpath, 'r') as logfile:
         lines = logfile.readlines()
         # neigh_modify delay every check page one
@@ -3902,7 +3903,7 @@ def trans_foci_all_cyl(
     print('done.')
 
 
-def trans_fuci_bug_cubic(
+def trans_fuci_bug_cub(
     topology: str,
     trajectory: str,
     lineage: str,
@@ -3937,7 +3938,7 @@ def trans_fuci_bug_cubic(
             UserWarning
         )
     print("Setting the name of analyze file...")
-    sim_info = TransFociCubic(
+    sim_info = TransFociCub(
         trajectory,
         lineage,
         'cubic',
@@ -4029,7 +4030,7 @@ def trans_fuci_bug_cubic(
     print('done.')
 
 
-def trans_foci_all_cubic(
+def trans_foci_all_cub(
     topology: str,
     trajectory: str,
     lineage: str,
@@ -4065,7 +4066,7 @@ def trans_foci_all_cubic(
             UserWarning
         )
     print("Setting the name of analyze file...")
-    sim_info = TransFociCubic(
+    sim_info = TransFociCub(
         trajectory,
         lineage,
         'cylindrical',
@@ -4566,4 +4567,124 @@ def trans_foci_all_cubic(
         }
     }
     write_hists(hist_2d_groups, sim_name, save_to, std=False)
+    print('done.')
+
+
+def hns_nucleoid_cub(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    the `geometry` of interest.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = HnsCub(
+        trajectory,
+        lineage,
+        'cubic',
+        'nucleoid'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon * np.sqrt(
+        sim_info.mmon * sim_info.eps_others)  # LJ time unit
+    lj_nstep = sim_info.ndump  # Sampling steps via dump command in Lammps
+    lj_dt = sim_info.dt
+    sim_real_dt = lj_nstep * lj_dt * time_unit
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt
+        )
+    # slicing trajectory based the continuous condition
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+        n_frames = cell.trajectory.n_frames - 1
+    else:
+        sliced_trj = cell.trajectory
+        n_frames = cell.trajectory.n_frames
+    # selecting atom groups
+    bug = cell.select_atoms('resid 1')  # the bug
+    hns_hole = cell.select_atoms('type 2')  # the hns holes
+    hns_core = cell.select_atoms('type 3')  # the hns cores
+    # defining collectors
+    # -bug:
+    gyr_t = []
+    principal_axes_t = np.empty([0, 3, 3])
+    asphericity_t = []
+    shape_parameter_t = []
+    for _ in sliced_trj:
+        # bug:
+        # -various measures of chain size
+        gyr_t.append(bug.radius_of_gyration())
+        # -shape parameters:
+        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
+        principal_axes_t = np.append(
+            principal_axes_t,
+            np.array([bug.principal_axes(pbc=False)]),
+            axis=0
+        )
+        shape_parameter_t.append(bug.shape_parameter(pbc=False))
+        # foci:
+        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
+        foci_pair_dist = np.triu(dist_sq_mat, 1)
+        foci_pair_dist = np.sqrt(foci_pair_dist)
+        # keep atom ids on the diag
+        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
+        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
+        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
+        dir_contacts_t = np.append(
+            dir_contacts_t,
+            np.array([dir_contacts]),
+            axis=0
+        )
+        bonds_stat = clusters.count_bonds(dir_contacts)
+        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        contacts = clusters.contact_matrix(dir_contacts)
+        clusters_stat = clusters.count_clusters(contacts)
+        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+    # Saving collectors to memory
+    # -bug
+    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
+    np.save(save_to + sim_name + '-asphericityTMon.npy',
+            np.array(asphericity_t)
+            )
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    # -foci
+    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
+    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
+    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
+    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
+    # Simulation stamps:
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
     print('done.')
