@@ -69,6 +69,10 @@ def dist_sq_matrix(
         A square matrix of size n_atoms * n_atoms in which each elements are
         the squares of the center-to-center distances between different pairs
         of atoms. All the diagonal elements of this materix is 0.
+
+    References
+    ----------
+    2019 - Albanie S - Euclidean Distance Matrix Trick
     """
     n_atoms, n_dims = positions.shape
     # Defining pbc lengths with value zero in all directions:
@@ -80,17 +84,77 @@ def dist_sq_matrix(
         pbc_lengths, pbc_lengths_inverse = apply_pbc(
             pbc_lengths, pbc_lengths_inverse, pbc
         )
-    # Redefining the shapres ofdifferent arrays to combine linear algebra
+    # Redefining the shapes of different arrays to combine linear algebra
     # with numpy broadcasting.
     pbc_lengths = np.reshape(pbc_lengths, (n_dims, 1, 1))
     pbc_lengths_inverse = np.reshape(pbc_lengths_inverse, (n_dims, 1, 1))
     pos_T = positions.T
     pos_j_element = np.reshape(pos_T, (n_dims, n_atoms, 1))
     pos_i_element = np.reshape(pos_T, (n_dims, 1, n_atoms))
+    # differences:
     dist_sq = pos_j_element - pos_i_element
+    # applying pbc
     dist_sq = dist_sq - pbc_lengths * np.around(pbc_lengths_inverse * dist_sq)
+    # squaring each elements
     dist_sq = dist_sq ** 2
+    # sum over qaxis=0 means sum over d in x_ijd^2 where d is the number of
+    # dimentions and x_ijd are d elements of a given r_ij^2.
     dist_sq = np.sum(dist_sq, axis=0)
+    return dist_sq
+
+
+def dist_sq_matrix_opt(
+    positions: np.ndarray,
+    pbc: Optional[dict] = None
+) -> np.ndarray:
+    """Finds the squares of distances between all the pair of atoms
+    (even self-distances where i=j) for a given list of atoms' `positions`.
+    In 3 dimesions, this method is not much faster the `dist_sq_matrix`.
+
+    To-do
+    -----
+    Check the pbc applied below; is it correct?
+
+    Parameters
+    ----------
+    positions: np.ndarray
+        a matrix with size n_atoms * n_dims of atoms' positions in which
+        the rows are atoms' positions and the columns are different dimentions
+        or components.
+
+    pbc: dict, defualt None
+        A dictionary of dimensions (keys) and lenghts (values) in which
+        the pbc exists.
+
+    Rutern
+    ------
+    dist_sq: np.ndarray
+        A square matrix of size n_atoms * n_atoms in which each elements are
+        the squares of the center-to-center distances between different pairs
+        of atoms. All the diagonal elements of this materix is 0.
+
+    References
+    ----------
+    2019 - Albanie S - Euclidean Distance Matrix Trick
+    """
+    n_atoms, n_dims = positions.shape
+    # Defining pbc lengths with value zero in all directions:
+    # The approach allows us to combine linear agebra and numpy broadcasting
+    # and efficently apply pbc.
+    pbc_lengths = np.zeros(n_dims)
+    pbc_lengths_inverse = np.zeros(n_dims)
+    if pbc is not None:
+        pbc_lengths, pbc_lengths_inverse = apply_pbc(
+            pbc_lengths, pbc_lengths_inverse, pbc
+        )
+    pbc_lengths = pbc_lengths**2
+    pbc_lengths_inverse = pbc_lengths_inverse**2
+    # Redefining the shapes of different arrays to combine linear algebra
+    # with numpy broadcasting.
+    gram = np.matmul(positions, positions.T)
+    dist_sq = np.diag(gram).reshape(n_atoms, 1) + \
+        np.diag(gram).reshape(1, n_atoms) - 2 * gram
+    dist_sq = dist_sq - pbc_lengths * np.around(pbc_lengths_inverse * dist_sq)
     return dist_sq
 
 
