@@ -382,7 +382,7 @@ def save_parent(
         The physical property.
     save_to : str
         An/a absolute/relative path of a directory to which outputs are saved.
-    group: {'bug', 'all'}, default 'bug'
+    group: {'bug', 'nucleoid', 'all'}, default 'bug'
         Type of the particle group.
     ext: {'csv', 'npy'}, defualt 'csv'
     """
@@ -436,7 +436,7 @@ def database_path(
         Name of the new phase
     stage: {'segment', 'wholeSim', 'ens', 'ensAvg', 'space'}, default None
         Stage of the new directory.
-    group: {'bug', 'all'}, default None
+    group: {'bug', 'nucleoid', 'all'}, default None
         Type of the particle group.
 
     Return
@@ -448,7 +448,7 @@ def database_path(
                     ['simulationsAll', 'simulationsCont', 'logs',
                      'trjs', 'probe', 'analysis', 'viz']
                     )
-    invalid_keyword(group, ['bug', 'all', None])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all', None])
     invalid_keyword(stage,
                     ['segment', 'wholeSim', 'ens', 'ensAvg', 'space', None]
                     )
@@ -488,6 +488,7 @@ def whole_from_segment(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str,
     relation: str,
     save_to: Optional[str] = None
 ) -> Dict[str, np.ndarray]:
@@ -507,8 +508,10 @@ def whole_from_segment(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
+    topology: str
+        Topology of the polymer.
     relation : {'histogram', 'tseries', 'bin_edges'}
         Relation between segments and wholes:
 
@@ -542,7 +545,7 @@ def whole_from_segment(
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(relation, ['histogram', 'tseries', 'bin_edge'])
     mapping_func = {
         'histogram': lambda whole: (whole[0], np.sum(whole[1], axis=0)),
@@ -557,7 +560,8 @@ def whole_from_segment(
             segment[0],
             'segment',
             geometry,
-            group
+            group,
+            topology
         )
         whole_name = getattr(segment_info, 'whole')
         child_arr = np.load(segment[0])
@@ -595,6 +599,7 @@ def whole_from_file(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str
 ) -> Dict[str, np.ndarray]:
     """Loads `whole` numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their pathes
@@ -610,8 +615,10 @@ def whole_from_file(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
+    topology: str
+        Topology of the polymer.
 
     Return
     ------
@@ -625,14 +632,15 @@ def whole_from_file(
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     wholes = {}
     for whole_path in whole_paths:
         whole_info = parser(
             whole_path[0],
             'whole',
             geometry,
-            group
+            group,
+            topology
         )
         whole_name = getattr(whole_info, 'whole')
         wholes[whole_name] = np.load(whole_path[0])
@@ -644,6 +652,7 @@ def whole_from_distMat_t(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str
 ) -> Dict[str, np.ndarray]:
     """
     Loads `whole` 2D numpy arrays for a given physical property of the
@@ -660,8 +669,10 @@ def whole_from_distMat_t(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
+    topology: str
+        Topology of the polymer.
 
     Return
     ------
@@ -675,7 +686,7 @@ def whole_from_distMat_t(
     of 'geomtery', and 'group', and the definitons of their keywords.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     wholes_freqs = {}
     wholes_rdfs = {}
     wholes_tseries = {}
@@ -684,7 +695,8 @@ def whole_from_distMat_t(
             whole_path[0],
             'whole',
             geometry,
-            group
+            group,
+            topology
         )
         whole_freqs, whole_rdfs, whole_tseries = whole_distMat_foci(
             whole_path[0],
@@ -794,6 +806,7 @@ def ensemble(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str,
     whole_type: str,
     edge_wholes: Optional[Dict[str, np.ndarray]] = None,
     save_to: str = None
@@ -833,8 +846,10 @@ def ensemble(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         The type of the particle group.
+    topology: str
+        Topology of the polymer.
     whole_type: {'vector', 'matrix'}
         The type of "whole" files.
 
@@ -869,7 +884,7 @@ def ensemble(
     """
     # Averging over ensembles with simailar initial paramters
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(whole_type, ['vector', 'matrix', 'dataframe', 'bin_edge'])
     ensembles = {}
     bin_centers = {}
@@ -879,6 +894,7 @@ def ensemble(
             'whole',
             geometry,
             group,
+            topology,
             ispath=False
         )
         ens_name = getattr(w_info, 'ensemble_long')
@@ -1041,12 +1057,9 @@ def ensemble_avg(
         number of columns is equal to or more than the number of
         children of that parent. Columns' names are the children' names and
         the names given by `exclude`.
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
     ens_type: {'vector', 'matrix'}
         The type of "ens" values.
@@ -1072,7 +1085,7 @@ def ensemble_avg(
         values are dataframes of ensemble-averaged measurements.
     """
     # Averging over ensembles with simailar initial paramters
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(ens_type, ['dataframe', 'ndarray', 'bin_edge'])
     ens_avgs = {}
@@ -1135,7 +1148,7 @@ def children_stamps(
     stamps: list of tuple
         List of tuples where each tumple has one member and that member is a
         filepath to the stamp of a 'segment' simulation in a space.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
     lineage: {'segment', 'whole'}
         Lineage type of children' stamps
@@ -1147,7 +1160,7 @@ def children_stamps(
     space_stamps: pd.DataFrame
         Dataframe of all the children stamps in the `group` in a space.
     """
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(lineage, ['segment', 'whole'])
     space_stamps = [pd.read_csv(stamp[0]) for stamp in stamps]
     space_stamps = pd.concat(space_stamps)
@@ -1193,7 +1206,7 @@ def parents_stamps(
         Dataframe of all the simulation stamps in the `group` in a space.
     geometry : str in {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box
-    group: str in {'bug', 'all'}
+    group: str in {'bug', 'nucleoid', 'all'}
         Type of the particle group.
     lineage: str in  {'segment', 'whole'}
         Lineage type of children's stamps.
@@ -1220,7 +1233,7 @@ def parents_stamps(
         Dataframe of all the parents stamps in the `group` in a space.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(lineage, ['segment', 'whole'])
     # attributes, properties and genealogy:
     stamps_cols = list(stamps.columns)
@@ -1366,6 +1379,7 @@ def space_tseries(
     physical_attrs: List[str],
     group: str,
     geometry: str,
+    topology: str,
     divisor: Optional[float] = 0.025,
     round_to: Optional[int] = 3,
     is_save: Optional[bool] = False
@@ -1402,10 +1416,12 @@ def space_tseries(
     attributes: list of str
         The physical attributes that will added as new columns to the
         concatenated timeseries.
-    group: str in {'bug', 'all'}
+    group: str in {'bug', 'nucleoid', 'all'}
         The type of the particle group.
     geometry : str in {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
+    topology: str
+        Topology of the polymer.
     divisor: float, default 0.025
         The step by which the values of "phi_c_bulk" attribute are rounded.
     round_to: int, default 3
@@ -1431,7 +1447,8 @@ def space_tseries(
             ens_avg_csv[0],
             'ensemble_long',
             geometry,
-            group
+            group,
+            topology
         )
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={'index': 'time'}, inplace=True)
@@ -1464,6 +1481,7 @@ def space_hists(
     physical_attrs: List[str],
     group: str,
     geometry: str,
+    topology: str,
     bin_center: Optional[np.ndarray] = None,
     normalize: Optional[bool] = False,
     divisor: Optional[float] = 0.025,
@@ -1508,10 +1526,12 @@ def space_hists(
     phys_attrs: list of str
         The physical attributes that will added as new columns to the
         concatenated timeseries.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         The type of the particle group.
     geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
+    topology: str
+        Topology of the polymer.
     single_space:
         Whether the all-in-one file is for all the timeseries properties of a
         single space or all the space in a project.
@@ -1552,7 +1572,8 @@ def space_hists(
             ens_avg_csv[0],
             'ensemble_long',
             geometry,
-            group
+            group,
+            topology
         )
         if bin_center is not None:
             ens_avg['bin_center'] = bin_center.tolist()
@@ -1772,6 +1793,7 @@ def space_sum_rule(
     size_attr: str,
     group: str,
     geometry: str,
+    topology: str,
     direction: str,
     divisor: Optional[float] = 0.025,
     round_to: Optional[int] = 3,
@@ -1827,10 +1849,12 @@ def space_sum_rule(
     size_attr: str
         The attribute of the `parser` object that is the size (diameter) of
         species.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         The type of the particle group.
     geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
+    topology: str
+        Topology of the polymer.
     direction: {'r', 'z'}
         The direction along which operation is done.
     divisor: float, default 0.025
@@ -1869,7 +1893,8 @@ def space_sum_rule(
             ens_avg_csv[0],
             'ensemble_long',
             geometry,
-            group
+            group,
+            topology
         )
         if property_ == 'Phi':
             scaler = getattr(property_info, size_attr)

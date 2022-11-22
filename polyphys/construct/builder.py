@@ -218,6 +218,7 @@ def bug_data_file_generator(
     data_template: str,
     trjs: List[str],
     geometry: str = 'biaixal',
+    topology: str = 'linear',
     lineage: str = 'whole',
     parser: ParserT = SumRuleCyl,
     save_to: str = './'
@@ -243,6 +244,8 @@ def bug_data_file_generator(
         data file are generated.
     geometry : {'biaxial', 'slit', 'box'}, default 'biaxial'
         Shape of the simulation box
+    topology: {'linear', 'ring'}. default 'linear'
+        Topology of the polymer
     lineage: {'segment', 'whole'}, default 'whole'
         Lineage type of children' stamps
     parser: ParserT
@@ -298,6 +301,7 @@ def bug_data_file_generator(
             trj,
             geometry,
             'bug',
+            topology
         )
         bug_data_name = save_to + trj_info.whole + '.bug.data'
         with open(data_template, 'r') as data_in,\
