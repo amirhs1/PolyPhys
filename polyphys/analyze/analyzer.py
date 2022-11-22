@@ -38,6 +38,7 @@ def time_series(
     observations: List[str],
     parser: ParserT,
     geometry: str,
+    topology: str,
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
     tseries_properties: Optional[List[TimeSeriesT]] = None,
@@ -69,6 +70,8 @@ def time_series(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
+    topology:
+        Topology of the polymer
     is_segment: bool
         Whether `observations` are 'segment' or 'whole'
     save_to : tuple of three str
@@ -107,6 +110,7 @@ def time_series(
                     parser,
                     geometry,
                     group,
+                    topology,
                     relation='tseries',
                     save_to=save_to_whole
                 )
@@ -115,7 +119,8 @@ def time_series(
                     tseries,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
             ensembles = ensemble(
                     property_ + species,
@@ -123,6 +128,7 @@ def time_series(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'vector',
                     save_to=save_to_ens
             )
@@ -149,6 +155,7 @@ def time_series(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'tseries',
                     save_to=save_to_whole
                 )
@@ -157,7 +164,8 @@ def time_series(
                     tseries,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
             ensembles = ensemble(
                     property_ + species,
@@ -165,6 +173,7 @@ def time_series(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'vector',
                     save_to=save_to_ens
                 )
@@ -174,6 +183,7 @@ def time_series(
                 nlags,
                 alpha,
                 group,
+                topology,
                 save_to=save_to_ens
             )
             _ = ensemble_avg(
@@ -214,6 +224,7 @@ def histograms(
     observations: List[str],
     parser: ParserT,
     geometry: str,
+    topology: str,
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
     hist_properties: Optional[List[HistogramT]] = None,
@@ -242,6 +253,8 @@ def histograms(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}, default cylindrical
         Shape of the simulation box.
+    topology:
+        Topology of the polymer
     is_segment: bool, default False
         Whether `observations` are 'segment' or 'whole'
     save_to : tuple of three str
@@ -279,6 +292,7 @@ def histograms(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'histogram',
                     save_to=save_to_whole
                 )
@@ -288,6 +302,7 @@ def histograms(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'bin_edge',
                     save_to=save_to_whole
                 )
@@ -296,13 +311,15 @@ def histograms(
                     hists,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
                 edge_wholes = whole_from_file(
                     edges,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
             # 'whole' dataframes, each with a 'whole' columns.
             rho_wholes, phi_wholes = distributions_generator(
@@ -311,6 +328,7 @@ def histograms(
                 group,
                 species,
                 geometry,
+                topology,
                 direction,
                 parser,
                 save_to=save_to_whole
@@ -321,6 +339,7 @@ def histograms(
                 parser,
                 geometry,
                 group,
+                topology,
                 'vector',
                 edge_wholes=edge_wholes,
                 save_to=save_to_ens
@@ -339,6 +358,7 @@ def histograms(
                 parser,
                 geometry,
                 group,
+                topology,
                 'vector',
                 edge_wholes=edge_wholes,
                 save_to=save_to_ens
@@ -357,6 +377,7 @@ def histograms(
                 parser,
                 geometry,
                 group,
+                topology,
                 'vector',
                 edge_wholes=edge_wholes,
                 save_to=save_to_ens
@@ -387,6 +408,7 @@ def histograms(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'histogram',
                     save_to=save_to_whole
                 )
@@ -396,6 +418,7 @@ def histograms(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'bin_edge',
                     save_to=save_to_whole
                 )
@@ -410,7 +433,8 @@ def histograms(
                     edges,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
             ensembles = ensemble(
                 direction + 'Hist' + species,
@@ -418,6 +442,7 @@ def histograms(
                 parser,
                 geometry,
                 group,
+                topology,
                 'vector',
                 edge_wholes=edge_wholes,
                 save_to=save_to_ens
@@ -436,6 +461,7 @@ def histograms_2d(
     observations: List[str],
     parser: ParserT,
     geometry: str,
+    topology: str,
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
     hist2d_properties: Optional[List[HistogramT]] = None,
@@ -464,6 +490,8 @@ def histograms_2d(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}, default cylindrical
         Shape of the simulation box.
+    topology:
+        Topology of the polymer
     is_segment: bool, default False
         Whether `observations` are 'segment' or 'whole'
     save_to : tuple of three str
@@ -491,6 +519,7 @@ def histograms_2d(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'histogram',
                     save_to=save_to_whole
                 )
@@ -499,7 +528,8 @@ def histograms_2d(
                     hists,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
             ensembles = ensemble(
                 direction + 'Hist' + species,
@@ -507,6 +537,7 @@ def histograms_2d(
                 parser,
                 geometry,
                 group,
+                topology,
                 'matrix',
                 save_to=save_to_ens
             )
@@ -531,6 +562,7 @@ def histograms_2d(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'bin_edge',
                     save_to=save_to_whole
                 )
@@ -539,7 +571,8 @@ def histograms_2d(
                     edges,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
             ensembles = ensemble(
                 direction + 'Edge',
@@ -547,6 +580,7 @@ def histograms_2d(
                 parser,
                 geometry,
                 group,
+                topology,
                 'bin_edge',
                 save_to=save_to_ens
             )
@@ -564,6 +598,7 @@ def nonscalar_time_series(
     observations: List[str],
     parser: ParserT,
     geometry: str,
+    topology: str,
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
     nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
@@ -610,6 +645,8 @@ def nonscalar_time_series(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
+    topology:
+        Topology of the polymer
     is_segment: bool
         Whether `observations` are 'segment' or 'whole'
     save_to : tuple of three str
@@ -642,6 +679,7 @@ def nonscalar_time_series(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'tseries',
                     save_to=save_to_whole
                 )
@@ -650,7 +688,8 @@ def nonscalar_time_series(
                     tseries,
                     parser,
                     geometry,
-                    group
+                    group,
+                    topology
                 )
             # Cleaning process on "clustersHistTFoci":
             # See `polyphys.analyze.clusters.count_clusters` for why we have to
@@ -681,6 +720,7 @@ def nonscalar_time_series(
                     parser,
                     geometry,
                     group,
+                    topology,
                     'vector',
                     save_to=save_to_ens
             )
@@ -689,6 +729,7 @@ def nonscalar_time_series(
                     ensembles,
                     geometry,
                     group,
+                    topology,
                     'dataframe',
                     save_to=save_to_ens_avg
             )
@@ -705,7 +746,8 @@ def nonscalar_time_series(
                         whole_paths,
                         parser,
                         geometry,
-                        group
+                        group,
+                        topology
                         )
                 property_old = property_
                 property_ = 'pairDistHist'
@@ -722,6 +764,7 @@ def nonscalar_time_series(
                         parser,
                         geometry,
                         group,
+                        topology,
                         'dataframe',
                         save_to=save_to_ens_avg
                 )
@@ -741,6 +784,7 @@ def nonscalar_time_series(
                         parser,
                         geometry,
                         group,
+                        topology,
                         'dataframe',
                         save_to=save_to_ens_avg
                 )
@@ -758,6 +802,7 @@ def nonscalar_time_series(
                         parser,
                         geometry,
                         group,
+                        topology,
                         'dataframe',
                         save_to=save_to_ens_avg
                 )
@@ -773,6 +818,7 @@ def nonscalar_time_series(
                         parser,
                         geometry,
                         group,
+                        topology,
                         'tseries',
                         save_to=save_to_whole
                     )
@@ -781,7 +827,8 @@ def nonscalar_time_series(
                         tseries,
                         parser,
                         geometry,
-                        group
+                        group,
+                        topology
                     )
                 # changing property_ name after averaging:
                 ensembles = ensemble(
@@ -790,6 +837,7 @@ def nonscalar_time_series(
                         parser,
                         geometry,
                         group,
+                        topology,
                         'matrix',
                         save_to=save_to_ens
                 )
@@ -798,381 +846,92 @@ def nonscalar_time_series(
                         ensembles,
                         geometry,
                         group,
+                        topology,
                         'ndarray',
                         save_to=save_to_ens_avg
                 )
 
 
-def analyze_bug(
-    input_database: str,
-    hierarchy: str,
-    parser: ParserT,
+def stamps(
+    observations: List[str],
+    group: str,
     geometry: str,
     is_segment: bool,
-    tseries_properties: Optional[List[TimeSeriesT]] = None,
-    acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
-    hist_properties: Optional[List[HistogramT]] = None,
-    rho_phi_hist_properties: Optional[List[HistogramT]] = None,
-    nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
-    nonscalar_mat_t_properties: Optional[List[NonScalarMatT]] = None,
-    nlags: int = 7000,
-    alpha: float = 0.05
+    save_to: Tuple[Union[str, None], Union[str, None]],
 ) -> None:
-    """read in the 'probe' observations of the 'group' particles based on the
-    `hierarchy` of directories and files from the `input_database` path to the
-    'probe' phase of a 'space' and creates the 'analysis' phase at that parent
-    directory of the 'probe' of that 'space', infers 'space' names from
-    `input_database` path and creates a 'space' directories at various stages
-    in the 'analysis' directory for both 'bug' and 'all' groups.
+    """Runs various statistical analyses on `observations` of
+    each of `HistogramT` types in a given `geometry` and then
+    writes the ensembles and ensemble-averages of time series and its
+    associated analyses to file.
 
-    `tseries_properties`, `hists_properties`, `rho_phi_hists_properties` are
-    list of tuples in which each tuple has three string members. The first
-    string is the name of a physical property, the second one is the particle
-    type, and the last one is `group` type.
+    If the `segment` is `True`, `observations` are "segements" and
+    are "horizontally" merged to create "wholes".
+
+    Issue
+    -----
+    HThis function only work for spatial distributions created by
+    SpatialDistribution class.
 
     Parameters
     ----------
-    input_database: str
-        Path to the input_database; a 'space' directory at a given 'phase'.
-    hierarchy: str
-        Hierarchy of the directories and files within the `input_database`;
-        for instance, "/N*/N*" means files that starts with "N" and are
-        located in directories starting with "N".
+    observations: list of str
+        List of path to different observations generated by 'probed'
+        trajectory files.
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
+    group : {'bug', 'nucleoid', 'all'}, default cylindrical
+        Shape of the simulation box.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     is_segment: bool
-        Whether `observations` are 'segment' (True) or 'whole' (False)
-    nonscalar_properties: list of TimeSeriesT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of nonscalar form.
-    tseries_properties: list of TimeSeriesT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of the time-series form.
-    acf_tseries_properties: list of TimeSeriesT, default None
-        A list of tuples where each tuple has three members: the property
-        name, species, and group of a 'time-series' property. For
-        `cls_tseries_properties`, the the auto correlation function (AFC) is
-        also computed.
-    hist_properties: list of HistogramT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of the histogram form.
-    rho_phi_hist_properties: list of HistogramT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of the histogram form; however, in contrast to
-        `hists_properties`, the local number denisty and volume fraction of
-        `rho_phi_hists_properties` are also calculated.
-    nonscalar_hist_t_properties: list of NonScalarTimeSeriesT, default None
-        A list of tuples in which each tuple has four string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, the third one is `group` type, and the last one
-        is the axis over which the. These physical
-        properties are all of nonscalar form.
-    nonscalar_mat_t_properties: list of NonScalarTimeSeriesT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of nonscalar form.
-    nlags: int, default 7000
-        Maximum lag in the auto correlation function (AFC).
-    alpha: float, default 0.05
-        If a number is given, the confidence intervals for the given level
-        are returned. For instance if alpha=.05, 95 % confidence intervals
-        are returned where the standard deviation is computed according to
-        Bartlett”s formula.
+        Whether `observations` are 'segment' or 'whole'
+    save_to : tuple of three str
+        Absolute or relative path of the directories to which wholes,
+        ensembles, and ensemble-aveages are saved.
     """
-    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    observations = glob(input_database + hierarchy)
-    if observations == []:
-        raise ValueError(
-            "File not found in "
-            f"'{input_database + hierarchy}'"
-            )
-    # 'bug' save_to paths:
-    save_to_ens = database_path(
-        input_database, 'analysis', stage='ens', group='bug'
-    )
-    save_to_ens_avg = database_path(
-        input_database, 'analysis', stage='ensAvg', group='bug'
-    )
-    # stamps:
-    stamp_files = sort_filenames(observations, fmts=['-stamps.csv'])
-
+    save_to_whole, save_to_ens, save_to_ens_avg = save_to
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
+    invalid_keyword(geometry,  ['cylindrical', 'slit', 'cubic'])
     if is_segment is True:
-        save_to_whole = database_path(
-            input_database, 'analysis', stage='wholeSim', group='bug'
-        )
         segments_stamps = children_stamps(
-            stamp_files,
-            'bug',
+            observations,
+            group,
             'segment',  # lineage of the children stamps
             save_to=save_to_whole  # save all the segment stamps in one file
         )
         whole_stamps = parents_stamps(
             segments_stamps,
             geometry,
-            'bug',
+            group,
             'segment',  # lineage of the children stamps
             save_to=save_to_ens  # save all the whole stamps
         )
     else:
-        save_to_whole = None
         whole_stamps = children_stamps(
-            stamp_files,
-            'bug',
+            observations,
+            group,
             'whole',  # lineage of the children stamps
             save_to=save_to_ens  # save all the whole stamps
         )
     _ = parents_stamps(
         whole_stamps,
         geometry,
-        'bug',
+        group,
         'whole',  # lineage of the children stamps
         save_to=save_to_ens_avg  # save all the ensemble-averaged stamps
     )
-    # physical properties
-    if tseries_properties is not None:
-        time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            tseries_properties=tseries_properties,
-        )
-    if acf_tseries_properties is not None:
-        time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            acf_tseries_properties=acf_tseries_properties,
-            nlags=nlags,
-            alpha=alpha
-        )
-    if hist_properties is not None:
-        histograms(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            hist_properties=hist_properties,
-        )
-    if rho_phi_hist_properties is not None:
-        histograms(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            rho_phi_hist_properties=rho_phi_hist_properties,
-        )
-    if nonscalar_hist_t_properties is not None:
-        nonscalar_time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_hist_t_properties=nonscalar_hist_t_properties,
-        )
-    if nonscalar_mat_t_properties is not None:
-        nonscalar_time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_mat_t_properties=nonscalar_mat_t_properties,
-        )
 
 
-def analyze_bug_trans_size(
+def analyze_measures(
     input_database: str,
     hierarchy: str,
     parser: ParserT,
+    group: str,
     geometry: str,
+    topology: str,
     is_segment: bool,
-    tseries_properties: Optional[List[TimeSeriesT]] = None,
-    acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
-    hist_properties: Optional[List[HistogramT]] = None,
-    rho_phi_hist_properties: Optional[List[HistogramT]] = None,
-    nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
-    nonscalar_mat_t_properties: Optional[List[NonScalarMatT]] = None,
-    nlags: int = 7000,
-    alpha: float = 0.05
-) -> None:
-    """read in the 'probe' observations of the 'group' particles based on the
-    `hierarchy` of directories and files from the `input_database` path to the
-    'probe' phase of a 'space' and creates the 'analysis' phase at that parent
-    directory of the 'probe' of that 'space', infers 'space' names from
-    `input_database` path and creates a 'space' directories at various stages
-    in the 'analysis' directory for both 'bug' and 'all' groups.
-
-    `tseries_properties`, `hists_properties`, `rho_phi_hists_properties` are
-    list of tuples in which each tuple has three string members. The first
-    string is the name of a physical property, the second one is the particle
-    type, and the last one is `group` type.
-
-    Parameters
-    ----------
-    input_database: str
-        Path to the input_database; a 'space' directory at a given 'phase'.
-    hierarchy: str
-        Hierarchy of the directories and files within the `input_database`;
-        for instance, "/N*/N*" means files that starts with "N" and are
-        located in directories starting with "N".
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
-    geometry : {'cylindrical', 'slit', 'cubic'}
-        Shape of the simulation box.
-    is_segment: bool
-        Whether `observations` are 'segment' (True) or 'whole' (False)
-    nonscalar_properties: list of TimeSeriesT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of nonscalar form.
-    tseries_properties: list of TimeSeriesT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of the time-series form.
-    acf_tseries_properties: list of TimeSeriesT, default None
-        A list of tuples where each tuple has three members: the property
-        name, species, and group of a 'time-series' property. For
-        `cls_tseries_properties`, the the auto correlation function (AFC) is
-        also computed.
-    hist_properties: list of HistogramT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of the histogram form.
-    rho_phi_hist_properties: list of HistogramT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of the histogram form; however, in contrast to
-        `hists_properties`, the local number denisty and volume fraction of
-        `rho_phi_hists_properties` are also calculated.
-    nonscalar_hist_t_properties: list of NonScalarTimeSeriesT, default None
-        A list of tuples in which each tuple has four string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, the third one is `group` type, and the last one
-        is the axis over which the. These physical
-        properties are all of nonscalar form.
-    nonscalar_mat_t_properties: list of NonScalarTimeSeriesT, default None
-        A list of tuples in which each tuple has three string members. The
-        first string is the name of a physical property, the second one is
-        the particletype, and the last one is `group` type. These physical
-        properties are all of nonscalar form.
-    nlags: int, default 7000
-        Maximum lag in the auto correlation function (AFC).
-    alpha: float, default 0.05
-        If a number is given, the confidence intervals for the given level
-        are returned. For instance if alpha=.05, 95 % confidence intervals
-        are returned where the standard deviation is computed according to
-        Bartlett”s formula.
-    """
-    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    observations = glob(input_database + hierarchy)
-    if observations == []:
-        raise ValueError(
-            "File not found in "
-            f"'{input_database + hierarchy}'"
-            )
-    # 'bug' save_to paths:
-    save_to_ens = database_path(
-        input_database, 'analysis', stage='ens', group='bug'
-    )
-    save_to_ens_avg = database_path(
-        input_database, 'analysis', stage='ensAvg', group='bug'
-    )
-
-    if is_segment is True:
-        save_to_whole = database_path(
-            input_database, 'analysis', stage='wholeSim', group='bug'
-        )
-    else:
-        save_to_whole = None
-    # physical properties
-    if tseries_properties is not None:
-        time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            tseries_properties=tseries_properties,
-        )
-    if acf_tseries_properties is not None:
-        time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            acf_tseries_properties=acf_tseries_properties,
-            nlags=nlags,
-            alpha=alpha
-        )
-    if hist_properties is not None:
-        histograms(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            hist_properties=hist_properties,
-        )
-    if rho_phi_hist_properties is not None:
-        histograms(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            rho_phi_hist_properties=rho_phi_hist_properties,
-        )
-    if nonscalar_hist_t_properties is not None:
-        nonscalar_time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_hist_t_properties=nonscalar_hist_t_properties,
-        )
-    if nonscalar_mat_t_properties is not None:
-        nonscalar_time_series(
-            observations,
-            parser,
-            geometry,
-            is_segment,
-            (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_mat_t_properties=nonscalar_mat_t_properties,
-        )
-
-
-def analyze_all(
-    input_database: str,
-    hierarchy: str,
-    parser: ParserT,
-    geometry: str,
-    is_segment: bool,
+    has_stamp: bool,
     tseries_properties: Optional[List[TimeSeriesT]] = None,
     acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
     hist_properties: Optional[List[HistogramT]] = None,
@@ -1209,8 +968,12 @@ def analyze_all(
         or filepathes to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
+    topology:
+        Topology of the polymer
     is_segment: bool
         Whether `observations` are 'segment' (True) or 'whole' (False)
+    has_stamp: bool.
+        Whether `observations` have 'stamp' files (True) or 'whole' (False).
     nonscalar_properties: list of TimeSeriesT, default None
         A list of tuples in which each tuple has three string members. The
         first string is the name of a physical property, the second one is
@@ -1268,28 +1031,42 @@ def analyze_all(
         Bartlett”s formula.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     observations = glob(input_database + hierarchy)
     if observations == []:
         raise ValueError(
             "File not found in "
             f"'{input_database + hierarchy}'"
             )
-    # 'bug' save_to paths:
+    # save_to paths:
     save_to_ens = database_path(
-        input_database, 'analysis', stage='ens', group='all'
+        input_database, 'analysis', stage='ens', group=group
     )
     save_to_ens_avg = database_path(
-        input_database, 'analysis', stage='ensAvg', group='all'
+        input_database, 'analysis', stage='ensAvg', group=group
     )
-    save_to_whole = database_path(
-        input_database, 'analysis', stage='wholeSim', group='all'
-       )
+    save_to_whole = None
+    if is_segment is True:
+        save_to_whole = database_path(
+            input_database, 'analysis', stage='wholeSim', group=group
+        )
+    # stamps:
+    if has_stamp is True:
+        stamp_files = sort_filenames(observations, fmts=['-stamps.csv'])
+        stamps(
+            stamp_files,
+            group,
+            geometry,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg)
+        )
     # physical properties
     if tseries_properties is not None:
         time_series(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             tseries_properties=tseries_properties,
@@ -1299,6 +1076,7 @@ def analyze_all(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             acf_tseries_properties=acf_tseries_properties,
@@ -1310,6 +1088,7 @@ def analyze_all(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             hist_properties=hist_properties,
@@ -1319,6 +1098,7 @@ def analyze_all(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             rho_phi_hist_properties=rho_phi_hist_properties,
@@ -1328,6 +1108,7 @@ def analyze_all(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             nonscalar_hist_t_properties=nonscalar_hist_t_properties,
@@ -1337,6 +1118,7 @@ def analyze_all(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             nonscalar_mat_t_properties=nonscalar_mat_t_properties,
@@ -1346,6 +1128,7 @@ def analyze_all(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             hist2d_properties=hist2d_properties,
@@ -1355,9 +1138,187 @@ def analyze_all(
             observations,
             parser,
             geometry,
+            topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
             hist2d_edges=hist2d_edges,
+        )
+
+
+def analyze_bug_trans_size(
+    input_database: str,
+    hierarchy: str,
+    parser: ParserT,
+    geometry: str,
+    topology: str,
+    is_segment: bool,
+    tseries_properties: Optional[List[TimeSeriesT]] = None,
+    acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
+    hist_properties: Optional[List[HistogramT]] = None,
+    rho_phi_hist_properties: Optional[List[HistogramT]] = None,
+    nonscalar_hist_t_properties: Optional[List[NonScalarHistT]] = None,
+    nonscalar_mat_t_properties: Optional[List[NonScalarMatT]] = None,
+    nlags: int = 7000,
+    alpha: float = 0.05
+) -> None:
+    """read in the 'probe' observations of the 'group' particles based on the
+    `hierarchy` of directories and files from the `input_database` path to the
+    'probe' phase of a 'space' and creates the 'analysis' phase at that parent
+    directory of the 'probe' of that 'space', infers 'space' names from
+    `input_database` path and creates a 'space' directories at various stages
+    in the 'analysis' directory for both 'bug' and 'all' groups.
+
+    `tseries_properties`, `hists_properties`, `rho_phi_hists_properties` are
+    list of tuples in which each tuple has three string members. The first
+    string is the name of a physical property, the second one is the particle
+    type, and the last one is `group` type.
+
+    Parameters
+    ----------
+    input_database: str
+        Path to the input_database; a 'space' directory at a given 'phase'.
+    hierarchy: str
+        Hierarchy of the directories and files within the `input_database`;
+        for instance, "/N*/N*" means files that starts with "N" and are
+        located in directories starting with "N".
+    parser: ParserT
+        A class from 'PolyPhys.manage.parser' moduel that parses filenames
+        or filepathes to infer information about a file.
+    geometry : {'cylindrical', 'slit', 'cubic'}
+        Shape of the simulation box.
+    topology:
+        Topology of the polymer
+    is_segment: bool
+        Whether `observations` are 'segment' (True) or 'whole' (False)
+    nonscalar_properties: list of TimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of nonscalar form.
+    tseries_properties: list of TimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the time-series form.
+    acf_tseries_properties: list of TimeSeriesT, default None
+        A list of tuples where each tuple has three members: the property
+        name, species, and group of a 'time-series' property. For
+        `cls_tseries_properties`, the the auto correlation function (AFC) is
+        also computed.
+    hist_properties: list of HistogramT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the histogram form.
+    rho_phi_hist_properties: list of HistogramT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of the histogram form; however, in contrast to
+        `hists_properties`, the local number denisty and volume fraction of
+        `rho_phi_hists_properties` are also calculated.
+    nonscalar_hist_t_properties: list of NonScalarTimeSeriesT, default None
+        A list of tuples in which each tuple has four string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, the third one is `group` type, and the last one
+        is the axis over which the. These physical
+        properties are all of nonscalar form.
+    nonscalar_mat_t_properties: list of NonScalarTimeSeriesT, default None
+        A list of tuples in which each tuple has three string members. The
+        first string is the name of a physical property, the second one is
+        the particletype, and the last one is `group` type. These physical
+        properties are all of nonscalar form.
+    nlags: int, default 7000
+        Maximum lag in the auto correlation function (AFC).
+    alpha: float, default 0.05
+        If a number is given, the confidence intervals for the given level
+        are returned. For instance if alpha=.05, 95 % confidence intervals
+        are returned where the standard deviation is computed according to
+        Bartlett”s formula.
+    """
+    invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
+    observations = glob(input_database + hierarchy)
+    if observations == []:
+        raise ValueError(
+            "File not found in "
+            f"'{input_database + hierarchy}'"
+            )
+    # 'bug' save_to paths:
+    save_to_ens = database_path(
+        input_database, 'analysis', stage='ens', group='bug'
+    )
+    save_to_ens_avg = database_path(
+        input_database, 'analysis', stage='ensAvg', group='bug'
+    )
+
+    if is_segment is True:
+        save_to_whole = database_path(
+            input_database, 'analysis', stage='wholeSim', group='bug'
+        )
+    else:
+        save_to_whole = None
+    # physical properties
+    if tseries_properties is not None:
+        time_series(
+            observations,
+            parser,
+            geometry,
+            topology,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            tseries_properties=tseries_properties,
+        )
+    if acf_tseries_properties is not None:
+        time_series(
+            observations,
+            parser,
+            geometry,
+            topology,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            acf_tseries_properties=acf_tseries_properties,
+            nlags=nlags,
+            alpha=alpha
+        )
+    if hist_properties is not None:
+        histograms(
+            observations,
+            parser,
+            geometry,
+            topology,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            hist_properties=hist_properties,
+        )
+    if rho_phi_hist_properties is not None:
+        histograms(
+            observations,
+            parser,
+            geometry,
+            topology,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            rho_phi_hist_properties=rho_phi_hist_properties,
+        )
+    if nonscalar_hist_t_properties is not None:
+        nonscalar_time_series(
+            observations,
+            parser,
+            geometry,
+            topology,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            nonscalar_hist_t_properties=nonscalar_hist_t_properties,
+        )
+    if nonscalar_mat_t_properties is not None:
+        nonscalar_time_series(
+            observations,
+            parser,
+            geometry,
+            topology,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            nonscalar_mat_t_properties=nonscalar_mat_t_properties,
         )
 
 

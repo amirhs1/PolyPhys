@@ -93,7 +93,7 @@ def acf_generator(
         are returned. For instance if alpha=.05, 95 % confidence intervals
         are returned where the standard deviation is computed according to
         Bartlett”s formula.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
     save_to : str, default None
         Absolute/relative path of a directory to which outputs are saved.
@@ -116,7 +116,7 @@ def acf_generator(
     These three dictionaries are also written to memory as csv files if
     save_to is not None.
     """
-    invalid_keyword(group, ['bug', 'all'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     acfs = {}
     lower_cls = {}
     upper_cls = {}
@@ -308,6 +308,9 @@ def fit_wholes(
     func_name: str,
     property_pattern: str,
     parser: ParserT,
+    group: str,
+    geometry: str,
+    topology: str,
     x_type: str = 'index',
     scale: str = None,
     length: int = 50000,
@@ -345,6 +348,14 @@ def fit_wholes(
     parser: ParserT
         A class from 'PolyPhys.manage.parser' moduel that parses filenames
         or filepathes to infer information about a file.
+    group: str in {'bug', 'all'}
+        The type of the particle group.
+    species: str in {'Mon', 'Crd', 'Foci'}
+        The species of particles.
+    geometry: str in {'cylindrical', 'slit', 'cubic'}
+        The shape of the simulation box.
+    topology: str in {'ring', 'linear'}
+        The topology of the polymer.
     x_type: {'index', 'time'}, default 'index'
         Whether use the 'index' of the data set as x variable or use the real
         'time' of simulation as x vaiable.
@@ -425,9 +436,10 @@ def fit_wholes(
             whole_info = parser(
                 whole_name,
                 'whole',
-                'biaxial',
-                'bug',
-                ispath=False
+                geometry,
+                group,
+                topology,
+                ispath=False,
             )
             whole_data = [whole_name]
             y = property_df.loc[:length, col].values
@@ -617,3 +629,45 @@ def fit_exp_wholes(
          )
         fit_df.to_csv(save_to + output + ".csv", index=False)
     return fit_df
+
+
+def bond_info(
+    positions: np.ndarray,
+    topology: str
+) -> tuple[np.ndarray, np.ndarray]:
+    """Calculate all the bond lengths and the cosines of the angles between all
+    the pairs of bond vectors based on the `positions` of the monomers in a
+    given polymer with a given `topology`.
+
+    `n_bonds=n_atoms-1` for 'linear' topology while `n_bonds=n_atoms` for
+    'ring' topology.
+
+    Parameters
+    ----------
+    positions: np.NDArray
+        A 2D array of shape n_atoms * n_dims containing the postions of the
+        point-like monomers connected by the (spring-like) bonds
+    topology: str
+        The topology of the polymer.
+
+    Return
+    ------
+    bond_lengths: np.ndarray
+        An array of size `n_bonds` containing the bond lengths.
+    cosine_corrs: np.ndarray
+        An array of size `n_bonds` containing the cosines of the angles between
+        all the pairs of vectors. The cosines_ij are accomolated based on their
+        lags; for example, there are `nbonds` cosines with lga `i-j=1`. Hence,
+        `cosine_corr[k]` is the sum of `k` cosines with lag `i-j=k`.
+    """
+    chain_topos = {'linear': 'raise', 'ring': 'wrap'}
+    bonds = positions - np.take(
+        positions, range(1, 201), axis=0, mode=chain_topos[topology])
+    n_bonds, _ = bonds.shape
+    cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
+    bond_lengths = np.linalg.norm(bonds, axis=1).reshape(n_bonds, 1)
+    bonds = np.divide(bonds, bond_lengths)
+    cosines = np.dot(bonds, bonds.T)
+    for i in range(n_bonds):
+        cosine_corrs[:n_bonds-i] += cosines[i, i:]
+    return bond_lengths, cosine_corrs
