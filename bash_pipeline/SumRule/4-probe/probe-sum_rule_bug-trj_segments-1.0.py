@@ -27,6 +27,7 @@ for bug_trj in bug_trjs:
         topo_lineage,
         'cylindrical',
         group,
+        'linear'
     )
     # all the frames in the last segment are probed:
     if trj_info.segment_id == max_segment_id:

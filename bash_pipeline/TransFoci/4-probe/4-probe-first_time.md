@@ -1,6 +1,8 @@
 # How to use GNU Parallel to run **probe** scripts in the **trj**   directory
 
-**Caution:** Sometimes instead of **ns#nl#al#D#ac#-___** pattern, you have **ns#nl#al#D#ac#phic#-___** pattern.
+**Caution:** Different projects have differant **PACE_PROJECT_PATTERN** project patterns. Below, **PACE_PROJECT_PATTERN=ns#nl#al#D#ac#** which is for the **TransFociCyl** project.
+
+**Caution:** Sometimes instead of **SPACE_PROJECT_PATTERN-___** pattern, you have **SPACE_PROJECT_PATTERNphic#-___** pattern.
 
 **Caution:** Update the *PROBING_PACKAGE* with running the following commands Go to the *$HOME/github/PROBING_PACKAGE*:
     1. Run **git pull git@github.com:amirhs1/PROBING_PACKAGE.git master** to pull from repository.

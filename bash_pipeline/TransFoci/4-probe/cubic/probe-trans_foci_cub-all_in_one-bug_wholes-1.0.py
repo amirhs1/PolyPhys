@@ -35,7 +35,7 @@ max_segment_id = len(all_trjs)
 
 # it is assumed that the all trjs are numbers from 1 to max_segment_id
 for all_trj in all_trjs:
-    trj_info = TransFociCub(all_trj, topo_lineage, 'cubic', group)
+    trj_info = TransFociCub(all_trj, topo_lineage, 'cubic', group, 'ring')
     # all the frames in the last segment are probed:
     if trj_info.segment_id == max_segment_id:
         prober.trans_foci_all_cubic(

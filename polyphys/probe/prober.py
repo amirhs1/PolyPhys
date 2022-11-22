@@ -8,7 +8,7 @@ from polyphys.manage.typer import ParserT
 from polyphys.manage.parser import SumRuleCyl, TransFociCyl, \
     TransFociCub, HnsCub
 from polyphys.manage.organizer import invalid_keyword
-from polyphys.analyze import clusters
+from polyphys.analyze import clusters, correlations
 import warnings
 
 
@@ -17,6 +17,7 @@ def log_stat(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str,
     lineage: str,
     save_to: str = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -47,9 +48,10 @@ def log_stat(
     logname = logname.split("/")[-1]
     log_info = parser(
         logname,
-        geometry=geometry,
-        group=group,
-        lineage=lineage,
+        lineage,
+        geometry,
+        group,
+        topology,
         ispath=False
     )
     run_stat = {
@@ -156,6 +158,7 @@ def thermo_multi(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str,
     lineage: str,
     save_to: str = None
 ) -> pd.DataFrame:
@@ -242,9 +245,10 @@ def thermo_multi(
     thermo.reset_index(inplace=True, drop=True)
     log_info = parser(
         logname,
-        geometry=geometry,
-        group=group,
-        lineage=lineage,
+        lineage,
+        geometry,
+        group,
+        topology,
         ispath=False
     )
     for lineage_name in log_info.genealogy:
@@ -293,14 +297,14 @@ def thermo_one_and_custom(
     with open(logpath, 'r') as logfile:
         line = logfile.readline()
         loop_counter = 1  # counts the # of runs/loops in a log
-        while(line):
+        while line:
             if line.startswith("Step"):
                 if loop_counter == 1:
                     headers = [word.strip() for word in line.split()]
                     thermo = {header: [] for header in headers}
                 loop_counter += 1
                 line = logfile.readline()
-                while(line):
+                while line:
                     if line.startswith("Loop time of "):
                         break
                     try:
@@ -330,6 +334,7 @@ def thermo_one(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str,
     lineage: str,
     save_to: str = None
 ) -> pd.DataFrame:
@@ -366,14 +371,13 @@ def thermo_one(
     }
     with open(logpath, 'r') as logfile:
         line = logfile.readline()
-        while(line):
+        while line:
             if line.startswith("Step Temp E_pair E_mol TotEng Press"):
                 line = logfile.readline()
-                while(line):
+                while line:
                     if line.startswith("Loop time of "):
                         break
                     try:
-                        #print(line)
                         words = [float(i) for i in line.strip().split()]
                         thermo["Step"].append(int(words[0]))  # Step
                         thermo["Temp"].append(float(words[1]))  # Temp
@@ -381,12 +385,10 @@ def thermo_one(
                         thermo["E_mol"].append(float(words[3]))  # E_mol
                         thermo["TotEng"].append(float(words[4]))  # TotEng
                         thermo["Press"].append(float(words[5]))  # Press
-                    #except (ValueError, IndexError) as error:
-                    except ValueError as error:
+                    # except (ValueError, IndexError) as error:
+                    except ValueError:
                         # Some text has snuck into the thermo output,
                         # this text is ignored.
-                        #print(error)
-                        #print(line)
                         pass
                     line = logfile.readline()
             else:
@@ -395,9 +397,10 @@ def thermo_one(
     thermo.drop_duplicates(inplace=True)
     log_info = parser(
         logname,
-        geometry=geometry,
-        group=group,
-        lineage=lineage,
+        lineage,
+        geometry,
+        group,
+        topology,
         ispath=False
     )
     for lineage_name in log_info.genealogy:
@@ -930,6 +933,7 @@ def sum_rule_bug_cyl(
         lineage,
         'cylindrical',
         'bug',
+        'linear',
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -1041,7 +1045,8 @@ def sum_rule_bug_cyl_flory_hist(
         trajectory,
         lineage,
         'cylindrical',
-        'bug'
+        'bug',
+        'linear'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -1176,7 +1181,8 @@ def sum_rule_bug_cyl_rmsd(
         trajectory,
         lineage,
         'cylindrical',
-        'bug'
+        'bug',
+        'linear'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print(f"Doing RMSD analysis on {sim_name} ...\n")
@@ -1249,7 +1255,8 @@ def sum_rule_all_cyl_hist1d(
         trajectory,
         lineage,
         'cylindrical',
-        'all'
+        'all',
+        'linear'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -1491,6 +1498,7 @@ def sum_rule_all_cyl_hist2d(
         lineage,
         'cylindrical',
         'all',
+        'linear'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -1792,7 +1800,8 @@ def sum_rule_all_cyl(
         trajectory,
         lineage,
         'cylindrical',
-        'all'
+        'all',
+        'linear'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -2245,7 +2254,8 @@ def trans_fuci_bug_cyl(
         trajectory,
         lineage,
         'cylindrical'
-        'bug'
+        'bug',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -2381,7 +2391,8 @@ def trans_fuci_bug_cyl_transverse_size(
         trajectory,
         lineage,
         'cylindrical',
-        'bug'
+        'bug',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -2449,7 +2460,8 @@ def trans_foci_all_cyl_hist1d(
         trajectory,
         lineage,
         'cylindrical',
-        'all'
+        'all',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -2777,7 +2789,8 @@ def trans_foci_all_cyl_hist2d(
         trajectory,
         lineage,
         'cylindrical',
-        'all'
+        'all',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...")
@@ -3242,7 +3255,8 @@ def trans_foci_all_cyl(
         trajectory,
         lineage,
         'cylindrical',
-        'all'
+        'all',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -3942,7 +3956,8 @@ def trans_fuci_bug_cub(
         trajectory,
         lineage,
         'cubic',
-        'bug'
+        'bug',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -4070,7 +4085,8 @@ def trans_foci_all_cub(
         trajectory,
         lineage,
         'cylindrical',
-        'all'
+        'all',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -4609,7 +4625,8 @@ def hns_nucleoid_cub(
         trajectory,
         lineage,
         'cubic',
-        'nucleoid'
+        'nucleoid',
+        'ring'
     )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
@@ -4633,14 +4650,18 @@ def hns_nucleoid_cub(
         n_frames = cell.trajectory.n_frames
     # selecting atom groups
     bug = cell.select_atoms('resid 1')  # the bug
-    hns_hole = cell.select_atoms('type 2')  # the hns holes
-    hns_core = cell.select_atoms('type 3')  # the hns cores
+    # hns_hole = cell.select_atoms('type 2')  # the hns holes
+    # hns_core = cell.select_atoms('type 3')  # the hns cores
     # defining collectors
-    # -bug:
+    # bug:
     gyr_t = []
     principal_axes_t = np.empty([0, 3, 3])
     asphericity_t = []
     shape_parameter_t = []
+    # bond info
+    n_bonds = len(bug.bonds.indices)
+    bond_lengths = np.zeros(n_bonds, dtype=np.float64)
+    cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
     for _ in sliced_trj:
         # bug:
         # -various measures of chain size
@@ -4653,37 +4674,26 @@ def hns_nucleoid_cub(
             axis=0
         )
         shape_parameter_t.append(bug.shape_parameter(pbc=False))
-        # foci:
-        dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
-        foci_pair_dist = np.triu(dist_sq_mat, 1)
-        foci_pair_dist = np.sqrt(foci_pair_dist)
-        # keep atom ids on the diag
-        np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
-        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
-        dir_contacts = clusters.direct_contact(dist_sq_mat, cluster_cutoff)
-        dir_contacts_t = np.append(
-            dir_contacts_t,
-            np.array([dir_contacts]),
-            axis=0
-        )
-        bonds_stat = clusters.count_bonds(dir_contacts)
-        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
-        contacts = clusters.contact_matrix(dir_contacts)
-        clusters_stat = clusters.count_clusters(contacts)
-        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+        # bug:
+        bond_dummy, cosine_dummy = correlations.bond_info(
+            bug.positions,
+            sim_info.topology
+            )
+        bond_lengths += bond_dummy.reshape(200)
+        cosine_corrs += cosine_dummy
     # Saving collectors to memory
-    # -bug
+    # bug
     np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
     np.save(save_to + sim_name + '-asphericityTMon.npy',
             np.array(asphericity_t)
             )
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
     np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
-    # -foci
-    np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
-    np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
-    np.save(save_to + sim_name + '-bondsHistTFoci.npy', bonds_t)
-    np.save(save_to + sim_name + '-clustersHistTFoci.npy', clusters_t)
+    bond_lengths = bond_lengths / n_frames
+    bonds_per_lag = np.arange(n_bonds, 0, -1)
+    cosine_corrs = cosine_corrs / (n_frames * bonds_per_lag)
+    np.save(save_to + sim_name + '-bondLengthVec.npy', bond_lengths)
+    np.save(save_to + sim_name + '-bondCosineCorrVec.npy', cosine_corrs)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)

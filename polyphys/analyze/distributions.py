@@ -2003,6 +2003,7 @@ def distributions_generator(
     group: str,
     species: str,
     geometry: str,
+    topology: str,
     direction: str,
     parser: ParserT,
     save_to: Optional[str] = None,
@@ -2023,8 +2024,10 @@ def distributions_generator(
         The type of the particle group.
     species: str in {'Mon', 'Crd', 'Foci'}
         The species of particles.
-    geometry : str in {'cylindrical', 'slit', 'cubic'}
+    geometry: str in {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
+    topology: str in {'ring', 'linear'}
+        The topology of the polymer.
     direction: str in {'azimuthal', 'polar', 'radial', 'longitudinal'}
         The direction of interest in the `geometry` of interest.
     parser: ParserT
@@ -2067,7 +2070,8 @@ def distributions_generator(
             'whole',
             geometry,
             group,
-            ispath=False
+            topology,
+            ispath=False,
         )
         distributions = SpatialDistribution(
             freq,

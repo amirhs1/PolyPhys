@@ -15,6 +15,7 @@ class ParserBase(ABC):
     lineage: str
     geometry: str
     group: str
+    topology: str
     ispath: bool = True
     """
     parses a `name` (which can be the nale of a file or the whole path to that
@@ -31,9 +32,11 @@ class ParserBase(ABC):
         Type of the lineage of the name.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
-    group: {'bug', 'all'}
+    group: {'bug', 'nuceloid', 'all'}
         Type of the particle group.  'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
+    topology:
+        The topology of the polymer.
     ispath: bool, default True
         Whether the name is a filepath or a simple name.
 
@@ -49,11 +52,13 @@ class ParserBase(ABC):
         Type of the lineage of the name.
     _geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
-    _group: {'bug', 'all'}
+    _group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.  'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
     _ispath: bool, default True
         Whether a `name` is a filename or a filepath.
+    _topology: str, default 'linear'
+        The topology of the polymer.
     lineage_name: str
         The unique name of type extracted from self.fullname
 
@@ -111,6 +116,7 @@ class ParserBase(ABC):
         lineage: str,
         geometry: str,
         group: str,
+        topology: str,
         ispath: bool = True,
     ) -> None:
         self.filepath = name
@@ -118,6 +124,7 @@ class ParserBase(ABC):
         self._lineage = lineage
         self._geometry = geometry
         self._group = group
+        self._topology = topology
         self._ispath = ispath
         if self._ispath is True:
             self.filename, _ = os.path.splitext(self.filepath)
@@ -281,6 +288,36 @@ class ParserBase(ABC):
         """
         pass
 
+    @property
+    def topology(self) -> bool:
+        """
+        gets the current `ispath`.
+
+        Returns
+        -------
+        str
+            returns the current `ispath`.
+        """
+        return self._topology
+
+    @topology.setter
+    def _set_topology(self, topology: str) -> None:
+        """
+        checks and sets the `group` of a given name.
+
+        Parameters
+        ----------
+        topolgy : str
+            Type of the polymer group. 'linear' is used for a linear polymer.
+            'ring' is used for a ring/circular polymer.
+
+        Raises
+        ------
+        ValueError
+            Riases if the atom `topology` is invalid.
+        """
+        self._topology = topology
+
     @abstractmethod
     def _initiate_attributes(self) -> None:
         """
@@ -328,6 +365,7 @@ class SumRuleCyl(ParserBase):
     lineage: str
     geometry: str
     group: str
+    topology: str
     ispath: bool = True
     """
     parses a `name` (which can be the nale of a file or the whole path to that
@@ -376,9 +414,11 @@ class SumRuleCyl(ParserBase):
         Type of the lineage of the name.
     geometry: 'cylindrical'
         Shape of the simulation box.
-    group: {'bug', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group. 'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
+    topology:
+        The topology of the polymer.
     ispath: bool, default True
         Whether the name is a filepath or a simple name.
 
@@ -394,11 +434,13 @@ class SumRuleCyl(ParserBase):
         Type of the lineage of the name.
     _geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
-    _group: {'bug', 'all'}
+    _group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.  'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
     _ispath: bool, default True
         Whether the name is a filepath or a simple name.
+    _topology: str, default 'linear'
+        The topology of the polymer.
     lineage_name: str,
         The unique name of the type extracted from self.fullname
     dmon: float, default 1.0
@@ -538,9 +580,10 @@ class SumRuleCyl(ParserBase):
         lineage: str,
         geometry: str,
         group: str,
-        ispath: bool = True
+        topology: str,
+        ispath: bool = True,
     ) -> None:
-        super().__init__(name, lineage, geometry, group, ispath)
+        super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
@@ -733,6 +776,7 @@ class TransFociCyl(ParserBase):
     lineage: str
     geometry: str
     group: str
+    topology: str
     ispath: bool = True
     """
     parses a `name` (which can be the nale of a file or the whole path to that
@@ -784,6 +828,8 @@ class TransFociCyl(ParserBase):
     group: {'bug', 'all'}
         Type of the particle group. 'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
+    topology:
+        The topology of the polymer.
     ispath: bool, default True
         Whether the name is a filepath or a simple name.
 
@@ -804,6 +850,8 @@ class TransFociCyl(ParserBase):
         'all' is used for all the particles/atoms in the system.
     _ispath: bool, default True
         Whether the name is a filepath or a simple name.
+    _topology: str, default 'linear'
+        The topology of the polymer.
     lineage_name: str,
         The unique name of type extracted from self.fullname
     dmon_small: float, default 1.0
@@ -964,9 +1012,10 @@ class TransFociCyl(ParserBase):
         lineage: str,
         geometry: str,
         group: str,
-        ispath: bool = True
+        topology: str,
+        ispath: bool = True,
     ) -> None:
-        super().__init__(name, lineage, geometry, group, ispath)
+        super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
@@ -1171,6 +1220,7 @@ class TransFociCub(ParserBase):
     lineage: str
     geometry: str
     group: str
+    topology: str
     ispath: bool = True
     """
     parses a `name` (which can be the nale of a file or the whole path to that
@@ -1222,6 +1272,8 @@ class TransFociCub(ParserBase):
     group: {'bug', 'all'}
         Type of the particle group. 'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
+    topology:
+        The topology of the polymer.
     ispath: bool, default True
         Whether the name is a filepath or a simple name.
 
@@ -1242,6 +1294,8 @@ class TransFociCub(ParserBase):
         'all' is used for all the particles/atoms in the system.
     _ispath: bool, default True
         Whether the name is a filepath or a simple name.
+    _topology: str, default 'linear'
+        The topology of the polymer.
     lineage_name: str,
         The unique name of type extracted from self.fullname
     dmon_small: float, default 1.0
@@ -1368,9 +1422,10 @@ class TransFociCub(ParserBase):
         lineage: str,
         geometry: str,
         group: str,
-        ispath: bool = True
+        topology: str,
+        ispath: bool = True,
     ) -> None:
-        super().__init__(name, lineage, geometry, group, ispath)
+        super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
@@ -1569,6 +1624,7 @@ class HnsCub(ParserBase):
     lineage: str
     geometry: str
     group: str
+    topology: str
     ispath: bool = True
     """
     parses a `name` (which can be the nale of a file or the whole path to that
@@ -1620,6 +1676,8 @@ class HnsCub(ParserBase):
         Type of the particle group. 'nucleoid' is used for a single polymer
         with its nucleoid-associated proteins within the nucleoid. 'all' is
         used for all the particles/atoms in the system.
+    topology:
+        The topology of the polymer.
     ispath: bool, default True
         Whether the name is a filepath or a simple name.
 
@@ -1641,6 +1699,8 @@ class HnsCub(ParserBase):
         used for all the particles/atoms in the system.
     _ispath: bool, default True
         Whether the name is a filepath or a simple name.
+    _topology: str, default 'linear'
+        The topology of the polymer.
     lineage_name: str,
         The unique name of type extracted from self.fullname
     dmon: float, default 1.0
@@ -1769,9 +1829,10 @@ class HnsCub(ParserBase):
         lineage: str,
         geometry: str,
         group: str,
-        ispath: bool = True
+        topology: str,
+        ispath: bool = True,
     ) -> None:
-        super().__init__(name, lineage, geometry, group, ispath)
+        super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
@@ -1840,9 +1901,9 @@ class HnsCub(ParserBase):
         self.mmon = self.dmon ** 3
         self.phi_m_bulk = np.nan
         self.rho_m_bulk = np.nan
-        self.dhns = np.nan
+        self.dhns = 1.0
         self.nhns = np.nan
-        self.mhns = np.nan
+        self.mhns = self.dhns ** 3
         self.phi_hns_bulk = np.nan
         self.rho_hns_bulk = np.nan
         self.dcrowd = np.nan
@@ -1888,7 +1949,6 @@ class HnsCub(ParserBase):
                     " lineage name. Please check whether "
                     f"'{self.filename}'"
                     " is valid name or not.")
-        self.mhns = self.dhns ** 3
         self.mcrowd = self.dcrowd ** 3
 
     def _set_parents(self) -> None:
