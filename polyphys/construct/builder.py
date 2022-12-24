@@ -4,9 +4,9 @@ from typing import (
     Dict,
     Union
 )
-from polyphys.manage.organizer import invalid_keyword
-from polyphys.manage.parser import SumRuleCyl
-from polyphys.manage.typer import ParserT
+from ..manage.utilizer import invalid_keyword
+from ..manage.parser import SumRuleCyl
+from ..manage.typer import ParserT
 
 
 def parse_lammps_trj(
