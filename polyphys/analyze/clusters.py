@@ -326,7 +326,6 @@ def random_direct_contacts(
         it does not. All the diagonal elements of this matrix are 1 by the
         definition in `direct_contacts` function.
     """
-    n_atoms = 5
     # Creating direct-contacts matrix
     np.random(seed)
     dir_contacts = np.random.binomial(n=1, p=0.35, size=[n_atoms * n_atoms])

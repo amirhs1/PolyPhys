@@ -220,7 +220,7 @@ import warnings
 from ..manage.typer import EdgeT, EnsembleT, ParserT
 from ..analyze.clusters import whole_distMat_foci
 
-from .utilizer import round_up_nearest
+from .utilizer import round_up_nearest, invalid_keyword
 
 
 def camel_case_split(
@@ -296,7 +296,7 @@ def sort_filenames(
     fnames: List[str],
     fmts: List[str] = ['data', 'lammpstrj'],
     report: bool = False
-) -> List[str]:
+) -> list[tuple]:
     """
     Returns an alphanumerically sorted list of strings.
 
@@ -324,15 +324,13 @@ def sort_filenames(
         a sorted list of tuples where each tuple has `len(formats)` filenames.
 
     """
-    fnames_by_fmt = [None] * len(fmts)
+    fnames_by_fmt = []
     # a nested list where each sublist has all the files with the same
     # extension:
-    for fmt_idx, fmt_exts in enumerate(fmts):
-        fnames_by_fmt[fmt_idx] = \
-            [fname for fname in fnames if fname.endswith(fmt_exts)]
-    for fmt_idx, fnames_same_fmt in enumerate(fnames_by_fmt):
-        fnames_by_fmt[fmt_idx] = \
-            sorted(fnames_same_fmt, key=sort_by_alphanumeric)
+    for exts in fmts:
+        fnames_by_fmt.append([f for f in fnames if f.endswith(exts)])
+    for idx, fnames_same_fmt in enumerate(fnames_by_fmt):
+        fnames_by_fmt[idx] = sorted(fnames_same_fmt, key=sort_by_alphanumeric)
     fnames_sorted = list(zip(*fnames_by_fmt))
     if report:
         print("Total number of files is ", len(fnames_sorted))
@@ -340,30 +338,9 @@ def sort_filenames(
     return fnames_sorted
 
 
-def invalid_keyword(
-    keyword: str,
-    valid_keywords: List[str]
-) -> None:
-    """
-    Raises an error if `keyowrd` is not in `valid_keywords`.
-
-    Parameters
-    ----------
-    keyword: str
-        Name of the `keyword`
-    valid_keywords: array of str
-        Array of valid keywords
-    """
-    if keyword not in valid_keywords:
-        raise ValueError(
-            f"'{keyword}'"
-            " is not a valid option. Please select one of "
-            f"{valid_keywords} options.")
-
-
 def save_parent(
     name: str,
-    data: Union[np.ndarray, pd.DataFrame],
+    data: Union[np.ndarray, pd.DataFrame, dict[str, np.ndarray]],
     property_: str,
     save_to: str,
     group: str = 'bug',
@@ -1577,8 +1554,8 @@ def space_hists(
         )
         if bin_center is not None:
             ens_avg['bin_center'] = bin_center.tolist()
-        ens_avg['bin_center-norm'] = \
-            ens_avg['bin_center'] / ens_avg['bin_center'].max()
+            ens_avg['bin_center-norm'] = \
+                ens_avg['bin_center'] / ens_avg['bin_center'].max()
         if normalize is True:
             normalizer = ens_avg[property_+'-mean'].sum()
             if normalizer != 0:

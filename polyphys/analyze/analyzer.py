@@ -7,9 +7,10 @@ from typing import (
 )
 from glob import glob
 import warnings
-
+import numpy as np
+import pandas as pd
+from ..manage.utilizer import invalid_keyword
 from ..manage.organizer import (
-    invalid_keyword,
     sort_filenames,
     database_path,
     whole_from_file,
@@ -20,10 +21,6 @@ from ..manage.organizer import (
     children_stamps,
     parents_stamps
 )
-from .distributions import distributions_generator
-from .correlations import acf_generator
-import numpy as np
-import pandas as pd
 from ..manage.typer import (
     ParserT,
     TimeSeriesT,
@@ -32,6 +29,8 @@ from ..manage.typer import (
     NonScalarMatT,
     EdgeT
 )
+from .distributions import distributions_generator
+from .correlations import acf_generator
 
 
 def time_series(

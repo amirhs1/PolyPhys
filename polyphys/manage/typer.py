@@ -1,8 +1,8 @@
-from .parser import TransFociCyl, SumRuleCyl, TransFociCub, HnsCub
 from typing import Type, Union, Tuple, Dict, NewType
-
 import numpy as np
 import pandas as pd
+# pylint: disable-next=reportShadowedImports
+from .parser import (TransFociCyl, SumRuleCyl, TransFociCub, HnsCub, Snapshot)
 
 PropertyT = NewType('PropertyT', str)
 SpeciesT = NewType('SpeciesT', str)
@@ -31,3 +31,5 @@ EnsembleT = Tuple[EnsembleName, EnsWholes]
 
 FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
+
+SnapshotT = Type[Snapshot]
