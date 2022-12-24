@@ -2,7 +2,7 @@
 # organize topology and data files base on their *whole* simulation names into directories.
 for file in N*.bug.data; do
 	# trunk-ignore(shellcheck/SC2086)
-	dir=$(echo ${file} | sed -n -e 's/\(^.*\)\(\(.bug.data\).*\)/\1/p')
+	dir=$(echo $file | sed -n -e 's/\(^.*\)\(\(.bug.data\).*\)/\1/p')
 	echo "${dir}"
 	# trunk-ignore(shellcheck/SC2086)
 	trj=$(echo ${dir}*.bug.lammpstrj)

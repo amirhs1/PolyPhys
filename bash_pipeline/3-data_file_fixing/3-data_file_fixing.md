@@ -4,7 +4,7 @@
 2. Check and (if needed) fix **....all.data** files via running **fix_PairIJ_all_data_files_v---.sh**. This bash script fixes some lines in the **all** data (topology) files, so they can be read by **MDAnalysis** package. This step can be dropped if the bug/issue in **MDAnalysis** is resolved.
 **Caution**: the *fix_PairIJ_all_data_files_v#.sh* assumes the pattern of the parent directory is **N#D#ac#-trjs** and the pair style is **lj-cut**.
 3. copy **___nc0___ens1.all.data** to **fake_nc0_all.data**.
-**Caution**: Some templates are availble in [archive_technique](./archive-technique/) directory. All of these templates start **data_templete** but iti is better to use the origin ones from the simulations.
+**Caution**: Some templates are availble in [archive_technique](./archive-technique/) directory. All of these templates start **data_templete** but itis better to use the origin ones from the simulations.
 4. Check the **allLine** parameter based on the **project** and **geometry**.
 5. Chech the **for** loop based on the **project** and **geometry**.
 6. Run the **fake_bug_data.sh** script to fake **N___.bug.data** for **bug trajectories**. Since we want to use the data file to extract the mass and topology information, such a faking is ok.
