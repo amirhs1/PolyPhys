@@ -3677,7 +3677,7 @@ def trans_foci_all_cub(
     sim_info = TransFociCub(
         trajectory,
         lineage,
-        'cylindrical',
+        'cubic',
         'all',
         'ring'
     )
