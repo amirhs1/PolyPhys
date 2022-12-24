@@ -9,8 +9,9 @@ import numpy as np
 import pandas as pd
 from scipy import optimize
 import statsmodels.tsa.stattools as tsas
+
+from ..manage.utilizer import invalid_keyword
 from ..manage.organizer import (
-    invalid_keyword,
     save_parent,
     sort_filenames
 )

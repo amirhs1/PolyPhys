@@ -4,19 +4,16 @@ import numpy as np
 import pandas as pd
 import os
 import re
-from typing import TypeVar
+from typing import TypeVar, IO
 import warnings
+from collections import OrderedDict
+from .utilizer import invalid_keyword, openany_context
+
 TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
 TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
 
 
 class ParserBase(ABC):
-    name: str
-    lineage: str
-    geometry: str
-    group: str
-    topology: str
-    ispath: bool = True
     """
     parses a `name` (which can be the nale of a file or the whole path to that
     based on the value of `ispath` argument) to extract information about a
@@ -78,36 +75,43 @@ class ParserBase(ABC):
         that contains the parent-like lineage attirbutes of that `lineage`.
     """
     _lineage_attributes: dict[str, None] = {
-        'segment': None,
-        'whole': None,
-        'ensemble_long': None,
-        'ensemble': None,
-        'space': None
+        "segment": None,
+        "whole": None,
+        "ensemble_long": None,
+        "ensemble": None,
+        "space": None,
     }
     _physical_attributes: dict[str, None] = {
-        'segment': None,
-        'whole': None,
-        'ensemble_long': None,
-        'ensemble': None,
-        'space': None
+        "segment": None,
+        "whole": None,
+        "ensemble_long": None,
+        "ensemble": None,
+        "space": None,
     }
     _genealogy: dict[str, list[str]] = {
-        'segment': [
-            'lineage_name', 'segment', 'whole', 'ensemble_long', 'ensemble',
-            'space'
+        "segment": [
+            "lineage_name",
+            "segment",
+            "whole",
+            "ensemble_long",
+            "ensemble",
+            "space",
         ],
-        'whole': [
-            'lineage_name', 'whole', 'ensemble_long', 'ensemble', 'space'
+        "whole": [
+            "lineage_name",
+            "whole",
+            "ensemble_long",
+            "ensemble",
+            "space"
         ],
-        'ensemble_long': [
-            'lineage_name', 'ensemble_long', 'ensemble', 'space',
+        "ensemble_long": [
+            "lineage_name",
+            "ensemble_long",
+            "ensemble",
+            "space",
         ],
-        'ensemble': [
-            'lineage_name', 'ensemble', 'space'
-        ],
-        'space': [
-            'lineage_name', 'space'
-        ]
+        "ensemble": ["lineage_name", "ensemble", "space"],
+        "space": ["lineage_name", "space"],
     }
 
     def __init__(
@@ -120,7 +124,8 @@ class ParserBase(ABC):
         ispath: bool = True,
     ) -> None:
         self.filepath = name
-        self.filename = None
+        self.filename = ''
+        invalid_keyword(lineage, list(self._lineage_attributes.keys()))
         self._lineage = lineage
         self._geometry = geometry
         self._group = group
@@ -140,15 +145,17 @@ class ParserBase(ABC):
             Name: '{self.filename}',
             Geometry: '{self._geometry},
             Group: '{self._group}',
-            Lineage: '{self._lineage}'
+            Lineage: '{self._lineage}',
+            Polymer topology: '{self._topology}'
         """
         return observation
 
     def __repr__(self) -> str:
         return (
-            f"Observation('{self.filename}' in geometry" +
-            f" '{self._geometry}' from group '{self._group}' with" +
-            f" lineage '{self._lineage}')"
+            f"Observation('{self.filename}' in geometry"
+            + f" '{self._geometry}' from group '{self._group}' with"
+            + f" lineage '{self._lineage}' and "
+            + f" polymer topology '{self._topology}')"
         )
 
     @property
@@ -163,37 +170,12 @@ class ParserBase(ABC):
         """
         return self._lineage
 
-    @lineage.setter
-    def _set_lineage(self, lineage: str) -> None:
-        """
-        checks and set the `lineage` of a given name.
-
-        Parameters
-        ----------
-        lineage : str
-            Type of the lineage of a filename or name.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `lineage` is invalid.
-        """
-        if lineage in self._lineage_attributes.keys():
-            self._lineage = lineage
-        else:
-            types_string: str = "'" + "', '".join(
-                self._lineage_attributes.keys()) + "'"
-            raise ValueError(
-                f"'{type}' "
-                "is not a valid name type. Please select one of "
-                f"{types_string} types.")
-
     def _find_lineage_name(self) -> None:
         """
         parses the unique lineage_name (the first substring of filename
         and/or the segment keyword middle substring) of a filename.
         """
-        if self._lineage in ['segment', 'whole']:
+        if self._lineage in ["segment", "whole"]:
             # a 'segment' lineage only used in 'probe' phase
             # a 'whole' lineage used in 'probe' or 'analyze' phases
             # so its lineage_name is either ended by 'group' keyword or "-".
@@ -201,7 +183,7 @@ class ParserBase(ABC):
             self.lineage_name: str = \
                 self.filename.split("." + self._group)[0].split("-")[0]
         else:  # 'ensemble' or 'space' lineages
-            self.lineage_name = self.filename.split('-')[0]
+            self.lineage_name = self.filename.split("-")[0]
 
     @property
     def ispath(self) -> bool:
@@ -215,18 +197,6 @@ class ParserBase(ABC):
         """
         return self._ispath
 
-    @ispath.setter
-    def _set_ispath(self, ispath: bool) -> None:
-        """
-        checks and sets the `ispath` of a given name.
-
-        Parameters
-        ----------
-        ispath : bool
-            Shape of the simulation box.
-        """
-        self._ispath = ispath
-
     @property
     def geometry(self) -> str:
         """
@@ -238,24 +208,6 @@ class ParserBase(ABC):
             returns the current `geometry`.
         """
         return self._geometry
-
-    @geometry.setter
-    @abstractmethod
-    def _set_geometry(self, geometry: str) -> None:
-        """
-        checks and sets the `geometry` of a given name.
-
-        Parameters
-        ----------
-        geometry : str
-            Shape of the simulation box.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `geometry` is invalid.
-        """
-        pass
 
     @property
     def group(self) -> str:
@@ -269,27 +221,8 @@ class ParserBase(ABC):
         """
         return self._group
 
-    @group.setter
-    @abstractmethod
-    def _set_group(self, group: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        group : str
-            Type of the particle group. 'bug' is used for a single polymer.
-            'all' is used for all the particles/atoms in the system.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `group` is invalid.
-        """
-        pass
-
     @property
-    def topology(self) -> bool:
+    def topology(self) -> str:
         """
         gets the current `ispath`.
 
@@ -299,24 +232,6 @@ class ParserBase(ABC):
             returns the current `ispath`.
         """
         return self._topology
-
-    @topology.setter
-    def _set_topology(self, topology: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        topolgy : str
-            Type of the polymer group. 'linear' is used for a linear polymer.
-            'ring' is used for a ring/circular polymer.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `topology` is invalid.
-        """
-        self._topology = topology
 
     @abstractmethod
     def _initiate_attributes(self) -> None:
@@ -529,50 +444,85 @@ class SumRuleCyl(ParserBase):
         attributes are either used in the simulation/experiment/run but not use
         the `name`, or are created within this class.
     """
-    _groups = ['bug', 'all']
-    _lineage_attributes = {
-        'segment': {  # dcyl twice of r
-            'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
-            'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'ensemble_id': 'ens', 'segment_id': 'j'
+    _groups = ["bug", "all"]
+    _lineage_attributes: dict[str, dict[str, str]] = {
+        "segment": {  # dcyl twice of r
+            "nmon": "N",
+            "epsilon": "epsilon",
+            "dcyl": "r",
+            "lcyl": "lz",
+            "dcrowd": "sig",
+            "ncrowd": "nc",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+            "ensemble_id": "ens",
+            "segment_id": "j",
         },
-        'whole': {  # dcyl twice of r
-            'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
-            'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'ensemble_id': 'ens'
+        "whole": {  # dcyl twice of r
+            "nmon": "N",
+            "epsilon": "epsilon",
+            "dcyl": "r",
+            "lcyl": "lz",
+            "dcrowd": "sig",
+            "ncrowd": "nc",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+            "ensemble_id": "ens",
         },
-        'ensemble_long': {  # dcyl twice of r
-            'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
-            'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump'
+        "ensemble_long": {  # dcyl twice of r
+            "nmon": "N",
+            "epsilon": "epsilon",
+            "dcyl": "r",
+            "lcyl": "lz",
+            "dcrowd": "sig",
+            "ncrowd": "nc",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
         },
-        'ensemble': {
-            'nmon': 'N', 'dcyl': 'D', 'dcrd': 'ac', 'ncrowd': 'nc'
-        },
-        'space': {
-            'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac'
-        }
+        "ensemble": {"nmon": "N", "dcyl": "D", "dcrd": "ac", "ncrowd": "nc"},
+        "space": {"nmon": "N", "dcyl": "D", "dcrowd": "ac"},
     }
-    _physical_attributes = {
-        'segment': [
-            'dmon', 'mmon', 'eps_others', 'mcrowd', 'dwall', 'phi_m_bulk',
-            'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+    _physical_attributes: dict[str, list[str]] = {
+        "segment": [
+            "dmon",
+            "mmon",
+            "eps_others",
+            "mcrowd",
+            "dwall",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'whole': [
-            'dmon', 'mmon', 'eps_others', 'mcrowd', 'dwall', 'phi_m_bulk',
-            'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "whole": [
+            "dmon",
+            "mmon",
+            "eps_others",
+            "mcrowd",
+            "dwall",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble_long': [
-            'dmon', 'mmon', 'eps_others', 'mcrowd', 'dwall', 'phi_m_bulk',
-            'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "ensemble_long": [
+            "dmon",
+            "mmon",
+            "eps_others",
+            "mcrowd",
+            "dwall",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble': [
-            'dmon', 'mmon', 'eps_others', 'mcrowd', 'dwall'
-        ],
-        'space': [
-            'dmon', 'mmon', 'eps_others', 'mcrowd', 'dwall'
-        ]
+        "ensemble": ["dmon", "mmon", "eps_others", "mcrowd", "dwall"],
+        "space": ["dmon", "mmon", "eps_others", "mcrowd", "dwall"],
     }
+    _geometry_error = "'SumRuleCyl' is used for the 'cylindrical' geometry."
 
     def __init__(
         self,
@@ -583,63 +533,19 @@ class SumRuleCyl(ParserBase):
         topology: str,
         ispath: bool = True,
     ) -> None:
+        invalid_keyword(geometry, ["cylindrical"], self._geometry_error)
+        invalid_keyword(group, self._groups)
         super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
-        self.attributes = list(
-            self._lineage_attributes[self.lineage].keys()
-            ) + self._physical_attributes[self.lineage]
+        self.attributes = (
+            list(self._lineage_attributes[self.lineage].keys())
+            + self._physical_attributes[self.lineage]
+        )
         self.genealogy: list[str] = super()._genealogy[self.lineage]
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
+        if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
-
-    def _set_geometry(self, geometry: str) -> None:
-        """
-        checks and sets the `geometry` of a given name.
-
-        Parameters
-        ----------
-        geometry : str
-            Shape of the simulation box.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `geometry` is invalid.
-        """
-        if geometry == 'cylindrical':
-            self._geometry = geometry
-        else:
-            raise ValueError(
-                f"'{geometry}' "
-                "is not 'cylindrical'. This 'TransFociCyl' is used for "
-                f"'cylindrical' geometries.")
-
-    def _set_group(self, group: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        group : str
-            Type of the particle group. 'bug' is used for a single polymer.
-            'all' is used for all the particles/atoms in the system.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `group` is invalid.
-        """
-        if group in self._groups:
-            self._group = group
-        else:
-            groups_string = "'" + "', '".join(
-                self._groups) + "'"
-            raise ValueError(
-                f"'{group}' "
-                "is not a valid particle group. Please select one of "
-                f"{groups_string} groups.")
 
     def _initiate_attributes(self) -> None:
         """
@@ -649,7 +555,7 @@ class SumRuleCyl(ParserBase):
         # group attributes
         self.dmon = 1.0
         self.nmon = np.nan
-        self.mmon = self.dmon ** 3
+        self.mmon = self.dmon**3
         self.phi_m_bulk = np.nan
         self.rho_m_bulk = np.nan
         self.dcrowd = np.nan
@@ -675,31 +581,31 @@ class SumRuleCyl(ParserBase):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        str_lineages = re.compile(r'([a-zA-Z\-]+)')
+        str_lineages = re.compile(r"([a-zA-Z\-]+)")
         words = str_lineages.split(self.lineage_name)
-        attributes_float = ['dmon', 'dcyl', 'lcyl', 'epsilon', 'dcrowd', 'dt']
-        for attr_name, attr_keyword in \
-                self._lineage_attributes[self.lineage].items():
+        attributes_float = ["dmon", "dcyl", "lcyl", "epsilon", "dcrowd", "dt"]
+        for attr_n, attr_kw in self._lineage_attributes[self.lineage].items():
             try:
-                attr_value = words[words.index(attr_keyword)+1]
-                if attr_name in attributes_float:
+                attr_value = words[words.index(attr_kw) + 1]
+                if attr_n in attributes_float:
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                if attr_keyword == 'lz':
+                if attr_kw == "lz":
                     attr_value = 2 * attr_value
-                if attr_keyword == 'r':
+                if attr_kw == "r":
                     attr_value = 2 * attr_value - self.dwall
-                setattr(self, attr_name, attr_value)
+                setattr(self, attr_n, attr_value)
             except ValueError:
                 print(
-                    f"'{attr_keyword}'"
+                    f"'{attr_kw}'"
                     " attribute keyword is not in "
                     f"'{self.lineage_name}'"
                     " lineage name. Please check whether "
                     f"'{self.filename}'"
-                    " is valid name or not.")
-        self.mcrowd = self.dcrowd ** 3
+                    " is valid name or not."
+                )
+        self.mcrowd = self.dcrowd**3
 
     def _set_parents(self) -> None:
         """
@@ -716,44 +622,51 @@ class SumRuleCyl(ParserBase):
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
-            "It is assumed that 'nc' is the last attribute" +
-            " shortkey in a lineage_name of types:" +
-            " 'ensemble', 'ensemble_long', 'whole', 'segment'.")
-        if self.lineage == 'space':
+            "It is assumed that 'nc' is the last attribute"
+            + " shortkey in a lineage_name of types:"
+            + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
+        )
+        if self.lineage == "space":
             self.space = self.lineage_name
             self.ensemble = "N/A"
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble':
-            self.space = self.lineage_name.split('nc')[0]
+        elif self.lineage == "ensemble":
+            self.space = self.lineage_name.split("nc")[0]
             warnings.warn(convention_warning, UserWarning)
             self.ensemble = self.lineage_name
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble_long':
-            self.space = 'N' + str(self.nmon) + 'D' + str(self.dcyl) \
-                + 'ac' + str(self.dcrowd)
-            self.ensemble = self.space + 'nc' + str(self.ncrowd)
+        elif self.lineage == "ensemble_long":
+            self.space = (
+                "N" + str(self.nmon) + "D" + str(self.dcyl) +
+                "ac" + str(self.dcrowd)
+            )
+            self.ensemble = self.space + "nc" + str(self.ncrowd)
             warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'whole':
-            self.space = 'N' + str(self.nmon) + 'D' + str(self.dcyl) \
-                + 'ac' + str(self.dcrowd)
-            self.ensemble = self.space + 'nc' + str(self.ncrowd)
+        elif self.lineage == "whole":
+            self.space = (
+                "N" + str(self.nmon) + "D" + str(self.dcyl) +
+                "ac" + str(self.dcrowd)
+            )
+            self.ensemble = self.space + "nc" + str(self.ncrowd)
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
         else:
-            self.space = 'N' + str(self.nmon) + 'D' + str(self.dcyl) \
-                + 'ac' + str(self.dcrowd)
-            self.ensemble = self.space + 'nc' + str(self.ncrowd)
+            self.space = (
+                "N" + str(self.nmon) + "D" + str(self.dcyl) +
+                "ac" + str(self.dcrowd)
+            )
+            self.ensemble = self.space + "nc" + str(self.ncrowd)
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name.split(".j")[0]
             self.segment = self.lineage_name
 
@@ -951,60 +864,111 @@ class TransFociCyl(ParserBase):
         attributes are either used in the simulation/experiment/run but not use
         the `name`, or are created within this class.
     """
-    _groups = ['bug', 'all']
-    _lineage_attributes = {
-        'segment': {  # dcyl twice of r
-            'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-            'ensemble_id': 'ens', 'segment_id': 'j'
-            },
-        'whole': {  # dcyl twice of r
-            'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-            'ensemble_id': 'ens'
-            },
-        'ensemble_long': {  # dcyl twice of r
-            'epsilon_small': 'epss', 'epsilon_large': 'epss', 'dcyl': 'r',
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcyl': 'lz',
-            'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'
-            },
-        'ensemble': {
-            'dcyl': 'D', 'dmon_large': 'al', 'nmon_large': 'nl',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc'
-            },
-        'space': {
-            'dcyl': 'D', 'dmon_large': 'al', 'nmon_large': 'nl',
-            'nmon_small': 'ns', 'dcrowd': 'ac'
-            }
+    _groups = ["bug", "all"]
+    _lineage_attributes: dict[str, dict[str, str]] = {
+        "segment": {  # dcyl twice of r
+            "epsilon_small": "epss",
+            "epsilon_large": "epss",
+            "dcyl": "r",
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "mmon_large": "ml",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcyl": "lz",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+            "ensemble_id": "ens",
+            "segment_id": "j",
+        },
+        "whole": {  # dcyl twice of r
+            "epsilon_small": "epss",
+            "epsilon_large": "epss",
+            "dcyl": "r",
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "mmon_large": "ml",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcyl": "lz",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+            "ensemble_id": "ens",
+        },
+        "ensemble_long": {  # dcyl twice of r
+            "epsilon_small": "epss",
+            "epsilon_large": "epss",
+            "dcyl": "r",
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "mmon_large": "ml",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcyl": "lz",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+        },
+        "ensemble": {
+            "dcyl": "D",
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+        },
+        "space": {
+            "dcyl": "D",
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+        },
     }
-    _physical_attributes = {
-        'segment': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+    _physical_attributes: dict[str, list[str]] = {
+        "segment": [
+            "dmon_small",
+            "mmon_small",
+            "eps_others",
+            "mcrowd",
+            "dwall",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'whole': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "whole": [
+            "dmon_small",
+            "mmon_small",
+            "eps_others",
+            "mcrowd",
+            "dwall",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble_long': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "ensemble_long": [
+            "dmon_small",
+            "mmon_small",
+            "eps_others",
+            "mcrowd",
+            "dwall",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall'
-        ],
-        'space': [
-            'dmon_small', 'mmon_small', 'eps_others', 'mcrowd', 'dwall'
-        ]
+        "ensemble": [
+            "dmon_small", "mmon_small", "eps_others", "mcrowd", "dwall"],
+        "space": ["dmon_small", "mmon_small", "eps_others", "mcrowd", "dwall"],
     }
+    _geometry_error = "'TransFociCyl' is used for the 'cylindrical' geometry."
 
     def __init__(
         self,
@@ -1015,63 +979,19 @@ class TransFociCyl(ParserBase):
         topology: str,
         ispath: bool = True,
     ) -> None:
+        invalid_keyword(geometry, ["cylindrical"], self._geometry_error)
+        invalid_keyword(group, self._groups)
         super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
-        self.attributes = list(
-            self._lineage_attributes[self.lineage].keys()
-            ) + self._physical_attributes[self.lineage]
+        self.attributes = (
+            list(self._lineage_attributes[self.lineage].keys())
+            + self._physical_attributes[self.lineage]
+        )
         self.genealogy: list[str] = super()._genealogy[self.lineage]
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
+        if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
-
-    def _set_geometry(self, geometry: str) -> None:
-        """
-        checks and sets the `geometry` of a given name.
-
-        Parameters
-        ----------
-        geometry : str
-            Shape of the simulation box.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `geometry` is invalid.
-        """
-        if geometry == 'cylindrical':
-            self._geometry = geometry
-        else:
-            raise ValueError(
-                f"'{geometry}' "
-                "is not 'cylindrical'. This 'TransFociCyl' is used for "
-                f"'cylindrical' geometries.")
-
-    def _set_group(self, group: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        group : str
-            Type of the particle group. 'bug' is used for a single polymer.
-            'all' is used for all the particles/atoms in the system.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `group` is invalid.
-        """
-        if group in self._groups:
-            self._group = group
-        else:
-            groups_string = "'" + "', '".join(
-                self._groups) + "'"
-            raise ValueError(
-                f"'{group}' "
-                "is not a valid particle group. Please select one of "
-                f"{groups_string} groups.")
 
     def _initiate_attributes(self) -> None:
         """
@@ -1081,7 +1001,7 @@ class TransFociCyl(ParserBase):
         # group attributes
         self.dmon_small = 1.0
         self.nmon_small = np.nan
-        self.mmon_small = self.dmon_small ** 3
+        self.mmon_small = self.dmon_small**3
         self.nmon_large = np.nan
         self.dmon_large = np.nan
         self.mmon_large = np.nan
@@ -1112,34 +1032,41 @@ class TransFociCyl(ParserBase):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        str_lineages = re.compile(r'([a-zA-Z\-]+)')
+        str_lineages = re.compile(r"([a-zA-Z\-]+)")
         words = str_lineages.split(self.lineage_name)
         attributes_float = [
-            'dmon_large', 'dcyl', 'lcyl', 'epsilon_small', 'epsilon_large',
-            'mmon_large', 'dcrowd', 'dt']
-        for attr_name, attr_keyword in \
-                self._lineage_attributes[self.lineage].items():
+            "dmon_large",
+            "dcyl",
+            "lcyl",
+            "epsilon_small",
+            "epsilon_large",
+            "mmon_large",
+            "dcrowd",
+            "dt",
+        ]
+        for attr_n, attr_kw in self._lineage_attributes[self.lineage].items():
             try:
-                attr_value = words[words.index(attr_keyword)+1]
-                if attr_name in attributes_float:
+                attr_value = words[words.index(attr_kw) + 1]
+                if attr_n in attributes_float:
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                if attr_keyword == 'lz':
+                if attr_kw == "lz":
                     attr_value = 2 * attr_value
-                if attr_keyword == 'r':
+                if attr_kw == "r":
                     attr_value = 2 * attr_value - self.dwall
-                setattr(self, attr_name, attr_value)
+                setattr(self, attr_n, attr_value)
             except ValueError:
                 print(
-                    f"'{attr_keyword}'"
+                    f"'{attr_kw}'"
                     " attribute keyword is not in "
                     f"'{self.lineage_name}'"
                     " lineage name. Please check whether "
                     f"'{self.filename}'"
-                    " is valid name or not.")
-        setattr(self, 'nmon', self.nmon_large + self.nmon_small)
-        self.mcrowd = self.dcrowd ** 3
+                    " is valid name or not."
+                )
+        setattr(self, "nmon", self.nmon_large + self.nmon_small)
+        self.mcrowd = self.dcrowd**3
 
     def _set_parents(self) -> None:
         """
@@ -1156,46 +1083,55 @@ class TransFociCyl(ParserBase):
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
-            "It is assumed that 'nc' is the last attribute" +
-            " shortkey in a lineage_name of types:" +
-            " 'ensemble', 'ensemble_long', 'whole', 'segment'."
+            "It is assumed that 'nc' is the last attribute"
+            + " shortkey in a lineage_name of types:"
+            + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
-        space_name = 'ns' + str(self.nmon_small) + 'nl' + \
-            str(self.nmon_large) + 'al' + str(self.dmon_large) + \
-            'D' + str(self.dcyl) + 'ac' + str(self.dcrowd)
-        ensemble_name = space_name + 'nc' + str(self.ncrowd)
-        if self.lineage == 'space':
+        space_name = (
+            "ns"
+            + str(self.nmon_small)
+            + "nl"
+            + str(self.nmon_large)
+            + "al"
+            + str(self.dmon_large)
+            + "D"
+            + str(self.dcyl)
+            + "ac"
+            + str(self.dcrowd)
+        )
+        ensemble_name = space_name + "nc" + str(self.ncrowd)
+        if self.lineage == "space":
             self.space = self.lineage_name
             self.ensemble = "N/A"
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble':
-            self.space = self.lineage_name.split('nc')[0]
+        elif self.lineage == "ensemble":
+            self.space = self.lineage_name.split("nc")[0]
             warnings.warn(convention_warning, UserWarning)
             self.ensemble = self.lineage_name
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble_long':
+        elif self.lineage == "ensemble_long":
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'whole':
+        elif self.lineage == "whole":
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
         else:
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name.split(".j")[0]
             self.segment = self.lineage_name
 
@@ -1208,8 +1144,9 @@ class TransFociCyl(ParserBase):
         vol_mon_s = np.pi * self.dmon_small**3 / 6
         vol_mon_l = np.pi * self.dmon_large**3 / 6
         self.rho_m_bulk = self.nmon / vol_cell
-        self.phi_m_bulk = (vol_mon_s * self.nmon_small +
-                           vol_mon_l * self.nmon_large) / vol_cell
+        self.phi_m_bulk = (
+            vol_mon_s * self.nmon_small + vol_mon_l * self.nmon_large
+        ) / vol_cell
         vol_crowd = np.pi * self.dcrowd**3 / 6
         self.rho_c_bulk = self.ncrowd / vol_cell
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
@@ -1371,50 +1308,96 @@ class TransFociCub(ParserBase):
         attributes are either used in the simulation/experiment/run but not use
         the `name`, or are created within this class.
     """
-    _groups = ['bug', 'all']
-    _lineage_attributes = {
-        'segment': {  # lcube twice of l
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-            'ensemble_id': 'ens', 'segment_id': 'j'
-            },
-        'whole': {  # lcube twice of l
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-            'ensemble_id': 'ens'
-            },
-        'ensemble_long': {  # lcube twice of l
-            'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'
-            },
-        'ensemble': {
-            'dmon_large': 'al', 'nmon_large': 'nl',
-            'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc'
-            },
-        'space': {
-            'dmon_large': 'al', 'nmon_large': 'nl', 'nmon_small': 'ns',
-            'dcrowd': 'ac'
-            }
+    _groups = ["bug", "all"]
+    _lineage_attributes: dict[str, dict[str, str]] = {
+        "segment": {  # lcube twice of l
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "mmon_large": "ml",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcube": "l",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+            "ensemble_id": "ens",
+            "segment_id": "j",
+        },
+        "whole": {  # lcube twice of l
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "mmon_large": "ml",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcube": "l",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+            "ensemble_id": "ens",
+        },
+        "ensemble_long": {  # lcube twice of l
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "mmon_large": "ml",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcube": "l",
+            "dt": "dt",
+            "bdump": "bdump",
+            "adump": "adump",
+        },
+        "ensemble": {
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+        },
+        "space": {
+            "dmon_large": "al",
+            "nmon_large": "nl",
+            "nmon_small": "ns",
+            "dcrowd": "ac",
+        },
     }
-    _physical_attributes = {
-        'segment': [
-            'dmon_small', 'mmon_small', 'mcrowd', 'eps_others',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+    _physical_attributes: dict[str, list[str]] = {
+        "segment": [
+            "dmon_small",
+            "mmon_small",
+            "mcrowd",
+            "eps_others",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'whole': [
-            'dmon_small', 'mmon_small', 'mcrowd', 'eps_others',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "whole": [
+            "dmon_small",
+            "mmon_small",
+            "mcrowd",
+            "eps_others",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble_long': [
-            'dmon_small', 'mmon_small', 'mcrowd', 'eps_othesr',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "ensemble_long": [
+            "dmon_small",
+            "mmon_small",
+            "mcrowd",
+            "eps_othesr",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_others'],
-        'space': ['dmon_small', 'mmon_small', 'mcrowd', 'eps_others']
+        "ensemble": ["dmon_small", "mmon_small", "mcrowd", "eps_others"],
+        "space": ["dmon_small", "mmon_small", "mcrowd", "eps_others"],
     }
+    _geometry_error = "'TransFociCub' is used for the 'cubic' geometry."
 
     def __init__(
         self,
@@ -1425,63 +1408,19 @@ class TransFociCub(ParserBase):
         topology: str,
         ispath: bool = True,
     ) -> None:
+        invalid_keyword(geometry, ["cubic"], self._geometry_error)
+        invalid_keyword(group, self._groups)
         super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
-        self.attributes = list(
-            self._lineage_attributes[self.lineage].keys()
-            ) + self._physical_attributes[self.lineage]
+        self.attributes = (
+            list(self._lineage_attributes[self.lineage].keys())
+            + self._physical_attributes[self.lineage]
+        )
         self.genealogy: list[str] = super()._genealogy[self.lineage]
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
+        if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
-
-    def _set_geometry(self, geometry: str) -> None:
-        """
-        checks and sets the `geometry` of a given name.
-
-        Parameters
-        ----------
-        geometry : str
-            Shape of the simulation box.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `geometry` is invalid.
-        """
-        if geometry == 'cubic':
-            self._geometry = geometry
-        else:
-            raise ValueError(
-                f"'{geometry}' "
-                "is not 'cubic'. This 'TransFociCub' is used for "
-                f"'cubic' geometries.")
-
-    def _set_group(self, group: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        group : str
-            Type of the particle group. 'bug' is used for a single polymer.
-            'all' is used for all the particles/atoms in the system.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `group` is invalid.
-        """
-        if group in self._groups:
-            self._group = group
-        else:
-            groups_string = "'" + "', '".join(
-                self._groups) + "'"
-            raise ValueError(
-                f"'{group}' "
-                "is not a valid particle group. Please select one of "
-                f"{groups_string} groups.")
 
     def _initiate_attributes(self) -> None:
         """
@@ -1491,7 +1430,7 @@ class TransFociCub(ParserBase):
         # group attributes
         self.dmon_small = 1.0
         self.nmon_small = np.nan
-        self.mmon_small = self.dmon_small ** 3
+        self.mmon_small = self.dmon_small**3
         self.nmon_large = np.nan
         self.dmon_large = np.nan
         self.mmon_large = np.nan
@@ -1518,32 +1457,31 @@ class TransFociCub(ParserBase):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        str_lineages = re.compile(r'([a-zA-Z\-]+)')
+        str_lineages = re.compile(r"([a-zA-Z\-]+)")
         words = str_lineages.split(self.lineage_name)
-        attributes_float = [
-            'dmon_large', 'lcube', 'mmon_large', 'dcrowd', 'dt'
-        ]
-        for attr_name, attr_keyword in \
-                self._lineage_attributes[self.lineage].items():
+        attributes_float = ["dmon_large",
+                            "lcube", "mmon_large", "dcrowd", "dt"]
+        for attr_n, attr_kw in self._lineage_attributes[self.lineage].items():
             try:
-                attr_value = words[words.index(attr_keyword)+1]
-                if attr_name in attributes_float:
+                attr_value = words[words.index(attr_kw) + 1]
+                if attr_n in attributes_float:
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                if attr_keyword == 'l':
+                if attr_kw == "l":
                     attr_value = 2 * attr_value
-                setattr(self, attr_name, attr_value)
+                setattr(self, attr_n, attr_value)
             except ValueError:
                 print(
-                    f"'{attr_keyword}'"
+                    f"'{attr_kw}'"
                     " attribute keyword is not in "
                     f"'{self.lineage_name}'"
                     " lineage name. Please check whether "
                     f"'{self.filename}'"
-                    " is valid name or not.")
-        setattr(self, 'nmon', self.nmon_large + self.nmon_small)
-        self.mcrowd = self.dcrowd ** 3
+                    " is valid name or not."
+                )
+        setattr(self, "nmon", self.nmon_large + self.nmon_small)
+        self.mcrowd = self.dcrowd**3
 
     def _set_parents(self) -> None:
         """
@@ -1560,46 +1498,53 @@ class TransFociCub(ParserBase):
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
-            "It is assumed that 'nc' is the last attribute" +
-            " shortkey in a lineage_name of types:" +
-            " 'ensemble', 'ensemble_long', 'whole', 'segment'."
+            "It is assumed that 'nc' is the last attribute"
+            + " shortkey in a lineage_name of types:"
+            + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
-        space_name = 'ns' + str(self.nmon_small) + 'nl' + \
-            str(self.nmon_large) + 'al' + str(self.dmon_large) + \
-            'ac' + str(self.dcrowd)
-        ensemble_name = space_name + 'nc' + str(self.ncrowd)
-        if self.lineage == 'space':
+        space_name = (
+            "ns"
+            + str(self.nmon_small)
+            + "nl"
+            + str(self.nmon_large)
+            + "al"
+            + str(self.dmon_large)
+            + "ac"
+            + str(self.dcrowd)
+        )
+        ensemble_name = space_name + "nc" + str(self.ncrowd)
+        if self.lineage == "space":
             self.space = self.lineage_name
             self.ensemble = "N/A"
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble':
-            self.space = self.lineage_name.split('nc')[0]
+        elif self.lineage == "ensemble":
+            self.space = self.lineage_name.split("nc")[0]
             warnings.warn(convention_warning, UserWarning)
             self.ensemble = self.lineage_name
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble_long':
+        elif self.lineage == "ensemble_long":
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'whole':
+        elif self.lineage == "whole":
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
         else:
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name.split(".j")[0]
             self.segment = self.lineage_name
 
@@ -1612,8 +1557,9 @@ class TransFociCub(ParserBase):
         vol_mon_s = np.pi * self.dmon_small**3 / 6
         vol_mon_l = np.pi * self.dmon_large**3 / 6
         self.rho_m_bulk = self.nmon / vol_cell
-        self.phi_m_bulk = (vol_mon_s * self.nmon_small +
-                           vol_mon_l * self.nmon_large) / vol_cell
+        self.phi_m_bulk = (
+            vol_mon_s * self.nmon_small + vol_mon_l * self.nmon_large
+        ) / vol_cell
         vol_crowd = np.pi * self.dcrowd**3 / 6
         self.rho_c_bulk = self.ncrowd / vol_cell
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
@@ -1781,47 +1727,99 @@ class HnsCub(ParserBase):
         attributes are either used in the simulation/experiment/run but not use
         the `name`, or are created within this class.
     """
-    _groups = ['nucleoid', 'all']
-    _lineage_attributes = {
-        'segment': {  # lcube twice of l
-            'nmon': 'N', 'eps_hm': 'epshm', 'nhns': 'nh', 'dcrowd': 'ac',
-            'ncrowd': 'nc', 'lcube': 'l', 'dt': 'dt', 'ndump': 'ndump',
-            'adump': 'adump', 'ensemble_id': 'ens', 'segment_id': 'j'
-            },
-        'whole': {  # lcube twice of l
-            'nmon': 'N', 'eps_hm': 'epshm', 'nhns': 'nh', 'dcrowd': 'ac',
-            'ncrowd': 'nc', 'lcube': 'l', 'dt': 'dt', 'ndump': 'ndump',
-            'adump': 'adump', 'ensemble_id': 'ens'
-            },
-        'ensemble_long': {  # lcube twice of l
-            'nmon': 'N', 'eps_hm': 'epshm', 'nhns': 'nh', 'dcrowd': 'ac',
-            'ncrowd': 'nc', 'lcube': 'l', 'dt': 'dt', 'ndump': 'ndump',
-            'adump': 'adump'
-            },
-        'ensemble': {
-            'nmon': 'N', 'eps_hm': 'epshm', 'nhns': 'nh', 'dcrowd': 'ac',
-            'ncrowd': 'nc'
-            },
-        'space': {
-            'nmon': 'N', 'eps_hm': 'epshm', 'nhns': 'nh', 'dcrowd': 'ac',
-            }
+    _groups = ["nucleoid", "all"]
+    _lineage_attributes: dict[str, dict[str, str]] = {
+        "segment": {  # lcube twice of l
+            "nmon": "N",
+            "eps_hm": "epshm",
+            "nhns": "nh",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcube": "l",
+            "dt": "dt",
+            "ndump": "ndump",
+            "adump": "adump",
+            "ensemble_id": "ens",
+            "segment_id": "j",
+        },
+        "whole": {  # lcube twice of l
+            "nmon": "N",
+            "eps_hm": "epshm",
+            "nhns": "nh",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcube": "l",
+            "dt": "dt",
+            "ndump": "ndump",
+            "adump": "adump",
+            "ensemble_id": "ens",
+        },
+        "ensemble_long": {  # lcube twice of l
+            "nmon": "N",
+            "eps_hm": "epshm",
+            "nhns": "nh",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcube": "l",
+            "dt": "dt",
+            "ndump": "ndump",
+            "adump": "adump",
+        },
+        "ensemble": {
+            "nmon": "N",
+            "eps_hm": "epshm",
+            "nhns": "nh",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+        },
+        "space": {
+            "nmon": "N",
+            "eps_hm": "epshm",
+            "nhns": "nh",
+            "dcrowd": "ac",
+        },
     }
-    _physical_attributes = {
-        'segment': [
-            'dmon', 'mmon', 'dhns', 'mhns', 'mcrowd', 'eps_others',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+    _physical_attributes: dict[str, list[str]] = {
+        "segment": [
+            "dmon",
+            "mmon",
+            "dhns",
+            "mhns",
+            "mcrowd",
+            "eps_others",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'whole': [
-            'dmon', 'mmon', 'dhns', 'mhns', 'mcrowd', 'eps_others',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "whole": [
+            "dmon",
+            "mmon",
+            "dhns",
+            "mhns",
+            "mcrowd",
+            "eps_others",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble_long': [
-            'dmon', 'mmon', 'dhns', 'mhns', 'mcrowd', 'eps_othesr',
-            'phi_m_bulk', 'rho_m_bulk', 'phi_c_bulk', 'rho_c_bulk'
+        "ensemble_long": [
+            "dmon",
+            "mmon",
+            "dhns",
+            "mhns",
+            "mcrowd",
+            "eps_othesr",
+            "phi_m_bulk",
+            "rho_m_bulk",
+            "phi_c_bulk",
+            "rho_c_bulk",
         ],
-        'ensemble': ['dmon', 'mmon', 'dhns', 'mhns', 'mcrowd', 'eps_others'],
-        'space': ['dmon', 'mmon', 'dhns', 'mhns', 'mcrowd', 'eps_others']
+        "ensemble": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others"],
+        "space": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others"],
     }
+    _geometry_error = "'HnsCub' is used for the 'cubic' geometry."
 
     def __init__(
         self,
@@ -1832,63 +1830,19 @@ class HnsCub(ParserBase):
         topology: str,
         ispath: bool = True,
     ) -> None:
+        invalid_keyword(geometry, ["cubic"], self._geometry_error)
+        invalid_keyword(group, self._groups)
         super().__init__(name, lineage, geometry, group, topology, ispath)
         self._initiate_attributes()
         self._parse_lineage_name()
         self._set_parents()
-        self.attributes = list(
-            self._lineage_attributes[self.lineage].keys()
-            ) + self._physical_attributes[self.lineage]
+        self.attributes = (
+            list(self._lineage_attributes[self.lineage].keys())
+            + self._physical_attributes[self.lineage]
+        )
         self.genealogy: list[str] = super()._genealogy[self.lineage]
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
+        if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
-
-    def _set_geometry(self, geometry: str) -> None:
-        """
-        checks and sets the `geometry` of a given name.
-
-        Parameters
-        ----------
-        geometry : str
-            Shape of the simulation box.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `geometry` is invalid.
-        """
-        if geometry == 'cubic':
-            self._geometry = geometry
-        else:
-            raise ValueError(
-                f"'{geometry}' "
-                "is not 'cubic'. This 'HnsCub' is used for "
-                f"'cubic' geometries.")
-
-    def _set_group(self, group: str) -> None:
-        """
-        checks and sets the `group` of a given name.
-
-        Parameters
-        ----------
-        group : str
-            Type of the particle group. 'bug' is used for a single polymer.
-            'all' is used for all the particles/atoms in the system.
-
-        Raises
-        ------
-        ValueError
-            Riases if the atom `group` is invalid.
-        """
-        if group in self._groups:
-            self._group = group
-        else:
-            groups_string = "'" + "', '".join(
-                self._groups) + "'"
-            raise ValueError(
-                f"'{group}' "
-                "is not a valid particle group. Please select one of "
-                f"{groups_string} groups.")
 
     def _initiate_attributes(self) -> None:
         """
@@ -1898,12 +1852,12 @@ class HnsCub(ParserBase):
         # group attributes
         self.dmon = 1.0
         self.nmon = np.nan
-        self.mmon = self.dmon ** 3
+        self.mmon = self.dmon**3
         self.phi_m_bulk = np.nan
         self.rho_m_bulk = np.nan
         self.dhns = 1.0
         self.nhns = np.nan
-        self.mhns = self.dhns ** 3
+        self.mhns = self.dhns**3
         self.phi_hns_bulk = np.nan
         self.rho_hns_bulk = np.nan
         self.dcrowd = np.nan
@@ -1927,29 +1881,29 @@ class HnsCub(ParserBase):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        str_lineages = re.compile(r'([a-zA-Z\-]+)')
+        str_lineages = re.compile(r"([a-zA-Z\-]+)")
         words = str_lineages.split(self.lineage_name)
-        attributes_float = ['eps_hm', 'lcube', 'dcrowd', 'dt']
-        for attr_name, attr_keyword in \
-                self._lineage_attributes[self.lineage].items():
+        attributes_float = ["eps_hm", "lcube", "dcrowd", "dt"]
+        for attr_n, attr_kw in self._lineage_attributes[self.lineage].items():
             try:
-                attr_value = words[words.index(attr_keyword)+1]
-                if attr_name in attributes_float:
+                attr_value = words[words.index(attr_kw) + 1]
+                if attr_n in attributes_float:
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                if attr_keyword == 'l':
+                if attr_kw == "l":
                     attr_value = 2 * attr_value
-                setattr(self, attr_name, attr_value)
+                setattr(self, attr_n, attr_value)
             except ValueError:
                 print(
-                    f"'{attr_keyword}'"
+                    f"'{attr_kw}'"
                     " attribute keyword is not in "
                     f"'{self.lineage_name}'"
                     " lineage name. Please check whether "
                     f"'{self.filename}'"
-                    " is valid name or not.")
-        self.mcrowd = self.dcrowd ** 3
+                    " is valid name or not."
+                )
+        self.mcrowd = self.dcrowd**3
 
     def _set_parents(self) -> None:
         """
@@ -1966,46 +1920,53 @@ class HnsCub(ParserBase):
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
-            "It is assumed that 'nc' is the last attribute" +
-            " shortkey in a lineage_name of types:" +
-            " 'ensemble', 'ensemble_long', 'whole', 'segment'."
+            "It is assumed that 'nc' is the last attribute"
+            + " shortkey in a lineage_name of types:"
+            + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
-        space_name = 'N' + str(self.nmon) + 'epshm' + \
-            str(self.eps_hm) + 'nh' + str(self.nhns) + \
-            'ac' + str(self.dcrowd)
-        ensemble_name = space_name + 'nc' + str(self.ncrowd)
-        if self.lineage == 'space':
+        space_name = (
+            "N"
+            + str(self.nmon)
+            + "epshm"
+            + str(self.eps_hm)
+            + "nh"
+            + str(self.nhns)
+            + "ac"
+            + str(self.dcrowd)
+        )
+        ensemble_name = space_name + "nc" + str(self.ncrowd)
+        if self.lineage == "space":
             self.space = self.lineage_name
             self.ensemble = "N/A"
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble':
-            self.space = self.lineage_name.split('nc')[0]
+        elif self.lineage == "ensemble":
+            self.space = self.lineage_name.split("nc")[0]
             warnings.warn(convention_warning, UserWarning)
             self.ensemble = self.lineage_name
             self.ensemble_long = "N/A"
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'ensemble_long':
+        elif self.lineage == "ensemble_long":
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
             self.ensemble_long = self.lineage_name
             self.whole = "N/A"
             self.segment = "N/A"
-        elif self.lineage == 'whole':
+        elif self.lineage == "whole":
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name
             self.segment = "N/A"
         else:
             self.space = space_name
             self.ensemble = ensemble_name
             warnings.warn(convention_warning, UserWarning)
-            self.ensemble_long = self.lineage_name.split('ens')[0]
+            self.ensemble_long = self.lineage_name.split("ens")[0]
             self.whole = self.lineage_name.split(".j")[0]
             self.segment = self.lineage_name
 
@@ -2063,43 +2024,41 @@ class FloryChain(object):
     Class Attributes
     ----------------
 
-     """
+    """
+
     _physical_attributes = {
-        'deGennes': {
-            'dimension': 'dim',
-            'w3body': 'w',
-            'nmon': 'n',
-            'dcyl': 'd',
-            'dcrowd': 'ac'
-        },
-        'twoBodyOnly': {
-            'dimension': 'dim',
-            'w3body': 'w',
-            'nmon': 'n',
-            'dcyl': 'd',
-            'dcrowd': 'ac'
-        },
-        'shendruk': {
-            'dimension': 'dim',
-            'nmon': 'n',
-            'dcyl': 'd',
-            'dcrowd': 'ac'
-        }
+        "deGennes": {
+            "dimension": "dim",
+            "w3body": "w",
+            "nmon": "n",
+            "dcyl": "d",
+            "dcrowd": "ac",
+            },
+        "twoBodyOnly": {
+            "dimension": "dim",
+            "w3body": "w",
+            "nmon": "n",
+            "dcyl": "d",
+            "dcrowd": "ac",
+            },
+        "shendruk": {
+            "dimension": "dim",
+            "nmon": "n",
+            "dcyl": "d",
+            "dcrowd": "ac"
+            },
     }
     _column_names = {
-        'deGennes': ['phi_c', 'vexc', 'swollen'],
-        'twoBodyOnly': ['phi_c', 'vexc', 'swollen'],
-        'shendruk': ['phi_c', 'vexc', 'w3body', 'swollen']
+        "deGennes": ["phi_c", "vexc", "swollen"],
+        "twoBodyOnly": ["phi_c", "vexc", "swollen"],
+        "shendruk": ["phi_c", "vexc", "w3body", "swollen"],
     }
 
-    def __init__(
-        self,
-        name: str,
-        limit: bool = False,
-        ispath: bool = True
-    ):
+    def __init__(self, name: str, limit: bool = False, ispath: bool = True
+                 ) -> None:
         self.limit = limit
-        if ispath:
+        self.ispath = ispath
+        if self.ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)
             self.filename = self.filename.split("/")[-1]
@@ -2143,29 +2102,31 @@ class FloryChain(object):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        words = self.filename.split('-')
+        words = self.filename.split("-")
         self.w3body_model = words[1]
         self.vexc_model = words[2]
-        attrs_pattern = re.compile(r'([a-zA-Z\-]+)')
+        attrs_pattern = re.compile(r"([a-zA-Z\-]+)")
         attrs = attrs_pattern.split(words[-1])
-        attributes_float = ['dmon', 'dcyl', 'dcrowd', 'three_body']
-        for attr_name, attr_keyword in \
-                self._physical_attributes[self.w3body_model].items():
+        attributes_float = ["dmon", "dcyl", "dcrowd", "three_body"]
+        for attr_n, attr_kw in self._physical_attributes[
+            self.w3body_model
+        ].items():
             try:
-                attr_value = attrs[attrs.index(attr_keyword)+1]
-                if attr_name in attributes_float:
+                attr_value = attrs[attrs.index(attr_kw) + 1]
+                if attr_n in attributes_float:
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                setattr(self, attr_name, attr_value)
+                setattr(self, attr_n, attr_value)
             except ValueError:
                 print(
-                    f"'{attr_keyword}'"
+                    f"'{attr_kw}'"
                     " attribute keyword is not in "
                     f"'{self.filename}'"
                     " lineage name. Please check whether "
                     f"'{self.filename}'"
-                    " is valid name or not.")
+                    " is valid name or not."
+                )
 
     def _athermal_virial_coeffs(self):
         """
@@ -2173,17 +2134,17 @@ class FloryChain(object):
         three-body coefficient (thrid virial coefficient) for the
         equivalent athermal system.
         """
-        if self.vexc_model == 'AOExcVol':
+        if self.vexc_model == "AOExcVol":
             # The hard-sphere potenial's virial coefficient
-            self.vexc_athr = (4/3) * np.pi * self.dmon**3
-            self.w3body_athr = (5/8) * self.vexc_athr**2
-        elif self.vexc_model == 'HaExcVol':
+            self.vexc_athr = (4 / 3) * np.pi * self.dmon**3
+            self.w3body_athr = (5 / 8) * self.vexc_athr**2
+        elif self.vexc_model == "HaExcVol":
             # The fully-repulsive Weeks–Chandler–Anderson (WCA) potential
             # with r_cut = 2**(1/6) * sigma where sigma=self.dmon=1.0
             self.vexc_athr = 4.40944631
-            self.w3body_athr = (5/8) * self.vexc_athr**2
+            self.w3body_athr = (5 / 8) * self.vexc_athr**2
         else:
-            vexc_models = ['AOExcVol', 'HaExcVol']
+            vexc_models = ["AOExcVol", "HaExcVol"]
             raise ValueError(
                 f"'{self.vexc_model}' "
                 "is not a valid model of the excluded volume of monomers."
@@ -2197,27 +2158,35 @@ class FloryChain(object):
         """
         self.flory_exponent = 3 / (self.dimension + 2)
         if self.dimension == 3:
-            self.r_flory = 1.12 * self.dmon * self.nmon ** self.flory_exponent
+            self.r_flory = 1.12 * self.dmon * self.nmon**self.flory_exponent
         elif self.dimension == 2:
             print("In 2-dimensional space, the pre-factor is set to 1.0.")
-            self.r_flory = 1.0 * self.dmon * (
-                self.nmon ** self.flory_exponent *
-                (self.dmon/self.dcyl) ** (1/4)
+            self.r_flory = (
+                1.0
+                * self.dmon
+                * (
+                    self.nmon**self.flory_exponent
+                    * (self.dmon / self.dcyl) ** (1 / 4)
                 )
+            )
         elif self.dimension == 1:
-            self.r_flory = 1.37 * self.dmon * (
-                self.nmon ** self.flory_exponent *
-                (self.dmon/self.dcyl) ** (2/3)
+            self.r_flory = (
+                1.37
+                * self.dmon
+                * (
+                    self.nmon**self.flory_exponent
+                    * (self.dmon / self.dcyl) ** (2 / 3)
                 )
+            )
         else:
             raise ValueError(
                 f"'{self.dimension}' "
                 "is not a valid dimension for the system."
                 f"Please select one of these '{list(range(1,4,1))}' models."
             )
-        self.r_ideal = self.dmon * self.nmon ** 0.5
+        self.r_ideal = self.dmon * self.nmon**0.5
 
-    def _clean(self):
+    def _clean(self) -> None:
         """
         clean a dataset of a chain's size based on its attributes.
         """
@@ -2225,25 +2194,22 @@ class FloryChain(object):
             df = pd.read_csv(
                 self.filepath,
                 index_col=False,
-                names=self._column_names[self.w3body_model]
+                names=self._column_names[self.w3body_model],
             )
         else:
-            raise ValueError(
-                f"'{self.filepath}' "
-                "is not a valid filepath."
-            )
+            raise ValueError(f"'{self.filepath}' " "is not a valid filepath.")
         df.dropna(inplace=True)
-        df.sort_values(by=['phi_c'], inplace=True)
+        df.sort_values(by=["phi_c"], inplace=True)
         df.reset_index(inplace=True, drop=True)
-        if self.w3body_model == 'deGennes':
+        if self.w3body_model == "deGennes":
             if self.nmon == 80:
-                df = df.groupby('phi_c').min()
+                df = df.groupby("phi_c").min()
                 df.reset_index(inplace=True)
-        elif self.w3body_model == 'shendruk':
-            df = df.groupby('phi_c').min()
+        elif self.w3body_model == "shendruk":
+            df = df.groupby("phi_c").min()
             df.reset_index(inplace=True)
         else:
-            df = df.sort_values(by=['swollen'])
+            df = df.sort_values(by=["swollen"])
         self.chain_size = df
 
     def _expand(self):
@@ -2251,36 +2217,37 @@ class FloryChain(object):
         expand `self.chain_size` by adding the physical attributes to it as
          new columns.
         """
-        self.chain_size['w3body_model'] = self.w3body_model
-        self.chain_size['vexc_model'] = self.vexc_model
-        for attr_name in self._physical_attributes[self.w3body_model].keys():
-            self.chain_size[attr_name] = getattr(self, attr_name)
+        self.chain_size["w3body_model"] = self.w3body_model
+        self.chain_size["vexc_model"] = self.vexc_model
+        for attr_n in self._physical_attributes[self.w3body_model].keys():
+            self.chain_size[attr_n] = getattr(self, attr_n)
 
     def _scale(self, limit=False):
         """
         scale a chain's attributes.
         """
-        self.chain_size['phi_c_scaled'] = \
-            self.dmon * self.chain_size['phi_c'] / self.dcrowd
+        self.chain_size["phi_c_scaled"] = (
+            self.dmon * self.chain_size["phi_c"] / self.dcrowd
+        )
         # phi_c*a/a_c for a_c << a for maximum free energy gain:
-        self.chain_size['vexc_scaled'] = \
-            self.chain_size['vexc'] / self.vexc_athr
-        self.chain_size['r'] = self.chain_size['swollen'] * self.r_ideal
-        self.r_max = self.chain_size['r'].max()
-        self.chain_size['r_scaled_max'] = self.chain_size['r'] / self.r_max
-        self.chain_size['r_scaled_flory'] = self.chain_size['r'] / self.r_flory
-        self.chain_size['w3body_scaled'] = \
-            self.chain_size['w3body'] / self.w3body_athr
-        if self.w3body_model == 'shendruk':
+        self.chain_size["vexc_scaled"] = self.chain_size["vexc"] / \
+            self.vexc_athr
+        self.chain_size["r"] = self.chain_size["swollen"] * self.r_ideal
+        self.r_max = self.chain_size["r"].max()
+        self.chain_size["r_scaled_max"] = self.chain_size["r"] / self.r_max
+        self.chain_size["r_scaled_flory"] = self.chain_size["r"] / self.r_flory
+        self.chain_size["w3body_scaled"] = self.chain_size["w3body"] / \
+            self.w3body_athr
+        if self.w3body_model == "shendruk":
             self.w3body = (
-                self.chain_size['w3body'].min(),
-                self.chain_size['w3body'].max()
-                )
+                self.chain_size["w3body"].min(),
+                self.chain_size["w3body"].max(),
+            )
         if limit:
             # Limit the data only to -1*exc_vol_athr <= exc_vol <= exc_vol_athr
-            limit_range = \
-                (self.chain_size['vexc_scaled'] <= 1.5) & (
-                 self.chain_size['vexc_scaled'] >= -1.0)
+            limit_range = (self.chain_size["vexc_scaled"] <= 1.5) & (
+                self.chain_size["vexc_scaled"] >= -1.0
+            )
             self.chain_size = self.chain_size[limit_range]
 
 
@@ -2345,24 +2312,17 @@ class LammpsDataTemplate(object):
         maps the keywords of physical attributes in that geometry to their
         corresponding attributes in `DataTemplate` class.
     """
-    _groups = ['bug', 'all']
+    _groups = ["bug", "all"]
     _geometries_attributes = {
-        'cylindrical': {
-            'nmon': 'N', 'dcyl': 'D', 'lcyl': 'L'
+        "cylindrical": {"nmon": "N", "dcyl": "D", "lcyl": "L"},
+        "slit": {"nmon": "N", "dcyl": "D", "lcyl": "L"},
+        "cubic": {
+            "nmon": "N",
+            "lcyl": "L",
         },
-        'slit': {
-            'nmon': 'N', 'dcyl': 'D', 'lcyl': 'L'
-        },
-        'cubic': {
-            'nmon': 'N',  'lcyl': 'L',
-        }
     }
 
-    def __init__(
-        self,
-        name: str,
-        ispath: bool = True
-    ):
+    def __init__(self, name: str, ispath: bool = True):
         if ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)
@@ -2390,8 +2350,8 @@ class LammpsDataTemplate(object):
         defines and initiates the class attribute based on the physical
         attributes defined for the project.
         """
-        self.geometry = 'N/A'
-        self.group = 'N/A'
+        self.geometry = "N/A"
+        self.group = "N/A"
         self.nmon = np.nan
         self.dcyl = np.nan
         self.lcyl = np.nan
@@ -2401,7 +2361,7 @@ class LammpsDataTemplate(object):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        words = self.filename.split('-')
+        words = self.filename.split("-")
         if len(words) == 4:
             raise ValueError(
                 f"The number of words in the filename '{self.filename}'"
@@ -2413,42 +2373,46 @@ class LammpsDataTemplate(object):
         if geometry in self._geometries_attributes.keys():
             self.geometry = geometry
         else:
-            geometries_string = "'" + "', '".join(
-                self._geometries_attributes.keys()) + "'"
+            geometries_string = (
+                "'" + "', '".join(self._geometries_attributes.keys()) + "'"
+            )
             raise ValueError(
                 f"'{geometry}' "
                 "is not a valid geometry. Please select one of "
-                f"{geometries_string} geometries.")
+                f"{geometries_string} geometries."
+            )
         group = words[2]
         if group in self._groups:
             self.group = group
         else:
-            groups_string = "'" + "', '".join(
-                self._groups) + "'"
+            groups_string = "'" + "', '".join(self._groups) + "'"
             raise ValueError(
                 f"'{group}' "
                 "is not a valid particle group. Please select one of "
-                f"{groups_string} groups.")
-        str_attrs = re.compile(r'([a-zA-Z\-]+)')
-        attributes_float = ['dcyl', 'lcyl']
+                f"{groups_string} groups."
+            )
+        str_attrs = re.compile(r"([a-zA-Z\-]+)")
+        attributes_float = ["dcyl", "lcyl"]
         attrs = str_attrs.split(words[3])
-        for attr_name, attr_keyword in \
-                self._geometries_attributes[self.geometry].items():
+        for attr_n, attr_kw in self._geometries_attributes[
+            self.geometry
+        ].items():
             try:
-                attr_value = attrs[attrs.index(attr_keyword)+1]
-                if attr_name in attributes_float:
+                attr_value = attrs[attrs.index(attr_kw) + 1]
+                if attr_n in attributes_float:
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                setattr(self, attr_name, attr_value)
+                setattr(self, attr_n, attr_value)
             except ValueError:
                 print(
-                    f"'{attr_keyword}'"
+                    f"'{attr_kw}'"
                     " attribute keyword is not in "
                     f"'{self.filename}'"
                     " template data name. Please check whether "
                     f"'{self.filename}'"
-                    " is valid name or not.")
+                    " is valid name or not."
+                )
 
 
 @dataclass
@@ -2510,17 +2474,13 @@ class ExcludedVolume(object):
     self._vexc_models: list of str
         List if the defined excluded-volume models.
     """
-    _vexc_models = ['AO', 'LJ', 'Edwards']
+    _vexc_models = ["AO", "LJ", "Edwards"]
 
-    def __init__(
-        self,
-        name: str,
-        ispath: bool = True
-    ):
+    def __init__(self, name: str, ispath: bool = True):
         if ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)
-            self.filename = self.filename.split('/')[-1]
+            self.filename = self.filename.split("/")[-1]
         else:
             self.filepath = "N/A"
             self.filename = name
@@ -2541,55 +2501,50 @@ class ExcludedVolume(object):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        str_attrs = re.compile(r'([a-zA-Z\-]+)')
-        words = self.filename.split('-')
+        str_attrs = re.compile(r"([a-zA-Z\-]+)")
+        words = self.filename.split("-")
         if words[1] in self._vexc_models:
             self.vexc_model = words[1]  # model name
         else:
-            vexc_models_string = "'" + "', '".join(
-                self._vexc_models) + "'"
+            vexc_models_string = "'" + "', '".join(self._vexc_models) + "'"
             raise ValueError(
                 f"'{words[1]}' "
                 "is not a valid excluded-volume model. Please check wehther "
                 "the data belongs to one of "
-                f"{vexc_models_string} model or not.")
+                f"{vexc_models_string} model or not."
+            )
         new_words = str_attrs.split(words[2])  # find dcrowd
-        self.dcrowd = float(new_words[new_words.index('ac')+1])
-        if (self.dcrowd == 1.0) & (self.vexc_model == 'WCA'):
-            print(f"The excluded data for 'a_c={self.dcrowd}'"
-                  " is computed via the fitting function for a_c<a in the"
-                  f"exculded-volume model '{self.vexc_model}'.")
+        self.dcrowd = float(new_words[new_words.index("ac") + 1])
+        if (self.dcrowd == 1.0) & (self.vexc_model == "WCA"):
+            print(
+                f"The excluded data for 'a_c={self.dcrowd}'"
+                " is computed via the fitting function for a_c<a in the"
+                f"exculded-volume model '{self.vexc_model}'."
+            )
 
-    def _set_vexc_athermal(self):
+    def _set_vexc_athermal(self) -> None:
         """set the athermal excluded-volume of a monomer in the absence of the
         crowders based on a given model.
         """
         _vexc_athrs = {
-            'AO': (4/3) * np.pi * (self.dmon**3),
-            'Edwards': (4/3) * np.pi * (self.dmon**3),
-            'LJ': 4.40945
+            "AO": (4 / 3) * np.pi * (self.dmon**3),
+            "Edwards": (4 / 3) * np.pi * (self.dmon**3),
+            "LJ": 4.40945,
         }
         self.vexc_athr = _vexc_athrs[self.vexc_model]
 
-    def read_data(
-        self,
-    ) -> TExcludedVolume:
+    def read_data(self) -> None:
         """Read the excluded-volume data"""
         if self.ispath is True:
-            self.vexc_df = pd.read_csv(
-                self.filepath,
-                names=['phi_c_bulk', 'vexc'])
-            return self
+            self.vexc_df = pd.read_csv(self.filepath, names=[
+                                       "phi_c_bulk", "vexc"])
         else:
             raise ValueError(
                 "The excluded volume data not found:"
                 f"'{self.filename}' is not a valid filepath"
             )
 
-    def scale(
-        self,
-        limit: bool = True
-    ) -> TExcludedVolume:
+    def scale(self, limit: bool = True) -> None:
         """Rescale the bulk volume fraction of crowders 'phi_c_bulk' and
         excluded-volume 'vexc' and add them as two new columns to
         `self.vexc_df` attribute.
@@ -2607,19 +2562,18 @@ class ExcludedVolume(object):
         """
         # phi_c is rescaled as phi_c*a/a_c when a_c << a to gain the maximum
         # depletion free energy:
-        self.vexc_df['phi_c_bulk_scaled'] = (
-            self.dmon * self.vexc_df['phi_c_bulk'] / self.dcrowd
-            )
-        self.vexc_df['vexc_scaled'] = self.vexc_df['vexc'] / self.vexc_athr
+        self.vexc_df["phi_c_bulk_scaled"] = (
+            self.dmon * self.vexc_df["phi_c_bulk"] / self.dcrowd
+        )
+        self.vexc_df["vexc_scaled"] = self.vexc_df["vexc"] / self.vexc_athr
         # Limit the vexc data to [-1*vexc_athr, vexc_athr]:
         if limit is True:
             self.vexc_df = self.vexc_df[
-                (self.vexc_df['vexc_scaled'] <= 1.0) &
-                (self.vexc_df['vexc_scaled'] >= (-1*1.0))
+                (self.vexc_df["vexc_scaled"] <= 1.0)
+                & (self.vexc_df["vexc_scaled"] >= (-1 * 1.0))
             ]
-        return self
 
-    def add_model_info(self) -> TExcludedVolume:
+    def add_model_info(self):
         """Add `self.vexc_model` and `self.dcrowd` data as two new columns to
         the `self.vexc_df` attribute.
 
@@ -2628,9 +2582,8 @@ class ExcludedVolume(object):
         self: ParserExcVol
             An updated ParserExcVol.self object.
         """
-        self.vexc_df['vexc_model'] = self.vexc_model
-        self.vexc_df['dcrowd'] = self.dcrowd
-        return self
+        self.vexc_df["vexc_model"] = self.vexc_model
+        self.vexc_df["dcrowd"] = self.dcrowd
 
 
 @dataclass
@@ -2676,18 +2629,14 @@ class FreeEnergyVirial(object):
     ----------------
     ?
     """
-    _tail_models = ['ThreeBody', 'LJ']
-    _vdep_models = ['deVries', 'Ha']
+    _tail_models = ["ThreeBody", "LJ"]
+    _vdep_models = ["deVries", "Ha"]
 
-    def __init__(
-        self,
-        name: str,
-        ispath: bool = True
-    ):
+    def __init__(self, name: str, ispath: bool = True):
         if ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)
-            self.filename = self.filename.split('/')[-1]
+            self.filename = self.filename.split("/")[-1]
         else:
             self.filepath = "N/A"
             self.filename = name
@@ -2713,58 +2662,52 @@ class FreeEnergyVirial(object):
         parses a lineage_name based on a list of keywords of physical
         attributes.
         """
-        str_attrs = re.compile(r'([a-zA-Z\-]+)')
-        words = self.filename.split('-')
+        str_attrs = re.compile(r"([a-zA-Z\-]+)")
+        words = self.filename.split("-")
         if words[0] in self._tail_models:
             self.tail_model = words[0]  # model name
         else:
-            tail_models_string = "'" + "', '".join(
-                self._tail_models) + "'"
+            tail_models_string = "'" + "', '".join(self._tail_models) + "'"
             raise ValueError(
                 f"'{words[0]}' "
                 "is not a valid tail model. Please check wehther "
                 "the data belongs to one of "
-                f"{tail_models_string} model or not.")
+                f"{tail_models_string} model or not."
+            )
         if words[1] in self._vdep_models:
             self.vdep_model = words[1]  # model name
         else:
-            vdep_models_string = "'" + "', '".join(
-                self._vdep_models) + "'"
+            vdep_models_string = "'" + "', '".join(self._vdep_models) + "'"
             raise ValueError(
                 f"'{words[1]}' "
                 "is not a valid tail model. Please check wehther "
                 "the data belongs to one of "
-                f"{vdep_models_string} model or not.")
+                f"{vdep_models_string} model or not."
+            )
         new_words = str_attrs.split(words[2])  # find dcrowd
-        self.nmon = float(new_words[new_words.index('N')+1])
-        self.dcyl = float(new_words[new_words.index('D')+1])
-        self.dcrowd = float(new_words[new_words.index('ac')+1])
+        self.nmon = float(new_words[new_words.index("N") + 1])
+        self.dcyl = float(new_words[new_words.index("D") + 1])
+        self.dcrowd = float(new_words[new_words.index("ac") + 1])
 
-    def _set_other_attributes(self):
+    def _set_other_attributes(self) -> None:
         """set any other possible attributes that should be defined based on
         parsed attributes.
         """
         self.vcrowd = np.pi * self.dcrowd**3 / 6
 
-    def read_data(
-        self,
-    ) -> TFreeEnergyVirial:
+    def read_data(self) -> None:
         """Read the free energy approach data."""
         if self.ispath is True:
             self.r_chain_df = pd.read_csv(
-                self.filepath,
-                names=['rho_c_out', 'rho_c_in', 'r_chain'])
-            return self
+                self.filepath, names=["rho_c_out", "rho_c_in", "r_chain"]
+            )
         else:
             raise ValueError(
                 "The free energy approach data not found:"
                 f"'{self.filename}' is not a valid filepath"
             )
 
-    def scale(
-        self,
-        phi_c_out_cap: float = 0.45
-    ) -> TFreeEnergyVirial:
+    def scale(self, phi_c_out_cap: float = 0.45) -> None:
         """Rescale the bulk number density of crowders inside and outsied the
         chain-occupying region ('rho_c_out' and 'rho_c_in'), and the chain size
         'r_chain' to create new columns.
@@ -2791,22 +2734,17 @@ class FreeEnergyVirial(object):
                 f"'{phi_c_out_cap}' "
                 "should be larger than 0 and smaller or equal to 1."
             )
-        self.r_chain_df['phi_c_out'] = (
-            self.r_chain_df['rho_c_out'] * self.vcrowd
-            )
-        self.r_chain_df['phi_c_in'] = (
-            self.r_chain_df['rho_c_in'] * self.vcrowd
-            )
-        r_chain_max = self.r_chain_df['r_chain'].max()
-        self.r_chain_df['r_scaled'] = (
-            self.r_chain_df['r_chain'] / r_chain_max
-            )
-        cond = self.r_chain_df['phi_c_out'] <= phi_c_out_cap
+        self.r_chain_df["phi_c_out"] = \
+            self.r_chain_df["rho_c_out"] * self.vcrowd
+        self.r_chain_df["phi_c_in"] = \
+            self.r_chain_df["rho_c_in"] * self.vcrowd
+        r_chain_max = self.r_chain_df["r_chain"].max()
+        self.r_chain_df["r_scaled"] = self.r_chain_df["r_chain"] / r_chain_max
+        cond = self.r_chain_df["phi_c_out"] <= phi_c_out_cap
         self.r_chain_df = self.r_chain_df.loc[cond, :]
         # Limit the vexc data to [-1*vexc_athr, vexc_athr]:
-        return self
 
-    def add_model_info(self) -> TFreeEnergyVirial:
+    def add_model_info(self) -> None:
         """Add the parsed attributed as the new columns to
         the `self.r_chain_df` dataset.
 
@@ -2815,9 +2753,520 @@ class FreeEnergyVirial(object):
         self: ParserExcVol
             An updated ParserExcVol.self object.
         """
-        self.r_chain_df['tail_model'] = self.tail_model
-        self.r_chain_df['vdep_model'] = self.vdep_model
-        self.r_chain_df['nmon'] = self.nmon
-        self.r_chain_df['dcyl'] = self.dcyl
-        self.r_chain_df['dcrowd'] = self.dcrowd
-        return self
+        self.r_chain_df["tail_model"] = self.tail_model
+        self.r_chain_df["vdep_model"] = self.vdep_model
+        self.r_chain_df["nmon"] = self.nmon
+        self.r_chain_df["dcyl"] = self.dcyl
+        self.r_chain_df["dcrowd"] = self.dcrowd
+
+
+class Snapshot:
+    file: IO
+    """
+    Read a single snapshot from a dump `file` object.
+    """
+
+    def __init__(self, file: IO) -> None:
+        self.file = file
+        # time, n_atoms, and n_props are default to invalid numbers.
+        self.time = -1  # time stamp
+        self.n_atoms = 0  # number of atoms
+        self.boxstr = ''  # box information
+        self.is_scaled = -1  # unknown status for coordinates
+        self.triclinic: bool = False  # default: orthogonal box
+        self.xlo = 0.0  # box information
+        self.xhi = 0.0
+        self.xy = 0.0
+        self.ylo = 0.0
+        self.yhi = 0.0
+        self.xz = 0.0
+        self.zlo = 0.0
+        self.zhi = 0.0
+        self.yz = 0.0
+        self.props = {}  # names and col indices of per-atom properties
+        self.n_props = 0  # number of per atom properties in the dump file
+        self.atoms = np.empty((self.n_atoms, self.n_props), dtype=np.float64)
+        self.read()
+
+    def read(self) -> None:
+        """
+        Read a single snapshot and assigns column names (file must be
+        self-describing). Moreover, it changes `self.is_scaled` from -1
+        (unknown) to 0 (unscaled) or 1 (scaled), and converts 'xs' and 'xu' to
+        'x' in `self.props`.
+        """
+        _ = self.file.readline()
+        # just grab 1st field
+        self.time = int(self.file.readline().split()[0])
+        _ = self.file.readline()
+        self.n_atoms = int(self.file.readline())
+        self.boxstr = self.file.readline()
+        words = self.boxstr.split()
+        self.triclinic = words == 9  # ITEM: BOX BOUNDS
+        if self.triclinic:
+            self.xlo, self.xhi, self.xy = \
+                map(float, self.file.readline().split())
+            self.ylo, self.yhi, self.xz = \
+                map(float, self.file.readline().split())
+            self.zlo, self.zhi, self.yz = \
+                map(float, self.file.readline().split())
+        else:
+            self.xlo, self.xhi = map(float, self.file.readline().split())
+            self.ylo, self.yhi = map(float, self.file.readline().split())
+            self.zlo, self.zhi = map(float, self.file.readline().split())
+
+        x_flag = y_flag = z_flag = -1
+        self.props = {
+            c: i for i, c in enumerate(self.file.readline().split()[2:])
+            }  # dump per atom props
+        props = list(self.props.keys())
+        if ("x" in props) or ("xu" in props):
+            x_flag = 0
+        elif ("xs" in props) or ("xsu" in props):
+            x_flag = 1
+        elif ("y" in props) or ("yu" in props):
+            y_flag = 0
+        elif ("ys" in props) or ("ysu" in props):
+            y_flag = 1
+        elif ("z" in props) or ("zu" in props):
+            z_flag = 0
+        elif ("zs" in props) or ("zsu" in props):
+            z_flag = 1
+        if x_flag == 0 and y_flag == 0 and z_flag == 0:
+            self.is_scaled = 0
+        if x_flag == 1 and y_flag == 1 and z_flag == 1:
+            self.is_scaled = 1
+        words = self.file.readline().split()
+        self.n_props = len(words)
+        self.atoms = np.zeros((self.n_atoms, self.n_props), dtype=np.float64)
+        self.atoms[0, :] = np.array(list(map(float, words)))  # read first atom
+        if self.n_props != len(self.props):
+            raise ValueError(
+                f"Number of per atom columns '{self.n_props}' is not equal "
+                f"to the number of column names '{len(self.props)}'."
+                )
+        for i in range(1, self.n_atoms):
+            self.atoms[i, :] = \
+                np.array(list(map(float, self.file.readline().split())))
+
+
+class Dump:
+    """
+    Read, write, and manipulate dump files and particle attributes.
+
+    Examples
+    --------
+    d = dump("dump.one")              read in a single dump.
+    d = dump(["dump.1", "dump.2"])	  can be more than one dump.
+    d = dump(["dump.1", "dump.2.gz"]) can be gzipped
+
+    `Dump` automatically delete incomplete and duplicate snapshots and
+    unscaled coordinates if they are stored in files as scaled.
+    """
+    def __init__(self, filepath: str) -> None:
+        self.filepath = filepath
+        self.names = {}
+        self.is_scaled = -1  # -1/0/1 mean unknown/unscale/scale coordinates.
+        self.snaps: list[Snapshot] = []
+        self.n_snaps: int = 0  # total number of snapshots
+        self.increment = 1
+        self.eof = 0
+
+    def read_all(self) -> None:
+        """
+        Read all snapshots from each file; test for gzipped files.
+        """
+        with openany_context(self.filepath) as dfile:
+            snap = Snapshot(dfile)
+            if self.names == {}:
+                self.names = snap.props
+                print("Assigned columns: " + self.names2str())
+                self.is_scaled = snap.is_scaled
+            while snap:
+                self.snaps.append(snap)
+                snap = Snapshot(dfile)
+        # sort entries by timestep, cull duplicates
+        self.snaps.sort(key=self.compare_time)
+        self.cull()
+        self.n_snaps = len(self.snaps)
+        print(f"{self.n_snaps} snapshots were read.")
+        # select all timesteps and atoms
+        # if snapshots are scaled, unscale them
+        if ("x" not in self.names.keys()) or \
+            ("y" not in self.names.keys()) or \
+                ("z" not in self.names.keys()):
+            print("Dump scaling status is unknown.")
+        elif self.n_snaps > 0:
+            if self.is_scaled == 1:
+                self.unscale()
+            elif self.is_scaled == 0:
+                print("dump is already unscaled")
+        else:
+            print("Dump scaling status is unknown")
+
+    def names2str(self) -> str:
+        """
+        Convert column names to a string, by column order.
+
+        Returns
+        -------
+        col_str: str
+            The string of column names. `col_str` is repeated in the header
+            section of a snapshot, determining per atom properties in that
+            snapshot.
+        """
+        names_res = dict(((v, k) for k, v in self.names.items()))
+        names_res = OrderedDict(sorted(names_res.items()))
+        col_str = " ".join(names_res.values())
+        return col_str
+
+    def cull(self) -> None:
+        """
+        Delete successive snapshots with duplicate time stamp.
+        """
+        i = 1
+        while i < len(self.snaps):
+            if self.snaps[i].time == self.snaps[i-1].time:
+                del self.snaps[i]
+            else:
+                i += 1
+
+    def find_snapshot(self, ts: int) -> int:
+        """
+        Find a snapshot with timestep `ts`.
+
+        Parameters
+        ----------
+        ts: int
+            The snapshot to be found.
+
+        Returns
+        -------
+        i: int
+            The index of the snapshot in `self.n_snaps` for which timestep is
+            equal to `ts`.
+
+        Raises
+        ------
+        ValueError
+            raise error  if `ts` is not found.
+        """
+        for i in range(self.n_snaps):
+            if self.snaps[i].time == ts:
+                return i
+        raise ValueError(f"No step '{ts}' exists.")
+
+    @staticmethod
+    def compare_time(snap: Snapshot) -> int:
+        """
+        Sort snapshots on time stamp.
+        """
+        return snap.time
+
+    @staticmethod
+    def unit_cell(snap: Snapshot) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Compute elements of the h-matrix for a tricilinic or orthogonal unit
+        cell and its inverse matrix
+        Parameters
+        ----------
+        snap : Snapshot
+            Snapshot being unscaled.
+
+        Return
+        ------
+        h_mat : numpy array
+            An array of length 6 containing the elements of h_matrix.
+        h_inv : numpy array
+            An array of length 6 containing the elements of the inverse of
+            the h_matrix.
+        """
+        xlo_bound = snap.xlo
+        xhi_bound = snap.xhi
+        ylo_bound = snap.ylo
+        yhi_bound = snap.yhi
+        zlo_bound = snap.zlo
+        zhi_bound = snap.zhi
+        xy = snap.xy
+        xz = snap.xz
+        yz = snap.yz
+        xlo = xlo_bound - min((0.0, xy, xz, xy+xz))
+        xhi = xhi_bound - max((0.0, xy, xz, xy+xz))
+        ylo = ylo_bound - min((0.0, yz))
+        yhi = yhi_bound - max((0.0, yz))
+        zlo = zlo_bound
+        zhi = zhi_bound
+        h_mat = np.zeros(6, dtype=np.float64)
+        h_mat[0] = xhi - xlo
+        h_mat[1] = yhi - ylo
+        h_mat[2] = zhi - zlo
+        h_mat[3] = yz
+        h_mat[4] = xz
+        h_mat[5] = xy
+        h_inv = np.zeros(6, dtype=np.float64)
+        h_inv[0] = 1.0 / h_mat[0]
+        h_inv[1] = 1.0 / h_mat[1]
+        h_inv[2] = 1.0 / h_mat[2]
+        h_inv[3] = yz / (h_mat[1]*h_mat[2])
+        h_inv[4] = (h_mat[3]*h_mat[5] - h_mat[1]*h_mat[4]) / \
+            (h_mat[0]*h_mat[1]*h_mat[2])
+        h_inv[5] = xy / (h_mat[0]*h_mat[1])
+        return h_mat, h_inv
+
+    def scale(self, timestep: int = -1) -> None:
+        """
+        Scale coordinates from box size to [0,1] for all snapshots or for
+        snapshot `timestep`, using the h-matrix to treat orthogonal or
+        triclinic boxes.
+
+        Parameters
+        ----------
+        timestep : int, optional
+            The timestep of the snapshot being unscaled.
+        """
+        if timestep == -1:
+            print("Scaling dump ...")
+            x = self.names["x"]
+            y = self.names["y"]
+            z = self.names["z"]
+            for snap in self.snaps:
+                self.scale_one(snap, x, y, z)
+        else:
+            i = self.find_snapshot(timestep)
+            x = self.names["x"]
+            y = self.names["y"]
+            z = self.names["z"]
+            self.scale_one(self.snaps[i], x, y, z)
+
+    def scale_one(self, snap: Snapshot, x: int, y: int, z: int) -> None:
+        """
+        Scale a single snapshot.
+
+        Parameters
+        ----------
+        snap : Snapshot
+            Snapshot being unscaled.
+        x : int
+            Column id of the x coordinate.
+        y : int
+            Column id of the y coordinate.
+        z : int
+            Column id of the z coordinate.
+        """
+        # scale coordinates in a single `snap`, using
+        if not snap.triclinic:
+            xprdinv = 1.0 / (snap.xhi - snap.xlo)
+            yprdinv = 1.0 / (snap.yhi - snap.ylo)
+            zprdinv = 1.0 / (snap.zhi - snap.zlo)
+            atoms = snap.atoms
+            if atoms is not None:
+                atoms[:, x] = (atoms[:, x] - snap.xlo) * xprdinv
+                atoms[:, y] = (atoms[:, y] - snap.ylo) * yprdinv
+                atoms[:, z] = (atoms[:, z] - snap.zlo) * zprdinv
+        else:
+            # Creating h-matrix:
+            _, h_inv = self.unit_cell(snap)
+            atoms = snap.atoms
+            if atoms is not None:
+                atoms[:, x] = (atoms[:, x] - snap.xlo)*h_inv[0] + \
+                    (atoms[:, y] - snap.ylo)*h_inv[5] + \
+                    (atoms[:, z] - snap.zlo)*h_inv[4]
+                atoms[:, y] = (atoms[:, y] - snap.ylo)*h_inv[1] + \
+                    (atoms[:, z] - snap.zlo)*h_inv[3]
+                atoms[:, z] = (atoms[:, z] - snap.zlo)*h_inv[2]
+
+    def unscale(self, timestep: int = -1) -> None:
+        """
+        Unscale coordinates from [0,1] to box size for all snapshots or
+        for snapshot `timestep`, using the h-matrix to treat orthogonal or
+        triclinic boxes.
+
+        Parameters
+        ----------
+        timestep : int, optional
+            The timestep of the snapshot being unscaled.
+        """
+        if timestep == -1:
+            print("Unscaling dump ...")
+            x = self.names["x"]
+            y = self.names["y"]
+            z = self.names["z"]
+            for snap in self.snaps:
+                self.unscale_one(snap, x, y, z)
+        else:
+            i = self.find_snapshot(timestep)
+            x = self.names["x"]
+            y = self.names["y"]
+            z = self.names["z"]
+            self.unscale_one(self.snaps[i], x, y, z)
+
+    def unscale_one(self, snap: Snapshot, x: int, y: int, z: int) -> None:
+        """
+        Unscale a single snapshot.
+
+        Parameters
+        ----------
+        snap : Snapshot
+            Snapshot being unscaled.
+        x : int
+            Column id of the x coordinate.
+        y : int
+            Column id of the y coordinate.
+        z : int
+            Column id of the z coordinate.
+        """
+        if not snap.triclinic:
+            xprd = snap.xhi - snap.xlo
+            yprd = snap.yhi - snap.ylo
+            zprd = snap.zhi - snap.zlo
+            atoms = snap.atoms
+            if atoms is not None:
+                atoms[:, x] = snap.xlo + atoms[:, x]*xprd
+                atoms[:, y] = snap.ylo + atoms[:, y]*yprd
+                atoms[:, z] = snap.zlo + atoms[:, z]*zprd
+        else:
+            # Creating h-matrix:
+            h_mat, _ = self.unit_cell(snap)
+            atoms = snap.atoms
+            if atoms is not None:
+                atoms[:, x] = snap.xlo + atoms[:, x] * \
+                    h_mat[0] + atoms[:, y]*h_mat[5] + atoms[:, z]*h_mat[4]
+                atoms[:, y] = snap.ylo + atoms[:, y]*h_mat[1] + \
+                    atoms[:, z]*h_mat[3]
+                atoms[:, z] = snap.zlo + atoms[:, z]*h_mat[2]
+
+    def wrap(self) -> None:
+        """
+        Wraps coordinates from outside box to inside.
+        """
+        print("Wrapping dump ...")
+        x = self.names["x"]
+        y = self.names["y"]
+        z = self.names["z"]
+        ix = self.names["ix"]
+        iy = self.names["iy"]
+        iz = self.names["iz"]
+        for snap in self.snaps:
+            xprd = snap.xhi - snap.xlo
+            yprd = snap.yhi - snap.ylo
+            zprd = snap.zhi - snap.zlo
+            atoms = snap.atoms
+            atoms[:, x] -= atoms[:, ix]*xprd
+            atoms[:, y] -= atoms[:, iy]*yprd
+            atoms[:, z] -= atoms[:, iz]*zprd
+
+    def unwrap(self) -> None:
+        """
+        Unwraps coordinates from inside box to outside.
+        """
+        print("Unwrapping dump ...")
+        x = self.names["x"]
+        y = self.names["y"]
+        z = self.names["z"]
+        ix = self.names["ix"]
+        iy = self.names["iy"]
+        iz = self.names["iz"]
+        for snap in self.snaps:
+            xprd = snap.xhi - snap.xlo
+            yprd = snap.yhi - snap.ylo
+            zprd = snap.zhi - snap.zlo
+            atoms = snap.atoms
+            atoms[:, x] += atoms[:, ix]*xprd
+            atoms[:, y] += atoms[:, iy]*yprd
+            atoms[:, z] += atoms[:, iz]*zprd
+
+    @staticmethod
+    def write_header(snap: Snapshot, file: IO, cols: str) -> None:
+        """
+        Write the 'header' section of a dump file.
+
+        Parameters
+        ----------
+        snap : Snapshot
+            The snapshot for which header is written
+        file : TextIO
+            Pointer to the file to which the header is written
+        cols : str
+            The space-separated column names
+        """
+        file.write("ITEM: TIMESTEP\n")
+        file.write(str(snap.time) + "\n")
+        file.write("ITEM: NUMBER OF ATOMS\n")
+        file.write(str(snap.n_atoms) + "\n")
+        if snap.boxstr:
+            file.write(snap.boxstr)
+        else:
+            file.write("ITEM: BOX BOUNDS\n")
+        if snap.triclinic:
+            file.write(f"{snap.xlo} {snap.xhi} {snap.xy}\n")
+            file.write(f"{snap.ylo} {snap.yhi} {snap.xz}\n")
+            file.write(f"{snap.zlo} {snap.zhi} {snap.yz}\n")
+        else:
+            file.write(f"{snap.xlo} {snap.xhi}\n")
+            file.write(f"{snap.ylo} {snap.yhi}\n")
+            file.write(f"{snap.zlo} {snap.zhi}\n")
+        file.write("ITEM: ATOMS " + cols + "\n")
+
+    def write(self, filename: str, header: bool = True, mode: str = "w"
+              ) -> None:
+        """
+        write a single dump file from current selection.
+
+        Parameters
+        ----------
+        filename: str
+            _description_
+        header : bool, optional
+            Whether to write 'header' section or not.
+        mode : str, optional
+            Whether write to a new file or append to an existing file.
+        """
+        col_str = self.names2str()
+        if "id" in self.names:
+            atom_id_col = self.names["id"]
+        else:
+            raise ValueError("atom id column not found!")
+        if "type" in self.names:
+            atom_type_col = self.names["type"]
+        else:
+            raise ValueError("atom type column not found!")
+        with open(filename, mode) as snapshot:
+            for snap in self.snaps:
+                self.write_header(snap, snapshot, col_str)
+                for atom in snap.atoms:
+                    line = ""
+                    for j in range(snap.n_props):
+                        if j == atom_id_col or j == atom_type_col:
+                            line += str(int(atom[j])) + " "
+                        else:
+                            line += str(atom[j]) + " "
+                    snapshot.write(line)
+                    snapshot.write("\n")
+        print(f"{self.n_snaps} snapshots are written to a single dump file.")
+
+    def scatter(self, prefix: str) -> None:
+        """
+        Write one dump file per snapshot from the current selection, using
+        `prefix` as the prefix for filenames.
+
+        Parameters
+        ----------
+        prefix: str
+            The prefix used in the filenames.
+        """
+        col_str = self.names2str()
+        for snap in self.snaps:
+            print(snap.time, flush=True)
+            filename = prefix + "." + str(snap.time) + '.lammpstrj'
+            with open(filename, "w") as snapshot:
+                self.write_header(snap, snapshot, col_str)
+                for atom in snap.atoms:
+                    line = ""
+                    for j in range(snap.n_props):
+                        if j < 2:
+                            line += str(int(atom[j])) + " "
+                        else:
+                            line += str(atom[j]) + " "
+                    snapshot.write(line)
+        print(f"{self.n_snaps} snapshot(s) are written to "
+              f"{self.n_snaps} file(s).")
