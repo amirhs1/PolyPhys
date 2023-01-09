@@ -1,4 +1,5 @@
 ## Defining force-field variables
+variable m_crowd equal ${sig4}^3
 ### sigma_i
 # i=1: DNA, i=2: Protein pole, i=3: Protine core, i=4: Crowder
 # In this model, sig2 is set based on cutoff22 from cutoff2

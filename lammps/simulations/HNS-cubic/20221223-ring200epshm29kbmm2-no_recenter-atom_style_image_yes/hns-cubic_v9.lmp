@@ -1,4 +1,5 @@
 ## Defining force-field variables
+variable m_crowd equal ${sig4}^3
 ### sigma_i
 # i=1: DNA, i=2: Protein pole, i=3: Protine core, i=4: Crowder
 # In this model, sig2 is set based on cutoff22 from cutoff2
@@ -121,7 +122,6 @@ create_atoms 0 random ${n_hns} ${randseed_mols} cube units box mol 2 ${randseed_
 create_atoms 4 random ${n_crowd} ${randseed_crowds} cube units box
 
 #### Masses
-variable m_crowd equal ${sig4}^3
 mass 1 1.0
 mass 2 1.0
 mass 3 1.0

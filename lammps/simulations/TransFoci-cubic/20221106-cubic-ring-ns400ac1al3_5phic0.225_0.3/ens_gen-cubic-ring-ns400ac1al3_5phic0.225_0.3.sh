@@ -67,7 +67,7 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		mv input.lmp "${dirname}"
 		cp ./*.data initial_config.data
 		mv initial_config.data "${dirname}"
-		cp ./submit_init_config_minimize "${dirname}"
+		cp ./submit_init_config_minimize.sh "${dirname}"
 
 		N=$((n_big+n_small))
 		if [ $((n_crowd+N)) -ne ${N} ]; 

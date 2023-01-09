@@ -1588,7 +1588,7 @@ class HnsCub(ParserBase):
         ensemble: N#epshm#nh#ac#nc#
             A collection of 'wholes' (complete simulations) that differs only
             in their initial conditions (e.g., random number seed).
-        space: ns#nl#al#ac#
+        space: N#epshm#nh#ac#
             A collection of ensembles with a unique set of all the input
             parameters except number of crowders (nc).
 

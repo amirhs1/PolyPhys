@@ -24,17 +24,19 @@ Follow these instructions to restart a crashed simulation; the main idea is to f
       7. the **run** command.
       8. the **dump**, **dump_modify**, and **undump** commands, espcailly those used in the loop over **dump** and **run**.
       9. check **write_data**.
+      10. rename **restart** file pattern to **restart.after_crash**.
          **Caution: Use the appropriate retart-input-....lmp files; see the explanation in each file.**
          **Caution: Use the appropriate esm_restart_....sh files; see the explanation in each file.**
-6. rename **restart-input-___.lmp** to **input.lmp**.
-7. Copy **submit.sh** file to restart directories and edit each submit file individually in the directories
+6. Create **restarts** directory.
+7. rename **restart-input-___.lmp** to **input.lmp**.
+8. Copy **submit.sh** file to restart directories and edit each submit file individually in the directories
    1. **Caution:**Change the name of lammps input file in the submit script to **restart.lmp**.
-8. Run **loop_on_sbatch_restart.sh** to do the restart simulations.
-9. Copy **all___.lammpstrj.gz** files, check **j** value, **bug___.lammpstrj**, and **log.lammps** to the **complete** directories, using **copy_files_from_res_example.sh** script as a template.10. Go to each **complete** directory and do the following steps and run **restart_bug_trj_merger.sh** in each complete folder or run it as a loop.
+9.  Run **loop_on_sbatch_restart.sh** to do the restart simulations.
+10. Copy **all___.lammpstrj.gz** files, check **j** value, **bug___.lammpstrj**, and **log.lammps** to the **complete** directories, using **copy_files_from_res_example.sh** script as a template.10. Go to each **complete** directory and do the following steps and run **restart_bug_trj_merger.sh** in each complete folder or run it as a loop.
 
 ## Step 2: Generating a complete simulation directory: See *merge_outputs* directory
 
-1. Edit and run **copy_files_to_complete-___** where **___** is the name of **project** to copy trajectory, log, and data files from incomplete and restart directories to the new directories.
+1. Edit and run **copy_files_to_complete** to copy trajectory, log, and data files from incomplete and restart directories to the new directories.
    1. **Caution** : check the name of **bug**, **log**, and **all** files since they should be different for **incomplete** and **restart** files.
 2. Edit and run **trj_bug_merger-___** and **log_merger-___** where **___** is the name of **projecgt** to merge the **bug** incomplete and restart trajectories, creating full trajectories.
 3. Open the **complete** simulation directories to manually rename the **all** incomplete and restart trajectories.
