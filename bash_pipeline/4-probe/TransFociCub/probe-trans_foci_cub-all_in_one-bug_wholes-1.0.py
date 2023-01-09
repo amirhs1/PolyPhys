@@ -19,7 +19,7 @@ for (bug_topo, bug_trj) in bug_pairs:
 
 # analyzig all files
 group = 'all'
-topo_lineage = 'whole'
+top_lineage = 'whole'
 lineage = 'segment'
 save_to = './'
 all_trjs = glob('./al*' + group + '*')
@@ -28,22 +28,22 @@ all_trjs = organizer.sort_filenames(
     fmts=['.' + group + '.lammpstrj']
 )
 all_trjs = [all_trj[0] for all_trj in all_trjs]
-all_topo = glob('./al*' + group + '*')
-all_topo = organizer.sort_filenames(all_topo, fmts=['.' + group + '.data'])
-all_topo = all_topo[0][0]
+all_top = glob('./al*' + group + '*')
+all_top = organizer.sort_filenames(all_top, fmts=['.' + group + '.data'])
+all_top = all_top[0][0]
 max_segment_id = len(all_trjs)
 
 # it is assumed that the all trjs are numbers from 1 to max_segment_id
 for all_trj in all_trjs:
-    trj_info = TransFociCub(all_trj, topo_lineage, 'cubic', group, 'ring')
+    trj_info = TransFociCub(all_trj, top_lineage, 'cubic', group, 'ring')
     # all the frames in the last segment are probed:
     if trj_info.segment_id == max_segment_id:
-        prober.trans_foci_all_cubic(
-            all_topo, all_trj, lineage, save_to=save_to
+        prober.trans_foci_all_cub(
+            all_top, all_trj, lineage, save_to=save_to
             )
     else:
-        prober.trans_foci_all_cubic(
-            all_topo,
+        prober.trans_foci_all_cub(
+            all_top,
             all_trj,
             lineage,
             save_to=save_to,
