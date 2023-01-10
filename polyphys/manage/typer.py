@@ -24,7 +24,7 @@ TransFociCylT = Type[TransFociCyl]
 TransFociT = Union[TransFociCylT, TransFociCubT]
 SumRuleCylT = Type[SumRuleCyl]
 HnsCubT = Type[HnsCub]
-ParserT = Union[TransFociCylT, SumRuleCylT, TransFociCubT, HnsCubT]
+ParserT = Union[TransFociCub, TransFociCyl, SumRuleCyl, HnsCub]
 
 EnsWholes = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
 EnsembleT = Tuple[EnsembleName, EnsWholes]
