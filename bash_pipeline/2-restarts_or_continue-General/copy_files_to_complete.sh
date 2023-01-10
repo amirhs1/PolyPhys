@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "Start copying ..."
 for dir in N*.ring_incomplete/; do # HnsCub
 #for dir in N*[1-8]_incomplete/; do # SumRuleCyl
 #for dir in al*_incomplete/; do # TransFociCub
@@ -13,10 +14,11 @@ for dir in N*.ring_incomplete/; do # HnsCub
     cd ..
     cd "${comdir}"_res || exit
         cp N*all.data ../"${comdir}/"
-        cp N*all.lammpstrj.gz ../"${comdir}"/
+        cp N*all.restart.lammpstrj.gz ../"${comdir}"/
         #cp N*nucleoid.restart.lammpstrj ../"${comdir}"/ # HnsCub
         cp N*bug.restart.lammpstrj ../"${comdir}"/ # others
         cp log.lammps restart.log.lammps
         mv restart.log.lammps ../"${comdir}"/
     cd ..
 done
+echo "Finished!"

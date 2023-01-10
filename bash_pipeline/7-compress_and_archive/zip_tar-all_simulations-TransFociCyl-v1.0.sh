@@ -28,3 +28,4 @@ for directory in eps*/; do
     project=${dir}.tar
     tar -cvkf "${project}" "${zipdir}" >> "${report}"
 done
+echo "Finished!"
