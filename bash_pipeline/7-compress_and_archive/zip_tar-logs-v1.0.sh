@@ -8,8 +8,10 @@ read -rp "Enter Project Name > " project
 read -rp "Enter Part Number > " part
 report="${project}-part${part}-logs-archive_report.txt" #report name
 touch "$report"
-for dir in D*-logs/; do
+echo "Start archiving..."
+for dir in N*-logs/; do
     echo "${dir}" >> "${report}"
     project=${dir::-1}.tar.gz
     tar -czvf "${project}" "${dir}" >> "${report}"
 done
+echo "Finished!"

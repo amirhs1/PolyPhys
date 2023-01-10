@@ -12,3 +12,4 @@ for dir in N*-bug-*/; do
     echo "${dir}" >> "${report}"
     tar -cvkzf "${sim}.tar.gz" "${dir}"
 done
+echo "Finished!"

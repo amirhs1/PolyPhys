@@ -31,15 +31,22 @@ Follow these instructions to restart a crashed simulation; the main idea is to f
 7. rename **restart-input-___.lmp** to **input.lmp**.
 8. Copy **submit.sh** file to restart directories and edit each submit file individually in the directories
    1. **Caution:**Change the name of lammps input file in the submit script to **restart.lmp**.
-9.  Run **loop_on_sbatch_restart.sh** to do the restart simulations.
+9. Run **loop_on_sbatch_restart.sh** to do the restart simulations.
 10. Copy **all___.lammpstrj.gz** files, check **j** value, **bug___.lammpstrj**, and **log.lammps** to the **complete** directories, using **copy_files_from_res_example.sh** script as a template.10. Go to each **complete** directory and do the following steps and run **restart_bug_trj_merger.sh** in each complete folder or run it as a loop.
 
 ## Step 2: Generating a complete simulation directory: See *merge_outputs* directory
 
 1. Edit and run **copy_files_to_complete** to copy trajectory, log, and data files from incomplete and restart directories to the new directories.
    1. **Caution** : check the name of **bug**, **log**, and **all** files since they should be different for **incomplete** and **restart** files.
-2. Edit and run **trj_bug_merger-___** and **log_merger-___** where **___** is the name of **projecgt** to merge the **bug** incomplete and restart trajectories, creating full trajectories.
-3. Open the **complete** simulation directories to manually rename the **all** incomplete and restart trajectories.
+2. Edit and run **trj_bug_merger-___** where **___** is the name of **project** to merge the **bug** incomplete and restart trajectories, creating full trajectories.
+3. Fixing Log files:
+   1. Find the run time of the **incomplete** *log.lammps* file.
+   2. Copy incomplete *log.lammps* to *log.restart.fake*.
+   3. Check the last line of the *log.restart.fake* to see wether it has the end of line charachter or not; use **sed -i '$d'** to delete gthe last line in place if neccessary.
+   4. Fake the end of *log.restart.fake* by adding "Total wall time: FAKETIME" to it.
+   5. Rename the incomplete and restart logs accordingly.
+4. Open the **complete** simulation directories to manually rename the **all** incomplete and restart trajectories.
+5. Use the **trj_restart_extractor.sh** to extract trajectories.
 
 ## Step 3: Continuing a finished simulation
 

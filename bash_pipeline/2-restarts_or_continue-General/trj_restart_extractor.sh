@@ -1,6 +1,5 @@
 #!/bin/bash
 # This script copies the dump bug/momomer file from a run folder to the simulation folder and rename it to the run folder name
-echo "Start to extract ..."
 pname=$(pwd | rev | cut -d / -f 1 | rev) # pattern of the parent name: D#al#nl#ns#ac#-SIMTYPE
 name=$( echo "$pname" | cut -d - -f 1)
 logdir=${name}-logs # name of trjactories directory
@@ -17,4 +16,4 @@ done
 rundir=run_files-${name}
 mkdir "$rundir"
 mv ./*.data ./*.lmp ./*.sh "$rundir"
-echo "Finished!"
+cp ../PolyPhys/bash_scripts/4-probe/cubic/probe_runfiles-cubic.sh .

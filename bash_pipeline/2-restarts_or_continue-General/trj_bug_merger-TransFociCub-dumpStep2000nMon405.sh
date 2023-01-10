@@ -2,8 +2,8 @@
 # incomfile (the main trj file) tstep (timestep ast which the merge is done) trjfile (the restart trj file)
 echo "If there is a number the same as the timestep of interest, this script does not work."
 read -rp "Enter whole name > " whole
-read -rp "Enter dump step > " dumpStep
-read -rp "Enter total number of monomers > " nMon
+dumpStep=2000
+nMon=405
 lastStep=$(head -n 2 "$whole".restart.lammpstrj | tail -n 1)
 splitStep=$((lastStep + dumpStep))
 echo "timestep to split: $splitStep"

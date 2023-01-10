@@ -551,30 +551,32 @@ class SumRuleCyl(ParserBase):
         """
         defines and initiates the class attributes based on the physical
         attributes defined for the project.
+
+        The negative initial values are unphysical.
         """
         # group attributes
-        self.dmon = 1.0
-        self.nmon = np.nan
-        self.mmon = self.dmon**3
-        self.phi_m_bulk = np.nan
-        self.rho_m_bulk = np.nan
-        self.dcrowd = np.nan
-        self.ncrowd = np.nan
-        self.mcrowd = np.nan
-        self.phi_c_bulk = np.nan
-        self.rho_c_bulk = np.nan
+        self.dmon: float = 1
+        self.nmon: int = -1
+        self.mmon: float = self.dmon**3
+        self.phi_m_bulk: float = -1
+        self.rho_m_bulk: float = -1
+        self.dcrowd: float = -1
+        self.ncrowd: int = -1
+        self.mcrowd: float = -1
+        self.phi_c_bulk: float = -1
+        self.rho_c_bulk: float = -1
         # system attributes
-        self.ensemble_id = np.nan
-        self.segment_id = np.nan
-        self.dt = np.nan
-        self.bdump = np.nan
-        self.adump = np.nan
+        self.ensemble_id: int = -1
+        self.segment_id: int = -1
+        self.dt: float = 0
+        self.bdump: int = -1
+        self.adump: int = -1
         # geomtery attributes:
-        self.dcyl = np.nan
-        self.lcyl = np.nan
-        self.dwall = 1.0
-        self.eps_others = 1.0
-        self.epsilon = np.nan
+        self.dcyl: float = -1
+        self.lcyl: float = -1
+        self.dwall: float = 1
+        self.eps_others: float = 1
+        self.epsilon: float = 0
 
     def _parse_lineage_name(self) -> None:
         """
@@ -997,35 +999,37 @@ class TransFociCyl(ParserBase):
         """
         defines and initiates the class attributes based on the physical
         attributes defined for the project.
+
+        The negative initial values are unphysical.
         """
         # group attributes
-        self.dmon_small = 1.0
-        self.nmon_small = np.nan
-        self.mmon_small = self.dmon_small**3
-        self.nmon_large = np.nan
-        self.dmon_large = np.nan
-        self.mmon_large = np.nan
-        self.nmon = np.nan
-        self.phi_m_bulk = np.nan
-        self.rho_m_bulk = np.nan
-        self.dcrowd = np.nan
-        self.ncrowd = np.nan
-        self.mcrowd = np.nan
-        self.phi_c_bulk = np.nan
-        self.rho_c_bulk = np.nan
+        self.dmon_small: float = 1.0
+        self.nmon_small: int = -1
+        self.mmon_small: float = self.dmon_small**3
+        self.nmon_large: int = -1
+        self.dmon_large: float = -1
+        self.mmon_large: float = -1
+        self.nmon: int = -1
+        self.phi_m_bulk: float = -1
+        self.rho_m_bulk: float = -1
+        self.dcrowd: float = -1
+        self.ncrowd: int = -1
+        self.mcrowd: float = -1
+        self.phi_c_bulk: float = -1
+        self.rho_c_bulk: float = -1
         # system attributes
-        self.ensemble_id = np.nan
-        self.segment_id = np.nan
-        self.dt = np.nan
-        self.bdump = np.nan
-        self.adump = np.nan
+        self.ensemble_id: int = -1
+        self.segment_id: int = -1
+        self.dt: float = 0
+        self.bdump: int = -1
+        self.adump: int = -1
         # geometry attributes
-        self.lcyl = np.nan
-        self.dwall = 1.0
-        self.eps_others = 1.0
-        self.dcyl = np.nan
-        self.epsilon_small = np.nan
-        self.epsilon_large = np.nan
+        self.lcyl: float = -1
+        self.dwall: float = 1.0
+        self.eps_others: float = 1.0
+        self.dcyl: float = -1
+        self.epsilon_small: float = -1
+        self.epsilon_large: float = -1
 
     def _parse_lineage_name(self) -> None:
         """
@@ -1426,31 +1430,33 @@ class TransFociCub(ParserBase):
         """
         defines and initiates the class attributes based on the physical
         attributes defined for the project.
+
+        The negative initial values are unphysical.
         """
         # group attributes
-        self.dmon_small = 1.0
-        self.nmon_small = np.nan
-        self.mmon_small = self.dmon_small**3
-        self.nmon_large = np.nan
-        self.dmon_large = np.nan
-        self.mmon_large = np.nan
-        self.nmon = np.nan
-        self.phi_m_bulk = np.nan
-        self.rho_m_bulk = np.nan
-        self.dcrowd = np.nan
-        self.ncrowd = np.nan
-        self.mcrowd = np.nan
-        self.phi_c_bulk = np.nan
-        self.rho_c_bulk = np.nan
+        self.dmon_small: float = 1.0
+        self.nmon_small: int = -1
+        self.mmon_small: float = self.dmon_small**3
+        self.nmon_large: int = -1
+        self.dmon_large: float = -1
+        self.mmon_large: float = -1
+        self.nmon: int = -1
+        self.phi_m_bulk: float = -1
+        self.rho_m_bulk: float = -1
+        self.dcrowd: float = -1
+        self.ncrowd: int = -1
+        self.mcrowd: float = -1
+        self.phi_c_bulk: float = -1
+        self.rho_c_bulk: float = -1
         # system attributes
-        self.ensemble_id = np.nan
-        self.segment_id = np.nan
-        self.dt = np.nan
-        self.bdump = np.nan
-        self.adump = np.nan
+        self.ensemble_id: int = -1
+        self.segment_id: int = -1
+        self.dt: float = 0
+        self.bdump: int = -1
+        self.adump: int = -1
         # cubic attributes
-        self.eps_others = 1.0
-        self.lcube = np.nan
+        self.eps_others: float = 1.0
+        self.lcube: float = -1
 
     def _parse_lineage_name(self) -> None:
         """
@@ -1848,33 +1854,35 @@ class HnsCub(ParserBase):
         """
         defines and initiates the class attributes based on the physical
         attributes defined for the project.
+
+        All negative initial values are unphysical.
         """
         # group attributes
-        self.dmon = 1.0
-        self.nmon = np.nan
-        self.mmon = self.dmon**3
-        self.phi_m_bulk = np.nan
-        self.rho_m_bulk = np.nan
-        self.dhns = 1.0
-        self.nhns = np.nan
-        self.mhns = self.dhns**3
-        self.phi_hns_bulk = np.nan
-        self.rho_hns_bulk = np.nan
-        self.dcrowd = np.nan
-        self.ncrowd = np.nan
-        self.mcrowd = np.nan
-        self.phi_c_bulk = np.nan
-        self.rho_c_bulk = np.nan
+        self.dmon: float = 1.0
+        self.nmon: int = -1
+        self.mmon: float = self.dmon**3
+        self.phi_m_bulk: float = -1
+        self.rho_m_bulk: float = -1
+        self.dhns: float = 1.0
+        self.nhns: int = -1
+        self.mhns: float = self.dhns**3
+        self.phi_hns_bulk: float = -1
+        self.rho_hns_bulk: float = -1
+        self.dcrowd: float = -1
+        self.ncrowd: int = -1
+        self.mcrowd: float = -1
+        self.phi_c_bulk: float = -1
+        self.rho_c_bulk: float = -1
         # system attributes
-        self.ensemble_id = np.nan
-        self.segment_id = np.nan
-        self.dt = np.nan
-        self.ndump = np.nan
-        self.adump = np.nan
+        self.ensemble_id: int = -1
+        self.segment_id: int = -1
+        self.dt: float = -1
+        self.ndump: int = -1
+        self.adump: int = -1
         # cubic attributes
-        self.eps_hm = np.nan
-        self.eps_others = 1.0
-        self.lcube = np.nan
+        self.eps_hm: float = -1
+        self.eps_others: float = 1.0
+        self.lcube: float = -1
 
     def _parse_lineage_name(self) -> None:
         """

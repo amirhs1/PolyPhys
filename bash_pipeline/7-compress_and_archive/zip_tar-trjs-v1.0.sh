@@ -17,3 +17,4 @@ for dir in eps*/; do
 #    project=${zipdir}.tar.gz
 #    tar -czvf ${project} ${zipdir} >> "${report}"
 done
+echo "Finished!"

@@ -362,6 +362,7 @@ def fixedsize_bins(
     _lmin = np.asarray(lmin, dtype=np.float_)
     _lmax = np.asarray(lmax, dtype=np.float_)
     _length = _lmax - _lmin
+    n_bins: int = 0
     if bin_type == 'ordinary':
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)  # excess length
@@ -1846,10 +1847,10 @@ def trans_fuci_bug_cyl(
     sim_info = TransFociCyl(
         trajectory,
         lineage,
-        'cylindrical'
+        'cylindrical',
         'bug',
         'ring'
-    )
+        )
     sim_name = sim_info.lineage_name + "-" + sim_info.group
     print("\n" + sim_name + " is analyzing...\n")
     # LJ time difference between two consecutive frames:
@@ -2390,17 +2391,17 @@ def trans_foci_all_cyl_hist2d(
     # dict of bin edges:
     bin_edges = {
         'xEdge': {
-            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
             'lmin': -0.5 * sim_info.dcyl,
             'lmax': 0.5 * sim_info.dcyl
             },
         'yEdge': {
-            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
             'lmin': -0.5 * sim_info.dcyl,
             'lmax': 0.5 * sim_info.dcyl
             },
         'zEdge': {
-            'bin_size':  0.5 * min(sim_info.dmon, sim_info.dcrowd),
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
             'lmin': -0.5 * sim_info.lcyl,
             'lmax': 0.5 * sim_info.lcyl
             }
