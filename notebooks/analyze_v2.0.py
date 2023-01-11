@@ -78,9 +78,9 @@ bug_details = {
             ('asphericityT', 'Mon', 'bug')
         ]
     },
-    'TransFociCubicWhole': {
+    'TransFociCubWhole': {
         'hierarchy': 'al*/al*',  # dir/file
-        'parser': TransFociCubic,
+        'parser': TransFociCub,
         'geometry': 'cubic',
         'is_segment': False,
         'nonscalar_hist_t_properties': [
@@ -197,9 +197,9 @@ all_details = {
             ('z', 'all'),
         ]
     },
-    'TransFociCubicWhole': {
+    'TransFociCubWhole': {
         'hierarchy': 'al*/al*',  # dir/file
-        'parser': TransFociCubic,
+        'parser': TransFociCub,
         'geometry': 'cubic',
         'is_segment': True,
         'rho_phi_hist_properties': [
