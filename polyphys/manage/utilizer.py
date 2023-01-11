@@ -2,12 +2,16 @@
 """
 import numpy as np
 import gzip
+from gzip import GzipFile
 import os
-from typing import List, Generator, IO, Any
+from typing import Generator, IO, Any, Optional, TextIO, Union
 from contextlib import contextmanager
 
 
-def openany(filepath: str, mode: str = 'r') -> IO[Any]:
+def openany(
+    filepath: str,
+    mode: str = 'r'
+) -> Union[GzipFile, TextIO, IO[Any]]:
     """
     Open a regular or gzipped file.
 
@@ -32,8 +36,10 @@ def openany(filepath: str, mode: str = 'r') -> IO[Any]:
 
 
 @contextmanager
-def openany_context(filepath: str, mode: str = 'r'
-                    ) -> Generator[IO[Any], None, None]:
+def openany_context(
+    filepath: str,
+    mode: str = 'r'
+) -> Generator[Union[IO[Any], TextIO, GzipFile], None, None]:
     """
     Open a regular or gzipped file.
 
@@ -46,7 +52,7 @@ def openany_context(filepath: str, mode: str = 'r'
 
     Yields
     ------
-    Generator[IO, None, None]
+    Generator:
         A file object.
     """
     _, ext = os.path.splitext(filepath)
@@ -64,12 +70,15 @@ def openany_context(filepath: str, mode: str = 'r'
 def round_down_first_non_zero(x: float) -> float:
     """rounds down a number to its first non-zero digit.
 
-    Parameters:
-    x (float or int): number which is rounded.
+    Parameters
+    ----------
+    x : float
+        number which is rounded.
 
-    Returns:
-    a float or integer number to which to which x is rounded down to its
-        first non-zero digit.
+    Returns
+    -------
+    float:
+        a float number to which x is rounded down to its first non-zero digit.
     """
     if x == 0:
         return x
@@ -79,34 +88,37 @@ def round_down_first_non_zero(x: float) -> float:
         return round(np.floor(x/non_zero)*non_zero, int(abs(exponent)))
 
 
-def round_up_nearest(dividend: float, diviser: float, round_to: int) -> float:
-    """rounds up `dividend` by `diviser` up to `round_to` significatn digits.
+def round_up_nearest(
+    dividend: float,
+    divider: float,
+    round_to: int
+) -> float:
+    """rounds up `dividend` by `divider` up to `round_to` significant digits.
 
     Parameters
     ----------
     dividend: float
         The number should be rounded up.
-    diviser: float
-        The number used as the diviser.
+    divider: float
+        The number used as the divider.
     round_to: int
-        The nuumber of the significatn digits.
+        The number of the significant digits.
 
     Return
     ------
     float:
-        The rounded number which is divisable by the divisor.
+        The rounded number which is divisible by the divisor.
     """
-    # pylance: disable-next=reportGeneralTypeIssues
-    return np.around(np.around(dividend / diviser) * diviser, round_to)
+    return round(round(dividend / divider) * divider, round_to)
 
 
 def invalid_keyword(
     keyword: str,
-    valid_keywords: List[str],
-    message: str = ''
+    valid_keywords: list[str],
+    message: Optional[str] = None
 ) -> None:
     """
-    Raises an error if `keyowrd` is not in `valid_keywords`.
+    Raises an error if `keyword` is not in `valid_keywords`.
 
     Parameters
     ----------
@@ -114,6 +126,8 @@ def invalid_keyword(
         Name of the `keyword`
     valid_keywords: array of str
         Array of valid keywords
+    message: str
+        Message to be printed.
     """
     if message is None:
         message = " is an invalid option. Please select one of " + \

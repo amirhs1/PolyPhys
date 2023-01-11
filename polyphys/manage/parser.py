@@ -15,10 +15,10 @@ TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
 
 class ParserBase(ABC):
     """
-    parses a `name` (which can be the nale of a file or the whole path to that
-    based on the value of `ispath` argument) to extract information about a
+    parses a `name` (which can be a filename or  a filepath based on the
+    value of `ispath` argument) to extract information about a
     project's file based on a pattern pre-defined by the `lineage` in a given
-    `goemetry` for a given `group`.
+    `geometry` for a given `group`.
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ class ParserBase(ABC):
         Type of the lineage of the name.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
-    group: {'bug', 'nuceloid', 'all'}
+    group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.  'bug' is used for a single polymer.
         'all' is used for all the particles/atoms in the system.
     topology:
@@ -39,10 +39,10 @@ class ParserBase(ABC):
 
     Attributes
     ----------
-    _pathname: str, default "N/A"
+    filepath: str, default "N/A"
         Equal to `name` if `name` is a filepath, otherwise "N/A".
-    _filename: str
-        Name of a the file referred to by `name` if `name` is a filepath,
+    filename: str
+        Name of a file referred to by `name` if `name` is a filepath,
         otherwise the `name` itself.
     _lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
         'space'}, default whole
@@ -72,7 +72,7 @@ class ParserBase(ABC):
         `lineage` in the class.
     _genealogy: dict of lists
         A dictionary of `lineage` names. For each `lineage`, a list is defined
-        that contains the parent-like lineage attirbutes of that `lineage`.
+        that contains the parent-like lineage attributes of that `lineage`.
     """
     _lineage_attributes: dict[str, None] = {
         "segment": None,
@@ -252,16 +252,16 @@ class ParserBase(ABC):
     @abstractmethod
     def _set_parents(self) -> None:
         """
-        set to parent names for a lineage_name based on it lineage.
+        set to parent names for a lineage_name based on its lineage.
 
         The following map is used for setting relationships:
 
             'segment': A child of 'whole' lineage.
             'whole': A child of 'ensemble' lineage.
-            'ensemble': Achild of 'space' lineage.
+            'ensemble': A child of 'space' lineage.
             'space': The root of other lineages.
 
-        It is assumed that 'nc' is the last attribute shortkey in a
+        It is assumed that 'nc' is the last attribute short-key in a
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         pass
@@ -283,12 +283,12 @@ class SumRuleCyl(ParserBase):
     topology: str
     ispath: bool = True
     """
-    parses a `name` (which can be the nale of a file or the whole path to that
-    based on the value of `ispath` argument) to extract information about a
-    project's file based on a pattern pre-defined by the `lineage` in the
+    parses a `name` (which can be a filename or a file path based on the
+    value of `ispath` argument) to extract information about a project's
+    file based on a pattern pre-defined by the `lineage` in the
     'cylindrical' geometry for a given `group` in the project.
 
-    In the geomtery 'cylindrical', these patterns are used to parse a `name`:
+    In the geometry 'cylindrical', these patterns are used to parse a `name`:
 
         segment: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
             One of multiple chunks of a complete simulation or measurement.
@@ -381,15 +381,15 @@ class SumRuleCyl(ParserBase):
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
         from either 'r' keyword (the radius of a cylindrical confinement
         with open ends) or 'D' keyword (size of that confinement. Following
-        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
-        domain over which x and y cartesian coordiantes are defined in the
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inclusive is the
+        domain over which x and y cartesian coordinates are defined in the
         'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
-        inculsive is the domain over which z cartesian coordiante is defined
+        inclusive is the domain over which z cartesian coordinate is defined
         in the 'slit' geometry. It is important to note that `dcyl` is
         different from the size defined in LAMMPS input file if the
         wall-forming particle are defined; in this case:
             `self.dcyl` = LAMMPS.dcyl - `self.dwall`
-        Hence, `dcyl` is defined differenty in different parser classes in
+        Hence, `dcyl` is defined differently in different parser classes in
         this module.
     lcyl: float, np.nan
         Length of the cylindrical confinement along z axis (the periodic,
@@ -571,7 +571,7 @@ class SumRuleCyl(ParserBase):
         self.dt: float = 0
         self.bdump: int = -1
         self.adump: int = -1
-        # geomtery attributes:
+        # geometry attributes:
         self.dcyl: float = -1
         self.lcyl: float = -1
         self.dwall: float = 1
@@ -611,21 +611,21 @@ class SumRuleCyl(ParserBase):
 
     def _set_parents(self) -> None:
         """
-        set to parent names for a lineage_name based on it lineage.
+        set to parent names for a lineage_name based on its lineage.
 
         The following map is used for setting relationships:
 
             'segment': A child of 'whole' lineage.
             'whole': A child of 'ensemble' lineage.
-            'ensemble': Achild of 'space' lineage.
+            'ensemble': A child of 'space' lineage.
             'space': The root of other lineages.
 
-        It is assumed that 'nc' is the last attribute shortkey in a
+        It is assumed that 'nc' is the last attribute short-key in a
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
             "It is assumed that 'nc' is the last attribute"
-            + " shortkey in a lineage_name of types:"
+            + " short-key in a lineage_name of types:"
             + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
         if self.lineage == "space":
@@ -694,12 +694,12 @@ class TransFociCyl(ParserBase):
     topology: str
     ispath: bool = True
     """
-    parses a `name` (which can be the nale of a file or the whole path to that
-    based on the value of `ispath` argument) to extract information about a
-    project's file based on a pattern pre-defined by the `lineage` in the
+    parses a `name` (which can be a filename or filepath based on the value
+    of `ispath` argument) to extract information about a project's file
+    based on a pattern pre-defined by the `lineage` in the
     'cylindrical' geometry for a given `group` in the project.
 
-    In the geomtery 'cylindrical', these patterns are used to parse a `name`:
+    In the geometry 'cylindrical', these patterns are used to parse a `name`:
 
         segment: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#.ring
             One of multiple chunks of a complete simulation or measurement.
@@ -803,15 +803,15 @@ class TransFociCyl(ParserBase):
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
         from either 'r' keyword (radius of the cylindrical confinement with
         open ends) or 'D' keyword (size of that confinement. Following
-        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
-        domain over which x and y cartesian coordiantes are defined in the
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inclusive is the
+        domain over which x and y cartesian coordinates are defined in the
         'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
-        inculsive is the domain over which z cartesian coordiante is defined
+        inclusive is the domain over which z cartesian coordinate is defined
         in the 'slit' geometry. It is important to note that `dcyl` is
         different from the size defined in LAMMPS input file if the
         wall-forming particle are defined; in this case:
             `self.dcyl` = LAMMPS.dcyl - `self.dwall`
-        Hence, `dcyl` is defined differenty in different parser classes in
+        Hence, `dcyl` is defined differently in different parser classes in
         this module.
     lcyl: float, np.nan
         Length of the cylindrical confinement along z axis (the periodic,
@@ -1074,21 +1074,21 @@ class TransFociCyl(ParserBase):
 
     def _set_parents(self) -> None:
         """
-        set to parent names for a lineage_name based on it lineage.
+        set to parent names for a lineage_name based on its lineage.
 
         The following map is used for setting relationships:
 
             'segment': A child of 'whole' lineage.
             'whole': A child of 'ensemble' lineage.
-            'ensemble': Achild of 'space' lineage.
+            'ensemble': A child of 'space' lineage.
             'space': The root of other lineages.
 
-        It is assumed that 'nc' is the last attribute shortkey in a
+        It is assumed that 'nc' is the last attribute short-key in a
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
             "It is assumed that 'nc' is the last attribute"
-            + " shortkey in a lineage_name of types:"
+            + " short-key in a lineage_name of types:"
             + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
         space_name = (
@@ -1164,12 +1164,12 @@ class TransFociCub(ParserBase):
     topology: str
     ispath: bool = True
     """
-    parses a `name` (which can be the nale of a file or the whole path to that
-    based on the value of `ispath` argument) to extract information about a
-    project's file based on a pattern pre-defined by the `lineage` in the
+    parses a `name` (which can be a filename or filepath based on the value
+    of `ispath` argument) to extract information about a project's file
+    based on a pattern pre-defined by the `lineage` in the
     'cubic' geometry for a given `group` in the project.
 
-    In the geomtery 'cubic', these patterns are used to parse a `name`:
+    In the geometry 'cubic', these patterns are used to parse a `name`:
 
         segment: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
             One of multiple chunks of a complete simulation or measurement.
@@ -1261,7 +1261,7 @@ class TransFociCub(ParserBase):
         Mass of a crowder.
     eps_others: float, default 1.0
         Unit of the LJ interaction strength.
-    lcubic: float, np.nan
+    lcube: float, np.nan
         Side of the cubic simulation box.
     dt: float, np.nan
         Simulation timestep. Its associated keyword is 'dt'.
@@ -1392,7 +1392,7 @@ class TransFociCub(ParserBase):
             "dmon_small",
             "mmon_small",
             "mcrowd",
-            "eps_othesr",
+            "eps_others",
             "phi_m_bulk",
             "rho_m_bulk",
             "phi_c_bulk",
@@ -1491,21 +1491,21 @@ class TransFociCub(ParserBase):
 
     def _set_parents(self) -> None:
         """
-        set to parent names for a lineage_name based on it lineage.
+        set to parent names for a lineage_name based on its lineage.
 
         The following map is used for setting relationships:
 
             'segment': A child of 'whole' lineage.
             'whole': A child of 'ensemble' lineage.
-            'ensemble': Achild of 'space' lineage.
+            'ensemble': A child of 'space' lineage.
             'space': The root of other lineages.
 
-        It is assumed that 'nc' is the last attribute shortkey in a
+        It is assumed that 'nc' is the last attribute short-key in a
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
             "It is assumed that 'nc' is the last attribute"
-            + " shortkey in a lineage_name of types:"
+            + " short-key in a lineage_name of types:"
             + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
         space_name = (
@@ -1579,12 +1579,12 @@ class HnsCub(ParserBase):
     topology: str
     ispath: bool = True
     """
-    parses a `name` (which can be the nale of a file or the whole path to that
-    based on the value of `ispath` argument) to extract information about a
-    project's file based on a pattern pre-defined by the `lineage` in the
+    parses a `name` (which can be a filename or a pathname based on the value
+    of `ispath` argument) to extract information about a project's file
+    based on a pattern pre-defined by the `lineage` in the
     'cubic' geometry for a given `group` in the project.
 
-    In the geomtery 'cubic', these patterns are used to parse a `name`:
+    In the geometry 'cubic', these patterns are used to parse a `name`:
         segment: N#epshm#nh#ac#nc#l#dt#ndump#adump#ens.#j#.ring
             One of multiple chunks of a complete simulation or measurement.
         whole: N#epshm#nh#ac#nc#l#dt#ndump#adump#ens#.ring
@@ -1674,11 +1674,11 @@ class HnsCub(ParserBase):
     mcrowd: float, default np.nan
         Mass of a crowder
     eps_hm: float, default np.nan
-        The stregnth of attractive LJ interaction between hns poles and
+        The strength of attractive LJ interaction between hns poles and
         monomers. Its associated keyword is 'epshm'.
     eps_others: float, default 1.0
         Unit of the LJ interaction strength
-    lcubic: float, np.nan
+    lcube: float, np.nan
         Side of the cubic simulation box.
     dt: float, np.nan
         Simulation timestep. Its associated keyword is 'dt'.
@@ -1816,7 +1816,7 @@ class HnsCub(ParserBase):
             "dhns",
             "mhns",
             "mcrowd",
-            "eps_othesr",
+            "eps_others",
             "phi_m_bulk",
             "rho_m_bulk",
             "phi_c_bulk",
@@ -1915,21 +1915,21 @@ class HnsCub(ParserBase):
 
     def _set_parents(self) -> None:
         """
-        set to parent names for a lineage_name based on it lineage.
+        set to parent names for a lineage_name based on its lineage.
 
         The following map is used for setting relationships:
 
             'segment': A child of 'whole' lineage.
             'whole': A child of 'ensemble' lineage.
-            'ensemble': Achild of 'space' lineage.
+            'ensemble': A child of 'space' lineage.
             'space': The root of other lineages.
 
-        It is assumed that 'nc' is the last attribute shortkey in a
+        It is assumed that 'nc' is the last attribute short-key in a
         lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
         """
         convention_warning = (
             "It is assumed that 'nc' is the last attribute"
-            + " shortkey in a lineage_name of types:"
+            + " short-key in a lineage_name of types:"
             + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
         space_name = (
@@ -2017,16 +2017,16 @@ class FloryChain(object):
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
         from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
-        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inculsive is the
-        domain over which x and y cartesian coordiantes are defined in the
+        open ends) or 'D' keyword (size of that confinement). Following
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inclusive is the
+        domain over which x and y cartesian coordinates are defined in the
         'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
-        inculsive is the domain over which z cartesian coordiante is defined
+        inclusive is the domain over which z cartesian coordinate is defined
         in the 'slit' geometry. It is important to note that `dcyl` is
         different from the size defined in LAMMPS input file if the
         wall-forming particle are defined; in this case:
             `self.dcyl` = LAMMPS.dcyl - `self.dwall`
-        Hence, `dcyl` is defined differenty in different parser classes in
+        Hence, `dcyl` is defined differently in different parser classes in
         this module.
 
     Class Attributes
@@ -2138,12 +2138,12 @@ class FloryChain(object):
 
     def _athermal_virial_coeffs(self):
         """
-        compute the excluded volume (second viriral coefficient) and
-        three-body coefficient (thrid virial coefficient) for the
+        compute the excluded volume (second virial coefficient) and
+        three-body coefficient (third virial coefficient) for the
         equivalent athermal system.
         """
         if self.vexc_model == "AOExcVol":
-            # The hard-sphere potenial's virial coefficient
+            # The hard-sphere potential's virial coefficient
             self.vexc_athr = (4 / 3) * np.pi * self.dmon**3
             self.w3body_athr = (5 / 8) * self.vexc_athr**2
         elif self.vexc_model == "HaExcVol":
@@ -2161,8 +2161,8 @@ class FloryChain(object):
 
     def _initial_chain_size(self):
         """
-        compute the equlibirium chain size in the given dimension in
-        the absent of crowders.
+        compute the equilibrium chain size in the given dimension in
+        the absence of crowders.
         """
         self.flory_exponent = 3 / (self.dimension + 2)
         if self.dimension == 3:
@@ -2268,19 +2268,19 @@ class LammpsDataTemplate(object):
     1. 'data_template-geometry-group-N#D#L#'
 
         where 'data_template' is the fixed header name of the LAMMPS template
-        files, 'geometry' is the geoemtery of the space, 'group' is the name of
+        files, 'geometry' is the geometry of the space, 'group' is the name of
         file group, 'N" is the number of monomers, 'D' is the diameter (size)
         of the cylinder, and 'L' is the length of cylinder. This template is
-        for 'cylindrical' and 'slit' geomteries. It is important to note that
-        the system is peroidic along z direction with range [-L/2,L/2]
-        inclusive in the 'cylindrical' geoemtry while it is periodic along x
+        for 'cylindrical' and 'slit' geometries. It is important to note that
+        the system is periodic along z direction with range [-L/2,L/2]
+        inclusive in the 'cylindrical' geometry while it is periodic along x
         and y directions both with the same range [-D/2,D/2] in the 'slit'
         geometry. Here, x, y, and z are cartesian coordinates.
 
      2. 'data_template-geometry-group-N#L#'
 
         where 'data_template' is the fixed header name of the LAMMPS template
-        files, 'geometry' is the geoemtery of the space, 'group' is the name of
+        files, 'geometry' is the geometry of the space, 'group' is the name of
         file group, 'N" is the number of monomers, and 'L' is the length
         (size) of the cubic box.
 
@@ -2307,7 +2307,7 @@ class LammpsDataTemplate(object):
         Number of monomers. Its associated keyword is 'N'.
     dcyl: float, np.nan
         Size (or diameter) of the cylindrical (cylindrical) confinement,
-        inferred from 'D' keyword keyword. Cuation: The size of cylindrical
+        inferred from 'D' keyword keyword. Caution: The size of cylindrical
         confinement is defined based on the LAMMPS' tango, so it is different
         from the size defined in other parsers defined in this module.
 
@@ -2436,7 +2436,7 @@ class ExcludedVolume(object):
         AO: The Asakura-Oosawa depletion interaction
             The excluded volume of a large hard-spheres in a solution of
             smaller by using the Asakura-Oosawa depletion potential as the
-            effetive pair potential between a pair of monomers.
+            effective pair potential between a pair of monomers.
 
         Edwards: The Edwards-type interaction
             The excluded volume of a monomer in a solution of Edwards
@@ -2444,10 +2444,10 @@ class ExcludedVolume(object):
             found by solving a coarse-grained Hamiltonian of the system.
 
         LJ: The Lannard-Jones interaction
-            The excluded volume of amonmoer is given by a function that is
-            fitted to the numerically-measurd excluded volume of a monomer
+            The excluded volume of a monomer is given by a function that is
+            fitted to the numerically-measured excluded volume of a monomer
             in a bead-on-spring chain. Monomers and crowders are interacting
-            by the Lannard-Jone interaction with various cut-off and
+            by the Lannard-Jones interaction with various cut-off and
             interaction parameters.
 
 
@@ -2475,7 +2475,7 @@ class ExcludedVolume(object):
         The excluded volume of a monomer in the absence of crowders in the high
         temperature (athermal) limit.
     self.vexc_df: pd.DataFrame
-        A pandad dataframe that contains the excluded-volume data.
+        A dataframe that contains the excluded-volume data.
 
     Class attributes
     ----------------
@@ -2485,6 +2485,7 @@ class ExcludedVolume(object):
     _vexc_models = ["AO", "LJ", "Edwards"]
 
     def __init__(self, name: str, ispath: bool = True):
+        self.vexc_df = None
         if ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)
@@ -2517,7 +2518,7 @@ class ExcludedVolume(object):
             vexc_models_string = "'" + "', '".join(self._vexc_models) + "'"
             raise ValueError(
                 f"'{words[1]}' "
-                "is not a valid excluded-volume model. Please check wehther "
+                "is not a valid excluded-volume model. Please check whether "
                 "the data belongs to one of "
                 f"{vexc_models_string} model or not."
             )
@@ -2527,7 +2528,7 @@ class ExcludedVolume(object):
             print(
                 f"The excluded data for 'a_c={self.dcrowd}'"
                 " is computed via the fitting function for a_c<a in the"
-                f"exculded-volume model '{self.vexc_model}'."
+                f"excluded-volume model '{self.vexc_model}'."
             )
 
     def _set_vexc_athermal(self) -> None:
@@ -2562,11 +2563,6 @@ class ExcludedVolume(object):
         limit: bool, default True
             Whether limit the excluded-volume data to [-1*vexc_athr,
             vexc_athr] or not.
-
-        Returns
-        -------
-        self: ParserExcVol
-            An updated ParserExcVol.self object.
         """
         # phi_c is rescaled as phi_c*a/a_c when a_c << a to gain the maximum
         # depletion free energy:
@@ -2584,11 +2580,6 @@ class ExcludedVolume(object):
     def add_model_info(self):
         """Add `self.vexc_model` and `self.dcrowd` data as two new columns to
         the `self.vexc_df` attribute.
-
-        Returns
-        -------
-        self: ParserExcVol
-            An updated ParserExcVol.self object.
         """
         self.vexc_df["vexc_model"] = self.vexc_model
         self.vexc_df["dcrowd"] = self.dcrowd
@@ -2604,7 +2595,7 @@ class FreeEnergyVirial(object):
     crowders data in that 'csv' file.
 
     The free energy approach data are currently available for four models that
-    are created by combining two differents models for depletion volumes of
+    are created by combining two different models for depletion volumes of
     two monomers and two different models for tail interactions between
     monomers.
 
@@ -2618,7 +2609,7 @@ class FreeEnergyVirial(object):
     Issues
     ------
     Currently the class works only for the cylindrical system; what about bulk/
-    cubic and slit geoemteries?
+    cubic and slit geometries?
 
     define "_set_other_attributes" for other parsing classes.
 
@@ -2641,6 +2632,7 @@ class FreeEnergyVirial(object):
     _vdep_models = ["deVries", "Ha"]
 
     def __init__(self, name: str, ispath: bool = True):
+        self.r_chain_df = None
         if ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)
@@ -2678,7 +2670,7 @@ class FreeEnergyVirial(object):
             tail_models_string = "'" + "', '".join(self._tail_models) + "'"
             raise ValueError(
                 f"'{words[0]}' "
-                "is not a valid tail model. Please check wehther "
+                "is not a valid tail model. Please check whether "
                 "the data belongs to one of "
                 f"{tail_models_string} model or not."
             )
@@ -2688,7 +2680,7 @@ class FreeEnergyVirial(object):
             vdep_models_string = "'" + "', '".join(self._vdep_models) + "'"
             raise ValueError(
                 f"'{words[1]}' "
-                "is not a valid tail model. Please check wehther "
+                "is not a valid tail model. Please check whether "
                 "the data belongs to one of "
                 f"{vdep_models_string} model or not."
             )
@@ -2716,27 +2708,22 @@ class FreeEnergyVirial(object):
             )
 
     def scale(self, phi_c_out_cap: float = 0.45) -> None:
-        """Rescale the bulk number density of crowders inside and outsied the
+        """Rescale the bulk number density of crowders inside and outside the
         chain-occupying region ('rho_c_out' and 'rho_c_in'), and the chain size
         'r_chain' to create new columns.
 
-        `scale` adds the volume fraction of crowders inside and outside of the
+        `scale` adds the volume fraction of crowders inside and outside the
         chain-occupying region ('phi_c_out' and 'phi_c_in') and normalized
         chain size 'r_scaled' to `self.r_chain_df` dataset.
 
         Parameters
         ----------
         phi_c_out_cap: float, default 0.45
-            The upper limit over the volume fraction of crowders outsied the
+            The upper limit over the volume fraction of crowders outside the
             chain-occupying region.
-
-        Returns
-        -------
-        self: ParserExcVol
-            An updated ParserExcVol.self object.
         """
-        # phi_c is rescaled as phi_c*a/a_c when a_c << a to gain the maximum
-        # depletion free energy:
+        # phi_c is rescaled as phi_c*a/a_c when a_c is much smaller than a to
+        # gain the maximum depletion free energy:
         if (phi_c_out_cap <= 0) or (phi_c_out_cap > 1):
             raise ValueError(
                 f"'{phi_c_out_cap}' "
@@ -2755,11 +2742,6 @@ class FreeEnergyVirial(object):
     def add_model_info(self) -> None:
         """Add the parsed attributed as the new columns to
         the `self.r_chain_df` dataset.
-
-        Returns
-        -------
-        self: ParserExcVol
-            An updated ParserExcVol.self object.
         """
         self.r_chain_df["tail_model"] = self.tail_model
         self.r_chain_df["vdep_model"] = self.vdep_model
@@ -3215,7 +3197,7 @@ class Dump:
             file.write(f"{snap.zlo} {snap.zhi}\n")
         file.write("ITEM: ATOMS " + cols + "\n")
 
-    def write(self, filename: str, header: bool = True, mode: str = "w"
+    def write(self, filename: str, mode: str = "w"
               ) -> None:
         """
         write a single dump file from current selection.
@@ -3224,8 +3206,6 @@ class Dump:
         ----------
         filename: str
             _description_
-        header : bool, optional
-            Whether to write 'header' section or not.
         mode : str, optional
             Whether write to a new file or append to an existing file.
         """

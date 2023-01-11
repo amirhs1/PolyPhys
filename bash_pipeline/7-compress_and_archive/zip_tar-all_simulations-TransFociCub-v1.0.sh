@@ -26,6 +26,6 @@ for directory in al*/; do
     cd ..
 
     project=${dir}.tar
-    tar -cvkf "${project}" "${zipdir}" >> "${report}"
+    tar -ncvkf "${project}" "${zipdir}" >> "${report}"
 done
 echo "Finished!"

@@ -24,17 +24,17 @@ lineage: {'segment', 'whole', 'ensemble', 'space'}
     ensemble:
         A collection of 'wholes' files that differs only in their initial
         conditions (e.g., random number seed).
-        An ensemble is a group of themodynamically-equivalent experiments
+        An ensemble is a group of thermodynamically-equivalent experiments
         (more precisely states) of a system. In in-situ experimentation,
         such experiments or states or virtual copies are created by doing an
-        experiment with different seudo-random generator seeds while keeping
+        experiment with different pseudo-random generator seeds while keeping
         all the other attributes fixed. In other words, experiments in an
         ensemble differs only in their initial conditions (the random
         generator seed) in the phase space, but have the same attributes
-        (macroscopic property). The 'name' of an ensmble does not have 'ens'
+        (macroscopic property). The 'name' of an ensemble does not have 'ens'
         'segment' attribute. An ensemble can be varied by changing ONE
-        macroscopic attribute of a system at a time. A group of enembles with
-        ONE varring attribute belongs to an 'space' group.
+        macroscopic attribute of a system at a time. A group of ensembles with
+        ONE varying attribute belongs to an 'space' group.
 
     space:
         A collection of ensembles.
@@ -43,26 +43,26 @@ lineage: {'segment', 'whole', 'ensemble', 'space'}
 
 attribute:
     a macroscopic feature that characterizes a system under study; for
-    instance, the length of a cubic simulation box or the toplogy of a
-    polymer (see `parser` module lists of 'attribute' keywords of a system.
-    For the list of valid attributes, please see `parser` module and the
+    instance, the length of a cubic simulation box or the topology of a
+    polymer. For the list of valid attributes, please see `parser` module
+    and the
     classes defined therein.
 
 property_:
-    a phyiscal feature that is measured in an experiment; for instance, the
-    bin edges and frequencies of the local number denisty of a given species
+    a physical feature that is measured in an experiment; for instance, the
+    bin edges and frequencies of the local number density of a given species
     or the end-to-end size of a polymer over time. a property 'keyword' is
     camelCase or CamelCase, and it has information about the direction, name,
-    and species of a physica property; for example, "rHistMon" means a
+    and species of a physical property; for example, "rHistMon" means a
     histogram file in the radial direction for monomers.
 
 species:
-    The keyword for the type of a species; for instance, 'Mon' stands for
+    The keyword for the type of species; for instance, 'Mon' stands for
     monomers. A list of species is defined within a class or function that
     works differently based on the type of species.
 
 direction:
-    The short name of a direction in a given coordiante system; for instance,
+    The short name of a direction in a given coordinate system; for instance,
     'r' for the radial direction in the spherical coordinate system.  A list
     of species is defined within a class or function that works differently
     based on the type of species.
@@ -80,18 +80,18 @@ group:
 
 run: {'restart', 'cont}
     a 'run' keyword shows whether a simulation trajectory file ('lammpstrj'
-    or 'trj' extentions) is 'restarted' from a previously broken simulation
-    or a 'continued' from a sucessfully finished simulation.
+    or 'trj' extensions) is 'restarted' from a previously broken simulation
+    or a 'continued' from a successfully finished simulation.
 
 phase: {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe',
         'analyze', and 'viz'}
-    A keyword ised the name of a directory and is related to one of the
-    post-processing phases
+    A `phase` keyword is the name of a directory and is related to one of the
+    post-processing phases.
 
     simulationsAll:
     The directory that contains all the Lammps-related files for running all
     the simulations in a 'space', and the bash scripts for sanity checks and
-    organzing simulation files on a cluster.
+    organizing simulation files on a cluster.
 
     simulationCont:
     The directory that is similar to the 'simulationAll', but it is about a
@@ -101,16 +101,16 @@ phase: {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe',
     The directory that contains the LAMMPS logs in a 'space' group.
 
     trjs:
-    The directory that contains trajectory and toplogy files of a 'space'.
+    The directory that contains trajectory and topology files of a 'space'.
 
     probe:
-    A directory or phase that coantins the files resulted from direct probing
+    A directory or phase that contains the files resulted from direct probing
     of trajectories in a 'space'. Measuring a polymer's length over time (a
     time series) or counting the number of species on a spatial grid (a
     histogram) are two popular probing operations.
 
         observation:
-            a file resulted from probing a trjectory.
+            a file resulted from probing a trajectory.
 
     analyze:
     A directory or phase that contains the files resulted from analyzing
@@ -132,7 +132,7 @@ stage: {'wholeSim', 'ens', 'ensAvg'}
     A directory that contains all the 'ensemble' files of a 'space'.
 
     ensAvg:
-    A 'esneAvg' directory contains all the ensemble-averaged files of a
+    A 'ensAvg' directory contains all the ensemble-averaged files of a
     'space' while an 'ensAvg' file is created by averaging over all the
     'whole' data in an 'ensemble' file.
 
@@ -144,12 +144,12 @@ name:
     A file or directory 'name' is a sequence of 'lineage_name', 'property_',
     'phase', 'group', 'stage', or file 'format', separated by a splitter.
 
-    Period spliiter ".":
-    This spliiter is used in naming the files the trajectory ('lammpstrj'
-    and 'trj' extentions) and topology ('data' extention) files that are
+    Period splitter ".":
+    This splitter is used in naming the files the trajectory ('lammpstrj'
+    and 'trj' extensions) and topology ('data' extension) files that are
     generated by LAMMMPS package.
 
-    Hypen spliiter "-":
+    Hyphen splitter "-":
     This splitter is used in all other file formats, except 'trajectory' and
     'topology' files.
 
@@ -165,12 +165,13 @@ name:
         Directories:
         lineage-phase-group-stage
 
-I   A  file or directory may  have all or part of the aboe period- or hypen-
-    separated keywords. See below for more information about 'AllInOne' files.
+A file or directory may have all or part of the above period- or
+hyphen-separated keywords. See below for more information about 'AllInOne'
+files.
 
-Different files and directories ceated at different 'phases' to oragnize
-'segment', 'whole', 'ensmeble', or 'ensAvg' files. Below, some general
-categories are difined for this files and directories.
+Different files and directories created at different 'phases' to organize
+'segment', 'whole', 'ensemble', or 'ensAvg' files. Below, some general
+categories are defined for these files and directories.
 
     'whole' directories:
     A 'whole' directory contains all the files that belong to a 'whole'
@@ -181,24 +182,24 @@ categories are difined for this files and directories.
     See above for the definition of the 'ensemble' 'lineage' and 'ens' 'stage'.
 
     'ensAvg' files:
-    A file that is created by averageing over all the 'whole' files in an
+    A file that is created by averaging over all the 'whole' files in an
     ensemble. An ensemble-averaged file has 'ensAvg' keyword in its filename.
     An ensemble-averaged file is created by changing ONE attribute of the
     system at a time (similar to an ensemble file). A group of
-    enemble-averaged files with ONE varring attribute belongs to an 'space'
+    ensemble-averaged files with ONE varying attribute belongs to an 'space'
     group.
 
     'space' directories:
     A directory contains all the files of all the 'properties' of a 'group'
     in a 'space' in a given 'stage' at a given 'phase'.
-    A 'space' directory may or may not have the 'group' keyword in tis name.
+    A 'space' directory may or may not have the 'group' keyword in its name.
 
     'all-in-one' files:
     A clean file (dataset) that contains all the measurements in all the
     'space' groups about a given 'property_'.
 
 A 'space' group results in a curve in the 'viz' phase. An 'ensAvg' file gives
-a data point. For a given 'property_', if there are N esmebles, each with M
+a data point. For a given 'property_', if there are N ensembles, each with M
 'whole' files, then there are N ensemble-average groups and N*M 'whole' files
 in the space group.
 """
@@ -208,7 +209,7 @@ from typing import (
     Tuple,
     Optional,
     Union,
-    Callable
+    Callable,
 )
 import pathlib
 from glob import glob
@@ -217,9 +218,8 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from ..manage.typer import EdgeT, EnsembleT, ParserT
+from ..manage.typer import WholeT, EnsembleT
 from ..analyze.clusters import whole_distMat_foci
-
 from .utilizer import round_up_nearest, invalid_keyword
 
 
@@ -227,7 +227,7 @@ def camel_case_split(
     word: str
 ) -> List[str]:
     """
-    Splits a camleCase or CamelCase `str` to its constituent sub-strings.
+    Splits a camelCase or CamelCase `str` to its constituent sub-strings.
 
     Parameters
     ----------
@@ -293,19 +293,18 @@ def sort_by_alphanumeric(
 
 
 def sort_filenames(
-    fnames: List[str],
-    fmts: List[str] = ['data', 'lammpstrj'],
-    report: bool = False
-) -> list[tuple]:
+    fnames: list[str],
+    fmts: Optional[list[str]] = None,
+    report: Optional[bool] = False
+) -> List[Tuple[str, ...]]:
     """
     Returns an alphanumerically sorted list of strings.
-
 
     Groups `fnames` with the same names into tuples where the length of
     tuples is the length of `fmts`. For instance, A LAMMPS molecular
     dynamics simulation output usually is composed of two type of files;
-    a trajectroy (trj or lammpstrj extentions) constisting of several
-    snapshots and a topology (data extention) containing information
+    a trajectory (trj or lammpstrj extensions) consisting of several
+    snapshots and a topology (data extension) containing information
     about simulation box, particle and bond types.
 
     Parameters
@@ -320,10 +319,12 @@ def sort_filenames(
 
     Returns
     -------
-    filenames_sorted: list of tuple
+    filenames_sorted: list of tuple of str
         a sorted list of tuples where each tuple has `len(formats)` filenames.
 
     """
+    if fmts is None:
+        fmts = ['data', 'lammpstrj']
     fnames_by_fmt = []
     # a nested list where each sublist has all the files with the same
     # extension:
@@ -331,7 +332,7 @@ def sort_filenames(
         fnames_by_fmt.append([f for f in fnames if f.endswith(exts)])
     for idx, fnames_same_fmt in enumerate(fnames_by_fmt):
         fnames_by_fmt[idx] = sorted(fnames_same_fmt, key=sort_by_alphanumeric)
-    fnames_sorted = list(zip(*fnames_by_fmt))
+    fnames_sorted: list[tuple[str, ...]] = list(zip(*fnames_by_fmt))
     if report:
         print("Total number of files is ", len(fnames_sorted))
         print("Path to the first tuple of the sorted file: ", fnames_sorted[0])
@@ -353,28 +354,29 @@ def save_parent(
     ----------
     name: str
         Name of the dataframe
-    df: pd.DataFrame
-        Dataframe to be saved.
+    data: np.ndarray or pd.DataFrame or dict of np.ndarray
+        data to be saved.
     property_ : str
         The physical property.
     save_to : str
-        An/a absolute/relative path of a directory to which outputs are saved.
+        Absolute or relative path of a directory to which outputs are
+        saved.
     group: {'bug', 'nucleoid', 'all'}, default 'bug'
         Type of the particle group.
-    ext: {'csv', 'npy'}, defualt 'csv'
+    ext: {'csv', 'npy'}, default 'csv'
     """
     invalid_keyword(ext, ['csv', 'npy', 'dict_of_npy'])
     filename = "-".join([name, group, property_])
-    if ext == 'csv':
+    if isinstance(data, pd.DataFrame) and ext == 'csv':
         data.to_csv(save_to + filename + ".csv", index=False)
-    elif ext == 'npy':
+    elif isinstance(data, np.ndarray) and ext == 'npy':
         np.save(save_to + filename + ".npy", data)
     else:  # dict of np.ndarray
         for prop_, prop_data in data.items():
             _, prop_measure = prop_.split('-')
             np.save(
-               save_to + filename + "-" + prop_measure + ".npy", prop_data
-               )
+                save_to + filename + "-" + prop_measure + ".npy", prop_data
+            )
 
 
 def database_path(
@@ -425,10 +427,10 @@ def database_path(
                     ['simulationsAll', 'simulationsCont', 'logs',
                      'trjs', 'probe', 'analysis', 'viz']
                     )
-    invalid_keyword(group, ['bug', 'nucleoid', 'all', None])
-    invalid_keyword(stage,
-                    ['segment', 'wholeSim', 'ens', 'ensAvg', 'space', None]
-                    )
+    # invalid_keyword(group, ['bug', 'nucleoid', 'all'])
+    # invalid_keyword(stage,
+    #                ['segment', 'wholeSim', 'ens', 'ensAvg', 'space']
+    #                )
     old_path = pathlib.Path(input_database)  # PurePath object
     old_space_parts = old_path.parts
     # Space name of a directory
@@ -462,7 +464,7 @@ def database_path(
 def whole_from_segment(
     property_: str,
     segments: List[Tuple[str]],
-    parser: ParserT,
+    parser: Callable,
     geometry: str,
     group: str,
     topology: str,
@@ -475,14 +477,14 @@ def whole_from_segment(
 
     Parameters
     ----------
-    property_ : str
+    property_: str
         The physical property.
-    children : list of tuples
+    segments: list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: ParserT
+    parser: Callable
         A class from 'PolyPhys.manage.parser' module that parses filenames
-        or filepathes to infer information about a file.
+        or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     group: {'bug', 'nucleoid', 'all'}
@@ -492,15 +494,15 @@ def whole_from_segment(
     relation : {'histogram', 'tseries', 'bin_edges'}
         Relation between segments and wholes:
 
-        'hisotgram'
-            Child is a N-dimensional histogram-like 'segment' file, so the
-            children of a parent should be sum along "axis=0" in numpy's lingo.
+        'histogram'
+            Child is an N-dimensional histogram-like 'segment' file, so the
+            children of a parent should be sum along "axis=0" in numpy lingo.
             In 2-dimensional space, a histogram has a (x_nbins, y_nbins) shape.
 
         'tseries'
             Child is a time-series-like 'segment' file, so the children of
-            a parent should be concatnated vertically (along "axis=0" in
-            Pandas's lingo).
+            a parent should be concatenated vertically (along "axis=0" in
+            pandas lingo).
 
         'bin_edge'
             Child is a bin edges 'segment' file. All the siblings' 'segments'
@@ -519,7 +521,7 @@ def whole_from_segment(
     Notes
     -----
     Please see the 'organizer' documentation for definitions
-    of 'geomtery', and 'group', and the definitons of their keywords.
+    of 'geometry', and 'group', and the definitions of their keywords.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
@@ -553,7 +555,7 @@ def whole_from_segment(
             mapping_func[relation],
             wholes.items()
         )
-     )
+    )
     if save_to is not None:
         _ = dict(
             map(
@@ -573,13 +575,13 @@ def whole_from_segment(
 
 def whole_from_file(
     whole_paths: List[Tuple[str]],
-    parser: ParserT,
+    parser: Callable,
     geometry: str,
     group: str,
     topology: str
 ) -> Dict[str, np.ndarray]:
     """Loads `whole` numpy arrays for a given physical property of the
-    particle `group` in the `geometry` of interest from their pathes
+    particle `group` in the `geometry` of interest from their paths
     `whole_paths`.
 
     Parameters
@@ -587,9 +589,9 @@ def whole_from_file(
     whole_paths : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     group: {'bug', 'nucleoid', 'all'}
@@ -606,7 +608,7 @@ def whole_from_file(
     Notes
     -----
     Please see the 'organizer' documentation for definitions
-    of 'geomtery', and 'group', and the definitons of their keywords.
+    of 'geometry', and 'group', and the definitions of their keywords.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
@@ -624,26 +626,26 @@ def whole_from_file(
     return wholes
 
 
-def whole_from_distMat_t(
+def whole_from_dist_mat_t(
     whole_paths: List[Tuple[str]],
-    parser: ParserT,
+    parser: Callable,
     geometry: str,
     group: str,
     topology: str
-) -> Dict[str, np.ndarray]:
+) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
     """
     Loads `whole` 2D numpy arrays for a given physical property of the
-    particle `group` in the `geometry` of interest from their pathes
-    `whole_pathes`.
+    particle `group` in the `geometry` of interest from their paths
+    `whole_paths`.
 
     Parameters
     ----------
     whole_paths : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         Shape of the simulation box.
     group: {'bug', 'nucleoid', 'all'}
@@ -660,7 +662,7 @@ def whole_from_distMat_t(
     Notes
     -----
     Please see the 'organizer' documentation for definitions
-    of 'geomtery', and 'group', and the definitons of their keywords.
+    of 'geometry', and 'group', and the definitions of their keywords.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
@@ -686,18 +688,26 @@ def whole_from_distMat_t(
     return wholes_freqs, wholes_rdfs, wholes_tseries
 
 
-def ens_from_bin_edge(
-    ens: EdgeT,
-) -> Tuple[str, pd.DataFrame]:
+def ens_from_bin_edge(ens) -> Tuple[str, np.ndarray]:
     """
-    Not written yet
+    Convert an "ensemble" bin edge from several "whole" bin edges where all
+    the "whole" bin edges are similar but named differently because they
+    belong to different wholes.
+
+    Parameters
+    ----------
+    ens: np.ndarray
+        All the "whole" bin edges in a given `ens`.
+
+    Returns
+    -------
+    tuple of str and np.ndarray
+        The "ensemble" name  and its bin edge values.
     """
-    return (ens[0], np.unique(list(ens[1].values())))
+    return ens[0], np.unique(list(ens[1].values()))
 
 
-def ens_from_vec(
-    ens: EnsembleT,
-) -> Tuple[str, pd.DataFrame]:
+def ens_from_vec(ens: EnsembleT) -> tuple[str, pd.DataFrame]:
     """
     Creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy vector or 1D array.
@@ -711,14 +721,12 @@ def ens_from_vec(
 
     Return
     ------
-    A tuple of ensemble name and its assocaited dataframe.
+    A tuple of ensemble name and its associated dataframe.
     """
-    return (ens[0], pd.DataFrame.from_dict(ens[1], orient='columns'))
+    return ens[0], pd.DataFrame.from_dict(ens[1], orient='columns')
 
 
-def ens_from_mat_T(
-    ens: EnsembleT,
-) -> Tuple[str, np.ndarray]:
+def ens_from_mat_t(ens: EnsembleT) -> tuple[str, np.ndarray]:
     """
     creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy 2D array.
@@ -731,14 +739,12 @@ def ens_from_mat_T(
         whole-type data.
     Return
     ------
-    A tuple of ensemble name and its assocaited dataframe.
+    A tuple of ensemble name and its associated dataframe.
     """
-    return (ens[0], np.stack(list(ens[1].values()), axis=0))
+    return ens[0], np.stack(list(ens[1].values()), axis=0)
 
 
-def ens_from_df(
-    ens: EnsembleT,
-) -> Tuple[str, pd.DataFrame]:
+def ens_from_df(ens: EnsembleT) -> tuple[str, pd.DataFrame]:
     """
     creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a pandas dataframe.
@@ -752,10 +758,10 @@ def ens_from_df(
 
     There is a stark difference between ensembles of "vectors" and "matrices"
     whole types and ensembles of "dataframe" whole type. In the former, the
-    headers in an "esnemble" dataframe are "whole" names and the columns are
-    the values of a given properies. In the later, the headers in an "ensemble"
-    dataframe are "elements" of a matrix and the columns are the values of
-    "elements", each averaged over all the "whole" dataframes.
+    headers in an "ensemble" dataframe are "whole" names and the columns are
+    the values of a given properties. In the latter, the headers in an
+    "ensemble" dataframe are "elements" of a matrix and the columns are the
+    values of "elements", each averaged over all the "whole" dataframes.
 
     Note
     ----
@@ -765,28 +771,28 @@ def ens_from_df(
 
     Parameters
     ----------
-    ens: tuple of np.ndarray
+    ens: tuple of pd.DataFrame
         A tuple in which the first element is an ensemble name and the second
-        one is a dictionary in which  keys are whole names and values are
+        one is a dictionary in which keys are whole names and values are
         whole-type data.
 
     Return
     ------
-    A tuple of ensemble name and its assocaited dataframe.
+    A tuple of ensemble name and its associated dataframe.
     """
-    return (ens[0], pd.concat(list(ens[1].values())).groupby(level=0).mean())
+    return ens[0], pd.concat(list(ens[1].values())).groupby(level=0).mean()
 
 
 def ensemble(
     property_: str,
-    wholes: Dict[str, Union[np.ndarray, pd.DataFrame]],
-    parser: ParserT,
+    wholes: WholeT,
+    parser: Callable,
     geometry: str,
     group: str,
     topology: str,
     whole_type: str,
     edge_wholes: Optional[Dict[str, np.ndarray]] = None,
-    save_to: str = None
+    save_to: Optional[str] = None
 ) -> Dict[str, Union[pd.DataFrame, np.ndarray]]:
     """Generates ensembles from `wholes` for the physical property `property_`
     of a particle `group` in a `geometry` of interest.
@@ -795,8 +801,8 @@ def ensemble(
     numpy array, or "dataframe". The "dataframe" `whole_type` are "whole"
     dataframe in which the headers are elements of a matrix and the columns
     are either the values of that elements over time (a "timeseries"
-    "dataframe" `whole_type`) or a meausrement on values; for instance, the
-    measurement can be histograming/counting. For such a "histogram"
+    "dataframe" `whole_type`) or a measurement on values; for instance, the
+    measurement can be counting (histogram). For such a "histogram"
     "dataframe" `whole_type`, there is an additional header that is
     "bin_center". The length of "timeseries" "whole" "dataframe" is equal to
     the number of time frames while the length of "histogram" "whole"
@@ -804,12 +810,12 @@ def ensemble(
 
     There is a stark difference between ensembles of "vectors" and "matrices"
     whole types and ensembles of "dataframe" whole type. In the former, the
-    headers in an "esnemble" dataframe are "whole" names and the columns are
-    the values of a given properies. In the later, the headers in an "ensemble"
-    dataframe are "elements" of a matrix and the columns are the values of
-    "elements", each averaged over all the "whole" dataframes; as a result,
-    ensembles of "dataframe" `whole-type` are ensemble-averaged and do not any
-    any further steps.
+    headers in an "ensemble" dataframe are "whole" names and the columns are
+    the values of a given properties. In the latter, the headers in an
+    "ensemble" dataframe are "elements" of a matrix and the columns are the
+    values of "elements", each averaged over all the "whole" dataframes; as
+    a result, ensembles of "dataframe" `whole-type` are ensemble-averaged
+    and do not any further steps.
 
     Parameters
     ----------
@@ -818,24 +824,22 @@ def ensemble(
     wholes : dict of np.ndarray
         A dictionary in which keys are 'whole' names and values are data
         (1D array).
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
     group: {'bug', 'nucleoid', 'all'}
         The type of the particle group.
     topology: str
         Topology of the polymer.
-    whole_type: {'vector', 'matrix'}
-        The type of "whole" files.
+    whole_type: {'vector', 'matrix', 'dataframe', 'bin_edge'}
+        The type of "whole" files:
 
         'vector':
             A numpy 1D array; for example, a time series or a histogram.
-
         'matrix':
             A numpy 2D array; for example, the gyration matrix.
-
         'dataframe':
             A pandas dataframe; for example, the pair distances of a group of
             monomers.
@@ -850,7 +854,8 @@ def ensemble(
         dataframe. `edge_wholes` is meaningful if "vector" `whole_type` is
         used.
     save_to : str, default None
-        An/a absolute/relative path of a directory to which outputs are saved.
+        Absolute or relative path of a directory to which outputs are
+        saved.
 
     Return
     ------
@@ -859,7 +864,7 @@ def ensemble(
         values are dataframes. In each dataframe, the columns are wholes of
         that ensemble.
     """
-    # Averging over ensembles with simailar initial paramters
+    # Averaging over ensembles with similar initial parameters
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(whole_type, ['vector', 'matrix', 'dataframe', 'bin_edge'])
@@ -891,7 +896,7 @@ def ensemble(
             "ext": "csv"
         },
         "matrix": {
-            "mapping_func": ens_from_mat_T,
+            "mapping_func": ens_from_mat_t,
             "ext": "npy"
         },
         "dataframe": {
@@ -915,14 +920,13 @@ def ensemble(
     if save_to is not None:
         _ = dict(
             map(
-                lambda ensemble: (ensemble[0],
-                                  save_parent(
-                                    ensemble[0], ensemble[1],
-                                    property_, save_to,
-                                    group=group,
-                                    ext=whole_types[whole_type]["ext"]
-                                    )
-                                  ),
+                lambda ens: (ens[0],
+                             save_parent(
+                                 ens[0], ens[1], property_,
+                                 save_to, group=group,
+                                 ext=whole_types[whole_type]["ext"]
+                             )
+                             ),
                 ensembles.items()
             )
         )
@@ -930,12 +934,12 @@ def ensemble(
 
 
 def ens_avg_from_df(
-    ens_property: str,
+    ens_prop: str,
     ens_data: pd.DataFrame,
     exclude: List[str]
-) -> Tuple[str, pd.DataFrame]:
+) -> pd.DataFrame:
     """
-    Creates an "ensAvg" dataframe from a "ensemble" dataframe. The columns
+    Creates an "ensAvg" dataframe from an "ensemble" dataframe. The columns
     in the "ensemble" dataframe `ens_data` are the "whole" data and any other
     variable/data given by `exclude`; for instance, if the ensembles is a
     histogram, then there is "bin_center" column in addition to the "whole"
@@ -943,7 +947,7 @@ def ens_avg_from_df(
 
     Parameters
     ----------
-    ens_property: str
+    ens_prop: str
         The property name to which theis "ensemble" data belongs.
     ens_data: pd.DataFrame
         The dataframe of "ensemble"data.
@@ -953,21 +957,21 @@ def ens_avg_from_df(
     Return
     ------
     ens_data: pd.DataFrame
-        Update the `ens_data` with avergaing statisicts.
+        Update the `ens_data` with averaging statistics.
     """
     wholes = [col for col in ens_data.columns if col not in exclude]
-    ens_data[ens_property + '-mean'] = ens_data[wholes].mean(axis=1)
-    ens_data[ens_property + '-var'] = ens_data[wholes].var(axis=1, ddof=1)
-    ens_data[ens_property + '-sem'] = ens_data[wholes].sem(axis=1, ddof=1)
+    ens_data[ens_prop + '-mean'] = ens_data[wholes].mean(axis=1)
+    ens_data[ens_prop + '-var'] = ens_data[wholes].var(axis=1, ddof=1)
+    ens_data[ens_prop + '-sem'] = ens_data[wholes].sem(axis=1, ddof=1)
     ens_data.drop(columns=wholes, inplace=True)
     return ens_data
 
 
 def ens_avg_from_bin_edge(
-    ens_property: str,
+    ens_prop: str,
     ens_data: np.ndarray,
-    exclude: List[str]
-) -> Dict[str, np.ndarray]:
+    exclude: list[str]
+) -> np.ndarray:
     """
     Not written yet
     """
@@ -975,24 +979,24 @@ def ens_avg_from_bin_edge(
 
 
 def ens_avg_from_ndarray(
-    ens_property: str,
+    ens_prop: str,
     ens_data: np.ndarray,
     exclude: List[str]
 ) -> Dict[str, np.ndarray]:
     """
-    Creates an "ensAvg" matrix from a "ensemble" matrix. The first axis of
+    Creates an "ensAvg" matrix from an "ensemble" matrix. The first axis of
     the "ensemble" matrix (axis=0 in numpy lingo) contains the whole matrices
-    and statsitical measurements are performed on this axis.
+    and statistical measurements are performed on this axis.
 
     Parameters
     ----------
-    ens_property: str
+    ens_prop: str
         The property name to which theis "ensemble" data belongs.
     ens_data: pd.DataFrame
         The matrix of "ensemble" data.
     exclude: list of str
         The list of columns other than "whole" columns. It does not have any
-        application but is defined for consisitnacy with `ens_avg_from_df`.
+        application but is defined for consistency with `ens_avg_from_df`.
 
     Return
     ------
@@ -1000,11 +1004,12 @@ def ens_avg_from_ndarray(
         A dictionary in which values of various statistical measures and
         values are the ensemble-averages.
     """
-    ens_avg = {}
-    ens_avg[ens_property + '-mean'] = np.mean(ens_data, axis=0)
-    ens_avg[ens_property + '-var'] = np.var(ens_data, axis=0, ddof=1)
-    ens_avg[ens_property + '-sem'] = \
-        np.std(ens_data, axis=0, ddof=1) / ens_data.shape[0]**0.5
+    size_sqrt = ens_data.shape[0] ** 0.5
+    ens_avg = {
+        ens_prop + '-mean': np.mean(ens_data, axis=0),
+        ens_prop + '-var': np.var(ens_data, axis=0, ddof=1),
+        ens_prop + '-sem': np.std(ens_data, axis=0, ddof=1) / size_sqrt
+    }
     return ens_avg
 
 
@@ -1014,8 +1019,8 @@ def ensemble_avg(
     geometry: str,
     group: str,
     ens_type: str,
-    exclude: list = ['bin_center'],
-    save_to: str = None
+    exclude: Optional[list] = None,
+    save_to: Optional[str] = None
 ) -> Dict[str, pd.DataFrame]:
     """
     Performa averaging over the "whole" data in each "ensemble" data in the
@@ -1028,7 +1033,7 @@ def ensemble_avg(
     ----------
     property_ : str
         The physical property.
-    siblings : dict of DataFrame
+    ensembles : dict of DataFrame
         Dictionary of siblings (dataframes) where keys are parent names and
         values are siblings (dataframes). In each siblings' dataframe, the
         number of columns is equal to or more than the number of
@@ -1061,7 +1066,9 @@ def ensemble_avg(
         Dict of  on `property_` where keys are ensemble names and
         values are dataframes of ensemble-averaged measurements.
     """
-    # Averging over ensembles with simailar initial paramters
+    # Averaging over ensembles with similar initial parameters
+    if exclude is None:
+        exclude = ['bin_center']
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(ens_type, ['dataframe', 'ndarray', 'bin_edge'])
@@ -1082,24 +1089,24 @@ def ensemble_avg(
     }
     for ens, ens_data in ensembles.items():
         ens_avg = ens_types[ens_type]["ens_avg_func"](
-           property_,
-           ens_data,
-           exclude
+            property_,
+            ens_data,
+            exclude
         )
         ens_avgs[ens] = ens_avg
     if save_to is not None:
         property_ = property_ + '-ensAvg'
         _ = dict(
             map(
-                lambda ens: (ens[0],
-                             save_parent(
-                                 ens[0],
-                                 ens[1],
-                                 property_, save_to,
-                                 group=group,
-                                 ext=ens_types[ens_type]["ext"]
-                             )
-                             ),
+                lambda ens_dummy: (ens_dummy[0],
+                                   save_parent(
+                                       ens_dummy[0],
+                                       ens_dummy[1],
+                                       property_, save_to,
+                                       group=group,
+                                       ext=ens_types[ens_type]["ext"]
+                                   )
+                                   ),
                 ens_avgs.items()
             )
         )
@@ -1113,7 +1120,7 @@ def children_stamps(
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
     """
-    Generates a dataset of the phyiscal attributes and equilibrium
+    Generates a dataset of the physical attributes and equilibrium
     (time-averaged) physical properties of all the `lineage` simulations of a
     particle `group` in a 'space' in a `geometry`.
 
@@ -1123,31 +1130,31 @@ def children_stamps(
     Parameters
     ----------
     stamps: list of tuple
-        List of tuples where each tumple has one member and that member is a
+        List of tuples where each tuple has one member and that member is a
         filepath to the stamp of a 'segment' simulation in a space.
     group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
     lineage: {'segment', 'whole'}
-        Lineage type of children' stamps
+        Lineage type of child stamps
     save_to : str, default None
         Absolute or relative path of a directory to which outputs are saved.
 
     Return
     ------
     space_stamps: pd.DataFrame
-        Dataframe of all the children stamps in the `group` in a space.
+        All the child stamps in the `group` in a space.
     """
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(lineage, ['segment', 'whole'])
     space_stamps = [pd.read_csv(stamp[0]) for stamp in stamps]
     space_stamps = pd.concat(space_stamps)
     space_stamps.reset_index(inplace=True, drop=True)
+    cols_to_drop = ['segment', 'segment_id']
     if lineage == 'whole':
         # Some older version of parsers use 'segment'= "N/A" and
         # 'segment_id'="N/A" in a "whole" stamp when "whole" linage
         # is used.
         try:
-            cols_to_drop = ['segment', 'segment_id']
             space_stamps.drop(columns=cols_to_drop, inplace=True)
             warnings.warn(
                 "'segment' and 'segment_id' columns are dropped when"
@@ -1158,7 +1165,7 @@ def children_stamps(
         except KeyError:
             print(f"'{cols_to_drop}' are not among columns.")
     if save_to is not None:
-        space_name = space_stamps.loc[0, 'space']
+        space_name = str(space_stamps.loc[0, 'space'])
         filename = '-'.join([space_name, group, lineage, 'stamps.csv'])
         space_stamps.to_csv(save_to + filename, index=False)
     return space_stamps
@@ -1175,7 +1182,7 @@ def parents_stamps(
     """
     Performs merging/ensemble-averaging over all the 'segment/'whole'
     simulation stamps in a 'space' in a given `geometry` for a given
-    `group` basedon the given `lineage`.
+    `group` based on the given `lineage`.
 
     Parameters
     ----------
@@ -1188,10 +1195,10 @@ def parents_stamps(
     lineage: str in  {'segment', 'whole'}
         Lineage type of children's stamps.
     properties: dict of str
-        A dictionary in which the keys are properties such as the time-
-        averaged radius of gyration which are measured during the 'probe'
+        A dictionary in which the keys are properties such as the
+        time-averaged radius of gyration which are measured during the 'probe'
         phase and the values are user-defined or numpy functions which are
-        used as the aggregation function bu pandas.
+        used as the aggregation function by pandas.
     save_to : str, default None
         Absolute or relative path of a directory to which outputs are saved.
 
@@ -1225,12 +1232,12 @@ def parents_stamps(
             " a previous call of 'parents_stamps' function."
         )
     # aggregation dictionary: See Note above.
-    agg_funcs = dict()
+    agg_funcs: dict[str, Union[Callable, str]] = dict()
     attr_agg_funcs = ['last'] * len(stamps_cols)
     agg_funcs.update(zip(stamps_cols, attr_agg_funcs))
     if properties is not None:  # add/update agg funcs for properties.
         agg_funcs.update(properties)
-    # Handing 'lineage'-specific details:
+    # handling lineage-specific details:
     if lineage == 'whole':
         parent_groupby = 'ensemble_long'
         # aggregating functions for properties
@@ -1244,10 +1251,10 @@ def parents_stamps(
         agg_funcs['n_frames'] = 'sum'
         file_lastname = 'whole'
     agg_funcs.pop(parent_groupby)
-    parents_stamps = stamps.groupby([parent_groupby]).agg(agg_funcs)
-    parents_stamps.reset_index(inplace=True)
+    parent_stps = stamps.groupby([parent_groupby]).agg(agg_funcs)
+    parent_stps.reset_index(inplace=True)
     if lineage == 'whole':
-        parents_stamps.rename(
+        parent_stps.rename(
             columns={'ensemble_id': 'n_ensembles'},
             inplace=True
         )
@@ -1259,24 +1266,24 @@ def parents_stamps(
         # stamps, so it is removed. The "whole" stamps directly generated
         # in the "probe" phase do not have such a column, but those generated
         # from "segment" stamps have.
-        # Droping redundant columns silently:
-        parents_stamps.drop(
+        # Dropping redundant columns silently:
+        parent_stps.drop(
             columns=['n_segments', 'segment_id', 'segment'],
             inplace=True,
             errors='ignore'
-            )
+        )
     else:
-        parents_stamps.rename(
+        parent_stps.rename(
             columns={'segment_id': 'n_segments'},
             inplace=True
         )
     if save_to is not None:
-        space_name = parents_stamps.loc[0, 'space']
+        space_name = str(parent_stps.loc[0, 'space'])
         filename = '-'.join(
             [space_name, group, 'stamps', file_lastname + '.csv']
         )
-        parents_stamps.to_csv(save_to + filename, index=False)
-    return parents_stamps
+        parent_stps.to_csv(save_to + filename, index=False)
+    return parent_stps
 
 
 def unique_property(
@@ -1288,11 +1295,12 @@ def unique_property(
 ) -> Tuple[List[str], List[str]]:
     """
     Finds unique physical properties and physical property-measures by
-    spliting filenames given by the glob-friendly 'filepath'.
+    splitting filenames given by the glob-friendly 'filepath'.
 
     A measure refers to some measurement done on a physical property.
 
-    A physcial property-measure is defined as a measurement done on a physical;
+    A physical property-measure is defined as a measurement done on a
+    physical;
     for instance, "gyrT-acf" means the auto-correlation function of the radius
     of gyration.
 
@@ -1308,14 +1316,14 @@ def unique_property(
         This is different from a file's extensions/format such as "csv" or
         "npy".
     drop_properties: list of str, default None
-        The proeprties that should be ignored.
+        The properties that should be ignored.
     sep: str, default "-"
         The seperator between a "property" and its "measure".
 
     Return
     ------
     uniq_props: list of str
-        A sorted liste of unique physcial properties.
+        A sorted list of unique physical properties.
     uniq_prop_measures: list of str
         A sorted list of unique property-measures.
     """
@@ -1326,20 +1334,21 @@ def unique_property(
             set(
                 [sep.join(
                     prop.split("/")[-1].split(ext)[0].split(sep)[prop_idx:]
-                    ) for prop in props_measures]
-                )
+                ) for prop in props_measures]
             )
+        )
         uniq_prop_measures.extend(prop_measure_per_ext)
-    for drop_property in drop_properties:
-        try:
-            uniq_prop_measures.remove(drop_property)
-        except ValueError:
-            print(
-                f"'{drop_property}' is not among unique properties."
+    if drop_properties is not None:
+        for drop_property in drop_properties:
+            try:
+                uniq_prop_measures.remove(drop_property)
+            except ValueError:
+                print(
+                    f"'{drop_property}' is not among unique properties."
                 )
     uniq_props = set(
-            [property_.split(sep)[0] for property_ in uniq_prop_measures]
-            )
+        [property_.split(sep)[0] for property_ in uniq_prop_measures]
+    )
     uniq_prop_measures = set(uniq_prop_measures)
     uniq_prop_measures = list(uniq_prop_measures.difference(uniq_props))
     uniq_props = list(uniq_props)
@@ -1351,9 +1360,9 @@ def unique_property(
 def space_tseries(
     input_database: str,
     property_: str,
-    parser: ParserT,
+    parser: Callable,
     hierarchy: str,
-    physical_attrs: List[str],
+    physical_attrs: list[str],
     group: str,
     geometry: str,
     topology: str,
@@ -1366,12 +1375,12 @@ def space_tseries(
     in a given space `input_database`,  adds the `physical_attrs` of interest
     as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
     dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
-    in pandas's lingo,
+    in pandas lingo,
 
     In each 'ensemble-averaged' dataframe, there are 3 columns with this name
     pattern:
 
-    column name = '[long_ensemble]-[porperty_][-measure]-[stat]'
+    column name = '[long_ensemble]-[property_][-measure]-[stat]'
 
     where '[-measure]' is a physical measurement such as the auto correlation
     function (AFC) done on the physical 'property_'. [...] means this keyword
@@ -1380,18 +1389,18 @@ def space_tseries(
 
     Parameters
     ----------
-    property_path: str
-        Path to the the timeseries of the physical property of interest.
+    input_database: str
+        Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
-    property_pattern: str
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
+    hierarchy: str
         The pattern by which the filenames of timeseries are started with; for
         instance, "N*" means files start with "N"
-    attributes: list of str
-        The physical attributes that will added as new columns to the
+    physical_attrs: list of str
+        The physical attributes that will be added as new columns to the
         concatenated timeseries.
     group: str in {'bug', 'nucleoid', 'all'}
         The type of the particle group.
@@ -1416,7 +1425,8 @@ def space_tseries(
     """
     property_ext = "-" + property_ + "-ensAvg.csv"
     ens_avg_csvs = glob(input_database + hierarchy + property_ext)
-    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
+    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[
+        property_ext])
     property_db = []
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
@@ -1443,7 +1453,7 @@ def space_tseries(
             'analysis',
             stage='space',
             group='bug'
-            )
+        )
         space = save_to_space.split("/")[-2].split("-")[0]
         output = "-".join([space, group, property_]) + "-space.csv"
         property_db.to_csv(save_to_space + output, index=False)
@@ -1453,7 +1463,7 @@ def space_tseries(
 def space_hists(
     input_database: str,
     property_: str,
-    parser: ParserT,
+    parser: Callable,
     hierarchy: str,
     physical_attrs: List[str],
     group: str,
@@ -1470,12 +1480,12 @@ def space_hists(
     in a given space `input_database`,  adds the `physical_attrs` of interest
     as the new columns to each 'ensAvg' dataframe, and merges all the 'ensAvg'
     dataframes into one 'space' dataframe along the 0 (or 'row' or 'index')
-    in pandas's lingo,
+    in pandas lingo,
 
     In each 'ensemble-averaged' dataframe, there are 4 columns with this name
     pattern:
 
-    column name = '[long_ensemble]-[porperty_][-measure]-[stat]'
+    column name = '[long_ensemble]-[property_][-measure]-[stat]'
 
     , and sometimes
 
@@ -1490,18 +1500,18 @@ def space_hists(
 
     Parameters
     ----------
-    property_path: str
-        Path to the the timeseries of the physical property of interest.
+    input_database: str
+        Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
     hierarchy: str
         The pattern by which the filenames of timeseries are started with; for
         instance, "N*" means files start with "N"
-    phys_attrs: list of str
-        The physical attributes that will added as new columns to the
+    physical_attrs: list of str
+        The physical attributes that will be added as new columns to the
         concatenated timeseries.
     group: {'bug', 'nucleoid', 'all'}
         The type of the particle group.
@@ -1509,9 +1519,6 @@ def space_hists(
         The shape of the simulation box.
     topology: str
         Topology of the polymer.
-    single_space:
-        Whether the all-in-one file is for all the timeseries properties of a
-        single space or all the space in a project.
     bin_center: numpy array, default None
         The bin centers. The argument should be given if the 'bin_center' is
         not in the ensemble-averaged dataframe and the same array of bin
@@ -1519,7 +1526,7 @@ def space_hists(
         the case for "clustersHistTFoci" or "bondsHistTFoci" properties, but
         not for "zHistMon" or "rHistCrd".
     normalize: bool, default False
-        Whether normalize freqs or not.
+        Whether normalize frequencies or not.
     divisor: float, default 0.025
         The step by which the values of "phi_c_bulk" attribute are rounded.
     round_to: int, default 3
@@ -1535,13 +1542,14 @@ def space_hists(
         of interest, and "properties and attributes" of interest are added to
         it as the new columns.
 
-    Requirenents
+    Requirements
     ------------
     PolyPhys, Pandas
     """
     property_ext = "-" + property_ + "-ensAvg.csv"
     ens_avg_csvs = glob(input_database + hierarchy + property_ext)
-    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
+    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[
+        property_ext])
     property_db = []
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
@@ -1557,17 +1565,17 @@ def space_hists(
             ens_avg['bin_center-norm'] = \
                 ens_avg['bin_center'] / ens_avg['bin_center'].max()
         if normalize is True:
-            normalizer = ens_avg[property_+'-mean'].sum()
+            normalizer = ens_avg[property_ + '-mean'].sum()
             if normalizer != 0:
-                ens_avg[property_+'-norm'] = \
-                    ens_avg[property_+'-mean'] / normalizer
+                ens_avg[property_ + '-norm'] = \
+                    ens_avg[property_ + '-mean'] / normalizer
             else:
                 warnings.warn(
                     "All the frequencies are zero, so all the normalized"
-                    " frequerncies are set to zero.",
+                    " frequencies are set to zero.",
                     UserWarning
                 )
-                ens_avg[property_+'-norm'] = 0
+                ens_avg[property_ + '-norm'] = 0
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(property_info, attr_name)
         ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
@@ -1581,7 +1589,7 @@ def space_hists(
             'analysis',
             stage='space',
             group=group
-            )
+        )
         space = save_to_space.split("/")[-2].split("-")[0]
         output = "-".join([space, group, property_]) + "-space.csv"
         property_db.to_csv(save_to_space + output, index=False)
@@ -1611,18 +1619,18 @@ def normalize_z_incorrect(
     ens_avg: pd.DataFrame
         Normalized ensemble-average local distribution.
     """
-    ens_avg_max = ens_avg[prop+'-scale'].max()
-    ens_avg[prop+'-normalizer'] = ens_avg_max
+    ens_avg_max = ens_avg[prop + '-scale'].max()
+    ens_avg[prop + '-normalizer'] = ens_avg_max
     print(ens_avg_max)
     if ens_avg_max != 0:
-        ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
+        ens_avg[prop + '-norm'] = ens_avg[prop + '-scale'] / ens_avg_max
     else:
         warnings.warn(
             "All the frequencies are zero, so all the normalized"
-            " frequerncies are set to zero.",
+            " frequencies are set to zero.",
             UserWarning
         )
-        ens_avg[prop+'-norm'] = 0
+        ens_avg[prop + '-norm'] = 0
     # If system is symmetric with respect to z=0, then an average can be
     # applied with respect to absolut size of bin centers.
     if norm_direction is True:
@@ -1660,32 +1668,30 @@ def normalize_z(
 
     Return
     ------
-    ens_sum: pd.DataFrame
+    ens_avg or esn_sum: pd.DataFrame
         Normalized ensemble-average local distribution.
     """
-    ens_avg_max = ens_avg[prop+'-scale'].max()
-    ens_avg[prop+'-normalizer'] = ens_avg_max
+    ens_avg_max = ens_avg[prop + '-scale'].max()
+    ens_avg[prop + '-normalizer'] = ens_avg_max
     if ens_avg_max != 0:
-        ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
+        ens_avg[prop + '-norm'] = ens_avg[prop + '-scale'] / ens_avg_max
     else:
         warnings.warn(
             "All the frequencies are zero, so all the normalized"
-            " frequerncies are set to zero.",
+            " frequencies are set to zero.",
             UserWarning
         )
-        ens_avg[prop+'-norm'] = 0
+        ens_avg[prop + '-norm'] = 0
     # If system is symmetric with respect to z=0, then an average can be
     # applied with respect to absolut size of bin centers.
     if norm_direction is True:
-        ens_pos = pd.DataFrame(columns=ens_avg.columns)
-        ens_neg = pd.DataFrame(columns=ens_avg.columns)
         df_len = ens_avg.shape[0]
         if df_len % 2 == 0:
             # index or bin_center or z >= 0:
-            ens_pos = ens_avg.iloc[df_len//2:, :].copy()
+            ens_pos = ens_avg.iloc[df_len // 2:, :].copy()
             ens_pos.reset_index(inplace=True, drop=True)
             # index or bin_center or z < 0:
-            ens_neg = ens_avg.iloc[:df_len//2, :].copy()
+            ens_neg = ens_avg.iloc[:df_len // 2, :].copy()
             ens_neg.index = -1 * ens_neg.index
             ens_neg.sort_index(inplace=True)
             ens_neg.reset_index(inplace=True, drop=True)
@@ -1694,10 +1700,10 @@ def normalize_z(
             ens_sum = 0.5 * (ens_pos + ens_neg)
         else:
             # index or bin_center or z > 0
-            ens_pos = ens_avg.iloc[df_len//2+1:, :].copy()
+            ens_pos = ens_avg.iloc[df_len // 2 + 1:, :].copy()
             ens_pos.reset_index(inplace=True, drop=True)
             # index or bin_center or z < 0
-            ens_neg = ens_avg.iloc[:df_len//2, :].copy()
+            ens_neg = ens_avg.iloc[:df_len // 2, :].copy()
             ens_neg.index = -1 * ens_neg.index
             ens_neg.sort_index(inplace=True)
             ens_neg.reset_index(inplace=True, drop=True)
@@ -1706,10 +1712,12 @@ def normalize_z(
             ens_sum = 0.5 * (ens_pos + ens_neg)
             # index or bin_center or z = 0
             ens_sum.set_index('bin_center', inplace=True)
-            ens_sum.loc[0, :] = ens_avg.loc[df_len//2, :]
+            ens_sum.loc[0, :] = ens_avg.loc[df_len // 2, :]
             ens_sum.sort_index(inplace=True)
             ens_sum.reset_index(inplace=True)
-    return ens_sum
+        return ens_sum
+    else:
+        return ens_avg
 
 
 def normalize_r(
@@ -1740,32 +1748,32 @@ def normalize_r(
         Normalized ensemble-average local distribution.
     """
     if method == 'first':
-        ens_avg_max = ens_avg[prop+'-scale'].values[0]
+        ens_avg_max = ens_avg[prop + '-scale'].values[0]
     elif method == 'max':
-        ens_avg_max = ens_avg[prop+'-scale'].max()
+        ens_avg_max = ens_avg[prop + '-scale'].max()
     else:
         raise NotImplementedError(
             "Choose either 'first' or 'max' method."
         )
-    ens_avg[prop+'-normalizer'] = ens_avg_max
+    ens_avg[prop + '-normalizer'] = ens_avg_max
     if ens_avg_max != 0:
-        ens_avg[prop+'-norm'] = ens_avg[prop+'-scale'] / ens_avg_max
+        ens_avg[prop + '-norm'] = ens_avg[prop + '-scale'] / ens_avg_max
     else:
         warnings.warn(
             "All the frequencies are zero, so all the normalized"
-            " frequerncies are set to zero.",
+            " frequencies are set to zero.",
             UserWarning
         )
-        ens_avg[prop+'-norm'] = 0
+        ens_avg[prop + '-norm'] = 0
     return ens_avg
 
 
 def space_sum_rule(
     input_database: str,
     property_: str,
-    parser: ParserT,
+    parser: Callable,
     hierarchy: str,
-    physical_attrs: List[str],
+    physical_attrs: list[str],
     species: str,
     size_attr: str,
     group: str,
@@ -1780,12 +1788,12 @@ def space_sum_rule(
     `property_` in a given space `input_database`, normalize and scale that
     distribution, adds the `physical_attrs` of interest as the new columns to
     each 'ensAvg' distribution, and merges all the 'ensAvg' distributions into
-    one 'space' dataframe along the 0 (or 'row' or 'index') in pandas's lingo,
+    one 'space' dataframe along the 0 (or 'row' or 'index') in pandas lingo,
 
     In each 'ensemble-averaged' dataframe, there are 4 columns with this name
     pattern:
 
-    column name = '[long_ensemble]-[porperty_][-measure]-[stat]'
+    column name = '[long_ensemble]-[property_][-measure]-[stat]'
 
     , and sometimes
 
@@ -1800,22 +1808,22 @@ def space_sum_rule(
 
     Issues
     ------
-    Currently, `direction` is only defined for 'cylindrical' goemtery.
+    Currently, `direction` is only defined for 'cylindrical' geometry.
 
     Parameters
     ----------
-    property_path: str
-        Path to the the timeseries of the physical property of interest.
+    input_database: str
+        Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
     hierarchy: str
         The pattern by which the filenames of timeseries are started with; for
         instance, "N*" means files start with "N"
-    phys_attrs: list of str
-        The physical attributes that will added as new columns to the
+    physical_attrs: list of str
+        The physical attributes that will be added as new columns to the
         concatenated timeseries.
     species: {'Mon', 'Crd', 'Foci', 'Dna'}
         The species of the particles in a group.
@@ -1849,7 +1857,7 @@ def space_sum_rule(
         of interest, and "properties and attributes" of interest are added to
         it as the new columns.
 
-    Requirenents
+    Requirements
     ------------
     PolyPhys, Pandas
     """
@@ -1861,7 +1869,8 @@ def space_sum_rule(
     property_ext += "-ensAvg.csv"
     prop = direction + property_ + species  # full name of physical property
     ens_avg_csvs = glob(input_database + hierarchy + property_ext)
-    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[property_ext])
+    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[
+        property_ext])
     property_db = []
     # ens_csvs is a list of tuples, each has one member.
     for ens_avg_csv in ens_avg_csvs:
@@ -1875,22 +1884,22 @@ def space_sum_rule(
         )
         if property_ == 'Phi':
             scaler = getattr(property_info, size_attr)
-            ens_avg[prop+'-scaler'] = scaler
-            ens_avg[prop+'-scale'] = ens_avg[prop+'-mean'] / scaler
+            ens_avg[prop + '-scaler'] = scaler
+            ens_avg[prop + '-scale'] = ens_avg[prop + '-mean'] / scaler
         elif property_ == 'Rho':
             scaler = getattr(property_info, size_attr)
-            ens_avg[prop+'-scaler'] = scaler**2
-            ens_avg[prop+'-scale'] = ens_avg[prop+'-mean'] * scaler**2
+            ens_avg[prop + '-scaler'] = scaler ** 2
+            ens_avg[prop + '-scale'] = ens_avg[prop + '-mean'] * scaler ** 2
         else:
             raise NotImplementedError(
                 "Sum rule's scaler is only defined for "
                 "'rho' (density) or 'phi' (volume fraction) properties."
             )
-        ens_avg[prop+'-scale-normalized_curve'] = \
-            ens_avg[prop+'-scale'] / ens_avg[prop+'-scale'].sum()
+        ens_avg[prop + '-scale-normalized_curve'] = \
+            ens_avg[prop + '-scale'] / ens_avg[prop + '-scale'].sum()
         ens_avg = normalizer[direction](prop, ens_avg)
-        ens_avg[prop+'-sumrule_constant'] = \
-            ens_avg[prop+'-normalizer'] / ens_avg[prop+'-scaler']
+        ens_avg[prop + '-sumrule_constant'] = \
+            ens_avg[prop + '-normalizer'] / ens_avg[prop + '-scaler']
         ens_avg['bin_center-norm'] = \
             ens_avg['bin_center'] / ens_avg['bin_center'].max()
         for attr_name in physical_attrs:
@@ -1898,20 +1907,20 @@ def space_sum_rule(
         ens_avg['temp'] = (
             (ens_avg['dcyl'] % ens_avg['dcrowd']) /
             (ens_avg['dcrowd'])
-            )
+        )
         ens_avg['bin_center-dcrowd'] = (
             2 * ens_avg['bin_center'] / ens_avg['dcrowd']
-            )
+        )
         ens_avg['bin_center-dcrowd-recentered'] = (
             ens_avg['bin_center-dcrowd'] - ens_avg['temp']
-            )
+        )
         ens_avg['bin_center-recentered-norm'] = (
             ens_avg['bin_center'] - (ens_avg['dcyl'] % ens_avg['dcrowd'])
-            )
+        )
         ens_avg['bin_center-recentered-norm'] = (
             ens_avg['bin_center-recentered-norm'] /
             ens_avg['bin_center-recentered-norm'].max()
-            )
+        )
         ens_avg.drop(columns=['temp'], inplace=True)
         ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
             round_up_nearest, args=[divisor, round_to])
@@ -1924,7 +1933,7 @@ def space_sum_rule(
             'analysis',
             stage='space',
             group=group
-            )
+        )
         space = save_to_space.split("/")[-2].split("-")[0]
         output = "-".join([space, group, property_, species])
         output += "-normalizedRescaled-space.csv"

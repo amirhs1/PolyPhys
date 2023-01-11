@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Dict,
     Tuple,
+    Optional
 )
 import inspect
 import numpy as np
@@ -19,7 +20,7 @@ from ..manage.typer import ParserT
 
 
 def acf_of_wholes(
-    ensemble: Dict[str, pd.DataFrame],
+    ensemble: pd.DataFrame,
     nlags: int,
     alpha: float
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -71,7 +72,7 @@ def acf_generator(
     nlags: int,
     alpha: float,
     group: str,
-    save_to: str = None
+    save_to: Optional[str] = None
 ) -> Tuple[Dict[str, pd.DataFrame],
            Dict[str, pd.DataFrame],
            Dict[str, pd.DataFrame]]:
@@ -313,9 +314,9 @@ def fit_wholes(
     geometry: str,
     topology: str,
     x_type: str = 'index',
-    scale: str = None,
+    scale: Optional[str] = None,
     length: int = 50000,
-    save_to: str = None,
+    save_to: Optional[str] = None,
     **kwargs
 ) -> pd.DataFrame:
     """Takes the `property_path` to the directory in which the ansemble-average
