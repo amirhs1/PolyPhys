@@ -26,8 +26,8 @@ SumRuleCylT = Type[SumRuleCyl]
 HnsCubT = Type[HnsCub]
 ParserT = Union[TransFociCub, TransFociCyl, SumRuleCyl, HnsCub]
 
-EnsWholes = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
-EnsembleT = Tuple[EnsembleName, EnsWholes]
+WholeT = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
+EnsembleT = Tuple[EnsembleName, WholeT]
 
 FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
