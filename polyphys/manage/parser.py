@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 import re
-from typing import TypeVar, IO
+from typing import TypeVar, IO, Tuple, Dict, List
 import warnings
 from collections import OrderedDict
 from .utilizer import invalid_keyword, openany_context
@@ -74,21 +74,21 @@ class ParserBase(ABC):
         A dictionary of `lineage` names. For each `lineage`, a list is defined
         that contains the parent-like lineage attributes of that `lineage`.
     """
-    _lineage_attributes: dict[str, None] = {
+    _lineage_attributes: Dict[str, None] = {
         "segment": None,
         "whole": None,
         "ensemble_long": None,
         "ensemble": None,
         "space": None,
     }
-    _physical_attributes: dict[str, None] = {
+    _physical_attributes: Dict[str, None] = {
         "segment": None,
         "whole": None,
         "ensemble_long": None,
         "ensemble": None,
         "space": None,
     }
-    _genealogy: dict[str, list[str]] = {
+    _genealogy: Dict[str, List[str]] = {
         "segment": [
             "lineage_name",
             "segment",
@@ -445,7 +445,7 @@ class SumRuleCyl(ParserBase):
         the `name`, or are created within this class.
     """
     _groups = ["bug", "all"]
-    _lineage_attributes: dict[str, dict[str, str]] = {
+    _lineage_attributes: Dict[str, Dict[str, str]] = {
         "segment": {  # dcyl twice of r
             "nmon": "N",
             "epsilon": "epsilon",
@@ -485,7 +485,7 @@ class SumRuleCyl(ParserBase):
         "ensemble": {"nmon": "N", "dcyl": "D", "dcrd": "ac", "ncrowd": "nc"},
         "space": {"nmon": "N", "dcyl": "D", "dcrowd": "ac"},
     }
-    _physical_attributes: dict[str, list[str]] = {
+    _physical_attributes: Dict[str, List[str]] = {
         "segment": [
             "dmon",
             "mmon",
@@ -543,7 +543,7 @@ class SumRuleCyl(ParserBase):
             list(self._lineage_attributes[self.lineage].keys())
             + self._physical_attributes[self.lineage]
         )
-        self.genealogy: list[str] = super()._genealogy[self.lineage]
+        self.genealogy: List[str] = super()._genealogy[self.lineage]
         if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
 
@@ -867,7 +867,7 @@ class TransFociCyl(ParserBase):
         the `name`, or are created within this class.
     """
     _groups = ["bug", "all"]
-    _lineage_attributes: dict[str, dict[str, str]] = {
+    _lineage_attributes: Dict[str, Dict[str, str]] = {
         "segment": {  # dcyl twice of r
             "epsilon_small": "epss",
             "epsilon_large": "epss",
@@ -932,7 +932,7 @@ class TransFociCyl(ParserBase):
             "dcrowd": "ac",
         },
     }
-    _physical_attributes: dict[str, list[str]] = {
+    _physical_attributes: Dict[str, List[str]] = {
         "segment": [
             "dmon_small",
             "mmon_small",
@@ -991,7 +991,7 @@ class TransFociCyl(ParserBase):
             list(self._lineage_attributes[self.lineage].keys())
             + self._physical_attributes[self.lineage]
         )
-        self.genealogy: list[str] = super()._genealogy[self.lineage]
+        self.genealogy: List[str] = super()._genealogy[self.lineage]
         if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
 
@@ -1313,7 +1313,7 @@ class TransFociCub(ParserBase):
         the `name`, or are created within this class.
     """
     _groups = ["bug", "all"]
-    _lineage_attributes: dict[str, dict[str, str]] = {
+    _lineage_attributes: Dict[str, Dict[str, str]] = {
         "segment": {  # lcube twice of l
             "dmon_large": "al",
             "nmon_large": "nl",
@@ -1367,7 +1367,7 @@ class TransFociCub(ParserBase):
             "dcrowd": "ac",
         },
     }
-    _physical_attributes: dict[str, list[str]] = {
+    _physical_attributes: Dict[str, List[str]] = {
         "segment": [
             "dmon_small",
             "mmon_small",
@@ -1422,7 +1422,7 @@ class TransFociCub(ParserBase):
             list(self._lineage_attributes[self.lineage].keys())
             + self._physical_attributes[self.lineage]
         )
-        self.genealogy: list[str] = super()._genealogy[self.lineage]
+        self.genealogy: List[str] = super()._genealogy[self.lineage]
         if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
 
@@ -1734,7 +1734,7 @@ class HnsCub(ParserBase):
         the `name`, or are created within this class.
     """
     _groups = ["nucleoid", "all"]
-    _lineage_attributes: dict[str, dict[str, str]] = {
+    _lineage_attributes: Dict[str, Dict[str, str]] = {
         "segment": {  # lcube twice of l
             "nmon": "N",
             "eps_hm": "epshm",
@@ -1785,7 +1785,7 @@ class HnsCub(ParserBase):
             "dcrowd": "ac",
         },
     }
-    _physical_attributes: dict[str, list[str]] = {
+    _physical_attributes: Dict[str, List[str]] = {
         "segment": [
             "dmon",
             "mmon",
@@ -1846,7 +1846,7 @@ class HnsCub(ParserBase):
             list(self._lineage_attributes[self.lineage].keys())
             + self._physical_attributes[self.lineage]
         )
-        self.genealogy: list[str] = super()._genealogy[self.lineage]
+        self.genealogy: List[str] = super()._genealogy[self.lineage]
         if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
 
@@ -2857,7 +2857,7 @@ class Dump:
         self.filepath = filepath
         self.names = {}
         self.is_scaled = -1  # -1/0/1 mean unknown/unscale/scale coordinates.
-        self.snaps: list[Snapshot] = []
+        self.snaps: List[Snapshot] = []
         self.n_snaps: int = 0  # total number of snapshots
         self.increment = 1
         self.eof = 0
@@ -2954,7 +2954,7 @@ class Dump:
         return snap.time
 
     @staticmethod
-    def unit_cell(snap: Snapshot) -> tuple[np.ndarray, np.ndarray]:
+    def unit_cell(snap: Snapshot) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute elements of the h-matrix for a tricilinic or orthogonal unit
         cell and its inverse matrix
