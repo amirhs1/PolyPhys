@@ -1,5 +1,5 @@
 """
-Contains tools fro perfroming statistical measurements such as avaerging,
+Contains tools for performing statistical measurements such as averaging,
 standard deviation, or the like on a given time series, correlation data,
 or histogram.
 """

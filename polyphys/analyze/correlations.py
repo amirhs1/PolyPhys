@@ -7,6 +7,7 @@ from typing import (
 )
 import inspect
 import numpy as np
+from numpy.typing import ArrayLike
 import pandas as pd
 from scipy import optimize
 import statsmodels.tsa.stattools as tsas
@@ -25,7 +26,7 @@ def acf_of_wholes(
     alpha: float
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Calculates the `nlags` auto correlation function (ACF) of 'wholes'
-    in the `ensemble` and thier lower and upper confidence limits with
+    in the `ensemble` and their lower and upper confidence limits with
     accuracy 1-`alpha`.
 
     Parameters
@@ -38,7 +39,7 @@ def acf_of_wholes(
         If a number is given, the confidence intervals for the given level
         are returned. For instance if alpha=.05, 95 % confidence intervals
         are returned where the standard deviation is computed according to
-        Bartlett”s formula.
+        Bartlett's formula.
 
     Return
     ------
@@ -76,7 +77,7 @@ def acf_generator(
 ) -> Tuple[Dict[str, pd.DataFrame],
            Dict[str, pd.DataFrame],
            Dict[str, pd.DataFrame]]:
-    """Generates the autocorrelation function (ACF) of `nlags` lags of the
+    """Generates the auto-correlation function (ACF) of `nlags` lags of the
     'wholes' in each of the `ensembles` of the given attribute or property
     (property_) with their associate confidence intervals (CIs) (alpha).
 
@@ -84,8 +85,8 @@ def acf_generator(
     ----------
     property_ : str
         The physical property.
-    whole: dict of DataFrame
-        a dictionary of ensembles in which each key is a ensemble' name and
+    ensembles: dict of DataFrame
+        a dictionary of ensembles in which each key is an ensemble name and
         its associated value is the dataframe of its wholes. The names of
         the columns in each dataframe are wholes' names.
     nlags :int
@@ -94,7 +95,7 @@ def acf_generator(
         If a number is given, the confidence intervals for the given level
         are returned. For instance if alpha=.05, 95 % confidence intervals
         are returned where the standard deviation is computed according to
-        Bartlett”s formula.
+        Bartlett's formula.
     group: {'bug', 'nucleoid', 'all'}
         Type of the particle group.
     save_to : str, default None
@@ -109,11 +110,11 @@ def acf_generator(
     lower_cls: dict of DataFrame
         Dict of ensembles where keys are ensembles' names and values are the
         lower limits of the confidence intervals of the acfs of ensembles.
-        In each ensemble dataframe, columns are wholes's names.
+        In each ensemble dataframe, columns are wholes' names.
     upper_cls: dict of DataFrame
         Dict of ensembles where keys are ensembles' names and values are the
         upper limits of the confidence intervals of the acfs of ensembles.
-        In each ensemble dataframe, columns are wholes's names.
+        In each ensemble dataframe, columns are wholes' names.
 
     These three dictionaries are also written to memory as csv files if
     save_to is not None.
@@ -176,7 +177,7 @@ def acf_generator(
     return acfs, lower_cls, upper_cls
 
 
-def mono_unit_exp(x, omega, alpha):
+def mono_unit_exp(x: ArrayLike, omega: float, alpha: float) -> ArrayLike:
     """Calculates the mono-exponential decay with the unit amplitude, decay
     coefficient `omega` and decay exponent `alpha` for array `x`.
 
@@ -192,12 +193,12 @@ def mono_unit_exp(x, omega, alpha):
     Return
     ------
     array-like:
-        Measured exponentail values for the input data `x`.
+        Measured exponential values for the input data `x`.
     """
     return np.exp(-1 * omega * x ** alpha)
 
 
-def mono_unit_exp_tau(x, tau, alpha):
+def mono_unit_exp_tau(x: ArrayLike, tau: float, alpha: float) -> ArrayLike:
     """Calculates the mono-exponential decay with the unit amplitude, decay
     time `tau` and decay exponent `alpha` for array `x`.
 
@@ -213,14 +214,16 @@ def mono_unit_exp_tau(x, tau, alpha):
     Return
     ------
     array-like:
-        Measured exponentail values for the input data `x`.
+        Measured exponential values for the input data `x`.
     """
     return np.exp(-1 * (x/tau) ** alpha)
 
 
-def mono_exp_tau_res(x, tau, alpha, amp, residue):
+def mono_exp_tau_res(
+    x: ArrayLike, tau: float, alpha: float, amp: float, residue: float
+) -> ArrayLike:
     """Calculates the mono-exponential decay with the amplitude `amp`, decay
-    time `tau`, decay exponent `alpha` and 'residue` for array `x`.
+    time `tau`, decay exponent `alpha` and `residue` for array `x`.
 
     Parameters
     ----------
@@ -230,38 +233,50 @@ def mono_exp_tau_res(x, tau, alpha, amp, residue):
         Decay coefficient
     alpha: float
         Decay exponent
+    amp: float
+        The amplitude
+    residue: float
+        The residue value.
 
     Return
     ------
     array-like:
-        Measured exponentail values for the input data `x`.
+        Measured exponential values for the input data `x`.
     """
     return amp * np.exp(-1 * (x/tau) ** alpha) + residue
 
 
-def mono_exp_res(x, omega, alpha, amp, residue):
+def mono_exp_res(
+    x: ArrayLike, omega: float, alpha: float, amp: float, residue: float
+) -> ArrayLike:
     """Calculates the mono-exponential decay with the amplitude `amp`,
-    decay coefficient `tau`, decay exponent `alpha` and 'residue`
+    decay coefficient `tau`, decay exponent `alpha` and `residue`
     for array `x`.
 
     Parameters
     ----------
     x: array-like
         Input data
-    tau: float
-        Decay coefficient
+    omega: float
+        The inverse of exponential decay time.
     alpha: float
         Decay exponent
+    amp: float
+        The amplitude
+    residue: float
+        The residue value.
 
     Return
     ------
     array-like:
-        Measured exponentail values for the input data `x`.
+        Measured exponential values for the input data `x`.
     """
     return amp * np.exp(-1 * omega * x ** alpha) + residue
 
 
-def mono_exp(x, omega, alpha, amp):
+def mono_exp(
+    x: ArrayLike, omega: float, alpha: float, amp: float
+) -> ArrayLike:
     """Calculates the mono-exponential decay with the amplitude `amp`,
     decay coefficient `omega`, and decay exponent `alpha` for array `x`.
 
@@ -269,20 +284,24 @@ def mono_exp(x, omega, alpha, amp):
     ----------
     x: array-like
         Input data
-    tau: float
-        Decay coefficient
+    omega: float
+        The inverse of exponential decay time.
     alpha: float
         Decay exponent
+    amp: float
+        The amplitude
 
     Return
     ------
     array-like:
-        Measured exponentail values for the input data `x`.
+        Measured exponential values for the input data `x`.
     """
     return amp * np.exp(-1 * omega * x ** alpha)
 
 
-def mono_exp_tau(x, tau, alpha, amp):
+def mono_exp_tau(
+    x: ArrayLike, tau: float, alpha: float, amp: float
+) -> ArrayLike:
     """Calculates the mono-exponential decay with the amplitude `amp`,
     decay time `tau`, and decay exponent `alpha` for array `x`.
 
@@ -294,11 +313,13 @@ def mono_exp_tau(x, tau, alpha, amp):
         Decay coefficient
     alpha: float
         Decay exponent
+    amp: float
+        Amplitude of decay.
 
     Return
     ------
     array-like:
-        Measured exponentail values for the input data `x`.
+        Measured exponential values for the input data `x`.
     """
     return amp * np.exp(-1 * (x/tau) ** alpha)
 
@@ -319,17 +340,17 @@ def fit_wholes(
     save_to: Optional[str] = None,
     **kwargs
 ) -> pd.DataFrame:
-    """Takes the `property_path` to the directory in which the ansemble-average
+    """Takes the `property_path` to the directory in which the ensemble-average
     timeseries of a given physical `property_` of a given `group` in a given
     `geometry`, and performs the following operations in the `orient` of
     interest: First, it concatenates the timeseries into one dataframe along
-    the 0 or 'row' or 'index' in pandas's lingo, and thenadds the physical
+    the 0 or 'row' or 'index' in pandas lingo, and then adds the physical
     `attributes` of interest as the name columns to the concatenated
     timeseries.
 
     In each 'ensemble-averaged' dataframe, there are 3 columns with
     this name patter:
-    column name = 'long_ensemble-group-porperty_[-measure]-stat'
+    column name = 'long_ensemble-group-property_[-measure]-stat'
     where '[-measure]' is a physical measurement such as the auto correlation
     function (AFC) done on the physical 'property_'. [...] means this keyword
     in the column name can be optional. the 'stat' keyword is either 'mean',
@@ -340,7 +361,7 @@ def fit_wholes(
     space: str
         The name of the simulation `space` to which `ensembles` belong.
     property_path: str
-        Path to the the timeseries of the physical property of interest.
+        Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
     func_name: str
@@ -348,22 +369,20 @@ def fit_wholes(
     property_pattern: str
         The pattern by which the filenames of timeseries are started with.
     parser: ParserT
-        A class from 'PolyPhys.manage.parser' moduel that parses filenames
-        or filepathes to infer information about a file.
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
     group: str in {'bug', 'all'}
         The type of the particle group.
-    species: str in {'Mon', 'Crd', 'Foci'}
-        The species of particles.
     geometry: str in {'cylindrical', 'slit', 'cubic'}
         The shape of the simulation box.
     topology: str in {'ring', 'linear'}
         The topology of the polymer.
     x_type: {'index', 'time'}, default 'index'
-        Whether use the 'index' of the data set as x variable or use the real
-        'time' of simulation as x vaiable.
+        Either use the 'index' of the data set as x variable or use the real
+        'time' of simulation as x variable.
     scale: {'zscore', 'minmax}, default None,
         Whether scaled the data before fitting or not. If data is scaled, one
-        of these two optionsis used:
+        of these two options used:
 
         'zscore':
         Scaling data by subtracting the mean of data and then dividing by the
@@ -378,9 +397,10 @@ def fit_wholes(
     length: int = 50000,
         The length of data to which `fit_func` is fit.
     save_to : str, default None
-        An/a absolute/relative path of a directory to which outputs are saved.
+        An absolute or a relative path of a directory to which outputs are
+        saved.
     **kwargs :
-        Keyword argumnts passed to `scipy.optimize.fit` method.
+        Keyword arguments passed to `scipy.optimize.fit` method.
 
     Return
     ------
@@ -430,7 +450,7 @@ def fit_wholes(
     fit_data = []
     for property_csv in property_csvs:
         property_df = pd.read_csv(property_csv[0], header=0)
-        # the first column of porperty_df is used to extract
+        # the first column of property_df is used to extract
         # the information about the property and the space it
         # belongs to.
         for col in property_df.columns:
@@ -470,7 +490,7 @@ def fit_wholes(
                 fit_data.append(whole_data)
             except RuntimeError:
                 print("could not fit " + whole_name)
-                # the'convergance' parameter is the second element
+                # convergence parameter is the second element
                 # in whole_data list:
                 whole_data.extend([False])
                 whole_data.extend(np.zeros(4))
@@ -490,9 +510,9 @@ def set_x_property(
     x_property: str,
     group: str,
     y_length: int,
-    whole_info: Callable
+    whole_info: ParserT
 ) -> np.ndarray:
-    """Defines varibale `x` based on `x_property` and the time difference
+    """Defines variable `x` based on `x_property` and the time difference
     between two consecutive values of a "whole" time series of a given
     simulation for which the details are given by `whole_info`.
     """
@@ -518,6 +538,7 @@ def fit_exp_wholes(
     parser: ParserT,
     geometry: str,
     group: str,
+    topology: str,
     alpha: float,
     omega_lag: int,
     amp_lag: int,
@@ -527,17 +548,17 @@ def fit_exp_wholes(
     save_to: str = None,
     **kwargs
 ) -> pd.DataFrame:
-    """Takes the `property_path` to the directory in which the ansemble-average
+    """Takes the `property_path` to the directory in which the ensemble-average
     timeseries of a given physical `property_` of a given `group` in a given
     `geometry`, and performs the following operations in the `orient` of
     interest: First, it concatenates the timeseries into one dataframe along
-    the 0 or 'row' or 'index' in pandas's lingo, and thenadds the physical
+    the 0 or 'row' or 'index' in pandas lingo, and then adds the physical
     `attributes` of interest as the name columns to the concatenated
     timeseries.
 
     In each 'ensemble-averaged' dataframe, there are 3 columns with
     this name patter:
-    column name = 'long_ensemble-group-porperty_[-measure]-stat'
+    column name = 'long_ensemble-group-property_[-measure]-stat'
     where '[-measure]' is a physical measurement such as the auto correlation
     function (AFC) done on the physical 'property_'. [...] means this keyword
     in the column name can be optional. the 'stat' keyword is either 'mean',
@@ -555,10 +576,11 @@ def fit_exp_wholes(
     space_attributes = [
         'space', 'ensemble_long', 'ensemble', 'whole', 'nmon', 'dcyl',
         'dcrowd', 'phi_c_bulk']
+    fit_name = ''
     if inspect.isfunction(fit_func):
         fit_name = fit_func.__name__
         # Assuming: 1. All arguments are positional. 2. The first argument is
-        # the independent one. 3. Other positional arguments sould be find by
+        # the independent one. 3. Other positional arguments should be found by
         # fitting -- See scipy.optimize.fit_curve
         fit_params = inspect.getfullargspec(fit_func).args[1:]
     property_pat = '-' + property_ + '.' + property_ext
@@ -571,10 +593,10 @@ def fit_exp_wholes(
         ]
     cols = space_attributes + stats_names + ['convergence']
     cols = cols + params_name + params_std
-    fit_data = []  # the fiting data for all wholes.
+    fit_data = []  # the fitting data for all wholes.
     for property_db in property_dbs:
         property_df = pd.read_csv(property_db[0], header=0)
-        # the first column of porperty_df is used to extract
+        # the first column of property_df is used to extract
         # the information about the property and the space it
         # belongs to.
         for col in property_df.columns:
@@ -584,9 +606,10 @@ def fit_exp_wholes(
                 'whole',
                 geometry,
                 group,
+                topology,
                 ispath=False
             )
-            whole_data = []  # contains fiiting info of a whole
+            whole_data = []  # contains fitting info of a whole
             for attr in space_attributes:
                 attr_value = getattr(whole_info, attr)
                 whole_data.append(attr_value)
@@ -596,9 +619,9 @@ def fit_exp_wholes(
             y_sem = np.std(y, ddof=1) / len(y) ** 0.5
             whole_data.extend([y_mean, y_var, y_sem])
             x = set_x_property(x_property, group, len(y), whole_info)
-            # Issue: p0_guesss only works for
+            # Issue: p0_guess only works for
             # polyphys.analyze.correlations.mono_exp_res
-            # omega sets the x inteval over which fit_func decays:
+            # omega sets the x interval over which fit_func decays:
             omega = 1 / x[omega_lag]
             amp = np.mean(y[:amp_lag])
             res = np.mean(y[-1 * res_lag:])
@@ -617,7 +640,7 @@ def fit_exp_wholes(
                 fit_data.append(whole_data)
             except RuntimeError:
                 print("could not fit " + whole_name)
-                # the'convergance' parameter is the second element
+                # convergence parameter is the second element
                 # in whole_data list:
                 whole_data.extend([False])
                 whole_data.extend(np.zeros(4))
@@ -636,7 +659,7 @@ def fit_exp_wholes(
 def bond_info(
     positions: np.ndarray,
     topology: str
-) -> tuple[np.ndarray, np.ndarray]:
+) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate all the bond lengths and the cosines of the angles between all
     the pairs of bond vectors based on the `positions` of the monomers in a
     given polymer with a given `topology`.
@@ -647,7 +670,7 @@ def bond_info(
     Parameters
     ----------
     positions: np.NDArray
-        A 2D array of shape n_atoms * n_dims containing the postions of the
+        A 2D array of shape n_atoms * n_dims containing the positions of the
         point-like monomers connected by the (spring-like) bonds
     topology: str
         The topology of the polymer.
@@ -658,7 +681,7 @@ def bond_info(
         An array of size `n_bonds` containing the bond lengths.
     cosine_corrs: np.ndarray
         An array of size `n_bonds` containing the cosines of the angles between
-        all the pairs of vectors. The cosines_ij are accomolated based on their
+        all the pairs of vectors. The cosines_ij are accumulated based on their
         lags; for example, there are `nbonds` cosines with lga `i-j=1`. Hence,
         `cosine_corr[k]` is the sum of `k` cosines with lag `i-j=k`.
     """

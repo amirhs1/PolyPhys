@@ -12,11 +12,11 @@ from ..manage.typer import ParserT
 def parse_lammps_trj(
     trj_in: TextIOWrapper
 ) -> Dict[str, Union[float, int]]:
-    """parse the header of the first snapshot of a LAMMPS trjectory dump file.
+    """parse the header of the first snapshot of a LAMMPS trajectory dump file.
 
     Issue
     -----
-    Is the atom_type alwasy an integer?
+    Is the atom_type always an integer?
 
     Parameters
     ----------

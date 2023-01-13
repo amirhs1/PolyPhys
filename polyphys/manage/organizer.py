@@ -219,7 +219,7 @@ import pandas as pd
 import warnings
 
 from ..manage.typer import WholeT, EnsembleT
-from ..analyze.clusters import whole_distMat_foci
+from ..analyze.clusters import whole_dist_mat_foci
 from .utilizer import round_up_nearest, invalid_keyword
 
 
@@ -293,8 +293,8 @@ def sort_by_alphanumeric(
 
 
 def sort_filenames(
-    fnames: list[str],
-    fmts: Optional[list[str]] = None,
+    fnames: List[str],
+    fmts: Optional[List[str]] = None,
     report: Optional[bool] = False
 ) -> List[Tuple[str, ...]]:
     """
@@ -332,7 +332,7 @@ def sort_filenames(
         fnames_by_fmt.append([f for f in fnames if f.endswith(exts)])
     for idx, fnames_same_fmt in enumerate(fnames_by_fmt):
         fnames_by_fmt[idx] = sorted(fnames_same_fmt, key=sort_by_alphanumeric)
-    fnames_sorted: list[tuple[str, ...]] = list(zip(*fnames_by_fmt))
+    fnames_sorted = list(zip(*fnames_by_fmt))
     if report:
         print("Total number of files is ", len(fnames_sorted))
         print("Path to the first tuple of the sorted file: ", fnames_sorted[0])
@@ -341,7 +341,7 @@ def sort_filenames(
 
 def save_parent(
     name: str,
-    data: Union[np.ndarray, pd.DataFrame, dict[str, np.ndarray]],
+    data: Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]],
     property_: str,
     save_to: str,
     group: str = 'bug',
@@ -632,7 +632,7 @@ def whole_from_dist_mat_t(
     geometry: str,
     group: str,
     topology: str
-) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict]]:
+) -> Tuple[Dict[str, dict], Dict[str, dict], Dict[str, dict]]:
     """
     Loads `whole` 2D numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their paths
@@ -677,7 +677,7 @@ def whole_from_dist_mat_t(
             group,
             topology
         )
-        whole_freqs, whole_rdfs, whole_tseries = whole_distMat_foci(
+        whole_freqs, whole_rdfs, whole_tseries = whole_dist_mat_foci(
             whole_path[0],
             whole_info
         )
@@ -707,7 +707,7 @@ def ens_from_bin_edge(ens) -> Tuple[str, np.ndarray]:
     return ens[0], np.unique(list(ens[1].values()))
 
 
-def ens_from_vec(ens: EnsembleT) -> tuple[str, pd.DataFrame]:
+def ens_from_vec(ens: EnsembleT) -> Tuple[str, pd.DataFrame]:
     """
     Creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy vector or 1D array.
@@ -726,7 +726,7 @@ def ens_from_vec(ens: EnsembleT) -> tuple[str, pd.DataFrame]:
     return ens[0], pd.DataFrame.from_dict(ens[1], orient='columns')
 
 
-def ens_from_mat_t(ens: EnsembleT) -> tuple[str, np.ndarray]:
+def ens_from_mat_t(ens: EnsembleT) -> Tuple[str, np.ndarray]:
     """
     creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy 2D array.
@@ -744,7 +744,7 @@ def ens_from_mat_t(ens: EnsembleT) -> tuple[str, np.ndarray]:
     return ens[0], np.stack(list(ens[1].values()), axis=0)
 
 
-def ens_from_df(ens: EnsembleT) -> tuple[str, pd.DataFrame]:
+def ens_from_df(ens: EnsembleT) -> Tuple[str, pd.DataFrame]:
     """
     creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a pandas dataframe.
@@ -890,7 +890,7 @@ def ensemble(
             bin_centers[ens_name] = 0.5 * (
                 edge_wholes[w_name][:-1] + edge_wholes[w_name][1:]
             )
-    whole_types = {
+    whole_types: Dict[str, Dict[str, Union[Callable, str]]] = {
         "vector": {
             "mapping_func": ens_from_vec,
             "ext": "csv"
@@ -910,7 +910,7 @@ def ensemble(
     }
     ensembles = dict(
         map(
-            whole_types[whole_type]["mapping_func"],
+            whole_types[whole_type]['mapping_func'],
             ensembles.items()
         )
     )
@@ -970,7 +970,7 @@ def ens_avg_from_df(
 def ens_avg_from_bin_edge(
     ens_prop: str,
     ens_data: np.ndarray,
-    exclude: list[str]
+    exclude: List[str]
 ) -> np.ndarray:
     """
     Not written yet
@@ -1088,7 +1088,7 @@ def ensemble_avg(
         }
     }
     for ens, ens_data in ensembles.items():
-        ens_avg = ens_types[ens_type]["ens_avg_func"](
+        ens_avg = ens_types[ens_type]['ens_avg_func'](
             property_,
             ens_data,
             exclude
@@ -1232,7 +1232,7 @@ def parents_stamps(
             " a previous call of 'parents_stamps' function."
         )
     # aggregation dictionary: See Note above.
-    agg_funcs: dict[str, Union[Callable, str]] = dict()
+    agg_funcs: Dict[str, Union[Callable, str]] = dict()
     attr_agg_funcs = ['last'] * len(stamps_cols)
     agg_funcs.update(zip(stamps_cols, attr_agg_funcs))
     if properties is not None:  # add/update agg funcs for properties.
@@ -1362,7 +1362,7 @@ def space_tseries(
     property_: str,
     parser: Callable,
     hierarchy: str,
-    physical_attrs: list[str],
+    physical_attrs: List[str],
     group: str,
     geometry: str,
     topology: str,
@@ -1428,6 +1428,16 @@ def space_tseries(
     ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[
         property_ext])
     property_db = []
+    parser_name = getattr(parser, '__name__', 'unknown')
+    if parser_name == 'unknown':
+        raise ValueError(f"'{parser}' does not have a name!")
+
+    dumping_freq = {
+        'TransFociCyl': 'bdump',
+        'TransFociCub': 'bdump',
+        'SumRuleCyl': 'bdump',
+        'HnsCub': 'ndump'
+    }
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = parser(
@@ -1439,7 +1449,10 @@ def space_tseries(
         )
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={'index': 'time'}, inplace=True)
-        ens_avg['time'] = ens_avg['time'] * property_info.dt
+        ens_avg['time'] = (
+            ens_avg['time'] * property_info.dt
+            * getattr(property_info, dumping_freq[parser_name])
+        )
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(property_info, attr_name)
         ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
@@ -1773,7 +1786,7 @@ def space_sum_rule(
     property_: str,
     parser: Callable,
     hierarchy: str,
-    physical_attrs: list[str],
+    physical_attrs: List[str],
     species: str,
     size_attr: str,
     group: str,

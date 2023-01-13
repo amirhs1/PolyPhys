@@ -2,7 +2,9 @@ from typing import Type, Union, Tuple, Dict, NewType
 import numpy as np
 import pandas as pd
 # pylint: disable-next=reportShadowedImports
-from .parser import (TransFociCyl, SumRuleCyl, TransFociCub, HnsCub, Snapshot)
+from .parser import (
+    ParserBase, TransFociCyl, TransFociCub, SumRuleCyl, HnsCub, Snapshot
+)
 
 PropertyT = NewType('PropertyT', str)
 SpeciesT = NewType('SpeciesT', str)
@@ -24,7 +26,8 @@ TransFociCylT = Type[TransFociCyl]
 TransFociT = Union[TransFociCylT, TransFociCubT]
 SumRuleCylT = Type[SumRuleCyl]
 HnsCubT = Type[HnsCub]
-ParserT = Union[TransFociCub, TransFociCyl, SumRuleCyl, HnsCub]
+ParserBaseT = Union[ParserBase]
+ParserT = Union[TransFociCylT, TransFociCubT, SumRuleCylT, HnsCubT]
 
 WholeT = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
 EnsembleT = Tuple[EnsembleName, WholeT]

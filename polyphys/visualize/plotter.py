@@ -35,7 +35,7 @@ def rdf_ideal_plotter(
     nmon: number of monomers
     dmon: size of monomer (or the kuhn segment)
     rdf: The probability distribution of the end-to-end distance of an
-    ideal linear chainm
+    ideal linear chain
     dmon_large: size of the pair of monomers at the two ends of the chain.
     This is used for scaling bin centers defined below.
 
@@ -116,7 +116,7 @@ def rdf_real_plotter(
     nmon: number of monomers
     dmon: size of monomer (or the kuhn segment)
     rdf: The probability distribution of the end-to-end distance of an ideal
-    linear chainm
+    linear chain
     dmon_large: size of the pair of monomers at the two ends of the chain.
     This is used for scaling bin centers defined below.
 
@@ -126,7 +126,7 @@ def rdf_real_plotter(
     """
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     # rFlory = 1.12 * nmon ** 0.588 * dmon
-    # chain size or the root-mean-square end-to-end distancs or Flory radius
+    # chain size or the root-mean-square end-to-end distances or Flory radius
     rdfFactor = 4 * np.pi * bin_centers**2
     if rdf is False:
         rdfFactor = 1.0
@@ -223,7 +223,7 @@ def p_vexc(
         A dictionary in which the keys are the crowder sizes and the values
         are their associated colors.
     kwargs: dict
-       The **kwargs in the `matplotlib.plot` used to customized the plot.
+       The **kwargs in the `matplotlib.plot` used to customize the plot.
     Requirements
     ------------
     matplotlib, seaborn, pandas
@@ -284,10 +284,6 @@ def p_vexc_models(
         Name of the color map used for curves with different crowder sizes.
     save_to : str, default './'
         An/a absolute/relative path of a directory to which outputs are saved.
-
-    Requirements
-    ------------
-    matplotlib, seaborn
     """
     _xnames = ['phi_c_bulk', 'phi_c_bulk_scaled']
     _vexc_styles = {
@@ -456,21 +452,21 @@ def p_acf(
     acf_db: pd.DataFrame
         The dataframe in which the ACF and CIs of the `property_` are
         located.
-    time: np.array
-        The time data plotted along x axis.
+    time: np.ndarray
+        The time data plotted along the x-axis.
     property_: str
         The physical property of interest.
     color: str
         A color as it recognised by matplotlib.
-    fbetween_lable: str, default None
+    fbetween_label: str, default None
         Label for the fill_between curve (the confidence interval).
     **acf_kwargs :
-        Keyword argumnts passed to `ax.plot` method below.
+        Keyword arguments passed to `ax.plot` method below.
 
     Return
     ------
     acf_t: matplotlib.axes.Axes
-        the plotted ACF with its assocaited CIs.
+        the plotted ACF with its associated CIs.
     """
     plt.rcParams.update({
         "text.usetex": True,
@@ -519,8 +515,8 @@ def p_acf_with_ci_space(
     `ext` format into the `save_to` path.
 
     Issues:
-    1. Currently, this polot works weel if we have 12=4*3 values for each
-    properties. Look at seeaborn col_wrap parameter.
+    1. Currently, this plot works well if we have 12=4*3 values for each
+    property. Look at seaborn col_wrap parameter.
 
     Parameters
     ----------
@@ -531,12 +527,12 @@ def p_acf_with_ci_space(
     space_title: str
         The formatted space name for the plot title.
     project_name: str
-        The name of a poject.
+        The name of a project.
     properties: dict of dict
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
-        the like, and the values are the spcific values of these
+        the like, and the values are the specific values of these
         characteristics for a physical property.
     xlimits: tuple, default (0, 7000, 1000),
         The lower and upper limits, and the step for the x-ticks.
@@ -657,13 +653,13 @@ def p_acf_fit_curve_space(
     **save_kwargs
 ) -> None:
     """plot the auto-correlation function (AFC) with its associated
-    confidence intervals (CIs) of a physical `property_` with its asscoated
-    fitting function 'func' in oneplot for all the `ensembles` in a simulation
+    confidence intervals (CIs) of a physical `property_` with its associated
+    fitting function 'func' in one plot for all the `ensembles` in a simulation
     `space`, and save it in `ext` format into the `save_to` path.
 
     Issues:
-    1. Currently, this polot works weel if we have 12=4*3 values for each
-    properties. Look at seeaborn col_wrap parameter.
+    1. Currently, this plot works well if we have 12=4*3 values for each
+    property. Look at seaborn col_wrap parameter.
 
     Parameters
     ----------
@@ -674,9 +670,8 @@ def p_acf_fit_curve_space(
     space_title: str
         The formatted space name for the plot title.
     project_name: str
-        The name of a poject.
-    space_stamps: pd.DataFrame
-        Dataframe that contains the physical attributes, equilibirium
+        The name of a project.
+    space_stamps: pd.DataFrame         that contains the physical attributes, equilibrium
         properties, and the fitting parameters of `func` for each
         'ensemble' in the 'space'
     func_name: str
@@ -687,12 +682,12 @@ def p_acf_fit_curve_space(
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
-        the like and the values are the spcific values of these
+        the like and the values are the specific values of these
         characteristics for a physical property.
     x_type: {'index', 'time'}, default 'index'
-        Whether use the 'index' of the data set as x variable or use the real
+        Either use the 'index' of the data set as x variable or use the real
     round_to: float, default 0.025
-        The flot number to which the bulk volume fraction of crowders are
+        The float number to which the bulk volume fraction of crowders is
         rounded.
     xlimits: tuple, default (0, 7000, 1000),
         The lower and upper limits, and the step for the x-ticks.
@@ -836,7 +831,7 @@ def p_acf_fit_curve_space(
         )
     title = (
         'Exponential fit (' + fit_info[func_name]['name']
-        + ') to the autocorrelation function (ACF) of the '
+        + ') to the auto-correlation function (ACF) of the '
         + properties[property_]['name']
         + space_title
     )
@@ -887,9 +882,9 @@ def p_acf_allInOne_project(
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
-        the like and the values are the spcific values of these
+        the like and the values are the specific values of these
         characteristics for a physical property.
-    phi_crds: np.array
+    phi_crds: np.ndarray
         An ordered list of bulk volume fraction of crowders.
     phi_colors: sns.palettes._ColorPalette
         A palette of colors for `phi_crds`.
@@ -994,7 +989,7 @@ def p_acf_allInOne_project(
     plt.close()
 
 
-def p_tseries_allInOne_project(
+def p_tseries_all_in_one_project(
     project_data: pd.DataFrame,
     project: str,
     space_titles: Dict[str, str],
@@ -1030,11 +1025,11 @@ def p_tseries_allInOne_project(
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
-        the like and the values are the spcific values of these
+        the like and the values are the specific values of these
         characteristics for a physical property.
-    phi_crds: np.array
+    attr_values: np.ndarray
         An ordered list of bulk volume fraction of crowders.
-    phi_colors: sns.palettes._ColorPalette
+    attr_colors: sns.palettes._ColorPalette
         A palette of colors for `phi_crds`.
     xlimits: tuple, default (0, 7000, 1000),
         The lower and upper limits, and the step for the x-ticks.
@@ -1054,10 +1049,6 @@ def p_tseries_allInOne_project(
         An/a absolute/relative path of a directory to which outputs are saved.
     **save_kwrags:
         Keywords arguments pass to the plt.savefig method.
-
-    Requirements
-    ------------
-    Matplotlib, Pandas
     """
     fig, axes = plt.subplots(
         nrows=nrows, ncols=ncols, figsize=(16, 12), sharey=True)
@@ -1146,14 +1137,11 @@ def p_tseries_space(
     titles: Dict[str, str],
     x_property: Optional[str] = 'time',
     plot_context: Optional[str] = 'paper',
-    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
-        'mathtext.default': 'regular',
-        'text.usetex': True
-        },
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = None,
     col_wrap: Optional[int] = 1,
     share_x: Optional[str] = True,
     share_y: Optional[str] = True,
-    fig_title_kws: Optional[Dict[str, str]] = {'x': 0.5, 'y': 1.0},
+    fig_title_kws: Optional[Dict[str, str]] = None,
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
 ) -> sns.FacetGrid:
@@ -1166,49 +1154,36 @@ def p_tseries_space(
     property_: str
         The timeseries-like property used for y-axis.
     hue_attr: str
-        The categorial-like property used for coloring curves.
+        The categorical-like property used for coloring curves.
     col_attr: str
-        The categorial-like property used for creating a grid of sub-plots.
+        The categorical-like property used for creating a grid of sub-plots.
     space_df: pd.DataFrame
         The `space` data set
     space_title: str
         The formatted name of `space`.
     properties_specs: dict
         A dictionary in which the keys are 'name', 'symbol', 'color', and
-        the like and the values are the spcific values of these
+        the like and the values are the specific values of these
         characteristics for the `property_`.
     titles: dict of dic
         A dictionary in which the keys are the name of physical properties for
         which the ACFs are plotted and the values are dictionaries. In each
         internal dictionary, the keys are 'name', 'symbol', 'color', and
-        the like and the values are the spcific values of these
+        the like and the values are the specific values of these
         characteristics for the `hue_attr`, `x_property`, or `col_attr`.
-    space_acf: pd.DataFrame
-        The dataset of the ACFs.
-    space: str
-        The name of the simulation `space` to which `ensembles` belong.
     space_title: str
         The formatted space name for the plot title.
-    project_name: str
-        The name of a poject.
-    properties: dict of dict[str, str]
-        A nested dictionary in which the keys are the name of categorial-like
-        atrtribute and the values are dictionaries in which the keys are the
-        'name', 'symbol', 'color', and the like, and the values are the
-        spcific values of these characteristics for a physical property.
     x_property: str, 'time'
         The timeseries-like property used for x-axis.
     plot_context: str, default 'paper'
-        Set seaborn plooting context
-    font_scale: float, default 2
-        The scaling factor for fonts.
+        Set seaborn plotting context
     rc_params: dict, default {
                                'mathtext.default': 'regular',
                                'text.usetex': True
                                }
         The rc parameters.
     axes_style: str, default 'ticks',
-        The seabonr axes style.
+        The seaborn axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
     col_wrap: int, default 1
@@ -1229,6 +1204,10 @@ def p_tseries_space(
     ------------
     Matplotlib, Seaborn
     """
+    if rc_params is None:
+        rc_params = {'mathtext.default': 'regular', 'text.usetex': True}
+    if fig_title_kws is None:
+        fig_title_kws = {'x': 0.5, 'y': 1.0}
     sns.set_theme(
         context=plot_context,
         style=axes_style,
@@ -1246,7 +1225,7 @@ def p_tseries_space(
             aspect=16/9,
             facet_kws={'sharey': share_y, 'sharex': share_x},
             legend='full',
-            ci=None,
+            errorbar=None,
             col_wrap=col_wrap
         )
     tseries_grid.map(
@@ -1276,17 +1255,12 @@ def p_tseries_allInOne_space(
     color_palette: str = 'rocket_r',
     alpha: float = 0.7,
     plot_context: Optional[str] = 'paper',
-    rc_params: Optional[Dict[str, Union[str, float, int]]] = {
-        'mathtext.default': 'regular',
-        'text.usetex': True
-        },
+    rc_params: Optional[Dict[str, Union[str, float, int]]] = None,
     font_scale: int = 2,
     axes_style: Optional[str] = 'ticks',
     font_family: Optional[str] = 'Times New Roman',
-    facet_kws: dict = {
-        'sharey': False, 'sharex': False, 'legend_out': True
-        },
-    fig_title_kws: dict = {'x': 0.5, 'y': 1.0},
+    facet_kws: Optional[dict] = None,
+    fig_title_kws: Optional[dict] = None,
     **kwargs
 ) -> sns.FacetGrid:
     """Plots the time series of a physical `property_` in a given `space` for
@@ -1304,9 +1278,9 @@ def p_tseries_allInOne_space(
     y_prop: str
         The time-series-like property
     hue_attr: str
-        The categorial-like attribute used for coloring curves.
+        The categorical-like attribute used for coloring curves.
     col_attr: str
-        The categorial-like attribute used for seting number of sub-plots.
+        The categorical-like attribute used for setting number of sub-plots.
     prop_labels: dict of str
         The formatted details of the `y_prop`.
     attr_labels:
@@ -1322,7 +1296,7 @@ def p_tseries_allInOne_space(
     alpha: float, default 0.7
         The transparency of colors. It should be in [0, 1]
     plot_context: str, default 'paper'
-        Set seaborn plooting context
+        Set seaborn plotting context
     font_scale: float, default 2
         The scaling factor for fonts.
     rc_params: dict, default {
@@ -1331,13 +1305,9 @@ def p_tseries_allInOne_space(
                                }
         The rc parameters.
     axes_style: str, default 'ticks',
-        The seabonr axes style.
+        The seaborn axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
-    figsize: tuple, default (12,6)
-        The size of the figure.
-    leg_ncol: int, default 1
-        The number of columns in the legend.
     facet_kws: dict, default {
         'sharey': False, 'sharex': False, 'legend_out': True
         }
@@ -1351,11 +1321,18 @@ def p_tseries_allInOne_space(
     ------
     tseries_grid: sns.FacetGrid
         A FacetGrid plot.
-
-    Requirements
-    ------------
-    Matplotlib, Seaborn, Pandas
     """
+    if rc_params is None:
+        rc_params = {
+        'mathtext.default': 'regular',
+        'text.usetex': True
+        }
+    if facet_kws is None:
+        facet_kws = {
+        'sharey': False, 'sharex': False, 'legend_out': True
+        },
+    if fig_title_kws is None:
+        fig_title_kws =  {'x': 0.5, 'y': 1.0}
     sns.set_theme(
         context=plot_context,
         style=axes_style,
@@ -1377,7 +1354,7 @@ def p_tseries_allInOne_space(
         alpha=alpha,
         legend='full',
         kind='line',
-        ci=None,
+        errorbar=None,
         facet_kws=facet_kws,
     )
     tseries_grid.set_axis_labels(
@@ -1440,11 +1417,11 @@ def p_equil_allInOne_project(
     y_prop: str
         The time-series-like property
     hue_attr: str
-        The categorial-like attribute used for coloring curves.
+        The categorical-like attribute used for coloring curves.
     col_attr: str
-        The categorial-like attribute used for setting number of sub-plots.
+        The categorical-like attribute used for setting number of sub-plots.
     col_order: lost of str
-        The order of categorial-like attribute used for seting number of
+        The order of categorical-like attribute used for setting number of
         sub-plots.
     marker: str
         The shape of marker.
@@ -1461,7 +1438,7 @@ def p_equil_allInOne_project(
     color_palette: str, default 'rocket_r'
         The color palette`
     plot_context: str, default 'paper'
-        Set seaborn plooting context
+        Set seaborn plotting context
     font_scale: float, default 2
         The scaling factor for fonts.
     rc_params: dict, default {
@@ -1470,9 +1447,9 @@ def p_equil_allInOne_project(
                                }
         The rc parameters.
     ylabel_pad: float, default 30,
-        The y-axis lavble pad,
+        The y-axis label pad,
     axes_style: str, default 'ticks',
-        The seabonr axes style.
+        The seaborn axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
     ext: str, default 'pdf'
@@ -1588,9 +1565,9 @@ def p_hist_allInOne_project(
     y_prop: str
         The time-series-like property
     hue_attr: str
-        The categorial-like attribute used for coloring curves.
+        The categorical-like attribute used for coloring curves.
     col_attr: str
-        The categorial-like attribute used for seting number of sub-plots.
+        The categorical-like attribute used for setting number of sub-plots.
     kind: str, default 'point'.
         The kind of catplot.
     prop_labels: dict of str
@@ -1606,7 +1583,7 @@ def p_hist_allInOne_project(
     color_palette: str, default 'rocket_r'
         The color palette`
     plot_context: str, default 'paper'
-        Set seaborn plooting context
+        Set seaborn plotting context
     font_scale: float, default 2
         The scaling factor for fonts.
     rc_params: dict, default {
@@ -1615,7 +1592,7 @@ def p_hist_allInOne_project(
         }
         The rc parameters.
     axes_style: str, default 'ticks',
-        The seabonr axes style.
+        The seaborn axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
     figsize: tuple, default (12,6)
@@ -1628,11 +1605,11 @@ def p_hist_allInOne_project(
         kwargs passed to FaceGrid.
     fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
-    loc: str, default 'center right
+    loc: str, default center right
         Location of the legend
     legend_style: str
         One of `seaborn.catplot` legend keywords.
-    move_legend_kws: dict, deafult None
+    move_legend_kws: dict, default None
         kwargs pass to seaborn.move_legend
     kwargs:
         kwargs passed to relplot.
@@ -1732,13 +1709,13 @@ def p_pairDist_allInOne_project_lineStyle(
     y_prop: str
         The time-series-like property
     hue_attr: str
-        The categorial-like attribute used for coloring curves.
+        The categorical-like attribute used for coloring curves.
     style_attr: str
-        The categorial-like attribute used for line size.
+        The categorical-like attribute used for line size.
     style_attr: list
-        The order of categorial-like attribute used for line size.
+        The order of categorical-like attribute used for line size.
     col_attr: str
-        The categorial-like attribute used for seting number of sub-plots.
+        The categorical-like attribute used for setting number of sub-plots.
     prop_labels: dict of str
         The formatted details of the `y_prop`.
     attr_labels:
@@ -1752,7 +1729,7 @@ def p_pairDist_allInOne_project_lineStyle(
     color_palette: str, default 'rocket_r'
         The color palette`
     plot_context: str, default 'paper'
-        Set seaborn plooting context
+        Set seaborn plotting context
     font_scale: float, default 2
         The scaling factor for fonts.
     rc_params: dict, default {
@@ -1761,7 +1738,7 @@ def p_pairDist_allInOne_project_lineStyle(
                                }
         The rc parameters.
     axes_style: str, default 'ticks',
-        The seabonr axes style.
+        The seaborn axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
     figsize: tuple, default (12,6)
@@ -1774,9 +1751,9 @@ def p_pairDist_allInOne_project_lineStyle(
         kwargs passed to FaceGrid.
     fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
-    loc: str, default 'center right
+    loc: str, default center right
         Location of the legend
-    move_legend_kws: dict, deafult None
+    move_legend_kws: dict, default None
         kwargs pass to seaborn.move_legend
     alpha: float, default 1,
         The transparency of curves
@@ -1815,7 +1792,7 @@ def p_pairDist_allInOne_project_lineStyle(
         col_wrap=col_wrap,
         facet_kws=facet_kws,
         alpha=alpha,
-        ci=None,
+        errorbar=None,
         **kwargs
     )
     for idx, new_label in enumerate(legend_labels):
@@ -1877,16 +1854,16 @@ def p_pairDist_allInOne_project_colStyle(
     y_prop: str
         The time-series-like property
     hue_attr: str
-        The categorial-like attribute used for coloring curves.
+        The categorical-like attribute used for coloring curves.
     col_attr: str
-        The categorial-like attribute used for seting number of cols.
+        The categorical-like attribute used for setting number of cols.
     col_order: list
-        The order of categorial-like attribute used for seting number of
+        The order of categorical-like attribute used for setting number of
         cols.
     row_attr: str
-        The categorial-like attribute used for seting number of rows.
+        The categorical-like attribute used for setting number of rows.
     row_order: list
-        The order of categorial-like attribute used for setting number of
+        The order of categorical-like attribute used for setting number of
         rows.
     prop_labels: dict of str
         The formatted details of the `y_prop`.
@@ -1899,7 +1876,7 @@ def p_pairDist_allInOne_project_colStyle(
     color_palette: str, default 'rocket_r'
         The color palette`
     plot_context: str, default 'paper'
-        Set seaborn plooting context
+        Set seaborn plotting context
     font_scale: float, default 2
         The scaling factor for fonts.
     rc_params: dict, default {
@@ -1907,16 +1884,10 @@ def p_pairDist_allInOne_project_colStyle(
                                'text.usetex': True
                                }
         The rc parameters.
-    ylabel_pad: float, default 30,
-        The y-axis lavble pad,
     axes_style: str, default 'ticks',
-        The seabonr axes style.
+        The seaborn axes style.
     font_family: str, default 'Times New Roman'
         The seaborn font family
-    figsize: tuple, default (12,6)
-        The size of the figure.
-    leg_ncol: int, default 1
-        The number of columns in the legend.
     facet_kws: dict, default {
         'sharey': False, 'sharex': False, 'legend_out': True
         }
@@ -1925,7 +1896,7 @@ def p_pairDist_allInOne_project_colStyle(
         Location of the legend
     fig_title_kws: dict, default {'x': 0.5, 'y': 1.0}
         The kwargs passed to `FacetGrid.fig.suptitle`
-    move_legend_kws: dict, deafult None
+    move_legend_kws: dict, default None
         kwargs pass to seaborn.move_legend
     alpha: float, default 1,
         The transparency of curves
@@ -1936,10 +1907,6 @@ def p_pairDist_allInOne_project_colStyle(
     ------
     tseries_grid: sns.FacetGrid
         A FacetGrid plot.
-
-    Requirements
-    ------------
-    Matplotlib, Seaborn, Pandas
     """
     sns.set_theme(
         context=plot_context,
@@ -1964,7 +1931,7 @@ def p_pairDist_allInOne_project_colStyle(
         palette=color_palette,
         facet_kws=facet_kws,
         alpha=alpha,
-        ci=None,
+        errorbar=None,
         **kwargs
     )
     for idx, new_label in enumerate(legend_labels[1:]):

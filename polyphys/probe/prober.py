@@ -1,7 +1,8 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 import MDAnalysis as mda
 from MDAnalysis.analysis.base import AnalysisFromFunction
 import numpy as np
+
 from polyphys.manage.typer import ParserT
 from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub
@@ -35,7 +36,7 @@ def stamps_report_with_measures(
         and physical attributes of a simulation.
     n_frames: int
         Number of frames/snapshots/configurations in a simulation.
-    *measures: dict
+    measures: Dict
         A dictionary of measures where a key and value pair is the name and
         value of a physical property.
     """
@@ -101,7 +102,7 @@ def stamps_report(
         report.write(f"{n_frames}")
 
 
-def simple_stats(property_name, array) -> dict:
+def simple_stats(property_name, array) -> Dict[str, Any]:
     """
     Measures the mean, standard deviation, variance, and standard error
     of the mean (sem) for an array.
@@ -115,7 +116,7 @@ def simple_stats(property_name, array) -> dict:
 
     Return
     ------
-    stats: dict
+    stats: Dict[str, Any]
         an dict of mean, std, var, and sem of `property_name`
     """
     # Unbiased std, var, and sem.
@@ -127,7 +128,7 @@ def simple_stats(property_name, array) -> dict:
     return stat
 
 
-def end_to_end(positions) -> np.floating:
+def end_to_end(positions) -> Any:
     """
     Measures the end-to-end distance of a linear polymer, in the frame of
     reference located at the polymer's center of geometry.
@@ -138,7 +139,7 @@ def end_to_end(positions) -> np.floating:
     Parameters
     ----------
     positions : numpy array of float
-        Positions (a n_atoms*n_dim  array) of the N atoms within an atom
+        Positions (an n_atoms*n_dim  array) of the N atoms within an atom
         group in a frame or snapshot or time step. `positions` is sorted
         by atom number form 1 to N.
 
@@ -186,7 +187,7 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     positions: numpy array of dtype float
-        Positions (a n_atoms*n_dim  array) of the N atoms within an atom
+        Positions (an n_atoms*n_dim  array) of the N atoms within an atom
         group in a frame or snapshot or time step. `positions` is sorted
         by atom number form 1 to N.
 
@@ -216,7 +217,7 @@ def fsd(
     Parameters
     ----------
     positions: numpy array of  float
-        Positions (a n_atoms*n_dim  array) of the N atoms within an atom
+        Positions (an n_atoms*n_dim  array) of the N atoms within an atom
         group in a frame or snapshot or time step. `positions` is sorted
         by atom number form 1 to N.
     axis: int or tuple of int, default 2
@@ -290,10 +291,10 @@ def fixedsize_bins(
     bin_type: str = 'ordinary',
     save_edge: Optional[bool] = True,
     save_to: Optional[str] = None,
-) -> dict:
+) -> Dict[str, Any]:
     """
     Generates arrays of bins and histograms, ensuring that the `bin_size`
-    guaranteed. To achieve this, it extend the `lmin` and `lmax` limits.
+    guaranteed. To achieve this, it extends the `lmin` and `lmax` limits.
 
     To-do List
     ----------
@@ -338,7 +339,7 @@ def fixedsize_bins(
             array of bin_edges is used; otherwise, n_bins is used.
 
     save_edge: bool, default True
-        Whether save edges as boy to memeory or not.
+        Whether save edges as boy to memory or not.
     save_to : str, default None
         Whether save outputs to memory as npy files or not.
 
@@ -393,7 +394,7 @@ def fixedsize_bins(
         n_bins = int(np.ceil(_length / _delta))
         print(
             f"Number of bins '{n_bins}'"
-            " is more than or equal to the acutal number of bins in "
+            " is more than or equal to the actual number of bins in "
             f"'periodic' bin type since the 'period=lmax-min={_length}'"
             f"and '{_delta}'"
             "(not 'n_bins') are used to created 'bin_edges'."
@@ -420,7 +421,9 @@ def fixedsize_bins(
     return results
 
 
-def frame_2d_hist(positions: np.ndarray, hist_info: dict) -> np.ndarray:
+def frame_2d_hist(
+    positions: np.ndarray, hist_info: Dict[str, Any]
+) -> np.ndarray:
     """
     Calculate the histogram of `positions` along r direction.
 
@@ -428,10 +431,10 @@ def frame_2d_hist(positions: np.ndarray, hist_info: dict) -> np.ndarray:
     ----------
     positions: np.ndarray
         The positions of a group of atoms in a given frame.
-    hist_info: dict
+    hist_info: Dict[str, any]
         The information about the histogram.
 
-    Reutrn
+    Return
     ------
     frame_hist: np.ndarray
         The counts of atoms in each bin.
@@ -445,7 +448,7 @@ def frame_2d_hist(positions: np.ndarray, hist_info: dict) -> np.ndarray:
 
 
 def write_hists(
-    hist_infos: Dict[str, Dict[str, dict]],
+    hist_infos: Dict[str, Any],
     sim_name: str,
     save_to: str,
     std: bool = False
@@ -455,10 +458,10 @@ def write_hists(
 
     Parameters
     ----------
-    hist_infos : Dict[str, Dict[str, dict]]
+    hist_infos : Dict[str, Any]
         A dict of dicts that contains the information about direction, species,
-         and histgrams.
-    sim_nae: str
+         and histograms.
+    sim_name: str
         The name of simulation file to which the `hist_infos` belongs.
     save_to: str
         The absolute/relative path of a directory to which outputs are saved.
@@ -496,7 +499,7 @@ def sum_rule_bug_cyl(
     The probability of the end-to-end distance or gyration radius or any other
     chain/polymer-level property can later be computed from applying histogram
     functions to the time-series of the property, thus they are not measured
-    directyl from the trajectories and "sum_rule_bug_flory_hist" function can
+    directly from the trajectories and "sum_rule_bug_flory_hist" function can
     be deleted.
 
     Parameters
@@ -609,7 +612,7 @@ def sum_rule_bug_cyl_flory_hist(
     The probability of the end-to-end distance or gyration radius or any other
     chain/polymer-level property can later be computed from applying histogram
     functions to the time-series of the property, thus they are not measured
-    directyl from the trajectories and "sum_rule_bug_flory_hist" function can
+    directly from the trajectories and "sum_rule_bug_flory_hist" function can
     be deleted.
 
     Parameters
@@ -672,7 +675,7 @@ def sum_rule_bug_cyl_flory_hist(
             }
         }
     # distribution of the size of the end-to-end
-    rflory_hist_info = fixedsize_bins(
+    rflory_hist_info: Dict[str, Any] = fixedsize_bins(
         sim_name,
         'rfloryEdgeMon',
         bin_edges['rfloryEdge']['bin_size'],
@@ -764,8 +767,6 @@ def sum_rule_bug_cyl_rmsd(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
     lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str, default './'
@@ -1014,7 +1015,7 @@ def sum_rule_all_cyl_hist1d(
         theta = np.arctan2(
             crds.positions[:, 1],
             crds.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         frame_hist, _ = np.histogram(
             theta,
             bins=theta_hist_crd_info['bin_edges'],
@@ -1285,7 +1286,7 @@ def sum_rule_all_cyl_hist2d(
     hist_mon_info_yz['collector'] = np.zeros(hist_mon_info_yz['n_bins'])
     hist_mon_info_yz['collector'] *= 0
     for _ in sliced_trj:
-        # histogram in 2 dimesional space
+        # histogram in 2 dimensional space
         # crds
         # # xy
         frame_hist, _, _ = np.histogram2d(
@@ -1704,7 +1705,7 @@ def sum_rule_all_cyl(
         theta = np.arctan2(
             crds.positions[:, 1],
             crds.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         frame_hist, _ = np.histogram(
             theta,
             bins=theta_hist_crd_info['bin_edges'],
@@ -1724,7 +1725,7 @@ def sum_rule_all_cyl(
         )
         theta_hist_mon_info['collector'] += frame_hist
         theta_hist_mon_info['collector_std'] += np.square(frame_hist)
-        # histogram in 2 dimesional space
+        # histogram in 2 dimensional space
         # crds
         # # xy
         frame_hist, _, _ = np.histogram2d(
@@ -2290,7 +2291,7 @@ def trans_foci_all_cyl_hist1d(
         theta = np.arctan2(
             crds.positions[:, 1],
             crds.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_crd_info)
         theta_hist_crd_info['collector'] += pos_hist
         theta_hist_crd_info['collector_std'] += np.square(pos_hist)
@@ -2298,7 +2299,7 @@ def trans_foci_all_cyl_hist1d(
         theta = np.arctan2(
             foci.positions[:, 1],
             foci.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_foci_info)
         theta_hist_foci_info['collector'] += pos_hist
         theta_hist_foci_info['collector_std'] += np.square(pos_hist)
@@ -2306,7 +2307,7 @@ def trans_foci_all_cyl_hist1d(
         theta = np.arctan2(
             dna.positions[:, 1],
             dna.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_dna_info)
         theta_hist_dna_info['collector'] += pos_hist
         theta_hist_dna_info['collector_std'] += np.square(pos_hist)
@@ -2314,7 +2315,7 @@ def trans_foci_all_cyl_hist1d(
         theta = np.arctan2(
             bug.positions[:, 1],
             bug.positions[:, 0]
-            )  # in radians betwene [-np.pi, np.pi]
+            )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_mon_info)
         theta_hist_mon_info['collector'] += pos_hist
         theta_hist_mon_info['collector_std'] += np.square(pos_hist)
@@ -2360,8 +2361,6 @@ def trans_foci_all_cyl_hist2d(
         Name of the topology file.
     trajectory: str
         Name of the trajectory file.
-    geometry : {'biaxial', 'slit', 'box'}
-        Shape of the simulation box.
     lineage: {'segment', 'whole'}
         Type of the input file.
     save_to: str
@@ -2683,7 +2682,7 @@ def trans_foci_all_cyl_hist2d(
     hist_dna_info_yz['collector'] = np.zeros(hist_dna_info_yz['n_bins'])
     hist_dna_info_yz['collector'] *= 0
     for _ in sliced_trj:
-        # histogram in 2 dimesional space
+        # histogram in 2 dimensional space
         # crds
         # # xy
         frame_hist, _, _ = np.histogram2d(
@@ -3336,7 +3335,7 @@ def trans_foci_all_cyl(
         theta = np.arctan2(
             crds.positions[:, 1],
             crds.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_crd_info)
         theta_hist_crd_info['collector'] += pos_hist
         theta_hist_crd_info['collector_std'] += np.square(pos_hist)
@@ -3344,7 +3343,7 @@ def trans_foci_all_cyl(
         theta = np.arctan2(
             foci.positions[:, 1],
             foci.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_foci_info)
         theta_hist_foci_info['collector'] += pos_hist
         theta_hist_foci_info['collector_std'] += np.square(pos_hist)
@@ -3352,7 +3351,7 @@ def trans_foci_all_cyl(
         theta = np.arctan2(
             dna.positions[:, 1],
             dna.positions[:, 0]
-        )  # in radians betwene [-np.pi, np.pi]
+        )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_dna_info)
         theta_hist_dna_info['collector'] += pos_hist
         theta_hist_dna_info['collector_std'] += np.square(pos_hist)
@@ -3360,11 +3359,11 @@ def trans_foci_all_cyl(
         theta = np.arctan2(
             bug.positions[:, 1],
             bug.positions[:, 0]
-            )  # in radians betwene [-np.pi, np.pi]
+            )  # in radians between [-np.pi, np.pi]
         pos_hist = frame_2d_hist(theta, theta_hist_mon_info)
         theta_hist_mon_info['collector'] += pos_hist
         theta_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # histogram in 2 dimesional space
+        # histogram in 2 dimensional space
         # crds
         # # xy
         frame_hist, _, _ = np.histogram2d(
@@ -4045,7 +4044,7 @@ def trans_foci_all_cub(
         pos_hist = frame_2d_hist(pos_r, r_hist_mon_info)
         r_hist_mon_info['collector'] += pos_hist
         r_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # histogram in 2 dimesional space
+        # histogram in 2 dimensional space
         # crds
         # # xy
         frame_hist, _, _ = np.histogram2d(
@@ -4244,8 +4243,8 @@ def hns_nucleoid_cub(
         n_frames = cell.trajectory.n_frames
     # selecting atom groups
     bug = cell.select_atoms('resid 1')  # the bug
-    # hns_hole = cell.select_atoms('type 2')  # the hns holes
-    # hns_core = cell.select_atoms('type 3')  # the hns cores
+    hns_hole = cell.select_atoms('type 2')  # the hns holes
+    hns_core = cell.select_atoms('type 3')  # the hns cores
     # defining collectors
     # bug:
     gyr_t = []

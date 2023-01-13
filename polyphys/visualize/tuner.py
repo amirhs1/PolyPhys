@@ -24,9 +24,6 @@ def set_facet_grid_legend(
         A new title for the legend.
     new_labels: list of str
         A list of new labels.
-
-    Requirements:
-    seaborn, matplotlib
     """
     # check axes and find which is have legend
     for ax in facet_grid.axes.flat:
