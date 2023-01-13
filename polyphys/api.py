@@ -12,7 +12,7 @@ from polyphys.analyze import analyzer
 from polyphys.manage.utilizer import round_up_nearest
 
 
-def allInOne_equil_tseries(
+def all_in_one_equil_tseries(
     project: str,
     analysis_db: str,
     group: str,
@@ -24,7 +24,8 @@ def allInOne_equil_tseries(
     save_space: Optional[bool] = False,
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
-    """Performs a group of `measures` on a collection of physical `properties`
+    """
+    Performs a group of `measures` on a collection of physical `properties`
     of a `species` in a `group` in all the `spaces` in the "ens" phase of the
     "analysis" stage of a `project` and merges the resulting dataframes as an
     "allInOne" dataframe.
@@ -44,7 +45,7 @@ def allInOne_equil_tseries(
     group: str
         The name of the group to which an `species` belong.
     spaces: str
-        The names of all the spaces in a prorject.
+        The names of all the spaces in a project.
     properties: list of str
         The names of physical properties.
     measures: list of Callable
@@ -57,11 +58,7 @@ def allInOne_equil_tseries(
     save_space: bool, default False
         Whether save the "space" dataframes or not.
     save_to : str, default None
-        Absolute or relative path to which the output is wrriten.
-
-    Requirements
-    ------------
-    polyphys, Pandas.
+        Absolute or relative path to which the output is written.
     """
     if save_space:
         save_to_space = save_to
@@ -77,7 +74,7 @@ def allInOne_equil_tseries(
                 "More than one 'whole' stamps dataset found. Which of the"
                 f" following is the correct one? '{whole_stamps}'")
         whole_stamps = pd.read_csv(whole_stamps[0], header=0)
-        spac_equil_props = analyzer.equilibrium_tseries_wholes(
+        space_equil_props = analyzer.equilibrium_tseries_wholes(
             space,
             space_db + "/*.csv",
             properties,
@@ -85,7 +82,7 @@ def allInOne_equil_tseries(
             whole_stamps,
             save_to=save_to_space
         )
-        all_in_one_equil_props.append(spac_equil_props)
+        all_in_one_equil_props.append(space_equil_props)
     all_in_one_equil_props = pd.concat(all_in_one_equil_props)
     # add rounded phi_crds to the dataset
     all_in_one_equil_props['phi_c_bulk_round'] = \
@@ -100,7 +97,7 @@ def allInOne_equil_tseries(
     return all_in_one_equil_props
 
 
-def allInOne_equil_tseries_ensAvg(
+def all_in_one_equil_tseries_ens_avg(
     project: str,
     project_db: Union[pd.DataFrame, str],
     group: str,
@@ -108,7 +105,7 @@ def allInOne_equil_tseries_ensAvg(
     attributes: List[str],
     save_to: Optional[str] = None
 ):
-    """Perform ensemble-avergaing and then normalization on the equilibrium
+    """Perform ensemble-averaging and then normalization on the equilibrium
     properties in a `project`.
 
     Parameters
@@ -124,7 +121,7 @@ def allInOne_equil_tseries_ensAvg(
     attributes: list of str
         The name of physical attributes.
     save_to : str, default None
-        Absolute or relative path to which the output is wrriten.
+        Absolute or relative path to which the output is written.
 
     Return
     ------

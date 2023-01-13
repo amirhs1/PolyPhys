@@ -1,4 +1,4 @@
-"""A sub-module to detect and analyze particle clusters in a given system. It
+"""A submodule to detect and analyze particle clusters in a given system. It is
 worth noting there is a difference analyzing particle clusters and
 trajectory (or ensemble) clusters.
 Below, different algorithms found in literature are implemented in scientific
@@ -9,16 +9,16 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 import numpy.linalg as npla
-from ..manage.typer import TransFociT
+from ..manage.typer import ParserT
 
 
 def apply_pbc(
     pbc_lengths: np.ndarray,
     pbc_lengths_inverse: np.ndarray,
-    pbc: dict
+    pbc: Dict[int, float]
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Updates the periodic boundary condition (PBC) information in the
-    dimentions (keys) by the length (values) passed by `pbc`. The key
+    dimensions (keys) by the length (values) passed by `pbc`. The key
     are indexes of the `pbc_lengths` and `pbc_lengths_inverse` arrays.
 
     Parameters
@@ -26,9 +26,9 @@ def apply_pbc(
     pbc_lengths: numpy.ndarray
         An array of lengths/sizes in different directions.
     pbc_lengths_inverse: numpy.ndarray
-        An array of the invesres of lengths/sizes in different directions.
+        An array of the inverses of lengths/sizes in different directions.
     pbc: dict
-        A dictionary of dimensions (keys) and lenghts (values) in which
+        A dictionary of dimensions (keys) and lengths (values) in which
         the pbc exists.
 
     Return
@@ -36,7 +36,7 @@ def apply_pbc(
     pbc_lengths: numpy.ndarray
         The updated array of lengths/sizes in different directions.
     pbc_lengths_inverse: numpy.ndarray
-        The updated array of the invesres of lengths/sizes in different
+        The updated array of the inverses of lengths/sizes in different
         directions.
     """
     for dim, length in pbc.items():
@@ -47,7 +47,7 @@ def apply_pbc(
 
 def dist_sq_matrix(
     positions: np.ndarray,
-    pbc: Optional[dict] = None
+    pbc: Optional[Dict[int, float]] = None
 ) -> np.ndarray:
     """Finds the squares of distances between all the pair of atoms
     (even self-distances where i=j) for a given list of atoms' `positions`.
@@ -56,19 +56,21 @@ def dist_sq_matrix(
     ----------
     positions: np.ndarray
         a matrix with size n_atoms * n_dims of atoms' positions in which
-        the rows are atoms' positions and the columns are different dimentions
+        the rows are atoms' positions and the columns are different dimensions
         or components.
 
     pbc: dict, defualt None
-        A dictionary of dimensions (keys) and lenghts (values) in which
-        the pbc exists.
+        A dictionary of dimensions (keys) and lengths (values) in which
+        the pbc exists. keys are integers where 0 means 'x' dimension,
+        1 means 'y' dimension, and 2 means 'z' dimension in the cartesian
+        coordinate system.
 
-    Rutern
+    Return
     ------
     dist_sq: np.ndarray
-        A square matrix of size n_atoms * n_atoms in which each elements are
+        A square matrix of size n_atoms * n_atoms in which each element is
         the squares of the center-to-center distances between different pairs
-        of atoms. All the diagonal elements of this materix is 0.
+        of atoms. All the diagonal elements of this matrix is 0.
 
     References
     ----------
@@ -76,8 +78,8 @@ def dist_sq_matrix(
     """
     n_atoms, n_dims = positions.shape
     # Defining pbc lengths with value zero in all directions:
-    # The approach allows us to combine linear agebra and numpy broadcasting
-    # and efficently apply pbc.
+    # The approach allows us to combine linear algebra and numpy broadcasting
+    # and efficiently apply pbc.
     pbc_lengths = np.zeros(n_dims)
     pbc_lengths_inverse = np.zeros(n_dims)
     if pbc is not None:
@@ -88,28 +90,28 @@ def dist_sq_matrix(
     # with numpy broadcasting.
     pbc_lengths = np.reshape(pbc_lengths, (n_dims, 1, 1))
     pbc_lengths_inverse = np.reshape(pbc_lengths_inverse, (n_dims, 1, 1))
-    pos_T = positions.T
-    pos_j_element = np.reshape(pos_T, (n_dims, n_atoms, 1))
-    pos_i_element = np.reshape(pos_T, (n_dims, 1, n_atoms))
+    pos_t = positions.T
+    pos_j_element = np.reshape(pos_t, (n_dims, n_atoms, 1))
+    pos_i_element = np.reshape(pos_t, (n_dims, 1, n_atoms))
     # differences:
     dist_sq = pos_j_element - pos_i_element
     # applying pbc
     dist_sq = dist_sq - pbc_lengths * np.around(pbc_lengths_inverse * dist_sq)
     # squaring each elements
     dist_sq = dist_sq ** 2
-    # sum over qaxis=0 means sum over d in x_ijd^2 where d is the number of
-    # dimentions and x_ijd are d elements of a given r_ij^2.
+    # sum over axis=0 means sum over d in x_ijd^2 where d is the number of
+    # dimensions and x_ijd are d elements of a given r_ij^2.
     dist_sq = np.sum(dist_sq, axis=0)
     return dist_sq
 
 
 def dist_sq_matrix_opt(
     positions: np.ndarray,
-    pbc: Optional[dict] = None
+    pbc: Optional[Dict[int, float]] = None
 ) -> np.ndarray:
     """Finds the squares of distances between all the pair of atoms
     (even self-distances where i=j) for a given list of atoms' `positions`.
-    In 3 dimesions, this method is not much faster the `dist_sq_matrix`.
+    In 3 dimensions, this method is not much faster the `dist_sq_matrix`.
 
     To-do
     -----
@@ -119,19 +121,21 @@ def dist_sq_matrix_opt(
     ----------
     positions: np.ndarray
         a matrix with size n_atoms * n_dims of atoms' positions in which
-        the rows are atoms' positions and the columns are different dimentions
+        the rows are atoms' positions and the columns are different dimensions
         or components.
 
     pbc: dict, defualt None
-        A dictionary of dimensions (keys) and lenghts (values) in which
-        the pbc exists.
+        A dictionary of dimensions (keys) and lengths (values) in which
+        the pbc exists. keys are integers where 0 means 'x' dimension,
+        1 means 'y' dimension, and 2 means 'z' dimension in the cartesian
+        coordinate system.
 
-    Rutern
+    Return
     ------
     dist_sq: np.ndarray
-        A square matrix of size n_atoms * n_atoms in which each elements are
+        A square matrix of size n_atoms * n_atoms in which each element are
         the squares of the center-to-center distances between different pairs
-        of atoms. All the diagonal elements of this materix is 0.
+        of atoms. All the diagonal elements of this matrix is 0.
 
     References
     ----------
@@ -139,8 +143,8 @@ def dist_sq_matrix_opt(
     """
     n_atoms, n_dims = positions.shape
     # Defining pbc lengths with value zero in all directions:
-    # The approach allows us to combine linear agebra and numpy broadcasting
-    # and efficently apply pbc.
+    # The approach allows us to combine linear algebra and numpy broadcasting
+    # and efficiently apply pbc.
     pbc_lengths = np.zeros(n_dims)
     pbc_lengths_inverse = np.zeros(n_dims)
     if pbc is not None:
@@ -159,21 +163,21 @@ def dist_sq_matrix_opt(
 
 
 def direct_contact(dist_sq: np.ndarray, cutoff: float) -> np.ndarray:
-    """Finds direct contancts between pairs of atoms.
+    """Finds direct contacts between pairs of atoms.
 
-    Direct contact refers to a conditon in which the center-to-center
+    Direct contact refers to a condition in which the center-to-center
     distance between two atoms is equal to or less than the `cutoff` distance.
     This definition means that an atom is in direct contact with itself.
-    Such a definition is correct since clusters with size 1 exist (i. e. a
-    signle atom that is not clustered with other atoms); moreover, this
-    definition esnures there is a correct number of atoms in a cluster.
+    Such a definition is correct since clusters with size 1 exist (i.e. a
+    single atom that is not clustered with other atoms); moreover, this
+    definition ensures there is a correct number of atoms in a cluster.
 
     Parameters
     ----------
     dist_sq: np.ndarray
-        A square matrix of size n_atoms * n_atoms in which each elements are
+        A square matrix of size n_atoms * n_atoms in which each element is
         the squares of the center-to-center distances between different pairs
-        of atoms. All the diagonal elements of this materix is 0.
+        of atoms. All the diagonal elements of this matrix is 0.
 
     cutoff: float
         The cutoff center-to-center distance for defining a direct
@@ -182,9 +186,9 @@ def direct_contact(dist_sq: np.ndarray, cutoff: float) -> np.ndarray:
     Return
     ------
     np.ndarray:
-        A symmeteric matrix of size n_atoms * n_atoms in which each element is
-        either 0 or 1 and indicates whether an direct contact is between a
-        pair of atoms or not. 1 means direct contact exists while 0 means
+        A symmetric matrix of size n_atoms * n_atoms in which each element is
+        either 0 or 1 and indicates whether a direct contact is between a
+        pair of atoms or not. 1 mean direct contact exists while 0 mean
         it does not. All the diagonal elements of this matrix are 1 by the
         definition given above.
 
@@ -196,15 +200,15 @@ def direct_contact(dist_sq: np.ndarray, cutoff: float) -> np.ndarray:
 
 
 def contact_matrix(dir_contacts: np.ndarray) -> np.ndarray:
-    """Finds the direct and indirect contants between atoms in a system
+    """Finds the direct and indirect contacts between atoms in a system
     from the direct contacts between these atoms `dir_contacts`.
 
     Parameters
     ----------
     dir_contacts: np.ndarray
-        A symmeteric matrix of size n_atoms * n_atoms in which each element
-        is either 0 or 1 and indicates whether an direct contact is
-        between a pair of atoms or not. 1 means direct contact exists
+        A symmetric matrix of size n_atoms * n_atoms in which each element
+        is either 0 or 1 and indicates whether a direct contact is
+        between a pair of atoms or not. 1 mean direct contact exists
         while 0 means it does not. All the diagonal elements of this matrix
         are 1 by the definition given above.
 
@@ -237,12 +241,12 @@ def contact_matrix(dir_contacts: np.ndarray) -> np.ndarray:
 def contact_from_sq_dists(
     positions: np.ndarray,
     cutoff: float,
-    pbc: Optional[dict] = None,
+    pbc: Optional[Dict[int, float]] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Creates the direct contact matrix for a group of atoms using a
-    cutoff for the center-to-center distance as the ceritrion for clustering.
+    cutoff for the center-to-center distance as the criterion for clustering.
 
-    All the diagonal elemnts of the contact matrix are 1; moreover,
+    All the diagonal elements of the contact matrix are 1; moreover,
     depending on the size and number of clusters, the matrix has many
     repeated columns.
 
@@ -251,15 +255,17 @@ def contact_from_sq_dists(
     positions: np.ndarray
         a matrix with size n_atoms * n_dims of atoms' positions in which
         the rows are atoms' positions and the columns are different
-        dimentions or components.
+        dimensions or components.
 
     cutoff: float
         The cutoff center-to-center distance for defining a direct
         contact.
 
     pbc: dict, default None
-        A dictionary of dimensions (keys) and lenghts (values) in which
-        the pbc exists.
+        A dictionary of dimensions (keys) and lengths (values) in which
+        the pbc exists. keys are integers where 0 means 'x' dimension,
+        1 means 'y' dimension, and 2 means 'z' dimension in the cartesian
+        coordinate system.
 
     Return
     ------
@@ -278,7 +284,7 @@ def contact_from_sq_dists(
         definition in `direct_contacts` function.
 
     foci_pair_dist: np.ndarray
-        An upper triangluar matrix with 0 zero diagonal elements that
+        An upper triangular matrix with 0 zero diagonal elements that
         contains the center-to-center distance between all the pairs of
         atoms.
     """
@@ -297,7 +303,7 @@ def random_direct_contacts(
     used to test a clustering algorithm. See `direct_contact`function
     description for more info.
 
-    All the diagonal elemnts of the direct contact matrix are 1; moreover,
+    All the diagonal elements of the direct contact matrix are 1; moreover,
     depending on the size and number of clusters, the matrix has many
     repeated columns.
 
@@ -313,8 +319,8 @@ def random_direct_contacts(
     seed: int, default 0
         The seed for the random number generator.
     save_to: tuple of str, default None
-        A tumple of two strings in which the first element is an/a
-        absolute/relative path of a directory to which the random direct
+        A tuple of two strings in which the first element is an absolute or
+        a relative path of a directory to which the random direct
         contact matrix is saved and the second one is the matrix name.
 
     Return
@@ -327,16 +333,16 @@ def random_direct_contacts(
         definition in `direct_contacts` function.
     """
     # Creating direct-contacts matrix
-    np.random(seed)
+    np.random.seed(seed)
     dir_contacts = np.random.binomial(n=1, p=0.35, size=[n_atoms * n_atoms])
     dir_contacts = np.reshape(dir_contacts, (n_atoms, n_atoms))
     dir_contacts_up = np.triu(dir_contacts)  # upper triangle
     dir_contacts_diag = np.identity(n_atoms, dtype=int)
-    # dropping diagnal elements:
+    # dropping diagonal elements:
     dir_contacts_up = dir_contacts_up - dir_contacts_diag
     # ensuring all diagonal elements are either 0 or 1:
     dir_contacts_up[dir_contacts_up < 0] = 0
-    dir_contacts_low = dir_contacts_up.T  # lower traingle: symmetry!
+    dir_contacts_low = dir_contacts_up.T  # lower triangle: symmetry!
     dir_contacts = dir_contacts_up + dir_contacts_low + dir_contacts_diag
     # Creating the full direct contacts matrix
     dir_contacts = contact_matrix(dir_contacts)
@@ -347,20 +353,20 @@ def random_direct_contacts(
     return dir_contacts
 
 
-def count_bonds(dir_contacts: np.ndarray):
+def count_bonds(dir_contacts: np.ndarray) -> np.ndarray:
     """Infers the number and size of bonds from the direct contact matrix
     `dir_contacts`.
 
     The direct contact matrix is symmetric and its diagonal elements are 1.
     The column- or row-wise sum of the matrix shows the number of bonds
     an atom has with itself and other atoms. A self-bond happens due to the
-    definition of the direct contact matirx (in which the diagonal elements
-    are 1). Such self-bonds are substracted below to give the correct number of
+    definition of the direct contact matrix (in which the diagonal elements
+    are 1). Such self-bonds are subtracted below to give the correct number of
     bonds, thus number of bonds per atom ranges from 0 to $n_{atoms}-1$.
 
     Parameters
     ----------
-    contacts: np.ndarray
+    dir_contacts: np.ndarray
         A symmetric matrix of size n_atoms * n_atoms in which each element
         is either 0 or 1 and indicates whether a contact is between a
         pair of atoms or not. 1 means a contact exists while 0 means
@@ -389,7 +395,7 @@ def count_bonds(dir_contacts: np.ndarray):
 def count_clusters(contacts: np.ndarray) -> np.ndarray:
     """Infers the number and size of clusters from a contact matrix `contacts`.
 
-    All the diagonal elemnts of the direct contact matrix are 1; moreover,
+    All the diagonal elements of the direct contact matrix are 1; moreover,
     depending on the size and number of clusters, the matrix has many repeated
     columns. While the number of non-zero eigenvalues of the contact
     matrix is equal to the number of clusters, the values of eigenvalues
@@ -420,7 +426,7 @@ def count_clusters(contacts: np.ndarray) -> np.ndarray:
     https://aip.scitation.org/doi/10.1063/1.454720
     """
     n_atoms, _ = contacts.shape
-    # While Tte eigenvalue 0 is not physically important, the eigenvaue n_atoms
+    # While eigenvalue 0 is not physically important, eigenvalue n_atoms
     # is. Here, a cluster list with values ranging from 0 to n_atoms is created
     # to properly collect all the eigenvalues.
     cluster_list = np.zeros(n_atoms + 1, dtype=int)
@@ -445,10 +451,10 @@ def count_clusters(contacts: np.ndarray) -> np.ndarray:
 def foci_info(
     genomic_pos: np.ndarray,
     nmon_large: int,
-    nmon_small: int,
+    nmon_small: int
 ) -> np.ndarray:
-    """Generates a dictionany of the information about all the possible pairs
-    of large monomers in a circular/ring heterogenous polymner composed of two
+    """Generates a dictionary of the information about all the possible pairs
+    of large monomers in a circular/ring heterogeneous polymer composed of two
     different monomer types (small and large monomers).
 
     This information is an array of shape(n_pairs,3) where the first two
@@ -458,12 +464,12 @@ def foci_info(
 
     Parameters
     ----------
-    genomic_pos: np.ndaaray
+    genomic_pos: np.ndarray
         A vector of size `nmon_large` that contains the genomic position of
         large monomers
     nmon_large: int
         Number of large monomers
-    nmon_large: int
+    nmon_small: int
         Number of small monomers
 
     Return
@@ -476,10 +482,10 @@ def foci_info(
     pairs = np.array(list(combinations(range(nmon_large), 2)), dtype=np.int)
     genomic_idx = np.choose(pairs, genomic_pos)
     genomic_dist = np.diff(genomic_idx, axis=1)
-    # Applying the topological contrain on the genmoic distance, i. e. finding
+    # Applying the topological contain on the genomic distance, i.e. finding
     # minimum distance between a pair on a circle.
     # the pair is inclusive, so their difference is one unit more than the
-    # actual number of genomic units between them, thus sabtracting by 1.0.
+    # actual number of genomic units between them, thus subtracting by 1.0.
     genomic_dist = np.minimum.reduce((nmon-genomic_dist, genomic_dist)) - 1.0
     pair_info = np.concatenate(
         (genomic_idx, genomic_dist),
@@ -491,10 +497,10 @@ def foci_info(
 def v_histogram(
     data: np.ndarray,
     bins: int,
-    range: Tuple[float, float],
+    bin_range: Tuple[float, float],
     **kwargs
 ) -> np.ndarray:
-    """Vectorizes `n.histogram` so it can be mapped to a collection of data
+    """Vectorize `n.histogram` so it can be mapped to a collection of data
     with different `nbins` and `range` kwargs. The `range` is divided into
     `nbins` bins, so there are `nbins` equal bins.
 
@@ -504,7 +510,7 @@ def v_histogram(
         1D array-like input data
     bins: int
         Number of bins
-    range: float
+    bin_range: float
         The lower and upper range of bins.
 
     Return
@@ -512,7 +518,7 @@ def v_histogram(
     hist: np.ndarray
         The frequencies of `data` in bins.
     """
-    hist, _ = np.histogram(data, bins=bins, range=range, **kwargs)
+    hist, _ = np.histogram(data, bins=bins, range=bin_range, **kwargs)
     return hist
 
 
@@ -527,7 +533,7 @@ def foci_rdf(
 
     Parameters
     ----------
-    hist: np.ndaaray
+    hist: np.ndarray
        The frequencies of particles in bins with equal size.
     bin_centers
         The positions of bin centers along the radial direction.
@@ -583,7 +589,7 @@ def foci_histogram(
     n_pairs = pairs_info.shape[0]
     # the maximum pair distance used as upper limit of histogram range in all
     # pair histogram. This value is rounded to be a multiple of binsize.
-    upper_range = np.ceil(pairs_dist.max() / binsize) * binsize
+    upper_range = np.ceil(np.max(pairs_dist) / binsize) * binsize
     max_range = (0, upper_range)
     max_bins = np.ceil((max_range[1] - max_range[0]) / binsize).astype(np.int)
     pairs_range = [max_range] * n_pairs
@@ -604,23 +610,23 @@ def foci_histogram(
     return pair_hists, pair_rdfs
 
 
-def whole_distMat_foci(
+def whole_dist_mat_foci(
     whole_path: str,
-    whole_info: TransFociT
+    whole_info: ParserT
 ) -> Tuple[
     Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]
 ]:
     """Generates time series and histograms of foci distances from distance
     matrix of (large) monomers.
 
-    A foci is a pair of large monomer. The ditance matrix is upper-triangular
+    A foci are a pair of large monomer. The distance matrix is upper-triangular
     matrix containing all the spatial distances between any possible foci of
     large monomers.
 
     Parameters
     ----------
     whole_path: str
-        Path to a "whole" diatance matrix.
+        Path to a "whole" distance matrix.
     whole_info: TransFociT
         A TransFociT object contains information about a "whole" simulation
 
@@ -634,7 +640,7 @@ def whole_distMat_foci(
         A dataframe in which the columns are pair tags and the values of pair
         rdfs. There is also extra column named 'bin_center' that contains
         the center of bins.
-    piars_tseries: dict
+    pairs_tseries: dict
         A dataframe in which the columns are pair tags and the values of pair
         timeseries.
     """

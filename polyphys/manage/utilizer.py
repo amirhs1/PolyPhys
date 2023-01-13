@@ -4,7 +4,7 @@ import numpy as np
 import gzip
 from gzip import GzipFile
 import os
-from typing import Generator, IO, Any, Optional, TextIO, Union
+from typing import Generator, IO, Any, Optional, TextIO, Union, List
 from contextlib import contextmanager
 
 
@@ -114,7 +114,7 @@ def round_up_nearest(
 
 def invalid_keyword(
     keyword: str,
-    valid_keywords: list[str],
+    valid_keywords: List[str],
     message: Optional[str] = None
 ) -> None:
     """
