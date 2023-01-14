@@ -4351,15 +4351,15 @@ def hns_nucleoid_cub(
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
     # bug hns-patch:
     # mon and hns-patch are attracted if their distance <= the below distance:
-    m_hpatch_attr_cutoff = 0.5 * (sim_info.dmon + sim_info.dhns_patch)
+    #m_hpatch_attr_cutoff = 0.5 * (sim_info.dmon + sim_info.dhns_patch)
     m_hpatch_shape = [0, sim_info.nmon, 2 * sim_info.nhns]
     m_m_shape = [0, sim_info.nmon, sim_info.nmon]
     # distance matrices
     dist_m_hpatch_t = np.zeros(m_hpatch_shape, dtype=np.float64)
     dist_m_m_t = np.zeros(m_m_shape, dtype=np.int64)
     # contact matrices
-    dir_contacts_m_hpatch_t = np.zeros(m_hpatch_shape, dtype=np.float64)
-    dir_contacts_m_m_t = np.zeros(m_m_shape, dtype=np.int64)
+    #dir_contacts_m_hpatch_t = np.zeros(m_hpatch_shape, dtype=np.float64)
+    #dir_contacts_m_m_t = np.zeros(m_m_shape, dtype=np.int64)
     for _ in sliced_trj:
         # bug:
         # -various measures of chain size
@@ -4374,7 +4374,7 @@ def hns_nucleoid_cub(
         shape_parameter_t.append(bug.shape_parameter(pbc=False))
         # -bond info
         bond_dummy, cosine_dummy = correlations.bond_info(
-            bug.positions,
+            bug,
             sim_info.topology
         )
         bond_lengths += bond_dummy.reshape(200)
@@ -4393,17 +4393,17 @@ def hns_nucleoid_cub(
             dist_m_m_t, np.array([dummy_m_m]), axis=0
         )
         # - contact matrices
-        dummy = np.asarray(dummy <= m_hpatch_attr_cutoff, dtype=int)
+        #dummy = np.asarray(dummy <= m_hpatch_attr_cutoff, dtype=int)
         # dir_contacts_m_hpatch_t += dummy
-        dir_contacts_m_hpatch_t = np.append(
-            dir_contacts_m_hpatch_t, np.array([dummy]), axis=0
-        )
+        #dir_contacts_m_hpatch_t = np.append(
+        #    dir_contacts_m_hpatch_t, np.array([dummy]), axis=0
+        #)
         #
-        dummy_m_m = np.matmul(dummy, dummy.T)
+        #dummy_m_m = np.matmul(dummy, dummy.T)
         # dir_contacts_m_m_t += dummy_m_m
-        dir_contacts_m_m_t = np.append(
-            dir_contacts_m_m_t, np.array([dummy_m_m]), axis=0
-        )
+        #dir_contacts_m_m_t = np.append(
+        #    dir_contacts_m_m_t, np.array([dummy_m_m]), axis=0
+        #)
     # Saving collectors to memory
     # bug
     np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
@@ -4424,14 +4424,14 @@ def hns_nucleoid_cub(
     np.save(
         save_to + sim_name + "-distMatTMonMon.npy", dist_m_m_t
     )
-    np.save(
-        save_to + sim_name + "-directContactsMatTMonPatch.npy",
-        dir_contacts_m_hpatch_t
-    )
-    np.save(
-        save_to + sim_name + "-directContactsMatTMonMon.npy",
-        dir_contacts_m_m_t
-    )
+    #np.save(
+    #    save_to + sim_name + "-directContactsMatTMonPatch.npy",
+    #    dir_contacts_m_hpatch_t
+    #)
+    #np.save(
+    #    save_to + sim_name + "-directContactsMatTMonMon.npy",
+    #    dir_contacts_m_m_t
+    #)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
