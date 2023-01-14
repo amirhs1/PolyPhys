@@ -1,12 +1,17 @@
 from typing import Optional, Dict, Any
 import MDAnalysis as mda
+from MDAnalysis.analysis import (
+    align as mda_align,
+    diffusionmap as mda_diffusion_map,
+    distances as mda_dist
+)
 from MDAnalysis.analysis.base import AnalysisFromFunction
 import numpy as np
 
-from polyphys.manage.typer import ParserT
 from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub
     )
+from polyphys.manage.typer import ParserT
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 import warnings
@@ -32,8 +37,8 @@ def stamps_report_with_measures(
     report_name: str
         Name of the report.
     sim_info: ParserT
-        A SumRule object that contains information about the name, parents,
-        and physical attributes of a simulation.
+        A ParserT instant object that contains information about the name,
+        parents,and physical attributes of a simulation.
     n_frames: int
         Number of frames/snapshots/configurations in a simulation.
     measures: Dict
@@ -289,7 +294,6 @@ def fixedsize_bins(
     lmin: float,
     lmax: float,
     bin_type: str = 'ordinary',
-    save_edge: Optional[bool] = True,
     save_to: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -338,8 +342,6 @@ def fixedsize_bins(
             therefore, if 'period' is not a multiple of `bin_size`, then an
             array of bin_edges is used; otherwise, n_bins is used.
 
-    save_edge: bool, default True
-        Whether save edges as boy to memory or not.
     save_to : str, default None
         Whether save outputs to memory as npy files or not.
 
@@ -359,9 +361,9 @@ def fixedsize_bins(
     bin_types = ['ordinary', 'nonnagative', 'periodic']
     if not np.all(lmin < lmax):
         raise ValueError('Boundaries are not sane: should be xmin < xmax.')
-    _delta = np.asarray(bin_size, dtype=np.float_)
-    _lmin = np.asarray(lmin, dtype=np.float_)
-    _lmax = np.asarray(lmax, dtype=np.float_)
+    _delta = bin_size
+    _lmin = lmin
+    _lmax = lmax
     _length = _lmax - _lmin
     n_bins: int = 0
     if bin_type == 'ordinary':
@@ -409,7 +411,7 @@ def fixedsize_bins(
         invalid_keyword(bin_type, bin_types)
     hist_collectors *= 0
     hist_collectors_std = hist_collectors.copy()
-    if save_edge is True:
+    if save_to is not None:
         np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
     results = {
         'n_bins': n_bins,
@@ -496,11 +498,11 @@ def sum_rule_bug_cyl(
 
     Note
     ----
-    The probability of the end-to-end distance or gyration radius or any other
-    chain/polymer-level property can later be computed from applying histogram
-    functions to the time-series of the property, thus they are not measured
-    directly from the trajectories and "sum_rule_bug_flory_hist" function can
-    be deleted.
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -570,17 +572,17 @@ def sum_rule_bug_cyl(
         # shape parameters:
         asphericity_t = np.append(
             asphericity_t,
-            np.array([bug.asphericity(pbc=False, unwrap=False)]),
+            np.array([bug.asphericity(wrap=False, unwrap=False)]),
             axis=0
         )
         principal_axes_t = np.append(
             principal_axes_t,
-            np.array([bug.principal_axes(pbc=False)]),
+            np.array([bug.principal_axes(wrap=False)]),
             axis=0
         )
         shape_parameter_t = np.append(
             shape_parameter_t,
-            np.array([bug.shape_parameter(pbc=False)]),
+            np.array([bug.shape_parameter(wrap=False)]),
             axis=0
         )
     np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
@@ -609,11 +611,11 @@ def sum_rule_bug_cyl_flory_hist(
 
     Note
     ----
-    The probability of the end-to-end distance or gyration radius or any other
-    chain/polymer-level property can later be computed from applying histogram
-    functions to the time-series of the property, thus they are not measured
-    directly from the trajectories and "sum_rule_bug_flory_hist" function can
-    be deleted.
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -712,17 +714,17 @@ def sum_rule_bug_cyl_flory_hist(
         # shape parameters:
         asphericity_t = np.append(
             asphericity_t,
-            np.array([bug.asphericity(pbc=False, unwrap=False)]),
+            np.array([bug.asphericity(wrap=False, unwrap=False)]),
             axis=0
         )
         principal_axes_t = np.append(
             principal_axes_t,
-            np.array([bug.principal_axes(pbc=False)]),
+            np.array([bug.principal_axes(wrap=False)]),
             axis=0
         )
         shape_parameter_t = np.append(
             shape_parameter_t,
-            np.array([bug.shape_parameter(pbc=False)]),
+            np.array([bug.shape_parameter(wrap=False)]),
             axis=0
         )
 
@@ -761,6 +763,14 @@ def sum_rule_bug_cyl_rmsd(
     `rmsd_bug` does not support the `continuous` option defined in
     `sum_rule_bug` and `sum_rule_all` functions.
 
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
+
     Parameters
     ----------
     topology: str
@@ -797,13 +807,13 @@ def sum_rule_bug_cyl_rmsd(
         dt=sim_real_dt
     )
     cell.transfer_to_memory(step=50, verbose=False)
-    _ = mda.analysis.align.AlignTraj(
+    _ = mda_align.AlignTraj(
         cell,
         cell,
         select='resid 1',
         filename=sim_name + '.dcd'
     ).run()
-    matrix = mda.analysis.diffusionmap.DistanceMatrix(
+    matrix = mda_diffusion_map.DistanceMatrix(
         cell,
         select='resid 1'
     ).run()
@@ -822,6 +832,14 @@ def sum_rule_all_cyl_hist1d(
     Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -1064,6 +1082,14 @@ def sum_rule_all_cyl_hist2d(
     """Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -1367,6 +1393,14 @@ def sum_rule_all_cyl(
     Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -1820,6 +1854,14 @@ def trans_fuci_bug_cyl(
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
+
     Parameters
     ----------
     topology: str
@@ -1900,13 +1942,13 @@ def trans_fuci_bug_cyl(
         gyr_t.append(bug.radius_of_gyration())
         rflory_t.append(end_to_end(bug.positions))
         # -shape parameters:
-        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
+        asphericity_t.append(bug.asphericity(wrap=False, unwrap=False))
         principal_axes_t = np.append(
             principal_axes_t,
-            np.array([bug.principal_axes(pbc=False)]),
+            np.array([bug.principal_axes(wrap=False)]),
             axis=0
         )
-        shape_parameter_t.append(bug.shape_parameter(pbc=False))
+        shape_parameter_t.append(bug.shape_parameter(wrap=False))
         # foci:
         dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
         foci_pair_dist = np.triu(dist_sq_mat, 1)
@@ -1956,6 +1998,14 @@ def trans_fuci_bug_cyl_transverse_size(
 ) -> None:
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -2025,6 +2075,14 @@ def trans_foci_all_cyl_hist1d(
     """Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -2354,6 +2412,14 @@ def trans_foci_all_cyl_hist2d(
     """Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -2818,6 +2884,14 @@ def trans_foci_all_cyl(
     """Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -3520,6 +3594,14 @@ def trans_fuci_bug_cub(
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
+
     Parameters
     ----------
     topology: str
@@ -3594,13 +3676,13 @@ def trans_fuci_bug_cub(
         # -various measures of chain size
         gyr_t.append(bug.radius_of_gyration())
         # -shape parameters:
-        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
+        asphericity_t.append(bug.asphericity(wrap=False, unwrap=True))
         principal_axes_t = np.append(
             principal_axes_t,
-            np.array([bug.principal_axes(pbc=False)]),
+            np.array([bug.principal_axes(wrap=False)]),
             axis=0
         )
-        shape_parameter_t.append(bug.shape_parameter(pbc=False))
+        shape_parameter_t.append(bug.shape_parameter(wrap=False))
         # foci:
         dist_sq_mat = clusters.dist_sq_matrix(foci.positions)
         foci_pair_dist = np.triu(dist_sq_mat, 1)
@@ -3648,6 +3730,14 @@ def trans_foci_all_cub(
     """Runs various analyses on a `lineage` simulation of an 'all' atom
     group in the `geometry` of interest, and saves a variety of
     outputs (mostly in the csv format) to the `save_to` directory.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a
+    trajectory or topology file; moreover, LAMMPS recenter is used to
+    restrict the center of mass of "bug" (monomers) to the center of
+    simulation box; and consequently, coordinates of all the particles in a
+    trajectory or topology file is recentered to fulfill this constraint.
 
     Parameters
     ----------
@@ -4189,6 +4279,12 @@ def hns_nucleoid_cub(
     """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
 
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a trajectory or
+    topology file; moreover, a trajectory or topology file also has the box
+    image that the atom is in.
+
     Parameters
     ----------
     topology: str
@@ -4226,15 +4322,14 @@ def hns_nucleoid_cub(
     # LJ time difference between two consecutive frames:
     time_unit = sim_info.dmon * np.sqrt(
         sim_info.mmon * sim_info.eps_others)  # LJ time unit
-    lj_nstep = sim_info.ndump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
+    # Sampling via LAMMPS dump every 'ndump', so trajectory dt is:
+    sim_real_dt = sim_info.ndump * sim_info.dt * time_unit
     cell = mda.Universe(
         topology, trajectory, topology_format='DATA',
         format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        # unwrap_images=True,
         atom_style="id resid type x y z", dt=sim_real_dt
-        )
-    # slicing trajectory based the continuous condition
+    )
     if continuous:
         sliced_trj = cell.trajectory[0: -1]
         n_frames = cell.trajectory.n_frames - 1
@@ -4243,18 +4338,28 @@ def hns_nucleoid_cub(
         n_frames = cell.trajectory.n_frames
     # selecting atom groups
     bug = cell.select_atoms('resid 1')  # the bug
-    hns_hole = cell.select_atoms('type 2')  # the hns holes
-    hns_core = cell.select_atoms('type 3')  # the hns cores
+    hns_patch = cell.select_atoms('type 2')  # the hns patches
     # defining collectors
     # bug:
     gyr_t = []
     principal_axes_t = np.empty([0, 3, 3])
     asphericity_t = []
     shape_parameter_t = []
-    # bond info
+    # - bond info
     n_bonds = len(bug.bonds.indices)
     bond_lengths = np.zeros(n_bonds, dtype=np.float64)
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
+    # bug hns-patch:
+    # mon and hns-patch are attracted if their distance <= the below distance:
+    m_hpatch_attr_cutoff = 0.5 * (sim_info.dmon + sim_info.dhns_patch)
+    m_hpatch_shape = [0, sim_info.nmon, 2 * sim_info.nhns]
+    m_m_shape = [0, sim_info.nmon, sim_info.nmon]
+    # distance matrices
+    dist_m_hpatch_t = np.zeros(m_hpatch_shape, dtype=np.float64)
+    dist_m_m_t = np.zeros(m_m_shape, dtype=np.int64)
+    # contact matrices
+    dir_contacts_m_hpatch_t = np.zeros(m_hpatch_shape, dtype=np.float64)
+    dir_contacts_m_m_t = np.zeros(m_m_shape, dtype=np.int64)
     for _ in sliced_trj:
         # bug:
         # -various measures of chain size
@@ -4267,13 +4372,38 @@ def hns_nucleoid_cub(
             axis=0
         )
         shape_parameter_t.append(bug.shape_parameter(pbc=False))
-        # bug:
+        # -bond info
         bond_dummy, cosine_dummy = correlations.bond_info(
             bug.positions,
             sim_info.topology
-            )
+        )
         bond_lengths += bond_dummy.reshape(200)
         cosine_corrs += cosine_dummy
+        # bug - hns patch:
+        # - distance matrices
+        dummy = mda_dist.distance_array(bug, hns_patch, box=cell.dimensions)
+        # dist_m_hpatch_t += dummy # bug hns_pole
+        dist_m_hpatch_t = np.append(
+            dist_m_hpatch_t, np.array([dummy]), axis=0
+        )
+        # dist_m_hpatch_t.append(dummy)
+        #
+        dummy_m_m = np.matmul(dummy, dummy.T)
+        dist_m_m_t = np.append(
+            dist_m_m_t, np.array([dummy_m_m]), axis=0
+        )
+        # - contact matrices
+        dummy = np.asarray(dummy <= m_hpatch_attr_cutoff, dtype=int)
+        # dir_contacts_m_hpatch_t += dummy
+        dir_contacts_m_hpatch_t = np.append(
+            dir_contacts_m_hpatch_t, np.array([dummy]), axis=0
+        )
+        #
+        dummy_m_m = np.matmul(dummy, dummy.T)
+        # dir_contacts_m_m_t += dummy_m_m
+        dir_contacts_m_m_t = np.append(
+            dir_contacts_m_m_t, np.array([dummy_m_m]), axis=0
+        )
     # Saving collectors to memory
     # bug
     np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
@@ -4281,12 +4411,27 @@ def hns_nucleoid_cub(
             np.array(asphericity_t)
             )
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
     bond_lengths = bond_lengths / n_frames
     bonds_per_lag = np.arange(n_bonds, 0, -1)
     cosine_corrs = cosine_corrs / (n_frames * bonds_per_lag)
     np.save(save_to + sim_name + '-bondLengthVecMon.npy', bond_lengths)
     np.save(save_to + sim_name + '-bondCosineCorrVecMon.npy', cosine_corrs)
+    # bug hns-patch:
+    np.save(
+        save_to + sim_name + "-distMatTMonPatch.npy", dist_m_hpatch_t
+    )
+    np.save(
+        save_to + sim_name + "-distMatTMonMon.npy", dist_m_m_t
+    )
+    np.save(
+        save_to + sim_name + "-directContactsMatTMonPatch.npy",
+        dir_contacts_m_hpatch_t
+    )
+    np.save(
+        save_to + sim_name + "-directContactsMatTMonMon.npy",
+        dir_contacts_m_m_t
+    )
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
