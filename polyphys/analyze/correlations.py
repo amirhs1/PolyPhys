@@ -7,10 +7,10 @@ from typing import (
 )
 import inspect
 import numpy as np
-from numpy.typing import ArrayLike
 import pandas as pd
 from scipy import optimize
 import statsmodels.tsa.stattools as tsas
+import MDAnalysis as mda
 
 from ..manage.utilizer import invalid_keyword
 from ..manage.organizer import (
@@ -177,7 +177,7 @@ def acf_generator(
     return acfs, lower_cls, upper_cls
 
 
-def mono_unit_exp(x: ArrayLike, omega: float, alpha: float) -> ArrayLike:
+def mono_unit_exp(x: np.ndarray, omega: float, alpha: float) -> np.ndarray:
     """Calculates the mono-exponential decay with the unit amplitude, decay
     coefficient `omega` and decay exponent `alpha` for array `x`.
 
@@ -198,7 +198,7 @@ def mono_unit_exp(x: ArrayLike, omega: float, alpha: float) -> ArrayLike:
     return np.exp(-1 * omega * x ** alpha)
 
 
-def mono_unit_exp_tau(x: ArrayLike, tau: float, alpha: float) -> ArrayLike:
+def mono_unit_exp_tau(x: np.ndarray, tau: float, alpha: float) -> np.ndarray:
     """Calculates the mono-exponential decay with the unit amplitude, decay
     time `tau` and decay exponent `alpha` for array `x`.
 
@@ -216,12 +216,12 @@ def mono_unit_exp_tau(x: ArrayLike, tau: float, alpha: float) -> ArrayLike:
     array-like:
         Measured exponential values for the input data `x`.
     """
-    return np.exp(-1 * (x/tau) ** alpha)
+    return np.exp(-1 * (x / tau) ** alpha)
 
 
 def mono_exp_tau_res(
-    x: ArrayLike, tau: float, alpha: float, amp: float, residue: float
-) -> ArrayLike:
+    x: np.ndarray, tau: float, alpha: float, amp: float, residue: float
+) -> np.ndarray:
     """Calculates the mono-exponential decay with the amplitude `amp`, decay
     time `tau`, decay exponent `alpha` and `residue` for array `x`.
 
@@ -247,8 +247,8 @@ def mono_exp_tau_res(
 
 
 def mono_exp_res(
-    x: ArrayLike, omega: float, alpha: float, amp: float, residue: float
-) -> ArrayLike:
+    x: np.ndarray, omega: float, alpha: float, amp: float, residue: float
+) -> np.ndarray:
     """Calculates the mono-exponential decay with the amplitude `amp`,
     decay coefficient `tau`, decay exponent `alpha` and `residue`
     for array `x`.
@@ -275,8 +275,8 @@ def mono_exp_res(
 
 
 def mono_exp(
-    x: ArrayLike, omega: float, alpha: float, amp: float
-) -> ArrayLike:
+    x: np.ndarray, omega: float, alpha: float, amp: float
+) -> np.ndarray:
     """Calculates the mono-exponential decay with the amplitude `amp`,
     decay coefficient `omega`, and decay exponent `alpha` for array `x`.
 
@@ -300,8 +300,8 @@ def mono_exp(
 
 
 def mono_exp_tau(
-    x: ArrayLike, tau: float, alpha: float, amp: float
-) -> ArrayLike:
+    x: np.ndarray, tau: float, alpha: float, amp: float
+) -> np.ndarray:
     """Calculates the mono-exponential decay with the amplitude `amp`,
     decay time `tau`, and decay exponent `alpha` for array `x`.
 
@@ -330,7 +330,7 @@ def fit_wholes(
     property_: str,
     func_name: str,
     property_pattern: str,
-    parser: ParserT,
+    parser: Callable,
     group: str,
     geometry: str,
     topology: str,
@@ -657,7 +657,7 @@ def fit_exp_wholes(
 
 
 def bond_info(
-    positions: np.ndarray,
+    ag: mda.AtomGroup,
     topology: str
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate all the bond lengths and the cosines of the angles between all
@@ -669,9 +669,8 @@ def bond_info(
 
     Parameters
     ----------
-    positions: np.NDArray
-        A 2D array of shape n_atoms * n_dims containing the positions of the
-        point-like monomers connected by the (spring-like) bonds
+    ag: mda.Atomgroup
+        The atomgroup for which the bond information is measured.
     topology: str
         The topology of the polymer.
 
@@ -685,9 +684,13 @@ def bond_info(
         lags; for example, there are `nbonds` cosines with lga `i-j=1`. Hence,
         `cosine_corr[k]` is the sum of `k` cosines with lag `i-j=k`.
     """
-    chain_topos = {'linear': 'raise', 'ring': 'wrap'}
-    bonds = positions - np.take(
-        positions, range(1, 201), axis=0, mode=chain_topos[topology])
+    chain_topos: Dict[str, str] = {'linear': 'raise', 'ring': 'wrap'}
+    atoms = ag.atoms
+    com = atoms.center_of_mass(wrap=False)
+    pos = ag.positions
+    pos = pos - com
+    bonds = pos - np.take(
+        pos, range(1, 201), axis=0, mode=chain_topos[topology])
     n_bonds, _ = bonds.shape
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
     bond_lengths = np.linalg.norm(bonds, axis=1).reshape(n_bonds, 1)
