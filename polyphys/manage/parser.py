@@ -1663,6 +1663,8 @@ class HnsCub(ParserBase):
         Mass of a small monomer
     dhns: float, default 1.0
         Size (diameter) of a hns protein
+    dhns_patch: float, default 0.178
+        Size (diameter) of a hns protein patch at its pole.
     nhns: int, np.nan
         number of hns protein. Its associated keyword is 'nh'.
     mhns: float, default dhns**3
@@ -1864,6 +1866,7 @@ class HnsCub(ParserBase):
         self.phi_m_bulk: float = -1
         self.rho_m_bulk: float = -1
         self.dhns: float = 1.0
+        self.dhns_patch: float = 0.178
         self.nhns: int = -1
         self.mhns: float = self.dhns**3
         self.phi_hns_bulk: float = -1
@@ -2485,7 +2488,7 @@ class ExcludedVolume(object):
     _vexc_models = ["AO", "LJ", "Edwards"]
 
     def __init__(self, name: str, ispath: bool = True):
-        self.vexc_df = None
+        self.vexc_df: pd.DataFrame = pd.DataFrame()
         if ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)
@@ -2632,7 +2635,7 @@ class FreeEnergyVirial(object):
     _vdep_models = ["deVries", "Ha"]
 
     def __init__(self, name: str, ispath: bool = True):
-        self.r_chain_df = None
+        self.r_chain_df = pd.DataFrame()
         if ispath:
             self.filepath = name
             self.filename, _ = os.path.splitext(self.filepath)

@@ -4,19 +4,35 @@
 # Becareful; this script is correct only if we want to create a "bug" data file
 # from tje "bug" data file of a simulation with nc=0. In these two simulations,
 # everything is similar EXCEPT the number of crowders.
-read -rp "Enter the line number of the last line of the header section in 'all' data file  > " allLine
+#read -rp "Enter the line number of the last line of the header section in 'all' data file  > " allLine
 
 # For TransFociCub project, allLine=31
+#allLine=31
+#bugName=bug
+#w=al
+#end=ring
 # For TransFociCyl project, allLine=31
+#allLine=31
+#bugName=bug
+#w=eps
+#end=ring
 # For SumRuleCyl project, allLine=26
+#allLine=26
+#bugName=bug
+#w=N
+#end=[1-8]
 # For HnsCub project, allLine=38
+allLine=38
+bugName=nucleoid
+w=N
+end=ring
 headLine=$((allLine - 3))
 nextLine=$((allLine + 1))
 
 #for dir in eps*.ring/; do # TransFociCyl
 #for dir in N*.ring/; do # SumRuleCyl
 #for dir in N*.ring/; do # HnsCub
-for dir in al*.ring/; do # TransFociCub
+for dir in "${w}"*"${end}"/; do # TransFociCub
     echo "${dir}"
     name=${dir:0:-1}
     # The sed command copies the first 10 lines of all.data to bug.data
@@ -29,8 +45,7 @@ for dir in al*.ring/; do # TransFociCub
     # geometry) or l (in the free space or cubic geometry) are the lengths
     # simulation box in a period direction and are set to make nc as small
     # as possible to have a give volume fraction of crowders in the system
-    head -n 3 fake_nc0_all.data > "${dir}${name}".bug.data
-    head -n "${allLine}" "${dir}${name}.all.data" | tail -n "${headLine}" >> "${dir}${name}.bug.data"
-    tail -n "+${nextLine}" fake_nc0_all.data >> "${dir}${name}.bug.data"
+    head -n 3 nc0_fake_all.data > "${dir}${name}".${bugName}.data
+    head -n "${allLine}" "${dir}${name}.all.data" | tail -n "${headLine}" >> "${dir}${name}.${bugName}.data"
+    tail -n "+${nextLine}" nc0_fake_all.data >> "${dir}${name}.${bugName}.data"
 done
-
