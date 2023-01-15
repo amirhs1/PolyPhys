@@ -1,6 +1,5 @@
 #!/bin/bash
 # copies necessary files for a job array on the slurm schedular for probing for the first time
-cp ../PolyPhys/bash_pipeline/4-probe/TransFociCyl/sbatch*.sh .
 cp ../PolyPhys/bash_pipeline/4-probe/TransFociCyl/submit*.sh .
 cp ../PolyPhys/bash_pipeline/4-probe/TransFociCyl/probe-*.py .
 cp ../PolyPhys/bash_pipeline/4-probe/TransFociCyl/probe_gnuparallel-*.sh .
