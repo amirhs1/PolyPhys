@@ -1,4 +1,4 @@
-
+from typing import Dict
 import re
 import os
 from collections import defaultdict
@@ -162,13 +162,15 @@ class LammpsLog():
         ----------
         https://github.com/lammps/lammps/blob/2b8d6fc4d93f6c7dcce870ed134e6d3ac45f47b7/src/finish.cpp#L129
         """
-        run_data = defaultdict(list)
+        run_data: Dict[str, list] = defaultdict(list)
         wall_time = {}
         run_foots = self.thermo_heads[1:] + self.wall_time_txt
         for idx, (head, foot) in enumerate(zip(self.thermo_foots, run_foots)):
             run_data['loop_idx'].append(idx+1)  # loop/chunk idx
             lines = self.log_txt[head.start():foot.end()].split("\n")
             iline = 0
+            n_cores = 0
+            n_atoms = 0
             while iline < len(lines):
                 line = lines[iline]
                 if line.startswith('Loop time'):

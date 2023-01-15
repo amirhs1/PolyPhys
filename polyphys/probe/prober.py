@@ -1,10 +1,8 @@
 from typing import Optional, Dict, Any
 import MDAnalysis as mda
-from MDAnalysis.analysis import (
-    align as mda_align,
-    diffusionmap as mda_diffusion_map,
-    distances as mda_dist
-)
+from MDAnalysis.analysis import distances as mda_dist
+#align as mda_align,
+#diffusionmap as mda_diffusion_map,
 from MDAnalysis.analysis.base import AnalysisFromFunction
 import numpy as np
 
@@ -807,17 +805,17 @@ def sum_rule_bug_cyl_rmsd(
         dt=sim_real_dt
     )
     cell.transfer_to_memory(step=50, verbose=False)
-    _ = mda_align.AlignTraj(
-        cell,
-        cell,
-        select='resid 1',
-        filename=sim_name + '.dcd'
-    ).run()
-    matrix = mda_diffusion_map.DistanceMatrix(
-        cell,
-        select='resid 1'
-    ).run()
-    np.save(save_to + sim_name + '-rmsdMatrixMon.npy', matrix.dist_matrix)
+    #_ = mda_align.AlignTraj(
+    #    cell,
+    #    cell,
+    #    select='resid 1',
+    #    filename=sim_name + '.dcd'
+    #).run()
+    #matrix = mda_diffusion_map.DistanceMatrix(
+    #    cell,
+    #    select='resid 1'
+    #).run()
+    #np.save(save_to + sim_name + '-rmsdMatrixMon.npy', matrix.dist_matrix)
     print('done.')
 
 
@@ -4331,7 +4329,7 @@ def hns_nucleoid_cub(
         atom_style="id resid type x y z", dt=sim_real_dt
     )
     if continuous:
-        sliced_trj = cell.trajectory[0: -1]
+        sliced_trj = cell.trajectory[: -1]
         n_frames = cell.trajectory.n_frames - 1
     else:
         sliced_trj = cell.trajectory
@@ -4365,13 +4363,13 @@ def hns_nucleoid_cub(
         # -various measures of chain size
         gyr_t.append(bug.radius_of_gyration())
         # -shape parameters:
-        asphericity_t.append(bug.asphericity(pbc=False, unwrap=False))
+        asphericity_t.append(bug.asphericity(wrap=False, unwrap=False))
         principal_axes_t = np.append(
             principal_axes_t,
-            np.array([bug.principal_axes(pbc=False)]),
+            np.array([bug.principal_axes(wrap=False)]),
             axis=0
         )
-        shape_parameter_t.append(bug.shape_parameter(pbc=False))
+        shape_parameter_t.append(bug.shape_parameter(wrap=False))
         # -bond info
         bond_dummy, cosine_dummy = correlations.bond_info(
             bug,
