@@ -1,8 +1,7 @@
 from typing import Optional, Dict, Any
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances as mda_dist
-#align as mda_align,
-#diffusionmap as mda_diffusion_map,
+from MDAnalysis import transformations as mda_trans
 from MDAnalysis.analysis.base import AnalysisFromFunction
 import numpy as np
 
@@ -743,79 +742,6 @@ def sum_rule_bug_cyl_flory_hist(
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
-    print('done.')
-
-
-# noinspection PyUnresolvedReferences
-def sum_rule_bug_cyl_rmsd(
-    topology: str,
-    trajectory: str,
-    lineage: str,
-    save_to: str = './'
-) -> None:
-    """
-    Computes the rmsd of a 'segment simulation of a 'bug' atom group in the
-    `geometry` of interest, and then saves the output to the `save_to`
-    directory.
-
-    `rmsd_bug` does not support the `continuous` option defined in
-    `sum_rule_bug` and `sum_rule_all` functions.
-
-    Note
-    ----
-    In this project, coordinates are wrapped and unscaled in a
-    trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
-    simulation box; and consequently, coordinates of all the particles in a
-    trajectory or topology file is recentered to fulfill this constraint.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str, default './'
-        The absolute/relative path of a directory to which output is saved.
-    """
-    sim_info = SumRuleCyl(
-        trajectory,
-        lineage,
-        'cylindrical',
-        'bug',
-        'linear'
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print(f"Doing RMSD analysis on {sim_name} ...\n")
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon * np.sqrt(sim_info.mmon * sim_info.eps_others) \
-        # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cell = mda.Universe(
-        topology,
-        trajectory,
-        topology_format='DATA',
-        format='LAMMPSDUMP',
-        lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z",
-        dt=sim_real_dt
-    )
-    cell.transfer_to_memory(step=50, verbose=False)
-    #_ = mda_align.AlignTraj(
-    #    cell,
-    #    cell,
-    #    select='resid 1',
-    #    filename=sim_name + '.dcd'
-    #).run()
-    #matrix = mda_diffusion_map.DistanceMatrix(
-    #    cell,
-    #    select='resid 1'
-    #).run()
-    #np.save(save_to + sim_name + '-rmsdMatrixMon.npy', matrix.dist_matrix)
     print('done.')
 
 
@@ -4283,6 +4209,9 @@ def hns_nucleoid_cub(
     topology file; moreover, a trajectory or topology file also has the box
     image that the atom is in.
 
+    For HnsCub project, the coordinates must be wrap since we do not use
+    LAMMPS "recenter" command.
+
     Parameters
     ----------
     topology: str
@@ -4325,18 +4254,25 @@ def hns_nucleoid_cub(
     cell = mda.Universe(
         topology, trajectory, topology_format='DATA',
         format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        # unwrap_images=True,
-        atom_style="id resid type x y z", dt=sim_real_dt
-    )
+        unwrap_images=True,
+        atom_style="id resid type x y z", dt=sim_real_dt,
+        )
     if continuous:
-        sliced_trj = cell.trajectory[: -1]
+        sliced_trj = cell.trajectory[0: -1]
         n_frames = cell.trajectory.n_frames - 1
     else:
         sliced_trj = cell.trajectory
         n_frames = cell.trajectory.n_frames
-    # selecting atom groups
+    # selecting atom groups:
     bug = cell.select_atoms('resid 1')  # the bug
     hns_patch = cell.select_atoms('type 2')  # the hns patches
+    # transformations:
+    workflow = [
+        mda_trans.unwrap(cell.atoms),
+        mda_trans.center_in_box(bug),
+        mda_trans.wrap(cell.atoms)
+    ]
+    cell.trajectory.add_transformations(*workflow)
     # defining collectors
     # bug:
     gyr_t = []
@@ -4345,66 +4281,53 @@ def hns_nucleoid_cub(
     shape_parameter_t = []
     # - bond info
     n_bonds = len(bug.bonds.indices)
-    bond_lengths = np.zeros(n_bonds, dtype=np.float64)
+    bond_lengths = np.zeros((n_bonds, 1), dtype=np.float64)
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
-    # bug hns-patch:
     # mon and hns-patch are attracted if their distance <= the below distance:
-    #m_hpatch_attr_cutoff = 0.5 * (sim_info.dmon + sim_info.dhns_patch)
-    m_hpatch_shape = [0, sim_info.nmon, 2 * sim_info.nhns]
-    m_m_shape = [0, sim_info.nmon, sim_info.nmon]
+    m_hpatch_attr_cutoff = 0.5 * (sim_info.dmon + sim_info.dhns_patch)
+    m_hpatch_shape = (sim_info.nmon, 2 * sim_info.nhns)
+    m_m_shape = (sim_info.nmon, sim_info.nmon)
     # distance matrices
-    dist_m_hpatch_t = np.zeros(m_hpatch_shape, dtype=np.float64)
-    dist_m_m_t = np.zeros(m_m_shape, dtype=np.int64)
+    dist_m_hpatch = np.zeros(m_hpatch_shape, dtype=np.float64)
+    dist_m_m = np.zeros(m_m_shape, dtype=np.float64)
     # contact matrices
-    #dir_contacts_m_hpatch_t = np.zeros(m_hpatch_shape, dtype=np.float64)
-    #dir_contacts_m_m_t = np.zeros(m_m_shape, dtype=np.int64)
+    dir_contacts_m_hpatch = np.zeros(m_hpatch_shape, dtype=np.int64)
+    dir_contacts_m_m = np.zeros(m_m_shape, dtype=np.int64)
     for _ in sliced_trj:
         # bug:
         # -various measures of chain size
         gyr_t.append(bug.radius_of_gyration())
         # -shape parameters:
-        asphericity_t.append(bug.asphericity(wrap=False, unwrap=False))
+        asphericity_t.append(bug.asphericity())
         principal_axes_t = np.append(
             principal_axes_t,
-            np.array([bug.principal_axes(wrap=False)]),
+            np.array([bug.principal_axes()]),
             axis=0
         )
-        shape_parameter_t.append(bug.shape_parameter(wrap=False))
+        shape_parameter_t.append(bug.shape_parameter())
         # -bond info
         bond_dummy, cosine_dummy = correlations.bond_info(
             bug,
             sim_info.topology
-        )
-        bond_lengths += bond_dummy.reshape(200)
+            )
+        bond_lengths += bond_dummy
         cosine_corrs += cosine_dummy
         # bug - hns patch:
         # - distance matrices
         dummy = mda_dist.distance_array(bug, hns_patch, box=cell.dimensions)
-        # dist_m_hpatch_t += dummy # bug hns_pole
-        dist_m_hpatch_t = np.append(
-            dist_m_hpatch_t, np.array([dummy]), axis=0
-        )
-        # dist_m_hpatch_t.append(dummy)
-        #
+        dist_m_hpatch += dummy
         dummy_m_m = np.matmul(dummy, dummy.T)
-        dist_m_m_t = np.append(
-            dist_m_m_t, np.array([dummy_m_m]), axis=0
-        )
+        dist_m_m += dummy_m_m
         # - contact matrices
-        #dummy = np.asarray(dummy <= m_hpatch_attr_cutoff, dtype=int)
-        # dir_contacts_m_hpatch_t += dummy
-        #dir_contacts_m_hpatch_t = np.append(
-        #    dir_contacts_m_hpatch_t, np.array([dummy]), axis=0
-        #)
-        #
-        #dummy_m_m = np.matmul(dummy, dummy.T)
-        # dir_contacts_m_m_t += dummy_m_m
-        #dir_contacts_m_m_t = np.append(
-        #    dir_contacts_m_m_t, np.array([dummy_m_m]), axis=0
-        #)
+        dummy = np.asarray(dummy <= m_hpatch_attr_cutoff, dtype=int)
+        dir_contacts_m_hpatch += dummy
+        dummy_m_m = np.matmul(dummy, dummy.T)
+        dir_contacts_m_m += dummy_m_m
     # Saving collectors to memory
     # bug
     np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
     np.save(save_to + sim_name + '-asphericityTMon.npy',
             np.array(asphericity_t)
             )
@@ -4416,21 +4339,23 @@ def hns_nucleoid_cub(
     np.save(save_to + sim_name + '-bondLengthVecMon.npy', bond_lengths)
     np.save(save_to + sim_name + '-bondCosineCorrVecMon.npy', cosine_corrs)
     # bug hns-patch:
+    dist_m_hpatch = dist_m_hpatch / n_frames
+    dist_m_m = dist_m_m / n_frames
+    dir_contacts_m_hpatch = dir_contacts_m_hpatch / n_frames
+    dir_contacts_m_m = dir_contacts_m_m / n_frames
     np.save(
-        save_to + sim_name + "-distMatTMonPatch.npy", dist_m_hpatch_t
+        save_to + sim_name + "-distMatTMonPatch.npy", dist_m_hpatch
     )
     np.save(
-        save_to + sim_name + "-distMatTMonMon.npy", dist_m_m_t
+        save_to + sim_name + "-distMatTMonMon.npy", dist_m_m
     )
-    #np.save(
-    #    save_to + sim_name + "-directContactsMatTMonPatch.npy",
-    #    dir_contacts_m_hpatch_t
-    #)
-    #np.save(
-    #    save_to + sim_name + "-directContactsMatTMonMon.npy",
-    #    dir_contacts_m_m_t
-    #)
+    np.save(
+        save_to + sim_name + "-directContactsMatTMonPatch.npy",
+        dir_contacts_m_hpatch
+    )
+    np.save(
+        save_to + sim_name + "-directContactsMatTMonMon.npy",
+        dir_contacts_m_m
+    )
     # Simulation stamps:
-    outfile = save_to + sim_name + "-stamps.csv"
-    stamps_report(outfile, sim_info, n_frames)
     print('done.')
