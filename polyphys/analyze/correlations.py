@@ -535,7 +535,7 @@ def fit_exp_wholes(
     space_path: str,
     property_: str,
     fit_func: Callable,
-    parser: ParserT,
+    parser: Callable,
     geometry: str,
     group: str,
     topology: str,
@@ -658,7 +658,9 @@ def fit_exp_wholes(
 
 def bond_info(
     ag: mda.AtomGroup,
-    topology: str
+    topology: str,
+    wrap: Optional[bool] = False,
+    unwrap: Optional[bool] = False
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate all the bond lengths and the cosines of the angles between all
     the pairs of bond vectors based on the `positions` of the monomers in a
@@ -673,6 +675,11 @@ def bond_info(
         The atomgroup for which the bond information is measured.
     topology: str
         The topology of the polymer.
+    wrap : bool, optional
+        If ``True``,  move all atoms to the primary unit cell before
+        calculation.
+    unwrap : bool, optional
+        If ``True``, compounds will be unwrapped before computing their
 
     Return
     ------
@@ -686,7 +693,7 @@ def bond_info(
     """
     chain_topos: Dict[str, str] = {'linear': 'raise', 'ring': 'wrap'}
     atoms = ag.atoms
-    com = atoms.center_of_mass(wrap=False)
+    com = atoms.center_of_mass(wrap=wrap, unwrap=unwrap)
     pos = ag.positions
     pos = pos - com
     bonds = pos - np.take(

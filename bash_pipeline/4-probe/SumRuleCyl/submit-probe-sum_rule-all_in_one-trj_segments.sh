@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=32
 #SBATCH --mem-per-cpu=3G
-#SBATCH --time=3-00:00   
+#SBATCH --time=3-00:00
 #SBATCH --account=rrg-byha
-#SBATCH --mail-user=mr.a.h.saadeghi@gmail.com  
-#SBATCH --mail-type=ALL     
+#SBATCH --mail-user=mr.a.h.saadeghi@gmail.com
+#SBATCH --mail-type=ALL
 
 # record environment to unclutter gnu parallel run
 parallel --record-env
@@ -23,7 +23,7 @@ pip install --no-index pandas
 pip install --no-index seaborn
 pip install --no-index sympy
 pip install --no-index statsmodels
-pip install --no-index MDAnalysis==2.2.0
+pip install --no-index MDAnalysis==2.3.0
 
 # Create a function to execute your job
 exe(){
