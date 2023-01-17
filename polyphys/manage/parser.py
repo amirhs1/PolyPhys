@@ -7,7 +7,7 @@ import re
 from typing import TypeVar, IO, Tuple, Dict, List
 import warnings
 from collections import OrderedDict
-from .utilizer import invalid_keyword, openany_context
+from .utilizer import invalid_keyword, openany_context, InputT
 
 TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
 TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
@@ -2754,12 +2754,12 @@ class FreeEnergyVirial(object):
 
 
 class Snapshot:
-    file: IO
+    file: InputT
     """
     Read a single snapshot from a dump `file` object.
     """
 
-    def __init__(self, file: IO) -> None:
+    def __init__(self, file: InputT) -> None:
         self.file = file
         # time, n_atoms, and n_props are default to invalid numbers.
         self.time = -1  # time stamp
@@ -2776,12 +2776,13 @@ class Snapshot:
         self.zlo = 0.0
         self.zhi = 0.0
         self.yz = 0.0
-        self.props = {}  # names and col indices of per-atom properties
+        # names and col indices of per-atom properties:
+        self.props: Dict[str, int] = {}
         self.n_props = 0  # number of per atom properties in the dump file
         self.atoms = np.empty((self.n_atoms, self.n_props), dtype=np.float64)
-        self.read()
+        self._read()
 
-    def read(self) -> None:
+    def _read(self) -> None:
         """
         Read a single snapshot and assigns column names (file must be
         self-describing). Moreover, it changes `self.is_scaled` from -1
@@ -2858,7 +2859,7 @@ class Dump:
     """
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
-        self.names = {}
+        self.names: Dict[str, int] = {}
         self.is_scaled = -1  # -1/0/1 mean unknown/unscale/scale coordinates.
         self.snaps: List[Snapshot] = []
         self.n_snaps: int = 0  # total number of snapshots

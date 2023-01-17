@@ -4,14 +4,16 @@ import numpy as np
 import gzip
 from gzip import GzipFile
 import os
-from typing import Generator, IO, Any, Optional, TextIO, Union, List
+from typing import Generator, Optional, List, IO, TextIO, Any, Union
 from contextlib import contextmanager
+
+InputT = Union[GzipFile, TextIO, IO[Any]]
 
 
 def openany(
     filepath: str,
     mode: str = 'r'
-) -> Union[GzipFile, TextIO, IO[Any]]:
+) -> InputT:
     """
     Open a regular or gzipped file.
 
@@ -39,7 +41,7 @@ def openany(
 def openany_context(
     filepath: str,
     mode: str = 'r'
-) -> Generator[Union[IO[Any], TextIO, GzipFile], None, None]:
+) -> Generator[InputT, None, None]:
     """
     Open a regular or gzipped file.
 

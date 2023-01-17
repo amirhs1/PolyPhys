@@ -14,11 +14,14 @@ Currently, the following distribution are implemented:
     1. The local number density of hard beads.
     2. The local volume fraction of hard beads.
 """
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Callable
 import numpy as np
 from numpy.typing import ArrayLike
 import scipy.integrate as integrate
-from ..manage.typer import ParserT, FreqDataT, EdgeDataT
+from ..manage.typer import (
+    ParserT, FreqDataT, EdgeDataT, TransFociCubT, SumRuleCylT, TransFociCylT,
+    HnsCubT
+)
 
 
 def spherical_segment(
@@ -128,12 +131,12 @@ def sphere_sphere_intersection(
 
 
 class SpatialDistribution(object):
-    freq: np.ndarray
+    freqs: np.ndarray
     edges: np.ndarray
     hist_info: ParserT
     radius_attr: str
-    geometry: str = 'cylindrical'
-    direction: str = 'r'
+    geometry: str
+    direction: str
     normalized: bool = False
     """
     Computes the local number density of any species and the local volume
@@ -150,9 +153,9 @@ class SpatialDistribution(object):
 
     Parameters
     ----------
-    freq: np.ndarray
+    freqs: np.ndarray
         A 1D  array of frequencies in bins.
-    edge: np.ndarray
+    edges: np.ndarray
         A 1D array of the bin edge where `len(edge)=len(freq)`.
     hist_info: ParserT
         A ParserT object that contains information about the system to which
@@ -293,6 +296,11 @@ class SpatialDistribution(object):
         'slit': ['r', 'phi', 'z'],
         'cylindrical': ['r', 'phi', 'z']
     }
+    _parsers = {
+        'cubic': (TransFociCubT, HnsCubT),
+        'biaxial': (TransFociCylT, SumRuleCylT),
+        'cylindrical': (TransFociCylT, SumRuleCylT),
+    }
     _integrands = {
         'cubic': {
             'r': lambda r, const: 4 * const * np.pi * r**2,
@@ -336,8 +344,8 @@ class SpatialDistribution(object):
         edges: np.ndarray,
         hist_info: ParserT,
         radius_attr: str,
-        geometry: str = 'cylindrical',
-        direction: str = 'r',
+        geometry: str,
+        direction: str,
         normalized: bool = False,
     ):
         if isinstance(frequencies, np.ndarray):
@@ -398,6 +406,12 @@ class SpatialDistribution(object):
         """
         sets the arguments for the integrands along different directions
         in different geometries.
+
+        Note
+        ----
+        In a given geometry, The radius of the simulation box should be used as
+        the radial argumnet 'r'. Here, instead of halving 'lcube' or 'dcyl', we
+        introduced a 0.5 prefactor in the definition of the integrand.
         """
         self._args = {
             'cubic': {
@@ -406,10 +420,10 @@ class SpatialDistribution(object):
                 # is redundant and merely defined to make the use of args
                 # parameter of scipi.integral.quad function consistent among
                 # integrands.
-                'theta': (self.hist_info.lcyl, ),
+                'theta': (self.hist_info.lcube, ),
                 # In a box cubic or free space, the radius of the space
                 # is half of the length of simulation box.
-                'phi': (self.hist_info.lcyl, ),
+                'phi': (self.hist_info.lcube, ),
                 # In a box cubic or free space, the radius of the space
                 # is half of the length of simulation box.
             },
@@ -723,7 +737,7 @@ def distributions_generator(
     geometry: str,
     topology: str,
     direction: str,
-    parser: ParserT,
+    parser: Callable,
     save_to: Optional[str] = None,
     normalized: bool = False
 ) -> Tuple[Dict, Dict]:
@@ -769,14 +783,24 @@ def distributions_generator(
     vol_fractions = {}
     parser_name = parser.__name__
     radius_attrs = {
-        'SumRule': {
+        'SumRuleCyl': {
             'Mon': 'dmon',
             'Crd':  'dcrowd'
         },
-        'TransFoci': {
+        'TransFociCyl': {
             'Mon': 'dmon_small',
             'Crd': 'dcrowd',
             'Foci': 'dmon_large'
+        },
+        'TransFociCub': {
+            'Mon': 'dmon_small',
+            'Crd': 'dcrowd',
+            'Foci': 'dmon_large'
+        },
+        'HnsCub': {
+            'Mon': 'dmon',
+            'Hns': 'dhns',
+            'Crd': 'dcrowd'
         }
     }
     for whole, freq in freqs.items():
@@ -845,8 +869,8 @@ def entropic_energy(
 
 
 def looping_p(
-    histo_collections: ArrayLike,
-    bin_edges: ArrayLike,
+    histo_collections: np.ndarray,
+    bin_edges: np.ndarray,
     r_max: float,
     r_min: float
 ) -> float:
@@ -863,7 +887,8 @@ def looping_p(
     =constant), the effect of (bin_edges_i+1 - bin_edges_i) is cancelled out
     upon normalization.
 
-    Inputs:
+    Parameters
+    ----------
     histo_collections: a numpy array of the histograms of the Flory radius
     or the end-to-end distance during the whole run (the total number of
     data points is equal to the total number of time steps.)
@@ -876,12 +901,14 @@ def looping_p(
     less than r_max+r_min, no crowders can be between two monomers and the
     depletion force is non-zero.
 
-    Returns:
+    Return
+    ------
     The probability of looping.
     """
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     histo_collections = np.multiply(
-        histo_collections, (bin_edges[1:] - bin_edges[:-1]))
+        histo_collections, (bin_edges[1:] - bin_edges[:-1])
+        )
     histo_collections = histo_collections / np.sum(histo_collections)
     looped_probability = 0
     for i in range(len(bin_centers)):
