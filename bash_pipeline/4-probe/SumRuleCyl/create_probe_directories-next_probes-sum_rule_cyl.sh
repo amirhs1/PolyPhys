@@ -6,7 +6,7 @@ probe=${name}-probe
 mkdir "${probe}"
 cp slurm*.out "${probe}"-slurm_report.out 
 mv "${probe}"-slurm_report.out ./"${probe}"/
-for dir in N*ep*/; do
+for dir in N*ep*[1-8]/; do
     mkdir "${probe}/$dir"
     echo "$dir"
     cd "$dir" || exit
