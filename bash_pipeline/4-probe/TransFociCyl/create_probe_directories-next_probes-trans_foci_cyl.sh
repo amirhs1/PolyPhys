@@ -7,7 +7,7 @@ mkdir "${probe}"
 job=$(echo slurm*.out | cut -d . -f 1)
 cp slurm*.out "${probe}-${job}_report.out" 
 mv "${probe}"-slurm_report.out ./"${probe}"/
-for dir in eps*/; do
+for dir in eps*ring/; do
     mkdir "${probe}/$dir"
     echo "$dir"
     cd "$dir" || exit
