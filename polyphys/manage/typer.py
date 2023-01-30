@@ -1,9 +1,9 @@
-from typing import Type, Union, Tuple, Dict, NewType, TypeVar
+from typing import Type, Union, Tuple, Dict, NewType
 import numpy as np
 import pandas as pd
 # pylint: disable-next=reportShadowedImports
 from .parser import (
-    ParserBase, TransFociCyl, TransFociCub, SumRuleCyl, HnsCub, Snapshot
+    TransFociCyl, TransFociCub, SumRuleCyl, HnsCub, Snapshot
 )
 
 # String types:
@@ -29,9 +29,9 @@ FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
 
 # Parser types
-ParserBase = TypeVar('ParserBase', bound=ParserBase)
 TransFociCubT = Type[TransFociCub]
 TransFociCylT = Type[TransFociCyl]
+TransFociT = Union[TransFociCyl, TransFociCub]
 SumRuleCylT = Type[SumRuleCyl]
 HnsCubT = Type[HnsCub]
 ParserT = Union[TransFociCyl, TransFociCub, SumRuleCyl, HnsCub]

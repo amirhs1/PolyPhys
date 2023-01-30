@@ -9,7 +9,7 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 import numpy.linalg as npla
-from ..manage.typer import ParserT
+from ..manage.typer import TransFociT
 
 
 def apply_pbc(
@@ -612,7 +612,7 @@ def foci_histogram(
 
 def whole_dist_mat_foci(
     whole_path: str,
-    whole_info: ParserT
+    whole_info: TransFociT
 ) -> Tuple[
     Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]
 ]:
