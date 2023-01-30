@@ -9,6 +9,7 @@ from glob import glob
 import warnings
 import numpy as np
 import pandas as pd
+from ..manage.parser import TransFociCub, TransFociCyl
 from ..manage.utilizer import invalid_keyword
 from ..manage.organizer import (
     sort_filenames,
@@ -738,7 +739,9 @@ def nonscalar_time_series(
                 fmts=['-' + property_ + species + '.npy']
             )
             # changing property_ name after averaging:
-            if property_ == 'distMatT':
+            if property_ == 'distMatT' and isinstance(parser,
+                                                      TransFociCyl or
+                                                      TransFociCub):
                 wholes_hists, wholes_rdfs, wholes_tseries = \
                     whole_from_dist_mat_t(
                         whole_paths,
