@@ -428,7 +428,7 @@ def frame_dist_hist(
 
     Parameters
     ----------
-    distance: np.ndarray
+    distances: np.ndarray
         The distances of a group of atoms form a given origin in a given frame.
     hist_info: Dict[str, any]
         The information about the histogram.
@@ -4212,7 +4212,7 @@ def hns_nucleoid_cub(
     We did not use LAMMPS "recenter" command in this project. Consequently,
     the coordinates first must be unwrapped, the center of geometry of chain
     second must be brought to the center of box, and coordinates again must be
-    wrapped before doing any measurment on the bonds, interaction between
+    wrapped before doing any measurement on the bonds, interaction between
     monomers and other species, and any kind of histogramming.
 
     Parameters
@@ -4339,6 +4339,7 @@ def hns_nucleoid_cub(
     bond_lengths = bond_lengths / n_frames
     bonds_per_lag = np.arange(n_bonds, 0, -1)
     cosine_corrs = cosine_corrs / (n_frames * bonds_per_lag)
+    bond_lengths = bond_lengths.reshape(n_bonds,)
     np.save(save_to + sim_name + '-bondLengthVecMon.npy', bond_lengths)
     np.save(save_to + sim_name + '-bondCosineCorrVecMon.npy', cosine_corrs)
     # bug hns-patch:
@@ -4347,13 +4348,13 @@ def hns_nucleoid_cub(
     dir_contacts_m_hpatch = dir_contacts_m_hpatch / n_frames
     dir_contacts_m_m = dir_contacts_m_m / n_frames
     np.save(
-        save_to + sim_name + "-distMatTMonPatch.npy", dist_m_hpatch
+        save_to + sim_name + "-distMatMonPatch.npy", dist_m_hpatch
     )
     np.save(
-        save_to + sim_name + "-distMatTMonMon.npy", dist_m_m
+        save_to + sim_name + "-distMatMonMon.npy", dist_m_m
     )
     np.save(
-        save_to + sim_name + "-directContactsMatTMonPatch.npy",
+        save_to + sim_name + "-directContactsMatMonPatch.npy",
         dir_contacts_m_hpatch
     )
     np.save(
@@ -4384,7 +4385,7 @@ def hns_all_cub(
     We did not use LAMMPS "recenter" command in this project. Consequently,
     the coordinates first must be unwrapped, the center of geometry of chain
     second must be brought to the center of box, and coordinates again must be
-    wrapped before doing any measurment on the bonds, interaction between
+    wrapped before doing any measurement on the bonds, interaction between
     monomers and other species, and any kind of histogramming.
 
     Parameters

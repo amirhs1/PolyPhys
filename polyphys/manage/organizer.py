@@ -1748,7 +1748,7 @@ def normalize_r(
         Name of the physical property.
     ens_avg: pd.DataFrame
         Ensemble-average local distribution.
-    method: {'first', 'max'}, default True
+    method: {'first', 'max'}, default 'first'
         Normalization method
         'first':
             Normalizing by the first value of `ens_avg`.

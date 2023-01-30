@@ -9,13 +9,13 @@ group = 'all'
 topo_lineage = 'whole'
 lineage = 'segment'
 save_to = './'
-all_trjs = glob('/.N*' + group + '*')
+all_trjs = glob('./N*' + group + '*')
 all_trjs = organizer.sort_filenames(
     all_trjs,
     fmts=['.' + group + '.lammpstrj']
 )
 all_trjs = [all_trj[0] for all_trj in all_trjs]
-all_topo = glob('/.N*' + group + '*')
+all_topo = glob('./N*' + group + '*')
 all_topo = organizer.sort_filenames(all_topo, fmts=['.' + group + '.data'])
 all_topo = all_topo[0][0]
 max_segment_id = len(all_trjs)

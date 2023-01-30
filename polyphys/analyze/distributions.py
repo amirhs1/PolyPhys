@@ -135,6 +135,8 @@ class SpatialDistribution(object):
     edges: np.ndarray
     hist_info: ParserT
     radius_attr: str
+    lbox: str
+    dbox: str
     geometry: str
     direction: str
     normalized: bool = False
@@ -163,32 +165,37 @@ class SpatialDistribution(object):
     radius_attr: str
         The name of an attribute of `hist_info` that contains the radius of the
         species to which `freq` belongs.
+    radius_attr: str
+        The name of an attribute of `hist_info` that contains the radius of the
+        species to which `freq` belongs.
+    radius_attr: str
+        The name of an attribute of `hist_info` that contains the radius of the
+        species to which `freq` belongs.
     geometry: str t
         The shape of the simulation box
     direction: str
         The direction of interest in the `geometry` of interest.
+    normalized: bool
+        Whether normalizing the distributions to have a unit value total under
+        the distribution curve or not.
 
     Attributes
     ----------
-    self.frequencies:
+    self.frequencies: numpy.ndarray
         Frequencies in different bins
-    self.centers (numppy array):
-        The centers of the bins: the index of histogram
-    self.geometry:
-        The shape of the simulation box
-    self.direction:
-        direction
-    self.radius_type:
-        radius_type
-    self.r_bead:
-        radius of particle for which distribution are calculated.
-    self.r_bead:
-        the radius of the particles that their type is set by
-        radius_type
-    self.bin_size (float):
-        the size of the equally-sized bins.
-    self.edges (numpy array): the edges of the bins of the same size. The
-        range is [A-0.5*bin_size, B+0.5*bin_size]
+    self.edges: numpy.ndarray
+        The edges of the bins.
+    self.radius_attr: float
+        The radius of particle species for which distributions are computed.
+    self.geometry: str
+        The shape of the simulation box.
+    self.direction: str
+        The direction along which distribution are computed.
+    self.lbox: float
+        The side of a cubic box, the radius or side length of a rectangular or
+        cylindrical slit, or the longitudinal length of a cylinder.
+    self.dbox
+        The diameter of a cylindrical slit or a cylinder.
     self.rho (pandas dataframe):
         the dataframe of the local number
         densities which has the same index, number of columns and names of
@@ -298,7 +305,6 @@ class SpatialDistribution(object):
     }
     _parsers = {
         'cubic': (TransFociCubT, HnsCubT),
-        'biaxial': (TransFociCylT, SumRuleCylT),
         'cylindrical': (TransFociCylT, SumRuleCylT),
     }
     _integrands = {
@@ -344,10 +350,12 @@ class SpatialDistribution(object):
         edges: np.ndarray,
         hist_info: ParserT,
         radius_attr: str,
+        lbox: str,
+        dbox: str,
         geometry: str,
         direction: str,
         normalized: bool = False,
-    ):
+    ) -> None:
         if isinstance(frequencies, np.ndarray):
             self.frequencies = frequencies
         else:
@@ -366,6 +374,10 @@ class SpatialDistribution(object):
                 " is not a numpy.ndarray.")
         self.hist_info = hist_info
         self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
+        self.lbox = getattr(self.hist_info, lbox)
+        self.dbox = 0.0
+        if geometry in ['cylindrical', 'slit']:
+            self.dbox = getattr(self.hist_info, dbox)
         if geometry in self._directions.keys():
             self.geometry = geometry
         else:
@@ -410,8 +422,8 @@ class SpatialDistribution(object):
         Note
         ----
         In a given geometry, The radius of the simulation box should be used as
-        the radial argumnet 'r'. Here, instead of halving 'lcube' or 'dcyl', we
-        introduced a 0.5 prefactor in the definition of the integrand.
+        the radial argument 'r'. Here, instead of halving 'lcube' or 'dcyl', we
+        introduced a 0.5 pre-factor in the definition of the integrand.
         """
         self._args = {
             'cubic': {
@@ -420,22 +432,17 @@ class SpatialDistribution(object):
                 # is redundant and merely defined to make the use of args
                 # parameter of scipi.integral.quad function consistent among
                 # integrands.
-                'theta': (self.hist_info.lcube, ),
+                'theta': (self.lbox, ),
                 # In a box cubic or free space, the radius of the space
                 # is half of the length of simulation box.
-                'phi': (self.hist_info.lcube, ),
+                'phi': (self.lbox, ),
                 # In a box cubic or free space, the radius of the space
                 # is half of the length of simulation box.
-            },
-            'slit': {
-                'r': (self.hist_info.lcyl, ),
-                'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
-                'z': (self.hist_info.dcyl, )
             },
             'cylindrical': {
-                'r': (self.hist_info.lcyl, ),
-                'theta': (self.hist_info.lcyl, self.hist_info.dcyl, ),
-                'z': (self.hist_info.dcyl, )
+                'r': (self.lbox, ),
+                'theta': (self.lbox, self.dbox, ),
+                'z': (self.lbox, )
             }
         }
 
@@ -785,7 +792,7 @@ def distributions_generator(
     radius_attrs = {
         'SumRuleCyl': {
             'Mon': 'dmon',
-            'Crd':  'dcrowd'
+            'Crd': 'dcrowd'
         },
         'TransFociCyl': {
             'Mon': 'dmon_small',
@@ -803,6 +810,30 @@ def distributions_generator(
             'Crd': 'dcrowd'
         }
     }
+    lbox_attrs = {
+        'cubic': {
+            'TransFociCub': 'lcube',
+            'HnsCub': 'lcube'
+        },
+        'cylindrical': {
+            'SumRuleCyl': 'lcyl',
+            'TransFociCyl': 'lcyl'
+        }
+    }
+    dbox_attrs = {
+        'cubic': {
+            'TransFociCub': 'N/A',
+            'HnsCub': 'N/A'
+        },
+        'cylindrical': {
+            'SumRuleCyl': 'dcyl',
+            'TransFociCyl': 'dcyl'
+        }
+    }
+    geometries = ['cubic', 'cylindrical']
+    if geometry not in geometries:
+        raise NotImplementedError("The number density and volume fraction"
+                                  f"are currently available in '{geometries}")
     for whole, freq in freqs.items():
         whole_info = parser(
             whole,
@@ -816,9 +847,11 @@ def distributions_generator(
             freq,
             bin_edges[whole],
             whole_info,
-            radius_attr=radius_attrs[parser_name][species],
-            geometry=geometry,
-            direction=direction,
+            radius_attrs[parser_name][species],
+            lbox_attrs[geometry][parser_name],
+            dbox_attrs[geometry][parser_name],
+            geometry,
+            direction,
             normalized=normalized
         )
         densities[whole] = distributions.rho

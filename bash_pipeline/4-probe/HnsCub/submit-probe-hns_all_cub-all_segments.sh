@@ -29,7 +29,7 @@ pip install --no-index MDAnalysis==2.3.0
 exe(){
 dir=${1}
 file=$(echo "$dir" | cut -d / -f 1)
-(cd "${file}" && python probe-probe-hns_all_cub-all_segments.py > "${file}"-probe-hns_all_cub-all_segments.txt)
+(cd "${file}" && python probe-hns_all_cub-all_segments.py > "${file}"-probe-hns_all_cub-all_segments.txt)
 }
 
 echo "Starting run at: $(date)"
