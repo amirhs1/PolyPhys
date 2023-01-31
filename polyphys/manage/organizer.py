@@ -1448,9 +1448,9 @@ def space_tseries(
             topology
         )
         ens_avg.reset_index(inplace=True)
-        ens_avg.rename(columns={'index': 'time'}, inplace=True)
+        ens_avg.rename(columns={'index': 't_index'}, inplace=True)
         ens_avg['time'] = (
-            ens_avg['time'] * property_info.dt
+            ens_avg['t_index'] * property_info.dt
             * getattr(property_info, dumping_freq[parser_name])
         )
         for attr_name in physical_attrs:
