@@ -218,7 +218,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
-from ..manage.typer import WholeT, EnsembleT
+from ..manage.typer import ParserT, TransFociT
 from ..analyze.clusters import whole_dist_mat_foci
 from .utilizer import round_up_nearest, invalid_keyword
 
@@ -341,7 +341,7 @@ def sort_filenames(
 
 def save_parent(
     name: str,
-    data: Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]],
+    data: Union[np.ndarray, pd.DataFrame, dict[str, np.ndarray]],
     property_: str,
     save_to: str,
     group: str = 'bug',
@@ -371,12 +371,14 @@ def save_parent(
         data.to_csv(save_to + filename + ".csv", index=False)
     elif isinstance(data, np.ndarray) and ext == 'npy':
         np.save(save_to + filename + ".npy", data)
-    else:  # dict of np.ndarray
+    elif isinstance(data, dict):  # dict of np.ndarray
         for prop_, prop_data in data.items():
             _, prop_measure = prop_.split('-')
             np.save(
                 save_to + filename + "-" + prop_measure + ".npy", prop_data
             )
+    else:
+        raise TypeError
 
 
 def database_path(
@@ -628,11 +630,11 @@ def whole_from_file(
 
 def whole_from_dist_mat_t(
     whole_paths: List[Tuple[str]],
-    parser: Callable,
+    parser: TransFociT,
     geometry: str,
     group: str,
     topology: str
-) -> Tuple[Dict[str, dict], Dict[str, dict], Dict[str, dict]]:
+) -> Tuple[Dict[str, pd.DataFrame], ...]:
     """
     Loads `whole` 2D numpy arrays for a given physical property of the
     particle `group` in the `geometry` of interest from their paths
@@ -707,7 +709,8 @@ def ens_from_bin_edge(ens) -> Tuple[str, np.ndarray]:
     return ens[0], np.unique(list(ens[1].values()))
 
 
-def ens_from_vec(ens: EnsembleT) -> Tuple[str, pd.DataFrame]:
+def ens_from_vec(ens: Tuple[str, Dict[str, np.ndarray]]
+                 ) -> Tuple[str, pd.DataFrame]:
     """
     Creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy vector or 1D array.
@@ -726,7 +729,9 @@ def ens_from_vec(ens: EnsembleT) -> Tuple[str, pd.DataFrame]:
     return ens[0], pd.DataFrame.from_dict(ens[1], orient='columns')
 
 
-def ens_from_mat_t(ens: EnsembleT) -> Tuple[str, np.ndarray]:
+def ens_from_mat_t(
+    ens: Tuple[str, Dict[str, np.ndarray]]
+) -> Tuple[str, np.ndarray]:
     """
     creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a numpy 2D array.
@@ -744,7 +749,9 @@ def ens_from_mat_t(ens: EnsembleT) -> Tuple[str, np.ndarray]:
     return ens[0], np.stack(list(ens[1].values()), axis=0)
 
 
-def ens_from_df(ens: EnsembleT) -> Tuple[str, pd.DataFrame]:
+def ens_from_df(
+    ens: Tuple[str, Dict[str, pd.DataFrame]]
+) -> Tuple[str, pd.DataFrame]:
     """
     creates an "ensemble" dataframe from a dictionary of wholes where
     each "whole" is a pandas dataframe.
@@ -785,15 +792,15 @@ def ens_from_df(ens: EnsembleT) -> Tuple[str, pd.DataFrame]:
 
 def ensemble(
     property_: str,
-    wholes: WholeT,
-    parser: Callable,
+    wholes: Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]],
+    parser: ParserT,
     geometry: str,
     group: str,
     topology: str,
     whole_type: str,
     edge_wholes: Optional[Dict[str, np.ndarray]] = None,
     save_to: Optional[str] = None
-) -> Dict[str, Union[pd.DataFrame, np.ndarray]]:
+) -> Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]]:
     """Generates ensembles from `wholes` for the physical property `property_`
     of a particle `group` in a `geometry` of interest.
 
@@ -821,10 +828,10 @@ def ensemble(
     ----------
     property_ : str
         The physical property.
-    wholes : dict of np.ndarray
+    wholes : WholeT
         A dictionary in which keys are 'whole' names and values are data
         (1D array).
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
@@ -859,7 +866,7 @@ def ensemble(
 
     Return
     ------
-    ensembles : dict of pd.DataFrame
+    ensembles : EnsembleT
         A dictionary for `property_` in which keys are ensemble names and
         values are dataframes. In each dataframe, the columns are wholes of
         that ensemble.
@@ -868,7 +875,7 @@ def ensemble(
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
     invalid_keyword(whole_type, ['vector', 'matrix', 'dataframe', 'bin_edge'])
-    ensembles = {}
+    ensembles: Dict[str, Dict[str, Union[pd.DataFrame, np.ndarray]]] = {}
     bin_centers = {}
     for w_name, w_arr in wholes.items():
         w_info = parser(
@@ -890,7 +897,7 @@ def ensemble(
             bin_centers[ens_name] = 0.5 * (
                 edge_wholes[w_name][:-1] + edge_wholes[w_name][1:]
             )
-    whole_types: Dict[str, Dict[str, Union[Callable, str]]] = {
+    whole_types = {
         "vector": {
             "mapping_func": ens_from_vec,
             "ext": "csv"
@@ -908,15 +915,15 @@ def ensemble(
             "ext": "npy"
         }
     }
-    ensembles = dict(
+    ensembles_merged = dict(
         map(
             whole_types[whole_type]['mapping_func'],
             ensembles.items()
         )
     )
     if edge_wholes is not None:
-        for ens_name in ensembles.keys():
-            ensembles[ens_name]['bin_center'] = bin_centers[ens_name]
+        for ens_name in ensembles_merged.keys():
+            ensembles_merged[ens_name]['bin_center'] = bin_centers[ens_name]
     if save_to is not None:
         _ = dict(
             map(
@@ -927,10 +934,10 @@ def ensemble(
                                  ext=whole_types[whole_type]["ext"]
                              )
                              ),
-                ensembles.items()
+                ensembles_merged.items()
             )
         )
-    return ensembles
+    return ensembles_merged
 
 
 def ens_avg_from_df(
@@ -1015,7 +1022,7 @@ def ens_avg_from_ndarray(
 
 def ensemble_avg(
     property_: str,
-    ensembles: Dict[str, Union[pd.DataFrame, np.ndarray]],
+    ensembles: Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]],
     geometry: str,
     group: str,
     ens_type: str,
@@ -1232,7 +1239,7 @@ def parents_stamps(
             " a previous call of 'parents_stamps' function."
         )
     # aggregation dictionary: See Note above.
-    agg_funcs: Dict[str, Union[Callable, str]] = dict()
+    agg_funcs = dict()
     attr_agg_funcs = ['last'] * len(stamps_cols)
     agg_funcs.update(zip(stamps_cols, attr_agg_funcs))
     if properties is not None:  # add/update agg funcs for properties.
@@ -1360,7 +1367,7 @@ def unique_property(
 def space_tseries(
     input_database: str,
     property_: str,
-    parser: Callable,
+    parser: ParserT,
     hierarchy: str,
     physical_attrs: List[str],
     group: str,
@@ -1449,14 +1456,15 @@ def space_tseries(
         )
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={'index': 't_index'}, inplace=True)
-        ens_avg['time'] = (
-            ens_avg['t_index'] * property_info.dt
-            * getattr(property_info, dumping_freq[parser_name])
-        )
+        ens_avg['t_index'] = (ens_avg['t_index'] * getattr(
+            property_info, dumping_freq[parser_name])
+            )
+        ens_avg['time'] = ens_avg['t_index'] * property_info.dt
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(property_info, attr_name)
-        ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
-            round_up_nearest, args=[divisor, round_to])
+        ens_avg['phi_c_bulk_round'] = \
+            ens_avg['phi_c_bulk'].apply(
+                round_up_nearest, args=[divisor, round_to])
         property_db.append(ens_avg)
     property_db = pd.concat(property_db, axis=0)
     property_db.reset_index(inplace=True, drop=True)
@@ -1476,7 +1484,7 @@ def space_tseries(
 def space_hists(
     input_database: str,
     property_: str,
-    parser: Callable,
+    parser: ParserT,
     hierarchy: str,
     physical_attrs: List[str],
     group: str,
@@ -1609,61 +1617,10 @@ def space_hists(
     return property_db
 
 
-def normalize_z_incorrect(
-    prop: str,
-    ens_avg: pd.DataFrame, norm_direction: bool = True
-) -> pd.DataFrame:
-    """Normalizes the ensemble-average local distribution `ens_avg` of `prop`
-    along z direction in cylindrical geometry by the maximum value of the
-    `ens_avg`, and takes average over the absolute values of bin centers along
-    z direction if `norm_direction` is `True`.
-
-    Parameters
-    ----------
-    prop: str
-        Name of the physical property.
-    ens_avg: pd.DataFrame
-        Ensemble-average local distribution.
-    norm_direction: bool, default True
-        Whether averaging over absolute values of bin_centers or not.
-
-    Return
-    ------
-    ens_avg: pd.DataFrame
-        Normalized ensemble-average local distribution.
-    """
-    ens_avg_max = ens_avg[prop + '-scale'].max()
-    ens_avg[prop + '-normalizer'] = ens_avg_max
-    print(ens_avg_max)
-    if ens_avg_max != 0:
-        ens_avg[prop + '-norm'] = ens_avg[prop + '-scale'] / ens_avg_max
-    else:
-        warnings.warn(
-            "All the frequencies are zero, so all the normalized"
-            " frequencies are set to zero.",
-            UserWarning
-        )
-        ens_avg[prop + '-norm'] = 0
-    # If system is symmetric with respect to z=0, then an average can be
-    # applied with respect to absolut size of bin centers.
-    if norm_direction is True:
-        ens_nonneg = ens_avg.loc[0:, :]  # index or bin_center or z >= 0
-        ens_neg = ens_avg.loc[:0, :]  # index or bin_center or z < 0
-        ens_neg.index = -1 * ens_neg.index
-        ens_neg.sort_index(inplace=True)
-        if len(ens_nonneg) != len(ens_neg):
-            warnings.warn(
-                "'nonneg' and 'neg' dataframes ara not equal in size, "
-                "some 'nan' rows emerge when  they are averaged.",
-                UserWarning
-            )
-        ens_avg = 0.5 * (ens_nonneg + ens_neg)
-    return ens_avg
-
-
 def normalize_z(
     prop: str,
-    ens_avg: pd.DataFrame, norm_direction: bool = True
+    ens_avg: pd.DataFrame,
+    norm_direction: bool = True
 ) -> pd.DataFrame:
     """Normalizes the ensemble-average local distribution `ens_avg` of `prop`
     along z direction in cylindrical geometry by the maximum value of the

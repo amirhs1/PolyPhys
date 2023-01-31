@@ -9,7 +9,6 @@ from glob import glob
 import warnings
 import numpy as np
 import pandas as pd
-from ..manage.parser import TransFociCub, TransFociCyl
 from ..manage.utilizer import invalid_keyword
 from ..manage.organizer import (
     sort_filenames,
@@ -389,7 +388,6 @@ def histograms(
                 'dataframe',
                 save_to=save_to_ens_avg
             )
-        del rho_wholes, phi_wholes, ensembles
     if hist_properties is not None:
         for direction, species, group in hist_properties:
             hists = sort_filenames(
@@ -666,6 +664,7 @@ def nonscalar_time_series(
     """
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
+    foci_parsers = ['TransFociCyl', 'TransFociCub']
     if nonscalar_hist_t_properties is not None:
         for property_, species, group, avg_axis in nonscalar_hist_t_properties:
             tseries = sort_filenames(
@@ -739,9 +738,8 @@ def nonscalar_time_series(
                 fmts=['-' + property_ + species + '.npy']
             )
             # changing property_ name after averaging:
-            if property_ == 'distMatT' and isinstance(parser,
-                                                      TransFociCyl or
-                                                      TransFociCub):
+            p_name = parser.__name__
+            if property_ == 'distMatT' and (p_name in foci_parsers):
                 wholes_hists, wholes_rdfs, wholes_tseries = \
                     whole_from_dist_mat_t(
                         whole_paths,
@@ -853,7 +851,7 @@ def nonscalar_time_series(
 
 
 def stamps(
-    observations: List[str],
+    observations: List[Tuple[str]],
     group: str,
     geometry: str,
     is_segment: bool,
@@ -1496,9 +1494,10 @@ def space_measure(
     polyphys, Pandas, Numpy, or any other package needed for the `measure`
     """
     property_pat = '-' + property_ + '.csv'  # pattern of property files.
-    property_dbs = glob(space_db)
-    property_dbs: List[Tuple[str, ...]] = sort_filenames(property_dbs, fmts=[
-        property_pat])
+    property_pathes = glob(space_db)
+    property_dbs: List[Tuple[str, ...]] = sort_filenames(
+        property_pathes, fmts=[property_pat]
+        )
     meas_name = measure.__name__
     equil_name = "".join(property_.split("T"))  # new name when measure applied
     equil_meas_name = equil_name + "-" + meas_name
@@ -1516,8 +1515,8 @@ def space_measure(
 def equilibrium_tseries_wholes(
     space: str,
     space_db: str,
-    properties: List[str],
-    measures: List[Callable],
+    properties: list[str],
+    measures: list[Callable],
     whole_stamps: pd.DataFrame,
     save_to: Optional[str] = None,
 ) -> pd.DataFrame:
@@ -1557,7 +1556,7 @@ def equilibrium_tseries_wholes(
     """
     equil_properties = []
     for property_ in properties:
-        property_measures: List[pd.DataFrame] = []
+        property_measures: Union[list[pd.DataFrame], pd.DataFrame] = []
         for measure in measures:
             spc_measure: pd.DataFrame = space_measure(
                 property_, space_db, measure
