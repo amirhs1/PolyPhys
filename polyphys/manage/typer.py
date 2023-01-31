@@ -21,20 +21,19 @@ TimeSeriesT = Tuple[PropertyT, SpeciesT, GroupT]
 NonScalarHistT = Tuple[PropertyT, SpeciesT, GroupT, AxisT]
 NonScalarMatT = Tuple[PropertyT, SpeciesT, GroupT]
 HistogramT = Tuple[DirectionT, SpeciesT, GroupT]
-EdgeT = Union[Tuple[DirectionT, SpeciesT, GroupT],
-              Tuple[DirectionT, GroupT]]
+EdgeT = Tuple[DirectionT, GroupT]
 WholeT = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
-EnsembleT = Tuple[EnsembleName, WholeT]
+EnsembleT = Tuple[EnsembleName, Union[np.ndarray, pd.DataFrame]]
 FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
 
 # Parser types
 TransFociCubT = Type[TransFociCub]
 TransFociCylT = Type[TransFociCyl]
-TransFociT = Union[TransFociCyl, TransFociCub]
+TransFociT = Union[TransFociCylT, TransFociCubT]
 SumRuleCylT = Type[SumRuleCyl]
 HnsCubT = Type[HnsCub]
-ParserT = Union[TransFociCyl, TransFociCub, SumRuleCyl, HnsCub]
+ParserT = Union[TransFociCylT, TransFociCubT, SumRuleCylT, HnsCubT]
 
 # Lammps Snapshot
 SnapshotT = Type[Snapshot]

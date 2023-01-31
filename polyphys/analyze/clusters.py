@@ -4,12 +4,12 @@ trajectory (or ensemble) clusters.
 Below, different algorithms found in literature are implemented in scientific
 Python.
 """
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 from itertools import combinations
 import numpy as np
 import pandas as pd
 import numpy.linalg as npla
-from ..manage.typer import TransFociT
+from ..manage.parser import TransFociCub, TransFociCyl
 
 
 def apply_pbc(
@@ -479,7 +479,7 @@ def foci_info(
         genomic distance of each pair.
     """
     nmon = nmon_small + nmon_large
-    pairs = np.array(list(combinations(range(nmon_large), 2)), dtype=np.int)
+    pairs = np.array(list(combinations(range(nmon_large), 2)), dtype=np.int_)
     genomic_idx = np.choose(pairs, genomic_pos)
     genomic_dist = np.diff(genomic_idx, axis=1)
     # Applying the topological contain on the genomic distance, i.e. finding
@@ -555,7 +555,7 @@ def foci_histogram(
     pairs_info: np.ndarray,
     pairs_dist: np.ndarray,
     binsize: float
-) -> Dict[str, np.ndarray]:
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
     """Generates histograms of pair distances, use the same number of bins and
     the same bin range for all pairs.
 
@@ -591,7 +591,7 @@ def foci_histogram(
     # pair histogram. This value is rounded to be a multiple of binsize.
     upper_range = np.ceil(np.max(pairs_dist) / binsize) * binsize
     max_range = (0, upper_range)
-    max_bins = np.ceil((max_range[1] - max_range[0]) / binsize).astype(np.int)
+    max_bins = np.ceil((max_range[1] - max_range[0]) / binsize).astype(np.int_)
     pairs_range = [max_range] * n_pairs
     pairs_bins = [max_bins] * n_pairs
     bin_edges = np.arange(max_range[0], max_range[1] + binsize, binsize)
@@ -612,10 +612,8 @@ def foci_histogram(
 
 def whole_dist_mat_foci(
     whole_path: str,
-    whole_info: TransFociT
-) -> Tuple[
-    Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]
-]:
+    whole_info: Union[TransFociCub, TransFociCyl]
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Generates time series and histograms of foci distances from distance
     matrix of (large) monomers.
 
