@@ -294,7 +294,7 @@ def sort_by_alphanumeric(
 
 def sort_filenames(
     fnames: List[str],
-    fmts: Optional[List[str]] = None,
+    fmts: List[str],
     report: Optional[bool] = False
 ) -> List[Tuple[str, ...]]:
     """
@@ -323,8 +323,6 @@ def sort_filenames(
         a sorted list of tuples where each tuple has `len(formats)` filenames.
 
     """
-    if fmts is None:
-        fmts = ['data', 'lammpstrj']
     fnames_by_fmt = []
     # a nested list where each sublist has all the files with the same
     # extension:
