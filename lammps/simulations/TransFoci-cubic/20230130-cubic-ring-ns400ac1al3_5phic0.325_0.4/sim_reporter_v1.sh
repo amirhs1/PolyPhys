@@ -18,14 +18,15 @@ else
 fi
 echo "Simulation name: $rname" > "$rname".txt # name of the report file
 echo -e "\n" >> "$rname".txt
-for dir in al*[1-8].ring/; do
+for dir in al*[1-8].ring/; do # TransFociCub
+#for dir in eps*[1-8].ring/; do # TransFociCyl
     cd "$dir" || exit
     simname=$(echo "$dir" | cut -d / -f 1)
     echo "$simname"
     #echo $runname
     echo "Run name: $simname" >> "../$rname.txt"
     echo "1.Inputs:" >> "../$rname.txt"
-    head -n 7 input.lmp | tail -n 6 >> ../"$rname".txt
+    head -n 10 input.lmp | tail -n 6 >> ../"$rname".txt
     echo -e "\n" >> ../"$rname".txt
     echo '2. Run summary:' >> ../"$rname".txt
     tail -n 45 log.lammps >> ../"$rname".txt
