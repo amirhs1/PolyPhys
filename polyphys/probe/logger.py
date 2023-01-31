@@ -9,7 +9,7 @@ class BrokenLogError(Exception):
     pass
 
 
-class LammpsLog():
+class LammpsLog:
     filepath: str
     product_idx: int
     """
@@ -20,6 +20,9 @@ class LammpsLog():
     _real_num = re.compile(r"[-+]?\d+(?:\.\d+)?(?:[eE][\-\+]?\d+)?")
 
     def __init__(self, filepath: str, product_idx: int) -> None:
+        self.wall_time: pd.DataFrame = None
+        self.run_stat: pd.DataFrame = None
+        self.thermo: pd.DataFrame = None
         self.filepath = filepath
         self.filename, _ = os.path.splitext(self.filepath)
         self.filename: str = self.filename.split("/")[-1]
@@ -36,7 +39,7 @@ class LammpsLog():
         return lammps_log
 
     def __repr__(self) -> str:
-        return (f"LAMMPS log file('{self.filename}'")
+        return f"LAMMPS log file('{self.filename}'"
 
     def _find_chunks(self):
         """
@@ -45,8 +48,8 @@ class LammpsLog():
 
         In a given Lammps log find, depending on the numbers calls of Lammps
         'run' command, there is one or more chunk(s) of the thermodynamic
-        outputs, mpi statistics, minimazation report, and the like. Each
-        thermodynamicchunk starts with a head line about MPI memory usage and
+        outputs, mpi statistics, minimization report, and the like. Each
+        thermodynamic chunk starts with a headline about MPI memory usage and
         ends with a foot line about the run time. Other information than the
         thermodynamic outputs come before the head of the first chunk, between
         the head and foot of two consecutive chunks, or between the foot of
@@ -73,17 +76,17 @@ class LammpsLog():
             raise BrokenLogError(
                 "The number of headers and footers are not equal."
             )
-        if self.wall_time_txt == []:
+        if not self.wall_time_txt:
             raise BrokenLogError(
                 "No 'Total wall time' found."
             )
 
-    def _thermo_kws(self):
+    def _thermo_kws(self) -> None:
         """
         Parse the first thermo chunk to extract the thermodynamic keywords
         from the first few lines of the first chunk.
 
-        LAMMPS has foor different thermo styles: multi, one, yaml, and custom.
+        LAMMPS has four different thermo styles: multi, one, yaml, and custom.
         While the header can be directly defined for multi, one, and yaml
         styles, a general approach is used based on regex to handle all thermo
         styles including custom.
@@ -94,28 +97,36 @@ class LammpsLog():
         However, each section in the multi style is composed of 5 lines. In
         contrary to other styles, a section in multi style has both keywords
         and the values, so we must a different section splitter than '\n' for
-        the mutli style.
+        the multi style.
 
         References
         ----------
         Lammps "thermo" source file:
             https://github.com/lammps/lammps/blob/develop/src/thermo.cpp
         """
-        # The thermodynamic keywrods are a combination of alphabetic
+        # The thermodynamic keywords are a combination of alphabetic
         # characters and underscore:
         kw_pat = re.compile("\b*([A-Za-z_]{2,})\b*")
         first = self.thermo_heads[self.product_idx].end()
         last = self.thermo_foots[self.product_idx].start()
         chunk = self.log_txt[first:last-1]
+        # Sometimes, a "WARNING" statement exists among thermo lines,
+        # we use a brute force approach to drop these lines before finding
+        # keywords. In this approach we use the first 50 lines of the first
+        # thermodynamic chunk to find headers:
+        head_lines = chunk.split("\n")[:50]
+        head_lines = [
+            line for line in head_lines if not line.startswith('WARNING')
+        ]
         # The thermo keywords in all the thermo styles except the multi style
         # are in the first line of each chunk. In the multi style, the
-        # keywords are spreaded in several line. According to the LAMMPS log
+        # keywords are spread in several line. According to the LAMMPS log
         # file, each thermo output has 5 lines in the multi style, so we use
-        # the frist 5 lines of the first chunk in the production phase to find
+        # the first 5 lines of the first chunk in the production phase to find
         # thermodynamics. To make approach general, we do in a messy way.
-        # There is no themodynamic keywords with a single-character name, so
+        # There is no thermodynamic keywords with a single-character name, so
         # use {2,} to ignore 'e' or 'E' in numbers with the scientific format
-        head_lines = ' '.join(chunk.split("\n")[:5])
+        head_lines = ' '.join(head_lines[:5])
         words = re.findall(kw_pat, head_lines)
         try:
             words.remove('sec')  # remove 'sec' word in 'multi' style
@@ -131,7 +142,7 @@ class LammpsLog():
         Parse thermo chunks to extract the thermodynamic variable and create
         a Pandas dataframe from the extracted thermodynamic keywords and data.
 
-        Lammps has foor different thermo styles: multi, one, yaml, and custom.
+        Lammps has four different thermo styles: multi, one, yaml, and custom.
         While the header can be directly defined for multi, one, and yaml
         styles, a general approach is used based on regex to handle all thermo
         styles including custom.
@@ -153,7 +164,7 @@ class LammpsLog():
                 thermo_data.append(list(map(float, values)))
         self.thermo = pd.DataFrame(thermo_data, columns=self.keywords)
 
-    def extract_run_stat(self):
+    def extract_run_stat(self) -> None:
         """
         Parse a LAMMPS log file to extract the performance information about a
         given run (chunk) in a full run of a simulation.
