@@ -375,7 +375,10 @@ class SpatialDistribution(object):
         self.hist_info = hist_info
         self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
         self.lbox = getattr(self.hist_info, lbox)
-        self.dbox = 0.0
+        if dbox != 'N/A':
+            self.dbox = getattr(self.hist_info, dbox)
+        else:  # This is meaningless, fix it!
+            self.dbox = getattr(self.hist_info, lbox)
         if geometry in ['cylindrical', 'slit']:
             self.dbox = getattr(self.hist_info, dbox)
         if geometry in self._directions.keys():
@@ -414,7 +417,7 @@ class SpatialDistribution(object):
             # arises from the way we discretize the local number density.
             self.phi = self.phi / self.phi.sum()
 
-    def _set_args(self):
+    def _set_args(self) -> None:
         """
         sets the arguments for the integrands along different directions
         in different geometries.
@@ -446,7 +449,7 @@ class SpatialDistribution(object):
             }
         }
 
-    def _number_density(self):
+    def _number_density(self) -> None:
         """
         Calculates the local number density along the given direction in
         the given geometry.
