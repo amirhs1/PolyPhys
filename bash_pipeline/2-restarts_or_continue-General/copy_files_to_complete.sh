@@ -10,15 +10,16 @@ for dir in N*.ring_incomplete/; do # HnsCub
         cp ./*.all.lammpstrj.gz ../"${comdir}"/
         #cp ./*.nucleoid.lammpstrj ../"${comdir}"/ # HnsCub 
         cp ./*.bug.lammpstrj ../"${comdir}"/ # Others
-        cp log.lammps ../"${comdir}"/
+        cp ./log.lammps "${comdir}".incomplete.log
+        mv ./"${comdir}".incomplete.log ../"${comdir}"/
     cd ..
     cd "${comdir}"_res || exit
-        cp N*all.data ../"${comdir}/"
-        cp N*all.restart.lammpstrj.gz ../"${comdir}"/
-        #cp N*nucleoid.restart.lammpstrj ../"${comdir}"/ # HnsCub
-        cp N*bug.restart.lammpstrj ../"${comdir}"/ # others
-        cp log.lammps restart.log.lammps
-        mv restart.log.lammps ../"${comdir}"/
+        cp ./*all.data ../"${comdir}/"
+        cp ./*all.restart.lammpstrj.gz ../"${comdir}"/
+        #cp ./*nucleoid.restart.lammpstrj ../"${comdir}"/ # HnsCub
+        cp ./*bug.restart.lammpstrj ../"${comdir}"/ # others
+        cp ./log.lammps "${comdir}".restart.log
+        mv ./"${comdir}".restart.log ../"${comdir}"/
     cd ..
 done
 echo "Finished!"

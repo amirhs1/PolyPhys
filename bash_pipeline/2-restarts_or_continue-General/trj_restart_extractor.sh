@@ -17,3 +17,4 @@ rundir=run_files-${name}
 mkdir "$rundir"
 mv ./*.data ./*.lmp ./*.sh "$rundir"
 cp ../PolyPhys/bash_scripts/4-probe/cubic/probe_runfiles-cubic.sh .
+echo Finished!

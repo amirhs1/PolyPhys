@@ -6,7 +6,7 @@
 # nohup ... &  command.
 report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
 touch "$report"
-for directory in eps*/; do
+for directory in N*/; do
 
     echo "${directory}" >> "${report}"
     dir=${directory::-1}
@@ -15,17 +15,16 @@ for directory in eps*/; do
     echo "$dir"
     gzip -vrk "${dir}" >> "${report}"
     cd "$directory" || exit
-        cd restarts || exit
-            mkdir restarts_zip
-            mv ./*.gz restarts_zip
-            mv restarts_zip ..
-        cd ..
-
-        mv restarts_zip ../"${zipdir}"/
+        if [ -d restarts  ]; then
+            cd restarts
+                mkdir restarts_zip
+                mv ./*.gz restarts_zip
+                mv restarts_zip ../../"${zipdir}"/
+            cd ..
+        fi
         mv ./*.gz ../"${zipdir}"/
     cd ..
-
     project=${dir}.tar
-    tar -cvkf "${project}" "${zipdir}" >> "${report}"
+    tar -zcvkf "${project}" "${zipdir}" >> "${report}"
 done
 echo "Finished!"

@@ -7,6 +7,50 @@ from ..manage.utilizer import round_down_first_non_zero
 import numpy as np
 import matplotlib as mpl
 import seaborn as sns
+import inspect
+
+
+def add_legend_sub_axis(
+    grid: sns.FacetGrid,
+    axes_idx: List[int],
+    locs: List[str],
+    **kwargs
+) -> sns.FacetGrid:
+    """
+    Remove the current legend in a seaborn facte grid and add it to that
+    grid's `axes` at given locations `loc`.
+    """
+    old_legend = grid.legend
+    # Extract the components of the legend we need to reuse
+    handles = old_legend.legendHandles
+    labels = [t.get_text() for t in old_legend.get_texts()]
+    # Extract legend properties that can be passed to the recreation method
+    # (Vexingly, these don't all round-trip)
+    legend_kws = inspect.signature(mpl.legend.Legend).parameters
+    props = {
+        k: v for k, v in old_legend.properties().items() if k in legend_kws
+    }
+    # Delegate default bbox_to_anchor rules to matplotlib
+    props.pop("bbox_to_anchor")
+    # Try to propagate the existing title and font properties;
+    # respect new ones too
+    title = props.pop("title")
+    if "title" in kwargs:
+        title.set_text(kwargs.pop("title"))
+    title_kwargs = {k: v for k, v in kwargs.items() if k.startswith("title_")}
+    for key, val in title_kwargs.items():
+        title.set(**{key[6:]: val})
+        kwargs.pop(key)
+    # Try to respect the frame visibility
+    kwargs.setdefault("frameon", old_legend.legendPatch.get_visible())
+    # Remove the old legend and create the new one
+    props.update(kwargs)
+    old_legend.remove()
+    for (row, col), loc in zip(axes_idx, locs):
+        ax_legend = grid.axes[row, col].legend(handles, labels, loc=loc, **props)
+        grid.axes[row, col].add_artist(ax_legend)
+    # Let the Grid object continue to track the correct legend object
+    return grid
 
 
 def set_facet_grid_legend(
