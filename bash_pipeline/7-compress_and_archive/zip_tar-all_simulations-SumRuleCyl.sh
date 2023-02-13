@@ -16,7 +16,7 @@ for directory in N*/; do
     gzip -vrk "${dir}" >> "${report}"
     cd "$directory" || exit
         if [ -d restarts  ]; then
-            cd restarts
+            cd restarts || exit
                 mkdir restarts_zip
                 mv ./*.gz restarts_zip
                 mv restarts_zip ../../"${zipdir}"/
