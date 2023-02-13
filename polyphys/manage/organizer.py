@@ -1865,6 +1865,184 @@ def space_sum_rule(
             )
         ens_avg[prop + '-scale-normalized_curve'] = \
             ens_avg[prop + '-scale'] / ens_avg[prop + '-scale'].sum()
+        if direction == 'r' and geometry == 'cubic':
+            ens_avg = normalizer[direction](prop, ens_avg, method='max')
+        else:
+            ens_avg = normalizer[direction](prop, ens_avg)
+        ens_avg[prop + '-sumrule_constant'] = \
+            ens_avg[prop + '-normalizer'] / ens_avg[prop + '-scaler']
+        ens_avg['bin_center-norm'] = \
+            ens_avg['bin_center'] / ens_avg['bin_center'].max()
+        for attr_name in physical_attrs:
+            ens_avg[attr_name] = getattr(property_info, attr_name)
+        ens_avg['bin_center-dcrowd'] = (
+            2 * ens_avg['bin_center'] / ens_avg['dcrowd']
+        )
+        ens_avg['phi_c_bulk_round'] = ens_avg['phi_c_bulk'].apply(
+            round_up_nearest, args=[divisor, round_to])
+        if geometry == 'cylindrical':
+            ens_avg['temp'] = (
+                (ens_avg['dcyl'] % ens_avg['dcrowd']) /
+                (ens_avg['dcrowd'])
+            )
+            ens_avg['bin_center-dcrowd-recentered'] = (
+                ens_avg['bin_center-dcrowd'] - ens_avg['temp']
+            )
+            ens_avg['bin_center-recentered-norm'] = (
+                ens_avg['bin_center'] - (ens_avg['dcyl'] % ens_avg['dcrowd'])
+            )
+            ens_avg['bin_center-recentered-norm'] = (
+                ens_avg['bin_center-recentered-norm'] /
+                ens_avg['bin_center-recentered-norm'].max()
+            )
+            ens_avg.drop(columns=['temp'], inplace=True)
+        property_db.append(ens_avg)
+    property_db = pd.concat(property_db, axis=0)
+    property_db.reset_index(inplace=True, drop=True)
+    if is_save is not False:
+        save_to_space = database_path(
+            input_database,
+            'analysis',
+            stage='space',
+            group=group
+        )
+        space = save_to_space.split("/")[-2].split("-")[0]
+        output = "-".join([space, group, property_, species])
+        output += "-normalizedRescaled-space.csv"
+        property_db.to_csv(save_to_space + output, index=False)
+        print("done")
+    return property_db
+
+
+def space_sum_rule_old(
+    input_database: str,
+    property_: str,
+    parser: Callable,
+    hierarchy: str,
+    physical_attrs: List[str],
+    species: str,
+    size_attr: str,
+    group: str,
+    geometry: str,
+    topology: str,
+    direction: str,
+    divisor: Optional[float] = 0.025,
+    round_to: Optional[int] = 3,
+    is_save: Optional[bool] = False
+) -> pd.DataFrame:
+    """Takes the `property_path` to 'ensAvg' local distribution of a given
+    `property_` in a given space `input_database`, normalize and scale that
+    distribution, adds the `physical_attrs` of interest as the new columns to
+    each 'ensAvg' distribution, and merges all the 'ensAvg' distributions into
+    one 'space' dataframe along the 0 (or 'row' or 'index') in pandas lingo,
+
+    In each 'ensemble-averaged' dataframe, there are 4 columns with this name
+    pattern:
+
+    column name = '[long_ensemble]-[property_][-measure]-[stat]'
+
+    , and sometimes
+
+    column name = 'bin_center'
+
+    where '[-measure]' is a physical measurement such as the auto correlation
+    function (AFC) done on the physical 'property_'. [...] means this keyword
+    in the column name can be optional. the 'stat' keyword is either 'mean',
+    'ver', or 'sem'. If the 'bin_center' presents as a column in a
+    'ensemble_averaged' dataframe, then it is inferred; otherwise, it should
+    be passed to the function. See `bin_center` kw argument below.
+
+    Issues
+    ------
+    Currently, `direction` is only defined for 'cylindrical' geometry.
+
+    Parameters
+    ----------
+    input_database: str
+        Path to the timeseries of the physical property of interest.
+    property_: str
+        Name of the physical property of interest.
+    parser: Callable
+        A class from 'PolyPhys.manage.parser' module that parses filenames
+        or filepaths to infer information about a file.
+    hierarchy: str
+        The pattern by which the filenames of timeseries are started with; for
+        instance, "N*" means files start with "N"
+    physical_attrs: list of str
+        The physical attributes that will be added as new columns to the
+        concatenated timeseries.
+    species: {'Mon', 'Crd', 'Foci', 'Dna'}
+        The species of the particles in a group.
+            'Mon': Monomers or small monomers
+            'Crd': Crowders
+            'Foci': Large monomers
+            'Dna': Small and large monomers
+    size_attr: str
+        The attribute of the `parser` object that is the size (diameter) of
+        species.
+    group: {'bug', 'nucleoid', 'all'}
+        The type of the particle group.
+    geometry : {'cylindrical', 'slit', 'cubic'}
+        The shape of the simulation box.
+    topology: str
+        Topology of the polymer.
+    direction: {'r', 'z'}
+        The direction along which operation is done.
+    divisor: float, default 0.025
+        The step by which the values of "phi_c_bulk" attribute are rounded.
+    round_to: int, default 3
+        The number of significant decimal digits in the values of "phi_c_bulk"
+        attribute.
+    is_save : bool, default False
+        whether to save output to file or not.
+
+    Return
+    ------
+    all_in_one: pandas.DataFrame
+        a dataframe in which all the timeseries are concatenated along `orient`
+        of interest, and "properties and attributes" of interest are added to
+        it as the new columns.
+
+    Requirements
+    ------------
+    PolyPhys, Pandas
+    """
+    normalizer = {
+        'r': normalize_r,
+        'z': normalize_z
+    }
+    property_ext = "-" + group + "-" + direction + property_ + species
+    property_ext += "-ensAvg.csv"
+    prop = direction + property_ + species  # full name of physical property
+    ens_avg_csvs = glob(input_database + hierarchy + property_ext)
+    ens_avg_csvs = sort_filenames(ens_avg_csvs, fmts=[
+        property_ext])
+    property_db = []
+    # ens_csvs is a list of tuples, each has one member.
+    for ens_avg_csv in ens_avg_csvs:
+        ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
+        property_info = parser(
+            ens_avg_csv[0],
+            'ensemble_long',
+            geometry,
+            group,
+            topology
+        )
+        if property_ == 'Phi':
+            scaler = getattr(property_info, size_attr)
+            ens_avg[prop + '-scaler'] = scaler
+            ens_avg[prop + '-scale'] = ens_avg[prop + '-mean'] / scaler
+        elif property_ == 'Rho':
+            scaler = getattr(property_info, size_attr)
+            ens_avg[prop + '-scaler'] = scaler ** 2
+            ens_avg[prop + '-scale'] = ens_avg[prop + '-mean'] * scaler ** 2
+        else:
+            raise NotImplementedError(
+                "Sum rule's scaler is only defined for "
+                "'rho' (density) or 'phi' (volume fraction) properties."
+            )
+        ens_avg[prop + '-scale-normalized_curve'] = \
+            ens_avg[prop + '-scale'] / ens_avg[prop + '-scale'].sum()
         ens_avg = normalizer[direction](prop, ens_avg)
         ens_avg[prop + '-sumrule_constant'] = \
             ens_avg[prop + '-normalizer'] / ens_avg[prop + '-scaler']
