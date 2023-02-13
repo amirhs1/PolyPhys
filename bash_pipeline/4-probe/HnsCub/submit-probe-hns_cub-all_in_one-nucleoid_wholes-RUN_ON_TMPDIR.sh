@@ -31,11 +31,12 @@ file=$(echo "$dir" | cut -d / -f 1)
 parent=$(pwd "${dir}")
 cp -vR "${parent}"/"${file}" "${SLURM_TMPDIR}"/
 ls "${SLURM_TMPDIR}"/"${file}"/
-cd "${SLURM_TMPDIR}"/"${file}"/
+cd "${SLURM_TMPDIR}"/"${file}"/ || exit
 python probe-hns_cub-all_in_one-nucleoid_wholes.py > "${SLURM_TMPDIR}/${file}"-probe-hns_cub-all_in_one-nucleoid_wholes.txt
 cp "${SLURM_TMPDIR}"/"${file}"/*.npy "${parent}"/"${file}"/
 cp "${SLURM_TMPDIR}"/"${file}"/*.csv "${parent}"/"${file}"/
 cp "${SLURM_TMPDIR}"/"${file}"/*.txt "${parent}"/"${file}"/
+# trunk-ignore(shellcheck/SC2115)
 rm -r "${SLURM_TMPDIR}"/"${file}"
 }
 

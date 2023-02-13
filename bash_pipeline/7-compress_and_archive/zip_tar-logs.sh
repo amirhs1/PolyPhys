@@ -4,14 +4,14 @@
 # README: to use this file: connect to the Data Move node on your cluter.
 # For graham, it is gra-dtn1.sharcnet.ca you need to submit this scrip with
 # nohup ... &  command.
-read -rp "Enter Project Name > " project
-read -rp "Enter Part Number > " part
-report="${project}-part${part}-logs-archive_report.txt" #report name
+report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
 touch "$report"
 echo "Start archiving..."
-for dir in N*-logs/; do
+for dir in ns*-logs/; do
+#for dir in N*-logs/; do
+    sim=$(echo "$dir" | cut -d / -f 1)
+    echo "$sim"
     echo "${dir}" >> "${report}"
-    project=${dir::-1}.tar.gz
-    tar -czvf "${project}" "${dir}" >> "${report}"
+    tar -cvkzf "${sim}.tar.gz" "${dir}"
 done
 echo "Finished!"

@@ -6,7 +6,9 @@
 # nohup ... &  command.
 report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
 touch "$report"
-for dir in N*-bug-*/; do
+echo "Start archiving..."
+#for dir in ns*/; do
+for dir in N*/; do
     sim=$(echo "$dir" | cut -d / -f 1)
     echo "$sim"
     echo "${dir}" >> "${report}"
