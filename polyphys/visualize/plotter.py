@@ -12,9 +12,400 @@ from matplotlib import axes
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
-from polyphys.manage import organizer
-from polyphys.visualize import tuner as ptuner
-from polyphys.analyze import correlations
+
+from ..manage import organizer
+from ..visualize import tuner as ptuner
+from ..analyze import correlations
+from ..analyze import measurer
+from ..manage.parser import SumRuleCyl, TransFociCyl, TransFociCub, HnsCub
+
+
+PROJECT_DETAILS = {
+    'SumRuleCyl': {
+        'group': 'bug',
+        'geometry': 'cylindrical',
+        'geometry_name': 'cylindrical_confinement',
+        'chain_name': 'homogeneous_linear',
+        'topology': 'linear',
+        'parser': SumRuleCyl,
+        'space_pat': 'N*D*ac*',
+        'hierarchy': 'N*',
+        'species': ['Mon', 'Crd'],
+        'directions': ['r', 'z'],
+        'cross_section': ['xy', 'xz', 'yz'],
+        'edge_directions': ['x', 'y', 'z'],
+        'space_hierarchy': 'N*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon', 'dcyl',
+                       'dcrowd', 'phi_c_bulk'],
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
+                               'rfloryTMon', 'shapeTMon', 'transSizeMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['space', 'ensemble_long', 'ensemble', 'nmon',
+                             'dcyl', 'dcrowd', 'phi_c_bulk',
+                             'phi_c_bulk_round', 'size_ratio'],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'fsdMon-mean',
+                             'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'rfloryMon-mean',
+                             'rfloryMon-var', 'rfloryMon-sem',
+                             'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem',
+                             'transSizeMon-mean', 'transSizeMon-var',
+                             'transSizeMon-sem']
+    },
+    'TransFociCyl': {
+        'group': 'bug',
+        'geometry': 'cylindrical',
+        'geometry_name': 'cylindrical_confinement',
+        'chain_name': 'heterogeneous_ring',
+        'topology': 'ring',
+        'parser': TransFociCyl,
+        'space_pat': 'ns*nl*al*D*ac*',
+        'hierarchy': 'eps*',
+        'species': ['Mon', 'Foci', 'Crd'],
+        'directions': ['r', 'z'],
+        'cross_section': ['xy', 'xz', 'yz'],
+        'edge_directions': ['x', 'y', 'z'],
+        'space_hierarchy': 'ns*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon_small',
+                       'nmon_large', 'dmon_large', 'dcyl', 'dcrowd',
+                       'phi_c_bulk'],
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
+                               'shapeTMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'dcyl',
+                             'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'fsdMon-mean',
+                             'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
+                             'shapeMon-var', 'shapeMon-sem',
+                             'transSizeMon-mean', 'transSizeMon-var',
+                             'transSizeMon-sem']
+    },
+    'TransFociCub': {
+        'group': 'bug',
+        'geometry': 'cubic',
+        'geometry_name': 'free_space',
+        'chain_name': 'heterogeneous_ring',
+        'topology': 'ring',
+        'parser': TransFociCub,
+        'space_pat': 'ns*nl*al*ac*',
+        'hierarchy': 'al*',
+        'species': ['Mon', 'Foci', 'Crd'],
+        'directions': ['r'],
+        'cross_section': ['xy', 'xz', 'yz'],
+        'edge_directions': ['x', 'y', 'z'],
+        'space_hierarchy': 'ns*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon_small',
+                       'nmon_large', 'dmon_large', 'dcrowd', 'phi_c_bulk'],
+        'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space',
+                             'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
+                             'shapeMon-var', 'shapeMon-sem']
+    },
+    'HnsCub': {
+        'group': 'nucleoid',
+        'geometry': 'cubic',
+        'geometry_name': 'free_space',
+        'chain_name': 'semiflexible_ring',
+        'topology': 'ring',
+        'parser': HnsCub,
+        'space_pat': 'N*epshm*nh*ac*',
+        'hierarchy': 'N*',
+        'species': ['Mon', 'Hns', 'Crd'],
+        'directions': ['r'],
+        'cross_section': ['xy', 'xz', 'yz'],
+        'edge_directions': ['x', 'y', 'z'],
+        'space_hierarchy': 'N*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon',
+                       'eps_hm', 'nhns', 'dcrowd', 'phi_c_bulk'],
+        'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'nmon',
+                             'eps_hm', 'nhns', 'dcrowd', 'phi_c_bulk',
+                             'phi_c_bulk_round', 'size_ratio'],
+        'equil_properties': ['asphericityMon-mean', 'gyrMon-mean',
+                             'shapeMon-mean']
+    }
+}
+
+SIZE_MEASURES_LABELS = {
+    'rfloryTMon': {
+        'name': 'Flory radius',
+        'symbol': r'$R_F/a_m$',
+        'symbol-norm': r'$R_F/\langle R_F \rangle$',
+        'pdf': r'$\mathcal{P}(R_F)$'
+    },
+    'gyrTMon': {
+        'name': 'radius of gyration',
+        'symbol': r'$R_g/a_m$',
+        'symbol-norm': r'$R_g/\langle R_g \rangle$',
+        'pdf': r'$\mathcal{P}(R_g)$'
+    },
+    'fsdTMon': {
+        'name': 'furthermost distance',
+        'symbol': r'$L/a_m$',
+        'symbol-norm': r'$L/\langle L \rangle$',
+        'pdf': r'$\mathcal{P}(L)$'
+    },
+    'transSizeTMon': {
+        'name': 'furthermost distance',
+        'symbol': r'$L_{\perp}/a_m$',
+        'symbol-norm': r'$L_{\perp}/\langle L_{\perp} \rangle$',
+        'pdf': r'$\mathcal{P}(L_{\perp})$'
+    },
+    'asphericityTMon': {
+        'name': 'asphericity',
+        'symbol': r'$\Delta$'
+    },
+    'shapeTMon': {
+        'name': 'shape parameter',
+        'symbol': r'$S$'
+    },
+    'gyrTMon-zscoreNorm': {
+        'name': 'radius of gyration',
+        'symbol': r'$(R_g-\langle R_g \rangle)/\sigma_{R_g}$',
+    },
+    'asphericityTMon-zscoreNorm': {
+        'name': 'asphericity',
+        'symbol': r'$(\Delta-\langle \Delta \rangle)/\sigma_{\Delta}$',
+    },
+    'shapeTMon-zscoreNorm': {
+        'name': 'shape parameter',
+        'symbol': r'$(S-\langle S \rangle)/\sigma_{S}$',
+    }
+}
+
+PROPERTY_LABELS = {
+    'rfloryMon-norm': {
+        'name': 'Flory radius',
+        'symbol': r'$\frac{{\langle R_F(\phi_c)\rangle}}{{R_{F,0}\rangle}}$'
+        },
+    'gyrMon-norm': {
+        'name': 'Radius of gyration',
+        'symbol': r'$\frac{{\langle R_g(\phi_c)\rangle}}{{R_{g,0}\rangle}}$'
+        },
+    'fsdMon-norm': {
+        'name': 'Furthermost distance',
+        'symbol': r'$\frac{{\langle L(\phi_c)\rangle}}{{L_{0}\rangle}}$'
+        },
+    'transSizeMon-norm': {
+        'name': 'Mean radial size',
+        'symbol':
+            r'$\frac{{\langle R_{\perp}(\phi_c)\rangle}}{{R_{\perp,0}\rangle}}$'
+        },
+    'asphericityMon-norm': {
+        'name': 'Asphericity',
+        'symbol':
+            r'$\frac{{\langle \Delta(\phi_c)\rangle}}{{\Delta_{0}\rangle}}$'
+        },
+    'gyrMon-mean': {
+            'name': 'Radius of gyration',
+            'symbol': r'$\langle R_g(\phi_c)\rangle$',
+        },
+    'shapeMon-norm': {
+        'name': 'Shape parameter',
+        'symbol': r'$\frac{{\langle S(\phi_c)\rangle}}{{S_{0}\rangle}}$'
+        },
+    'asphericityMon-mean': {
+        'name': 'Asphericity',
+        'symbol': r'$\langle \Delta(\phi_c)\rangle$'
+        },
+    'shapeMon-mean': {
+        'name': 'Shape parameter',
+        'symbol': r'$\langle S(\phi_c)\rangle$'
+        },
+    'rPhi': {
+        'name': 'Radial volume fraction',
+        'symbol': r'$\phi(r)$'
+        },
+    'zPhi': {
+        'name': 'Longitudinal volume fraction',
+        'symbol': r'$\phi(|z|)$'
+        },
+    'rRho': {
+        'name': 'Radial number density',
+        'symbol': r'$\rho(r)$'
+        },
+    'zRho': {
+        'name': 'Longitudinal number density',
+        'symbol': r'$\rho(|z|)$'
+        },
+    'rPhi-norm': {
+        'name': 'Normalized radial volume fraction',
+        'symbol': r'$\phi(r)$',
+        'Mon': r'$\phi_m(r)$',
+        'Foci': r'$\phi_M(r)$',
+        'Hns': r'$\phi_n(r)$',
+        'Crd': r'$\phi_c(r)$',
+        'Sum': r'$\sum_i\phi_i(r)/a_i$',
+        'Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$'
+        },
+    'zPhi-norm': {
+        'name': 'Normalized longitudinal volume fraction',
+        'symbol': r'$\phi(|z|)$',
+        'Mon': r'$\phi_m(|z|)$',
+        'Foci': r'$\phi_M(|z|)$',
+        'Crd': r'$\phi_c(|z|)$',
+        'Sum': r'$\sum_i\phi_i(|z|)/a_i$',
+        'Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$'
+        },
+    'rRho-norm': {
+        'name': 'Normalized radial number density',
+        'symbol': r'$\rho(r)$',
+        'Mon': r'${{\rho_m(r)}}/{{\rho_m(0)}}$',
+        'Foci': r'${{\rho_M(r)}}/{{\rho_M(0)}}$',
+        'Hns': r'${{\rho_n(r)}}/{{\rho_n(0)}}$',
+        'Crd': r'${{\rho_c(r)}}/{{\rho_c(\infty)}}$',
+        'Sum': r'${(\sum_i\rho_i(r)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
+        'Sum_constant':
+            r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_i(\infty)a_i^2)}$'
+        },
+    'zRho-norm': {
+        'name': 'Normalized longitudinal number density',
+        'symbol': r'$\rho(|z|)$',
+        'Mon': r'${{\rho_m(|z|)}}/{{\rho_m(0)}}$',
+        'Foci': r'${{\rho_M(|z|)}}/{{\rho_M(0)}}$',
+        'Crd': r'${{\rho_c(|z|)}}/{{\rho_c(\infty)}}$',
+        'Sum': r'${(\sum_i\rho_i(|z|)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
+        'Sum_constant':
+            r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_i(\infty)a_i^2)}$'
+        },
+    'rPhi-norm-old': {
+        'name': 'Normalized radial volume fraction',
+        'symbol': r'$\phi(r)$',
+        'Mon': r'${{\phi_m(r)}}/{{\phi_m(0)}}$',
+        'Foci': r'${{\phi_M(r)}}/{{\phi_M(0)}}$',
+        'Hns': r'${{\phi_n(r)}}/{{\phi_n(0)}}$',
+        'Crd': r'${{\phi_c(r)}}/{{\phi_c(\infty)}}$',
+        'Sum': r'${(\sum_i\phi_i(r)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
+        'Sum_constant':
+            r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$'
+        },
+    'zPhi-norm-old': {
+        'name': 'Normalized longitudinal volume fraction',
+        'symbol': r'$\phi(|z|)$',
+        'Mon': r'${{\phi_m(|z|)}}/{{\phi_m(0)}}$',
+        'Foci': r'${{\phi_M(|z|)}}/{{\phi_M(0)}}$',
+        'Crd': r'${{\phi_c(|z|)}}/{{\phi_c(\infty)}}$',
+        'Sum': r'${(\sum_i\phi_i(|z|)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
+        'Sum_constant':
+            r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$'
+        },
+    'bondsHistFoci-norm': {
+        'name': 'Probability distribution function of direct bonds',
+        'symbol': r'$\mathcal{P}(x_d)$',
+        'color': 'orchid'
+        },
+    'clustersHistFoci-norm': {
+        'name': 'Probability distribution function of clusters',
+        'symbol': r'$\mathcal{P}(x_c)$',
+        'color': 'orchid'
+        },
+    'pairDistHistFoci': {
+        'name': 'Frequency distribution of pair distance',
+        'symbol': r'$\mathcal{H}(n_i,n_j,\Delta n;r)$',
+        'color': 'orchid'
+        },
+    'pairDistRdfFoci': {
+        'name': 'Radial distribution function of pair distance',
+        'symbol': r'$\mathcal{P}(n_i,n_j,\Delta n;r)$',
+        'color': 'orchid'
+        },
+    'pairDistRdfGenDistAvg': {
+        'name': ('Radial distribution function of pair distance ' +
+                 'averaged over Genomic distances'),
+        'symbol': r'$\mathcal{P}(\Delta n;r)$',
+        'color': 'orchid'
+        },
+    'pairDistTFoci': {
+        'name': 'Pair distance',
+        'symbol': r'$r(t)$',
+        'color': 'orchid'
+        }
+}
+ATTRIBUTE_LABELS = {
+    "size_ratio": "",
+    "space": "",
+    "ensemble": "",
+    "phi_c_bulk_round": r"$\phi_c$",
+    "time": r"$t$",
+    "t_idx_norm": r"$t/t^{{max}}$",
+    "t_index": r"${t}/{\delta t}$",
+    "lag_time": r"${t}_{lag}$",
+    "lag_index": r"${t}_{lag}$",
+    "dmon_large": "${{a_M}}/{{a_m}}$",
+    "dcrowd": "${{a_c}}/{{a_m}}$",
+    "dcyl": "${{D}}/{{a_m}}$",
+    "lcyl": "${{L_{{cyl}}}}/{{a_m}}$",
+    "nmon_small": "$N_m$",
+    "nmon_large": "$N_M$",
+    'phi_c_bulk_norm': r"${a\phi_c}/{a_c}$",
+    'genomic_distance':  r"$\Delta n$",
+    'bin_center': '$r$',
+    'bin_center-norm-r-dmon_large': '${{r}}/{{a_M}}$',
+    'bin_center-norm': '${{r}}/{{r_{max}}}$',
+    'bin_center-r': '$r$',
+    'bin_center-norm-r-dcyl': '${{2r}}/{{D}}$',
+    'bin_center-fsd_mean-r': '${{2r}}/{{D}}$',
+    'bin_center-recentered-norm-r-cyl': '${{(2r-a^{shift})}}/{{D}}$',
+    'bin_center-norm-r-cub': '${{r}}/{{r_{max}}}$',
+    'bin_center-dcrowd-r': '${{2r}}/{{a_c}}$',
+    'bin_center-dcrowd-recentered-r': '${{(2r-a^{shift})}}/{{a_c}}$',
+    'bin_center-z': '$z$',
+    'bin_center-norm-z': '${{|z|}}/{{z_{max}}}$',
+    'bin_center-dcrowd-z': '${{|z|}}/{{z_{max}}}$',
+    'bin_center-fsd_mean-z': r'${{2|z|}}/{{\langle L(\phi_c)\rangle}}$',
+    'bin_center-dcrowd-recentered-z': '${{|z|}}/{{z_{max}}}$',
+    'bin_center-theta': r'$\theta$',
+    'bin_center-dcrowd-theta': r'${{\theta}}/{{\pi}}$',
+    'bin_center-norm-theta': r'${{\theta}}/{{\pi}}$',
+    'geometry': 'Box Geometry',
+    'nmon': '$N$',
+    'nhns': '$N_{{hns}}$',
+    'phi_c_rescaled': r'$\\frac{{a_m\phi_c}}{{a_c}}$',
+    'confinement_rate': r'$\kappa=\\frac{{a_c}}{{D-a_c}}$',
+    'confinement_rate_r': r'$\kappa=\\frac{{D-a_c}}{{a_c}}$',
+    'dep_energy_max':
+        r'$\mathcal{F}_{dep}=\phi_c^{(bulk)}[1+{{3a_m}}{{2a_c}}]$',
+    'int_energy_max':
+        r'$\mathcal{F}_{int}=\\frac{{Na\phi_c^{(bulk)}}}{{a_c}}$' +
+        r'$[3a_ma_c + \\frac{{3}}{{2}}]$',
+    'species': 'Type'
+    }
+
+# https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-with-your-data
+DUTCH_FEILD_COLORS = ["#e60049", "#0bb4ff", "#50e991", "#e6d800", "#9b19f5",
+                      "#ffa300", "#dc0ab4", "#b3d4ff", "#00bfa0"]
+# https://sashamaps.net/docs/resources/20-colors/
+ACCES_COLORS = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
+                '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
+                '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
+                '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9']
+# https://en.wikipedia.org/wiki/Help:Distinguishable_colors
+DIST_COLORS = ['#F0A3FF', '#0075DC', '#993F00', '#4C005C', '#191919',
+               '#005C31', '#2BCE48', '#FFCC99', '#808080', '#94FFB5',
+               '#8F7C00', '#9DCC00', '#C20088', '#003380', '#FFA405',
+               '#FFA8BB', '#426600', '#FF0010', '#5EF1F2', '#00998F',
+               '#E0FF66', '#740AFF', '#990000', '#FFFF80', '#FFE100',
+               '#FF5005']
+# min luminocity 1%, max luminocity: 80%: https://mokole.com/palette.html
+OTHER_COLORS = ['#2f4f4f', '#8b4513', '#228b22', '#00008b', '#ff0000',
+                '#ffff00', '#00ff00', '#00ffff', '#ff00ff', '#1e90ff',
+                '#eee8aa', '#ff69b4']
+
+AMIRHSI_COLORS_ORDER = ["#e60049", '#ffe119', '#eee8aa', "#9b19f5", "#ffa300",
+                        '#ff00ff', '#8b4513', "#00008b", '#00ffff', '#228b22',
+                        '#00ff00', '#2f4f4f', '#a9a9a9']
+AMIRHSI_COLORS = ["#00008b", "#e60049", "#9b19f5", '#ffe119', '#228b22',
+                  'gray', '#ff00ff', '#00ffff', "#ffa300", '#00ff00',
+                  '#8b4513', '#000000']
 
 
 def rdf_ideal_plotter(
