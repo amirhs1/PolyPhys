@@ -140,33 +140,39 @@ SIZE_MEASURES_LABELS = {
         'name': 'Flory radius',
         'symbol': r'$R_F/a_m$',
         'symbol-norm': r'$R_F/\langle R_F \rangle$',
-        'pdf': r'$\mathcal{P}(R_F)$'
+        'pdf': r'$\mathcal{P}(R_F)$',
+        'acf': r'$c_{R_FR_F}$'
     },
     'gyrTMon': {
         'name': 'radius of gyration',
         'symbol': r'$R_g/a_m$',
         'symbol-norm': r'$R_g/\langle R_g \rangle$',
-        'pdf': r'$\mathcal{P}(R_g)$'
+        'pdf': r'$\mathcal{P}(R_g)$',
+        'acf': r'$c_{R_gR_g}$'
     },
     'fsdTMon': {
         'name': 'furthermost distance',
         'symbol': r'$L/a_m$',
         'symbol-norm': r'$L/\langle L \rangle$',
-        'pdf': r'$\mathcal{P}(L)$'
+        'pdf': r'$\mathcal{P}(L)$',
+        'acf': r'$c_{LL}$'
     },
     'transSizeTMon': {
         'name': 'furthermost distance',
         'symbol': r'$L_{\perp}/a_m$',
         'symbol-norm': r'$L_{\perp}/\langle L_{\perp} \rangle$',
-        'pdf': r'$\mathcal{P}(L_{\perp})$'
+        'pdf': r'$\mathcal{P}(L_{\perp})$',
+        'acf': r'$c_{L_{\perp}L_{\perp}}$'
     },
     'asphericityTMon': {
         'name': 'asphericity',
-        'symbol': r'$\Delta$'
+        'symbol': r'$\Delta$',
+        'acf': r'$c_{\Delta\Delta}$'
     },
     'shapeTMon': {
         'name': 'shape parameter',
-        'symbol': r'$S$'
+        'symbol': r'$S$',
+        'acf': r'$c_{SS}$'
     },
     'gyrTMon-zscoreNorm': {
         'name': 'radius of gyration',
@@ -185,20 +191,23 @@ SIZE_MEASURES_LABELS = {
 PROPERTY_LABELS = {
     'rfloryMon-norm': {
         'name': 'Flory radius',
-        'symbol': r'$\frac{{\langle R_F(\phi_c)\rangle}}{{R_{F,0}\rangle}}$'
+        'symbol':
+            r'$\frac{{\langle R_F(\phi_c)\rangle}}{{\langle R_{F,0}\rangle}}$'
         },
     'gyrMon-norm': {
         'name': 'Radius of gyration',
-        'symbol': r'$\frac{{\langle R_g(\phi_c)\rangle}}{{R_{g,0}\rangle}}$'
+        'symbol':
+            r'$\frac{{\langle R_g(\phi_c)\rangle}}{{\langle R_{g,0}\rangle}}$'
         },
     'fsdMon-norm': {
         'name': 'Furthermost distance',
-        'symbol': r'$\frac{{\langle L(\phi_c)\rangle}}{{L_{0}\rangle}}$'
+        'symbol':
+            r'$\frac{{\langle L(\phi_c)\rangle}}{{\langle L_{0}\rangle}}$'
         },
     'transSizeMon-norm': {
         'name': 'Mean radial size',
         'symbol':
-            r'$\frac{{\langle R_{\perp}(\phi_c)\rangle}}{{R_{\perp,0}\rangle}}$'
+            r'$\frac{{\langle R_{\perp}(\phi_c)\rangle}}{{\langle R_{\perp,0}\rangle}}$'
         },
     'asphericityMon-norm': {
         'name': 'Asphericity',
