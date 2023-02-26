@@ -188,158 +188,77 @@ SIZE_MEASURES_LABELS = {
     }
 }
 
-PROPERTY_LABELS = {
-    'rfloryMon-norm': {
-        'name': 'Flory radius',
-        'symbol':
-            r'$\frac{{\langle R_F(\phi_c)\rangle}}{{\langle R_{F,0}\rangle}}$'
-        },
-    'gyrMon-norm': {
-        'name': 'Radius of gyration',
-        'symbol':
-            r'$\frac{{\langle R_g(\phi_c)\rangle}}{{\langle R_{g,0}\rangle}}$'
-        },
-    'fsdMon-norm': {
-        'name': 'Furthermost distance',
-        'symbol':
-            r'$\frac{{\langle L(\phi_c)\rangle}}{{\langle L_{0}\rangle}}$'
-        },
-    'transSizeMon-norm': {
-        'name': 'Mean radial size',
-        'symbol':
-            r'$\frac{{\langle R_{\perp}(\phi_c)\rangle}}{{\langle R_{\perp,0}\rangle}}$'
-        },
-    'asphericityMon-norm': {
-        'name': 'Asphericity',
-        'symbol':
-            r'$\frac{{\langle \Delta(\phi_c)\rangle}}{{\Delta_{0}\rangle}}$'
-        },
-    'gyrMon-mean': {
-            'name': 'Radius of gyration',
-            'symbol': r'$\langle R_g(\phi_c)\rangle$',
-        },
-    'shapeMon-norm': {
-        'name': 'Shape parameter',
-        'symbol': r'$\frac{{\langle S(\phi_c)\rangle}}{{S_{0}\rangle}}$'
-        },
-    'asphericityMon-mean': {
-        'name': 'Asphericity',
-        'symbol': r'$\langle \Delta(\phi_c)\rangle$'
-        },
-    'shapeMon-mean': {
-        'name': 'Shape parameter',
-        'symbol': r'$\langle S(\phi_c)\rangle$'
-        },
-    'rPhi': {
-        'name': 'Radial volume fraction',
-        'symbol': r'$\phi(r)$'
-        },
-    'zPhi': {
-        'name': 'Longitudinal volume fraction',
-        'symbol': r'$\phi(|z|)$'
-        },
-    'rRho': {
-        'name': 'Radial number density',
-        'symbol': r'$\rho(r)$'
-        },
-    'zRho': {
-        'name': 'Longitudinal number density',
-        'symbol': r'$\rho(|z|)$'
-        },
-    'rPhi-norm': {
-        'name': 'Normalized radial volume fraction',
-        'symbol': r'$\phi(r)$',
-        'Mon': r'$\phi_m(r)$',
-        'Foci': r'$\phi_M(r)$',
-        'Hns': r'$\phi_n(r)$',
-        'Crd': r'$\phi_c(r)$',
-        'Sum': r'$\sum_i\phi_i(r)/a_i$',
-        'Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$'
-        },
-    'zPhi-norm': {
-        'name': 'Normalized longitudinal volume fraction',
-        'symbol': r'$\phi(|z|)$',
-        'Mon': r'$\phi_m(|z|)$',
-        'Foci': r'$\phi_M(|z|)$',
-        'Crd': r'$\phi_c(|z|)$',
-        'Sum': r'$\sum_i\phi_i(|z|)/a_i$',
-        'Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$'
-        },
-    'rRho-norm': {
-        'name': 'Normalized radial number density',
-        'symbol': r'$\rho(r)$',
-        'Mon': r'${{\rho_m(r)}}/{{\rho_m(0)}}$',
-        'Foci': r'${{\rho_M(r)}}/{{\rho_M(0)}}$',
-        'Hns': r'${{\rho_n(r)}}/{{\rho_n(0)}}$',
-        'Crd': r'${{\rho_c(r)}}/{{\rho_c(\infty)}}$',
-        'Sum': r'${(\sum_i\rho_i(r)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
-        'Sum_constant':
-            r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_i(\infty)a_i^2)}$'
-        },
-    'zRho-norm': {
-        'name': 'Normalized longitudinal number density',
-        'symbol': r'$\rho(|z|)$',
-        'Mon': r'${{\rho_m(|z|)}}/{{\rho_m(0)}}$',
-        'Foci': r'${{\rho_M(|z|)}}/{{\rho_M(0)}}$',
-        'Crd': r'${{\rho_c(|z|)}}/{{\rho_c(\infty)}}$',
-        'Sum': r'${(\sum_i\rho_i(|z|)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
-        'Sum_constant':
-            r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_i(\infty)a_i^2)}$'
-        },
-    'rPhi-norm-old': {
-        'name': 'Normalized radial volume fraction',
-        'symbol': r'$\phi(r)$',
-        'Mon': r'${{\phi_m(r)}}/{{\phi_m(0)}}$',
-        'Foci': r'${{\phi_M(r)}}/{{\phi_M(0)}}$',
-        'Hns': r'${{\phi_n(r)}}/{{\phi_n(0)}}$',
-        'Crd': r'${{\phi_c(r)}}/{{\phi_c(\infty)}}$',
-        'Sum': r'${(\sum_i\phi_i(r)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
-        'Sum_constant':
-            r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$'
-        },
-    'zPhi-norm-old': {
-        'name': 'Normalized longitudinal volume fraction',
-        'symbol': r'$\phi(|z|)$',
-        'Mon': r'${{\phi_m(|z|)}}/{{\phi_m(0)}}$',
-        'Foci': r'${{\phi_M(|z|)}}/{{\phi_M(0)}}$',
-        'Crd': r'${{\phi_c(|z|)}}/{{\phi_c(\infty)}}$',
-        'Sum': r'${(\sum_i\phi_i(|z|)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
-        'Sum_constant':
-            r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$'
-        },
-    'bondsHistFoci-norm': {
-        'name': 'Probability distribution function of direct bonds',
-        'symbol': r'$\mathcal{P}(x_d)$',
-        'color': 'orchid'
-        },
-    'clustersHistFoci-norm': {
-        'name': 'Probability distribution function of clusters',
-        'symbol': r'$\mathcal{P}(x_c)$',
-        'color': 'orchid'
-        },
-    'pairDistHistFoci': {
-        'name': 'Frequency distribution of pair distance',
-        'symbol': r'$\mathcal{H}(n_i,n_j,\Delta n;r)$',
-        'color': 'orchid'
-        },
-    'pairDistRdfFoci': {
-        'name': 'Radial distribution function of pair distance',
-        'symbol': r'$\mathcal{P}(n_i,n_j,\Delta n;r)$',
-        'color': 'orchid'
-        },
-    'pairDistRdfGenDistAvg': {
-        'name': ('Radial distribution function of pair distance ' +
-                 'averaged over Genomic distances'),
-        'symbol': r'$\mathcal{P}(\Delta n;r)$',
-        'color': 'orchid'
-        },
-    'pairDistTFoci': {
-        'name': 'Pair distance',
-        'symbol': r'$r(t)$',
-        'color': 'orchid'
-        }
-}
 ATTRIBUTE_LABELS = {
+    'rfloryMon-norm':
+        r'$\frac{{\langle R_F(\phi_c)\rangle}}{{\langle R_{F,0}\rangle}}$',
+    'gyrMon-norm':
+        r'$\frac{{\langle R_g(\phi_c)\rangle}}{{\langle R_{g,0}\rangle}}$',
+    'fsdMon-norm':
+        r'$\frac{{\langle L(\phi_c)\rangle}}{{\langle L_{0}\rangle}}$',
+    'transSizeMon-norm':
+        r'$\frac{{\langle L_{\perp}(\phi_c)\rangle}}{{\langle L_{\perp,0}\rangle}}$',
+    'asphericityMon-norm':
+        r'$\frac{{\langle \Delta(\phi_c)\rangle}}{{\Delta_{0}\rangle}}$',
+    'gyrMon-mean': r'$\langle R_g(\phi_c)\rangle$',
+    'shapeMon-norm': r'$\frac{{\langle S(\phi_c)\rangle}}{{S_{0}\rangle}}$',
+    'asphericityMon-mean': r'$\langle \Delta(\phi_c)\rangle$',
+    'shapeMon-mean': r'$\langle S(\phi_c)\rangle$',
+    'rPhi': r'$\phi(r)$',
+    'zPhi': r'$\phi(|z|)$',
+    'rRho': r'$\rho(r)$',
+    'zRho': r'$\rho(|z|)$',
+    'rPhi-norm': r'$\phi(r)$',
+    'rPhi-norm-Mon': r'$\phi_m(r)$',
+    'rPhi-norm-Foci': r'$\phi_M(r)$',
+    'rPhi-norm-Hns': r'$\phi_n(r)$',
+    'rPhi-norm-Crd': r'$\phi_c(r)$',
+    'rPhi-norm-Sum': r'$\sum_i\phi_i(r)/a_i$',
+    'rPhi-norm-Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$',
+    'zPhi-norm': r'$\phi(r)$',
+    'zPhi-norm-Mon': r'$\phi_m(|z|)$',
+    'zPhi-norm-Foci': r'$\phi_M(|z|)$',
+    'zPhi-norm-Hns': r'$\phi_n(|z|)$',
+    'zPhi-norm-Crd': r'$\phi_c(|z|)$',
+    'zPhi-norm-Sum': r'$\sum_i\phi_i(|z|)/a_i$',
+    'zPhi-norm-Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$',
+    'rRho-norm': r'$\rho(r)$',
+    'rRho-norm-Mon': r'${{\rho_m(r)}}/{{\rho_m(0)}}$',
+    'rRho-norm-Foci': r'${{\rho_M(r)}}/{{\rho_M(0)}}$',
+    'rRho-norm-Hns': r'${{\rho_n(r)}}/{{\rho_n(0)}}$',
+    'rRho-norm-Crd': r'${{\rho_c(r)}}/{{\rho_c(\infty)}}$',
+    'rRho-norm-Sum':
+        r'${(\sum_i\rho_i(r)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
+    'rRho-norm-Sum_constant':
+        r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_i(\infty)a_i^2)}$',
+    'zRho-norm': r'$\rho(|z|)$',
+    'zRho-norm-Mon': r'${{\rho_m(|z|)}}/{{\rho_m(0)}}$',
+    'zRho-norm-Foci': r'${{\rho_M(|z|)}}/{{\rho_M(0)}}$',
+    'zRho-norm-Crd': r'${{\rho_c(|z|)}}/{{\rho_c(\infty)}}$',
+    'zRho-norm-Sum':
+        r'${(\sum_i\rho_i(|z|)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
+    'zRho-norm-Sum_constant':
+        r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_i(\infty)a_i^2)}$',
+    'rPhi-norm-old-Mon': r'${{\phi_m(r)}}/{{\phi_m(0)}}$',
+    'rPhi-norm-old-Foci': r'${{\phi_M(r)}}/{{\phi_M(0)}}$',
+    'rPhi-norm-old-Hns': r'${{\phi_n(r)}}/{{\phi_n(0)}}$',
+    'rPhi-norm-old-Crd': r'${{\phi_c(r)}}/{{\phi_c(\infty)}}$',
+    'rPhi-norm-old-Sum':
+        r'${(\sum_i\phi_i(r)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
+    'rPhi-norm-old-Sum_constant':
+        r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$',
+    'zPhi-norm-old-Mon': r'${{\phi_m(|z|)}}/{{\phi_m(0)}}$',
+    'zPhi-norm-old-Foci': r'${{\phi_M(|z|)}}/{{\phi_M(0)}}$',
+    'zPhi-norm-old-Crd': r'${{\phi_c(|z|)}}/{{\phi_c(\infty)}}$',
+    'zPhi-norm-old-Sum':
+        r'${(\sum_i\phi_i(|z|)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
+    'zPhi-norm-old-Sum_constant':
+        r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$',
+    'bondsHistFoci-norm': r'$\mathcal{P}(x_d)$',
+    'clustersHistFoci-norm': r'$\mathcal{P}(x_c)$',
+    'pairDistHistFoci': r'$\mathcal{H}(n_i,n_j,\Delta n;r)$',
+    'pairDistRdfFoci': r'$\mathcal{P}(n_i,n_j,\Delta n;r)$',
+    'pairDistRdfGenDistAvg': r'$\mathcal{P}(\Delta n;r)$',
+    'pairDistTFoci': r'$r(t)$',
     "size_ratio": "",
     "space": "",
     "ensemble": "",
