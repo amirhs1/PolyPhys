@@ -19,10 +19,11 @@ def all_in_one_equil_tseries(
     spaces: List[str],
     properties: List[str],
     measures: List[Callable],
+    kind: str = 'dataframe',
     divisor: Optional[float] = 0.025,
     round_to: Optional[int] = 3,
     save_space: Optional[bool] = False,
-    save_to: Optional[str] = None
+    save_to: Optional[str] = None,
 ) -> pd.DataFrame:
     """
     Performs a group of `measures` on a collection of physical `properties`
@@ -50,6 +51,8 @@ def all_in_one_equil_tseries(
         The names of physical properties.
     measures: list of Callable
         The list of applying measures/functions.
+    kind: {'dataframe', 'array'}, default 'dataframe'
+        Type of 'properties' file.
     divisor: float, default 0.025
         The step by which the values of "phi_c_bulk" attribute are rounded.
     round_to: int, default 3
@@ -76,10 +79,11 @@ def all_in_one_equil_tseries(
         whole_stamps = pd.read_csv(whole_stamps[0], header=0)
         space_equil_props = analyzer.equilibrium_tseries_wholes(
             space,
-            space_db + "/*.csv",
+            space_db,
             properties,
             measures,
             whole_stamps,
+            kind='dataframe'
             save_to=save_to_space
         )
         all_in_one_equil_props.append(space_equil_props)

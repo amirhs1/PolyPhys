@@ -194,6 +194,7 @@ fix F_langevin all langevin 1 1 1 ${randseed} scale 4 ${scale4} #tally yes
 fix F_nve all nve # Time integration - NVE (Microcanonical) ensamble
 fix F_recenter dna recenter 0.0 0.0 0.0 shift all units box
 timestep ${run_dt}
+thermo 10000
 info coeffs
 dump D_nucleoid nucleoid atom  ${ndump} N${N}epshm${eps_hm}nh${n_hns}ac${sig4}nc${n_crowd}l${l}dt${run_dt}ndump${ndump}adump${adump}ens${i}.ring.nucleoid.restart.lammpstrj
 dump_modify D_nucleoid scale no
