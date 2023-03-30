@@ -5,7 +5,8 @@ from typing import (
     Optional,
     Union
 )
-from glob import glob
+import os
+import glob
 import warnings
 import numpy as np
 import pandas as pd
@@ -1024,7 +1025,7 @@ def analyze_measures(
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     invalid_keyword(group, ['bug', 'nucleoid', 'all'])
-    observations = glob(input_database + hierarchy)
+    observations = glob.glob(input_database + hierarchy)
     if not observations:
         raise ValueError(
             "File not found in "
@@ -1234,7 +1235,7 @@ def analyze_bug_trans_size(
         Bartlett's formula.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    observations = glob(input_database + hierarchy)  # observations
+    observations = glob.glob(input_database + hierarchy)  # observations
     if not observations:
         raise ValueError(
             "File not found in "
@@ -1421,49 +1422,87 @@ def error_calc_block(
     return block_analysis
 
 
-def ensemble_measure(ensemble_db: str, measure: Callable) -> pd.DataFrame:
+def ensemble_measure(
+    ensemble_db: str,
+    stat_func: Callable,
+    ) -> pd.DataFrame:
     """
-    applies `measure_func` column-wise (axis=0) on the "whole" columns in
-    an "ensemble" dataframe of a given property.
+    Apply `stat_func` column-wise (axis=0) on the "whole" columns in an "ensemble" dataframe or along a pre-set axis of the numpy "ensemble" ndarray of a given property. If the `measure_func` is applied to a numpy's ndarray, it must already have the information about the axis along which the measurements are done; for example, if the `property_db` refers to a ndarray with shape=(8,200,200) which say there are 8 ensembles, where each is 200*200 matrix, then `stat_func` should be something like this `stat_func=lambda x: np.mean(x, axis=(1,2))` to have 8 averages values for 8 different ensembles.
 
     Parameters
     ----------
     ensemble_db: str
-        Path to the "ensemble" dataframe of a given property,
+        Path to the "ensemble" dataframe or ndarray of a given property,
 
-    measure: Callable
-        The applying function
+    stat_func: Callable
+        A numpy or numpy-like function. If `ensemble_db` refers to ndarray, then `stat_func` must already have included 'axi' information.
 
     Return
     ------
     ensemble_measures: pd.DataFrame
         A dataframe in which the indexes are "whole" names and there is a
         column with the name of the `measure_func`. The values of this column
-        the measurements.
-
+        are the measurements.
+    
+    Raises
+    ------
+    TypeError
+        If `stat_func` is not a callable function.
+    FileNotFoundError
+        If the input `ensemble_db` path is invalid or does not exist.
+    ValueError
+        If the file extension is not '.csv' or '.npy'.
     Requirements
     ------------
-    Pandas, Numpy, or any other package needed for the `measure`
+    Pandas, Numpy, os and any other package needed for the `measure`.
     """
-    property_ens = pd.read_csv(ensemble_db[0], header=0)
-    ensemble_measures = property_ens.apply(measure, axis=0)
-    ensemble_measures = ensemble_measures.to_frame(name=measure.__name__)
-    return ensemble_measures
+    file_ext = os.path.splitext(ensemble_db)[1]
+    if not os.path.exists(ensemble_db):
+        raise FileNotFoundError(f"The file path {ensemble_db} does not exist.")
+
+    if not callable(stat_func):
+        raise TypeError(f"The input measure {stat_func} is not callable.")
+
+    if file_ext == '.csv':
+        property_ens = pd.read_csv(ensemble_db, header=0)
+        ens_measures = property_ens.apply(stat_func, axis=0)
+        ens_measures = ens_measures.to_frame(name=stat_func.__name__)       
+    elif file_ext == '.npy':
+        property_ens = np.load(ensemble_db)
+        n_ens = property_ens.shape[0]
+        # A property can be 0 for a given set of input parameters:
+        if property_ens.size != 0:
+            ens_measures = stat_func(property_ens)
+        else:
+            ens_measures = np.zeros(n_ens)
+        space_fullname = os.path.basename(ensemble_db).split('-')[0]
+        idxs = [f"{space_fullname}ens{i+1}" for i in range(n_ens)]
+        ens_measures = pd.DataFrame(
+            data=ens_measures,
+            index=idxs,
+            columns=[stat_func.__name__]
+            ) 
+    else:
+        raise ValueError(
+            f"'{file_ext}' is an invalid file extension. Use '.csv' for Pandas's 'dataframe' or '.npy' for Numpy's ndaarray."
+            )
+    return ens_measures
 
 
 def space_measure(
     property_: str,
     space_db: str,
-    measure: Callable
+    stat_func: Callable,
+    kind: str = 'dataframe'
 ) -> pd.DataFrame:
-    """Performs `measure` on all the "ensembles" of a given physical
+    """Performs `stat_func` on all the "ensembles" of a given physical
     `property_`in a "space" given. The "wholes" in an "ensemble" are time
-    series. By performing the `measure, we basically convert a time series to
+    series. By performing the `stat_func`, we basically convert a time series to
     a single value such as a mean, standard deviation, or the like.
 
     It is assumed that a `property_` follow this naming convention:
         path/ensemble-shortnameTspecies.csv
-    where *path8 is the path to the file, *ensemble* is the name of ensemble,
+    where *path* is the path to the file, *ensemble* is the name of ensemble,
     *shortname* is the short name of the property, "T" means the file is a
     time series, and "species" is the particle species to which this property
     belongs; for example
@@ -1471,16 +1510,16 @@ def space_measure(
     is the time-varying radius of gyration of a polymer composed of "Mon"
     species in "ns400nl4al5D20ac1nc0" ensemble.
 
-    The files in the `space_db` are all csv files.
-
     Parameters
     ----------
     property_: str
         The name of physical property.
     space_db: str
         Path to the ensembles of a given property in a given space.
-    measure: Callable
-        The applying function
+    stat_func: Callable
+        A numpy or numpy-like function. If `ensemble_db` refers to ndarray, then `stat_func` must already have included 'axi' information.
+    kind: {'dataframe', 'array'}, default 'dataframe'
+        The kind of the "ensemble" file type.
 
     Return
     ------
@@ -1489,22 +1528,53 @@ def space_measure(
         and the single column are the values of applied 'measure' on that
         property.
 
+    Errors
+    ------
+    ValueError:
+        Raised when an invalid 'kind' parameter is provided.
+    FileNotFoundError:
+        Raised when no files are found in the specified path or no files
+        matching the property pattern are found.
+    RuntimeError:
+        Raised when no valid ensembles are found for processing.        
+
     Requirements
     ------------
-    polyphys, Pandas, Numpy, or any other package needed for the `measure`
+    polyphys, Pandas, Numpy, or any other package needed for the `stat_func`
     """
-    property_pat = '-' + property_ + '.csv'  # pattern of property files.
-    property_pathes = glob(space_db)
-    property_dbs: List[Tuple[str, ...]] = sort_filenames(
-        property_pathes, fmts=[property_pat]
+    if kind not in ["dataframe", "array"]:
+        raise ValueError("Invalid 'kind' parameter. Must be 'dataframe' or 'array'.")
+
+    suffix = {
+        'dataframe': '.csv',
+        'array': '.npy',
+    }
+
+    property_paths = glob.glob(space_db)
+    if not property_paths:
+        raise FileNotFoundError(f"No files found in the specified path: {space_db}")
+    
+    property_pat = '-' + property_ + suffix[kind]  # pattern of property files.
+    property_paths = sort_filenames(
+        property_paths, fmts=[property_pat]
         )
-    meas_name = measure.__name__
+    if not property_paths:
+        raise FileNotFoundError(f"No matching files found in the specified path: {space_db}")
+    
+    meas_name = stat_func.__name__
     equil_name = "".join(property_.split("T"))  # new name when measure applied
     equil_meas_name = equil_name + "-" + meas_name
     spc_measure = []
-    for property_db in property_dbs:
-        ens_measure = ensemble_measure(property_db, measure)
-        spc_measure.append(ens_measure)
+    for property_db in property_paths:
+        try:
+            ens_measure = ensemble_measure(property_db[0], stat_func)
+            spc_measure.append(ens_measure)
+        except Exception as e:
+            print(f"Error processing {property_db[0]}: {e}")
+    
+    if not spc_measure:
+        raise RuntimeError("No valid ensembles found for processing.")
+
     spc_measure = pd.concat(spc_measure)
     spc_measure.rename(
         columns={meas_name: equil_meas_name}, inplace=True
@@ -1512,42 +1582,49 @@ def space_measure(
     return spc_measure
 
 
-def equilibrium_tseries_wholes(
+def equilibrium_wholes(
     space: str,
     space_db: str,
-    properties: list[str],
-    measures: list[Callable],
+    physical_properties: List[str],
+    stat_funcs: List[Callable],
     whole_stamps: pd.DataFrame,
-    save_to: Optional[str] = None,
+    output_type: str = 'dataframe',
+    topology: Optional[str] = None,
+    output_path: Optional[str] = None,
 ) -> pd.DataFrame:
-    """Performs a group of `measures` on a group of physical `properties` in a
+    """
+    Performs a group of `stat_funcs` on a group of physical `physical_properties` in a
     given `space` and merges the resulting dataframe with the `whole_stamps`
     dataset.
 
-    Each statistical measure is applied to each "whole" *times series* (a
+    Each statistical function is applied to each "whole" *times series* (a
     column in an "ensemble" data frame) in each "ensemble" of a given physical
     property in a space.
 
     Parameters
     ----------
-    space: str
-        The name of a space.
-    space_db: str
-        The path to all the csv files in a space in globe style; for example:
+    space : str
+        The name of the space.
+    space_db : str
+        The path to all the csv files in the space in globe style; for example:
         "path-to-space/*.csvs"
-    properties: list of str
+    physical_properties : List[str]
         The names of physical properties.
-    measures: list of Callable
-        The list of applying measures/functions.
-    whole_stamps: pd.DataFrame
+    stat_funcs : List[Callable]
+        The list of statistics functions.
+    whole_stamps : pd.DataFrame
         The dataframe contains the details of each "whole" simulation.
-    save_to : str, default None
+    output_type : {'dataframe', 'array'}, default 'dataframe'
+        The kind of the "ensemble" file type.
+    topology : str, optional
+        The topology of the simulation, if any.
+    output_path : str, optional
         Absolute or relative path to which the output is written.
 
-    Return
-    ------
-    equil_properties: pd.DataFrame
-        A dataframe of the all attributes and physical properties of all the
+    Returns
+    -------
+    whole_simulations_properties : pd.DataFrame
+        A dataframe of the attributes and physical properties of all the
         "whole" simulations in a given `space`.
 
     Requirements
@@ -1555,20 +1632,23 @@ def equilibrium_tseries_wholes(
     Pandas
     """
     equil_properties = []
-    for property_ in properties:
-        property_measures: Union[list[pd.DataFrame], pd.DataFrame] = []
-        for measure in measures:
-            spc_measure: pd.DataFrame = space_measure(
-                property_, space_db, measure
+    for physical_property in physical_properties:
+        property_measurements = [
+            space_measure(
+                physical_property, space_db, stat_func, kind=output_type
             )
-            property_measures.append(spc_measure)
-        property_measures = pd.concat(property_measures, axis=1)
-        equil_properties.append(property_measures)
+            for stat_func in stat_funcs
+        ]
+        property_measurements = pd.concat(property_measurements, axis=1)
+        equil_properties.append(property_measurements)
+    
     equil_properties = pd.concat(equil_properties, axis=1)
     equil_properties.reset_index(inplace=True)
     equil_properties.rename(columns={"index": "whole"}, inplace=True)
+    if topology is not None:
+        equil_properties["whole"] = equil_properties["whole"] + '.' + topology
     equil_properties = whole_stamps.merge(equil_properties, on="whole")
-    if save_to is not None:
-        output = '-'.join([space, "whole-equilProps"])
-        equil_properties.to_csv(save_to + output + ".csv", index=False)
+    if output_path is not None:
+        output_filename = '-'.join([space, "whole-equilProps"])
+        equil_properties.to_csv(output_path + output_filename + ".csv", index=False)
     return equil_properties

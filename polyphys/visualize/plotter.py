@@ -253,11 +253,13 @@ ATTRIBUTE_LABELS = {
         r'${(\sum_i\phi_i(|z|)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
     'zPhi-norm-old-Sum_constant':
         r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$',
-    'bondsHistFoci-norm': r'$\mathcal{P}(x_d)$',
-    'clustersHistFoci-norm': r'$\mathcal{P}(x_c)$',
-    'pairDistHistFoci': r'$\mathcal{H}(n_i,n_j,\Delta n;r)$',
-    'pairDistRdfFoci': r'$\mathcal{P}(n_i,n_j,\Delta n;r)$',
-    'pairDistRdfGenDistAvg': r'$\mathcal{P}(\Delta n;r)$',
+    'bondsHistFoci-norm': r'$\mathcal{P}$',
+    'bondsHistFoci-norm-full_name': r'$\mathcal{P}(x_d)$',
+    'clustersHistFoci-norm': r'$\mathcal{P}$',
+    'clustersHistFoci-norm-full_name': r'$\mathcal{P}(x_c)$',
+    'pairDistHistFoci': r'$\mathcal{H}(n_i,n_j,\Delta n_{ij})$',
+    'pairDistRdfFoci': r'$\mathcal{P}(n_i,n_j,\Delta n_{ij})$',
+    'pairDistRdfGenDistAvg': r'$\mathcal{P}(\Delta n)$',
     'pairDistTFoci': r'$r(t)$',
     "size_ratio": "",
     "space": "",
@@ -268,7 +270,7 @@ ATTRIBUTE_LABELS = {
     "t_index": r"${t}/{\delta t}$",
     "lag_time": r"${t}_{lag}$",
     "lag_index": r"${t}_{lag}$",
-    "dmon_large": "${{a_M}}/{{a_m}}$",
+    "dmon_large": "${{a_M}}/{{a_c}}$",
     "dcrowd": "${{a_c}}/{{a_m}}$",
     "dcyl": "${{D}}/{{a_m}}$",
     "lcyl": "${{L_{{cyl}}}}/{{a_m}}$",
@@ -276,7 +278,7 @@ ATTRIBUTE_LABELS = {
     "nmon_large": "$N_M$",
     'phi_c_bulk_norm': r"${a\phi_c}/{a_c}$",
     'genomic_distance':  r"$\Delta n$",
-    'bin_center': '$r$',
+    'bin_center': '$r/a_m$',  # Pair distance between two monomers in their PDF
     'bin_center-norm-r-dmon_large': '${{r}}/{{a_M}}$',
     'bin_center-norm': '${{r}}/{{r_{max}}}$',
     'bin_center-r': '$r$',
@@ -294,7 +296,9 @@ ATTRIBUTE_LABELS = {
     'bin_center-theta': r'$\theta$',
     'bin_center-dcrowd-theta': r'${{\theta}}/{{\pi}}$',
     'bin_center-norm-theta': r'${{\theta}}/{{\pi}}$',
-    'geometry': 'Box Geometry',
+    'geometry': 'System geometry',
+    'cub': 'Free space',
+    'cyl': 'Cylindrical Confinement',
     'nmon': '$N$',
     'nhns': '$N_{{hns}}$',
     'phi_c_rescaled': r'$\\frac{{a_m\phi_c}}{{a_c}}$',
@@ -309,11 +313,11 @@ ATTRIBUTE_LABELS = {
     }
 
 # https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-with-your-data
-DUTCH_FEILD_COLORS = ["#e60049", "#0bb4ff", "#50e991", "#e6d800", "#9b19f5",
-                      "#ffa300", "#dc0ab4", "#b3d4ff", "#00bfa0"]
+DUTCH_FEILD_COLORS = ["#e60049", "#0bb4ff", "#50e991", "#9b19f5",
+                      "#ffa300", "#dc0ab4", "#b3d4ff", "#e6d800", "#00bfa0"]
 # https://sashamaps.net/docs/resources/20-colors/
-ACCES_COLORS = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231',
-                '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
+ACCES_COLORS = ['#e6194B', '#3cb44b', '#ffe119', '#911eb4', '#4363d8',
+                '#f58231', '#42d4f4', '#f032e6', '#bfef45', '#fabed4',
                 '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000',
                 '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9']
 # https://en.wikipedia.org/wiki/Help:Distinguishable_colors
@@ -331,8 +335,8 @@ OTHER_COLORS = ['#2f4f4f', '#8b4513', '#228b22', '#00008b', '#ff0000',
 AMIRHSI_COLORS_ORDER = ["#e60049", '#ffe119', '#eee8aa', "#9b19f5", "#ffa300",
                         '#ff00ff', '#8b4513', "#00008b", '#00ffff', '#228b22',
                         '#00ff00', '#2f4f4f', '#a9a9a9']
-AMIRHSI_COLORS = ["#00008b", "#e60049", "#9b19f5", '#ffe119', '#228b22',
-                  'gray', '#ff00ff', '#00ffff', "#ffa300", '#00ff00',
+AMIRHSI_COLORS = ["#00008b", "#e60049", "#9b19f5", '#228b22', 'gray',
+                  '#ffe119', '#ff00ff', '#00ffff', "#ffa300", '#00ff00',
                   '#8b4513', '#000000']
 
 
