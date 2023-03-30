@@ -9,6 +9,28 @@ class BrokenLogError(Exception):
     pass
 
 
+def string_to_float(input_string: str) -> float:
+    """
+    Converts an `input_string` to a float if possible; otherwise return 0.0.
+
+    Parameters
+    ----------
+    input_string : str
+        input string
+
+    Returns
+    -------
+    float
+        output float
+    """
+    try:
+        output_float = float(input_string)
+    except ValueError:
+        # print("Error: Could not convert input string to float.")
+        output_float = 0.0
+    return output_float
+
+
 class LammpsLog:
     filepath: str
     product_idx: int
@@ -137,7 +159,7 @@ class LammpsLog:
             self.sec_start = 1
         self.keywords = words
 
-    def extract_thermo(self):
+    def extract_thermo(self) -> None:
         """
         Parse thermo chunks to extract the thermodynamic variable and create
         a Pandas dataframe from the extracted thermodynamic keywords and data.
@@ -216,10 +238,11 @@ class LammpsLog:
                     line = lines[iline]
                     while len(line) != 0:
                         mpi_kw = line.split("|")[0].strip()
-                        values = re.findall(self._real_num, line)
-                        values = list(map(float, values))
-                        run_data[mpi_kw+'_avg_time'].append(values[0])
-                        run_data[mpi_kw+'_total_pct'].append(values[1])
+                        values = list(
+                            map(string_to_float, line.split("|")[1:])
+                            )
+                        run_data[mpi_kw+'_avg_time'].append(values[1])
+                        run_data[mpi_kw+'_total_pct'].append(values[-1])
                         iline += 1
                         line = lines[iline]
                 if line.startswith('Dangerous builds'):

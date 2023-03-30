@@ -56,6 +56,7 @@ fix F_langevin all langevin 1.0 1.0 10.0 ${randseed}
 fix F_nve all nve
 fix F_recenter bug recenter 0.0 0.0 0.0 shift all units box
 timestep ${run_dt}
+thermo 10000
 
 dump D_bug bug atom  ${bug_dump} al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring.bug.restart.lammpstrj
 dump_modify D_bug scale no

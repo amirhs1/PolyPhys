@@ -693,12 +693,12 @@ def bond_info(
     """
     chain_topos: Dict[str, str] = {'linear': 'raise', 'ring': 'wrap'}
     atoms = ag.atoms
+    n_bonds = atoms.n_atoms
     com = atoms.center_of_mass(wrap=wrap, unwrap=unwrap)
     pos = ag.positions
     pos = pos - com
     bonds = pos - np.take(
-        pos, range(1, 201), axis=0, mode=chain_topos[topology])
-    n_bonds, _ = bonds.shape
+        pos, range(1, n_bonds+1), axis=0, mode=chain_topos[topology])
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
     bond_lengths = np.linalg.norm(bonds, axis=1).reshape(n_bonds, 1)
     bonds = np.divide(bonds, bond_lengths)

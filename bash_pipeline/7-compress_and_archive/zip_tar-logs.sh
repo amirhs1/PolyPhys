@@ -7,8 +7,8 @@
 report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
 touch "$report"
 echo "Start archiving..."
-for dir in ns*-logs/; do
-#for dir in N*-logs/; do
+#for dir in ns*-logs/; do
+for dir in N*-logs/; do
     sim=$(echo "$dir" | cut -d / -f 1)
     echo "$sim"
     echo "${dir}" >> "${report}"

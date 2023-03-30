@@ -1,4 +1,5 @@
 #!/bin/bash
+# kbend is in LAMMPS lingo which is half the regualr one, so kbend_mm=2 in LAMMPS means kbend_mm=4 in theory.
 #			 N		epsilon_hns_mon	kbend	n_hns	a_crowd	n_crowd		l	rseed_group	run_dt 	ndump 	adump 	
 P[${#P[@]}]="200	29				2		0		2		0			25	1000		0.005	2000 	5000"
 P[${#P[@]}]="200	29				2		0		2		2985		25	1010		0.005	2000 	5000"
