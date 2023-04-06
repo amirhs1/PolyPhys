@@ -1,0 +1,237 @@
+## Defining force-field variables
+variable m_crowd equal ${sig4}^3
+### sigma_i
+# i=1: DNA, i=2: Protein pole, i=3: Protine core, i=4: Crowder
+# In this model, sig2 is set based on cutoff22 from cutoff2
+variable ljRcut equal 1.122462 # 2^(1/6) rounded at 6th decimal place.
+variable sig1 equal 1.0 # DNA monomers
+variable sig2 equal 0.178 # hns pole
+variable sig3 equal 1.0 # hns core
+
+### sigma_ij
+variable sig11 equal 0.5*(${sig1}+${sig1})
+variable sig12 equal 0.535 # = 0.5*(${cutoff22}+${sig1})/${ljRcut} 
+variable sig13 equal 0.5*(${sig1}+${sig3})
+variable sig14 equal 0.5*(${sig1}+${sig4})
+variable sig22 equal 0.5*(${sig2}+${sig2})
+# No interactions between pole and hole and pole and crowoder, so
+# sig23 and sig24 are not defined
+#variable sig23 equal 0.5*(${sig2}+${sig3}) # For FENE bond, not LJ exclusion
+#variable sig24 equal 0.535
+variable sig33 equal 0.5*(${sig3}+${sig3})
+variable sig34 equal 0.5*(${sig3}+${sig4})
+variable sig44 equal 0.5*(${sig4}+${sig4})
+
+### r_cutoff_ij
+variable cutoff11 equal ${sig11}*${ljRcut}
+variable cutoff12 equal 0.685 # unclear how it is set.
+variable cutoff13 equal ${sig13}*${ljRcut}
+variable cutoff14 equal ${sig14}*${ljRcut}
+variable cutoff22 equal 0.2 # hns pole
+# No interactions between pole and hole and pole and crowoder, so
+# sig23 and sig24 are not defined
+#variable cutoff23 equal ${sig23}*${ljRcut}
+#variable cutoff24 equal ${sig24}*${ljRcut}
+variable cutoff33 equal ${sig33}*${ljRcut}
+variable cutoff34 equal ${sig34}*${ljRcut}
+variable cutoff44 equal ${sig44}*${ljRcut}
+
+### LJ epsilon_ij
+variable epsilon11 equal 1.0
+variable epsilon12equilbrate equal 1.0 # used in the equilibration phase
+variable epsilon12 equal 29.0 # actual eps12, used in the production phase
+variable epsilon13 equal 1.0
+variable epsilon14 equal 1.0
+variable epsilon22 equal 1.0
+# No interactions between pole and hole and pole and crowoder, so
+# epsilon23 and epsilon24 are not defined
+#variable epsilon23 equal 1.0
+#variable epsilon24 equal 1.0
+variable epsilon33 equal 1.0
+variable epsilon34 equal 1.0
+variable epsilon44 equal 1.0
+
+### FENE bond potential
+# FENE inter-species max bond and spring constant:
+# r_bond_ij = rBondFeneij 
+# k_ij = kFeneij
+# Lengths measured in unit sigma=sig11=sig1=1.0
+# Energies measured in unit epsilon=epsilon11=1.0
+# k_ij=k_11*(sig_11/sig_ij)^2
+# k_11=k_0=30*epsilon_11
+# r_bond_ij=r_bond_11*(sig_ij/sig_11)
+# r_bond_11=r_bond_0=1.5*sig_11
+variable rBondFene11 equal 1.5*${sig11}
+variable kFene11 equal 30*${epsilon11}/(${sig11}^2)
+
+### Harmonic bond potential
+# Harmonic inter-species max bond and spring constant:
+# r_bond_ij = rBondHarmij 
+# k_ij = kHarmij
+# Lengths measured in unit sigma=sig11=sig1=1.0
+# Energies measured in unit epsilon=epsilon11=1.0
+# k_ij=k_11*(sig_11/sig_ij)^2
+# k_11=k_0=80*epsilon_11
+# r_bond_ij=r_bond_11*(sig_ij/sig_11)
+# r_bond_11=r_bond_0=1.2*sig_11
+variable rBondHarm23 equal 0.4
+variable kHarm23 equal 120.0
+
+## Initialization
+units   lj
+dimension   3
+boundary    f f p
+atom_style  angle
+
+### Read input file
+read_data minimized.dna.data nocoeff extra/atom/types 3 extra/bond/types 1 &
+		  extra/angle/types 1 # alter new atom, bond and angles types added
+
+### Neighbor Lists
+variable vskin equal 0.3
+neighbor ${vskin} multi #multi # using different ghost cutoffs  
+neigh_modify delay 0 every 1 check yes
+neigh_modify collection/type 2 1*3 4 # 1:mons, hns_patch, and hns_core, 2:crowder
+## Communication settings
+# ghost cutoff = neighbor cutoff = pairwise force cutoff + vskin
+# cutoff/multi(=Rcut) overrides ghost cutoff only if former is larger 
+# than later; please see below for cutoff/multi setting.
+# Whithout "multi" option in "neighbor":
+# ghost cutoff = max(neighbor cutoff) = max(pairwise force cutoff) + vskin # So we have:
+# ghost cutoff = max(neighbor cutoff) = cutoffLL + vskin
+# By changing to "multi" and setting communication/ghosy cutoff accordingly,
+# we have:
+variable gRcut1 equal ${cutoff11}+${vskin} # ghost cutoff: dna monomers, poles, holes
+variable gRcut4 equal ${cutoff44}+${vskin} # ghost cutoff: crowders
+#communicate single cutoff 3.0
+comm_modify mode multi cutoff/multi 1 ${gRcut1} cutoff/multi 2 ${gRcut4}
+
+### Simulation box and regions
+change_box  all x final -${r} ${r} y final -${r} ${r} z final -${lz} ${lz} boundary f f p units box
+#### The simulation region:
+region  cylshell cylinder z 0.0 0.0 ${r} INF INF units box
+#### The smaller region for creating atoms randomly and prevent bond lost error
+variable rCylCreate equal ${r}-1
+variable zCylCreate equal ${lz}-${r}
+region cylcreate cylinder z 0.0 0.0 ${rCylCreate} -${zCylCreate} ${zCylCreate} units box 
+
+
+### Atom properties
+#### Creating particles
+molecule 2 hns.mol toff 1 boff 1 aoff 1 # defining hns protiens
+variable randseed_mols equal ${randseed}+1
+variable randseed_hns equal ${randseed}+2
+variable randseed_crowds equal ${randseed}+3
+create_atoms 0 random ${n_hns} ${randseed_mols} cylcreate units box mol 2 ${randseed_hns}
+create_atoms 4 random ${n_crowd} ${randseed_crowds} cylcreate units box
+
+#### Masses
+mass 1 1.0
+mass 2 1.0
+mass 3 1.0
+mass 4 ${m_crowd}
+
+#### Groups
+group dna 		type 1
+group hns_pole  type 2
+group hns_core  type 3
+group crowder   type 4
+group nucleoid  type 1 2 3
+
+#### Add velocity
+# Define a temperature compute and use it to set velocities of ALL the atoms.
+compute mobile all temp
+velocity all create 1.0 ${randseed} temp mobile
+
+### Force fields
+
+#### Lennard-Jones potential among the atom types except hns poles and crowders
+pair_style lj/cut ${ljRcut}
+pair_modify shift yes 
+# LJ pair coeffs (i<=j): i j epsilon_ij sigma_ij cutoff_ij
+pair_coeff 1 1 ${epsilon11} ${sig11} ${cutoff11}
+# no attraction between hns proteins and dna monomers in the equilibraion phase
+pair_coeff 1 2 ${epsilon12equilbrate} ${sig12} ${cutoff12}
+pair_coeff 1 3 ${epsilon13} ${sig13} ${cutoff13}
+pair_coeff 1 4 ${epsilon14} ${sig14} ${cutoff14}
+pair_coeff 2 2 ${epsilon22} ${sig22} ${cutoff22}
+#pair_coeff 2 3 ${epsilon23} ${sig23}  ${cutoff23}
+#pair_coeff 2 4 ${epsilon24} ${sig24}  ${cutoff24}
+pair_coeff 3 3 ${epsilon33} ${sig33}  ${cutoff33}
+pair_coeff 3 4 ${epsilon34} ${sig34}  ${cutoff34}
+pair_coeff 4 4 ${epsilon44} ${sig44}  ${cutoff44}
+
+#### Bond potentials
+bond_style hybrid fene harmonic
+special_bonds fene
+# FENE bond coeffs:m (bond type) k_ij r_bond_ij epsilon_ij sigma_ij
+bond_coeff 1 fene ${kFene11} ${rBondFene11} ${epsilon11} ${sig11} # dna-dna
+# Harmonic bond coeffs:m (bond type) k_ij r_bond_ij
+bond_coeff 2 harmonic ${kHarm23} ${rBondHarm23} # protein_hole-protein_core 
+
+#### Angle potentials
+angle_style harmonic
+# Harmonic angle coeffs:m (angle type) k_ij angle_ij
+# LAMMPS bending rigidity=2*bending regidity in the harmonic angle potential.
+variable kBend11Lammps equal 0.5*${kBend11}
+angle_coeff 1 ${kBend11Lammps} 180.0 # dna-dna-dna
+angle_coeff 2 50.0 180.0 # protein_hole-protein_core-protein_hole
+
+#### Lennard-Jones potential between the lateral wall and each type of particles
+fix F_wall_dna dna wall/region cylshell lj126 5.0 ${sig11} ${cutoff11} # Interaction between wall and DNA monomers.
+fix F_wall_hns_pole hns_pole wall/region cylshell lj126 1.0 ${sig12} ${cutoff12} # Interaction between wall and HNS poles.
+fix F_wall_hns_core hns_core wall/region cylshell lj126 1.0 ${sig13} ${cutoff13} # Interaction between wall and HNS cores.
+fix F_wall_crowd crowder wall/region cylshell lj126 1.0 ${sig14} ${cutoff14} # Interaction between wall and crowders.
+
+#### Thermo settings
+thermo 10000
+thermo_style custom step ke pe etail ecouple econserve evdwl ebond eangle &
+             emol temp press
+
+#### Energy minimzation and time integration
+variable scale4 equal ${m_crowd}/${sig4} # scaling tdamp for crowders
+
+
+fix F_langevin all langevin 1 1 1 ${randseed} scale 4 ${scale4} tally yes
+fix F_nve all nve/limit 0.01
+fix F_recenter dna recenter NULL NULL 0.0 shift all units box
+timestep 0.01
+run 200000
+write_restart ./restart.before.i${i}.part2.all_no_hns_attraction_nve_limit
+unfix F_langevin
+unfix F_nve
+unfix F_recenter
+
+## Sampling/production phase
+### Force fields
+#### Lennard-Jones potential among the atom types except hns poles and crowders
+# Turning on attraction between hns proteins and dna monomers
+# LJ pair coeffs (i<=j): i j epsilon_ij sigma_ij cutoff_ij
+pair_coeff 1 2 ${epsilon12} ${sig12} ${cutoff12}
+
+#### Energy minimzation and time integration
+fix F_langevin all langevin 1 1 1 ${randseed} scale 4 ${scale4} tally yes
+fix F_nve all nve
+fix F_recenter dna recenter NULL NULL 0.0 shift all units box # always last fix to use
+
+timestep 0.005
+dump D_nucleoid nucleoid atom 5000 ${simname}.ring.nucleoid.lammpstrj
+dump_modify D_nucleoid scale no
+
+variable fname string input.lmp
+variable j loop 10 pad 
+	label dump_loop
+	dump D_all all atom 10000 ${simname}.j${j}.ring.all.lammpstrj.gz
+	dump_modify D_all scale no pad 2
+	restart 100000 ./restarts/restart.${i}
+	run	10000000
+	undump D_all
+	next j
+	jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.
+
+undump D_nucleoid
+write_data ${simname}.ring.all.data pair ij
+write_restart ./restart_after.i${i}
+unfix F_langevin
+unfix F_nve
+unfix F_recenter

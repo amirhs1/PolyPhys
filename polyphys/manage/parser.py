@@ -358,7 +358,7 @@ class SumRuleCyl(ParserBase):
         The topology of the polymer.
     lineage_name: str,
         The unique name of the type extracted from self.fullname
-    dmon: float, default 1.0
+    dmon: float, default 1
         Size (diameter) of a monomer
     nmon: int, np.nan
         Number of monomers. Its associated keyword is 'N'.
@@ -370,12 +370,12 @@ class SumRuleCyl(ParserBase):
         Number of crowders. Its associated keyword is 'nc'.
     mcrowd: float, default np.nan
         Mass of a crowder
-    dwall: float, default 1.0
+    dwall: float, default 1
         Wall-forming particles diameter
     epsilon: float, np.nan
         Wall-particle LJ interaction strength. Its associated keyword is
         'epsilon' keyword.
-    eps_others: float, default 1.0
+    eps_others: float, default 1
         Other LJ interaction strengths
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
@@ -421,13 +421,13 @@ class SumRuleCyl(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment: str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-    self.rho_m_bulk: float, default np.nan
+    rho_m_bulk: float, default np.nan
         Bulk number density fraction of monomers
-    self.phi_m_bulk: float, default np.nan
+    phi_m_bulk: float, default np.nan
         Bulk volume fraction of monomers
-    self.rho_c_bulk: float, default np.nan
+    rho_c_bulk: float, default np.nan
         Bulk number density fraction of crowders
-    self.phi_c_bulk: float, default np.nan
+    phi_c_bulk: float, default np.nan
         Bulk volume fraction of crowders
 
     Class Attributes
@@ -769,7 +769,7 @@ class TransFociCyl(ParserBase):
         The topology of the polymer.
     lineage_name: str,
         The unique name of type extracted from self.fullname
-    dmon_small: float, default 1.0
+    dmon_small: float, default 1
         Size (diameter) of a monomer
     nmon_small: int, np.nan
         number of small monomers. Its associated keyword is 'ns'.
@@ -789,7 +789,7 @@ class TransFociCyl(ParserBase):
         number of crowders. Its associated keyword is 'nc'.
     mcrowd: float, default np.nan
         Mass of a crowder
-    dwall: float, default 1.0
+    dwall: float, default 1
         Wall-forming particles diameter
     epsilon_s: float, np.nan
         Wall-small-monomer LJ interaction strength. Its associated keyword is
@@ -797,7 +797,7 @@ class TransFociCyl(ParserBase):
     epsilon_l: float, np.nan
         Wall-large-monomer LJ interaction strength. Its associated keyword is
         'espl' keyword.
-    eps_others: float, default 1.0
+    eps_others: float, default 1
         Other LJ interaction strengths
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
@@ -843,13 +843,13 @@ class TransFociCyl(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment: str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-    self.rho_m_bulk: float, default np.nan
+    rho_m_bulk: float, default np.nan
         Bulk number density fraction of monomers
-    self.phi_m_bulk: float, default np.nan
+    phi_m_bulk: float, default np.nan
         Bulk volume fraction of monomers
-    self.rho_c_bulk: float, default np.nan
+    rho_c_bulk: float, default np.nan
         Bulk number density fraction of crowders
-    self.phi_c_bulk: float, default np.nan
+    phi_c_bulk: float, default np.nan
         Bulk volume fraction of crowders
 
     Class Attributes
@@ -1003,7 +1003,7 @@ class TransFociCyl(ParserBase):
         The negative initial values are unphysical.
         """
         # group attributes
-        self.dmon_small: float = 1.0
+        self.dmon_small: float = 1
         self.nmon_small: int = -1
         self.mmon_small: float = self.dmon_small**3
         self.nmon_large: int = -1
@@ -1025,8 +1025,8 @@ class TransFociCyl(ParserBase):
         self.adump: int = -1
         # geometry attributes
         self.lcyl: float = -1
-        self.dwall: float = 1.0
-        self.eps_others: float = 1.0
+        self.dwall: float = 1
+        self.eps_others: float = 1
         self.dcyl: float = -1
         self.epsilon_small: float = -1
         self.epsilon_large: float = -1
@@ -1038,16 +1038,8 @@ class TransFociCyl(ParserBase):
         """
         str_lineages = re.compile(r"([a-zA-Z\-]+)")
         words = str_lineages.split(self.lineage_name)
-        attributes_float = [
-            "dmon_large",
-            "dcyl",
-            "lcyl",
-            "epsilon_small",
-            "epsilon_large",
-            "mmon_large",
-            "dcrowd",
-            "dt",
-        ]
+        attributes_float = ["dmon_large", "dcyl", "lcyl", "epsilon_small"
+                            "epsilon_large", "mmon_large", "dcrowd", "dt"]
         for attr_n, attr_kw in self._lineage_attributes[self.lineage].items():
             try:
                 attr_value = words[words.index(attr_kw) + 1]
@@ -1239,7 +1231,7 @@ class TransFociCub(ParserBase):
         The topology of the polymer.
     lineage_name: str,
         The unique name of type extracted from self.fullname
-    dmon_small: float, default 1.0
+    dmon_small: float, default 1
         Size (diameter) of a monomer
     nmon_small: int, np.nan
         number of small monomers. Its associated keyword is 'ns'.
@@ -1259,7 +1251,7 @@ class TransFociCub(ParserBase):
         number of crowders. Its associated keyword is 'nc'.
     mcrowd: float, default np.nan
         Mass of a crowder.
-    eps_others: float, default 1.0
+    eps_others: float, default 1
         Unit of the LJ interaction strength.
     lcube: float, np.nan
         Side of the cubic simulation box.
@@ -1289,13 +1281,13 @@ class TransFociCub(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment: str. "N/A"
         A segment's name if applicable, otherwise "N/A"
-    self.rho_m_bulk: float, default np.nan
+    rho_m_bulk: float, default np.nan
         Bulk number density fraction of monomers
-    self.phi_m_bulk: float, default np.nan
+    phi_m_bulk: float, default np.nan
         Bulk volume fraction of monomers
-    self.rho_c_bulk: float, default np.nan
+    rho_c_bulk: float, default np.nan
         Bulk number density fraction of crowders
-    self.phi_c_bulk: float, default np.nan
+    phi_c_bulk: float, default np.nan
         Bulk volume fraction of crowders
 
     Class Attributes
@@ -1434,7 +1426,7 @@ class TransFociCub(ParserBase):
         The negative initial values are unphysical.
         """
         # group attributes
-        self.dmon_small: float = 1.0
+        self.dmon_small: float = 1
         self.nmon_small: int = -1
         self.mmon_small: float = self.dmon_small**3
         self.nmon_large: int = -1
@@ -1455,7 +1447,7 @@ class TransFociCub(ParserBase):
         self.bdump: int = -1
         self.adump: int = -1
         # cubic attributes
-        self.eps_others: float = 1.0
+        self.eps_others: float = 1
         self.lcube: float = -1
 
     def _parse_lineage_name(self) -> None:
@@ -1622,7 +1614,7 @@ class HnsCub(ParserBase):
     lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
         'space'}
         Type of the lineage of the name.
-    geometry: 'cylindrical'
+    geometry: 'cubic'
         Shape of the simulation box.
     group: {'nucleoid', 'all'}
         Type of the particle group. 'nucleoid' is used for a single polymer
@@ -1655,13 +1647,13 @@ class HnsCub(ParserBase):
         The topology of the polymer.
     lineage_name: str,
         The unique name of type extracted from self.fullname
-    dmon: float, default 1.0
+    dmon: float, default 1
         Size (diameter) of a monomer
     nmon: int, np.nan
         number of monomers. Its associated keyword is 'N'.
     mmon: float, default dmon**3
         Mass of a small monomer
-    dhns: float, default 1.0
+    dhns: float, default 1
         Size (diameter) of a hns protein
     dhns_patch: float, default 0.178
         Size (diameter) of a hns protein patch at its pole.
@@ -1678,7 +1670,7 @@ class HnsCub(ParserBase):
     eps_hm: float, default np.nan
         The strength of attractive LJ interaction between hns poles and
         monomers. Its associated keyword is 'epshm'.
-    eps_others: float, default 1.0
+    eps_others: float, default 1
         Unit of the LJ interaction strength
     lcube: float, np.nan
         Side of the cubic simulation box.
@@ -1708,17 +1700,17 @@ class HnsCub(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment: str. "N/A"
         A segment's name if applicable, otherwise "N/A"
-    self.rho_m_bulk: float, default np.nan
+    rho_m_bulk: float, default np.nan
         Bulk number density fraction of monomers
-    self.phi_m_bulk: float, default np.nan
+    phi_m_bulk: float, default np.nan
         Bulk volume fraction of monomers
-    self.rho_hns_bulk: float, default np.nan
+    rho_hns_bulk: float, default np.nan
         Bulk number density fraction of hns proteins
-    self.phi_hns_bulk: float, default np.nan
+    phi_hns_bulk: float, default np.nan
         Bulk volume fraction of hns proteins
-    self.rho_c_bulk: float, default np.nan
+    rho_c_bulk: float, default np.nan
         Bulk number density fraction of crowders
-    self.phi_c_bulk: float, default np.nan
+    phi_c_bulk: float, default np.nan
         Bulk volume fraction of crowders
 
     Class Attributes
@@ -1860,12 +1852,12 @@ class HnsCub(ParserBase):
         All negative initial values are unphysical.
         """
         # group attributes
-        self.dmon: float = 1.0
+        self.dmon: float = 1
         self.nmon: int = -1
         self.mmon: float = self.dmon**3
         self.phi_m_bulk: float = -1
         self.rho_m_bulk: float = -1
-        self.dhns: float = 1.0
+        self.dhns: float = 1
         self.dhns_patch: float = 0.178
         self.nhns: int = -1
         self.mhns: float = self.dhns**3
@@ -1884,7 +1876,7 @@ class HnsCub(ParserBase):
         self.adump: int = -1
         # cubic attributes
         self.eps_hm: float = -1
-        self.eps_others: float = 1.0
+        self.eps_others: float = 1
         self.lcube: float = -1
 
     def _parse_lineage_name(self) -> None:
@@ -1987,6 +1979,420 @@ class HnsCub(ParserBase):
         primary attributes.
         """
         vol_cell = self.lcube**3
+        vol_mon = np.pi * self.dmon**3 / 6
+        self.rho_m_bulk = self.nmon / vol_cell
+        self.phi_m_bulk = vol_mon * self.nmon / vol_cell
+        vol_hns = np.pi * self.dhns**3 / 6
+        self.rho_hns_bulk = self.nmon / vol_cell
+        self.phi_hns_bulk = vol_hns * self.nmon / vol_cell
+        vol_crowd = np.pi * self.dcrowd**3 / 6
+        self.rho_c_bulk = self.ncrowd / vol_cell
+        self.phi_c_bulk = self.rho_c_bulk * vol_crowd
+
+
+class HnsCyl(ParserBase):
+    name: str
+    lineage: str
+    geometry: str
+    group: str
+    topology: str
+    ispath: bool = True
+    """
+    parses a `name` (which can be a filename or a pathname based on the value
+    of `ispath` argument) to extract information about a project's file
+    based on a pattern pre-defined by the `lineage` in the
+    'cubic' geometry for a given `group` in the project.
+
+    In the geometry 'cylindrical', these patterns are used to parse a `name`:
+        segment: N#kbmm#r#nh#ac#lz#nc#ens#.j#.ring
+            One of multiple chunks of a complete simulation or measurement.
+        whole: N#kbmm#r#nh#ac#r#lz#nc#ens#.ring
+            A complete simulation or measurement; a collection of 'segments'.
+        ensemble_long: N#kbmm#r#nh#ac#lz#nc#.ring
+            Long name of an ensemble.
+        ensemble: N#D#nh#ac#nc#
+            A collection of 'wholes' (complete simulations) that differs only
+            in their initial conditions (e.g., random number seed).
+        space: N#D#nh#ac#
+            A collection of ensembles with a unique set of all the input
+            parameters except number of crowders (nc).
+
+    In the above lineages, the keywords are attributes where their values
+    (shown by "#" sign) are float or integer number. If a lineage does not
+    have an attribute, then the value of that attribute is set to numpy.nan.
+    These are the attributes with "numpy.nan" values for different lineages:
+
+        whole: 'j'
+        ensemble_long: 'ens', and 'j'
+        ensemble: 'ens', 'j', 'l', 
+        space: 'ens' , 'j', 'l', and 'nc'
+
+    There are some difference between the keywords of physical attributes and
+    their associated attributes in the `HnsCub` class. Below, the these two
+    types of attributes are explained.
+
+    The mass density is uniform and is the same for all the species so,
+    m = d ** 3 is used to define mass for species whose masses are not parsed.
+
+    Parameters
+    ----------
+    name: str
+        Name that is parsed for extracting information.
+    lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
+        'space'}
+        Type of the lineage of the name.
+    geometry: 'cylindrical'
+        Shape of the simulation box.
+    group: {'nucleoid', 'all'}
+        Type of the particle group. 'nucleoid' is used for a single polymer
+        with its nucleoid-associated proteins within the nucleoid. 'all' is
+        used for all the particles/atoms in the system.
+    topology:
+        The topology of the polymer.
+    ispath: bool, default True
+        Whether the name is a filepath or a simple name.
+
+    Attributes
+    ----------
+    _pathname: str, default "N/A"
+        Equal to `name` if `name` is a filepath, otherwise "N/A".
+    _filename: str
+        Name of a the file referred to by `name` if `name` is a filepath,
+        otherwise the `name` itself.
+    _lineage: {'segment', 'whole', 'ensemble_long', 'ensemble',
+        'space'}, default whole
+        Type of the lineage of the name.
+    _geometry : {'cylindrical', 'slit', 'cubic'}
+        Shape of the simulation box.
+    _group: {'nucleoid', 'all'}
+        Type of the particle group.  'nucleoid' is used for a single polymer
+        with its nucleoid-associated proteins within the nucleoid. 'all' is
+        used for all the particles/atoms in the system.
+    _ispath: bool, default True
+        Whether the name is a filepath or a simple name.
+    _topology: str, default 'linear'
+        The topology of the polymer.
+    lineage_name: str,
+        The unique name of type extracted from self.fullname
+    dmon: float, default 1
+        Size (diameter) of a monomer
+    nmon: int, np.nan
+        number of monomers. Its associated keyword is 'N'.
+    mmon: float, default dmon**3
+        Mass of a small monomer
+    dhns: float, default 1
+        Size (diameter) of a hns protein
+    dhns_patch: float, default 0.178
+        Size (diameter) of a hns protein patch at its pole.
+    nhns: int, np.nan
+        number of hns protein. Its associated keyword is 'nh'.
+    mhns: float, default dhns**3
+        Mass of a hns protein
+    dcrowd: float, np.nan
+        Size (diameter) of a monomer. Its associated keyword is 'ac'.
+    ncrowd: int, np.nan
+        number of crowders. Its associated keyword is 'nc'.
+    mcrowd: float, default np.nan
+        Mass of a crowder
+    eps_hm: float, default 29
+        The strength of attractive LJ interaction between hns poles and
+        monomers. Its associated keyword is 'epshm'.
+    bend_mm: float, default np.nan
+        Bending rigidity of DNA monomers.
+    eps_others: float, default 1
+        Unit of the LJ interaction strength
+    dcyl: float, np.nan
+        Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
+        from either 'r' keyword (radius of the cylindrical confinement with
+        open ends) or 'D' keyword (size of that confinement. Following
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inclusive is the
+        domain over which x and y cartesian coordinates are defined in the
+        'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
+        inclusive is the domain over which z cartesian coordinate is defined
+        in the 'slit' geometry. It is important to note that `dcyl` is
+        different from the size defined in LAMMPS input file if the
+        wall-forming particle are defined; in this case:
+            `self.dcyl` = LAMMPS.dcyl - `self.dwall`
+        Hence, `dcyl` is defined differently in different parser classes in
+        this module.
+    lcyl: float, np.nan
+        Length of the cylindrical confinement along z axis (the periodic,
+        direction), inferred from 'lz' keyword (half of the length of the
+        cylindrical confinement along z axis.
+    dt: float, default 0.005
+        Simulation timestep. Its associated keyword is 'dt'.
+    ndump: int, default 5000
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        trajectory file. Its associated keyword is 'ndump'.
+    adump: int, default 10000
+        Frequency by which 'all' configurations are dumped in a 'segment'
+        trajectory file. Its associated keyword is 'adump'.
+    ensemble_id: int, np.nan
+        The ensemble number of a 'whole' simulation in an ensemble. Its
+        associated keyword is 'ens'.
+    segment_id: int, np.nan
+        The 'segment_id' keyword starts with 'j', ends with a 'padded'
+        number such as '05' or '14', showing the succession of segments
+        in a whole file. Its associated keyword is 'j'.
+    space: str
+        A space's name
+    ensemble: str, "N/A"
+        An ensemble's name if applicable, otherwise "N/A"
+    ensemble_long: str, "N/A"
+        The name of ensemble derived from 'whole' name if applicable,
+        otherwise "N/A"
+    whole: str, "N/A"
+        A whole's name if applicable, otherwise "N/A"
+    segment: str. "N/A"
+        A segment's name if applicable, otherwise "N/A"
+    rho_m_bulk: float, default np.nan
+        Bulk number density fraction of monomers
+    phi_m_bulk: float, default np.nan
+        Bulk volume fraction of monomers
+    rho_hns_bulk: float, default np.nan
+        Bulk number density fraction of hns proteins
+    phi_hns_bulk: float, default np.nan
+        Bulk volume fraction of hns proteins
+    rho_c_bulk: float, default np.nan
+        Bulk number density fraction of crowders
+    phi_c_bulk: float, default np.nan
+        Bulk volume fraction of crowders
+
+    Class Attributes
+    ----------------
+    _groups: list of str
+        Possible groups of the `HnsCyl` project.
+    _lineage_attributes: dict of dict
+        a dictionary of `lineage` names. For each `lineage`, a dictionary
+        maps the keywords of physical attributes in that lineage to their
+        corresponding attributes in this class.
+    _physical_attributes: dict of lists
+        a dictionary of `lineage` names. For each `lineage`, a list of
+        class attributes that are NOT "N/A" or np.nan is created. This
+        attributes are either used in the simulation/experiment/run but not use
+        the `name`, or are created within this class.
+    """
+    _groups = ["nucleoid", "all"]
+    _lineage_attributes: Dict[str, Dict[str, str]] = {
+        "segment": {  # lcube twice of l
+            "nmon": "N",
+            "bend_mm": "kbmm",
+            "nhns": "nh",
+            "dcyl": "r",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcyl": "lz",
+            "ensemble_id": "ens",
+            "segment_id": "j",
+        },
+        "whole": {  # lcube twice of l
+            "nmon": "N",
+            "bend_mm": "kbmm",
+            "nhns": "nh",
+            "dcyl": "r",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcyl": "lz",
+            "ensemble_id": "ens",
+        },
+        "ensemble_long": {  # lcube twice of l
+            "nmon": "N",
+            "bend_mm": "kbmm",
+            "nhns": "nh",
+            "dcyl": "r",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+            "lcyl": "lz",
+        },
+        "ensemble": {
+            "nmon": "N",
+            "nhns": "nh",
+            "dcyl": "D",
+            "dcrowd": "ac",
+            "ncrowd": "nc",
+        },
+        "space": {
+            "nmon": "N",
+            "nhns": "nh",
+            "dcyl": "D",
+            "dcrowd": "ac"
+        },
+    }
+    _physical_attributes: Dict[str, List[str]] = {
+        "segment": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+                    "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt","ndump", "adump" ],
+        "whole": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+                  "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt","ndump", "adump" ],
+        "ensemble_long": ["dmon", "mmon", "dhns", "mhns", "mcrowd",
+                          "eps_others", "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt", "ndump", "adump" ],
+        "ensemble": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+                     "eps_hm", "dt", "ndump", "adump"],
+        "space": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+                  "eps_hm", "dt", "ndump", "adump"],
+    }
+    _geometry_error = "'HnsCyl' is used for the 'cylindrical' geometry."
+
+    def __init__(
+        self,
+        name: str,
+        lineage: str,
+        geometry: str,
+        group: str,
+        topology: str,
+        ispath: bool = True,
+    ) -> None:
+        invalid_keyword(geometry, ["cylindrical"], self._geometry_error)
+        invalid_keyword(group, self._groups)
+        super().__init__(name, lineage, geometry, group, topology, ispath)
+        self._initiate_attributes()
+        self._parse_lineage_name()
+        self._set_parents()
+        self.attributes = (
+            list(self._lineage_attributes[self.lineage].keys())
+            + self._physical_attributes[self.lineage]
+        )
+        self.genealogy: List[str] = super()._genealogy[self.lineage]
+        if self.lineage in ["segment", "whole", "ensemble_long"]:
+            self._bulk_attributes()
+
+    def _initiate_attributes(self) -> None:
+        """
+        defines and initiates the class attributes based on the physical
+        attributes defined for the project.
+
+        All negative initial values are unphysical.
+        """
+        # group attributes
+        self.dmon: float = 1
+        self.nmon: int = -1
+        self.mmon: float = self.dmon**3
+        self.phi_m_bulk: float = -1
+        self.rho_m_bulk: float = -1
+        self.dhns: float = 1
+        self.dhns_patch: float = 0.178
+        self.nhns: int = -1
+        self.mhns: float = self.dhns**3
+        self.phi_hns_bulk: float = -1
+        self.rho_hns_bulk: float = -1
+        self.dcrowd: float = -1
+        self.ncrowd: int = -1
+        self.mcrowd: float = -1
+        self.phi_c_bulk: float = -1
+        self.rho_c_bulk: float = -1
+        # system attributes
+        self.ensemble_id: int = -1
+        self.segment_id: int = -1
+        self.dt: float = 0.005
+        self.ndump: int = 5000
+        self.adump: int = 10000
+        # cubic attributes
+        self.bend_mm: float = -1
+        self.eps_hm: float = 29
+        self.eps_others: float = 1
+        self.dcyl: float = -1
+        self.lcyl: float = -1
+
+    def _parse_lineage_name(self) -> None:
+        """
+        parses a lineage_name based on a list of keywords of physical
+        attributes.
+        """
+        str_lineages = re.compile(r"([a-zA-Z\-]+)")
+        words = str_lineages.split(self.lineage_name)
+        attributes_float = ["bend_mm", "dcyl", "lcyl", "dcrowd"]
+        for attr_n, attr_kw in self._lineage_attributes[self.lineage].items():
+            try:
+                attr_value = words[words.index(attr_kw) + 1]
+                if attr_n in attributes_float:
+                    attr_value = float(attr_value)
+                else:
+                    attr_value = int(float(attr_value))
+                if attr_kw in ["lz", "r"]:
+                    attr_value = 2 * attr_value
+                setattr(self, attr_n, attr_value)
+            except ValueError:
+                print(
+                    f"'{attr_kw}'"
+                    " attribute keyword is not in "
+                    f"'{self.lineage_name}'"
+                    " lineage name. Please check whether "
+                    f"'{self.filename}'"
+                    " is valid name or not."
+                )
+        self.mcrowd = self.dcrowd**3
+
+    def _set_parents(self) -> None:
+        """
+        set to parent names for a lineage_name based on its lineage.
+
+        The following map is used for setting relationships:
+
+            'segment': A child of 'whole' lineage.
+            'whole': A child of 'ensemble' lineage.
+            'ensemble': A child of 'space' lineage.
+            'space': The root of other lineages.
+
+        It is assumed that 'nc' is the last attribute short-key in a
+        lineage_name of types: 'ensemble', 'ensemble_long', 'whole', 'segment'.
+        """
+        convention_warning = (
+            "It is assumed that 'nc' is the last attribute"
+            + " short-key in a lineage_name of types:"
+            + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
+        )
+        #N#D#nh#ac#nc#
+        space_name = (
+            "N"
+            + str(self.nmon)
+            + "D"
+            + str(self.dcyl)
+            + "nh"
+            + str(self.nhns)
+            + "ac"
+            + str(self.dcrowd)
+        )
+        ensemble_name = space_name + "nc" + str(self.ncrowd)
+        if self.lineage == "space":
+            self.space = self.lineage_name
+            self.ensemble = "N/A"
+            self.ensemble_long = "N/A"
+            self.whole = "N/A"
+            self.segment = "N/A"
+        elif self.lineage == "ensemble":
+            self.space = self.lineage_name.split("nc")[0]
+            warnings.warn(convention_warning, UserWarning)
+            self.ensemble = self.lineage_name
+            self.ensemble_long = "N/A"
+            self.whole = "N/A"
+            self.segment = "N/A"
+        elif self.lineage == "ensemble_long":
+            self.space = space_name
+            self.ensemble = ensemble_name
+            warnings.warn(convention_warning, UserWarning)
+            self.ensemble_long = self.lineage_name
+            self.whole = "N/A"
+            self.segment = "N/A"
+        elif self.lineage == "whole":
+            self.space = space_name
+            self.ensemble = ensemble_name
+            warnings.warn(convention_warning, UserWarning)
+            self.ensemble_long = self.lineage_name.split("ens")[0]
+            self.whole = self.lineage_name
+            self.segment = "N/A"
+        else:
+            self.space = space_name
+            self.ensemble = ensemble_name
+            warnings.warn(convention_warning, UserWarning)
+            self.ensemble_long = self.lineage_name.split("ens")[0]
+            self.whole = self.lineage_name.split(".j")[0]
+            self.segment = self.lineage_name
+
+    def _bulk_attributes(self) -> None:
+        """
+        computes some physical attributes of a lineage based on its
+        primary attributes.
+        """
+        vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4
         vol_mon = np.pi * self.dmon**3 / 6
         self.rho_m_bulk = self.nmon / vol_cell
         self.phi_m_bulk = vol_mon * self.nmon / vol_cell
@@ -2101,7 +2507,7 @@ class FloryChain(object):
         """
         self.w3body_model = "N/A"
         self.vexc_model = "N/A"
-        self.dmon = 1.0
+        self.dmon = 1
         self.nmon = np.nan
         self.dcyl = np.nan
         self.dcrowd = np.nan
@@ -2151,7 +2557,7 @@ class FloryChain(object):
             self.w3body_athr = (5 / 8) * self.vexc_athr**2
         elif self.vexc_model == "HaExcVol":
             # The fully-repulsive Weeks–Chandler–Anderson (WCA) potential
-            # with r_cut = 2**(1/6) * sigma where sigma=self.dmon=1.0
+            # with r_cut = 2**(1/6) * sigma where sigma=self.dmon=1
             self.vexc_athr = 4.40944631
             self.w3body_athr = (5 / 8) * self.vexc_athr**2
         else:
@@ -2171,9 +2577,9 @@ class FloryChain(object):
         if self.dimension == 3:
             self.r_flory = 1.12 * self.dmon * self.nmon**self.flory_exponent
         elif self.dimension == 2:
-            print("In 2-dimensional space, the pre-factor is set to 1.0.")
+            print("In 2-dimensional space, the pre-factor is set to 1.")
             self.r_flory = (
-                1.0
+                1
                 * self.dmon
                 * (
                     self.nmon**self.flory_exponent
@@ -2257,7 +2663,7 @@ class FloryChain(object):
         if limit:
             # Limit the data only to -1*exc_vol_athr <= exc_vol <= exc_vol_athr
             limit_range = (self.chain_size["vexc_scaled"] <= 1.5) & (
-                self.chain_size["vexc_scaled"] >= -1.0
+                self.chain_size["vexc_scaled"] >= -1
             )
             self.chain_size = self.chain_size[limit_range]
 
@@ -2505,7 +2911,7 @@ class ExcludedVolume(object):
         attributes defined for the project.
         """
         self.vexc_model = "N/A"
-        self.dmon = 1.0
+        self.dmon = 1
         self.dcrowd = np.nan
 
     def _parse_name(self) -> None:
@@ -2527,7 +2933,7 @@ class ExcludedVolume(object):
             )
         new_words = str_attrs.split(words[2])  # find dcrowd
         self.dcrowd = float(new_words[new_words.index("ac") + 1])
-        if (self.dcrowd == 1.0) & (self.vexc_model == "WCA"):
+        if (self.dcrowd == 1) & (self.vexc_model == "WCA"):
             print(
                 f"The excluded data for 'a_c={self.dcrowd}'"
                 " is computed via the fitting function for a_c<a in the"
@@ -2576,8 +2982,8 @@ class ExcludedVolume(object):
         # Limit the vexc data to [-1*vexc_athr, vexc_athr]:
         if limit is True:
             self.vexc_df = self.vexc_df[
-                (self.vexc_df["vexc_scaled"] <= 1.0)
-                & (self.vexc_df["vexc_scaled"] >= (-1 * 1.0))
+                (self.vexc_df["vexc_scaled"] <= 1)
+                & (self.vexc_df["vexc_scaled"] >= (-1 * 1))
             ]
 
     def add_model_info(self):
@@ -2653,7 +3059,7 @@ class FreeEnergyVirial(object):
         """
         self.tail_model = "N/A"
         self.vdep_model = "N/A"
-        self.dmon = 1.0
+        self.dmon = 1
         self.vmon = np.pi * self.dmon**3 / 6
         self.nmon = np.nan
         self.dcyl = np.nan

@@ -17,8 +17,6 @@ fi
 echo "Trajectory directory: $trjdir"
 mkdir "$trjdir"
 mkdir "$logdir"
-#for dir in al*[1-8].ring/; do # TransFociCub
-#for dir in eps*[1-8].ring/; do # TransFociCyl
 for dir in N*[1-8].ring/; do
     echo "$dir"
     fname=$(echo "$dir" | cut -d / -f 1)
