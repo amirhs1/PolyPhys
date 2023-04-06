@@ -97,7 +97,7 @@ change_box  all x final -${r} ${r} y final -${r} ${r} z final -${lz} ${lz} bound
 #### The simulation region:
 region  cylshell cylinder z 0.0 0.0 ${r} INF INF units box
 #### The smaller region for creating atoms randomly and prevent bond lost error
-variable rCylCreate equal ${r}-1
+variable rCylCreate equal ${r}-0.5*${sig4}
 variable zCylCreate equal ${lz}-${r}
 region cylcreate cylinder z 0.0 0.0 ${rCylCreate} -${zCylCreate} ${zCylCreate} units box 
 
