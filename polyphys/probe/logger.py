@@ -42,9 +42,9 @@ class LammpsLog:
     _real_num = re.compile(r"[-+]?\d+(?:\.\d+)?(?:[eE][\-\+]?\d+)?")
 
     def __init__(self, filepath: str, product_idx: int) -> None:
-        self.wall_time: pd.DataFrame = None
-        self.run_stat: pd.DataFrame = None
-        self.thermo: pd.DataFrame = None
+        self.wall_time: pd.DataFrame = pd.DataFrame()
+        self.run_stat: pd.DataFrame = pd.DataFrame()
+        self.thermo: pd.DataFrame = pd.DataFrame()
         self.filepath = filepath
         self.filename, _ = os.path.splitext(self.filepath)
         self.filename: str = self.filename.split("/")[-1]

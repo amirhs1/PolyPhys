@@ -2,6 +2,7 @@ from glob import glob
 from typing import (
     Callable,
     Dict,
+    List,
     Tuple,
     Optional
 )
@@ -413,7 +414,7 @@ def fit_wholes(
     Scipy, Numpy, PolyPhys, Pandas
     """
     invalid_keyword(scale, ['zscore', 'minmax', None])
-    fit_funcs = {
+    fit_funcs: Dict[str, Dict[str, Callable | List[str]]] = {
         'mono_unit_exp': {
             'func': mono_unit_exp,
             'params': ['omega', 'alpha']

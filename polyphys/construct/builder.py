@@ -217,10 +217,10 @@ def write_data_for_trj(
 def bug_data_file_generator(
     data_template: str,
     trjs: List[str],
+    parser: ParserT,
     geometry: str = 'biaixal',
     topology: str = 'linear',
     lineage: str = 'whole',
-    parser: ParserT = SumRuleCyl,
     save_to: str = './'
 ) -> None:
     """generate conjugate LAMMPS data files based on `data_template` for

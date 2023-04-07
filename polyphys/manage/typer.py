@@ -2,9 +2,7 @@ from typing import Type, Union, Tuple, Dict, NewType
 import numpy as np
 import pandas as pd
 # pylint: disable-next=reportShadowedImports
-from .parser import (
-    TransFociCyl, TransFociCub, SumRuleCyl, HnsCub, Snapshot
-)
+from .parser import *
 
 # String types:
 
@@ -28,12 +26,8 @@ FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
 
 # Parser types
-TransFociCubT = Type[TransFociCub]
-TransFociCylT = Type[TransFociCyl]
-TransFociT = Union[TransFociCylT, TransFociCubT]
-SumRuleCylT = Type[SumRuleCyl]
-HnsCubT = Type[HnsCub]
-ParserT = Union[TransFociCylT, TransFociCubT, SumRuleCylT, HnsCubT]
-
-# Lammps Snapshot
-SnapshotT = Type[Snapshot]
+TransFociT = Union[TransFociCyl, TransFociCub]
+HnsT = Union[HnsCyl, HnsCub]
+ParserT = Union[TransFociCyl, TransFociCub, SumRuleCyl, HnsCub, HnsCyl]
+ParserCylT = Union[TransFociCyl, SumRuleCyl,HnsCyl]
+ParserCubT = Union[TransFociCub, HnsCub]

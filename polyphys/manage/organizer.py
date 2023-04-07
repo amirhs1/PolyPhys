@@ -670,7 +670,7 @@ def whole_from_dist_mat_t(
     wholes_rdfs = {}
     wholes_tseries = {}
     for whole_path in whole_paths:
-        whole_info = parser(
+        whole_info: TransFociT = parser(
             whole_path[0],
             'whole',
             geometry,

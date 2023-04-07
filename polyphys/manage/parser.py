@@ -184,7 +184,31 @@ class ParserBase(ABC):
                 self.filename.split("." + self._group)[0].split("-")[0]
         else:  # 'ensemble' or 'space' lineages
             self.lineage_name = self.filename.split("-")[0]
+   
+    @property
+    def lineage_attributes(self) -> Dict[str, None]:
+        """
+        gets the `lineage_attributes`.
 
+        Returns
+        -------
+        str
+            returns the `lineage_attributes`.
+        """
+        return self._lineage_attributes
+    
+    @property
+    def physical_attributes(self) -> Dict[str, None]:
+        """
+        gets the `physical_attributes`.
+
+        Returns
+        -------
+        str
+            returns the `physical_attributes`.
+        """
+        return self._physical_attributes
+    
     @property
     def ispath(self) -> bool:
         """
@@ -543,7 +567,7 @@ class SumRuleCyl(ParserBase):
             list(self._lineage_attributes[self.lineage].keys())
             + self._physical_attributes[self.lineage]
         )
-        self.genealogy: List[str] = super()._genealogy[self.lineage]
+        self.genealogy: List[str] = super()._genealogy[lineage]
         if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._bulk_attributes()
 
@@ -2024,7 +2048,7 @@ class HnsCyl(ParserBase):
 
         whole: 'j'
         ensemble_long: 'ens', and 'j'
-        ensemble: 'ens', 'j', 'l', 
+        ensemble: 'ens', 'j', 'l',
         space: 'ens' , 'j', 'l', and 'nc'
 
     There are some difference between the keywords of physical attributes and
@@ -2220,11 +2244,15 @@ class HnsCyl(ParserBase):
     }
     _physical_attributes: Dict[str, List[str]] = {
         "segment": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
-                    "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt","ndump", "adump" ],
+                    "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+                    "eps_hm", "dt", "ndump", "adump"],
         "whole": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
-                  "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt","ndump", "adump" ],
+                  "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+                  "eps_hm", "dt", "ndump", "adump"],
         "ensemble_long": ["dmon", "mmon", "dhns", "mhns", "mcrowd",
-                          "eps_others", "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt", "ndump", "adump" ],
+                          "eps_others", "phi_m_bulk", "rho_m_bulk",
+                          "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt", "ndump",
+                          "adump"],
         "ensemble": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
                      "eps_hm", "dt", "ndump", "adump"],
         "space": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
@@ -2340,7 +2368,6 @@ class HnsCyl(ParserBase):
             + " short-key in a lineage_name of types:"
             + " 'ensemble', 'ensemble_long', 'whole', 'segment'."
         )
-        #N#D#nh#ac#nc#
         space_name = (
             "N"
             + str(self.nmon)
@@ -3217,7 +3244,7 @@ class Snapshot:
 
         x_flag = y_flag = z_flag = -1
         self.props = {
-            c: i for i, c in enumerate(self.file.readline().split()[2:])
+            c: i for i, c in enumerate(str(self.file.readline().split()[2:]))
             }  # dump per atom props
         props = list(self.props.keys())
         if ("x" in props) or ("xu" in props):
@@ -3315,7 +3342,7 @@ class Dump:
             section of a snapshot, determining per atom properties in that
             snapshot.
         """
-        names_res = dict(((v, k) for k, v in self.names.items()))
+        names_res: Dict[int, str] = dict(((v, k) for k, v in self.names.items()))
         names_res = OrderedDict(sorted(names_res.items()))
         col_str = " ".join(names_res.values())
         return col_str
