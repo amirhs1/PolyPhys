@@ -18,10 +18,7 @@ from typing import Dict, Tuple, Optional, Callable
 import numpy as np
 from numpy.typing import ArrayLike
 import scipy.integrate as integrate
-from ..manage.typer import (
-    ParserT, FreqDataT, EdgeDataT, TransFociCubT, SumRuleCylT, TransFociCylT,
-    HnsCubT
-)
+from ..manage.typer import (ParserT, FreqDataT, EdgeDataT)
 
 
 def spherical_segment(
@@ -302,10 +299,6 @@ class SpatialDistribution(object):
         'cubic': ['r', 'theta', 'phi'],
         'slit': ['r', 'phi', 'z'],
         'cylindrical': ['r', 'phi', 'z']
-    }
-    _parsers = {
-        'cubic': (TransFociCubT, HnsCubT),
-        'cylindrical': (TransFociCylT, SumRuleCylT),
     }
     _integrands = {
         'cubic': {

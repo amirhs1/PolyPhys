@@ -115,7 +115,7 @@ def round_up_nearest(
 
 
 def invalid_keyword(
-    keyword: str,
+    keyword: str | None,
     valid_keywords: List[str],
     message: Optional[str] = None
 ) -> None:
