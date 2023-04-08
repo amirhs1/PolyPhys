@@ -36,5 +36,5 @@ done
 # move Lammps running files to run_files directory
 rundir=run_files-${name}
 mkdir "$rundir"
-mv ./*.data ./*.lmp ./*.sh "$rundir"
+mv ./*.data ./*.lmp ./*.sh ./*.mol "$rundir"
 echo "Finished!"
