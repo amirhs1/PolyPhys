@@ -2,7 +2,7 @@
 # This part is different between different projects
 #for dir in al*.ring/; do # TransFociCub
 #for dir in eps*.ring/; do # TransFociCyl
-#for dir in N*[1-8].ring/; do # HnsCub
+#for dir in N*[1-8].ring/; do # HnsCub HnsCyl
 for dir in N*[1-8]/; do # SumRuleCyl
     echo "$dir"
     cd "$dir" || exit
