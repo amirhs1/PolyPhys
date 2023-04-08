@@ -22,7 +22,7 @@ for dir in N*[1-8].ring/; do
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"
     cd "$dir" || exit
-    cp "$fname".bug.lammpstrj ../"$trjdir"/"$fname"/
+    cp "$fname".nucleoid.lammpstrj ../"$trjdir"/"$fname"/
     cp "$fname".all.data ../"$trjdir"/"$fname"/
     for gzfile in N*.all.lammpstrj.gz;do 
             gzip -dk "$gzfile"
@@ -36,5 +36,5 @@ done
 # move Lammps running files to run_files directory
 rundir=run_files-${name}
 mkdir "$rundir"
-mv ./*.data ./*.lmp ./*.sh "$rundir"
+mv ./*.data ./*.lmp ./*.sh ./*.mol "$rundir"
 echo "Finished!"
