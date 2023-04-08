@@ -3188,7 +3188,7 @@ def hns_nucleoid_cyl(
     cell = mda.Universe(
         topology, trajectory, topology_format='DATA',
         format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        unwrap_images=True,  # in_memory=True,
+        #unwrap_images=True,  # in_memory=True,
         atom_style="id resid type x y z", dt=sim_real_dt,
         )
     if continuous:
@@ -3217,7 +3217,7 @@ def hns_nucleoid_cyl(
     dist_m_hpatch_t = []
     dist_m_hcore_t = []
     dist_m_m_t = []
-    for _ in sliced_trj:
+    for _ in sliced_trj[::100]:
         # bug:
         # various measures of chain size
         gyr_t.append(bug.radius_of_gyration())
