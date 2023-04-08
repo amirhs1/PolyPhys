@@ -21,7 +21,7 @@
 #bugName=bug
 #w=N
 #end=[1-8]
-# For HnsCub project, allLine=38
+# For HnsCub HnsCyl project, allLine=38
 allLine=38
 bugName=nucleoid
 w=N
@@ -31,7 +31,7 @@ nextLine=$((allLine + 1))
 
 #for dir in eps*.ring/; do # TransFociCyl
 #for dir in N*.ring/; do # SumRuleCyl
-#for dir in N*.ring/; do # HnsCub
+#for dir in N*.ring/; do # HnsCub HnsCyl
 for dir in "${w}"*"${end}"/; do # TransFociCub
     echo "${dir}"
     name=${dir:0:-1}
