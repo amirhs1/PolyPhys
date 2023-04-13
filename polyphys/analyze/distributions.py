@@ -804,6 +804,11 @@ def distributions_generator(
             'Mon': 'dmon',
             'Hns': 'dhns',
             'Crd': 'dcrowd'
+        },
+        'HnsCyl': {
+            'Mon': 'dmon',
+            'Hns': 'dhns',
+            'Crd': 'dcrowd'
         }
     }
     lbox_attrs = {
@@ -813,7 +818,8 @@ def distributions_generator(
         },
         'cylindrical': {
             'SumRuleCyl': 'lcyl',
-            'TransFociCyl': 'lcyl'
+            'TransFociCyl': 'lcyl',
+            'HnsCyl': 'lcyl'
         }
     }
     dbox_attrs = {
@@ -823,7 +829,8 @@ def distributions_generator(
         },
         'cylindrical': {
             'SumRuleCyl': 'dcyl',
-            'TransFociCyl': 'dcyl'
+            'TransFociCyl': 'dcyl',
+            'HnsCyl': 'dcyl'
         }
     }
     geometries = ['cubic', 'cylindrical']

@@ -1441,7 +1441,8 @@ def space_tseries(
         'TransFociCyl': 'bdump',
         'TransFociCub': 'bdump',
         'SumRuleCyl': 'bdump',
-        'HnsCub': 'ndump'
+        'HnsCub': 'ndump',
+        'HnsCyl': 'ndump'
     }
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
