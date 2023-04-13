@@ -464,7 +464,7 @@ def database_path(
 def whole_from_segment(
     property_: str,
     segments: List[Tuple[str]],
-    parser: Callable,
+    parser: ParserT,
     geometry: str,
     group: str,
     topology: str,
@@ -482,7 +482,7 @@ def whole_from_segment(
     segments: list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
@@ -575,7 +575,7 @@ def whole_from_segment(
 
 def whole_from_file(
     whole_paths: List[Tuple[str]],
-    parser: Callable,
+    parser: ParserT,
     geometry: str,
     group: str,
     topology: str
@@ -589,7 +589,7 @@ def whole_from_file(
     whole_paths : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
@@ -643,7 +643,7 @@ def whole_from_dist_mat_t(
     whole_paths : list of tuples
         List of tuples where each tuple at least has one member (the path to
         a csv file for the `property_`).
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     geometry : {'cylindrical', 'slit', 'cubic'}
@@ -1398,7 +1398,7 @@ def space_tseries(
         Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     hierarchy: str
@@ -1524,7 +1524,7 @@ def space_hists(
         Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     hierarchy: str
@@ -1740,7 +1740,7 @@ def normalize_r(
 def space_sum_rule(
     input_database: str,
     property_: str,
-    parser: Callable,
+    parser: ParserT,
     hierarchy: str,
     physical_attrs: List[str],
     species: str,
@@ -1785,7 +1785,7 @@ def space_sum_rule(
         Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     hierarchy: str
@@ -1918,7 +1918,7 @@ def space_sum_rule(
 def space_sum_rule_old(
     input_database: str,
     property_: str,
-    parser: Callable,
+    parser: ParserT,
     hierarchy: str,
     physical_attrs: List[str],
     species: str,
@@ -1963,7 +1963,7 @@ def space_sum_rule_old(
         Path to the timeseries of the physical property of interest.
     property_: str
         Name of the physical property of interest.
-    parser: Callable
+    parser: ParserT
         A class from 'PolyPhys.manage.parser' module that parses filenames
         or filepaths to infer information about a file.
     hierarchy: str
