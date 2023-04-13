@@ -17,7 +17,7 @@ from ..manage import organizer
 from ..visualize import tuner as ptuner
 from ..analyze import correlations
 from ..analyze import measurer
-from ..manage.parser import SumRuleCyl, TransFociCyl, TransFociCub, HnsCub
+from ..manage.parser import SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
 
 
 PROJECT_DETAILS = {
@@ -132,6 +132,36 @@ PROJECT_DETAILS = {
                              'phi_c_bulk_round', 'size_ratio'],
         'equil_properties': ['asphericityMon-mean', 'gyrMon-mean',
                              'shapeMon-mean']
+    },
+    'HnsCyl': {
+        'group': 'nucleoid',
+        'geometry': 'cylindrical',
+        'geometry_name': 'free_space',
+        'chain_name': 'semiflexible_ring',
+        'topology': 'ring',
+        'parser': HnsCyl,
+        'space_pat': 'N*D*nh*ac*',
+        'hierarchy': 'N*',
+        'species': ['Mon', 'Hns', 'Crd'],
+        'directions': ['r', 'z'],
+        'cross_section': ['xy', 'xz', 'yz'],
+        'edge_directions': ['x', 'y', 'z'],
+        'space_hierarchy': 'N*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon', 'dcyl',
+                       'nhns', 'dcrowd', 'phi_c_bulk'],
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
+                               'shapeTMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'nmon',
+                             'dcyl', 'nhns', 'dcrowd', 'phi_c_bulk',
+                             'phi_c_bulk_round'],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'fsdMon-mean',
+                             'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
+                             'shapeMon-var', 'shapeMon-sem',
+                             'transSizeMon-mean', 'transSizeMon-var',
+                             'transSizeMon-sem']
     }
 }
 

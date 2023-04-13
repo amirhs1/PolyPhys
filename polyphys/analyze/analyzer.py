@@ -1617,7 +1617,7 @@ def equilibrium_wholes(
     output_type : {'dataframe', 'array'}, default 'dataframe'
         The kind of the "ensemble" file type.
     topology : str, optional
-        The topology of the simulation, if any.
+        The topology of the polymer, if any.
     output_path : str, optional
         Absolute or relative path to which the output is written.
 
