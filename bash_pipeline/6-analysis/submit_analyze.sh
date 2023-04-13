@@ -26,5 +26,5 @@ pip install --no-index MDAnalysis==2.3.0
 
 # python file
 echo "Starting run at: $(date)"
-python analyze.py > analyze.txt
+python analyze_phase.py > analyze.txt
 echo "Program finished with exit code $? at: $(date)"

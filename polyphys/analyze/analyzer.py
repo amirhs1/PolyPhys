@@ -30,6 +30,8 @@ from ..manage.typer import (
     NonScalarMatT,
     EdgeT
 )
+from ..manage.parser import \
+    HnsCyl, HnsCub, TransFociCub, TransFociCyl, SumRuleCyl
 from .distributions import distributions_generator
 from .correlations import acf_generator
 
@@ -227,6 +229,7 @@ def histograms(
     is_segment: bool,
     save_to: Tuple[Union[str, None], Union[str, None], Union[str, None]],
     hist_properties: Optional[List[HistogramT]] = None,
+    hist_properties_no_edge: Optional[List[HistogramT]] = None,
     rho_phi_hist_properties: Optional[List[HistogramT]] = None
 ) -> None:
     """Runs various statistical analyses on `observations` of
@@ -267,6 +270,10 @@ def histograms(
     hist_properties: list of HistogramT default None
         A list of tuples where each tuple has three members: the direction,
         species, and group of a 'histogram' property.
+    hist_properties_no_edge: list of HistogramT default None
+        A list of tuples where each tuple has three members: the direction,
+        species, and group of a 'histogram' property. This type of histrograms
+        does not have an accopanying edge.
     """
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
@@ -320,7 +327,7 @@ def histograms(
                     group,
                     topology
                 )
-            # 'whole' dataframes, each with a 'whole' columns.
+            # 'whole' dataframes, each with a 'whole' columns
             rho_wholes, phi_wholes = distributions_generator(
                 wholes,
                 edge_wholes,
@@ -444,6 +451,49 @@ def histograms(
                 topology,
                 'vector',
                 edge_wholes=edge_wholes,
+                save_to=save_to_ens
+            )
+            _ = ensemble_avg(
+                direction + 'Hist' + species,
+                ensembles,
+                geometry,
+                group,
+                'dataframe',
+                save_to=save_to_ens_avg
+            )
+    if hist_properties_no_edge is not None:
+        for direction, species, group in hist_properties_no_edge:
+            hists = sort_filenames(
+                observations,
+                fmts=[direction + 'Hist' + species + '.npy']
+            )
+            if is_segment is True:
+                wholes = whole_from_segment(
+                    direction + 'Hist' + species,
+                    hists,
+                    parser,
+                    geometry,
+                    group,
+                    topology,
+                    'histogram',
+                    save_to=save_to_whole
+                )
+            else:
+                wholes = whole_from_file(
+                    hists,
+                    parser,
+                    geometry,
+                    group,
+                    topology
+                )
+            ensembles = ensemble(
+                direction + 'Hist' + species,
+                wholes,
+                parser,
+                geometry,
+                group,
+                topology,
+                'vector',
                 save_to=save_to_ens
             )
             _ = ensemble_avg(
@@ -931,6 +981,7 @@ def analyze_measures(
     tseries_properties: Optional[List[TimeSeriesT]] = None,
     acf_tseries_properties: Optional[List[TimeSeriesT]] = None,
     hist_properties: Optional[List[HistogramT]] = None,
+    hist_properties_no_edge: Optional[List[HistogramT]] = None,
     hist2d_properties: Optional[List[HistogramT]] = None,
     hist2d_edges: Optional[List[EdgeT]] = None,
     rho_phi_hist_properties: Optional[List[HistogramT]] = None,
@@ -987,6 +1038,10 @@ def analyze_measures(
         first string is the name of a physical property, the second one is
         the particle type, and the last one is `group` type. These physical
         properties are all histogram form.
+    hist_properties_no_edge: list of HistogramT default None
+        A list of tuples where each tuple has three members: the direction,
+        species, and group of a 'histogram' property. This type of histrograms
+        does not have an accopanying edge.
     hist2d_properties: list of HistogramT, default None
         A list of tuples in which each tuple has three string members. The
         first string is the name of a physical property, the second one is
@@ -1084,7 +1139,17 @@ def analyze_measures(
             topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            hist_properties=hist_properties,
+            hist_properties=hist_properties
+        )
+    if hist_properties_no_edge is not None:
+        histograms(
+            observations,
+            parser,
+            geometry,
+            topology,
+            is_segment,
+            (save_to_whole, save_to_ens, save_to_ens_avg),
+            hist_properties_no_edge=hist_properties_no_edge
         )
     if rho_phi_hist_properties is not None:
         histograms(
@@ -1094,7 +1159,7 @@ def analyze_measures(
             topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            rho_phi_hist_properties=rho_phi_hist_properties,
+            rho_phi_hist_properties=rho_phi_hist_properties
         )
     if nonscalar_hist_t_properties is not None:
         nonscalar_time_series(
@@ -1104,7 +1169,7 @@ def analyze_measures(
             topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_hist_t_properties=nonscalar_hist_t_properties,
+            nonscalar_hist_t_properties=nonscalar_hist_t_properties
         )
     if nonscalar_mat_t_properties is not None:
         nonscalar_time_series(
@@ -1114,7 +1179,7 @@ def analyze_measures(
             topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            nonscalar_mat_t_properties=nonscalar_mat_t_properties,
+            nonscalar_mat_t_properties=nonscalar_mat_t_properties
         )
     if hist2d_properties is not None:
         histograms_2d(
@@ -1124,7 +1189,7 @@ def analyze_measures(
             topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            hist2d_properties=hist2d_properties,
+            hist2d_properties=hist2d_properties
         )
     if hist2d_edges is not None:
         histograms_2d(
@@ -1134,7 +1199,7 @@ def analyze_measures(
             topology,
             is_segment,
             (save_to_whole, save_to_ens, save_to_ens_avg),
-            hist2d_edges=hist2d_edges,
+            hist2d_edges=hist2d_edges
         )
 
 

@@ -7,7 +7,7 @@ import numpy as np
 from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
     )
-import polyphys.manage.typer as ptyper
+from polyphys.manage.typer import ParserT
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
@@ -65,7 +65,7 @@ def stamps_report_with_measures(
 
 def stamps_report(
     report_name: str,
-    sim_info: ptyper.ParserT,
+    sim_info: ParserT,
     n_frames: int
 ) -> None:
     """

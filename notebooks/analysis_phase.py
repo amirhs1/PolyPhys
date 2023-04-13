@@ -1,6 +1,6 @@
 from glob import glob
 from polyphys.manage.parser import \
-    SumRuleCyl, TransFociCyl, TransFociCub, HnsCub
+    SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
 from polyphys.analyze import analyzer
 import warnings
 warnings.filterwarnings("ignore")
@@ -127,16 +127,56 @@ bug_details = {
             ('bondCosineCorrVec', 'Mon', 'nucleoid'),
             ('bondLengthVec', 'Mon', 'nucleoid')
         ]
+    },
+    'HnsCylWhole': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': HnsCyl,
+        'group': 'nucleoid',
+        'geometry': 'cylindrical',
+        'topology': 'ring',
+        'is_segment': False,
+        'has_stamp': True,
+        'nonscalar_mat_t_properties': [
+            # property_, species, group, avg_axis
+            ('principalT', 'Mon', 'nucleoid')
+        ],
+        'tseries_properties': [
+            # treat these two as timeseries!
+            ('loopLengthHist', 'Mon', 'nucleoid'),
+            ('bondCosineCorrVec', 'Mon', 'nucleoid'),
+            ('bondLengthVec', 'Mon', 'nucleoid'),
+            ('nBound', 'HnsPatchT', 'nucleoid'),
+            ('nFree', 'HnsPatchT', 'nucleoid'),
+            ('nEngaged', 'HnsPatchT', 'nucleoid'),
+            ('nFree', 'HnsCoreT', 'nucleoid'),
+            ('nBridge', 'HnsCoreT', 'nucleoid'),
+            ('nDangle', 'HnsCoreT', 'nucleoid'),
+            ('nBound', 'MonT', 'nucleoid'),
+            ('nCis', 'MonT', 'nucleoid'),
+            ('nTrans', 'MonT', 'nucleoid')
+        ], 
+        'acf_tseries_properties': [
+            # property_, species, group
+            ('fsdT', 'Mon', 'nucleoid'),
+            ('gyrT', 'Mon', 'nucleoid'),
+            ('transSizeT', 'Mon', 'nucleoid'),
+            ('shapeT', 'Mon', 'nucleoid'),
+            ('asphericityT', 'Mon', 'nucleoid')
+        ],
+        'hist_properties_no_edge' : [
+            # direction, species, group
+            ('loopLength', 'Mon', 'nucleoid')
+        ]
     }
 }
 
 #input_databases = glob("/Users/amirhsi_mini/research_data/probe/N*-probe
 # -bugSegment")
-input_databases = glob("/Users/amirhsi_mini/research_data/probe/ns*-probe/")
-#input_databases = glob("/Users/amirhsi_mini/research_data/hns_cubic-probe
+#input_databases = glob("/Users/amirhsi_mini/research_data/probe/ns*-probe/")
+input_databases = glob("./N*-probe/")
 # /N*-nucleoidWhole/")
 #print(input_databases)
-project = 'TransFociCubWhole'
+project = 'HnsCylWhole'
 project_details = bug_details[project]
 for input_database in input_databases:
     print(input_database)

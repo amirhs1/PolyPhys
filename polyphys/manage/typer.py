@@ -13,6 +13,7 @@ DirectionT = NewType('DirectionT', str)
 AxisT = NewType('AxisT', int)
 WholeName = NewType('WholeName', str)
 EnsembleName = NewType('EnsembleName', str)
+HasEdgeT = NewType('HasEdgeT', bool)
 
 # Data unit types
 TimeSeriesT = Tuple[PropertyT, SpeciesT, GroupT]
@@ -26,8 +27,13 @@ FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
 
 # Parser types
-TransFociT = Union[TransFociCyl, TransFociCub]
-HnsT = Union[HnsCyl, HnsCub]
-ParserT = Union[TransFociCyl, TransFociCub, SumRuleCyl, HnsCub, HnsCyl]
-ParserCylT = Union[TransFociCyl, SumRuleCyl,HnsCyl]
-ParserCubT = Union[TransFociCub, HnsCub]
+TransFociCylT = Type[TransFociCyl]
+TransFociCubT = Type[TransFociCub]
+SumRuleCylT = Type[SumRuleCyl]
+HnsCubT = Type[HnsCub]
+HnsCylT = Type[HnsCyl]
+TransFociT = Union[TransFociCubT, TransFociCylT]
+HnsT = Union[HnsCubT, HnsCylT]
+ParserT = Union[SumRuleCylT, TransFociCubT, TransFociCylT, HnsCubT, HnsCylT]
+ParserCylT = Union[SumRuleCylT, TransFociCylT, HnsCylT]
+ParserCubT = Union[TransFociCubT, HnsCubT]
