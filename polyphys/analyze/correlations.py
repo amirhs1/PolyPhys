@@ -1,6 +1,7 @@
 from glob import glob
 from typing import (
     Callable,
+    Union,
     Dict,
     List,
     Tuple,
@@ -414,7 +415,7 @@ def fit_wholes(
     Scipy, Numpy, PolyPhys, Pandas
     """
     invalid_keyword(scale, ['zscore', 'minmax', None])
-    fit_funcs: Dict[str, Dict[str, Callable | List[str]]] = {
+    fit_funcs: Dict[str, Dict[str, Union[Callable, List[str]]]] = {
         'mono_unit_exp': {
             'func': mono_unit_exp,
             'params': ['omega', 'alpha']
