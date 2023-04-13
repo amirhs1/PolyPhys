@@ -20,6 +20,7 @@ def all_in_one_equil_tseries(
     properties: List[str],
     measures: List[Callable],
     kind: str = 'dataframe',
+    topology: Optional[str] = None,
     divisor: Optional[float] = 0.025,
     round_to: Optional[int] = 3,
     save_space: Optional[bool] = False,
@@ -53,6 +54,8 @@ def all_in_one_equil_tseries(
         The list of applying measures/functions.
     kind: {'dataframe', 'array'}, default 'dataframe'
         Type of 'properties' file.
+    topology : str, optional
+        The topology of the polymer, if any.
     divisor: float, default 0.025
         The step by which the values of "phi_c_bulk" attribute are rounded.
     round_to: int, default 3
@@ -77,14 +80,15 @@ def all_in_one_equil_tseries(
                 "More than one 'whole' stamps dataset found. Which of the"
                 f" following is the correct one? '{whole_stamps}'")
         whole_stamps = pd.read_csv(whole_stamps[0], header=0)
-        space_equil_props = analyzer.equilibrium_tseries_wholes(
+        space_equil_props = analyzer.equilibrium_wholes(
             space,
             space_db,
             properties,
             measures,
             whole_stamps,
-            kind='dataframe'
-            save_to=save_to_space
+            output_type=kind,
+            topology=topology,
+            output_path=save_to_space
         )
         all_in_one_equil_props.append(space_equil_props)
     all_in_one_equil_props = pd.concat(all_in_one_equil_props)
