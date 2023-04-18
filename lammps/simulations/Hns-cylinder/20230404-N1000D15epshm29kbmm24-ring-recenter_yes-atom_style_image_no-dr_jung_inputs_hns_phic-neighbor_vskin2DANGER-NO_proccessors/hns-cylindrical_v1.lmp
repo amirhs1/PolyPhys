@@ -5,12 +5,20 @@ variable m_crowd equal ${sig4}^3
 # In this model, sig2 is set based on cutoff22 from cutoff2
 variable ljRcut equal 1.122462 # 2^(1/6) rounded at 6th decimal place.
 variable sig1 equal 1.0 # DNA monomers
-variable sig2 equal 0.178 # hns pole
+variable sig2 equal 0.178 # = cutoff22/ljRcut
 variable sig3 equal 1.0 # hns core
 
 ### sigma_ij
 variable sig11 equal 0.5*(${sig1}+${sig1})
-variable sig12 equal 0.535 # = 0.5*(${cutoff22}+${sig1})/${ljRcut} 
+# An hns core center is co-center with its hns protein. The pair of hns
+# poles/paches in that hns protein are along an axis, each of which is 0.4*sig1
+# away from the hns core center.
+# If a hns core and monomer are in touch along the axis connecting the two
+# poles/patches, the center to center distance of them is 1*sig1, so the center
+# to center distance of the closer pole/patch is 0.6*sig1 and that of the
+# farther pole is 1.4*sig1. We use 0.6*sig1 to set sig12=0.6*sig1/ljRcut bellow
+# and cutoff12=ljRcut*sig12
+variable sig12 equal 0.535 # = (sig13-cutoff22)*sig1/ljRcut = 0.6*sig1/ljRcut
 variable sig13 equal 0.5*(${sig1}+${sig3})
 variable sig14 equal 0.5*(${sig1}+${sig4})
 variable sig22 equal 0.5*(${sig2}+${sig2})
@@ -24,7 +32,7 @@ variable sig44 equal 0.5*(${sig4}+${sig4})
 
 ### r_cutoff_ij
 variable cutoff11 equal ${sig11}*${ljRcut}
-variable cutoff12 equal 0.685 # unclear how it is set.
+variable cutoff12 equal 0.685 # = sig12+0.15*sig1
 variable cutoff13 equal ${sig13}*${ljRcut}
 variable cutoff14 equal ${sig14}*${ljRcut}
 variable cutoff22 equal 0.2 # hns pole
