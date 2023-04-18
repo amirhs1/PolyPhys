@@ -405,16 +405,14 @@ class SumRuleCyl(ParserBase):
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
         from either 'r' keyword (the radius of a cylindrical confinement
         with open ends) or 'D' keyword (size of that confinement. Following
-        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inclusive is the
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl/2] inclusive, is the
         domain over which x and y cartesian coordinates are defined in the
-        'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
-        inclusive is the domain over which z cartesian coordinate is defined
+        'cylindrical' geometry; however, `dcyl`, ranged from '[-dcyl/2,dcyl.2]
+        inclusive, is the domain over which z cartesian coordinate is defined
         in the 'slit' geometry. It is important to note that `dcyl` is
-        different from the size defined in LAMMPS input file if the
+        different from the cylinder size defined in LAMMPS input file if the
         wall-forming particle are defined; in this case:
             `self.dcyl` = LAMMPS.dcyl - `self.dwall`
-        Hence, `dcyl` is defined differently in different parser classes in
-        this module.
     lcyl: float, np.nan
         Length of the cylindrical confinement along z axis (the periodic,
         direction), inferred from 'lz' keyword (half of the length of the
@@ -703,7 +701,7 @@ class SumRuleCyl(ParserBase):
         """
         vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
         vol_mon = np.pi * self.dmon**3 / 6
-        self.rho_m_bulk = self.nmon / vol_cell
+        self.rho_m_bulk = self.nmon / vol_cell 
         self.phi_m_bulk = self.rho_m_bulk * vol_mon
         vol_crowd = np.pi * self.dcrowd**3 / 6
         self.rho_c_bulk = self.ncrowd / vol_cell
@@ -825,18 +823,16 @@ class TransFociCyl(ParserBase):
         Other LJ interaction strengths
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
-        from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
-        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inclusive is the
+        from either 'r' keyword (the radius of a cylindrical confinement
+        with open ends) or 'D' keyword (size of that confinement. Following
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl/2] inclusive, is the
         domain over which x and y cartesian coordinates are defined in the
-        'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
-        inclusive is the domain over which z cartesian coordinate is defined
+        'cylindrical' geometry; however, `dcyl`, ranged from '[-dcyl/2,dcyl.2]
+        inclusive, is the domain over which z cartesian coordinate is defined
         in the 'slit' geometry. It is important to note that `dcyl` is
-        different from the size defined in LAMMPS input file if the
+        different from the cylinder size defined in LAMMPS input file if the
         wall-forming particle are defined; in this case:
             `self.dcyl` = LAMMPS.dcyl - `self.dwall`
-        Hence, `dcyl` is defined differently in different parser classes in
-        this module.
     lcyl: float, np.nan
         Length of the cylindrical confinement along z axis (the periodic,
         direction), inferred from 'lz' keyword (half of the length of the
@@ -2118,6 +2114,8 @@ class HnsCyl(ParserBase):
         number of crowders. Its associated keyword is 'nc'.
     mcrowd: float, default np.nan
         Mass of a crowder
+    dwall: float, default 1
+        Wall-forming particles diameter
     eps_hm: float, default 29
         The strength of attractive LJ interaction between hns poles and
         monomers. Its associated keyword is 'epshm'.
@@ -2127,18 +2125,16 @@ class HnsCyl(ParserBase):
         Unit of the LJ interaction strength
     dcyl: float, np.nan
         Size (or diameter) of the `cylindrical` or `slit` confinement, inferred
-        from either 'r' keyword (radius of the cylindrical confinement with
-        open ends) or 'D' keyword (size of that confinement. Following
-        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl.2] inclusive is the
+        from either 'r' keyword (the radius of a cylindrical confinement
+        with open ends) or 'D' keyword (size of that confinement. Following
+        LAMMPS' tango, `dcyl` ranged from '[-dcyl/2,dcyl/2] inclusive, is the
         domain over which x and y cartesian coordinates are defined in the
-        'cylindrical' geometry; however, `dcyl` ranged from '[-dcyl/2,dcyl.2]
-        inclusive is the domain over which z cartesian coordinate is defined
+        'cylindrical' geometry; however, `dcyl`, ranged from '[-dcyl/2,dcyl.2]
+        inclusive, is the domain over which z cartesian coordinate is defined
         in the 'slit' geometry. It is important to note that `dcyl` is
-        different from the size defined in LAMMPS input file if the
+        different from the cylinder size defined in LAMMPS input file if the
         wall-forming particle are defined; in this case:
             `self.dcyl` = LAMMPS.dcyl - `self.dwall`
-        Hence, `dcyl` is defined differently in different parser classes in
-        this module.
     lcyl: float, np.nan
         Length of the cylindrical confinement along z axis (the periodic,
         direction), inferred from 'lz' keyword (half of the length of the
@@ -2319,6 +2315,7 @@ class HnsCyl(ParserBase):
         self.eps_others: float = 1
         self.dcyl: float = -1
         self.lcyl: float = -1
+        self.dwall: float = 1
 
     def _parse_lineage_name(self) -> None:
         """
@@ -2335,8 +2332,10 @@ class HnsCyl(ParserBase):
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                if attr_kw in ["lz", "r"]:
+                if attr_kw == "lz":
                     attr_value = 2 * attr_value
+                if attr_kw == "r":
+                    attr_value = 2 * attr_value - self.dwall
                 setattr(self, attr_n, attr_value)
             except ValueError:
                 print(

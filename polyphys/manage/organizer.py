@@ -1844,7 +1844,7 @@ def space_sum_rule(
     # ens_csvs is a list of tuples, each has one member.
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        property_info = parser(
+        property_info: ParserT = parser(
             ens_avg_csv[0],
             'ensemble_long',
             geometry,

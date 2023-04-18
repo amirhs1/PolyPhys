@@ -7,7 +7,7 @@ import numpy as np
 from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
     )
-from polyphys.manage.typer import ParserT
+from polyphys.manage.typer import *
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
@@ -3151,7 +3151,7 @@ def hns_nucleoid_cyl(
             UserWarning
         )
     print("Setting the name of analyze file...")
-    sim_info = HnsCyl(
+    sim_info: HnsCyl = HnsCyl(
         trajectory,
         lineage,
         'cylindrical',
@@ -3284,6 +3284,109 @@ def hns_nucleoid_cyl(
         np.array(loop_length_hist_t)
         )
 
+    print('done.')
+
+def hns_nucleoid_cyl_dis_matrix(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'nucleoid' atom
+    group in the `geometry` of interest.
+
+    Note
+    ----
+    In the HNS-DNA-Crowder project, we have a single semi-flexible ring
+    polymer (called "bug") and several H-NS proteins (each formed of a core
+    and two poles or patches) crowded by soft LJ spheres (crowders) in
+    free ("cubic" geometry) or confined ("cylindrical" geometry) space.
+
+    In this project, coordinates are wrapped and unscaled in a trajectory or
+    topology file; moreover, the coordinated are recentered with respect to the
+    center of mass of the single polymer (bug).
+    
+    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
+    other attribute of an atom.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info: HnsCyl = HnsCyl(
+        trajectory,
+        lineage,
+        'cylindrical',
+        'nucleoid',
+        'ring'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon * np.sqrt(
+        sim_info.mmon * sim_info.eps_others)  # LJ time unit
+    # Sampling via LAMMPS dump every 'ndump', so trajectory dt is:
+    sim_real_dt = sim_info.ndump * sim_info.dt * time_unit
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt,
+        )
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+        n_frames = cell.trajectory.n_frames - 1
+    else:
+        sliced_trj = cell.trajectory
+        n_frames = cell.trajectory.n_frames
+    # selecting atom groups:
+    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # chain/monomers
+    hns_patch = cell.select_atoms('type 2')  # hns patches
+    hns_core = cell.select_atoms('type 3')  # hns patches
+    # defining collectors
+    # bond info
+    # H-Ns binding:
+    dist_m_hcore = []
+    dist_m_hpatch = []
+    for _ in sliced_trj:
+        # bug:
+        # bug - hns patch:
+        # distance matrices
+        dummy = mda_dist.distance_array(bug, hns_patch)#, box=cell.dimensions)
+        dist_m_hpatch.append(dummy)
+        dummy = mda_dist.distance_array(bug, hns_core)#, box=cell.dimensions)
+        dist_m_hcore.append(dummy)
+
+    # Saving collectors to memory
+    # Simulation stamps:
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
+    # distance matirx
+    np.save(
+        save_to + sim_name + '-distMatTMonHnsPatch.npy', np.array(dist_m_hpatch))
+    np.save(
+        save_to + sim_name + '-distMatTMonHnsCore.npy', np.array(dist_m_hcore))
     print('done.')
 
 
