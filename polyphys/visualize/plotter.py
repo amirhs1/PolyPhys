@@ -23,6 +23,7 @@ from ..manage.parser import SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsC
 PROJECT_DETAILS = {
     'SumRuleCyl': {
         'group': 'bug',
+        'divisor': 0.025,
         'geometry': 'cylindrical',
         'geometry_name': 'cylindrical_confinement',
         'chain_name': 'homogeneous_linear',
@@ -54,6 +55,7 @@ PROJECT_DETAILS = {
     },
     'TransFociCyl': {
         'group': 'bug',
+        'divisor': 0.025,
         'geometry': 'cylindrical',
         'geometry_name': 'cylindrical_confinement',
         'chain_name': 'heterogeneous_ring',
@@ -85,6 +87,7 @@ PROJECT_DETAILS = {
     },
     'TransFociCub': {
         'group': 'bug',
+        'divisor': 0.025,
         'geometry': 'cubic',
         'geometry_name': 'free_space',
         'chain_name': 'heterogeneous_ring',
@@ -111,6 +114,7 @@ PROJECT_DETAILS = {
     },
     'HnsCub': {
         'group': 'nucleoid',
+        'divisor': 0.025,
         'geometry': 'cubic',
         'geometry_name': 'free_space',
         'chain_name': 'semiflexible_ring',
