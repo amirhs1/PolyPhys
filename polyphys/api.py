@@ -5,11 +5,183 @@ from typing import (
     Callable,
     Optional
 )
+import warnings
 import numpy as np
 import pandas as pd
 import itertools
+from polyphys.manage.parser import (SumRuleCyl, TransFociCub, TransFociCyl,
+                                    HnsCub, HnsCyl)
 from polyphys.analyze import analyzer
+from polyphys.analyze import measurer
 from polyphys.manage.utilizer import round_up_nearest
+
+PROJECTS_DETAILS = {
+    'SumRuleCyl': {
+        'group': 'bug',
+        'geometry': 'cylindrical',
+        'topology': 'linear',
+        'parser': SumRuleCyl,
+        'divisor': 0.025,
+        'space_pat': 'N*D*ac*',
+        'hierarchy': 'N*',
+        'directions': ['r', 'z'],
+        'props': ['Rho', 'Phi'],
+        'space_hierarchy': 'N*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon', 'dcyl',
+                       'dcrowd', 'phi_c_bulk'
+                       ],
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
+                               'rfloryTMon', 'shapeTMon', 'transSizeTMon'
+                               ],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['space', 'ensemble_long', 'ensemble', 'nmon',
+                             'dcyl', 'dcrowd', 'phi_c_bulk',
+                             'phi_c_bulk_round'
+                             ],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'fsdMon-mean', 'fsdMon-var',
+                             'fsdMon-sem', 'gyrMon-mean', 'gyrMon-var',
+                             'gyrMon-sem', 'rfloryMon-mean', 'rfloryMon-var',
+                             'rfloryMon-sem', 'shapeMon-mean', 'shapeMon-var',
+                             'shapeMon-sem', 'transSizeMon-mean',
+                             'transSizeMon-var', 'transSizeMon-sem'
+                             ],
+        'rhosPhisNormalizedScaled': [('Mon', 'dmon'), ('Crd', 'dcrowd')]
+    },
+    'TransFociCyl': {
+        'group': 'bug',
+        'geometry': 'cylindrical',
+        'topology': 'ring',
+        'parser': TransFociCyl,
+        'divisor': 0.025,
+        'space_pat': 'ns*nl*al*D*ac*',
+        'hierarchy': 'eps*',
+        'directions': ['r', 'z'],
+        'props': ['Rho', 'Phi'],
+        'space_hierarchy': 'ns*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon_small',
+                       'nmon_large', 'dmon_large', 'dcyl', 'dcrowd',
+                       'phi_c_bulk'
+                       ],
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
+                               'shapeTMon'
+                               ],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'dcyl',
+                             'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'
+                             ],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'fsdMon-mean',
+                             'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
+                             'shapeMon-var', 'shapeMon-sem'
+                             ],
+        'rhosPhisNormalizedScaled': [('Mon', 'dmon_small'), ('Crd', 'dcrowd'),
+                                     ('Foci', 'dmon_large')
+                                     ]
+    },
+    'TransFociCub': {
+        'group': 'bug',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'parser': TransFociCub,
+        'divisor': 0.025,
+        'space_pat': 'ns*nl*al*ac*',
+        'hierarchy': 'al*',
+        'directions': ['r'],
+        'props': ['Rho', 'Phi'],
+        'space_hierarchy': 'ns*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon_small',
+                       'nmon_large', 'dmon_large', 'dcrowd', 'phi_c_bulk'
+                       ],
+        'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
+        'equil_measures': [np.mean],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space',
+                             'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'
+                             ],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
+                             'shapeMon-var', 'shapeMon-sem'
+                             ],
+        'rhosPhisNormalizedScaled': [('Mon', 'dmon_small'), ('Crd', 'dcrowd'),
+                                     ('Foci', 'dmon_large')
+                                     ]
+    },
+    'HnsCub': {
+        'group': 'nucleoid',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'parser': HnsCub,
+        'divisor': 0.01,
+        'space_pat': 'N*epshm*nh*ac*',
+        'hierarchy': 'N*',
+        'directions': ['r'],
+        'props': ['Rho', 'Phi'],
+        'space_hierarchy': 'N*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'eps_hm',
+                       'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
+                       ],
+        'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
+        'equil_measures': [np.mean],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space',
+                             'eps_hm', 'nmon', 'nhns', 'dcrowd', 'phi_c_bulk',
+                             'phi_c_bulk_round'
+                             ],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
+                             'shapeMon-var', 'shapeMon-sem'
+                             ],
+        'rhosPhisNormalizedScaled': [('Mon', 'dmon'), ('Crd', 'dcrowd'),
+                                     ('Hns', 'dhns')]
+    },
+    'HnsCyl': {
+        'group': 'nucleoid',
+        'geometry': 'cylindrical',
+        'topology': 'ring',
+        'parser': HnsCyl,
+        'divisor': 0.01,
+        'space_pat': 'N*D*nh*ac*',
+        'hierarchy': 'N*',
+        'directions': ['r', 'z'],
+        'props': ['Rho', 'Phi'],
+        'space_hierarchy': 'N*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'dcyl',
+                       'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
+                       ],
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
+                               'shapeTMon', 'nBoundHnsPatchT',
+                               'nFreeHnsPatchT', 'nEngagedHnsPatchT',
+                               'nFreeHnsCoreT', 'nBridgeHnsCoreT',
+                               'nDangleHnsCoreT', 'nBoundMonT',
+                               'nCisMonT', 'nTransMonT', 'bondLengthVecMon'
+                               ],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'dcyl',
+                             'nhns', 'nmon', 'dcrowd', 'phi_c_bulk',
+                             'phi_c_bulk_round'],
+        'equil_properties': [
+            'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
+            'fsdMon-mean', 'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
+            'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean', 'shapeMon-var',
+            'shapeMon-sem', 'nBoundHnsPatch-mean', 'nBoundHnsPatch-var',
+            'nBoundHnsPatch-sem', 'nFreeHnsPatch-mean', 'nFreeHnsPatch-var',
+            'nFreeHnsPatch-sem', 'nEngagedHnsPatch-mean',
+            'nEngagedHnsPatch-var', 'nEngagedHnsPatch-sem',
+            'nFreeHnsCore-mean', 'nFreeHnsCore-var', 'nFreeHnsCore-sem',
+            'nBridgeHnsCore-mean', 'nBridgeHnsCore-var', 'nBridgeHnsCore-sem',
+            'nDangleHnsCore-mean', 'nDangleHnsCore-var', 'nDangleHnsCore-sem',
+            'nBoundMon-mean', 'nBoundMon-var', 'nBoundMon-sem', 'nCisMon-mean',
+            'nCisMon-var', 'nCisMon-sem', 'nTransMon-mean', 'nTransMon-var',
+            'nTransMon-sem', 'bondLengthMon-mean', 'bondLengthMon-var',
+            'bondLengthMon-sem'],
+        'rhosPhisNormalizedScaled': [('Mon', 'dmon'), ('Crd', 'dcrowd'),
+                                     ('Hns', 'dhns')]
+    }
+}
 
 
 def all_in_one_equil_tseries(
@@ -69,7 +241,7 @@ def all_in_one_equil_tseries(
     if save_space:
         save_to_space = save_to
     else:
-        save_to_space = False
+        save_to_space = None
     all_in_one_equil_props = []
     for space in spaces:
         space_db = analysis_db + "-".join([space, group, "ens"])
@@ -98,10 +270,9 @@ def all_in_one_equil_tseries(
             round_up_nearest,
             args=[divisor, round_to]
         )
-    output = "-".join(
-        ["allInOne", project, group, "equilProps-whole.csv"]
-    )
-    all_in_one_equil_props.to_csv(save_to + output, index=False)
+    if save_to is not None:
+        output = "-".join(["allInOne", project, group, "equilProps-whole.csv"])
+        all_in_one_equil_props.to_csv(save_to + output, index=False)
     return all_in_one_equil_props
 
 
@@ -161,14 +332,21 @@ def all_in_one_equil_tseries_ens_avg(
     norm_props = [
         prop.split('-')[0] for prop in properties if prop.endswith('mean')
     ]
-    for prop in norm_props:
-        ens_avg[prop + "-norm"] = 0
     for space, prop in itertools.product(spaces, norm_props):
         space_con = ens_avg['space'] == space
         phi_c_con = ens_avg['phi_c_bulk_round'] == 0
         prop_0 = ens_avg.loc[space_con & phi_c_con, prop + "-mean"].values[0]
-        ens_avg.loc[space_con, prop + "-norm"] = \
-            ens_avg.loc[space_con, prop + "-mean"] / prop_0
+        if prop_0 != 0:
+            ens_avg.loc[space_con, prop + "-norm"] = \
+                ens_avg.loc[space_con, prop + "-mean"] / prop_0
+        else:
+            warnings.warn(
+                f"The '{prop}' value in the absence of crowders "
+                f"(phi_c=0) for space '{space}, the values of '{prop}-norm' "
+                "at all the values of phi_c are set to 'np.nan'.",
+                UserWarning
+                )
+            ens_avg.loc[space_con, prop + "-norm"] = np.nan
     if save_to is not None:
         output = "-".join(
             ["allInOne", project, group, "equilProps-ensAvg.csv"]
