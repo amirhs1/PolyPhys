@@ -17,7 +17,8 @@ from ..manage import organizer
 from ..visualize import tuner as ptuner
 from ..analyze import correlations
 from ..analyze import measurer
-from ..manage.parser import SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
+from ..manage.parser import (
+    SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl)
 
 
 PROJECT_DETAILS = {
@@ -139,6 +140,7 @@ PROJECT_DETAILS = {
     },
     'HnsCyl': {
         'group': 'nucleoid',
+        'divisor': 0.01,
         'geometry': 'cylindrical',
         'geometry_name': 'free_space',
         'chain_name': 'semiflexible_ring',
@@ -232,9 +234,9 @@ ATTRIBUTE_LABELS = {
     'transSizeMon-norm':
         r'$\frac{{\langle L_{\perp}(\phi_c)\rangle}}{{\langle L_{\perp,0}\rangle}}$',
     'asphericityMon-norm':
-        r'$\frac{{\langle \Delta(\phi_c)\rangle}}{{\Delta_{0}\rangle}}$',
+        r'$\frac{{\langle \Delta(\phi_c)\rangle}}{{\langle \Delta_{0}\rangle}}$',
     'gyrMon-mean': r'$\langle R_g(\phi_c)\rangle$',
-    'shapeMon-norm': r'$\frac{{\langle S(\phi_c)\rangle}}{{S_{0}\rangle}}$',
+    'shapeMon-norm': r'$\frac{{\langle S(\phi_c)\rangle}}{{\langle S_{0}\rangle}}$',
     'asphericityMon-mean': r'$\langle \Delta(\phi_c)\rangle$',
     'shapeMon-mean': r'$\langle S(\phi_c)\rangle$',
     'rPhi': r'$\phi(r)$',
@@ -304,7 +306,7 @@ ATTRIBUTE_LABELS = {
     "t_index": r"${t}/{\delta t}$",
     "lag_time": r"${t}_{lag}$",
     "lag_index": r"${t}_{lag}$",
-    "dmon_large": "${{a_M}}/{{a_c}}$",
+    "dmon_large": "${{a_M}}/{{a_m}}$",
     "dcrowd": "${{a_c}}/{{a_m}}$",
     "dcyl": "${{D}}/{{a_m}}$",
     "lcyl": "${{L_{{cyl}}}}/{{a_m}}$",
@@ -343,8 +345,29 @@ ATTRIBUTE_LABELS = {
     'int_energy_max':
         r'$\mathcal{F}_{int}=\\frac{{Na\phi_c^{(bulk)}}}{{a_c}}$' +
         r'$[3a_ma_c + \\frac{{3}}{{2}}]$',
-    'species': 'Type'
-    }
+    'species': 'Type',
+    'nBoundHnsPatch-mean': r'$\langle n_{h}^{bound}\rangle$',
+    'nFreeHnsPatch-mean': r'$\langle n_{h}^{free}\rangle$',
+    'nEngagedHnsPatch-mean': r'$\langle n_{h}^{engaged}\rangle$',
+    'nFreeHnsCore-mean': r'$\langle n_{h}^{free}\rangle$',
+    'nBridgeHnsCore-mean': r'$\langle n_{h}^{bridge}\rangle$',
+    'nDangleHnsCore-mean': r'$\langle n_{h}^{dangle}\rangle$',
+    'nBoundMon-mean': r'$\langle n_{m}^{bound}\rangle$',
+    'nCisMon-mean': r'$\langle n_{m}^{cis}\rangle$',
+    'nTransMon-mean': r'$\langle n_{m}^{trans}\rangle$',
+    'bondLengthMon-mean': r'$\langle l \rangle$',
+    'nBoundHnsPatch-norm': r'$\frac{{\langle n_{h}^{bound}(\phi_c)\rangle}}{{\langle n_{h,0}^{bound}\rangle}}$',
+    'nFreeHnsPatch-norm': r'$\frac{{\langle n_{h}^{free}(\phi_c)\rangle}}{{\langle n_{h,0}^{free}\rangle}}$',
+    'nEngagedHnsPatch-norm': r'$\frac{{\langle n_{h}^{engaged}(\phi_c)\rangle}}{{\langle n_{h,0}^{engaged}\rangle}}$',
+    'nFreeHnsCore-norm': r'$\frac{{\langle n_{h}^{free}(\phi_c)\rangle}}{{\langle n_{h,0}^{free}\rangle}}$',
+    'nBridgeHnsCore-norm': r'$\frac{{\langle n_{h}^{bridge}(\phi_c)\rangle}}{{\langle n_{h,0}^{bridge}\rangle}}$',
+    'nDangleHnsCore-norm': r'$\frac{{\langle n_{h}^{dangle}(\phi_c)\rangle}}{{\langle n_{h,0}^{dangle}\rangle}}$',
+    'nBoundMon-norm': r'$\frac{{\langle n_{m}^{bound}(\phi_c)\rangle}}{{\langle n_{m,0}^{bound}\rangle}}$',
+    'nCisMon-norm': r'$\frac{{\langle n_{m}^{cis}(\phi_c)\rangle}}{{\langle n_{m,0}^{cis}\rangle}}$',
+    'nTransMon-norm': r'$\frac{{\langle n_{m}^{trans}(\phi_c)\rangle}}{{\langle n_{m,0}^{trans}\rangle}}$',
+    'bondLengthMon-norm': r'$\frac{{\langle l(\phi_c) \rangle}}{{\langle l{0} \rangle}}$'
+}
+
 
 # https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-with-your-data
 DUTCH_FEILD_COLORS = ["#e60049", "#0bb4ff", "#50e991", "#9b19f5",

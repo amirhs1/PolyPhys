@@ -24,14 +24,13 @@ from ..manage.organizer import (
 )
 from ..manage.typer import (
     ParserT,
+    TransFociT,
     TimeSeriesT,
     HistogramT,
     NonScalarHistT,
     NonScalarMatT,
     EdgeT
 )
-from ..manage.parser import \
-    HnsCyl, HnsCub, TransFociCub, TransFociCyl, SumRuleCyl
 from .distributions import distributions_generator
 from .correlations import acf_generator
 
@@ -715,7 +714,6 @@ def nonscalar_time_series(
     """
     save_to_whole, save_to_ens, save_to_ens_avg = save_to
     invalid_keyword(geometry, ['cylindrical', 'slit', 'cubic'])
-    foci_parsers = ['TransFociCyl', 'TransFociCub']
     if nonscalar_hist_t_properties is not None:
         for property_, species, group, avg_axis in nonscalar_hist_t_properties:
             tseries = sort_filenames(
@@ -789,8 +787,7 @@ def nonscalar_time_series(
                 fmts=['-' + property_ + species + '.npy']
             )
             # changing property_ name after averaging:
-            p_name = parser.__name__
-            if property_ == 'distMatT' and (p_name in foci_parsers):
+            if property_ == 'distMatT' and (type(parser) == TransFociT):
                 wholes_hists, wholes_rdfs, wholes_tseries = \
                     whole_from_dist_mat_t(
                         whole_paths,
@@ -1487,12 +1484,17 @@ def error_calc_block(
     return block_analysis
 
 
-def ensemble_measure(
-    ensemble_db: str,
-    stat_func: Callable,
-    ) -> pd.DataFrame:
+def ensemble_measure(ensemble_db: str, stat_func: Callable) -> pd.DataFrame:
     """
-    Apply `stat_func` column-wise (axis=0) on the "whole" columns in an "ensemble" dataframe or along a pre-set axis of the numpy "ensemble" ndarray of a given property. If the `measure_func` is applied to a numpy's ndarray, it must already have the information about the axis along which the measurements are done; for example, if the `property_db` refers to a ndarray with shape=(8,200,200) which say there are 8 ensembles, where each is 200*200 matrix, then `stat_func` should be something like this `stat_func=lambda x: np.mean(x, axis=(1,2))` to have 8 averages values for 8 different ensembles.
+    Apply `stat_func` column-wise (axis=0) on the "whole" columns in an
+    "ensemble" dataframe or along a pre-set axis of the numpy "ensemble"
+    ndarray of a given property. If the `measure_func` is applied to a numpy's
+    ndarray, it must already have the information about the axis along which
+    the measurements are done; for example, if the `property_db` refers to a
+    ndarray with shape=(8,200,200) which say there are 8 ensembles, where each
+    is 200*200 matrix, then `stat_func` should be something like this
+    `stat_func=lambda x: np.mean(x, axis=(1,2))` to have 8 averages values for
+    8 different ensembles.
 
     Parameters
     ----------
@@ -1500,7 +1502,8 @@ def ensemble_measure(
         Path to the "ensemble" dataframe or ndarray of a given property,
 
     stat_func: Callable
-        A numpy or numpy-like function. If `ensemble_db` refers to ndarray, then `stat_func` must already have included 'axi' information.
+        A numpy or numpy-like function. If `ensemble_db` refers to ndarray,
+        then `stat_func` must already have included 'axi' information.
 
     Return
     ------
@@ -1508,7 +1511,7 @@ def ensemble_measure(
         A dataframe in which the indexes are "whole" names and there is a
         column with the name of the `measure_func`. The values of this column
         are the measurements.
-    
+
     Raises
     ------
     TypeError
@@ -1531,7 +1534,7 @@ def ensemble_measure(
     if file_ext == '.csv':
         property_ens = pd.read_csv(ensemble_db, header=0)
         ens_measures = property_ens.apply(stat_func, axis=0)
-        ens_measures = ens_measures.to_frame(name=stat_func.__name__)       
+        ens_measures = ens_measures.to_frame(name=stat_func.__name__)
     elif file_ext == '.npy':
         property_ens = np.load(ensemble_db)
         n_ens = property_ens.shape[0]
@@ -1546,10 +1549,11 @@ def ensemble_measure(
             data=ens_measures,
             index=idxs,
             columns=[stat_func.__name__]
-            ) 
+            )
     else:
         raise ValueError(
-            f"'{file_ext}' is an invalid file extension. Use '.csv' for Pandas's 'dataframe' or '.npy' for Numpy's ndaarray."
+            f"'{file_ext}' is an invalid file extension. Use '.csv' for"
+            "Pandas's 'dataframe' or '.npy' for Numpy's ndaarray."
             )
     return ens_measures
 
@@ -1562,8 +1566,8 @@ def space_measure(
 ) -> pd.DataFrame:
     """Performs `stat_func` on all the "ensembles" of a given physical
     `property_`in a "space" given. The "wholes" in an "ensemble" are time
-    series. By performing the `stat_func`, we basically convert a time series to
-    a single value such as a mean, standard deviation, or the like.
+    series. By performing the `stat_func`, we basically convert a time series
+    to a single value such as a mean, standard deviation, or the like.
 
     It is assumed that a `property_` follow this naming convention:
         path/ensemble-shortnameTspecies.csv
@@ -1582,7 +1586,8 @@ def space_measure(
     space_db: str
         Path to the ensembles of a given property in a given space.
     stat_func: Callable
-        A numpy or numpy-like function. If `ensemble_db` refers to ndarray, then `stat_func` must already have included 'axi' information.
+        A numpy or numpy-like function. If `ensemble_db` refers to ndarray,
+        then `stat_func` must already have included 'axi' information.
     kind: {'dataframe', 'array'}, default 'dataframe'
         The kind of the "ensemble" file type.
 
@@ -1601,33 +1606,54 @@ def space_measure(
         Raised when no files are found in the specified path or no files
         matching the property pattern are found.
     RuntimeError:
-        Raised when no valid ensembles are found for processing.        
+        Raised when no valid ensembles are found for processing.
 
     Requirements
     ------------
     polyphys, Pandas, Numpy, or any other package needed for the `stat_func`
     """
     if kind not in ["dataframe", "array"]:
-        raise ValueError("Invalid 'kind' parameter. Must be 'dataframe' or 'array'.")
+        raise ValueError(
+            "Invalid 'kind' parameter. Must be 'dataframe' or 'array'."
+            )
 
     suffix = {
         'dataframe': '.csv',
         'array': '.npy',
     }
 
-    property_paths = glob.glob(space_db)
+    property_paths = glob.glob(space_db + '/*')
     if not property_paths:
-        raise FileNotFoundError(f"No files found in the specified path: {space_db}")
-    
+        raise FileNotFoundError(
+            f"No files found in the specified path: {space_db}"
+            )
+
     property_pat = '-' + property_ + suffix[kind]  # pattern of property files.
     property_paths = sort_filenames(
         property_paths, fmts=[property_pat]
         )
     if not property_paths:
-        raise FileNotFoundError(f"No matching files found in the specified path: {space_db}")
-    
+        raise FileNotFoundError(
+            f"No matching files found in the specified path: {space_db}"
+            )
+
     meas_name = stat_func.__name__
-    equil_name = "".join(property_.split("T"))  # new name when measure applied
+    last_t_index = property_.rfind('T')  # index of the last 'T'
+    if last_t_index != -1:
+        equil_name = "".join(
+            [property_[:last_t_index], property_[last_t_index+1:]]
+            )  # new name when measure applied
+    else:
+        warnings.warn(
+            f"The index of last 'T' is '{last_t_index}', meaning "
+            f"property '{property_}' is not a timeseries. Therefore, it is "
+            "considered as a 'vector' property and its equilibrium name is "
+            "found by splitting based on 'Vec' in its name. "
+        )
+        last_t_index = property_.rfind('Vec')  # index of the last 'Vec'
+        equil_name = "".join(
+            [property_[:last_t_index], property_[last_t_index+3:]]
+            )  # new name when measure applied
     equil_meas_name = equil_name + "-" + meas_name
     spc_measure = []
     for property_db in property_paths:
@@ -1636,7 +1662,7 @@ def space_measure(
             spc_measure.append(ens_measure)
         except Exception as e:
             print(f"Error processing {property_db[0]}: {e}")
-    
+
     if not spc_measure:
         raise RuntimeError("No valid ensembles found for processing.")
 
@@ -1658,9 +1684,9 @@ def equilibrium_wholes(
     output_path: Optional[str] = None,
 ) -> pd.DataFrame:
     """
-    Performs a group of `stat_funcs` on a group of physical `physical_properties` in a
-    given `space` and merges the resulting dataframe with the `whole_stamps`
-    dataset.
+    Performs a group of `stat_funcs` on a group of physical
+    `physical_properties` in a given `space` and merges the resulting dataframe
+    with the `whole_stamps` dataset.
 
     Each statistical function is applied to each "whole" *times series* (a
     column in an "ensemble" data frame) in each "ensemble" of a given physical
@@ -1706,7 +1732,7 @@ def equilibrium_wholes(
         ]
         property_measurements = pd.concat(property_measurements, axis=1)
         equil_properties.append(property_measurements)
-    
+
     equil_properties = pd.concat(equil_properties, axis=1)
     equil_properties.reset_index(inplace=True)
     equil_properties.rename(columns={"index": "whole"}, inplace=True)
@@ -1715,5 +1741,7 @@ def equilibrium_wholes(
     equil_properties = whole_stamps.merge(equil_properties, on="whole")
     if output_path is not None:
         output_filename = '-'.join([space, "whole-equilProps"])
-        equil_properties.to_csv(output_path + output_filename + ".csv", index=False)
+        equil_properties.to_csv(
+            output_path + output_filename + ".csv", index=False
+            )
     return equil_properties
