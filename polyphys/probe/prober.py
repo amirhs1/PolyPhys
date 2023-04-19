@@ -7,7 +7,7 @@ import numpy as np
 from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
     )
-from polyphys.manage.typer import *
+from polyphys.manage.typer import ParserT
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
@@ -330,10 +330,18 @@ def sum_rule_bug_cyl(
 
     Note
     ----
-    In this project, coordinates are wrapped and unscaled in a trajectory or topology file; moreover, LAMMPS recenter is used to restrict the center of mass of "bug" (monomers) to the center of simulation box; and consequently, coordinates of all the particles in a trajectory or topology file is recentered to fulfill this constraint.
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+    In this project, coordinates are wrapped and unscaled in a trajectory or
+    topology file; moreover, LAMMPS recenter is used to restrict the center of
+    mass of "bug" (monomers) to the center of simulation box; and consequently,
+    coordinates of all the particles in a trajectory or topology file is
+    recentered to fulfill this constraint.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -484,8 +492,12 @@ def sum_rule_all_cyl(
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -877,7 +889,7 @@ def sum_rule_all_cyl(
             range=yz_hist_mon_info['range'],
         )
         yz_hist_mon_info['collector'] += pos_hist
-    
+
     # end of loop
     hist_1d_groups = {
         'rHist': {
@@ -929,9 +941,13 @@ def trans_foci_bug_cyl(
     restrict the center of mass of "bug" (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -987,8 +1003,8 @@ def trans_foci_bug_cyl(
         sliced_trj = cell.trajectory
         n_frames = cell.trajectory.n_frames
     # selecting atom groups
-    foci: mda.AtomGroup = cell.select_atoms('type 2')  # the foci
-    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
+    foci: mda.AtomGroup = cell.select_atoms('type 2')  # foci
+    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # bug: small & large mon
     # defining collectors
     # -bug:
     trans_size_t = []
@@ -1077,9 +1093,13 @@ def trans_foci_all_cyl(
     restrict the center of mass of "bug" (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -1741,7 +1761,7 @@ def trans_foci_all_cyl(
             range=yz_hist_dna_info['range'],
         )
         yz_hist_dna_info['collector'] += pos_hist
-    
+
     # end of loop
     hist_1d_groups = {
         'rHist': {
@@ -1805,9 +1825,13 @@ def trans_foci_bug_cub(
     restrict the center of mass of "bug" (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -1863,8 +1887,8 @@ def trans_foci_bug_cub(
         sliced_trj = cell.trajectory
         n_frames = cell.trajectory.n_frames
     # selecting atom groups
-    foci: mda.AtomGroup = cell.select_atoms('type 2')  # the foci: large monomers
-    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # the bug/polymer: small and large mons
+    foci: mda.AtomGroup = cell.select_atoms('type 2')  # foci: large monomers
+    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # bug: small & large mon
     # defining collectors
     # -bug:
     gyr_t = []
@@ -1944,9 +1968,13 @@ def trans_foci_all_cub(
     restrict the center of mass of "bug" (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -2313,7 +2341,7 @@ def trans_foci_all_cub(
     yz_hist_dna_info['collector'] *= 0
     for _ in sliced_trj:
         # histogram in r direction
-        # crds 
+        # crds
         # # r
         pos_hist, _ = np.histogram(
             np.linalg.norm(crds.positions, axis=1),
@@ -2445,7 +2473,7 @@ def trans_foci_all_cub(
             range=yz_hist_dna_info['range'],
         )
         yz_hist_dna_info['collector'] += pos_hist
-    
+
     # end of loop
     hist_1d_groups = {
         'rHist': {
@@ -2493,12 +2521,20 @@ def hns_nucleoid_cub(
     Note
     ----
     In the HNS-DNA-Crowder project, we have a single semi-flexible ring
-    polymer (called "bug") and several H-NS proteins (each formed of a core and two poles or patches) crowded by soft LJ spheres (crowders) in free ("cubic" geometry) or confined ("cylindrical" geometry) space.
+    polymer (called "bug") and several H-NS proteins (each formed of a core and
+    two poles or patches) crowded by soft LJ spheres (crowders) in free
+    ("cubic" geometry) or confined ("cylindrical" geometry) space.
 
-    In this project, coordinates are wrapped and unscaled in a trajectory or topology file; moreover, the coordinated are recentered with respect to the center of mass of the single polymer (bug).
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+    In this project, coordinates are wrapped and unscaled in a trajectory or
+    topology file; moreover, the coordinated are recentered with respect to
+    the center of mass of the single polymer (bug).
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -2658,17 +2694,26 @@ def hns_all_cub(
     continuous: Optional[bool] = False
 ) -> None:
     """Runs various analyses on a `lineage` simulation of an 'all' atom
-    group in the `geometry` of interest,and saves a variety of outputs (mostly in the csv format) to the `save_to` directory.
+    group in the `geometry` of interest,and saves a variety of outputs (mostly
+    in the csv format) to the `save_to` directory.
 
     Note
     ----
     In the HNS-DNA-Crowder project, we have a single semi-flexible ring
-    polymer (called "bug") and several H-NS proteins (each formed of a core and two poles or patches) crowded by soft LJ spheres (crowders) in free ("cubic" geometry) or confined ("cylindrical" geometry) space.
+    polymer (called "bug") and several H-NS proteins (each formed of a core and
+    two poles or patches) crowded by soft LJ spheres (crowders) in free
+    ("cubic" geometry) or confined ("cylindrical" geometry) space.
 
-    In this project, coordinates are wrapped and unscaled in a trajectory or topology file; moreover, the coordinated are recentered with respect to the center of mass of the single polymer (bug).
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+    In this project, coordinates are wrapped and unscaled in a trajectory or
+    topology file; moreover, the coordinated are recentered with respect to the
+    center of mass of the single polymer (bug).
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -3071,7 +3116,7 @@ def hns_all_cub(
             range=yz_hist_hns_info['range'],
         )
         yz_hist_hns_info['collector'] += pos_hist
-    
+
     # end of loop
     hist_1d_groups = {
         'rHist': {
@@ -3122,9 +3167,13 @@ def hns_nucleoid_cyl(
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to the
     center of mass of the single polymer (bug).
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -3193,7 +3242,9 @@ def hns_nucleoid_cyl(
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
     # H-Ns binding:
     lj_cut = 2**(1/6)
-    r_cutoff = np.round(0.5 * lj_cut * (sim_info.dmon + sim_info.dhns_patch), 3)
+    r_cutoff = np.round(
+        0.5 * lj_cut * (sim_info.dmon + sim_info.dhns_patch), 3
+        )
     binding_stats_t = {
         'n_m_hpatch_bound': [],
         'n_hpatch_free': [],
@@ -3232,12 +3283,13 @@ def hns_nucleoid_cyl(
         cosine_corrs += cosine_dummy
         # bug - hns patch:
         # distance matrices
-        dummy = mda_dist.distance_array(bug, hns_patch)#, box=cell.dimensions)
+        dummy = mda_dist.distance_array(bug, hns_patch)
         d_contact_m_hpatch = clusters.find_direct_contacts(
             dummy, r_cutoff, inclusive=False
             )
         binding_stats_t, loop_length_hist_t = clusters.hns_binding(
-                d_contact_m_hpatch, sim_info.topology, results=binding_stats_t, loop_length_hist=loop_length_hist_t
+                d_contact_m_hpatch, sim_info.topology, results=binding_stats_t,
+                loop_length_hist=loop_length_hist_t
                 )
 
     # Saving collectors to memory
@@ -3286,6 +3338,7 @@ def hns_nucleoid_cyl(
 
     print('done.')
 
+
 def hns_nucleoid_cyl_dis_matrix(
     topology: str,
     trajectory: str,
@@ -3306,9 +3359,13 @@ def hns_nucleoid_cyl_dis_matrix(
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to the
     center of mass of the single polymer (bug).
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius) , genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms, bonds, angles,
+    and any other attribute of an atom.
 
     Parameters
     ----------
@@ -3363,20 +3420,14 @@ def hns_nucleoid_cyl_dis_matrix(
     # selecting atom groups:
     bug: mda.AtomGroup = cell.select_atoms('resid 1')  # chain/monomers
     hns_patch = cell.select_atoms('type 2')  # hns patches
-    hns_core = cell.select_atoms('type 3')  # hns patches
-    # defining collectors
-    # bond info
     # H-Ns binding:
-    dist_m_hcore = []
     dist_m_hpatch = []
     for _ in sliced_trj:
         # bug:
         # bug - hns patch:
         # distance matrices
-        dummy = mda_dist.distance_array(bug, hns_patch)#, box=cell.dimensions)
+        dummy = mda_dist.distance_array(bug, hns_patch)
         dist_m_hpatch.append(dummy)
-        dummy = mda_dist.distance_array(bug, hns_core)#, box=cell.dimensions)
-        dist_m_hcore.append(dummy)
 
     # Saving collectors to memory
     # Simulation stamps:
@@ -3384,9 +3435,9 @@ def hns_nucleoid_cyl_dis_matrix(
     stamps_report(outfile, sim_info, n_frames)
     # distance matirx
     np.save(
-        save_to + sim_name + '-distMatTMonHnsPatch.npy', np.array(dist_m_hpatch))
-    np.save(
-        save_to + sim_name + '-distMatTMonHnsCore.npy', np.array(dist_m_hcore))
+        save_to + sim_name + '-distMatTMonHnsPatch.npy',
+        np.array(dist_m_hpatch)
+        )
     print('done.')
 
 
@@ -3411,9 +3462,13 @@ def hns_all_cyl(
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to the
     center of mass of the single polymer (bug).
-    
-    In MDAnalysis, selections by `universe.select_atoms` always return an AtomGroup with atoms sorted according to their index in the topology. This feature is used below to measure the end-to-end distance (Flory radius), genomic distance (index differnce along the backbone), and any other measurement that needs the sorted indices of atoms, bonds, angles, and any
-    other attribute of an atom.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
 
     Parameters
     ----------
@@ -3799,7 +3854,7 @@ def hns_all_cyl(
         print(bug.center_of_geometry())
         # # r
         pos_hist, _ = np.histogram(
-            np.linalg.norm(crds.positions[:, :2], axis=1), 
+            np.linalg.norm(crds.positions[:, :2], axis=1),
             bins=r_hist_crd_info['bin_edges'],
             range=r_hist_crd_info['range']
         )
