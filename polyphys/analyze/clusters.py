@@ -4,7 +4,7 @@ trajectory (or ensemble) clusters.
 Below, different algorithms found in literature are implemented in scientific
 Python.
 """
-from typing import Dict, List, Tuple, Optional, Union, Any
+from typing import Dict, List, Tuple, Optional, Union
 from itertools import combinations
 from collections import defaultdict
 import numpy as np
@@ -13,7 +13,6 @@ import numpy.linalg as npla
 
 from ..manage.parser import TransFociCub, TransFociCyl
 
-HnsStatDict = Dict[str, Union[List[int], np.ndarray]]
 
 def apply_pbc_orthogonal(
     pbc_lengths: np.ndarray,
@@ -51,29 +50,34 @@ def apply_pbc_orthogonal(
 def self_dist_array(
     positions: np.ndarray,
     pbc: Optional[Dict[int, float]] = None
-    ) -> np.ndarray:
+) -> np.ndarray:
     """
-    Calculate pairwise distances between all pairs of atoms for a given list of atoms' `positions`.
+    Calculate pairwise distances between all pairs of atoms for a given list
+    of atoms' `positions`.
 
     Parameters
     ----------
     positions : np.ndarray, shape (n_atoms, n_dims)
-        An array of atomic positions, where each row represents the position of an atom in n_dims
+        An array of atomic positions, where each row represents the position of
+        an atom in n_dims
         Cartesian dimensions.
     pbc : dict, optional
-        A dictionary of dimensions (keys) and lengths (values) in which the periodic boundary conditions
-        exist. Keys are integers where 0 means 'x' dimension, 1 means 'y' dimension, and 2 means 'z'
+        A dictionary of dimensions (keys) and lengths (values) in which the
+        periodic boundary conditions exist. Keys are integers where 0 means 'x'
+        dimension, 1 means 'y' dimension, and 2 means 'z'
         dimension in the Cartesian coordinate system. Default is None.
 
     Returns
     -------
     np.ndarray, shape (n_atoms, n_atoms)
-        A symmetric matrix where each element (i, j) is the center-to-center distance between atoms i and j.
+        A symmetric matrix where each element (i, j) is the center-to-center
+        distance between atoms i and j.
 
     References
     ----------
-    Albanie S. (2019) Euclidean Distance Matrix Trick. In: Advances in Computer Vision. EECV 2018.
-    Lecture Notes in Computer Science, vol 11131. Springer, Cham. https://doi.org/10.1007/978-3-030-01446-4_2
+    Albanie S. (2019) Euclidean Distance Matrix Trick. In: Advances in Computer
+    Vision. EECV 2018. Lecture Notes in Computer Science, vol 11131. Springer,
+    Cham. https://doi.org/10.1007/978-3-030-01446-4_2
     """
     n_atoms, n_dims = positions.shape
     # Calculate pairwise distance matrix
@@ -84,7 +88,9 @@ def self_dist_array(
 
     # Calculate PBC lengths and inverses, and apply PBCs if PBCs are present
     if pbc is not None:
-        pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(np.zeros(n_dims), np.zeros(n_dims), pbc)
+        pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
+            np.zeros(n_dims), np.zeros(n_dims), pbc
+            )
         pbc_lengths = pbc_lengths.reshape(n_dims, 1, 1)
         pbc_lengths_inverse = pbc_lengths_inverse.reshape(n_dims, 1, 1)
         dist_ji -= pbc_lengths * np.around(pbc_lengths_inverse * dist_ji)
@@ -99,7 +105,7 @@ def self_dist_array_opt(
     positions: np.ndarray,
     pbc: Optional[Dict[int, float]] = None
 ) -> np.ndarray:
-    """Calculate all possible distances between all the pair of atoms for a 
+    """Calculate all possible distances between all the pair of atoms for a
     given list of atoms' `positions`. In 3 dimensions, this method is not
     much faster the `self_dist_array`.
 
@@ -124,13 +130,14 @@ def self_dist_array_opt(
     ------
     np.ndarray
         A square matrix of size n_atoms * n_atoms in which each element are
-        the center-to-center distances between different pairs of atoms. All 
+        the center-to-center distances between different pairs of atoms. All
         the diagonal elements of this matrix is 0.
 
     References
     ----------
-    Albanie S. (2019) Euclidean Distance Matrix Trick. In: Advances in Computer Vision. EECV 2018.
-    Lecture Notes in Computer Science, vol 11131. Springer, Cham. https://doi.org/10.1007/978-3-030-01446-4_2
+    Albanie S. (2019) Euclidean Distance Matrix Trick. In: Advances in Computer
+    Vision. EECV 2018. Lecture Notes in Computer Science, vol 11131. Springer,
+    Cham. https://doi.org/10.1007/978-3-030-01446-4_2
     """
     n_atoms, n_dims = positions.shape
     # Redefining the shapes of different arrays to combine linear algebra
@@ -138,7 +145,7 @@ def self_dist_array_opt(
     gram = np.matmul(positions, positions.T)
     dist_sq = np.diag(gram).reshape(n_atoms, 1) + \
         np.diag(gram).reshape(1, n_atoms) - 2 * gram
-        
+
     # Calculate PBC lengths and inverses, and apply PBCs if PBCs are present
     if pbc is not None:
         pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
@@ -146,16 +153,24 @@ def self_dist_array_opt(
         )
         pbc_lengths = pbc_lengths**2
         pbc_lengths_inverse = pbc_lengths_inverse**2
-        dist_sq = dist_sq - pbc_lengths * np.around(pbc_lengths_inverse * dist_sq)
+        dist_sq = dist_sq - pbc_lengths * np.around(
+            pbc_lengths_inverse * dist_sq
+            )
     return np.sqrt(dist_sq)
 
-import numpy as np
 
-def find_direct_contacts(dist: np.ndarray, cutoff: float, inclusive: bool = True) -> np.ndarray:
+def find_direct_contacts(
+    dist: np.ndarray,
+    cutoff: float,
+    inclusive: bool = True
+) -> np.ndarray:
     """
-    Determines whether pairs of atoms are in direct contact based on a cutoff distance.
+    Determines whether pairs of atoms are in direct contact based on a cutoff
+    distance.
 
-    Direct contact is defined as the center-to-center distance between two atoms being less than or equal to the cutoff distance, or less than the cutoff distance depending on the value of the `inclusive` parameter.
+    Direct contact is defined as the center-to-center distance between two
+    atoms being less than or equal to the cutoff distance, or less than the
+    cutoff distance depending on the value of the `inclusive` parameter.
 
     Parameters
     ----------
@@ -164,24 +179,28 @@ def find_direct_contacts(dist: np.ndarray, cutoff: float, inclusive: bool = True
     cutoff : float
         The cutoff distance for defining direct contact.
     inclusive : bool, optional
-        If True, includes pairs of atoms where the center-to-center distance is equal to
-        the cutoff distance. If False, only includes pairs where the distance is strictly
-        less than the cutoff distance. Default is True.
+        If True, includes pairs of atoms where the center-to-center distance
+        is equal to the cutoff distance. If False, only includes pairs where
+        the distance is strictly less than the cutoff distance. Default is
+        True.
 
     Returns
     -------
     np.ndarray, shape (n_atoms, m_atoms)
         A binary matrix where each element (i, j) is 1 if the center-to-center
         distance between atoms i and j is within the cutoff distance, and 0
-        otherwise. If the input dist matrix is the symmteric self-distance  sqaure matrix, then the output is also a symmetric square matrix,  with all diagonal elements set to 1.
+        otherwise. If the input dist matrix is the symmteric self-distance
+        sqaure matrix, then the output is also a symmetric square matrix,
+        with all diagonal elements set to 1.
 
     References
     ----------
     Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
     calculations of cluster statistics in continuum models of composite
-    morphology. The Journal of Chemical Physics, 89(1), 668-676. https://aip.scitation.org/doi/10.1063/1.454720 .
+    morphology. The Journal of Chemical Physics, 89(1), 668-676.
+    https://aip.scitation.org/doi/10.1063/1.454720 .
     """
-    if cutoff <=0:
+    if cutoff <= 0:
         raise ValueError("'cutoff' must be a positive number.")
     if inclusive:
         direct_contacts = dist <= cutoff
@@ -193,10 +212,16 @@ def find_direct_contacts(dist: np.ndarray, cutoff: float, inclusive: bool = True
 
 def generate_contact_matrix(direct_contacts: np.ndarray) -> np.ndarray:
     """
-    Generates a symmetric matrix of all contacts between pairs of atoms including both direct and indirect contacts, from a matrix of direct contacts between pairs of atoms.
-    
-    The `direct_contacts` matrix is a binary matrix of the shape (n_atoms, m_atoms), where any of 'm_atoms' along the columns any be in direct contact with any of 'n_atoms' along the rows.
-    If the `direct_contact` matrix is the symmetric self-direct square matrix of a system with 'n_atoms', then the output is also symmetric. See `find_direct_contacts` function. 
+    Generates a symmetric matrix of all contacts between pairs of atoms
+    including both direct and indirect contacts, from a matrix of direct
+    contacts between pairs of atoms.
+
+    The `direct_contacts` matrix is a binary matrix of the shape
+    (n_atoms, m_atoms), where any of 'm_atoms' along the columns any be in
+    direct contact with any of 'n_atoms' along the rows.
+    If the `direct_contact` matrix is the symmetric self-direct square matrix
+    of a system with 'n_atoms', then the output is also symmetric.
+    See `find_direct_contacts` function.
 
     Parameters
     ----------
@@ -227,7 +252,7 @@ def generate_contact_matrix(direct_contacts: np.ndarray) -> np.ndarray:
             transient = contact_matrix[:, i] | contact_matrix[:, j]
             contact_matrix[:, i] = transient
             contact_matrix[:, j] = transient
-    
+
     return contact_matrix
 
 
@@ -606,56 +631,142 @@ def whole_dist_mat_foci(
     return pair_hists, pair_rdfs, pair_tseries
 
 
-def hns_genomic_distance(
-    contact_m_m_nonzeros: np.ndarray,
+def enforce_single_patch_contact(contact_matrix: np.ndarray) -> np.ndarray:
+    """Given a binary contact matrix of shape (n_monomers, n_patches), where
+    each element represents whether a given monomer and patch are in direct
+    contact or not, sets the values of all the elements after the first
+    contact (the first non-zero element) in each column to 0.
+
+    Parameters
+    ----------
+    contact_matrix : numpy.ndarray
+        The binary contact matrix of shape (n_monomers, n_patches).
+
+    Returns
+    -------
+    numpy.ndarray
+        The modified contact matrix, where the values of all elements after
+        the first contact in each column have been set to 0.
+    """
+    # make a copy of the input matrix to avoid modifying it in place
+    contact_matrix = contact_matrix.copy()
+
+    # loop over columns
+    for j in range(contact_matrix.shape[1]):
+        # find index of first contact in column j
+        i = np.argmax(contact_matrix[:, j] != 0)
+        # set values of elements after first contact to 0
+        contact_matrix[i+1:, j] = 0
+
+    return contact_matrix
+
+
+def genomic_distance(
+    atoms_a: np.ndarray,
+    atoms_b: np.ndarray,
     topology: str,
-    n_mon: int) -> np.ndarray:
-    """Calculate the intra-monomer distance along the backbone, a.k.a the genomic distance between them, foor the pair of monomers bridged by a H-NS
-    protein in a monomer.
+    num_backbone_atoms: int
+) -> np.ndarray:
+    """Calculate the intra-monomer distance, a.k.a the genomic distance,
+    between atoms in `atoms_a` and `atoms_b` along the backbone of a polymer
+    with the given `topology`.
+
+    Parameters
+    ----------
+    atoms_a : np.ndarray
+        Array of atom indices in the first group along the backbone, with shape
+        (num_backbone_atoms,) or (num_backbone_atoms, 1).
+    atoms_b : np.ndarray
+        Array of atom indices in the second group along the backbone, with
+        shape (num_backbone_atoms,) or (num_backbone_atoms, 1).
+    topology : str
+        Topology of the polymer ('linear' or 'ring').
+    num_backbone_atoms : int
+        Total number of atoms along the backbone.
+
+    Returns
+    -------
+    np.ndarray
+        Array of element-wise genomic distances between corresponding pairs of
+        atoms along the backbone.
+
+    Raises
+    ------
+    ValueError
+        If `atoms_a` and `atoms_b` have different shapes or if `topology` is
+        not 'linear' or 'ring'.
+
+    Notes
+    -----
+    The genomic distance between two atoms is the absolute value of the
+    difference in their indices along the backbone of the polymer. If the
+    polymer has a 'ring' topology, the genomic distance is the minimum of the
+    absolute difference and the difference in index when traversing the ring
+    in the opposite direction.
+    Genomic distance is measured in number of bonds, not number of atoms, so
+    it is 1 unit more than the number of atoms between a pair of atoms.
+    """
+    if atoms_a.shape != atoms_b.shape:
+        raise ValueError("'atoms_a' and 'atoms_b' must have the same shape.")
+    if topology not in ('linear', 'ring'):
+        raise ValueError(
+            f"The genomic distance is not defined for '{topology}' topology.")
+    topology_functions = {
+        'linear': lambda a, b: np.abs(a - b),
+        'ring': lambda a, b, n: np.minimum(np.abs(a - b), n - np.abs(a - b)),
+    }
+    return topology_functions[topology](atoms_a, atoms_b, num_backbone_atoms)
+
+
+def hns_genomic_distance(
+    contact_nonzeros: np.ndarray,
+    topology: str,
+    n_mons: int,
+) -> np.ndarray:
+    """Calculate the intra-monomer distance between the pair of monomers
+    bridged by a H-NS protein in a polymer.
 
     Parameters
     ----------
     contact_m_m_nonzeros: np.ndarray
-        Pair of indices of non-zero elements in the monomer-monomer contact matrix.
+        Pair of indices of non-zero elements in the monomer-monomer contact
+        matrix.
     topology: str
         Polymer topology.
-    n_mon: int
+    n_mons: int
         Number of monomers in the polymer.
 
     Return
     ------
     contact_m_m_gen_dist: np.ndarray
-        A matrix with 3 columns anv varing number of rows, where the first column contain the indices of the first monomer, second column contaions the indices of the second monomer, and the third one contains the genomic distance betweem the two monnomers in pairs of bridged monomers.
+        A matrix with 3 columns anv varing number of rows, where the first
+        column contain the indices of the first monomer, second column
+        contaions the indices of the second monomer, and the third one contains
+        the genomic distance betweem the two monnomers in pairs of bridged
+        monomers.
     """
-    if topology == 'linear':
-        contact_m_m_gen_dist = np.array((
-            contact_m_m_nonzeros[:,0],
-            contact_m_m_nonzeros[:,1],
-            np.abs(contact_m_m_nonzeros[:,0]-contact_m_m_nonzeros[:,1])
-            )).T # axis 0: monomer i, monomer j, genomic_dist_ij
-    elif topology == 'ring':
-        contact_m_m_gen_dist = np.array((
-            contact_m_m_nonzeros[:,0],
-            contact_m_m_nonzeros[:,1],
-            np.minimum(
-                np.abs(contact_m_m_nonzeros[:,0]-contact_m_m_nonzeros[:,1]),
-                n_mon-np.abs(contact_m_m_nonzeros[:,0]-contact_m_m_nonzeros[:,1]))
-            )).T # axis 0: monomer i, monomer j, genomic_dist_ij
-    else:
-        raise ValueError(
-            f"The genomic distance is not defined for '{topology}' topology"
-            )
+    genomic_distances = genomic_distance(
+        contact_nonzeros[:, 0],
+        contact_nonzeros[:, 1],
+        topology,
+        n_mons
+    )
+    contact_m_m_gen_dist = np.column_stack((
+        contact_nonzeros,
+        genomic_distances
+    ))  # axis 0: monomer i, monomer j, genomic_dist_ij
     return contact_m_m_gen_dist
 
 
 def hns_binding(
     direct_contact: np.ndarray,
     topology: str,
+    cis_threshold: int,
     results: Dict[str, List[int]] = defaultdict(List[int]),
     loop_length_hist: np.ndarray = np.array([])
-    ) -> Tuple[Dict[str, List[int]], np.ndarray]:
+) -> Tuple[Dict[str, List[int]], np.ndarray]:
     """Calculate the binding statistics of H-NS proteins to monomers.
-    
+
     A H-NS protein consist of a core and two patches at the poles of the core.
 
     Parameters
@@ -663,63 +774,73 @@ def hns_binding(
     direct_contact: np.ndarray, shape (n_mon, n_hpatch)
         A binary matrix where each element (i, j) is 1 if atoms i and j have a
         contact, and 0 otherwise.
-    
+
     topology: str
         Topology of the polymer containing monomers.
-    
+
+    cis_threshold: int, default 2,
+        The genomic distance in number of bonds (not number of monomers) less
+        than or equal to which a H-NS is of cis-binding type.
+
     results: dict
-        A dictionary of binding statistics of H-NS proteins to which new statisitics is appended.
-    
+        A dictionary of binding statistics of H-NS proteins to which new
+        statisitics is appended.
+
     loop_size_hist: np.ndarray
         An histogram of the size of loops created by bridging two monomers.
-    
+
     Return
     ------
     results: dict
-        A new or updated dictionary contains the statistical data about the binding of H-NS proteins to monomers.
-    
+        A new or updated dictionary contains the statistical data about the
+        binding of H-NS proteins to monomers.
+
     loop_size_hist: np.ndarray
-        A new or updated arrat contains the histogram of loop sizes. 
-    """ 
+        A new or updated arrat contains the histogram of loop sizes.
+    """
     # Initialize results if not provided
     n_mon, n_hpatch = direct_contact.shape
     n_hcore = n_hpatch // 2
-    if topology not in ['ring', 'linear']:
+    if topology not in ('ring', 'linear'):
         raise ValueError(
             f"The genomic distance is not defined for '{topology}' topology"
             )
-    # For both, ring with odd or even number of monomers, the maximum intra-chain distance is the same. 
+    # For both, ring with odd or even number of monomers, the maximum
+    # intra-chain distance is the same.
     if loop_length_hist == np.array([]):
         max_gen_distance = {
             'linear': n_mon,
-            'ring': n_mon//2+1 
-        }   
+            'ring': n_mon//2+1
+        }
         loop_length_hist = np.zeros(max_gen_distance[topology])
-    
+
     results['n_m_hpatch_bound'].append(np.sum(direct_contact))
     d_cont_per_hpatch = np.sum(direct_contact, axis=0)
     results['n_hpatch_engaged'].append(np.count_nonzero(d_cont_per_hpatch))
     results['n_hpatch_free'].append(n_hpatch - results['n_hpatch_engaged'][-1])
     results['n_hcore_free'].append(np.sum(
-        (d_cont_per_hpatch[0::2]==0) & (d_cont_per_hpatch[1::2]==0)
+        (d_cont_per_hpatch[0::2] == 0) & (d_cont_per_hpatch[1::2] == 0)
         ))
     results['n_hcore_bridge'].append(
-        np.sum((d_cont_per_hpatch[0::2]>0) & (d_cont_per_hpatch[1::2]>0)
+        np.sum((d_cont_per_hpatch[0::2] > 0) & (d_cont_per_hpatch[1::2] > 0)
                ))
-    results['n_hcore_dangle'].append(n_hcore-results['n_hcore_free'][-1]-results['n_hcore_bridge'][-1])
-    cont_m_hpatch = generate_contact_matrix(direct_contact)
-    cont_m_hcore = np.zeros((n_mon,n_hcore))
-    #for i in range(n_hcore):
+    results['n_hcore_dangle'].append(
+        n_hcore-results['n_hcore_free'][-1] - results['n_hcore_bridge'][-1]
+        )
+    single_patch_contact = enforce_single_patch_contact(direct_contact)
+    cont_m_hpatch = generate_contact_matrix(single_patch_contact)
+    cont_m_hcore = np.zeros((n_mon, n_hcore))
+    # for i in range(n_hcore):
     #    cont_m_hcore[:,i] = cont_m_hpatch[:, 2*i] | cont_m_hpatch[:, 2*i+1]
     cont_m_hcore = np.logical_or(cont_m_hpatch[:, ::2], cont_m_hpatch[:, 1::2])
-    cont_m_m = np.matmul(cont_m_hcore, cont_m_hcore.T) # symmetric
+    cont_m_m = np.matmul(cont_m_hcore, cont_m_hcore.T)  # symmetric
     cont_m_m_triu = np.triu(cont_m_m, 1)
-    cont_m_m_nonzeros = np.array(np.where(cont_m_m_triu>0)).T
-    results['n_mon_bound'].append(cont_m_m_nonzeros.shape[0])
+    cont_m_m_nonzeros = np.array(np.where(cont_m_m_triu > 0)).T
     m_m_gen_dist = hns_genomic_distance(cont_m_m_nonzeros, topology, n_mon)
-    results['n_mon_cis'].append(np.count_nonzero(
-        (m_m_gen_dist[:,2]>0) & (m_m_gen_dist[:,2]<=2)
+    results['n_hcore_cis'].append(np.count_nonzero(
+        (m_m_gen_dist[:, 2] > 0) & (m_m_gen_dist[:, 2] <= cis_threshold)
         ))
-    results['n_mon_trans'].append(np.count_nonzero(m_m_gen_dist[:,2]>2))
-    np.add.at(loop_length_hist, m_m_gen_dist[:,2], 1)
-    return results, loop_length_hist 
+    results['n_hcore_trans'].append(np.count_nonzero(
+        m_m_gen_dist[:, 2] > cis_threshold))
+    np.add.at(loop_length_hist, m_m_gen_dist[:, 2], 1)
+    return results, loop_length_hist
