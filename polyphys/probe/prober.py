@@ -216,7 +216,7 @@ def fixedsize_bins(
     hist_collectors = 0
     bin_edges = 0
     bin_types = ['ordinary', 'nonnagative', 'periodic']
-    if not np.all(lmin < lmax):
+    if lmin >= lmax:
         raise ValueError('Boundaries are not sane: should be xmin < xmax.')
     _delta = bin_size
     _lmin = lmin
@@ -3241,6 +3241,8 @@ def hns_nucleoid_cyl(
     bond_lengths = np.zeros((n_bonds, 1), dtype=np.float64)
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
     # H-Ns binding:
+    cis_threshold = 2
+    dist_m_hpatch = []
     lj_cut = 2**(1/6)
     r_cutoff = np.round(
         0.5 * lj_cut * (sim_info.dmon + sim_info.dhns_patch), 3
@@ -3252,9 +3254,8 @@ def hns_nucleoid_cyl(
         'n_hcore_free': [],
         'n_hcore_bridge': [],
         'n_hcore_dangle': [],
-        'n_mon_bound': [],
-        'n_mon_cis': [],
-        'n_mon_trans': []
+        'n_hcore_cis': [],
+        'n_hcore_trans': []
     }
     if sim_info.topology == 'linear':
         loop_length_hist_t = np.zeros(sim_info.nmon, dtype=int)
@@ -3284,11 +3285,13 @@ def hns_nucleoid_cyl(
         # bug - hns patch:
         # distance matrices
         dummy = mda_dist.distance_array(bug, hns_patch)
+        dist_m_hpatch.append(dummy)
         d_contact_m_hpatch = clusters.find_direct_contacts(
             dummy, r_cutoff, inclusive=False
             )
         binding_stats_t, loop_length_hist_t = clusters.hns_binding(
-                d_contact_m_hpatch, sim_info.topology, results=binding_stats_t,
+                d_contact_m_hpatch, sim_info.topology, cis_threshold,
+                results=binding_stats_t,
                 loop_length_hist=loop_length_hist_t
                 )
 
@@ -3316,26 +3319,29 @@ def hns_nucleoid_cyl(
     np.save(save_to + sim_name + '-bondCosineCorrVecMon.npy', cosine_corrs)
     # H-NS binding stats:
     binding_stats_names = {
-        'n_m_hpatch_bound': 'nBoundHnsPatch',
-        'n_hpatch_free': 'nFreeHnsPatch',
-        'n_hpatch_engaged': 'nEngagedHnsPatch',
-        'n_hcore_free': 'nFreeHnsCore',
-        'n_hcore_bridge': 'nBridgeHnsCore',
-        'n_hcore_dangle': 'nDangleHnsCore',
-        'n_mon_bound': 'nBoundMon',
-        'n_mon_cis': 'nCisMon',
-        'n_mon_trans': 'nTransMon',
+        'n_m_hpatch_bound': 'nBoundHnsTPatch',
+        'n_hpatch_free': 'nFreeTHnsPatch',
+        'n_hpatch_engaged': 'nEngagedTHnsPatch',
+        'n_hcore_free': 'nFreeTHnsCore',
+        'n_hcore_bridge': 'nBridgeTHnsCore',
+        'n_hcore_dangle': 'nDangleTHnsCore',
+        'n_hcore_cis': 'nCisTHnsCore',
+        'n_hcore_trans': 'nTransTHnsCore',
     }
     for key, value in binding_stats_t.items():
         np.save(
-            save_to + sim_name + '-' + binding_stats_names[key] + 'T.npy',
+            save_to + sim_name + '-' + binding_stats_names[key] + '.npy',
             np.array(value)
         )
     np.save(
         save_to + sim_name + '-loopLengthHistMon.npy',
         np.array(loop_length_hist_t)
         )
-
+    # distance matirx
+    np.save(
+        save_to + sim_name + '-distMatTMonHnsPatch.npy',
+        np.array(dist_m_hpatch)
+        )
     print('done.')
 
 
