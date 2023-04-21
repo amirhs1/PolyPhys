@@ -1,10 +1,11 @@
-from typing import Type, Union, Tuple, Dict, NewType
+from typing import Type, Union, Tuple, Dict, NewType, List
 import numpy as np
 import pandas as pd
-# pylint: disable-next=reportShadowedImports
-from .parser import *
+from .parser import (
+    ParserBase, SumRuleCyl, TransFociCyl, TransFociCub, HnsCyl, HnsCub
+    )
 
-# String types:
+# Define custom type aliases for clarity:
 
 PropertyT = NewType('PropertyT', str)
 SpeciesT = NewType('SpeciesT', str)
@@ -15,7 +16,7 @@ WholeName = NewType('WholeName', str)
 EnsembleName = NewType('EnsembleName', str)
 HasEdgeT = NewType('HasEdgeT', bool)
 
-# Data unit types
+# Define custom type aliases for various data structures:
 TimeSeriesT = Tuple[PropertyT, SpeciesT, GroupT]
 NonScalarHistT = Tuple[PropertyT, SpeciesT, GroupT, AxisT]
 NonScalarMatT = Tuple[PropertyT, SpeciesT, GroupT]
@@ -25,8 +26,9 @@ WholeT = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
 EnsembleT = Tuple[EnsembleName, Union[np.ndarray, pd.DataFrame]]
 FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
+HnsStatDict = Dict[str, Union[List[int], np.ndarray]]
 
-# Parser types
+# Define custom type aliases for various parser classes
 ParserBaseT = Type[ParserBase]
 TransFociCylT = Type[TransFociCyl]
 TransFociCubT = Type[TransFociCub]
@@ -35,7 +37,7 @@ HnsCubT = Type[HnsCub]
 HnsCylT = Type[HnsCyl]
 TransFociT = Union[TransFociCubT, TransFociCylT]
 HnsT = Union[HnsCubT, HnsCylT]
-#ParserT = Union[SumRuleCylT, TransFociCubT, TransFociCylT, HnsCubT, HnsCylT]
+# ParserT = Union[SumRuleCylT, TransFociCubT, TransFociCylT, HnsCubT, HnsCylT]
 ParserT = Union[SumRuleCyl, TransFociCub, TransFociCyl, HnsCub, HnsCyl]
 ParserCylT = Union[SumRuleCylT, TransFociCylT, HnsCylT]
 ParserCubT = Union[TransFociCubT, HnsCubT]
