@@ -715,7 +715,9 @@ def genomic_distance(
         'linear': lambda a, b: np.abs(a - b),
         'ring': lambda a, b, n: np.minimum(np.abs(a - b), n - np.abs(a - b)),
     }
-    return topology_functions[topology](atoms_a, atoms_b, num_backbone_atoms)
+    distances: np.ndarray = \
+        topology_functions[topology](atoms_a, atoms_b, num_backbone_atoms)
+    return distances
 
 
 def hns_genomic_distance(
@@ -745,13 +747,13 @@ def hns_genomic_distance(
         the genomic distance betweem the two monnomers in pairs of bridged
         monomers.
     """
-    genomic_distances = genomic_distance(
+    genomic_distances: np.ndarray = genomic_distance(
         contact_nonzeros[:, 0],
         contact_nonzeros[:, 1],
         topology,
         n_mons
     )
-    contact_m_m_gen_dist = np.column_stack((
+    contact_m_m_gen_dist: np.ndarray = np.column_stack((
         contact_nonzeros,
         genomic_distances
     ))  # axis 0: monomer i, monomer j, genomic_dist_ij
@@ -761,10 +763,11 @@ def hns_genomic_distance(
 def hns_binding(
     direct_contact: np.ndarray,
     topology: str,
-    cis_threshold: int,
-    results: Dict[str, List[int]] = defaultdict(List[int]),
+    cis_threshold: int = 4,
+    binding_stats: Dict[str, List[int]] = defaultdict(List[int]),
+    bridged_monomers: List[np.ndarray] = [],
     loop_length_hist: np.ndarray = np.array([])
-) -> Tuple[Dict[str, List[int]], np.ndarray]:
+) -> Tuple[Dict[str, List[int]], List[np.ndarray], np.ndarray]:
     """Calculate the binding statistics of H-NS proteins to monomers.
 
     A H-NS protein consist of a core and two patches at the poles of the core.
@@ -778,7 +781,7 @@ def hns_binding(
     topology: str
         Topology of the polymer containing monomers.
 
-    cis_threshold: int, default 2,
+    cis_threshold: int, default 4
         The genomic distance in number of bonds (not number of monomers) less
         than or equal to which a H-NS is of cis-binding type.
 
@@ -786,8 +789,10 @@ def hns_binding(
         A dictionary of binding statistics of H-NS proteins to which new
         statisitics is appended.
 
-    loop_size_hist: np.ndarray
-        An histogram of the size of loops created by bridging two monomers.
+    bridged_monomers: list of array
+        A list of arrays where each array is of shape (n_bridged_pairs, 3).
+        Each row of the an array contaion the index of first monomer, index of
+        second one and the genomic distance between them.
 
     Return
     ------
@@ -814,18 +819,21 @@ def hns_binding(
         }
         loop_length_hist = np.zeros(max_gen_distance[topology])
 
-    results['n_m_hpatch_bound'].append(np.sum(direct_contact))
+    binding_stats['n_m_hpatch_bound'].append(np.sum(direct_contact))
     d_cont_per_hpatch = np.sum(direct_contact, axis=0)
-    results['n_hpatch_engaged'].append(np.count_nonzero(d_cont_per_hpatch))
-    results['n_hpatch_free'].append(n_hpatch - results['n_hpatch_engaged'][-1])
-    results['n_hcore_free'].append(np.sum(
+    binding_stats['n_hpatch_engaged'].append(
+        np.count_nonzero(d_cont_per_hpatch))
+    binding_stats['n_hpatch_free'].append(
+        n_hpatch - binding_stats['n_hpatch_engaged'][-1])
+    binding_stats['n_hcore_free'].append(np.sum(
         (d_cont_per_hpatch[0::2] == 0) & (d_cont_per_hpatch[1::2] == 0)
         ))
-    results['n_hcore_bridge'].append(
+    binding_stats['n_hcore_bridge'].append(
         np.sum((d_cont_per_hpatch[0::2] > 0) & (d_cont_per_hpatch[1::2] > 0)
                ))
-    results['n_hcore_dangle'].append(
-        n_hcore-results['n_hcore_free'][-1] - results['n_hcore_bridge'][-1]
+    binding_stats['n_hcore_dangle'].append(
+        n_hcore-binding_stats['n_hcore_free'][-1] -
+        binding_stats['n_hcore_bridge'][-1]
         )
     single_patch_contact = enforce_single_patch_contact(direct_contact)
     cont_m_hpatch = generate_contact_matrix(single_patch_contact)
@@ -837,10 +845,11 @@ def hns_binding(
     cont_m_m_triu = np.triu(cont_m_m, 1)
     cont_m_m_nonzeros = np.array(np.where(cont_m_m_triu > 0)).T
     m_m_gen_dist = hns_genomic_distance(cont_m_m_nonzeros, topology, n_mon)
-    results['n_hcore_cis'].append(np.count_nonzero(
+    bridged_monomers.append(m_m_gen_dist)
+    binding_stats[f'n_hcore_cis'].append(np.count_nonzero(
         (m_m_gen_dist[:, 2] > 0) & (m_m_gen_dist[:, 2] <= cis_threshold)
         ))
-    results['n_hcore_trans'].append(np.count_nonzero(
+    binding_stats['n_hcore_trans'].append(np.count_nonzero(
         m_m_gen_dist[:, 2] > cis_threshold))
     np.add.at(loop_length_hist, m_m_gen_dist[:, 2], 1)
-    return results, loop_length_hist
+    return binding_stats, loop_length_hist
