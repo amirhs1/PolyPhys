@@ -185,7 +185,6 @@ thermo_style custom step ke pe etail ecouple econserve evdwl ebond eangle &
 #### Energy minimzation and time integration
 variable scale4 equal ${m_crowd}/${sig4} # scaling tdamp for crowders
 
-
 fix F_langevin all langevin 1 1 1 ${randseed} scale 4 ${scale4} tally yes
 fix F_nve all nve/limit 0.01
 fix F_recenter dna recenter NULL NULL 0.0 shift all units box # always last fix to use
