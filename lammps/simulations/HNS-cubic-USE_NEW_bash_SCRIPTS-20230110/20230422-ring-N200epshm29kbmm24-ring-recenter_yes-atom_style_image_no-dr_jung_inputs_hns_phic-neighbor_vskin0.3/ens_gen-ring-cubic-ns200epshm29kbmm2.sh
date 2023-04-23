@@ -77,13 +77,12 @@ ens='1 2 3 4' # Here, we define a global variable called "ens" which is the tota
 for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
 	for ((j=0; j<${#P[@]}; j++ )); do
 		N=$(echo "${P[$j]}" | awk '{print $1}') # number of monomers
-		eps_hm=$(echo "${P[$j]}" | awk '{print $2}')
-		kBend=$(echo "${P[$j]}" | awk '{print $3}')
-		n_hns=$(echo "${P[$j]}" | awk '{print $4}')
-		sig4=$(echo "${P[$j]}" | awk '{print $5}') # sizeo of crowders
-		n_crowd=$(echo "${P[$j]}" | awk '{print $6}')
-		l=$(echo "${P[$j]}" | awk '{print $7}') # range of x, y or z from -l to l
-		randseed_group=$(echo "${P[$j]}" | awk '{print $8}')
+		kBend=$(echo "${P[$j]}" | awk '{print $2}')
+		n_hns=$(echo "${P[$j]}" | awk '{print $3}')
+		sig4=$(echo "${P[$j]}" | awk '{print $4}') # sizeo of crowders
+		n_crowd=$(echo "${P[$j]}" | awk '{print $5}')
+		l=$(echo "${P[$j]}" | awk '{print $6}') # range of x, y or z from -l to l
+		randseed_group=$(echo "${P[$j]}" | awk '{print $7}')
 		dirname=N${N}kbmm${kBend}nh${n_hns}ac${sig4}l${l}nc${n_crowd}ens${i}.ring
 		simname=N${N}kbmm${kBend}nh${n_hns}ac${sig4}l${l}nc${n_crowd}ens${i}
 		# minimization and equilibration script
@@ -117,7 +116,6 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		echo "variable sig4 equal ${sig4}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_hns equal ${n_hns}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable kBend11 equal ${kBend}" | cat - input.lmp > temp && mv temp input.lmp
-		echo "variable eps_hm equal ${eps_hm}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable N equal ${N}" | cat - input.lmp > temp && mv temp input.lmp
 		echo '# Defining input parameters:' | cat - input.lmp > temp && mv temp input.lmp
 
