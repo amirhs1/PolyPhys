@@ -38,14 +38,14 @@ PROJECTS_DETAILS = {
                              'dcyl', 'dcrowd', 'phi_c_bulk',
                              'phi_c_bulk_round'
                              ],
-        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
-                             'asphericityMon-sem', 'fsdMon-mean', 'fsdMon-var',
-                             'fsdMon-sem', 'gyrMon-mean', 'gyrMon-var',
-                             'gyrMon-sem', 'rfloryMon-mean', 'rfloryMon-var',
-                             'rfloryMon-sem', 'shapeMon-mean', 'shapeMon-var',
-                             'shapeMon-sem', 'transSizeMon-mean',
-                             'transSizeMon-var', 'transSizeMon-sem'
-                             ],
+        'equil_properties': [
+            'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
+            'fsdMon-mean', 'fsdMon-var', 'fsdMon-sem',
+            'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
+            'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem',
+            'rfloryMon-var', 'rfloryMon-sem', 'shapeMon-mean',
+            'transSizeMon-mean', 'transSizeMon-var', 'transSizeMon-sem'
+            ],
         'rhosPhisNormalizedScaled': [('Mon', 'dmon'), ('Crd', 'dcrowd')]
     },
     'TransFociCyl': {
@@ -71,11 +71,11 @@ PROJECTS_DETAILS = {
                              'dmon_large', 'nmon_large', 'nmon_small',
                              'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'
                              ],
-        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
-                             'asphericityMon-sem', 'fsdMon-mean',
-                             'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
-                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
-                             'shapeMon-var', 'shapeMon-sem'
+        'equil_properties': [
+            'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
+            'fsdMon-mean', 'fsdMon-var', 'fsdMon-sem',
+            'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
+            'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem',
                              ],
         'rhosPhisNormalizedScaled': [('Mon', 'dmon_small'), ('Crd', 'dcrowd'),
                                      ('Foci', 'dmon_large')
@@ -101,11 +101,11 @@ PROJECTS_DETAILS = {
                              'dmon_large', 'nmon_large', 'nmon_small',
                              'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'
                              ],
-        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
-                             'asphericityMon-sem', 'gyrMon-mean',
-                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
-                             'shapeMon-var', 'shapeMon-sem'
-                             ],
+        'equil_properties': [
+            'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
+            'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
+            'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem'
+            ],
         'rhosPhisNormalizedScaled': [('Mon', 'dmon_small'), ('Crd', 'dcrowd'),
                                      ('Foci', 'dmon_large')
                                      ]
@@ -124,17 +124,33 @@ PROJECTS_DETAILS = {
         'attributes': ['space', 'ensemble_long', 'ensemble', 'eps_hm',
                        'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
                        ],
-        'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
+        'time_varying_props': ['asphericityTMon', 'gyrTMon',
+                               'shapeTMon',  'bondLengthVecMon',
+                               'nBoundHnsTPatch', 'nFreeHnsTPatch',
+                               'nEngagedTHnsPatch', 'nFreeHnsTCore',
+                               'nBridgeTHnsCore', 'nDangleHnsTCore',
+                               'nCisTHnsCore', 'nTransTHnsCore',
+                               ],
         'equil_measures': [np.mean],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space',
                              'eps_hm', 'nmon', 'nhns', 'dcrowd', 'phi_c_bulk',
                              'phi_c_bulk_round'
                              ],
-        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
-                             'asphericityMon-sem', 'gyrMon-mean',
-                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
-                             'shapeMon-var', 'shapeMon-sem'
-                             ],
+        'equil_properties': [
+            'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
+            'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
+            'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem',
+            'bondLengthMon-mean', 'bondLengthMon-var', 'bondLengthMon-sem',
+            'nBoundHnsPatch-mean', 'nBoundHnsPatch-var', 'nBoundHnsPatch-sem',
+            'nFreeHnsPatch-mean', 'nFreeHnsPatch-var', 'nFreeHnsPatch-sem',
+            'nEngagedHnsPatch-mean', 'nEngagedHnsPatch-var',
+            'nEngagedHnsPatch-sem',
+            'nFreeHnsCore-mean', 'nFreeHnsCore-var', 'nFreeHnsCore-sem',
+            'nBridgeHnsCore-mean', 'nBridgeHnsCore-var', 'nBridgeHnsCore-sem',
+            'nDangleHnsCore-mean', 'nDangleHnsCore-var', 'nDangleHnsCore-sem',
+            'nCisHnsCore-mean', 'nCisHnsCore-var', 'nCisHnsCore-sem',
+            'nTransHnsCore-mean', 'nTransHnsCore-var', 'nTransHnsCore-sem'
+            ],
         'rhosPhisNormalizedScaled': [('Mon', 'dmon'), ('Crd', 'dcrowd'),
                                      ('Hns', 'dhns')]
     },
@@ -152,12 +168,12 @@ PROJECTS_DETAILS = {
         'attributes': ['space', 'ensemble_long', 'ensemble', 'dcyl',
                        'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
                        ],
-        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
-                               'shapeTMon', 'nBoundHnsPatchT',
-                               'nFreeHnsPatchT', 'nEngagedHnsPatchT',
-                               'nFreeHnsCoreT', 'nBridgeHnsCoreT',
-                               'nDangleHnsCoreT', 'nBoundMonT',
-                               'nCisMonT', 'nTransMonT', 'bondLengthVecMon'
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'transSizeTMon',
+                               'gyrTMon', 'shapeTMon', 'bondLengthVecMon',
+                               'nBoundHnsTPatch', 'nFreeHnsTPatch',
+                               'nEngagedTHnsPatch', 'nFreeHnsTCore',
+                               'nBridgeTHnsCore', 'nDangleHnsTCore',
+                               'nCisTHnsCore', 'nTransTHnsCore',
                                ],
         'equil_measures': [np.mean, np.var, measurer.sem],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'dcyl',
@@ -165,19 +181,21 @@ PROJECTS_DETAILS = {
                              'phi_c_bulk_round'],
         'equil_properties': [
             'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
-            'fsdMon-mean', 'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
-            'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean', 'shapeMon-var',
-            'shapeMon-sem', 'nBoundHnsPatch-mean', 'nBoundHnsPatch-var',
-            'nBoundHnsPatch-sem', 'nFreeHnsPatch-mean', 'nFreeHnsPatch-var',
-            'nFreeHnsPatch-sem', 'nEngagedHnsPatch-mean',
-            'nEngagedHnsPatch-var', 'nEngagedHnsPatch-sem',
+            'fsdMon-mean', 'fsdMon-var', 'fsdMon-sem',
+            'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
+            'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem',
+            'transSizeMon-mean', 'transSizeMon-var', 'transSizeMon-sem',
+            'bondLengthMon-mean', 'bondLengthMon-var', 'bondLengthMon-sem',
+            'nBoundHnsPatch-mean', 'nBoundHnsPatch-var', 'nBoundHnsPatch-sem',
+            'nFreeHnsPatch-mean', 'nFreeHnsPatch-var', 'nFreeHnsPatch-sem',
+            'nEngagedHnsPatch-mean', 'nEngagedHnsPatch-var',
+            'nEngagedHnsPatch-sem',
             'nFreeHnsCore-mean', 'nFreeHnsCore-var', 'nFreeHnsCore-sem',
             'nBridgeHnsCore-mean', 'nBridgeHnsCore-var', 'nBridgeHnsCore-sem',
             'nDangleHnsCore-mean', 'nDangleHnsCore-var', 'nDangleHnsCore-sem',
-            'nBoundMon-mean', 'nBoundMon-var', 'nBoundMon-sem', 'nCisMon-mean',
-            'nCisMon-var', 'nCisMon-sem', 'nTransMon-mean', 'nTransMon-var',
-            'nTransMon-sem', 'bondLengthMon-mean', 'bondLengthMon-var',
-            'bondLengthMon-sem'],
+            'nCisHnsCore-mean', 'nCisHnsCore-var', 'nCisHnsCore-sem',
+            'nTransHnsCore-mean', 'nTransHnsCore-var', 'nTransHnsCore-sem'
+        ],
         'rhosPhisNormalizedScaled': [('Mon', 'dmon'), ('Crd', 'dcrowd'),
                                      ('Hns', 'dhns')]
     }
