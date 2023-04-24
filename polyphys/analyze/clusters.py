@@ -765,9 +765,8 @@ def hns_binding(
     topology: str,
     cis_threshold: int = 4,
     binding_stats: Dict[str, List[int]] = defaultdict(List[int]),
-    bridged_monomers: List[np.ndarray] = [],
     loop_length_hist: np.ndarray = np.array([])
-) -> Tuple[Dict[str, List[int]], List[np.ndarray], np.ndarray]:
+) -> Tuple[Dict[str, List[int]], np.ndarray]:
     """Calculate the binding statistics of H-NS proteins to monomers.
 
     A H-NS protein consist of a core and two patches at the poles of the core.
@@ -845,8 +844,7 @@ def hns_binding(
     cont_m_m_triu = np.triu(cont_m_m, 1)
     cont_m_m_nonzeros = np.array(np.where(cont_m_m_triu > 0)).T
     m_m_gen_dist = hns_genomic_distance(cont_m_m_nonzeros, topology, n_mon)
-    bridged_monomers.append(m_m_gen_dist)
-    binding_stats[f'n_hcore_cis'].append(np.count_nonzero(
+    binding_stats['n_hcore_cis'].append(np.count_nonzero(
         (m_m_gen_dist[:, 2] > 0) & (m_m_gen_dist[:, 2] <= cis_threshold)
         ))
     binding_stats['n_hcore_trans'].append(np.count_nonzero(
