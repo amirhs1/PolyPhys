@@ -185,7 +185,6 @@ ANALYSIS_DETAILS_NUCLEOID = {
             ('nFreeT', 'HnsCore', 'nucleoid'),
             ('nBridgeT', 'HnsCore', 'nucleoid'),
             ('nDangleT', 'HnsCore', 'nucleoid'),
-            ('nBoundT', 'HnsCore', 'nucleoid'),
             ('nCisT', 'HnsCore', 'nucleoid'),
             ('nTransT', 'HnsCore', 'nucleoid')
         ],
@@ -2007,7 +2006,8 @@ def space_measure(
         )
     if not property_paths:
         raise FileNotFoundError(
-            f"No matching files found in the specified path: {space_db}"
+            f"No matching files found for property pattern '{property_pat}'in"
+            f"the specified path: {space_db}"
             )
 
     meas_name = stat_func.__name__

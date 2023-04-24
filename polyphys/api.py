@@ -125,10 +125,10 @@ PROJECTS_DETAILS = {
                        'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
                        ],
         'time_varying_props': ['asphericityTMon', 'gyrTMon',
-                               'shapeTMon',  'bondLengthVecMon',
-                               'nBoundHnsTPatch', 'nFreeHnsTPatch',
-                               'nEngagedTHnsPatch', 'nFreeHnsTCore',
-                               'nBridgeTHnsCore', 'nDangleHnsTCore',
+                               'shapeTMon', 'bondLengthVecMon',
+                               'nBoundTHnsPatch', 'nFreeTHnsPatch',
+                               'nEngagedTHnsPatch', 'nFreeTHnsCore',
+                               'nBridgeTHnsCore', 'nDangleTHnsCore',
                                'nCisTHnsCore', 'nTransTHnsCore',
                                ],
         'equil_measures': [np.mean],
@@ -169,10 +169,11 @@ PROJECTS_DETAILS = {
                        'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
                        ],
         'time_varying_props': ['asphericityTMon', 'fsdTMon', 'transSizeTMon',
-                               'gyrTMon', 'shapeTMon', 'bondLengthVecMon',
-                               'nBoundHnsTPatch', 'nFreeHnsTPatch',
-                               'nEngagedTHnsPatch', 'nFreeHnsTCore',
-                               'nBridgeTHnsCore', 'nDangleHnsTCore',
+                               'shapeTMon', 'gyrTMon', 'transSizeTMon-mean',
+                               'bondLengthVecMon',
+                               'nBoundTHnsPatch', 'nFreeTHnsPatch',
+                               'nEngagedTHnsPatch', 'nFreeTHnsCore',
+                               'nBridgeTHnsCore', 'nDangleTHnsCore',
                                'nCisTHnsCore', 'nTransTHnsCore',
                                ],
         'equil_measures': [np.mean, np.var, measurer.sem],
@@ -365,6 +366,16 @@ def all_in_one_equil_tseries_ens_avg(
                 UserWarning
                 )
             ens_avg.loc[space_con, prop + "-norm"] = np.nan
+    if project in ['HnsCyl', 'HnsCub']:
+        hpatch_cols = ['nBoundHnsPatch', 'nFreeHnsPatch', 'nEngagedHnsPatch']
+        hcore_cols = ['nFreeHnsCore', 'nBridgeHnsCore', 'nDangleHnsCore',
+                      'nCisHnsCore', 'nTransHnsCore']
+        n_patch_per_cor = 2
+        for col in hpatch_cols:
+            ens_avg[col+'-norm'] = \
+                ens_avg[col+'-mean'] / (ens_avg['nhns'] * n_patch_per_cor)
+        for col in hcore_cols:
+            ens_avg[col+'-norm'] = ens_avg[col+'-mean'] / ens_avg['nhns'] 
     if save_to is not None:
         output = "-".join(
             ["allInOne", project, group, "equilProps-ensAvg.csv"]

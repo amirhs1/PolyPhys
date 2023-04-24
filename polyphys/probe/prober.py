@@ -3321,7 +3321,7 @@ def hns_nucleoid_cyl(
     np.save(save_to + sim_name + '-bondCosineCorrVecMon.npy', cosine_corrs)
     # H-NS binding stats:
     binding_stats_names = {
-        'n_m_hpatch_bound': 'nBoundHnsTPatch',
+        'n_m_hpatch_bound': 'nBoundTHnsPatch',
         'n_hpatch_free': 'nFreeTHnsPatch',
         'n_hpatch_engaged': 'nEngagedTHnsPatch',
         'n_hcore_free': 'nFreeTHnsCore',
