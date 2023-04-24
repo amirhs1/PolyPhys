@@ -22,6 +22,9 @@ from ..manage.organizer import (
     children_stamps,
     parents_stamps
 )
+from ..manage.parser import (
+    SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
+)
 from ..manage.typer import (
     ParserT,
     TransFociT,
@@ -33,6 +36,376 @@ from ..manage.typer import (
 )
 from .distributions import distributions_generator
 from .correlations import acf_generator
+
+
+ANALYSIS_DETAILS_NUCLEOID = {
+    'SumRuleCylSegment': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': SumRuleCyl,
+        'group': 'bug',
+        'geometry': 'cylindrical',
+        'topology': 'linear',
+        'is_segment': True,
+        'has_stamp': True,
+        'nonscalar_mat_t_properties': [
+            # property_, species, group
+            ('principalT', 'Mon', 'bug'),
+        ],
+        'acf_tseries_properties': [
+            # property_, species, group
+            ('fsdT', 'Mon', 'bug'),
+            ('gyrT', 'Mon', 'bug'),
+            ('transSizeT', 'Mon', 'bug'),
+            ('rfloryT', 'Mon', 'bug'),
+            ('shapeT', 'Mon', 'bug'),
+            ('asphericityT', 'Mon', 'bug')
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('rflory', 'Mon', 'bug')
+        ]
+    },
+
+    'SumRuleCylWhole': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': SumRuleCyl,
+        'group': 'bug',
+        'geometry': 'cylindrical',
+        'topology': 'linear',
+        'is_segment': False,
+        'has_stamp': True,
+        'nonscalar_mat_t_properties': [
+            # property_, species, group
+            ('principalT', 'Mon', 'bug'),
+        ],
+        'acf_tseries_properties': [
+            # property_, species, group
+            ('fsdT', 'Mon', 'bug'),
+            ('gyrT', 'Mon', 'bug'),
+            ('transSizeT', 'Mon', 'bug'),
+            ('rfloryT', 'Mon', 'bug'),
+            ('shapeT', 'Mon', 'bug'),
+            ('asphericityT', 'Mon', 'bug')
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('rflory', 'Mon', 'bug')
+        ]
+    },
+    'TransFociCylWhole': {
+        'hierarchy': 'eps*/eps*',  # dir/file
+        'parser': TransFociCyl,
+        'group': 'bug',
+        'geometry': 'cylindrical',
+        'topology': 'ring',
+        'is_segment': False,
+        'has_stamp': True,
+        'nonscalar_hist_t_properties': [
+            # property_, species, group, avg_axis
+            ('bondsHistT', 'Foci', 'bug', 0),
+            ('clustersHistT', 'Foci', 'bug', 0)
+        ],
+        'nonscalar_mat_t_properties': [
+            # property_, species, group, avg_axis
+            ('distMatT', 'Foci', 'bug'),
+            ('principalT', 'Mon', 'bug')
+        ],
+        'acf_tseries_properties': [
+            # property_, species, group
+            ('fsdT', 'Mon', 'bug'),
+            ('gyrT', 'Mon', 'bug'),
+            ('transSizeT', 'Mon', 'bug'),
+            ('shapeT', 'Mon', 'bug'),
+            ('asphericityT', 'Mon', 'bug')
+        ]
+    },
+    'TransFociCubWhole': {
+        'hierarchy': 'al*/al*',  # dir/file
+        'parser': TransFociCub,
+        'group': 'bug',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'is_segment': False,
+        'has_stamp': True,
+        'nonscalar_hist_t_properties': [
+            # property_, species, group, avg_axis
+            ('bondsHistT', 'Foci', 'bug', 0),
+            ('clustersHistT', 'Foci', 'bug', 0)
+        ],
+        'nonscalar_mat_t_properties': [
+            # property_, species, group, avg_axis
+            ('distMatT', 'Foci', 'bug'),
+            ('principalT', 'Mon', 'bug')
+        ],
+        'acf_tseries_properties': [
+            ('fsdT', 'Mon', 'bug'),
+            ('gyrT', 'Mon', 'bug'),
+            ('shapeT', 'Mon', 'bug'),
+            ('asphericityT', 'Mon', 'bug')
+        ]
+    },
+    'HnsCubWhole': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': HnsCub,
+        'group': 'nucleoid',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'is_segment': False,
+        'has_stamp': True,
+        'acf_tseries_properties': [
+            ('gyrT', 'Mon', 'nucleoid'),
+            ('shapeT', 'Mon', 'nucleoid'),
+            ('asphericityT', 'Mon', 'nucleoid')
+        ],
+        'tseries_properties': [
+            ('bondCosineCorrVec', 'Mon', 'nucleoid'),
+            ('bondLengthVec', 'Mon', 'nucleoid')
+        ]
+    },
+    'HnsCylWhole': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': HnsCyl,
+        'group': 'nucleoid',
+        'geometry': 'cylindrical',
+        'topology': 'ring',
+        'is_segment': False,
+        'has_stamp': True,
+        'nonscalar_mat_t_properties': [
+            # property_, species, group, avg_axis
+            ('principalT', 'Mon', 'nucleoid')
+        ],
+        'tseries_properties': [
+            # treat these two as timeseries!
+            ('loopLengthHist', 'Mon', 'nucleoid'),
+            ('bondCosineCorrVec', 'Mon', 'nucleoid'),
+            ('bondLengthVec', 'Mon', 'nucleoid'),
+            ('nBoundT', 'HnsPatch', 'nucleoid'),
+            ('nFreeT', 'HnsPatch', 'nucleoid'),
+            ('nEngagedT', 'HnsPatch', 'nucleoid'),
+            ('nFreeT', 'HnsCore', 'nucleoid'),
+            ('nBridgeT', 'HnsCore', 'nucleoid'),
+            ('nDangleT', 'HnsCore', 'nucleoid'),
+            ('nBoundT', 'HnsCore', 'nucleoid'),
+            ('nCisT', 'HnsCore', 'nucleoid'),
+            ('nTransT', 'HnsCore', 'nucleoid')
+        ],
+        'acf_tseries_properties': [
+            # property_, species, group
+            ('fsdT', 'Mon', 'nucleoid'),
+            ('gyrT', 'Mon', 'nucleoid'),
+            ('transSizeT', 'Mon', 'nucleoid'),
+            ('shapeT', 'Mon', 'nucleoid'),
+            ('asphericityT', 'Mon', 'nucleoid')
+        ]
+    }
+}
+ANALYSIS_DETAILS_ALL = all_details = {
+    'SumRuleCylSegment': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': SumRuleCyl,
+        'group': 'all',
+        'geometry': 'cylindrical',
+        'topology': 'linear',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('z', 'Crd', 'all'),
+            ('z', 'Mon', 'all'),
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('theta', 'Crd', 'all'),
+            ('theta', 'Mon', 'all'),
+        ],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all'),
+        ]
+    },
+    'TransFociCylWhole': {
+        'hierarchy': 'eps*/eps*',  # dir/file
+        'parser': TransFociCyl,
+        'group': 'all',
+        'geometry': 'cylindrical',
+        'topology': 'ring',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Foci', 'all'),
+            ('z', 'Crd', 'all'),
+            ('z', 'Mon', 'all'),
+            ('z', 'Foci', 'all')
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('r', 'Dna', 'all'),
+            ('z', 'Dna', 'all'),
+            ('theta', 'Crd', 'all'),
+            ('theta', 'Mon', 'all'),
+            ('theta', 'Dna', 'all'),
+            ('theta', 'Foci', 'all')
+        ],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xy', 'Dna', 'all'),
+            ('xy', 'Foci', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('xz', 'Dna', 'all'),
+            ('xz', 'Foci', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+            ('yz', 'Dna', 'all'),
+            ('yz', 'Foci', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all'),
+        ]
+    },
+    'TransFociCubWhole': {
+        'hierarchy': 'al*/al*',  # dir/file
+        'parser': TransFociCub,
+        'group': 'all',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Foci', 'all'),
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('r', 'Dna', 'all'),
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Foci', 'all')],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xy', 'Dna', 'all'),
+            ('xy', 'Foci', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('xz', 'Dna', 'all'),
+            ('xz', 'Foci', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+            ('yz', 'Dna', 'all'),
+            ('yz', 'Foci', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all')
+        ]
+    },
+    'HnsCubWhole': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': HnsCub,
+        'group': 'all',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Hns', 'all'),
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('r', 'Mon', 'all'),
+        ],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xy', 'Hns', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('xz', 'Hns', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+            ('yz', 'Hns', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all')
+        ]
+    },
+    'HnsCylWhole': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': HnsCyl,
+        'group': 'all',
+        'geometry': 'cylindrical',
+        'topology': 'ring',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Hns', 'all'),
+            ('z', 'Crd', 'all'),
+            ('z', 'Mon', 'all'),
+            ('z', 'Hns', 'all')
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('theta', 'Crd', 'all'),
+            ('theta', 'Mon', 'all'),
+            ('theta', 'Hns', 'all')
+        ],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xy', 'Hns', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('xz', 'Hns', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+            ('yz', 'Hns', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all'),
+        ]
+    }
+}
 
 
 def time_series(

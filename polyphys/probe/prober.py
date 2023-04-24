@@ -3289,7 +3289,7 @@ def hns_nucleoid_cyl(
         d_contact_m_hpatch = clusters.find_direct_contacts(
             dummy, r_cutoff, inclusive=False
             )
-        binding_stats_t, loop_length_hist_t  = clusters.hns_binding(
+        binding_stats_t, loop_length_hist_t = clusters.hns_binding(
                 d_contact_m_hpatch,
                 sim_info.topology,
                 cis_threshold=cis_threshold,
