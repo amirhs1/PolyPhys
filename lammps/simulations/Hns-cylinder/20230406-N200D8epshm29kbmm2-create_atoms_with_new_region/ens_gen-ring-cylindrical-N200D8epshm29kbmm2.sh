@@ -136,7 +136,7 @@ P[${#P[@]}]="200	2		30		1		5184	4.5	75	76170"
 P[${#P[@]}]="200	2		30		1		5760	4.5	75	76180"
 
 
-ens='1 2 3 4 5' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
+ens='1 2 3 4' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 #ens='1 2' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 
 for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.

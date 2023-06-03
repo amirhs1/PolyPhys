@@ -122,7 +122,7 @@ PROJECTS_DETAILS = {
         'props': ['Rho', 'Phi'],
         'space_hierarchy': 'N*',
         'attributes': ['space', 'ensemble_long', 'ensemble', 'eps_hm',
-                       'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
+                       'nmon', 'nhns', 'dcrowd', 'phi_c_bulk', 'rho_hns_bulk',
                        ],
         'time_varying_props': ['asphericityTMon', 'gyrTMon',
                                'shapeTMon', 'bondLengthVecMon',
@@ -134,8 +134,7 @@ PROJECTS_DETAILS = {
         'equil_measures': [np.mean],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space',
                              'eps_hm', 'nmon', 'nhns', 'dcrowd', 'phi_c_bulk',
-                             'phi_c_bulk_round'
-                             ],
+                             'phi_c_bulk_round', 'rho_hns_bulk'],
         'equil_properties': [
             'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
             'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
@@ -166,10 +165,10 @@ PROJECTS_DETAILS = {
         'props': ['Rho', 'Phi'],
         'space_hierarchy': 'N*',
         'attributes': ['space', 'ensemble_long', 'ensemble', 'dcyl',
-                       'nmon', 'nhns', 'dcrowd', 'phi_c_bulk'
+                       'nmon', 'nhns', 'dcrowd', 'phi_c_bulk', 'rho_hns_bulk'
                        ],
-        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'transSizeTMon',
-                               'shapeTMon', 'gyrTMon', 'transSizeTMon-mean',
+        'time_varying_props': ['asphericityTMon', 'fsdTMon', 'shapeTMon',
+                               'gyrTMon', 'transSizeTMon',
                                'bondLengthVecMon',
                                'nBoundTHnsPatch', 'nFreeTHnsPatch',
                                'nEngagedTHnsPatch', 'nFreeTHnsCore',
@@ -179,7 +178,7 @@ PROJECTS_DETAILS = {
         'equil_measures': [np.mean, np.var, measurer.sem],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'dcyl',
                              'nhns', 'nmon', 'dcrowd', 'phi_c_bulk',
-                             'phi_c_bulk_round'],
+                             'phi_c_bulk_round', 'rho_hns_bulk'],
         'equil_properties': [
             'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
             'fsdMon-mean', 'fsdMon-var', 'fsdMon-sem',
@@ -295,6 +294,118 @@ def all_in_one_equil_tseries(
     return all_in_one_equil_props
 
 
+def load_project_db(
+    project: str,
+    project_db: Union[pd.DataFrame, str]
+) -> pd.DataFrame:
+    """Load the project database.
+
+    Parameters
+    ----------
+    project : str
+        The name of the project.
+    project_db : str or pd.DataFrame
+        The project "whole" "allInOne" dataframe or the path to it.
+
+    Returns
+    -------
+    pd.DataFrame
+        The project database.
+    """
+    if isinstance(project_db, str):
+        project_path = "-".join(["allInOne", project, "equilProps-whole.csv"])
+        project_db = pd.read_csv(project_db + project_path, header=0)
+
+    return project_db
+
+
+def drop_unnecessary_columns(
+    df: pd.DataFrame,
+    properties: List[str],
+    attributes: List[str]
+) -> pd.DataFrame:
+    """Drop columns from the dataframe that are not properties or attributes.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The dataframe to process.
+    properties : list of str
+        The names of physical properties.
+    attributes : list of str
+        The name of physical attributes.
+
+    Returns
+    -------
+    pd.DataFrame
+        The processed dataframe.
+    """
+    cols_to_drop = list(
+        set(df.columns).difference(set(attributes + properties)))
+    df.drop(columns=cols_to_drop, inplace=True)
+
+    return df
+
+
+def normalize_data(
+    df: pd.DataFrame,
+    project: str,
+    properties: List[str]
+) -> pd.DataFrame:
+    """Normalize the data in the dataframe.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The dataframe to process.
+    project : str
+        The name of the project.
+    properties : list of str
+        The names of physical properties.
+
+    Returns
+    -------
+    pd.DataFrame
+        The processed dataframe.
+    """
+    df_copy = df.copy()
+    norm_props = [
+        prop.split('-')[0] for prop in properties if prop.endswith('mean')]
+    spaces = df_copy['space'].unique()
+
+    for space, prop in itertools.product(spaces, norm_props):
+        space_con = df_copy['space'] == space
+        phi_c_con = df_copy['phi_c_bulk_round'] == 0
+        prop_0 = \
+            df_copy.loc[
+                space_con & phi_c_con, prop + "-mean"
+                ].to_numpy()[0]  # type: ignore
+        if prop_0 != 0:
+            df_copy.loc[space_con, prop + "-norm"] = \
+                df_copy.loc[space_con, prop + "-mean"] / prop_0
+        else:
+            warnings.warn(
+                f"The '{prop}' value in the absence of crowders "
+                f"(phi_c=0) for space '{space}, the values of '{prop}-norm' "
+                "at all the values of phi_c are set to 'np.nan'.",
+                UserWarning
+            )
+            df_copy.loc[space_con, prop + "-norm"] = np.nan
+
+    if project in ['HnsCyl', 'HnsCub']:
+        n_patch_per_cor = 2
+        hpatch_cols = ['nBoundHnsPatch', 'nFreeHnsPatch', 'nEngagedHnsPatch']
+        hcore_cols = ['nFreeHnsCore', 'nBridgeHnsCore', 'nDangleHnsCore',
+                      'nCisHnsCore', 'nTransHnsCore']
+        for col in hpatch_cols:
+            df_copy[col + '-norm'] = \
+                df_copy[col + '-mean'] / (df_copy['nhns'] * n_patch_per_cor)
+        for col in hcore_cols:
+            df_copy[col + '-norm'] = df_copy[col + '-mean'] / df_copy['nhns']
+
+    return df_copy
+
+
 def all_in_one_equil_tseries_ens_avg(
     project: str,
     project_db: Union[pd.DataFrame, str],
@@ -302,7 +413,7 @@ def all_in_one_equil_tseries_ens_avg(
     properties: List[str],
     attributes: List[str],
     save_to: Optional[str] = None
-):
+) -> pd.DataFrame:
     """Perform ensemble-averaging and then normalization on the equilibrium
     properties in a `project`.
 
@@ -321,64 +432,57 @@ def all_in_one_equil_tseries_ens_avg(
     save_to : str, default None
         Absolute or relative path to which the output is written.
 
-    Return
-    ------
-    ens_avg: pd.DataFrame
+    Returns
+    -------
+    pd.DataFrame
         The dataframe of ensemble-averaged properties.
+
+    Raises
+    ------
+    ValueError
+        If `properties` or `attributes` is empty.
+    KeyError
+        If required columns are not found in the `project_db` dataframe.
 
     Requirements
     ------------
     Numpy, Pandas.
     """
-    if isinstance(project_db, str):
-        project_path = "-".join(
-            ["allInOne", project, group, "equilProps-whole.csv"]
-        )
-        project_db = pd.read_csv(project_db + project_path, header=0)
-    cols_to_drop = list(
-        set(project_db.columns).difference(set(attributes + properties))
-    )
-    project_db.drop(columns=cols_to_drop, inplace=True)
+    if not properties:
+        raise ValueError("The `properties` list is empty.")
+    if not attributes:
+        raise ValueError("The `attributes` list is empty.")
+
+    project_db = load_project_db(project, project_db)
+
+    if project in ["HnsCyl", "HnsCub"]:
+        required_cols = \
+             attributes + properties + ['space', 'phi_c_bulk_round', "nhns"]
+    else:
+        required_cols = \
+            attributes + properties + ['space', 'phi_c_bulk_round']
+    missing_cols = set(required_cols) - set(project_db.columns)
+    if missing_cols:
+        raise KeyError(
+            f"Missing required columns in the `project_db` dataframe: "
+            f"{missing_cols}"
+            )
+
+    ens_avg = project_db.copy()
+    ens_avg = drop_unnecessary_columns(ens_avg, properties, attributes)
     # Ensemble-averaging all the measures of all the properties:
-    ens_avg = project_db.groupby(attributes).agg(np.mean)
-    ens_avg.reset_index(inplace=True)
+    ens_avg = ens_avg.groupby(attributes).agg(np.mean).reset_index()
     # Normalizing the mean values of each property in each ensemble in a
     # space by the value of the property ensemble with phi_c_bulk_round=0 in
     # that space:
     # Here, the normalization is only performed for the "mean" measure not, the
     # "std" or "sem" measures.
-    spaces = ens_avg['space'].unique()
-    norm_props = [
-        prop.split('-')[0] for prop in properties if prop.endswith('mean')
-    ]
-    for space, prop in itertools.product(spaces, norm_props):
-        space_con = ens_avg['space'] == space
-        phi_c_con = ens_avg['phi_c_bulk_round'] == 0
-        prop_0 = ens_avg.loc[space_con & phi_c_con, prop + "-mean"].values[0]
-        if prop_0 != 0:
-            ens_avg.loc[space_con, prop + "-norm"] = \
-                ens_avg.loc[space_con, prop + "-mean"] / prop_0
-        else:
-            warnings.warn(
-                f"The '{prop}' value in the absence of crowders "
-                f"(phi_c=0) for space '{space}, the values of '{prop}-norm' "
-                "at all the values of phi_c are set to 'np.nan'.",
-                UserWarning
-                )
-            ens_avg.loc[space_con, prop + "-norm"] = np.nan
-    if project in ['HnsCyl', 'HnsCub']:
-        hpatch_cols = ['nBoundHnsPatch', 'nFreeHnsPatch', 'nEngagedHnsPatch']
-        hcore_cols = ['nFreeHnsCore', 'nBridgeHnsCore', 'nDangleHnsCore',
-                      'nCisHnsCore', 'nTransHnsCore']
-        n_patch_per_cor = 2
-        for col in hpatch_cols:
-            ens_avg[col+'-norm'] = \
-                ens_avg[col+'-mean'] / (ens_avg['nhns'] * n_patch_per_cor)
-        for col in hcore_cols:
-            ens_avg[col+'-norm'] = ens_avg[col+'-mean'] / ens_avg['nhns'] 
+    ens_avg = normalize_data(ens_avg, project, properties)
+
     if save_to is not None:
         output = "-".join(
             ["allInOne", project, group, "equilProps-ensAvg.csv"]
-        )
+            )
         ens_avg.to_csv(save_to + output, index=False)
+
     return ens_avg
