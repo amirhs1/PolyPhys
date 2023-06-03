@@ -184,7 +184,7 @@ class ParserBase(ABC):
                 self.filename.split("." + self._group)[0].split("-")[0]
         else:  # 'ensemble' or 'space' lineages
             self.lineage_name = self.filename.split("-")[0]
-   
+
     @property
     def lineage_attributes(self) -> Dict[str, None]:
         """
@@ -196,7 +196,7 @@ class ParserBase(ABC):
             returns the `lineage_attributes`.
         """
         return self._lineage_attributes
-    
+
     @property
     def physical_attributes(self) -> Dict[str, None]:
         """
@@ -208,7 +208,7 @@ class ParserBase(ABC):
             returns the `physical_attributes`.
         """
         return self._physical_attributes
-    
+
     @property
     def ispath(self) -> bool:
         """
@@ -701,7 +701,7 @@ class SumRuleCyl(ParserBase):
         """
         vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
         vol_mon = np.pi * self.dmon**3 / 6
-        self.rho_m_bulk = self.nmon / vol_cell 
+        self.rho_m_bulk = self.nmon / vol_cell
         self.phi_m_bulk = self.rho_m_bulk * vol_mon
         vol_crowd = np.pi * self.dcrowd**3 / 6
         self.rho_c_bulk = self.ncrowd / vol_cell
@@ -1801,43 +1801,28 @@ class HnsCub(ParserBase):
     }
     _physical_attributes: Dict[str, List[str]] = {
         "segment": [
-            "dmon",
-            "mmon",
-            "dhns",
-            "mhns",
-            "mcrowd",
-            "eps_others",
-            "phi_m_bulk",
-            "rho_m_bulk",
-            "phi_c_bulk",
-            "rho_c_bulk",
-        ],
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
+            ],
         "whole": [
-            "dmon",
-            "mmon",
-            "dhns",
-            "mhns",
-            "mcrowd",
-            "eps_others",
-            "phi_m_bulk",
-            "rho_m_bulk",
-            "phi_c_bulk",
-            "rho_c_bulk",
-        ],
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
+            ],
         "ensemble_long": [
-            "dmon",
-            "mmon",
-            "dhns",
-            "mhns",
-            "mcrowd",
-            "eps_others",
-            "phi_m_bulk",
-            "rho_m_bulk",
-            "phi_c_bulk",
-            "rho_c_bulk",
-        ],
-        "ensemble": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others"],
-        "space": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others"],
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+            "phi_hns_bulk", "rho_hns_bulk""eps_hm", "dt", "ndump", "adump"
+            ],
+        "ensemble": [
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
+            "dt", "ndump", "adump"
+            ],
+        "space": [
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
+            "dt", "ndump", "adump"
+            ]
     }
     _geometry_error = "'HnsCub' is used for the 'cubic' geometry."
 
@@ -2003,8 +1988,8 @@ class HnsCub(ParserBase):
         self.rho_m_bulk = self.nmon / vol_cell
         self.phi_m_bulk = vol_mon * self.nmon / vol_cell
         vol_hns = np.pi * self.dhns**3 / 6
-        self.rho_hns_bulk = self.nmon / vol_cell
-        self.phi_hns_bulk = vol_hns * self.nmon / vol_cell
+        self.rho_hns_bulk = self.nhns / vol_cell
+        self.phi_hns_bulk = vol_hns * self.nhns / vol_cell
         vol_crowd = np.pi * self.dcrowd**3 / 6
         self.rho_c_bulk = self.ncrowd / vol_cell
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
@@ -2239,20 +2224,29 @@ class HnsCyl(ParserBase):
         },
     }
     _physical_attributes: Dict[str, List[str]] = {
-        "segment": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
-                    "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-                    "eps_hm", "dt", "ndump", "adump"],
-        "whole": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
-                  "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-                  "eps_hm", "dt", "ndump", "adump"],
-        "ensemble_long": ["dmon", "mmon", "dhns", "mhns", "mcrowd",
-                          "eps_others", "phi_m_bulk", "rho_m_bulk",
-                          "phi_c_bulk", "rho_c_bulk", "eps_hm", "dt", "ndump",
-                          "adump"],
-        "ensemble": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
-                     "eps_hm", "dt", "ndump", "adump"],
-        "space": ["dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
-                  "eps_hm", "dt", "ndump", "adump"],
+        "segment": [
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
+            ],
+        "whole": [
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
+            ],
+        "ensemble_long": [
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
+            "phi_hns_bulk", "rho_hns_bulk""eps_hm", "dt", "ndump", "adump"
+            ],
+        "ensemble": [
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
+            "dt", "ndump", "adump"
+            ],
+        "space": [
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
+            "dt", "ndump", "adump"
+            ]
     }
     _geometry_error = "'HnsCyl' is used for the 'cylindrical' geometry."
 
@@ -2423,8 +2417,8 @@ class HnsCyl(ParserBase):
         self.rho_m_bulk = self.nmon / vol_cell
         self.phi_m_bulk = vol_mon * self.nmon / vol_cell
         vol_hns = np.pi * self.dhns**3 / 6
-        self.rho_hns_bulk = self.nmon / vol_cell
-        self.phi_hns_bulk = vol_hns * self.nmon / vol_cell
+        self.rho_hns_bulk = self.nhns / vol_cell
+        self.phi_hns_bulk = vol_hns * self.nhns / vol_cell
         vol_crowd = np.pi * self.dcrowd**3 / 6
         self.rho_c_bulk = self.ncrowd / vol_cell
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
@@ -3341,7 +3335,8 @@ class Dump:
             section of a snapshot, determining per atom properties in that
             snapshot.
         """
-        names_res: Dict[int, str] = dict(((v, k) for k, v in self.names.items()))
+        names_res: Dict[int, str] = \
+            dict(((v, k) for k, v in self.names.items()))
         names_res = OrderedDict(sorted(names_res.items()))
         col_str = " ".join(names_res.values())
         return col_str

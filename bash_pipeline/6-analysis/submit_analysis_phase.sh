@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=12G
-#SBATCH --time=0-06:00
-#SBATCH --account=def-byha
+#SBATCH --time=0-04:00
+#SBATCH --account=rrg-byha
 #SBATCH --mail-user=mr.a.h.saadeghi@gmail.com
 #SBATCH --mail-type=ALL
 
@@ -26,5 +26,5 @@ pip install --no-index MDAnalysis==2.3.0
 
 # python file
 echo "Starting run at: $(date)"
-python analyze_phase.py > analyze.txt
+python analysis_phase.py > analysis_phase.txt
 echo "Program finished with exit code $? at: $(date)"
