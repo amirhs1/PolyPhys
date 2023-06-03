@@ -129,12 +129,13 @@ PROJECT_DETAILS = {
         'edge_directions': ['x', 'y', 'z'],
         'space_hierarchy': 'N*',
         'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon',
-                       'eps_hm', 'nhns', 'dcrowd', 'phi_c_bulk'],
+                       'eps_hm', 'nhns', 'dcrowd', 'phi_c_bulk',
+                       'rho_hns_bulk'],
         'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
         'equil_measures': [np.mean, np.var, measurer.sem],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'nmon',
                              'eps_hm', 'nhns', 'dcrowd', 'phi_c_bulk',
-                             'phi_c_bulk_round', 'size_ratio'],
+                             'phi_c_bulk_round', 'size_ratio', 'rho_hns_bulk'],
         'equil_properties': ['asphericityMon-mean', 'gyrMon-mean',
                              'shapeMon-mean']
     },
@@ -154,13 +155,13 @@ PROJECT_DETAILS = {
         'edge_directions': ['x', 'y', 'z'],
         'space_hierarchy': 'N*',
         'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon', 'dcyl',
-                       'nhns', 'dcrowd', 'phi_c_bulk'],
+                       'nhns', 'dcrowd', 'phi_c_bulk', 'rho_hns_bulk'],
         'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
                                'shapeTMon'],
         'equil_measures': [np.mean, np.var, measurer.sem],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'nmon',
                              'dcyl', 'nhns', 'dcrowd', 'phi_c_bulk',
-                             'phi_c_bulk_round'],
+                             'phi_c_bulk_round', 'rho_hns_bulk'],
         'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
                              'asphericityMon-sem', 'fsdMon-mean',
                              'fsdMon-var', 'fsdMon-sem', 'gyrMon-mean',
@@ -176,28 +177,28 @@ SIZE_MEASURES_LABELS = {
         'name': 'Flory radius',
         'symbol': r'$R_F/a_m$',
         'symbol-norm': r'$R_F/\langle R_F \rangle$',
-        'pdf': r'$\mathcal{P}(R_F)$',
+        'pdf': r'$f(R_F)$',
         'acf': r'$c_{R_FR_F}$'
     },
     'gyrTMon': {
         'name': 'radius of gyration',
         'symbol': r'$R_g/a_m$',
         'symbol-norm': r'$R_g/\langle R_g \rangle$',
-        'pdf': r'$\mathcal{P}(R_g)$',
+        'pdf': r'$f(R_g)$',
         'acf': r'$c_{R_gR_g}$'
     },
     'fsdTMon': {
         'name': 'furthermost distance',
         'symbol': r'$L/a_m$',
         'symbol-norm': r'$L/\langle L \rangle$',
-        'pdf': r'$\mathcal{P}(L)$',
+        'pdf': r'$f(L)$',
         'acf': r'$c_{LL}$'
     },
     'transSizeTMon': {
         'name': 'furthermost distance',
         'symbol': r'$L_{\perp}/a_m$',
         'symbol-norm': r'$L_{\perp}/\langle L_{\perp} \rangle$',
-        'pdf': r'$\mathcal{P}(L_{\perp})$',
+        'pdf': r'$f(L_{\perp})$',
         'acf': r'$c_{L_{\perp}L_{\perp}}$'
     },
     'asphericityTMon': {
@@ -225,20 +226,17 @@ SIZE_MEASURES_LABELS = {
 }
 
 ATTRIBUTE_LABELS = {
-    'rfloryMon-norm':
-        r'$\frac{{\langle R_F(\phi_c)\rangle}}{{\langle R_{F,0}\rangle}}$',
-    'gyrMon-norm':
-        r'$\frac{{\langle R_g(\phi_c)\rangle}}{{\langle R_{g,0}\rangle}}$',
-    'fsdMon-norm':
-        r'$\frac{{\langle L(\phi_c)\rangle}}{{\langle L_{0}\rangle}}$',
+    'rfloryMon-norm': r'$\langle R_F\rangle/\langle R_{F,0}\rangle$',
+    'gyrMon-norm': r'$\langle R_g\rangle/\langle R_{g,0}\rangle$',
+    'fsdMon-norm': r'$\langle L\rangle/\langle L_{0}\rangle$',
     'transSizeMon-norm':
-        r'$\frac{{\langle L_{\perp}(\phi_c)\rangle}}{{\langle L_{\perp,0}\rangle}}$',
+        r'$\langle L_{\perp}\rangle/\langle L_{\perp,0}\rangle$',
     'asphericityMon-norm':
-        r'$\frac{{\langle \Delta(\phi_c)\rangle}}{{\langle \Delta_{0}\rangle}}$',
-    'gyrMon-mean': r'$\langle R_g(\phi_c)\rangle$',
-    'shapeMon-norm': r'$\frac{{\langle S(\phi_c)\rangle}}{{\langle S_{0}\rangle}}$',
-    'asphericityMon-mean': r'$\langle \Delta(\phi_c)\rangle$',
-    'shapeMon-mean': r'$\langle S(\phi_c)\rangle$',
+        r'$\langle \Delta\rangle/\langle \Delta_{0}\rangle$',
+    'shapeMon-norm': r'$\langle S\rangle/\langle S_{0}\rangle$',
+    'gyrMon-mean': r'$\langle R_g\rangle$',
+    'asphericityMon-mean': r'$\langle \Delta\rangle$',
+    'shapeMon-mean': r'$\langle S\rangle$',
     'rPhi': r'$\phi(r)$',
     'zPhi': r'$\phi(|z|)$',
     'rRho': r'$\rho(r)$',
@@ -289,13 +287,30 @@ ATTRIBUTE_LABELS = {
         r'${(\sum_i\phi_i(|z|)/a_i)}/{(\sum_i\phi_i(\infty)/a_i)}$',
     'zPhi-norm-old-Sum_constant':
         r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$',
-    'bondsHistFoci-norm': r'$\mathcal{P}$',
-    'bondsHistFoci-norm-full_name': r'$\mathcal{P}(x_d)$',
-    'clustersHistFoci-norm': r'$\mathcal{P}$',
-    'clustersHistFoci-norm-full_name': r'$\mathcal{P}(x_c)$',
+    'rcut_bonding': r'$r_{{thres}}/a_m$',
+    'rcut_bonding-norm': r'$r_{{thres}}/(a_M+a_c)$',
+    'bondsHistFoci-bin_center': r'$x_d$',
+    'bondsHistFoci-bin_center-average': r'$\langle x_d\rangle$',
+    'bondsHistFoci-norm': r'$p$',
+    'bondsHistFoci-norm-full_name': r'$p(x_d)$',
+    'bondsHistFoci-norm-bonding_threshold': r'$p(r_{thres};x_d)$',
+    'clustersHistFoci-bin_center': r'$x_c$',
+    'clustersHistFoci-bin_center-average': r'$\langle x_c\rangle$',
+    'clustersHistFoci-norm': r'$p$',
+    'clustersHistFoci-norm-full_name': r'$p(x_c)$',
+    'pairDistHistFoci-legend_title':
+        r'$(n_i,n_j,\Delta n_{ij}/\langle l_m \rangle)$',
+    'pairDistHistFoci-legend_title-index_diff':
+        r'$(n_i,n_j,\Delta n_{ij})$',
     'pairDistHistFoci': r'$\mathcal{H}(n_i,n_j,\Delta n_{ij})$',
-    'pairDistRdfFoci': r'$\mathcal{P}(n_i,n_j,\Delta n_{ij})$',
-    'pairDistRdfGenDistAvg': r'$\mathcal{P}(\Delta n)$',
+    'pairDistRdfFoci-legend_title':
+        r'$(n_i,n_j,\Delta n_{ij}/\langle l_m \rangle)$',
+    'pairDistRdfFoci-legend_title-index_diff':
+        r'$(n_i,n_j,\Delta n_{ij})$',
+    'pairDistRdfFoci': r'$f(r)$',
+    'pairDistRdfFoci-full_name': r'$f(n_i,n_j,\Delta n_{ij};r)$',
+    'pairDistRdfGenDistAvg': r'$f(r)$',
+    'pairDistRdfGenDistAvg-full_name': r'$f(\Delta n;r)$',
     'pairDistTFoci': r'$r(t)$',
     "size_ratio": "",
     "space": "",
@@ -313,7 +328,10 @@ ATTRIBUTE_LABELS = {
     "nmon_small": "$N_m$",
     "nmon_large": "$N_M$",
     'phi_c_bulk_norm': r"${a\phi_c}/{a_c}$",
-    'genomic_distance':  r"$\Delta n$",
+    'genomic_distance':  r"$\Delta n/\langle l\rangle$",
+    'index_difference':  r"$\Delta n$",
+    'loopLengthHistMon-norm': r'$f$',
+    'loopLengthHistMon-norm-full_name': r'$f(\Delta n)$',
     'bin_center': '$r/a_m$',  # Pair distance between two monomers in their PDF
     'bin_center-norm-r-dmon_large': '${{r}}/{{a_M}}$',
     'bin_center-norm': '${{r}}/{{r_{max}}}$',
@@ -336,7 +354,9 @@ ATTRIBUTE_LABELS = {
     'cub': 'Free space',
     'cyl': 'Cylindrical Confinement',
     'nmon': '$N$',
-    'nhns': '$N_{{h}}$',
+    'nhns': r'$N_{{hns}}$',
+    'c_hns_bulk': r'$c_{hns} (\mu M)$',
+    'c_hns_bulk-old': r'$[HNS] (\mu M)$',
     'phi_c_rescaled': r'$\\frac{{a_m\phi_c}}{{a_c}}$',
     'confinement_rate': r'$\kappa=\\frac{{a_c}}{{D-a_c}}$',
     'confinement_rate_r': r'$\kappa=\\frac{{D-a_c}}{{a_c}}$',
@@ -346,32 +366,63 @@ ATTRIBUTE_LABELS = {
         r'$\mathcal{F}_{int}=\\frac{{Na\phi_c^{(bulk)}}}{{a_c}}$' +
         r'$[3a_ma_c + \\frac{{3}}{{2}}]$',
     'species': 'Type',
-    'nBoundHnsPatch-mean': r'$\langle N_{h}^{bound}\rangle$',
-    'nFreeHnsPatch-mean': r'$\langle N_{h}^{free}\rangle$',
-    'nEngagedHnsPatch-mean': r'$\langle N_{h}^{engaged}\rangle$',
-    'nFreeHnsCore-mean': r'$\langle N_{h}^{free}\rangle$',
-    'nBridgeHnsCore-mean': r'$\langle N_{h}^{bridge}\rangle$',
-    'nDangleHnsCore-mean': r'$\langle N_{h}^{dangle}\rangle$',
-    'nBoundMon-mean': r'$\langle N^{bound}\rangle$',
+    'nBoundHnsPatch-mean': r'$\langle N_{hns}^{bound}\rangle$',
+    'nFreeHnsPatch-mean': r'$\langle N_{hns}^{free}\rangle$',
+    'nEngagedHnsPatch-mean': r'$\langle N_{hns}^{engaged}\rangle$',
+    'nFreeHnsCore-mean': r'$\langle N_{hns}^{free}\rangle$',
+    'nBridgeHnsCore-mean': r'$\langle N_{hns}^{bridge}\rangle$',
+    'nDangleHnsCore-mean': r'$\langle N_{hns}^{dangle}\rangle$',
+    'nBoundHnsCore-mean': r'$\langle N_{hns}^{bound}\rangle$',
     'nCisMon-mean': r'$\langle N^{cis}\rangle$',
     'nTransMon-mean': r'$\langle N^{trans}\rangle$',
     'bondLengthMon-mean': r'$\langle l \rangle$',
-    'nBoundHnsPatch-norm': r'$\frac{{\langle N_{h}^{bound}(\phi_c)\rangle}}{{2N_h}}$',
-    'nFreeHnsPatch-norm': r'$\frac{{\langle N_{h}^{free}(\phi_c)\rangle}}{{2N_h}}$',
-    'nHnsPatch-total': r'$\frac{{\langle N_{h}^{total}(\phi_c)\rangle}}{{2N_h}}$',
-    'nEngagedHnsPatch-norm': r'$\frac{{\langle N_{h}^{engaged}(\phi_c)\rangle}}{{2N_h}}$',
-    'nFreeHnsCore-norm': r'$\frac{{\langle N_{h}^{free}(\phi_c)\rangle}}{{N_h}}$',
-    'nBridgeHnsCore-norm': r'$\frac{{\langle N_{h}^{bridge}(\phi_c)\rangle}}{{N_h}}$',
-    'nDangleHnsCore-norm': r'$\frac{{\langle N_{h}^{dangle}(\phi_c)\rangle}}{{N_h}}$',
-    'nHnsCore-total': r'$\frac{{\langle N_{h}^{total}(\phi_c)\rangle}}{{N_h}}$',
-    'nBoundHnsCore-norm': r'$\frac{{\langle N_{h}^{bound}(\phi_c)\rangle}}{{N_h}}$',
-    'nBoundMon-norm': r'$\frac{{\langle N^{bound}(\phi_c)\rangle}}{{N}}$',
-    'nCisMon-norm': r'$\frac{{\langle N^{cis}(\phi_c)\rangle}}{{N}}$',
-    'nTransMon-norm': r'$\frac{{\langle N^{trans}(\phi_c)\rangle}}{{N}}$',
-    'nTransMon-norm': r'$\frac{{\langle N^{trans}(\phi_c)\rangle}}{{N}}$',
-    'bondLengthMon-norm': r'$\frac{{\langle l(\phi_c) \rangle}}{{\langle l{0} \rangle}}$'
+    'nBoundHnsPatch-norm':
+        r'$\frac{{\langle N_{hns}^{bound}\rangle}}{{2N_h}}$',
+    'nFreeHnsPatch-norm':
+        r'$\frac{{\langle N_{hns}^{free}\rangle}}{{2N_h}}$',
+    'nHnsPatch-total':
+        r'$\frac{{\langle N_{hns}^{total}\rangle}}{{2N_h}}$',
+    'nEngagedHnsPatch-norm':
+        r'$\frac{{\langle N_{hns}^{engaged}\rangle}}{{2N_h}}$',
+    'nFreeHnsCore-norm':
+        r'$\frac{{\langle N_{hns}^{free}\rangle}}{{N_h}}$',
+    'nBridgeHnsCore-norm-old':
+        r'$\frac{{\langle N_{hns}^{bridge}\rangle}}{{N_h}}$',
+    'nDangleHnsCore-norm-old':
+        r'$\frac{{\langle N_{hns}^{dangle}\rangle}}{{N_h}}$',
+    'nHnsCore-total':
+        r'$\frac{{\langle N_{hns}^{total}\rangle}}{{N_h}}$',
+    'nBoundHnsCore-norm-old':
+        r'$\frac{{\langle N_{hns}^{bound}\rangle}}{{N_h}}$',
+    'nCisHnsCore-norm-old':
+        r'$\frac{{\langle N_{hns}^{cis}\rangle}}{{N_h}}$',
+    'nTransHnsCore-norm-old':
+        r'$\frac{{\langle N_{hns}^{trans}\rangle}}{{N_h}}$',
+    'nEngagedHnsPatch-norm-old':
+        r'$\frac{{\langle N_{hns}^{engaged}\rangle}}{{2N_h}}$',
+    'nBridgeHnsCore-norm': r'$\theta_{bridge}$',
+    'nBridgeHnsCore-norm-rel':
+        r'${\theta_{bridge}}/{\theta_{bound}}$',
+    'nDangleHnsCore-norm-': r'$\theta_{dangle}$',
+    'nDangleHnsCore-norm-rel':
+        r'${\theta_{dangle}}/{\theta_{bound}}$',
+    'nBoundHnsCore-norm': r'$\theta_{bound}$',
+    'nCisHnsCore-norm': r'$\theta_{cis}$',
+    'nCisHnsCore-norm-rel':
+        r'$\theta_{cis}/\theta_{bridge}$',
+    'nTransHnsCore-norm': r'$\theta_{trans}$',
+    'nTransHnsCore-norm-rel':
+        r'$\theta_{trans}/\theta_{bridge}$',
+    'patch_binding_style': 'Binding State',
+    'rcut_binding': r'$r_{{thres}}/a_m$',
+    'cis_threshold': r'$\Delta n_{{thres}}/\langle l\rangle$',
+    'binding_probability_rcut': r'$\theta$',
+    'binding_style': 'Binding state',
+    'bridging_probability_rcut': r'$\theta$',
+    'bridging_probability_nhns_norm':
+        r'$\theta_i/\theta_{bridge}$',
+    'bridging_style': 'Bridging state',
 }
-
 
 # https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-with-your-data
 DUTCH_FEILD_COLORS = ["#e60049", "#0bb4ff", "#50e991", "#9b19f5",

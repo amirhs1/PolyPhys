@@ -447,8 +447,10 @@ def foci_info(
     # Applying the topological contain on the genomic distance, i.e. finding
     # minimum distance between a pair on a circle.
     # the pair is inclusive, so their difference is one unit more than the
-    # actual number of genomic units between them, thus subtracting by 1.0.
-    genomic_dist = np.minimum.reduce((nmon-genomic_dist, genomic_dist)) - 1.0
+    # actual number of genomic units between them, but it is equal to the
+    # number of bonds (not the length of bonds).
+    # Number of small monomers between to large monomers:
+    genomic_dist = np.minimum.reduce((nmon-genomic_dist, genomic_dist)) - 1
     pair_info = np.concatenate(
         (genomic_idx, genomic_dist),
         axis=1
@@ -782,20 +784,20 @@ def hns_binding(
 
     cis_threshold: int, default 4
         The genomic distance in number of bonds (not number of monomers) less
-        than or equal to which a H-NS is of cis-binding type.
+        than or equal (inclusive) to which a H-NS is of cis-binding type.
 
-    results: dict
+    binding_stats: dict
         A dictionary of binding statistics of H-NS proteins to which new
         statisitics is appended.
 
-    bridged_monomers: list of array
+    loop_length_hist: list of array
         A list of arrays where each array is of shape (n_bridged_pairs, 3).
         Each row of the an array contaion the index of first monomer, index of
         second one and the genomic distance between them.
 
     Return
     ------
-    results: dict
+    binding_stats: dict
         A new or updated dictionary contains the statistical data about the
         binding of H-NS proteins to monomers.
 
@@ -817,7 +819,11 @@ def hns_binding(
             'ring': n_mon//2+1
         }
         loop_length_hist = np.zeros(max_gen_distance[topology])
-
+    # A H-NS patch can bind more than one monomers, so the total number of
+    # of bindings between H-NS patches and monomers can be more than the total
+    # number of H-Ns patches. However, the total number of engaged and
+    # free patches is always less than or equal to the total number of H-NS
+    # patches:
     binding_stats['n_m_hpatch_bound'].append(np.sum(direct_contact))
     d_cont_per_hpatch = np.sum(direct_contact, axis=0)
     binding_stats['n_hpatch_engaged'].append(
