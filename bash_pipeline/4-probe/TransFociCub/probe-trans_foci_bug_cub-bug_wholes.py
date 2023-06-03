@@ -13,4 +13,4 @@ bug_pairs = organizer.sort_filenames(
     fmts=['.' + group + '.data', '.' + group + '.lammpstrj']
 )
 for (bug_topo, bug_trj) in bug_pairs:
-    prober.trans_fuci_bug_cub(bug_topo, bug_trj, lineage, save_to=save_to)
+    prober.trans_foci_bug_cub(bug_topo, bug_trj, lineage, save_to=save_to)
