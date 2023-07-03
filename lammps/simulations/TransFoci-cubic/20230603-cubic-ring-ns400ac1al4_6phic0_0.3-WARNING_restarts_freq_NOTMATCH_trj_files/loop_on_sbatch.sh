@@ -4,7 +4,7 @@ for directory in al*/; do # TransFociCub
 #for directory in eps*/; do # TransFociCyl
    cd "${directory}" || exit
    slurm=$(echo slurm*.out | cut -d . -f 1)
-   mv "${slurm}".out minimize_step-"${slurm}".out
+   mv "${slurm}".out minimize_initial_config-"${slurm}".out
    sbatch submit.sh
    sleep 5
    cd ..

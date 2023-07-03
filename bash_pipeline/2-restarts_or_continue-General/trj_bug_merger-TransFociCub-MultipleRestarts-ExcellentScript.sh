@@ -5,12 +5,15 @@ for res in al*_res/;do
     dir=$(echo "$res" | cut -d _ -f 1 )
     echo "$dir"
     mkdir "$dir"/test
+    # finding the full runtime of the crashed simulation from the submit.sh, 
+    # assuming the crashing happened due to time out.
     day=$(grep -oE "[0-9]{2}-[0-9]{2}:[0-9]{2}" ./"${dir}"_incomplete/submit.sh | cut -d '-' -f 1)
     dayToHrs=$(( day * 24))
     hoursMins=$(grep -oE "[0-9]{2}-[0-9]{2}:[0-9]{2}" ./"${dir}"_incomplete/submit.sh | cut -d '-' -f 2)
     hours=$(echo "$hoursMins" | cut -d ':' -f 1)
     totalHours=$(( hours + dayToHrs ))
     mins=$(echo "$hoursMins" | cut -d ':' -f 2)
+    # mergin bug/dna trj files:
     cd "$dir" || exit
         cp al*bug*lammpstrj ./test/
         cd test || exit
