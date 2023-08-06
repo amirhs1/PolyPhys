@@ -1902,7 +1902,7 @@ def trans_foci_bug_cub(
     )
     bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
     clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
-    for _ in sliced_trj:
+    for ts in sliced_trj:
         # bug:
         # various measures of chain size
         gyr_t.append(bug.radius_of_gyration())

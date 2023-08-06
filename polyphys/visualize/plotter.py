@@ -40,7 +40,7 @@ PROJECT_DETAILS = {
         'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon', 'dcyl',
                        'dcrowd', 'phi_c_bulk'],
         'time_varying_props': ['asphericityTMon', 'fsdTMon', 'gyrTMon',
-                               'rfloryTMon', 'shapeTMon', 'transSizeMon'],
+                               'rfloryTMon', 'shapeTMon', 'transSizeTMon'],
         'equil_measures': [np.mean, np.var, measurer.sem],
         'equil_attributes': ['space', 'ensemble_long', 'ensemble', 'nmon',
                              'dcyl', 'dcrowd', 'phi_c_bulk',
@@ -177,6 +177,7 @@ SIZE_MEASURES_LABELS = {
         'name': 'Flory radius',
         'symbol': r'$R_F/a_m$',
         'symbol-norm': r'$R_F/\langle R_F \rangle$',
+        'symbol-norm-max': r'$R_F/R_{F,max}$',
         'pdf': r'$f(R_F)$',
         'acf': r'$c_{R_FR_F}$'
     },
@@ -184,6 +185,7 @@ SIZE_MEASURES_LABELS = {
         'name': 'radius of gyration',
         'symbol': r'$R_g/a_m$',
         'symbol-norm': r'$R_g/\langle R_g \rangle$',
+        'symbol-norm-max': r'$R_g/R_{g,max}$',
         'pdf': r'$f(R_g)$',
         'acf': r'$c_{R_gR_g}$'
     },
@@ -191,6 +193,7 @@ SIZE_MEASURES_LABELS = {
         'name': 'furthermost distance',
         'symbol': r'$L/a_m$',
         'symbol-norm': r'$L/\langle L \rangle$',
+        'symbol-norm-max': r'$L/L_{max}$',
         'pdf': r'$f(L)$',
         'acf': r'$c_{LL}$'
     },
@@ -198,6 +201,7 @@ SIZE_MEASURES_LABELS = {
         'name': 'furthermost distance',
         'symbol': r'$L_{\perp}/a_m$',
         'symbol-norm': r'$L_{\perp}/\langle L_{\perp} \rangle$',
+        'symbol-norm-max': r'$L_{\perp}/L_{\perp,max}$',
         'pdf': r'$f(L_{\perp})$',
         'acf': r'$c_{L_{\perp}L_{\perp}}$'
     },
@@ -318,9 +322,9 @@ ATTRIBUTE_LABELS = {
     "phi_c_bulk_round": r"$\phi_c$",
     "time": r"$t$",
     "t_idx_norm": r"$t/t^{{max}}$",
-    "t_index": r"${t}/{\delta t}$",
+    "t_index": r"${t}/{\Delta t}$",
     "lag_time": r"${t}_{lag}$",
-    "lag_index": r"${t}_{lag}$",
+    "lag_index": r"${t}_{lag}/{\Delta t}$",
     "dmon_large": "${{a_M}}/{{a_m}}$",
     "dcrowd": "${{a_c}}/{{a_m}}$",
     "dcyl": "${{D}}/{{a_m}}$",

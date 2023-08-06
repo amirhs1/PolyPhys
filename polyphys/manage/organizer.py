@@ -655,8 +655,10 @@ def whole_from_dist_mat_t(
 
     Return
     ------
-    siblings: dict of np.ndarray
-        Dict of siblings where keys are 'whole' names (str) and values
+    wholes_freqs: dict of np.ndarray
+    wholes_rdfs: dict of np.ndarray
+    wholes_tseries: dict of np.ndarray
+        In each of these three dicts, keys are 'whole' names (str) and values
         are whole data (arrays).
 
     Notes

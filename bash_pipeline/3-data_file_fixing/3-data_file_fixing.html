@@ -2,7 +2,7 @@
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>How to use GNU Parallel to run &ast;&ast;probe&ast;&ast; scripts in the &ast;&ast;trj&ast;&ast;   directory</title>
+        <title>Setting up the &ast;PipeLine&ast; packages</title>
         <style>
 /* From extension vscode.github */
 /*---------------------------------------------------------------------------------------------
@@ -338,29 +338,48 @@
         <span id="markdown-mermaid" aria-hidden="true"
                     data-dark-mode-theme="dark"
                     data-light-mode-theme="default"></span>
-                <h1 id="how-to-use-gnu-parallel-to-run-probe-scripts-in-the-trj---directory">How to use GNU Parallel to run <strong>probe</strong> scripts in the <strong>trj</strong>   directory</h1>
-<p><strong>Caution:</strong> Different projects have differant <strong>SPACE_PROJECT_PATTERN</strong> project patterns. Below, <strong>SPACE_PROJECT_PATTERN=ProjectSpacePattern</strong> which is for the <strong>TransFociCyl</strong> project.</p>
-<p><strong>Caution:</strong> Sometimes instead of <strong>SPACE_PROJECT_PATTERN-___</strong> pattern, you have <strong>SPACE_PROJECT_PATTERNphic#-___</strong> pattern.</p>
-<p><strong>Caution:</strong> Update the <em>PROBING_PACKAGE</em> with running the following commands Go to the <em>$HOME/github/PROBING_PACKAGE</em>:
-1. Run <strong>git pull <a href="mailto:git@github.com">git@github.com</a>:amirhs1/PROBING_PACKAGE.git master</strong> to pull from repository.
-2. Enter the <strong>passcode</strong> for <strong>Graham</strong> cluster.
-3. Run <strong>rsync -axvH --no-g --no-p --exclude='.*' PROBING_PACKAGE /destination</strong> to copy directory, excluding hidden files.</p>
+                <h1 id="setting-up-the-pipeline-packages">Setting up the <em>PipeLine</em> packages</h1>
+<p><strong>Check the project</strong> and <strong>uncomments relevant lines</strong> in <strong>fix_PairIJ_all_data_files_v---.sh</strong> and <strong>fix_PairIJ_all_data_files_v</strong>.</p>
 <ol>
-<li>If there are two trajectory directories (<strong>ProjectSpacePattern-trjs</strong> and <strong>ProjectSpacePattern-trjs_cont</strong>), move all the trajectory files in <strong>ProjectSpacePattern-trjs_cont</strong> to *<strong>ProjectSpacePattern-trjs</strong> and create as single directory <strong>ProjectSpacePattern-all_trjs</strong>; otherwise, go to the directory with pattern <strong>ProjectSpacePattern-trjs</strong>.</li>
-<li>Run <strong>probe_runfiles-ProjectName.sh</strong> to copy run files from <strong>PolyPhys</strong> to <strong>ProjectSpacePattern-all_trjs</strong> directory.
-<strong>Caution</strong>: check how many <strong>probe_all_in_one_---.py</strong> you have.
-<strong>Cuation</strong>: check the relative path of the files with respect to the trj directories.</li>
-<li>Run <strong>probe_gnuparallel-___.sh</strong> to copy the <strong>polyphys</strong> package and <strong>probe___.py</strong> file to each <strong>simulation directory</strong>.</li>
-<li>Check the <strong>PolyPhys</strong> package to make sure which packages you need.</li>
-<li>Add the packages to the *<strong>submit-probe_all_in_one.sh</strong>, <strong>submit-probe_all_trj_segments.sh</strong>, or <strong>submit-probe_all_bug_segments.sh</strong> file.</li>
-<li>Set the number of cores, time, and memeory in the <strong>submit-probe_all_in_one.sh</strong>, <strong>submit-probe_all_trj_segments.sh</strong>, or <strong>submit-probe_all_bug_segments.sh</strong> file based on what group/type of particles you want to analyze.</li>
-<li>Check the name of Python file in the <strong>submit-probe_all_in_one.sh</strong>, <strong>submit-probe_all_trj_segments.sh</strong>, or <strong>submit-probe_all_bug_segments.sh</strong> file.
-<strong>Cuation:</strong> Check the name of <strong>python</strong>, its <strong>report</strong>, the <strong>pattern</strong> of <strong>directories</strong> and the <strong>report</strong> of the <strong>gnuparallel</strong> code.</li>
-<li>Run the <strong>sbatch subit-probe_all_in_one.sh</strong>, <strong>sbatch submit-probe_all_trj_segments.sh</strong>, or <strong>sbatch submit-probe_all_bug_segments.sh</strong> file.</li>
-<li>After the run finsihed, check slurm file and change its name to <strong>ProjectSpacePattern-probe-slurm_report-probe_all_in_one.out</strong>, <strong>ProjectSpacePattern-probe-slurm_report-probe_all_trj_segments.out</strong>, <strong>ProjectSpacePattern-probe-slurm_report-probe_all_bug_segments.out</strong>, or the like.
-<strong>TODO:</strong> this step can be combined with the next one in as if-statement or switch statement.</li>
-<li>Run <a href="./create_probe_directories.sh">create_probe_directories.sh</a> to create a new directory <strong>ProjectSpacePattern-probe</strong> and move all the <strong>csv</strong>, <strong>npy</strong>, or <strong>txt</strong> files to their corresponding simulation directories.
-<strong>CAUTION:</strong> Use <a href="./create_probe_directories-next_probes.sh">create_probe_directories-next_probes.sh</a> if this is NOT the first time you run a probe.</li>
+<li>Go to the <strong>___-trjs</strong> directory with this pattern: <strong>N#D#ac#-trjs</strong></li>
+<li>Check and (if needed) fix <strong>....all.data</strong> files via running <strong>fix_PairIJ_all_data_files_v---.sh</strong>. This bash script fixes some lines in the <strong>all</strong> data (topology) files, so they can be read by <strong>MDAnalysis</strong> package. This step can be dropped if the bug/issue in <strong>MDAnalysis</strong> is resolved.
+<strong>Caution</strong>: the <em>fix_PairIJ_all_data_files_v#.sh</em> assumes the pattern of the parent directory is <strong>N#D#ac#-trjs</strong> and the pair style is <strong>lj-cut</strong>.</li>
+<li>copy <strong>___nc0___ens1.all.data</strong> to <strong>nc0_fake_all.data</strong>.
+<strong>Caution</strong>: Some templates are availble in <a href="./archive-technique/">archive_technique</a> directory. All of these templates start <strong>data_templete</strong> but itis better to use the origin ones from the simulations.</li>
+<li>Check the <strong>allLine</strong> parameter based on the <strong>project</strong> and <strong>geometry</strong>.</li>
+<li>Chech the <strong>for</strong> loop based on the <strong>project</strong> and <strong>geometry</strong>.</li>
+<li>Run the <strong>fake_bug_data.sh</strong> script to fake <strong>N___.bug.data</strong> for <strong>bug trajectories</strong>. Since we want to use the data file to extract the mass and topology information, such a faking is ok.
+<strong>Caution</strong>: set the <strong>operating system</strong> for <strong>sed</strong>.
+<strong>Caution: this doesn not work on both operating systems</strong>: <strong>fake_bug_data.sh</strong> copy the first 10 lines of the real <strong>all.data</strong> file to the generated <strong>bug.data</strong> file to ensure that the later has the correct information about the simulation box. See the bash script for detailed explanation.</li>
+</ol>
+<p>The following step are need if the ablove approach does not work - See the <a href="./archive-technique/">archive_technique</a> directory:</p>
+<ol>
+<li>
+<p>Go to the <strong>___-trjs</strong> directory.</p>
+</li>
+<li>
+<p>Check and (if needed) fix <strong>....all.data</strong> files via running <strong>fix_PairIJ_all_data_files_v---.sh</strong>. This bash script fixes some lines in the <strong>all</strong> data (topology) files, so they can be read by <strong>MDAnalysis</strong> package. This step can be dropped if the bug/issue in <strong>MDAnalysis</strong> is resolved.</p>
+</li>
+<li>
+<p>copy <strong>___nc0___ens1.all.data</strong> to <strong>data_template-biaxial-bug-N___D___L___.data</strong>.</p>
+</li>
+<li>
+<p>Go to the <em>$HOME/github/sumrule_pipeline</em>:</p>
+<ol>
+<li>Run <strong>git pull <a href="mailto:git@github.com">git@github.com</a>:amirhs1/polyphys.git master</strong>* to pull from repository.</li>
+<li>Enter the <strong>passcode</strong> for <strong>Graham</strong> cluster.</li>
+<li>Run <strong>rsync -axvH --no-g --no-p --exclude='.*' PACKAGE_NAME /destination</strong> to copy directory, excluding hidden files.</li>
+</ol>
+</li>
+<li>
+<p>Request a computing node with <strong>salloc --ntasks=1 --cpus-per-task=1 --mem=2G --time=0:30:0 --account=def-someuser</strong>.</p>
+</li>
+<li>
+<p>Active <strong>daskEnv</strong> by running <strong>source ~/daskEnv/bin/activate</strong></p>
+</li>
+<li>
+<p>Run the <strong>datafile_generator.py</strong> in the <strong>____-trjs</strong> directory. This python script creates a <strong>bug</strong> data (topology) file for bug from bug trajectory file. The positions and velocities of atoms in this data file are not important since they are overwritten by the data from the trajectory file once read inby MDAnalyis; only, the topolgy and box information are important.</p>
+</li>
 </ol>
 
         <script async src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
