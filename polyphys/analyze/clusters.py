@@ -523,8 +523,8 @@ def foci_histogram(
     """Generates histograms of pair distances, use the same number of bins and
     the same bin range for all pairs.
 
-    The lower bin range is 0 while the upper one is the maximum pf the maximum
-    physical distances between any pairs.
+    The lower bin range is 0 while the upper one is the maximum of physical
+    distances between any pairs.
 
     Parameters
     ----------

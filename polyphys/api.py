@@ -96,7 +96,7 @@ PROJECTS_DETAILS = {
                        'nmon_large', 'dmon_large', 'dcrowd', 'phi_c_bulk'
                        ],
         'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
-        'equil_measures': [np.mean],
+        'equil_measures': [np.mean, np.var, measurer.sem],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space',
                              'dmon_large', 'nmon_large', 'nmon_small',
                              'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'

@@ -65,7 +65,6 @@ ANALYSIS_DETAILS_NUCLEOID = {
             ('rflory', 'Mon', 'bug')
         ]
     },
-
     'SumRuleCylWhole': {
         'hierarchy': 'N*/N*',  # dir/file
         'parser': SumRuleCyl,
@@ -138,7 +137,6 @@ ANALYSIS_DETAILS_NUCLEOID = {
             ('principalT', 'Mon', 'bug')
         ],
         'acf_tseries_properties': [
-            ('fsdT', 'Mon', 'bug'),
             ('gyrT', 'Mon', 'bug'),
             ('shapeT', 'Mon', 'bug'),
             ('asphericityT', 'Mon', 'bug')
@@ -1131,7 +1129,7 @@ def nonscalar_time_series(
             property_ = ''.join(property_.split('T'))
             warnings.warn(
                 f"property name '{property_old}' changed to"
-                f"'{property_}' after averaging over time.",
+                f" '{property_}' after averaging over time.",
                 UserWarning
             )
             ensembles = ensemble(
@@ -1159,7 +1157,10 @@ def nonscalar_time_series(
                 fmts=['-' + property_ + species + '.npy']
             )
             # changing property_ name after averaging:
-            if property_ == 'distMatT' and (type(parser) == TransFociT):
+            # Here not only "T" is dropped but also the "property name" is
+            # fully changed.
+            if property_ == 'distMatT' and \
+                parser.__name__ in ['TransFociCub', 'TransFociCyl']:
                 wholes_hists, wholes_rdfs, wholes_tseries = \
                     whole_from_dist_mat_t(
                         whole_paths,
@@ -1168,17 +1169,18 @@ def nonscalar_time_series(
                         group,
                         topology
                         )
-                property_old = property_
-                property_ = 'pairDistHist'
+                # Foci hists:
+                # "wholes_hists" are of 'dataframe' whole_type, we directly get
+                # its ensemble-averaged properties.
+                # changing property_ name after averaging:
+                property_new = 'pairDistHist'
                 warnings.warn(
-                    f"property name '{property_old}' changed to"
-                    f"'{property_}' after averaging over time.",
+                    f"property name '{property_}' changed to"
+                    f" '{property_new}' after averaging over time.",
                     UserWarning
                 )
-                # For 'dataframe' whole_type, we directly get the
-                # ensemble-averaged properties.
                 _ = ensemble(
-                        property_ + species + '-ensAvg',
+                        property_new + species + '-ensAvg',
                         wholes_hists,
                         parser,
                         geometry,
@@ -1187,18 +1189,18 @@ def nonscalar_time_series(
                         'dataframe',
                         save_to=save_to_ens_avg
                 )
+                # Foci rdfs:
+                # "wholes_rdfs" are of 'dataframe' whole_type, we directly get
+                # its ensemble-averaged properties.
                 # changing property_ name after averaging:
-                property_old = property_
-                property_ = 'pairDistRdf'
+                property_new = 'pairDistRdf'
                 warnings.warn(
-                    f"property name '{property_old}' changed to"
-                    f"'{property_}' after averaging over time.",
+                    f"property name '{property_}' changed to"
+                    f" '{property_new}' after averaging over time.",
                     UserWarning
                 )
-                # For 'dataframe' whole_type, we directly get the
-                # ensemble-averaged properties.
                 _ = ensemble(
-                        property_ + species + '-ensAvg',
+                        property_new + species + '-ensAvg',
                         wholes_rdfs,
                         parser,
                         geometry,
@@ -1207,16 +1209,20 @@ def nonscalar_time_series(
                         'dataframe',
                         save_to=save_to_ens_avg
                 )
-                property_ = 'pairDistT'
+                # Foci time series:
+                # "wholes_tseries" are of 'dataframe' whole_type, we directly
+                # get its ensemble-averaged properties.
+                # changing property_ name after averaging:
+                property_new = 'pairDistT'
                 warnings.warn(
-                    f"property name '{property_old}' changed to"
-                    f"'{property_}' after averaging over time.",
+                    f"property name '{property_}' changed to"
+                    f" '{property_new}' after averaging over time.",
                     UserWarning
                 )
                 # For 'dataframe' whole_type, we directly get the
                 # ensemble-averaged properties.
                 _ = ensemble(
-                        property_ + species + '-ensAvg',
+                        property_new + species + '-ensAvg',
                         wholes_tseries,
                         parser,
                         geometry,
@@ -1249,7 +1255,6 @@ def nonscalar_time_series(
                         group,
                         topology
                     )
-                # changing property_ name after averaging:
                 ensembles = ensemble(
                         property_ + species,
                         wholes,
