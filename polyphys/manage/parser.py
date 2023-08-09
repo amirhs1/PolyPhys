@@ -1597,16 +1597,16 @@ class HnsCub(ParserBase):
     'cubic' geometry for a given `group` in the project.
 
     In the geometry 'cubic', these patterns are used to parse a `name`:
-        segment: N#epshm#nh#ac#nc#l#dt#ndump#adump#ens.#j#.ring
+        segment: N#kbmm#nh#ac#l#epshc#nc#ens.#j#.ring
             One of multiple chunks of a complete simulation or measurement.
-        whole: N#epshm#nh#ac#nc#l#dt#ndump#adump#ens#.ring
+        whole: N#kbmm#nh#ac#l#epshc#nc#ens.ring
             A complete simulation or measurement; a collection of 'segments'.
-        ensemble_long: N#epshm#nh#ac#nc#l#dt#ndump#adump#.ring
+        ensemble_long: N#kbmm#nh#ac#l#epshc#nc#.ring
             Long name of an ensemble.
-        ensemble: N#epshm#nh#ac#nc#
+        ensemble: N#epshm#nh#ac#epshc#nc#
             A collection of 'wholes' (complete simulations) that differs only
             in their initial conditions (e.g., random number seed).
-        space: N#epshm#nh#ac#
+        space: N#epshm#nh#ac#epshc
             A collection of ensembles with a unique set of all the input
             parameters except number of crowders (nc).
 
@@ -1687,9 +1687,14 @@ class HnsCub(ParserBase):
         number of crowders. Its associated keyword is 'nc'.
     mcrowd: float, default np.nan
         Mass of a crowder
+    bend_mm: float, default np.nan
+        Bending rigidity of DNA monomers. Its associated keyword is 'kbmm'.
     eps_hm: float, default np.nan
         The strength of attractive LJ interaction between hns poles and
         monomers. Its associated keyword is 'epshm'.
+    eps_hc: float, default np.nan
+        The strength of attractive LJ interaction between hns cores and
+        crowders. Its associated keyword is 'epshc'.
     eps_others: float, default 1
         Unit of the LJ interaction strength
     lcube: float, np.nan
@@ -1751,42 +1756,37 @@ class HnsCub(ParserBase):
     _lineage_attributes: Dict[str, Dict[str, str]] = {
         "segment": {  # lcube twice of l
             "nmon": "N",
-            "eps_hm": "epshm",
+            "bend_mm": "kbmm",
+            "eps_hc": "epshc",
             "nhns": "nh",
             "dcrowd": "ac",
             "ncrowd": "nc",
             "lcube": "l",
-            "dt": "dt",
-            "ndump": "ndump",
-            "adump": "adump",
             "ensemble_id": "ens",
             "segment_id": "j",
         },
         "whole": {  # lcube twice of l
             "nmon": "N",
-            "eps_hm": "epshm",
+            "bend_mm": "kbmm",
+            "eps_hc": "epshc",
             "nhns": "nh",
             "dcrowd": "ac",
             "ncrowd": "nc",
             "lcube": "l",
-            "dt": "dt",
-            "ndump": "ndump",
-            "adump": "adump",
             "ensemble_id": "ens",
         },
         "ensemble_long": {  # lcube twice of l
             "nmon": "N",
-            "eps_hm": "epshm",
+            "bend_mm": "kbmm",
+            "eps_hc": "epshc",
             "nhns": "nh",
             "dcrowd": "ac",
             "ncrowd": "nc",
             "lcube": "l",
-            "dt": "dt",
-            "ndump": "ndump",
-            "adump": "adump",
         },
         "ensemble": {
             "nmon": "N",
+            "bend_mm": "kbmm",
             "eps_hm": "epshm",
             "nhns": "nh",
             "dcrowd": "ac",
@@ -1794,34 +1794,35 @@ class HnsCub(ParserBase):
         },
         "space": {
             "nmon": "N",
-            "eps_hm": "epshm",
+            "bend_mm": "kbmm",
+            "eps_hc": "epshc",
             "nhns": "nh",
             "dcrowd": "ac",
         },
     }
     _physical_attributes: Dict[str, List[str]] = {
         "segment": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "bend_mm",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hc", "dt", "ndump", "adump"
             ],
         "whole": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "bend_mm",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hc", "dt", "ndump", "adump"
             ],
         "ensemble_long": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "bend_mm",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk""eps_hm", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk""eps_hc", "dt", "ndump", "adump"
             ],
         "ensemble": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
-            "dt", "ndump", "adump"
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
+            "dt", "ndump", "adump", "bend_mm"
             ],
         "space": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
-            "dt", "ndump", "adump"
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
+            "dt", "ndump", "adump", "bend_mm"
             ]
     }
     _geometry_error = "'HnsCub' is used for the 'cubic' geometry."
@@ -1880,7 +1881,9 @@ class HnsCub(ParserBase):
         self.ndump: int = -1
         self.adump: int = -1
         # cubic attributes
-        self.eps_hm: float = -1
+        self.eps_hm: float = 29
+        self.bend_mm: float = -1
+        self.eps_hc: float = -1
         self.eps_others: float = 1
         self.lcube: float = -1
 
@@ -2009,16 +2012,16 @@ class HnsCyl(ParserBase):
     'cubic' geometry for a given `group` in the project.
 
     In the geometry 'cylindrical', these patterns are used to parse a `name`:
-        segment: N#kbmm#r#nh#ac#lz#nc#ens#.j#.ring
+        segment: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.j#.ring
             One of multiple chunks of a complete simulation or measurement.
-        whole: N#kbmm#r#nh#ac#r#lz#nc#ens#.ring
+        whole: N#kbmm#r#nh#ac#r#lz#epshc#nc#ens#.ring
             A complete simulation or measurement; a collection of 'segments'.
-        ensemble_long: N#kbmm#r#nh#ac#lz#nc#.ring
+        ensemble_long: N#kbmm#r#nh#ac#lz#epshc#nc#.ring
             Long name of an ensemble.
-        ensemble: N#D#nh#ac#nc#
+        ensemble: N#D#nh#ac#epshc#nc#
             A collection of 'wholes' (complete simulations) that differs only
             in their initial conditions (e.g., random number seed).
-        space: N#D#nh#ac#
+        space: N#D#nh#ac#epshc#
             A collection of ensembles with a unique set of all the input
             parameters except number of crowders (nc).
 
@@ -2104,6 +2107,9 @@ class HnsCyl(ParserBase):
     eps_hm: float, default 29
         The strength of attractive LJ interaction between hns poles and
         monomers. Its associated keyword is 'epshm'.
+    eps_hc: float, default np.nan
+        The strength of attractive LJ interaction between hns cores and
+        crowders. Its associated keyword is 'epshc'.
     bend_mm: float, default np.nan
         Bending rigidity of DNA monomers.
     eps_others: float, default 1
@@ -2182,6 +2188,7 @@ class HnsCyl(ParserBase):
         "segment": {  # lcube twice of l
             "nmon": "N",
             "bend_mm": "kbmm",
+            "eps_hc": "epshc",
             "nhns": "nh",
             "dcyl": "r",
             "dcrowd": "ac",
@@ -2193,6 +2200,7 @@ class HnsCyl(ParserBase):
         "whole": {  # lcube twice of l
             "nmon": "N",
             "bend_mm": "kbmm",
+            "eps_hc": "epshc",
             "nhns": "nh",
             "dcyl": "r",
             "dcrowd": "ac",
@@ -2203,6 +2211,7 @@ class HnsCyl(ParserBase):
         "ensemble_long": {  # lcube twice of l
             "nmon": "N",
             "bend_mm": "kbmm",
+            "eps_hc": "epshc",
             "nhns": "nh",
             "dcyl": "r",
             "dcrowd": "ac",
@@ -2212,6 +2221,7 @@ class HnsCyl(ParserBase):
         "ensemble": {
             "nmon": "N",
             "nhns": "nh",
+            "eps_hc": "epshc",
             "dcyl": "D",
             "dcrowd": "ac",
             "ncrowd": "nc",
@@ -2219,33 +2229,34 @@ class HnsCyl(ParserBase):
         "space": {
             "nmon": "N",
             "nhns": "nh",
+            "eps_hc": "epshc",
             "dcyl": "D",
             "dcrowd": "ac"
         },
     }
     _physical_attributes: Dict[str, List[str]] = {
         "segment": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
             "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
             ],
         "whole": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
             "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
             ],
         "ensemble_long": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk""eps_hm", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
             ],
         "ensemble": [
             "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
-            "dt", "ndump", "adump"
+            "dt", "ndump", "adump", "eps_hc",
             ],
         "space": [
             "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
-            "dt", "ndump", "adump"
+            "dt", "ndump", "adump", "eps_hc",
             ]
     }
     _geometry_error = "'HnsCyl' is used for the 'cylindrical' geometry."
@@ -2303,9 +2314,10 @@ class HnsCyl(ParserBase):
         self.dt: float = 0.005
         self.ndump: int = 5000
         self.adump: int = 10000
-        # cubic attributes
+        # cylindrical attributes
         self.bend_mm: float = -1
         self.eps_hm: float = 29
+        self.eps_hc: float = -1
         self.eps_others: float = 1
         self.dcyl: float = -1
         self.lcyl: float = -1
