@@ -175,9 +175,18 @@ def sem(data: np.ndarray) -> float:
 def size_ratio(dcrowd, dmon=1):
     """Set the type of size ratio of crowders to monomers."""
     if dcrowd < dmon:
-        ratio = r"$a_c<a$"
+        ratio = r"$a_c < 1$"
     elif dcrowd == dmon:
-        ratio = r"$a_c=a$"
+        ratio = r"$a_c = 1$"
     else:
-        ratio = r"$a_c>a$"
+        ratio = r"$a_c > 1$"
+    return ratio
+
+
+def size_ratio_equal(dcrowd, dmon=1):
+    """Set the type of size ratio of crowders to monomers."""
+    if dcrowd < dmon:
+        ratio = r"$a_c \leq 1$"
+    else:
+        ratio = r"$a_c > 1$"
     return ratio

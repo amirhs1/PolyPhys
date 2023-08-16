@@ -769,11 +769,11 @@ def histograms(
         for direction, species, group in hist_properties:
             hists = sort_filenames(
                 observations,
-                fmts=[direction + 'Hist' + species + '.npy']
+                fmts=['-' + direction + 'Hist' + species + '.npy']
             )
             edges = sort_filenames(
                 observations,
-                fmts=[direction + 'Edge' + species + '.npy']
+                fmts=['-' + direction + 'Edge' + species + '.npy']
             )
             if is_segment is True:
                 wholes = whole_from_segment(

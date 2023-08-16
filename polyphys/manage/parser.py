@@ -1603,10 +1603,10 @@ class HnsCub(ParserBase):
             A complete simulation or measurement; a collection of 'segments'.
         ensemble_long: N#kbmm#nh#ac#l#epshc#nc#.ring
             Long name of an ensemble.
-        ensemble: N#epshm#nh#ac#epshc#nc#
+        ensemble: N#kbmm#nh#ac#epshc#nc#
             A collection of 'wholes' (complete simulations) that differs only
             in their initial conditions (e.g., random number seed).
-        space: N#epshm#nh#ac#epshc
+        space: N#kbmm#nh#ac#epshc#
             A collection of ensembles with a unique set of all the input
             parameters except number of crowders (nc).
 
@@ -1814,7 +1814,7 @@ class HnsCub(ParserBase):
         "ensemble_long": [
             "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "bend_mm",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk""eps_hc", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk", "eps_hc", "dt", "ndump", "adump"
             ],
         "ensemble": [
             "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
@@ -1877,9 +1877,9 @@ class HnsCub(ParserBase):
         # system attributes
         self.ensemble_id: int = -1
         self.segment_id: int = -1
-        self.dt: float = -1
-        self.ndump: int = -1
-        self.adump: int = -1
+        self.dt: float = 0.005
+        self.ndump: int = 5000
+        self.adump: int = 10000
         # cubic attributes
         self.eps_hm: float = 29
         self.bend_mm: float = -1
@@ -1894,7 +1894,7 @@ class HnsCub(ParserBase):
         """
         str_lineages = re.compile(r"([a-zA-Z\-]+)")
         words = str_lineages.split(self.lineage_name)
-        attributes_float = ["eps_hm", "lcube", "dcrowd", "dt"]
+        attributes_float = ["kbmm", "lcube", "dcrowd", "epshc"]
         for attr_n, attr_kw in self._lineage_attributes[self.lineage].items():
             try:
                 attr_value = words[words.index(attr_kw) + 1]
@@ -1938,12 +1938,14 @@ class HnsCub(ParserBase):
         space_name = (
             "N"
             + str(self.nmon)
-            + "epshm"
-            + str(self.eps_hm)
+            + "kbmm"
+            + str(self.bend_mm)
             + "nh"
             + str(self.nhns)
             + "ac"
             + str(self.dcrowd)
+            + "epshc"
+            + str(self.eps_hc)
         )
         ensemble_name = space_name + "nc" + str(self.ncrowd)
         if self.lineage == "space":
@@ -2382,6 +2384,8 @@ class HnsCyl(ParserBase):
             + str(self.nhns)
             + "ac"
             + str(self.dcrowd)
+            + "epshc"
+            + str(self.eps_hc)
         )
         ensemble_name = space_name + "nc" + str(self.ncrowd)
         if self.lineage == "space":
