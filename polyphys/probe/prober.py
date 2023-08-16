@@ -2603,20 +2603,35 @@ def hns_nucleoid_cub(
     principal_axes_t = np.empty([0, 3, 3])
     asphericity_t = []
     shape_parameter_t = []
-    # - bond info
+    # bond info
     n_bonds = len(bug.bonds.indices)
     bond_lengths = np.zeros((n_bonds, 1), dtype=np.float64)
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
-    # mon and hns-patch are attracted if their distance <= the below distance:
-    m_hpatch_attr_cutoff = 0.5 * (sim_info.dmon + sim_info.dhns_patch)
-    m_hpatch_shape = (sim_info.nmon, 2 * sim_info.nhns)
-    m_m_shape = (sim_info.nmon, sim_info.nmon)
-    # distance matrices
-    dist_m_hpatch = np.zeros(m_hpatch_shape, dtype=np.float64)
-    dist_m_m = np.zeros(m_m_shape, dtype=np.float64)
-    # contact matrices
-    dir_contacts_m_hpatch = np.zeros(m_hpatch_shape, dtype=np.int64)
-    dir_contacts_m_m = np.zeros(m_m_shape, dtype=np.int64)
+    # H-NS binding:
+    cis_threshold = 4
+    dist_m_hpatch = []
+    lj_cut = 2**(1/6)
+    r_cutoff = np.round(
+        0.5 * lj_cut * (sim_info.dmon + sim_info.dhns_patch), 3
+        )
+    binding_stats_t = {
+        'n_m_hpatch_bound': [],
+        'n_hpatch_free': [],
+        'n_hpatch_engaged': [],
+        'n_hcore_free': [],
+        'n_hcore_bridge': [],
+        'n_hcore_dangle': [],
+        'n_hcore_cis': [],
+        'n_hcore_trans': []
+    }
+    if sim_info.topology == 'linear':
+        loop_length_hist_t = np.zeros(sim_info.nmon, dtype=int)
+    elif sim_info.topology == 'ring':
+        loop_length_hist_t = np.zeros((sim_info.nmon//2)+1, dtype=int)
+    else:
+        raise ValueError(
+            f"The genomic distance is not defined for '{topology}' topology"
+        )
     for _ in sliced_trj:
         # bug:
         # various measures of chain size
@@ -2630,6 +2645,7 @@ def hns_nucleoid_cub(
         )
         shape_parameter_t.append(bug.shape_parameter())
         # bond info
+        # bond info
         bond_dummy, cosine_dummy = correlations.bond_info(
             bug,
             sim_info.topology
@@ -2638,51 +2654,63 @@ def hns_nucleoid_cub(
         cosine_corrs += cosine_dummy
         # bug - hns patch:
         # distance matrices
-        dummy = mda_dist.distance_array(bug, hns_patch, box=cell.dimensions)
-        dist_m_hpatch += dummy
-        dummy_m_m = np.matmul(dummy, dummy.T)
-        dist_m_m += dummy_m_m
-        # contact matrices
-        dummy = np.asarray(dummy <= m_hpatch_attr_cutoff, dtype=int)
-        dir_contacts_m_hpatch += dummy
-        dummy_m_m = np.matmul(dummy, dummy.T)
-        dir_contacts_m_m += dummy_m_m
+        dummy = mda_dist.distance_array(bug, hns_patch)
+        dist_m_hpatch.append(dummy)
+        d_contact_m_hpatch = clusters.find_direct_contacts(
+            dummy, r_cutoff, inclusive=False
+            )
+        binding_stats_t, loop_length_hist_t = clusters.hns_binding(
+                d_contact_m_hpatch,
+                sim_info.topology,
+                cis_threshold=cis_threshold,
+                binding_stats=binding_stats_t,
+                loop_length_hist=loop_length_hist_t
+                )
     # Saving collectors to memory
     # bug
     np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
+    np.save(
+        save_to + sim_name + '-asphericityTMon.npy', np.array(asphericity_t)
+        )
+    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    np.save(
+        save_to + sim_name + '-principalTMon.npy', np.array(principal_axes_t)
+        )
+    # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
-    np.save(save_to + sim_name + '-asphericityTMon.npy',
-            np.array(asphericity_t)
-            )
-    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
+    # bond info
     bond_lengths = bond_lengths / n_frames
     bonds_per_lag = np.arange(n_bonds, 0, -1)
     cosine_corrs = cosine_corrs / (n_frames * bonds_per_lag)
     bond_lengths = bond_lengths.reshape(n_bonds,)
     np.save(save_to + sim_name + '-bondLengthVecMon.npy', bond_lengths)
     np.save(save_to + sim_name + '-bondCosineCorrVecMon.npy', cosine_corrs)
-    # bug hns-patch:
-    dist_m_hpatch = dist_m_hpatch / n_frames
-    dist_m_m = dist_m_m / n_frames
-    dir_contacts_m_hpatch = dir_contacts_m_hpatch / n_frames
-    dir_contacts_m_m = dir_contacts_m_m / n_frames
+    # H-NS binding stats:
+    binding_stats_names = {
+        'n_m_hpatch_bound': 'nBoundTHnsPatch',
+        'n_hpatch_free': 'nFreeTHnsPatch',
+        'n_hpatch_engaged': 'nEngagedTHnsPatch',
+        'n_hcore_free': 'nFreeTHnsCore',
+        'n_hcore_bridge': 'nBridgeTHnsCore',
+        'n_hcore_dangle': 'nDangleTHnsCore',
+        'n_hcore_cis': 'nCisTHnsCore',
+        'n_hcore_trans': 'nTransTHnsCore',
+    }
+    for key, value in binding_stats_t.items():
+        np.save(
+            save_to + sim_name + '-' + binding_stats_names[key] + '.npy',
+            np.array(value)
+        )
     np.save(
-        save_to + sim_name + "-distMatMonPatch.npy", dist_m_hpatch
-    )
+        save_to + sim_name + '-loopLengthHistMon.npy',
+        np.array(loop_length_hist_t)
+        )
+    # distance matirx
     np.save(
-        save_to + sim_name + "-distMatMonMon.npy", dist_m_m
-    )
-    np.save(
-        save_to + sim_name + "-directContactsMatMonPatch.npy",
-        dir_contacts_m_hpatch
-    )
-    np.save(
-        save_to + sim_name + "-directContactsMatTMonMon.npy",
-        dir_contacts_m_m
-    )
-    # Simulation stamps:
+        save_to + sim_name + '-distMatTMonHnsPatch.npy',
+        np.array(dist_m_hpatch)
+        )
     print('done.')
 
 
@@ -3240,7 +3268,7 @@ def hns_nucleoid_cyl(
     n_bonds = len(bug.bonds.indices)
     bond_lengths = np.zeros((n_bonds, 1), dtype=np.float64)
     cosine_corrs = np.zeros(n_bonds, dtype=np.float64)
-    # H-Ns binding:
+    # H-NS binding:
     cis_threshold = 4
     dist_m_hpatch = []
     lj_cut = 2**(1/6)

@@ -544,9 +544,12 @@ def whole_from_segment(
         )
         whole_name = getattr(segment_info, 'whole')
         child_arr = np.load(segment[0])
-        if not bool(wholes):  # is ens_names empty or not?
-            wholes[whole_name] = [child_arr]
-        elif whole_name not in wholes.keys():
+        #if not bool(wholes):  # is ens_names empty or not?
+        #    wholes[whole_name] = [child_arr]
+        #elif whole_name not in wholes.keys():
+        #    wholes[whole_name] = [child_arr]
+        # a better approach 2023-08-15
+        if whole_name not in wholes:
             wholes[whole_name] = [child_arr]
         else:
             wholes[whole_name].append(child_arr)
@@ -1446,6 +1449,7 @@ def space_tseries(
         'HnsCub': 'ndump',
         'HnsCyl': 'ndump'
     }
+    
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = parser(
