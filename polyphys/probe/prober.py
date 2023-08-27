@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Any, Union
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances as mda_dist
-from MDAnalysis import transformations as mda_trans
 import numpy as np
 
 from polyphys.manage.parser import (
@@ -396,75 +395,29 @@ def sum_rule_bug_cyl(
     # selecting atom groups
     bug: mda.AtomGroup = cell.select_atoms('resid 1')  # the polymer
     # collectors
-    trans_size_t = []
-    fsd_t = []
-    rflory_t = []
-    gyr_t = []
-    asphericity_t = []
-    shape_parameter_t = []
-    principal_axes_t = np.empty([0, 3, 3])
-    # dict of bin edges:
-    # bin_edges = {
-    #    'rfloryEdge': {
-    #        'bin_size': 0.5 * sim_info.dmon,
-    #        'lmin': 0,
-    #        'lmax': sim_info.nmon * sim_info.dmon
-    #    }
-    # }
-    # distribution of the size of the end-to-end
-    # rflory_hist_info: Dict[str, Any] = fixedsize_bins(
-    #    sim_name,
-    #    'rfloryEdgeMon',
-    #    bin_edges['rfloryEdge']['bin_size'],
-    #    bin_edges['rfloryEdge']['lmin'],
-    #    bin_edges['rfloryEdge']['lmax'],
-    #    bin_type='nonnegative',
-    #    save_to=save_to
-    # )
-    # if any([
-    #        rflory_hist_info['collector'].any() != 0,
-    #        rflory_hist_info['collector_std'].any() != 0,
-    #        ]):
-    #    raise ValueError("One of the histogram collectors are not empty!")
-    for _ in sliced_trj:
+    trans_size_t = np.zeros(n_frames)
+    fsd_t = np.zeros(n_frames)
+    rflory_t = np.zeros(n_frames)
+    gyr_t = np.zeros(n_frames)
+    asphericity_t = np.zeros(n_frames)
+    shape_parameter_t = np.zeros(n_frames)
+    principal_axes_t = np.empty([n_frames, 3, 3])
+    for idx, _ in enumerate(sliced_trj):
         # various measures of chain size
-        trans_size_t.append(transverse_size(bug))
-        fsd_t.append(fsd(bug.positions))
-        gyr_t.append(bug.radius_of_gyration())
-        rms = end_to_end(bug.positions)
-        rflory_t.append(rms)
-        # pos_hist, _ = np.histogram(
-        #    rms,
-        #    bins=rflory_hist_info['bin_edges'],
-        #    range=rflory_hist_info['range']
-        # )
-        # # RDF of the end-to-end distance
-        # rflory_hist_info['collector'] += pos_hist
-        # rflory_hist_info['collector_std'] += np.square(pos_hist)
-        # shape parameters:
-        asphericity_t.append(bug.asphericity(wrap=False, unwrap=False))
-        shape_parameter_t.append(bug.shape_parameter(wrap=False))
-        principal_axes_t = np.append(
-            principal_axes_t,
-            np.array([bug.principal_axes(wrap=False)]),
-            axis=0
-        )
+        trans_size_t[idx] = transverse_size(bug)
+        fsd_t[idx] = fsd(bug.positions)
+        gyr_t[idx] = bug.radius_of_gyration()
+        rflory_t[idx] = end_to_end(bug.positions)
+        asphericity_t[idx] = bug.asphericity(wrap=False, unwrap=False)
+        shape_parameter_t[idx] = bug.shape_parameter(wrap=False)
+        principal_axes_t[idx] = bug.principal_axes(wrap=False)
 
-    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
-    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
-    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
-    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
-    # np.save(
-    #    save_to + sim_name + '-rfloryHistMon.npy',
-    #    rflory_hist_info['collector']
-    # )
-    # np.save(
-    #    save_to + sim_name + '-rfloryHistStdMon.npy',
-    #    rflory_hist_info['collector_std']
-    # )
-    np.save(save_to + sim_name + '-asphericityTMon.npy', np.array(
-        asphericity_t))
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    np.save(save_to + sim_name + '-transSizeTMon.npy', trans_size_t)
+    np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
+    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
@@ -1007,63 +960,50 @@ def trans_foci_bug_cyl(
     bug: mda.AtomGroup = cell.select_atoms('resid 1')  # bug: small & large mon
     # defining collectors
     # -bug:
-    trans_size_t = []
-    fsd_t = []
-    rflory_t = []
-    gyr_t = []
-    principal_axes_t = np.empty([0, 3, 3])
-    asphericity_t = []
-    shape_parameter_t = []
+    trans_size_t = np.zeros(n_frames)
+    fsd_t = np.zeros(n_frames)
+    gyr_t = np.zeros(n_frames)
+    principal_axes_t = np.empty([n_frames, 3, 3])
+    asphericity_t = np.zeros(n_frames)
+    shape_parameter_t = np.zeros(n_frames)
     # -foci:
-    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
-    dir_contacts_t = np.empty(
-        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
+    foci_t = np.zeros((n_frames, sim_info.nmon_large, sim_info.nmon_large))
+    dir_contacts_t = np.zeros(
+        (n_frames, sim_info.nmon_large, sim_info.nmon_large), dtype=int
     )
-    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
-    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
-    for _ in sliced_trj:
+    bonds_t = np.zeros((n_frames, sim_info.nmon_large), dtype=int)
+    clusters_t = np.zeros((n_frames, sim_info.nmon_large+1), dtype=int)
+    for idx, _ in enumerate(sliced_trj):
         # bug:
         # various measures of chain size
-        trans_size_t.append(transverse_size(bug))
-        fsd_t.append(fsd(bug.positions))
-        gyr_t.append(bug.radius_of_gyration())
-        rflory_t.append(end_to_end(bug.positions))
+        trans_size_t[idx] = transverse_size(bug)
+        fsd_t[idx] = fsd(bug.positions)
+        gyr_t[idx] = bug.radius_of_gyration()
         # shape parameters:
-        asphericity_t.append(bug.asphericity(wrap=False, unwrap=False))
-        principal_axes_t = np.append(
-            principal_axes_t,
-            np.array([bug.principal_axes(wrap=False)]),
-            axis=0
-        )
-        shape_parameter_t.append(bug.shape_parameter(wrap=False))
+        asphericity_t[idx] = bug.asphericity(wrap=False, unwrap=False)
+        principal_axes_t[idx] = bug.principal_axes(wrap=False)
+        shape_parameter_t[idx] = bug.shape_parameter(wrap=False)
         # foci:
         dist_mat = clusters.self_dist_array(foci.positions)
         foci_pair_dist = np.triu(dist_mat, 1)
         # keep atom ids on the diag
         np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
-        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
+        foci_t[idx] = foci_pair_dist
         dir_contacts = clusters.find_direct_contacts(dist_mat, cluster_cutoff)
-        dir_contacts_t = np.append(
-            dir_contacts_t,
-            np.array([dir_contacts]),
-            axis=0
-        )
+        dir_contacts_t[idx] = dir_contacts
         bonds_stat = clusters.count_foci_bonds(dir_contacts)
-        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        bonds_t[idx] = bonds_stat
         contacts = clusters.generate_contact_matrix(dir_contacts)
         clusters_stat = clusters.count_foci_clusters(contacts)
-        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+        clusters_t[idx] = clusters_stat
     # Saving collectors to memory
     # -bug
-    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
-    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
-    np.save(save_to + sim_name + '-rfloryTMon.npy', np.array(rflory_t))
-    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
-    np.save(save_to + sim_name + '-asphericityTMon.npy',
-            np.array(asphericity_t)
-            )
+    np.save(save_to + sim_name + '-transSizeTMon.npy', trans_size_t)
+    np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
+    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
     # -foci
     np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
     np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
@@ -1891,54 +1831,44 @@ def trans_foci_bug_cub(
     bug: mda.AtomGroup = cell.select_atoms('resid 1')  # bug: small & large mon
     # defining collectors
     # -bug:
-    gyr_t = []
-    principal_axes_t = np.empty([0, 3, 3])
-    asphericity_t = []
-    shape_parameter_t = []
+    gyr_t = np.zeros(n_frames)
+    principal_axes_t = np.empty([n_frames, 3, 3])
+    asphericity_t = np.zeros(n_frames)
+    shape_parameter_t = np.zeros(n_frames)
     # -foci:
-    foci_t = np.empty([0, sim_info.nmon_large, sim_info.nmon_large])
-    dir_contacts_t = np.empty(
-        [0, sim_info.nmon_large, sim_info.nmon_large], dtype=int
+    foci_t = np.zeros((n_frames, sim_info.nmon_large, sim_info.nmon_large))
+    dir_contacts_t = np.zeros(
+        (n_frames, sim_info.nmon_large, sim_info.nmon_large), dtype=int
     )
-    bonds_t = np.empty([0, sim_info.nmon_large], dtype=int)
-    clusters_t = np.empty([0, sim_info.nmon_large+1], dtype=int)
-    for ts in sliced_trj:
+    bonds_t = np.zeros((n_frames, sim_info.nmon_large), dtype=int)
+    clusters_t = np.zeros((n_frames, sim_info.nmon_large+1), dtype=int)
+    for idx, _ in enumerate(sliced_trj):
         # bug:
         # various measures of chain size
-        gyr_t.append(bug.radius_of_gyration())
+        gyr_t[idx] = bug.radius_of_gyration()
         # shape parameters:
-        asphericity_t.append(bug.asphericity(wrap=False, unwrap=True))
-        principal_axes_t = np.append(
-            principal_axes_t,
-            np.array([bug.principal_axes(wrap=False)]),
-            axis=0
-        )
-        shape_parameter_t.append(bug.shape_parameter(wrap=False))
+        asphericity_t[idx] = bug.asphericity(wrap=False, unwrap=True)
+        principal_axes_t[idx] = bug.principal_axes(wrap=False)
+        shape_parameter_t[idx] = bug.shape_parameter(wrap=False)
         # foci:
         dist_mat = clusters.self_dist_array(foci.positions)
         foci_pair_dist = np.triu(dist_mat, 1)
         # keep atom ids on the diag
         np.fill_diagonal(foci_pair_dist, foci.atoms.ids)
-        foci_t = np.append(foci_t, np.array([foci_pair_dist]), axis=0)
+        foci_t[idx] = foci_pair_dist
         dir_contacts = clusters.find_direct_contacts(dist_mat, cluster_cutoff)
-        dir_contacts_t = np.append(
-            dir_contacts_t,
-            np.array([dir_contacts]),
-            axis=0
-        )
+        dir_contacts_t[idx] = dir_contacts
         bonds_stat = clusters.count_foci_bonds(dir_contacts)
-        bonds_t = np.append(bonds_t, np.array([bonds_stat]), axis=0)
+        bonds_t[idx] = bonds_stat
         contacts = clusters.generate_contact_matrix(dir_contacts)
         clusters_stat = clusters.count_foci_clusters(contacts)
-        clusters_t = np.append(clusters_t, np.array([clusters_stat]), axis=0)
+        clusters_t[idx] = clusters_stat
     # Saving collectors to memory
     # -bug
-    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
-    np.save(save_to + sim_name + '-asphericityTMon.npy',
-            np.array(asphericity_t)
-            )
+    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
     np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
     # -foci
     np.save(save_to + sim_name + '-distMatTFoci.npy', foci_t)
     np.save(save_to + sim_name + '-directContactsMatTFoci.npy', dir_contacts_t)
@@ -2578,7 +2508,6 @@ def hns_nucleoid_cub(
     cell = mda.Universe(
         topology, trajectory, topology_format='DATA',
         format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        unwrap_images=True,  # in_memory=True,
         atom_style="id resid type x y z", dt=sim_real_dt,
         )
     if continuous:
@@ -2590,19 +2519,12 @@ def hns_nucleoid_cub(
     # selecting atom groups:
     bug: mda.AtomGroup = cell.select_atoms('resid 1')  # the bug
     hns_patch = cell.select_atoms('type 2')  # the hns patches
-    # transformations:
-    workflow = [
-        mda_trans.unwrap(cell.atoms),
-        mda_trans.center_in_box(bug),
-        mda_trans.wrap(cell.atoms)
-    ]
-    cell.trajectory.add_transformations(*workflow)
     # defining collectors
     # bug:
-    gyr_t = []
-    principal_axes_t = np.empty([0, 3, 3])
-    asphericity_t = []
-    shape_parameter_t = []
+    gyr_t = np.zeros(n_frames)
+    principal_axes_t = np.empty([n_frames, 3, 3])
+    asphericity_t = np.zeros(n_frames)
+    shape_parameter_t = np.zeros(n_frames)
     # bond info
     n_bonds = len(bug.bonds.indices)
     bond_lengths = np.zeros((n_bonds, 1), dtype=np.float64)
@@ -2632,19 +2554,14 @@ def hns_nucleoid_cub(
         raise ValueError(
             f"The genomic distance is not defined for '{topology}' topology"
         )
-    for _ in sliced_trj:
+    for idx, _ in enumerate(sliced_trj):
         # bug:
-        # various measures of chain size
-        gyr_t.append(bug.radius_of_gyration())
+        # various measures of chain sizes
+        gyr_t[idx] = bug.radius_of_gyration()
         # shape parameters:
-        asphericity_t.append(bug.asphericity())
-        principal_axes_t = np.append(
-            principal_axes_t,
-            np.array([bug.principal_axes()]),
-            axis=0
-        )
-        shape_parameter_t.append(bug.shape_parameter())
-        # bond info
+        asphericity_t[idx] = bug.asphericity(wrap=False, unwrap=True)
+        principal_axes_t[idx] = bug.principal_axes(wrap=False)
+        shape_parameter_t[idx] = bug.shape_parameter(wrap=False)
         # bond info
         bond_dummy, cosine_dummy = correlations.bond_info(
             bug,
@@ -2668,14 +2585,10 @@ def hns_nucleoid_cub(
                 )
     # Saving collectors to memory
     # bug
-    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
-    np.save(
-        save_to + sim_name + '-asphericityTMon.npy', np.array(asphericity_t)
-        )
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
-    np.save(
-        save_to + sim_name + '-principalTMon.npy', np.array(principal_axes_t)
-        )
+    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
@@ -3258,12 +3171,12 @@ def hns_nucleoid_cyl(
     hns_patch = cell.select_atoms('type 2')  # hns patches
     # defining collectors
     # bug:
-    gyr_t = []
-    fsd_t = []
-    trans_size_t = []
-    principal_axes_t = []
-    asphericity_t = []
-    shape_parameter_t = []
+    gyr_t = np.zeros(n_frames)
+    fsd_t = np.zeros(n_frames)
+    trans_size_t = np.zeros(n_frames)
+    principal_axes_t = np.empty([n_frames, 3, 3])
+    asphericity_t = np.zeros(n_frames)
+    shape_parameter_t = np.zeros(n_frames)
     # bond info
     n_bonds = len(bug.bonds.indices)
     bond_lengths = np.zeros((n_bonds, 1), dtype=np.float64)
@@ -3293,16 +3206,16 @@ def hns_nucleoid_cyl(
         raise ValueError(
             f"The genomic distance is not defined for '{topology}' topology"
         )
-    for _ in sliced_trj:
+    for idx, _ in enumerate(sliced_trj):
         # bug:
         # various measures of chain size
-        gyr_t.append(bug.radius_of_gyration())
-        trans_size_t.append(transverse_size(bug))
-        fsd_t.append(fsd(bug.positions))
+        gyr_t[idx] = bug.radius_of_gyration()
+        trans_size_t[idx] = transverse_size(bug)
+        fsd_t[idx] = fsd(bug.positions)
         # shape parameters:
-        asphericity_t.append(bug.asphericity(wrap=False, unwrap=False))
-        shape_parameter_t.append(bug.shape_parameter(wrap=False))
-        principal_axes_t.append(bug.principal_axes(wrap=False))
+        asphericity_t[idx] = bug.asphericity(wrap=False, unwrap=False)
+        shape_parameter_t[idx] = bug.shape_parameter(wrap=False)
+        principal_axes_t[idx] = bug.principal_axes(wrap=False)
         # bond info
         bond_dummy, cosine_dummy = correlations.bond_info(
             bug,
@@ -3327,16 +3240,12 @@ def hns_nucleoid_cyl(
 
     # Saving collectors to memory
     # bug
-    np.save(save_to + sim_name + '-transSizeTMon.npy', np.array(trans_size_t))
-    np.save(save_to + sim_name + '-fsdTMon.npy', np.array(fsd_t))
-    np.save(save_to + sim_name + '-gyrTMon.npy', np.array(gyr_t))
-    np.save(
-        save_to + sim_name + '-asphericityTMon.npy', np.array(asphericity_t)
-        )
-    np.save(save_to + sim_name + '-shapeTMon.npy', np.array(shape_parameter_t))
-    np.save(
-        save_to + sim_name + '-principalTMon.npy', np.array(principal_axes_t)
-        )
+    np.save(save_to + sim_name + '-transSizeTMon.npy', trans_size_t)
+    np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
+    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
     # Simulation stamps:
     outfile = save_to + sim_name + "-stamps.csv"
     stamps_report(outfile, sim_info, n_frames)
@@ -3782,10 +3691,8 @@ def hns_all_cyl(
     }
     yz_hist_hns_info['collector'] = np.zeros(yz_hist_hns_info['n_bins'])
     yz_hist_hns_info['collector'] *= 0
-    for ts in sliced_trj:
+    for _ in sliced_trj:
         # crds
-        print(ts.dimensions)
-        print(bug.center_of_geometry())
         # # r
         pos_hist, _ = np.histogram(
             np.linalg.norm(crds.positions[:, :2], axis=1),
