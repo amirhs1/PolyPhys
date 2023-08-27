@@ -150,14 +150,29 @@ ANALYSIS_DETAILS_NUCLEOID = {
         'topology': 'ring',
         'is_segment': False,
         'has_stamp': True,
+        'nonscalar_mat_t_properties': [
+            # property_, species, group, avg_axis
+            ('principalT', 'Mon', 'nucleoid')
+        ],
+        'tseries_properties': [
+            # treat these two as timeseries!
+            ('loopLengthHist', 'Mon', 'nucleoid'),
+            ('bondCosineCorrVec', 'Mon', 'nucleoid'),
+            ('bondLengthVec', 'Mon', 'nucleoid'),
+            ('nBoundT', 'HnsPatch', 'nucleoid'),
+            ('nFreeT', 'HnsPatch', 'nucleoid'),
+            ('nEngagedT', 'HnsPatch', 'nucleoid'),
+            ('nFreeT', 'HnsCore', 'nucleoid'),
+            ('nBridgeT', 'HnsCore', 'nucleoid'),
+            ('nDangleT', 'HnsCore', 'nucleoid'),
+            ('nCisT', 'HnsCore', 'nucleoid'),
+            ('nTransT', 'HnsCore', 'nucleoid')
+        ],
         'acf_tseries_properties': [
+            # property_, species, group
             ('gyrT', 'Mon', 'nucleoid'),
             ('shapeT', 'Mon', 'nucleoid'),
             ('asphericityT', 'Mon', 'nucleoid')
-        ],
-        'tseries_properties': [
-            ('bondCosineCorrVec', 'Mon', 'nucleoid'),
-            ('bondLengthVec', 'Mon', 'nucleoid')
         ]
     },
     'HnsCylWhole': {
