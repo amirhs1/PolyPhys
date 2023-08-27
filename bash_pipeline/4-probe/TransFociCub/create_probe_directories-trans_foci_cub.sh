@@ -6,7 +6,7 @@ probe=${name}-probe
 mkdir "${probe}"
 job=$(echo slurm*.out | cut -d . -f 1)
 cp slurm*.out "${probe}-${job}_report.out" 
-mv "${probe}"-slurm_report.out ./"${probe}"/
+mv "${probe}"-"${job}"_report.out ./"${probe}"/
 for dir in al*ring/; do
     mkdir "${probe}/$dir"
     echo "$dir"
@@ -16,3 +16,4 @@ for dir in al*ring/; do
     mv ./*.txt "../${probe}/$dir"
     cd ..
 done
+echo "Finished!"

@@ -16,3 +16,4 @@ for dir in eps*/; do
     mv ./*.txt "../${probe}/$dir"
     cd ..
 done
+echo "Finished!"

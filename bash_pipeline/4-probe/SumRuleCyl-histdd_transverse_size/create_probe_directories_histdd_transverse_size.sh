@@ -5,7 +5,7 @@ name=$( echo "$currentname" | cut -d - -f 1)
 probe=${name}-probe
 mkdir "${probe}"
 cp slurm*.out "${probe}"-slurm_report.out 
-mv "${probe}"-slurm_report.out ./"${probe}"/
+mv "${probe}"-"${job}"_report.out ./"${probe}"/
 for dir in N*ep*[1-8]/; do
     mkdir "${probe}/$dir"
     echo "$dir"
@@ -15,3 +15,4 @@ for dir in N*ep*[1-8]/; do
     mv ./*.txt "../${probe}/$dir"
     cd ..
 done
+echo "Finished!"

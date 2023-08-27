@@ -4,7 +4,8 @@
 # README: to use this file: connect to the Data Move node on your cluster.
 # For graham, it is gra-dtn1.sharcnet.ca you need to submit this scrip with
 # nohup ... &  command.
-report=$(pwd | rev | cut -d / -f 1 | rev)-archive_report.txt #report name
+name=$(pwd | rev | cut -d / -f 1 | rev) #report name
+report=${name}-archive_report.txt
 touch "$report"
 for directory in N*/; do
 
@@ -27,4 +28,7 @@ for directory in N*/; do
     project=${dir}.tar
     tar -zcvkf "${project}" "${zipdir}" >> "${report}"
 done
+runname=$(echo $name | cut -d '-' -f 1)
+rundir=run_files-${runname}
+tar -zcvkf ${rundir}.tar.gz ${rundir}
 echo "Finished!"
