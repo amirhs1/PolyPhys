@@ -813,7 +813,7 @@ def hns_binding(
             )
     # For both, ring with odd or even number of monomers, the maximum
     # intra-chain distance is the same.
-    if loop_length_hist == np.array([]):
+    if loop_length_hist.size == 0:
         max_gen_distance = {
             'linear': n_mon,
             'ring': n_mon//2+1
