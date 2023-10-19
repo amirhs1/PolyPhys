@@ -7,8 +7,8 @@ from typing import (
 )
 import warnings
 import numpy as np
-import pandas as pd
 import itertools
+import pandas as pd
 from polyphys.manage.parser import (SumRuleCyl, TransFociCub, TransFociCyl,
                                     HnsCub, HnsCyl)
 from polyphys.analyze import analyzer
@@ -68,8 +68,8 @@ PROJECTS_DETAILS = {
                                ],
         'equil_measures': [np.mean, np.var, measurer.sem],
         'equil_attributes': ['ensemble_long', 'ensemble', 'space',
-                             'dcyl', 'dmon_large', 'nmon_large', 'nmon_small', 'dcrowd', 'phi_c_bulk',
-                             'phi_c_bulk_round'
+                             'dcyl', 'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'
                              ],
         'equil_properties': [
             'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
@@ -133,8 +133,8 @@ PROJECTS_DETAILS = {
                                'nCisTHnsCore', 'nTransTHnsCore',
                                ],
         'equil_measures': [np.mean, np.var, measurer.sem],
-        'equil_attributes': ['ensemble_long', 'ensemble', 'space',
-                             'eps_hm', 'nmon', 'nhns', 'dcrowd', 'phi_c_bulk',
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space', 'eps_hc',
+                             'bend_mm', 'nmon', 'nhns', 'dcrowd', 'phi_c_bulk',
                              'phi_c_bulk_round', 'rho_hns_bulk'],
         'equil_properties': [
             'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
@@ -368,32 +368,30 @@ def normalize_data(
     -------
     pd.DataFrame
         The processed dataframe.
-    """
+    """ 
     df_copy = df.copy()
     norm_props = [
         prop.split('-')[0] for prop in properties if prop.endswith('mean')]
     spaces = df_copy['space'].unique()
-
-    for space, prop in itertools.product(spaces, norm_props):
-        space_con = df_copy['space'] == space
-        phi_c_con = df_copy['phi_c_bulk_round'] == 0
-        prop_0 = \
-            df_copy.loc[
-                space_con & phi_c_con, prop + "-mean"
-                ].to_numpy()[0]  # type: ignore
-        if prop_0 != 0:
-            df_copy.loc[space_con, prop + "-norm"] = \
-                df_copy.loc[space_con, prop + "-mean"] / prop_0
-        else:
-            warnings.warn(
-                f"The '{prop}' value in the absence of crowders "
-                f"(phi_c=0) for space '{space}, the values of '{prop}-norm' "
-                "at all the values of phi_c are set to 'np.nan'.",
-                UserWarning
-            )
-            df_copy.loc[space_con, prop + "-norm"] = np.nan
-
     if project in ['HnsCyl', 'HnsCub']:
+        for space, prop in itertools.product(spaces, norm_props):
+            space_con = df_copy['space'] == space
+            phi_c_con = df_copy['phi_c_bulk_round'] == 0
+            prop_0 = \
+                df_copy.loc[
+                    space_con & phi_c_con, prop + "-mean"
+                    ].to_numpy()[0]  # type: ignore
+            if prop_0 != 0:
+                df_copy.loc[space_con, prop + "-norm"] = \
+                    df_copy.loc[space_con, prop + "-mean"] / prop_0
+            else:
+                warnings.warn(
+                    f"The '{prop}' value in the absence of crowders "
+                    f"(phi_c=0) for space '{space}, the values of '{prop}-norm' "
+                    "at all the values of phi_c are set to 'np.nan'.",
+                    UserWarning
+                )
+                df_copy.loc[space_con, prop + "-norm"] = np.nan
         n_patch_per_cor = 2
         hpatch_cols = ['nBoundHnsPatch', 'nFreeHnsPatch', 'nEngagedHnsPatch']
         hcore_cols = ['nFreeHnsCore', 'nBridgeHnsCore', 'nDangleHnsCore',
@@ -403,7 +401,25 @@ def normalize_data(
                 df_copy[col + '-mean'] / (df_copy['nhns'] * n_patch_per_cor)
         for col in hcore_cols:
             df_copy[col + '-norm'] = df_copy[col + '-mean'] / df_copy['nhns']
-
+    else:
+        for space, prop in itertools.product(spaces, norm_props):
+            space_con = df_copy['space'] == space
+            phi_c_con = df_copy['phi_c_bulk_round'] == 0
+            prop_0 = \
+                df_copy.loc[
+                    space_con & phi_c_con, prop + "-mean"
+                    ].to_numpy()[0]  # type: ignore
+            if prop_0 != 0:
+                df_copy.loc[space_con, prop + "-norm"] = \
+                    df_copy.loc[space_con, prop + "-mean"] / prop_0
+            else:
+                warnings.warn(
+                    f"The '{prop}' value in the absence of crowders "
+                    f"(phi_c=0) for space '{space}, the values of '{prop}-norm' "
+                    "at all the values of phi_c are set to 'np.nan'.",
+                    UserWarning
+                )
+                df_copy.loc[space_con, prop + "-norm"] = np.nan
     return df_copy
 
 
@@ -456,12 +472,7 @@ def all_in_one_equil_tseries_ens_avg(
 
     project_db = load_project_db(project, project_db)
 
-    if project in ["HnsCyl", "HnsCub"]:
-        required_cols = \
-             attributes + properties + ['space', 'phi_c_bulk_round', "nhns"]
-    else:
-        required_cols = \
-            attributes + properties + ['space', 'phi_c_bulk_round']
+    required_cols = attributes + properties
     missing_cols = set(required_cols) - set(project_db.columns)
     if missing_cols:
         raise KeyError(

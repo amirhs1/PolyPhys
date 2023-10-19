@@ -633,11 +633,24 @@ def whole_dist_mat_foci(
     return pair_hists, pair_rdfs, pair_tseries
 
 
-def enforce_single_patch_contact(contact_matrix: np.ndarray) -> np.ndarray:
+def enforce_single_patch_dir_contact(
+    contact_matrix: np.ndarray
+) -> np.ndarray:
     """Given a binary contact matrix of shape (n_monomers, n_patches), where
     each element represents whether a given monomer and patch are in direct
     contact or not, sets the values of all the elements after the first
     contact (the first non-zero element) in each column to 0.
+
+    Each H-NS patch can be in contact with one monomer. However, visual
+    inspection has revealed that a single patch can be in contact with more
+    than one monomers, which is an artifacts and does not have physical
+    grounds. The inspection has revealed these monomers are adjacent monomers
+    along the chain backbone. Therefore, it is decided to only consider the
+    contact of the H-NS patch with the first of these monomers as a real
+    contact and conisder the rest of contacts as artifacts. This means setting
+    the non-zero elements below the first
+    non-zero elements along a column equal to zero.
+
 
     Parameters
     ----------
@@ -772,6 +785,9 @@ def hns_binding(
     """Calculate the binding statistics of H-NS proteins to monomers.
 
     A H-NS protein consist of a core and two patches at the poles of the core.
+    In the `direct_contact` matrix, every two columns represent two patches of
+    the same H-NS proteins. We use this data to determine whether an H-NS
+    protein is in the unbound, dangled, or bridged mode.
 
     Parameters
     ----------
@@ -840,12 +856,12 @@ def hns_binding(
         n_hcore-binding_stats['n_hcore_free'][-1] -
         binding_stats['n_hcore_bridge'][-1]
         )
-    single_patch_contact = enforce_single_patch_contact(direct_contact)
-    cont_m_hpatch = generate_contact_matrix(single_patch_contact)
+    single_patch_dir_contact = enforce_single_patch_dir_contact(direct_contact)
+    cont_m_hpatch = generate_contact_matrix(single_patch_dir_contact)
     cont_m_hcore = np.zeros((n_mon, n_hcore))
-    # for i in range(n_hcore):
-    #    cont_m_hcore[:,i] = cont_m_hpatch[:, 2*i] | cont_m_hpatch[:, 2*i+1]
+    # Every two columns belongs to the same H-NS protein:
     cont_m_hcore = np.logical_or(cont_m_hpatch[:, ::2], cont_m_hpatch[:, 1::2])
+    # Symmetric squared monomer-monomer matrix:
     cont_m_m = np.matmul(cont_m_hcore, cont_m_hcore.T)  # symmetric
     cont_m_m_triu = np.triu(cont_m_m, 1)
     cont_m_m_nonzeros = np.array(np.where(cont_m_m_triu > 0)).T
@@ -857,3 +873,56 @@ def hns_binding(
         m_m_gen_dist[:, 2] > cis_threshold))
     np.add.at(loop_length_hist, m_m_gen_dist[:, 2], 1)
     return binding_stats, loop_length_hist
+
+
+def count_hns_clusters(
+    direct_contact: np.ndarray,
+) -> Tuple[Dict[str, List[int]], np.ndarray]:
+    """Calculate the clustering statistics of H-NS proteins along the polymer
+    chain.
+
+    The H-NS-core-H-nS-core contact symmetric squared matrix is created from the asymmetric unsquared distance marix monomer-H-NS-patch matrix.
+
+    Parameters
+    ----------
+    direct_contact: np.ndarray, shape (n_mon, n_hpatch)
+        A binary matrix where each element (i, j) is 1 if atoms i and j have a
+        contact, and 0 otherwise.
+
+    topology: str
+        Topology of the polymer containing monomers.
+
+    cis_threshold: int, default 4
+        The genomic distance in number of bonds (not number of monomers) less
+        than or equal (inclusive) to which a H-NS is of cis-binding type.
+
+    binding_stats: dict
+        A dictionary of binding statistics of H-NS proteins to which new
+        statisitics is appended.
+
+    loop_length_hist: list of array
+        A list of arrays where each array is of shape (n_bridged_pairs, 3).
+        Each row of the an array contaion the index of first monomer, index of
+        second one and the genomic distance between them.
+
+    Return
+    ------
+    binding_stats: dict
+        A new or updated dictionary contains the statistical data about the
+        binding of H-NS proteins to monomers.
+
+    loop_size_hist: np.ndarray
+        A new or updated arrat contains the histogram of loop sizes.
+    """
+    #
+    n_mon, n_hpatch = direct_contact.shape
+    n_hcore = n_hpatch // 2
+    single_patch_dir_contact = enforce_single_patch_dir_contact(direct_contact)
+    cont_m_hpatch = generate_contact_matrix(single_patch_dir_contact)
+    # Asymmetric unsquared monomer-H-NS-core matrix:
+    # Every two columns belongs to the same H-NS protein
+    cont_m_hcore = np.zeros((n_mon, n_hcore))
+    cont_m_hcore = np.logical_or(cont_m_hpatch[:, ::2], cont_m_hpatch[:, 1::2])
+    # Symmetric squared H-NS-core-H-NS-core matrix:
+    cont_hcore_hcore = np.matmul(cont_m_hcore.T, cont_m_hcore)
+    return cont_hcore_hcore

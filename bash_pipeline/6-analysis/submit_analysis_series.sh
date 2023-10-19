@@ -7,7 +7,6 @@
 #SBATCH --mail-type=ALL
 
 
-
 # Load python and generate your venv
 module load StdEnv/2020 python/3.9
 virtualenv --no-download "${SLURM_TMPDIR}"/env
