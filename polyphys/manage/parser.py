@@ -504,7 +504,7 @@ class SumRuleCyl(ParserBase):
             "bdump": "bdump",
             "adump": "adump",
         },
-        "ensemble": {"nmon": "N", "dcyl": "D", "dcrd": "ac", "ncrowd": "nc"},
+        "ensemble": {"nmon": "N", "dcyl": "D", "dcrowd": "ac", "ncrowd": "nc"},
         "space": {"nmon": "N", "dcyl": "D", "dcrowd": "ac"},
     }
     _physical_attributes: Dict[str, List[str]] = {
@@ -1802,27 +1802,27 @@ class HnsCub(ParserBase):
     }
     _physical_attributes: Dict[str, List[str]] = {
         "segment": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "bend_mm",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk", "eps_hc", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk", "dt", "ndump", "adump"
             ],
         "whole": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "bend_mm",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk", "eps_hc", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk",  "dt", "ndump", "adump"
             ],
         "ensemble_long": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "bend_mm",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
-            "phi_hns_bulk", "rho_hns_bulk", "eps_hc", "dt", "ndump", "adump"
+            "phi_hns_bulk", "rho_hns_bulk", "dt", "ndump", "adump"
             ],
         "ensemble": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
-            "dt", "ndump", "adump", "bend_mm"
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dt", "ndump", "adump"
             ],
         "space": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
-            "dt", "ndump", "adump", "bend_mm"
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
+            "dt", "ndump", "adump"
             ]
     }
     _geometry_error = "'HnsCub' is used for the 'cubic' geometry."
@@ -2190,7 +2190,7 @@ class HnsCyl(ParserBase):
         "segment": {  # lcube twice of l
             "nmon": "N",
             "bend_mm": "kbmm",
-            "eps_hc": "epshc",
+            #"eps_hc": "epshc",
             "nhns": "nh",
             "dcyl": "r",
             "dcrowd": "ac",
@@ -2202,7 +2202,7 @@ class HnsCyl(ParserBase):
         "whole": {  # lcube twice of l
             "nmon": "N",
             "bend_mm": "kbmm",
-            "eps_hc": "epshc",
+            #"eps_hc": "epshc",
             "nhns": "nh",
             "dcyl": "r",
             "dcrowd": "ac",
@@ -2213,7 +2213,7 @@ class HnsCyl(ParserBase):
         "ensemble_long": {  # lcube twice of l
             "nmon": "N",
             "bend_mm": "kbmm",
-            "eps_hc": "epshc",
+            #"eps_hc": "epshc",
             "nhns": "nh",
             "dcyl": "r",
             "dcrowd": "ac",
@@ -2223,7 +2223,7 @@ class HnsCyl(ParserBase):
         "ensemble": {
             "nmon": "N",
             "nhns": "nh",
-            "eps_hc": "epshc",
+            #"eps_hc": "epshc",
             "dcyl": "D",
             "dcrowd": "ac",
             "ncrowd": "nc",
@@ -2231,34 +2231,34 @@ class HnsCyl(ParserBase):
         "space": {
             "nmon": "N",
             "nhns": "nh",
-            "eps_hc": "epshc",
+            #"eps_hc": "epshc",
             "dcyl": "D",
             "dcrowd": "ac"
         },
     }
     _physical_attributes: Dict[str, List[str]] = {
         "segment": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
             "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
             ],
         "whole": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
             "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
             ],
         "ensemble_long": [
-            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hc",
+            "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others",
             "phi_m_bulk", "rho_m_bulk", "phi_c_bulk", "rho_c_bulk",
             "phi_hns_bulk", "rho_hns_bulk", "eps_hm", "dt", "ndump", "adump"
             ],
         "ensemble": [
             "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
-            "dt", "ndump", "adump", "eps_hc",
+            "dt", "ndump", "adump"
             ],
         "space": [
             "dmon", "mmon", "dhns", "mhns", "mcrowd", "eps_others", "eps_hm",
-            "dt", "ndump", "adump", "eps_hc",
+            "dt", "ndump", "adump"
             ]
     }
     _geometry_error = "'HnsCyl' is used for the 'cylindrical' geometry."

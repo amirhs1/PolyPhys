@@ -380,85 +380,72 @@ def save_parent(
 
 
 def database_path(
-    input_database: str,
+    old_database: str,
     phase: str,
-    stage: Optional[str] = None,
-    group: Optional[str] = None
+    stage: Optional[Union[str, None]] = None,
+    group: Optional[Union[str, None]] = None
 ) -> str:
     """
-    Creates a `stage` directory for a `group` at a given `phase` in
-    a `phase` directory. If the directory exists, raises error, and
-    return the path of the existing directory. If the `phase`
-    directory does not exist, `new_directory` creates it.
+    Constructs and creates a directory path based on the provided old_database
+    and the parameters phase, group, and stage. The new directory is created at
+    the same hierarchical level as the old_database.
 
-    The path of 'phase' directory is inferred from the `old_path` and
-    is at the same level of the 'phase' level of the `old_path`.
+    The old_database follows the naming pattern:
+        old_directory = prefix-old_phase-old_group-old_stage
 
-    General hierarchy of the `input_path`:
-        "root/parent1/.../parentN/old_phase/old_directory"
-    where the old_directory and the new_directory created below have
-    the similar pattern:
+    The new directory will follow the pattern:
+        new_directory = prefix-phase-group-stage
 
-        old_directory: "space-old_phase-old_group-old_stage"
-
-        old_directory: "space-old_phase-old_stage"
-            if the 'group' of old database is not important.
-
-        new_directory: "space-`phase`-`group`-`stage`"
+    Directory Hierarchy Examples:
+        old_database = root/parent1/.../parentN/old_phase/old_directory
+        new_database = root/parent1/.../parentN/new_phase/new_directory
 
     Parameters
     ----------
-    input_database: str
-        Path to directory.
+    old_database : str
+        Path to the existing directory.
     phase : {'simulationsAll', 'simulationsCont', 'logs', 'trjs', 'probe',
-    'analysis', 'viz'}
-        Name of the new phase
-    stage: {'segment', 'wholeSim', 'ens', 'ensAvg', 'space'}, default None
+             'analysis', 'viz'}
+        Name of the new phase.
+    stage : {'segment', 'wholeSim', 'ens', 'ensAvg', 'space'}, optional
         Stage of the new directory.
-    group: {'bug', 'nucleoid', 'all'}, default None
+    group : {'bug', 'nucleoid', 'all'}, optional
         Type of the particle group.
 
-    Return
-    ------
-    output_database: str
-        the string equivalent of the path to a new directory.
+    Returns
+    -------
+    new_database: str
+        Path to the newly created (or existing) directory.
     """
-    invalid_keyword(phase,
-                    ['simulationsAll', 'simulationsCont', 'logs',
-                     'trjs', 'probe', 'analysis', 'viz']
-                    )
-    # invalid_keyword(group, ['bug', 'nucleoid', 'all'])
-    # invalid_keyword(stage,
-    #                ['segment', 'wholeSim', 'ens', 'ensAvg', 'space']
-    #                )
-    old_path = pathlib.Path(input_database)  # PurePath object
-    old_space_parts = old_path.parts
-    # Space name of a directory
-    space_name = old_space_parts[-1].split('*')[0].split('-')[0]
-    # Directory full name
-    dir_name = [
-        part for part in [space_name, group, stage] if part is not None
-    ]
-    if len(dir_name) > 1:
-        dir_name = '-'.join(dir_name)
-    else:
-        dir_name = dir_name[0]
-    # Parents of old 'phase' directory, except 'root':
-    output_database = list(old_space_parts[:-2])
-    output_database.append(phase)  # New 'phase' path
-    output_database.append(dir_name)  # New directory path
-    output_database = '/'.join(output_database)
-    # The following is for fixing a bug in my design:
-    if output_database[0] == "/" and output_database[1] == "/":
-        output_database = output_database[1:]
-    output_database = pathlib.Path(output_database)
+    invalid_keyword(phase, ['simulationsAll', 'simulationsCont', 'logs',
+                            'trjs', 'probe', 'analysis', 'viz'])
+    invalid_keyword(group, ['bug', 'nucleoid', 'all', None])
+    invalid_keyword(stage, ['segment', 'wholeSim', 'ens', 'ensAvg', 'space',
+                            None])
+
+    old_path = pathlib.Path(old_database)
+    # Commmon prefix for both new and old databases:
+    prefix = old_path.parts[-1].split('*')[0].split('-')[0]
+    # Construct new_directory
+    new_directory = '-'.join([part for part in [prefix, group, stage] if part])
+
+    # Construct the new path
+    new_database_parts = list(old_path.parts[:-2])
+    new_database_parts.extend([phase, new_directory])
+    new_database = pathlib.Path('/'.join(new_database_parts))
+
+    # Ensure path doesn't start with double slashes
+    if str(new_database).startswith("//"):
+        new_database = pathlib.Path(str(new_database)[1:])
+
+    # Create the directory
     try:
-        output_database.mkdir(parents=True, exist_ok=False)
+        new_database.mkdir(parents=True, exist_ok=False)
     except FileExistsError as error:
         print(error)
         print("Files are saved/overwritten in an existing directory.")
     finally:
-        return str(output_database) + "/"
+        return str(new_database) + "/"
 
 
 def whole_from_segment(
