@@ -789,6 +789,12 @@ def hns_binding(
     the same H-NS proteins. We use this data to determine whether an H-NS
     protein is in the unbound, dangled, or bridged mode.
 
+    In principal, a patch cannot be in direct contact with more than one
+    monomer. However, due to many-body nature of the system and non-directional
+    nature of the forces, a patch can be in contact with 2 or 3 monomers in
+    very rare situations. Consequently, the some of rows along each column in
+    the direct_contact matrix can be more than one.
+
     Parameters
     ----------
     direct_contact: np.ndarray, shape (n_mon, n_hpatch)
@@ -840,12 +846,17 @@ def hns_binding(
     # number of H-Ns patches. However, the total number of engaged and
     # free patches is always less than or equal to the total number of H-NS
     # patches:
+    # These two 'n_m_hpatch_bound' and 'n_hpatch_engaged' have contributions
+    # from in valid double and triple binding of a patch.
     binding_stats['n_m_hpatch_bound'].append(np.sum(direct_contact))
     d_cont_per_hpatch = np.sum(direct_contact, axis=0)
     binding_stats['n_hpatch_engaged'].append(
         np.count_nonzero(d_cont_per_hpatch))
     binding_stats['n_hpatch_free'].append(
         n_hpatch - binding_stats['n_hpatch_engaged'][-1])
+    # The correct statistics for counting briding, dangling, and free H-NS
+    # proteins even if a patch is incorrectely in contact with 2 or more
+    # monomers:
     binding_stats['n_hcore_free'].append(np.sum(
         (d_cont_per_hpatch[0::2] == 0) & (d_cont_per_hpatch[1::2] == 0)
         ))
