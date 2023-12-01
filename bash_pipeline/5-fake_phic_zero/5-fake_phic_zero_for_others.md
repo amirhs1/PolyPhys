@@ -1,4 +1,4 @@
-# Copy simulation with phic=0 to this simulation set
+#cdf Copy simulation with phic=0 to this simulation set
 
 **Caution:** Different projects have differant **PACE_PROJECT_PATTERN** project patterns. Below, **PACE_PROJECT_PATTERN=ns#nl#al#D#ac#** which is for the **TransFociCyl** project.
 

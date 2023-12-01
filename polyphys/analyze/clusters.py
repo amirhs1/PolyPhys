@@ -774,7 +774,6 @@ def hns_genomic_distance(
     ))  # axis 0: monomer i, monomer j, genomic_dist_ij
     return contact_m_m_gen_dist
 
-
 def hns_binding(
     direct_contact: np.ndarray,
     topology: str,
@@ -886,54 +885,122 @@ def hns_binding(
     return binding_stats, loop_length_hist
 
 
-def count_hns_clusters(
-    direct_contact: np.ndarray,
-) -> Tuple[Dict[str, List[int]], np.ndarray]:
-    """Calculate the clustering statistics of H-NS proteins along the polymer
-    chain.
-
-    The H-NS-core-H-nS-core contact symmetric squared matrix is created from the asymmetric unsquared distance marix monomer-H-NS-patch matrix.
+def generate_mon_bind_direct(
+    mon_patch_dir: np.ndarray,
+    patch_per_binder: int
+) -> np.ndarray:
+    """Creates monomer-binder direct contact matrix from monomer-patch direct
+    contact matrix.
 
     Parameters
     ----------
-    direct_contact: np.ndarray, shape (n_mon, n_hpatch)
-        A binary matrix where each element (i, j) is 1 if atoms i and j have a
-        contact, and 0 otherwise.
+    mon_patch_direcy : np.ndarray
+        Monomer-patch direct contact matrix of size n_monomer *
+        (patch_per_binder)*n_binder
 
-    topology: str
-        Topology of the polymer containing monomers.
-
-    cis_threshold: int, default 4
-        The genomic distance in number of bonds (not number of monomers) less
-        than or equal (inclusive) to which a H-NS is of cis-binding type.
-
-    binding_stats: dict
-        A dictionary of binding statistics of H-NS proteins to which new
-        statisitics is appended.
-
-    loop_length_hist: list of array
-        A list of arrays where each array is of shape (n_bridged_pairs, 3).
-        Each row of the an array contaion the index of first monomer, index of
-        second one and the genomic distance between them.
-
-    Return
-    ------
-    binding_stats: dict
-        A new or updated dictionary contains the statistical data about the
-        binding of H-NS proteins to monomers.
-
-    loop_size_hist: np.ndarray
-        A new or updated arrat contains the histogram of loop sizes.
+    Returns
+    -------
+    np.ndarray
+        Monomer-binder direct contact matrix of size n_monomer * n_binder
     """
-    #
-    n_mon, n_hpatch = direct_contact.shape
-    n_hcore = n_hpatch // 2
-    single_patch_dir_contact = enforce_single_patch_dir_contact(direct_contact)
-    cont_m_hpatch = generate_contact_matrix(single_patch_dir_contact)
-    # Asymmetric unsquared monomer-H-NS-core matrix:
-    # Every two columns belongs to the same H-NS protein
-    cont_m_hcore = np.zeros((n_mon, n_hcore))
-    cont_m_hcore = np.logical_or(cont_m_hpatch[:, ::2], cont_m_hpatch[:, 1::2])
-    # Symmetric squared H-NS-core-H-NS-core matrix:
-    cont_hcore_hcore = np.matmul(cont_m_hcore.T, cont_m_hcore)
-    return cont_hcore_hcore
+    if len(mon_patch_dir.shape) != 2:
+        raise ValueError(
+            "The monomer-patch direct contact matrix is not a matrix!")
+    if mon_patch_dir.shape[1] % patch_per_binder != 0:
+        raise ValueError(
+            "The number of columns is nut a multiplier of"
+            f"'n={patch_per_binder}'"
+            )
+
+    n_bind = mon_patch_dir.shape[1] // patch_per_binder
+    mon_bind_dir = np.zeros((mon_patch_dir.shape[0], n_bind), dtype=np.int_)
+
+    for i in range(n_bind):
+        start_col = patch_per_binder * i
+        end_col = start_col + patch_per_binder
+        binder_patches = mon_patch_dir[:, start_col:end_col]
+        binder = np.any(binder_patches, axis=1).astype(int)
+        mon_bind_dir[:, i] = binder
+
+    return mon_bind_dir
+
+
+def split_binder_matrix(M_ij: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Splits the Monomer-Binder direct contact matrix into two matrices based
+    on whether a binder is a bridger or a dangler.
+
+    Parameters
+    ----------
+    M_ij (numpy.ndarray):
+        The monomer-binder direct contact matrix, where each row represents a
+        monomer and each column represents a binder. The matrix is binary,
+        with '1' indicating direct contact.
+
+    Returns
+    -------
+    Tuple of two numpy.ndarrays:
+        D_ij: The matrix representing dangling binders, where each binder is
+        attached to the polymer chain through only one patch.
+        B_ij: The matrix representing bridging binders, where each binder
+        connects two monomers using both patches.
+
+    The function calculates the sum of each column in M_ij to classify each
+    binder as dangling (sum = 1) or bridging (sum = 2) and populates the D_ij
+    and B_ij matrices accordingly.
+    """
+    n_monomers, n_binders = M_ij.shape
+    D_ij = np.zeros_like(M_ij)  # Dangling binders matrix
+    B_ij = np.zeros_like(M_ij)  # Bridging binders matrix
+
+    # Calculate the sum of each column to classify binders
+    column_sums = np.sum(M_ij, axis=0)
+
+    # Populate the D_ij and B_ij matrices
+    for binder in range(n_binders):
+        if column_sums[binder] == 1:
+            D_ij[:, binder] = M_ij[:, binder]
+        elif column_sums[binder] == 2:
+            B_ij[:, binder] = M_ij[:, binder]
+
+    return D_ij, B_ij
+
+
+def find_binder_clusters(M_ij: np.ndarray) -> np.ndarray:
+    """Identifies clusters of binders in a polymer system based on their
+    binding to the same or adjacent monomers.
+
+    Parameters
+    ----------
+    M_ij (numpy.ndarray)
+        Monomer-binder direct contact matrix, where rows represent monomers and
+        columns represent binders. It is a binary matrix with '1' indicating
+        direct contact.
+
+    Returns:
+    numpy.ndarray:
+        A square binary matrix where each element (i, j) is 1 if binders i and
+        j are part of the same cluster, and 0 otherwise. This matrix is
+        symmetric.
+
+    The function sets all diagonal elements of the output matrix to 1,
+    indicating each binder forms a cluster with itself. It then iterates over
+    all pairs of binders, checking for direct connections to the same monomer
+    or connections via adjacent monomers.
+    """
+    n_binders = M_ij.shape[1]
+    n_monomers = M_ij.shape[0]
+    B_ij = np.zeros((n_binders, n_binders), dtype=int)
+    np.fill_diagonal(B_ij, 1)
+    # Check for binders connected to the same monomer
+    for i in range(n_binders):
+        for j in range(i + 1, n_binders):
+            if np.any(M_ij[:, i] & M_ij[:, j]):
+                B_ij[i, j] = B_ij[j, i] = 1
+
+    # Check for binders connected to adjacent monomers
+    for monomer in range(n_monomers - 1):
+        adjacent_binders = np.where(M_ij[monomer] | M_ij[monomer + 1])[0]
+        for binder in adjacent_binders:
+            B_ij[binder, adjacent_binders] = 1
+
+    return B_ij
