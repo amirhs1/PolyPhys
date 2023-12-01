@@ -175,14 +175,14 @@ PROJECT_DETAILS = {
 
 TITLE_STYLES = {
     'TransFociCub': {
-        'title': lambda s: fr"$N_m={s.nmon_small}, N_M={s.nmon_large}, a_M={s.dmon_large}, a_c={s.dcrowd}$",
-        'short': lambda s: fr"$a_M={s.dmon_large}$",
-        'universe': lambda s: fr"$N_m={s.nmon_small}, N_M={s.nmon_large}, a_c={s.dcrowd}$"
+        'title': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, a_c={s.dcrowd}$",
+        'short': lambda s: fr"$a_l={s.dmon_large}$",
+        'universe': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, a_c={s.dcrowd}$"
     },
     'TransFociCyl': {
-        'title': lambda s: fr"$N_m={s.nmon_small}, N_M={s.nmon_large}, D={s.dcyl}, a_M={s.dmon_large}, a_c={s.dcrowd}$",
-        'short': lambda s: fr"$a_M={s.dmon_large}$",
-        'universe': lambda s: fr"$N_m={s.nmon_small}, N_M={s.nmon_large}, D={s.dcyl}, a_c={s.dcrowd}$"
+        'title': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, D={s.dcyl}, a_c={s.dcrowd}$",
+        'short': lambda s: fr"$a_l={s.dmon_large}$",
+        'universe': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, D={s.dcyl}, a_c={s.dcrowd}$"
     },
     'SumRuleCyl': {
         'title': lambda s: fr"$N={s.nmon}, D={s.dcyl}, a_c={s.dcrowd}$",
@@ -338,17 +338,19 @@ ATTRIBUTE_LABELS = {
         r'${(\sum_{\alpha}\phi_{\alpha}(|z|)/a_{\alpha})}/{(\sum_{\alpha}\phi_{\alpha}(\infty)/a_{\alpha})}$',
     'zPhi-norm-old-Sum_constant':
         r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_{\alpha}\phi_{\alpha}(\infty)/a_{\alpha})}$',
-    'rcut_bonding': r'$r_{{thres}}/a_m$',
-    'rcut_bonding-norm': r'$r_{{thres}}/(a_M+a_c)$',
+    'rcut_bonding-foci': r'$r_{{thres}}/a_s$',
+    'rcut_bonding-foci-norm': r'$r_{{thres}}/(a_l+a_c)$',
     'bondsHistFoci-bin_center': r'$x_d$',
     'bondsHistFoci-bin_center-average': r'$\langle x_d\rangle$',
     'bondsHistFoci-norm': r'$p$',
     'bondsHistFoci-norm-full_name': r'$p(x_d)$',
+    'bondsHistFoci-norm-full_name-cdf': r'$\mathcal{P}(x_d)$',
     'bondsHistFoci-norm-bonding_threshold': r'$p(r_{thres};x_d)$',
     'clustersHistFoci-bin_center': r'$x_c$',
     'clustersHistFoci-bin_center-average': r'$\langle x_c\rangle$',
     'clustersHistFoci-norm': r'$p$',
     'clustersHistFoci-norm-full_name': r'$p(x_c)$',
+    'clustersHistFoci-norm-full_name-cdf': r'$\mathcal{P}(x_c)$',
     'pairDistHistFoci-legend_title':
         r'$(n_i,n_j,\Delta n_{ij}/\langle l_m \rangle)$',
     'pairDistHistFoci-legend_title-index_diff':
@@ -375,7 +377,7 @@ ATTRIBUTE_LABELS = {
     "t_index": r"${t}/{\delta t}$",
     "lag_time": r"${t}_{lag}$",
     "lag_index": r"${t}_{lag}/{\Delta t}$",
-    "dmon_large": "$a_M$",
+    "dmon_large": "$a_l$",
     "dcrowd": "$a_c$",
     "dcyl": "$D$",
     "lcyl": "$Z$",
@@ -386,8 +388,9 @@ ATTRIBUTE_LABELS = {
     'index_difference':  r"$\Delta n$",
     'loopLengthHistMon-norm': r'$f$',
     'loopLengthHistMon-norm-full_name': r'$f(\Delta n)$',
-    'bin_center': '$r/a_m$',  # Pair distance between two monomers in their PDF
-    'bin_center-norm-r-dmon_large': '${{r}}/{{a_M}}$',
+    'bin_center-foci': '$r/a_s$',
+    'bin_center': '$r/a_m$',
+    'bin_center-norm-r-dmon_large': '${{r}}/{{a_l}}$',
     'bin_center-norm': '${{r}}/{{r_{max}}}$',
     'bin_center-r': '$r$',
     'bin_center-norm-r-dcyl': '${{2r}}/{{D}}$',
@@ -669,14 +672,14 @@ def looping_plotter(plotting_df):
             'linewidth': 2}
         axes[0].plot(
             'vfrc_crowd', 'looping_p', data=plotting_df, c=colors[0], **style)
-        axes[0].set_title(r'$N={},a_M={},a_c={}$'.format(
+        axes[0].set_title(r'$N={},a_l={},a_c={}$'.format(
             nmon, dmon_large, dcrowd), fontsize=20, fontname=font_name)
         axes[0].set_xlim(-0.002, 0.302)
         axes[0].set_ylim(-0.002, 0.16)
         axes[0].set_ylabel(
             r'$P_L(R_{min},R_{max})$', fontsize=18, fontname=font_name)
         axes[0].text(
-            0.002, 0.11, r'$\Delta=[0,a_M+a_m]$', fontsize=18, va='bottom',
+            0.002, 0.11, r'$\Delta=[0,a_l+a_m]$', fontsize=18, va='bottom',
             fontname=font_name)
         axes[0].xaxis.set_major_locator(mpl.ticker.MultipleLocator(0.05))
         axes[0].xaxis.set_minor_locator(mpl.ticker.MultipleLocator(0.025))
