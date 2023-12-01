@@ -36,7 +36,7 @@ Follow these instructions to restart a crashed simulation; the main idea is to f
 
 ## Step 2: Generating a complete simulation directory: See *merge_outputs* directory
 
-1. Edit and run **copy_files_to_complete** to copy trajectory, log, and data files from incomplete and restart directories to the new directories.
+1. **CAUTION** the new **trj_bug_merger-___** does all the steps together. Edit and run **copy_files_to_complete** to copy trajectory, log, and data files from incomplete and restart directories to the new directories. 
    1. **Caution** : check the name of **bug**, **log**, and **all** files since they should be different for **incomplete** and **restart** files.
 2. Edit and run **trj_bug_merger-___** where **___** is the name of **project** to merge the **bug** incomplete and restart trajectories, creating full trajectories.
 3. Fixing Log files:
