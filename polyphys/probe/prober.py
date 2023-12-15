@@ -2627,6 +2627,107 @@ def hns_nucleoid_cub(
     print('done.')
 
 
+def hns_nucleoid_cub_dis_hc_hc_cluster(
+    topology: str,
+    trajectory: str,
+    lineage: str,
+    save_to: str = './',
+    continuous: bool = False
+) -> None:
+    """Runs various analyses on a `lineage` simulation of a 'nucleoid' atom
+    group in the `geometry` of interest.
+
+    Note
+    ----
+    In the HNS-DNA-Crowder project, we have a single semi-flexible ring
+    polymer (called "bug") and several H-NS proteins (each formed of a core and
+    two poles or patches) crowded by soft LJ spheres (crowders) in free
+    ("cubic" geometry) or confined ("cylindrical" geometry) space.
+
+    In this project, coordinates are wrapped and unscaled in a trajectory or
+    topology file; moreover, the coordinated are recentered with respect to
+    the center of mass of the single polymer (bug).
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    if (lineage == 'segment') & (continuous is False):
+        warnings.warn(
+            "lineage is "
+            f"'{lineage}' "
+            "and 'continuous' is "
+            f"'{continuous}. "
+            "Please ensure the "
+            f"'{trajectory}' is NOT part of a sequence of trajectories.",
+            UserWarning
+        )
+    print("Setting the name of analyze file...")
+    sim_info = HnsCub(
+        trajectory,
+        lineage,
+        'cubic',
+        'nucleoid',
+        'ring'
+    )
+    sim_name = sim_info.lineage_name + "-" + sim_info.group
+    print("\n" + sim_name + " is analyzing...\n")
+    # LJ time difference between two consecutive frames:
+    time_unit = sim_info.dmon * np.sqrt(
+        sim_info.mmon * sim_info.eps_others)  # LJ time unit
+    # Sampling via LAMMPS dump every 'ndump', so trajectory dt is:
+    sim_real_dt = sim_info.ndump * sim_info.dt * time_unit
+    cluster_cutoff = sim_info.dhns + sim_info.dcrowd
+    cell = mda.Universe(
+        topology, trajectory, topology_format='DATA',
+        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
+        atom_style="id resid type x y z", dt=sim_real_dt,
+        )
+    if continuous:
+        sliced_trj = cell.trajectory[0: -1]
+        n_frames = cell.trajectory.n_frames - 1
+    else:
+        sliced_trj = cell.trajectory
+        n_frames = cell.trajectory.n_frames
+    # selecting atom groups:
+    hns_core = cell.select_atoms('type 3')  # the hns cores
+    # defining collectors
+    bonds_t = np.zeros((n_frames, sim_info.nhns), dtype=int)
+    clusters_t = np.zeros((n_frames, sim_info.nhns + 1), dtype=int)
+    for idx, _ in enumerate(sliced_trj):
+        # distance matrices
+        # hns core:
+        dist_mat = clusters.self_dist_array(hns_core.positions)
+        # keep atom ids on the diag
+        dir_contacts = clusters.find_direct_contacts(dist_mat, cluster_cutoff)
+        bonds_stat = clusters.count_foci_bonds(dir_contacts)
+        bonds_t[idx] = bonds_stat
+        contacts = clusters.generate_contact_matrix(dir_contacts)
+        clusters_stat = clusters.count_foci_clusters(contacts)
+        clusters_t[idx] = clusters_stat
+    # distance matirx
+    np.save(save_to + sim_name + '-bondsHistDirDepTHnsCore.npy', bonds_t)
+    np.save(save_to + sim_name + '-clustersHistDirDepTHnsCore.npy', clusters_t)
+    print('done.')
+
+
 def hns_all_cub(
     topology: str,
     trajectory: str,

@@ -1,15 +1,12 @@
 #!/bin/bash
+# CUATION: check folder pattern and namings
 
-for incomplete_folder in N*_incomplete; do
+for incomplete_folder in N*_res; do
     # Extract N* pattern from folder name
     pattern=$(echo "$incomplete_folder" | cut -d "_" -f 1)
     echo $pattern
     # Corresponding res folder
-    res_folder="${pattern}_res"
-    # Count the number of .all.lammpstrj.gz files
-    jdone=$(ls -l ${incomplete_folder}/${pattern}*.gz | wc -l)
-    jcount=$((21 - jdone))
-    echo $jcount
+    res_folder="${pattern}_cont"
     # Copy restart.lmp to N*_res folder
     cp "./restart.lmp" "${res_folder}/"
 
