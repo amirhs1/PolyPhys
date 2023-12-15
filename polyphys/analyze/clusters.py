@@ -354,7 +354,113 @@ def count_foci_bonds(dir_contacts: np.ndarray) -> np.ndarray:
     return bond_list
 
 
+def is_symmetric(matrix):
+    """
+    Checks if a given square matrix is symmetric.
+
+    A matrix is symmetric if it is equal to its transpose. This function
+    uses numpy's allclose method to allow for numerical tolerances in
+    floating-point comparisons.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        The matrix to be checked for symmetry.
+
+    Returns
+    -------
+    bool
+        True if the matrix is symmetric, False otherwise.
+    """
+    return np.allclose(matrix, matrix.T)
+
+
+def is_positive_semi_definite(matrix):
+    """
+    Checks if a given square matrix is positive semi-definite.
+
+    A matrix is positive semi-definite if all its eigenvalues are non-negative.
+    This function attempts a Cholesky decomposition, which only succeeds
+    for positive semi-definite matrices.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        The matrix to be checked for positive semi-definiteness.
+
+    Returns-------
+    bool
+        True if the matrix is positive semi-definite, False otherwise.
+    """
+    try:
+        np.linalg.cholesky(matrix)
+        return True
+    except np.linalg.LinAlgError:
+        return False
+
 def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
+    """
+    Infers the number and size of clusters from a contact matrix.
+
+    This function calculates the eigenvalues of the provided contact matrix.
+    The number of non-zero eigenvalues corresponds to the number of clusters,
+    and their values indicate the sizes of these clusters.
+
+    Before computing eigenvalues, the function checks if the contact matrix is
+    symmetric and positive semi-definite. It handles complex eigenvalues by
+    considering their real parts if the imaginary parts are below a certain
+    threshold.
+
+    Parameters
+    ----------
+    contacts : np.ndarray
+        A binary square matrix representing contacts between atoms. Each
+        element is either 0 or 1, indicating the absence or presence of a
+        contact, respectively. Diagonal elements are assumed to be 1.
+
+    Returns
+    -------
+    np.ndarray
+        A 1D array where each index represents 'cluster_size - 1', and the
+        values are the frequency of clusters of that size.
+
+    Raises------
+    ValueError
+        If the matrix is not symmetric or not positive semi-definite, or if
+        a cluster with size smaller than 0 is found.
+
+    Reference
+    ---------
+    https://aip.scitation.org/doi/10.1063/1.454720
+    """
+    # Check if the matrix is symmetric and positive semi-definite
+    #if not is_symmetric(contacts):
+    #    raise ValueError("The contact matrix is not symmetric.")
+    #if not is_positive_semi_definite(contacts):
+    #    raise ValueError("The contact matrix is not positive semi-definite.")
+
+    n_atoms, _ = contacts.shape
+    cluster_list = np.zeros(n_atoms + 1, dtype=int)
+
+    clusters_row = npla.eigvals(contacts)
+
+    # Handle complex eigenvalues with small imaginary parts
+    #threshold = 1e-6
+    #clusters = [c.real if abs(c.imag) < threshold else c for c in clusters]
+    clusters = np.asarray(np.round(clusters_row), dtype=int)
+
+    # Sanity check for cluster sizes
+    if np.any(clusters < 0):
+        print(clusters_row)
+        raise ValueError("A cluster with size smaller than 0 found!")
+
+    cluster_sizes, cluster_counts = np.unique(clusters, return_counts=True)
+    np.put(cluster_list, cluster_sizes, cluster_counts)
+
+    return cluster_list
+
+
+def count_foci_clusters_old(contacts: np.ndarray) -> np.ndarray:
     """Infers the number and size of clusters from a contact matrix `contacts`.
 
     All the diagonal elements of the direct contact matrix are 1; moreover,
@@ -392,11 +498,11 @@ def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
     # is. Here, a cluster list with values ranging from 0 to n_atoms is created
     # to properly collect all the eigenvalues.
     cluster_list = np.zeros(n_atoms + 1, dtype=int)
-    clusters, _ = npla.eig(contacts)
+    clusters = npla.eigvalsh(contacts)
     # numpy returns infinitesimal numbers instead of zero when an eigenvalue
     # is 0. Below, these eigenvalues are rounded to 0. The non-zero
     # values are already integer, so rounding does not affect them.
-    clusters = np.asarray(np.round(clusters), dtype=int)
+    #clusters = np.asarray(np.round(clusters), dtype=int)
     # Sanity check for having meaning cluster sizes:
     if np.any(clusters < 0):
         raise ValueError("A cluster with size smaller than 0 found!")

@@ -79,31 +79,32 @@ for ens_avg_space_db in ens_avg_space_dbs:
             project_details['group'],
             project_details['geometry'],
             project_details['topology'],
-            divisor = project_details['divisor'],
-            is_save = False  # if True, save per property per space
+            divisor=project_details['divisor'],
+            is_save=False  # if True, save per property per space
         )
         if project in ['HnsCyl', 'HnsCub']:
-            ens_avg['phi_c_bulk_round'].replace(0.09,0.08, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.15,0.16, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.21,0.2, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.31,0.32, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.09, 0.08, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.15, 0.16, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.21, 0.2, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.31, 0.32, inplace=True)
             ens_avg = \
-                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]),:]
-        elif project in ['TransFociCyl','TransFociCub']:
+                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]), :]
+        elif project in ['TransFociCyl', 'TransFociCub']:
             ens_avg = \
-                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.025, 0.05, 0.075, 0.125, 0.175]),:]
+                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
+                    [0.025, 0.05, 0.075, 0.125, 0.175]), :]
         else:
             raise ValueError("The 'phi_c drop' condition is not defined for "
-                            f"'{project}' project.")
+                             f"'{project}' project.")
         ens_avgs.append(ens_avg)
-    ens_avgs = pd.concat(ens_avgs,axis=1)
+    ens_avgs = pd.concat(ens_avgs, axis=1)
     # drop duplicated columns:
-    ens_avgs = ens_avgs.loc[:,~ens_avgs.columns.duplicated()]
-    output_name = analysis_db +  "-".join(
+    ens_avgs = ens_avgs.loc[:, ~ens_avgs.columns.duplicated()]
+    output_name = analysis_db + "-".join(
         [space,
          project_details['group'],
          "chainSize-acf.parquet.brotli"
-        ]
+         ]
     )
     ens_avgs.to_parquet(output_name, index=False, compression='brotli')
 
@@ -118,7 +119,7 @@ ens_avg_space_dbs = [
 ]
 print(ens_avg_space_dbs)
 # list of unique property_measures:
-filepath = ens_avg_space_dbs[0] + '*' + project_details['hierarchy'] + '.csv'  # physical properties in all the
+filepath = ens_avg_space_dbs[0] + '*' + project_details['hierarchy'] + '.csv'
 _, uniq_props_measures = organizer.unique_property(
     filepath, 2, ["-" + phase], drop_properties=['stamps'])
 props_tseries = list(
@@ -144,26 +145,27 @@ for ens_avg_space_db in ens_avg_space_dbs:
             project_details['group'],
             project_details['geometry'],
             project_details['topology'],
-            divisor = project_details['divisor'],
-            is_save = False  # if True, save per property per space
+            divisor=project_details['divisor'],
+            is_save=False  # if True, save per property per space
         )
         if project in ['HnsCyl', 'HnsCub']:
-            ens_avg['phi_c_bulk_round'].replace(0.09,0.08, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.15,0.16, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.21,0.2, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.31,0.32, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.09, 0.08, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.15, 0.16, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.21, 0.2, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.31, 0.32, inplace=True)
             ens_avg = \
-                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]),:]
-        elif project in ['TransFociCyl','TransFociCub']:
+                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]), :]
+        elif project in ['TransFociCyl', 'TransFociCub']:
             ens_avg = \
-                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.025, 0.05, 0.075, 0.125, 0.175]),:]
+                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
+                    [0.025, 0.05, 0.075, 0.125, 0.175]), :]
         else:
             raise ValueError("The 'phi_c drop' condition is not defined for "
-                            f"'{project}' project.")
+                             f"'{project}' project.")
         ens_avgs.append(ens_avg)
-    ens_avgs = pd.concat(ens_avgs,axis=1)
+    ens_avgs = pd.concat(ens_avgs, axis=1)
     # drop duplicated columns:
-    ens_avgs = ens_avgs.loc[:,~ens_avgs.columns.duplicated()]
+    ens_avgs = ens_avgs.loc[:, ~ens_avgs.columns.duplicated()]
     output_name = analysis_db +  "-".join(
         [space,  project_details['group'], "chainSize.parquet.brotli"]
     )
@@ -171,7 +173,8 @@ for ens_avg_space_db in ens_avg_space_dbs:
 
 # Ensemble-averaged time-averaged properties
 spaces = glob(analysis_db + project_details['space_pat'])
-spaces = sorted(list(set([space.split('/')[-1].split('-')[0] for space in spaces])))
+spaces = sorted(
+    list(set([space.split('/')[-1].split('-')[0] for space in spaces])))
 save_space = True
 equili_props_wholes = api.all_in_one_equil_tseries(
     project,
@@ -241,26 +244,27 @@ for ens_avg_space_db in ens_avg_space_dbs:
             project_details['group'],
             project_details['geometry'],
             project_details['topology'],
-            divisor = project_details['divisor'],
+            divisor=project_details['divisor'],
             bin_center=bonds_per_topology[polymer_topo],
             normalize=False,
             is_save=False
         )
         if project in ['HnsCyl', 'HnsCub']:
-            ens_avg['phi_c_bulk_round'].replace(0.09,0.08, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.15,0.16, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.21,0.2, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.31,0.32, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.09, 0.08, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.15, 0.16, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.21, 0.2, inplace=True)
+            ens_avg['phi_c_bulk_round'].replace(0.31, 0.32, inplace=True)
             ens_avg = \
-                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]),:]
-        elif project in ['TransFociCyl','TransFociCub']:
+                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]), :]
+        elif project in ['TransFociCyl', 'TransFociCub']:
             ens_avg = \
-                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.025, 0.05, 0.075, 0.125, 0.175]),:]
+                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
+                    [0.025, 0.05, 0.075, 0.125, 0.175]), :]
         else:
             raise ValueError("The 'phi_c drop' condition is not defined for "
-                            f"'{project}' project.")
+                             f"'{project}' project.")
         ens_avgs_list.append(ens_avg)
-    ens_avgs = pd.concat(ens_avgs_list,axis=1)
+    ens_avgs = pd.concat(ens_avgs_list, axis=1)
     # drop duplicated columns:
     ens_avgs = ens_avgs.loc[:, ~ens_avgs.columns.duplicated()]
     ens_avgs.reset_index(inplace=True, drop=True)
@@ -285,7 +289,7 @@ ens_avg_space_dbs = [
         project_details['group'] + '-' + phase
     )
 ]
-filepath = ens_avg_space_dbs[0] + project_details['hierarchy'] + ext # physical properties in all the
+filepath = ens_avg_space_dbs[0] + project_details['hierarchy'] + ext
 uniq_props,  _ = organizer.unique_property(
     filepath, 2, ["-" + phase], drop_properties=['stamps'])
 bond_props = list(
@@ -319,27 +323,28 @@ for ens_avg_space_db in ens_avg_space_dbs:
         project_details['group'],
         project_details['geometry'],
         project_details['topology'],
-        divisor = project_details['divisor'],
+        divisor=project_details['divisor'],
         bin_center=max_loop_per_topology[polymer_topo],
         normalize=False,
         is_save=False
     )
-    if project in ['HnsCyl', 'HnsCub']: 
-            ens_avg['phi_c_bulk_round'].replace(0.09,0.08, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.15,0.16, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.21,0.2, inplace=True)
-            ens_avg['phi_c_bulk_round'].replace(0.31,0.32, inplace=True)
-            ens_avg = \
-                ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]),:]
-    elif project in ['TransFociCyl','TransFociCub']:
+    if project in ['HnsCyl', 'HnsCub']:
+        ens_avg['phi_c_bulk_round'].replace(0.09, 0.08, inplace=True)
+        ens_avg['phi_c_bulk_round'].replace(0.15, 0.16, inplace=True)
+        ens_avg['phi_c_bulk_round'].replace(0.21, 0.2, inplace=True)
+        ens_avg['phi_c_bulk_round'].replace(0.31, 0.32, inplace=True)
         ens_avg = \
-            ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.025, 0.05, 0.075, 0.125, 0.175]),:]
+            ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin([0.06, 0.18]), :]
+    elif project in ['TransFociCyl', 'TransFociCub']:
+        ens_avg = \
+            ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
+                [0.025, 0.05, 0.075, 0.125, 0.175]), :]
     else:
         raise ValueError("The 'phi_c drop' condition is not defined for "
-                        f"'{project}' project.")
+                         f"'{project}' project.")
     ens_avg.rename(columns={'bin_center': 'genomic_distance'}, inplace=True)
     # drop duplicated columns:
-    ens_avg = ens_avg.loc[:,~ens_avg.columns.duplicated()]
+    ens_avg = ens_avg.loc[:, ~ens_avg.columns.duplicated()]
     ens_avg.reset_index(inplace=True, drop=True)
     project_all_in_one_list.append(ens_avg)
 project_all_in_one = pd.concat(project_all_in_one_list,axis=0)
@@ -391,20 +396,24 @@ for (prop, direction) in dir_prop_pairs:
                 is_save=False
             )
             if project in ['HnsCyl', 'HnsCub']:
-                per_space['phi_c_bulk_round'].replace(0.09,0.08, inplace=True)
-                per_space['phi_c_bulk_round'].replace(0.15,0.16, inplace=True)
-                per_space['phi_c_bulk_round'].replace(0.21,0.2, inplace=True)
-                per_space['phi_c_bulk_round'].replace(0.31,0.32, inplace=True)
+                per_space['phi_c_bulk_round'].replace(0.09, 0.08, inplace=True)
+                per_space['phi_c_bulk_round'].replace(0.15, 0.16, inplace=True)
+                per_space['phi_c_bulk_round'].replace(0.21, 0.2, inplace=True)
+                per_space['phi_c_bulk_round'].replace(0.31, 0.32, inplace=True)
                 per_space = \
-                    per_space.loc[~per_space['phi_c_bulk_round'].isin([0.06, 0.18]),:]
-            elif project in ['TransFociCyl','TransFociCub']:
+                    per_space.loc[~per_space['phi_c_bulk_round'].isin(
+                        [0.06, 0.18]), :]
+            elif project in ['TransFociCyl', 'TransFociCub']:
                 per_space = \
-                    per_space.loc[~per_space['phi_c_bulk_round'].isin([0.025, 0.05, 0.075, 0.125, 0.175]),:]
+                    per_space.loc[~per_space['phi_c_bulk_round'].isin(
+                        [0.025, 0.05, 0.075, 0.125, 0.175]), :]
             else:
-                raise ValueError("The 'phi_c drop' condition is not defined for "
-                                f"'{project}' project.")
+                raise ValueError(
+                    "The 'phi_c drop' condition is not defined for"
+                    f" '{project}' project."
+                    )
             per_species_list.append(per_space)
-        per_species = pd.concat(per_species_list,axis=0)
+        per_species = pd.concat(per_species_list, axis=0)
         per_species = per_species.loc[:, ~per_species.columns.duplicated()]
         per_species.reset_index(inplace=True, drop=True)
         all_in_one_list.append(per_species)
