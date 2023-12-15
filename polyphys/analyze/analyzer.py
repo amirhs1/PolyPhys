@@ -151,8 +151,17 @@ ANALYSIS_DETAILS_NUCLEOID = {
         'is_segment': False,
         'has_stamp': True,
         'nonscalar_mat_t_properties': [
+            # property_, species, group
+            ('principalT', 'Mon', 'nucleoid'),
+        ],
+        'nonscalar_hist_t_properties': [
             # property_, species, group, avg_axis
-            ('principalT', 'Mon', 'nucleoid')
+            ('bondsHistT', 'HnsCore', 'nucleoid', 0),
+            ('bondsHistDangleT', 'HnsCore', 'nucleoid', 0),
+            ('bondsHistBridgeT', 'HnsCore', 'nucleoid', 0),
+            ('clustersHistT', 'HnsCore', 'nucleoid', 0),
+            ('clustersHistDangleT', 'HnsCore', 'nucleoid', 0),
+            ('clustersHistBridgeT', 'HnsCore', 'nucleoid', 0)
         ],
         'tseries_properties': [
             # treat these two as timeseries!
@@ -1105,6 +1114,7 @@ def nonscalar_time_series(
                     observations,
                     fmts=['-' + property_ + species + '.npy']
                 )
+            print(tseries)
             if is_segment is True:
                 wholes = whole_from_segment(
                     property_ + species,
@@ -1129,7 +1139,9 @@ def nonscalar_time_series(
             # drop the first item and what it means.
             # See `polyphys.probe.prober.trans_fuci_bug` for how
             # `count_clusters` applied.
-            if property_ == 'clustersHistT':
+            cluster_list = \
+                ['clustersHistT', 'clustersHistDangleT', 'clustersHistBridgeT']
+            if property_ in cluster_list:
                 wholes = {
                     whole_name: whole_array[:, 1:]
                     for whole_name, whole_array in wholes.items()
