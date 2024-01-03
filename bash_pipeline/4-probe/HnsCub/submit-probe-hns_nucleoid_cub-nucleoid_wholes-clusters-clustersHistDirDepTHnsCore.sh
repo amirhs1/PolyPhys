@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --ntasks=32
+#SBATCH --ntasks=8
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=3G
-#SBATCH --time=00-10:00   
+#SBATCH --time=00-01:30   
 #SBATCH --account=rrg-byha
 #SBATCH --mail-user=mr.a.h.saadeghi@gmail.com  
 #SBATCH --mail-type=ALL     
@@ -30,7 +30,7 @@ pip install --no-index MDAnalysis==2.3.0
 exe(){
 dir=${1}
 file=$(echo "$dir" | cut -d / -f 1)
-(cd "${file}" && python probe-hns_nucleoid_cub-nucleoid_wholes_clusters.py > "${file}"-probe-hns_nucleoid_cub-nucleoid_wholes_clusters.txt)
+(cd "${file}" && python probe-hns_nucleoid_cub-nucleoid_wholes-clusters-clustersHistDirDepTHnsCore.py > "${file}"-probe-hns_nucleoid_cub-nucleoid_wholes-clusters-clustersHistDirDepTHnsCore.txt)
 }
 
 echo "Starting run at: $(date)"
@@ -40,6 +40,6 @@ echo "Starting run at: $(date)"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-hns_nucleoid_cub-nucleoid_wholes_clusters.txt ::: N*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-hns_nucleoid_cub-nucleoid_wholes-clusters-clustersHistDirDepTHnsCore.txt ::: N*/
 
 echo "Program glost_launch finished with exit code $? at: $(date)"

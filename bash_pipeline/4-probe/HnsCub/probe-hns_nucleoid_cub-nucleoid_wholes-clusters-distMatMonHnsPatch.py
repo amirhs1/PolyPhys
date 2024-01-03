@@ -47,26 +47,25 @@ for idx in range(len(wholes)):
         dir_m_hp = clusters.enforce_single_patch_dir_contact(dir_m_hp_dirty)
         dir_m_hc = clusters.generate_mon_bind_direct(dir_m_hp, 2)
         dir_m_hc_dangler, dir_m_hc_bridger = clusters.split_binder_matrix(dir_m_hc)
-
         # bound binder direct contact matirx
         dir_hc_hc = clusters.find_binder_clusters(dir_m_hc)
         bonds_stat = clusters.count_foci_bonds(dir_hc_hc)
         bonds_t[idx] = bonds_stat 
-        full_hc_hc = clusters.generate_contact_matrix(dir_hc_hc)
+        full_hc_hc = clusters.generate_contact_matrix_new(dir_hc_hc)
         clusters_stat = clusters.count_foci_clusters(full_hc_hc)
         clusters_t[idx] = clusters_stat
         # dangling binder direct contact matirx
         dir_hc_hc = clusters.find_binder_clusters(dir_m_hc_dangler)
         bonds_stat = clusters.count_foci_bonds(dir_hc_hc)
         bonds_dangler_t[idx] = bonds_stat
-        full_hc_hc = clusters.generate_contact_matrix(dir_hc_hc)
+        full_hc_hc = clusters.generate_contact_matrix_new(dir_hc_hc)
         clusters_stat = clusters.count_foci_clusters(full_hc_hc)
         clusters_dangler_t[idx] = clusters_stat
         # bridging binder direct contact matirx
         dir_hc_hc = clusters.find_binder_clusters(dir_m_hc_bridger) 
         bonds_stat = clusters.count_foci_bonds(dir_hc_hc)
         bonds_bridger_t[idx] = bonds_stat
-        full_hc_hc = clusters.generate_contact_matrix(dir_hc_hc)
+        full_hc_hc = clusters.generate_contact_matrix_new(dir_hc_hc)
         clusters_stat = clusters.count_foci_clusters(full_hc_hc)
         clusters_bridger_t[idx] = clusters_stat
 
