@@ -210,6 +210,65 @@ def find_direct_contacts(
     return np.asarray(direct_contacts, dtype=int)
 
 
+def generate_contact_matrix_new(direct_contacts: np.ndarray) -> np.ndarray:
+    """
+    Generates a symmetric matrix of all contacts between pairs of atoms
+    including both direct and indirect contacts, from a matrix of direct
+    contacts between pairs of atoms.
+
+    The `direct_contacts` matrix is a binary matrix of the shape
+    (n_atoms, m_atoms), where any of 'm_atoms' along the columns any be in
+    direct contact with any of 'n_atoms' along the rows.
+    If the `direct_contact` matrix is the symmetric self-direct square matrix
+    of a system with 'n_atoms', then the output is also symmetric.
+    See `find_direct_contacts` function.
+
+    Parameters
+    ----------
+    direct_contacts : np.ndarray, shape (n_atoms, m_atoms)
+        A binary matrix where each element (i, j) is 1 if atoms i and j have a
+        direct contact, and 0 otherwise.
+
+    Returns
+    -------
+    contact_matrix : np.ndarray, shape (n_atoms, m_atoms)
+        A binary matrix where each element (i, j) is 1 if atoms i and j have a
+        contact, and 0 otherwise.
+
+    References
+    ----------
+    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
+    calculations of cluster statistics in continuum models of composite
+    morphology. The Journal of Chemical Physics,
+    89(1), 668-676. https://doi.org/10.1063/1.454720
+    """
+    _, n_cols = direct_contacts.shape
+    contact_matrix = direct_contacts.copy()
+    # Initialize a variable to keep track of the starting index for
+    # combinations
+    start_idx = 0
+    # Use a while loop to allow resetting the start index when necessary
+    while start_idx < n_cols:
+        # No update in this iteration initially
+        updated = False
+        # Loop over pairs of column indices starting from start_idx
+        for i, j in combinations(range(start_idx, n_cols), 2):
+            if np.any(contact_matrix[:, i] & contact_matrix[:, j]) \
+            and not np.array_equal(contact_matrix[:, i], contact_matrix[:, j]):
+                transient = contact_matrix[:, i] | contact_matrix[:, j]
+                contact_matrix[:, i] = transient
+                contact_matrix[:, j] = transient
+                # Update the start index to the lower of the two indices
+                start_idx = min(i, start_idx)
+                updated = True
+                # Break out of the for-loop to restart from updated start_idx
+                break
+        # If no updates were made in this iteration, increment start_idx
+        if updated is False:
+            start_idx += 1
+    return contact_matrix
+
+
 def generate_contact_matrix(direct_contacts: np.ndarray) -> np.ndarray:
     """
     Generates a symmetric matrix of all contacts between pairs of atoms
@@ -398,6 +457,7 @@ def is_positive_semi_definite(matrix):
     except np.linalg.LinAlgError:
         return False
 
+
 def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
     """
     Infers the number and size of clusters from a contact matrix.
@@ -433,30 +493,12 @@ def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
     ---------
     https://aip.scitation.org/doi/10.1063/1.454720
     """
-    # Check if the matrix is symmetric and positive semi-definite
-    #if not is_symmetric(contacts):
-    #    raise ValueError("The contact matrix is not symmetric.")
-    #if not is_positive_semi_definite(contacts):
-    #    raise ValueError("The contact matrix is not positive semi-definite.")
-
     n_atoms, _ = contacts.shape
     cluster_list = np.zeros(n_atoms + 1, dtype=int)
-
-    clusters_row = npla.eigvals(contacts)
-
-    # Handle complex eigenvalues with small imaginary parts
-    #threshold = 1e-6
-    #clusters = [c.real if abs(c.imag) < threshold else c for c in clusters]
+    clusters_row = npla.eigvalsh(contacts)
     clusters = np.asarray(np.round(clusters_row), dtype=int)
-
-    # Sanity check for cluster sizes
-    if np.any(clusters < 0):
-        print(clusters_row)
-        raise ValueError("A cluster with size smaller than 0 found!")
-
     cluster_sizes, cluster_counts = np.unique(clusters, return_counts=True)
     np.put(cluster_list, cluster_sizes, cluster_counts)
-
     return cluster_list
 
 
@@ -502,7 +544,7 @@ def count_foci_clusters_old(contacts: np.ndarray) -> np.ndarray:
     # numpy returns infinitesimal numbers instead of zero when an eigenvalue
     # is 0. Below, these eigenvalues are rounded to 0. The non-zero
     # values are already integer, so rounding does not affect them.
-    #clusters = np.asarray(np.round(clusters), dtype=int)
+    # clusters = np.asarray(np.round(clusters), dtype=int)
     # Sanity check for having meaning cluster sizes:
     if np.any(clusters < 0):
         raise ValueError("A cluster with size smaller than 0 found!")

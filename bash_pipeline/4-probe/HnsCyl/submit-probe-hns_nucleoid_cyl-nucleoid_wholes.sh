@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=32
+#SBATCH --ntasks=32
+#SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=3G
 #SBATCH --time=00-20:00   
 #SBATCH --account=rrg-byha
