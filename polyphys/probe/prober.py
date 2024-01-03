@@ -2713,13 +2713,12 @@ def hns_nucleoid_cub_dis_hc_hc_cluster(
     clusters_t = np.zeros((n_frames, sim_info.nhns + 1), dtype=int)
     for idx, _ in enumerate(sliced_trj):
         # distance matrices
-        # hns core:
         dist_mat = clusters.self_dist_array(hns_core.positions)
         # keep atom ids on the diag
         dir_contacts = clusters.find_direct_contacts(dist_mat, cluster_cutoff)
         bonds_stat = clusters.count_foci_bonds(dir_contacts)
         bonds_t[idx] = bonds_stat
-        contacts = clusters.generate_contact_matrix(dir_contacts)
+        contacts = clusters.generate_contact_matrix_new(dir_contacts)
         clusters_stat = clusters.count_foci_clusters(contacts)
         clusters_t[idx] = clusters_stat
     # distance matirx
