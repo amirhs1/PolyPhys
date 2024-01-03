@@ -30,7 +30,7 @@ pip install --no-index MDAnalysis==2.3.0
 exe(){
 dir=${1}
 file=$(echo "$dir" | cut -d / -f 1)
-(cd "${file}" && python probe-hns_nucleoid_cub-nucleoid_wholes_clusters.py > "${file}"-probe-hns_nucleoid_cub-nucleoid_wholes_clusters.txt)
+(cd "${file}" && python probe-hns_nucleoid_cub-nucleoid_wholes-clusters-distMatMonHnsPatch.py > "${file}"-probe-hns_nucleoid_cub-nucleoid_wholes-clusters-distMatMonHnsPatch.txt)
 }
 
 echo "Starting run at: $(date)"
@@ -40,6 +40,6 @@ echo "Starting run at: $(date)"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-hns_nucleoid_cub-nucleoid_wholes_clusters.txt ::: N*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-hns_nucleoid_cub-nucleoid_wholes-clusters-distMatMonHnsPatch.txt ::: N*/
 
 echo "Program glost_launch finished with exit code $? at: $(date)"
