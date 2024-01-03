@@ -2,6 +2,6 @@
 # copies the python script and package which are then executed by gnuparallal.
 for dir in N*/; do
     echo "$dir"
-    cp probe-hns_nucleoid_cub-nucleoid_wholes_clusters.py ./"$dir"
+    cp probe-hns_nucleoid_cub-nucleoid_wholes-clusters-distMatMonHnsPatch.py ./"$dir"
     cp -R polyphys ./"${dir}"
 done
