@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH --cpus-per-task=4
+#SBATCH --ntasks=32
+#SBATCH --cpus-per-task=1
 #SBATCH --time=00-30:00   
 #SBATCH --account=def-group
 #SBATCH --mail-user=54184877+amirhs1@users.noreply.github.com  

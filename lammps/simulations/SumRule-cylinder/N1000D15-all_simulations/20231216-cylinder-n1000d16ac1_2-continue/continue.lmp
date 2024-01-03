@@ -1,0 +1,46 @@
+variable ljRcut equal 1.122462
+variable sig1 equal 1.0
+variable sig12 equal (${sig1}+${sig2})/2
+variable cutoff11 equal ${sig1}*${ljRcut}
+variable cutoff12 equal ((${sig1}+${sig2})/2.0)*${ljRcut}
+variable cutoff22 equal ${sig2}*${ljRcut}
+
+variable vskin equal 0.2 # v stands for Verlet
+neighbor ${vskin} multi # using different ghost cutoffs  
+neigh_modify delay 1 every 3 check yes 
+neigh_modify collection/type 2 1 2 # 1: small mons, 2: crowders
+variable gRcut1 equal ${cutoff11}+${vskin} # ghost cutoff: small monomer
+variable gRcut2 equal ${cutoff22}+${vskin} # ghost cutoff: large monomer
+comm_modify mode multi cutoff/multi 1 ${gRcut1} cutoff/multi 2 ${gRcut2} 
+
+region  cylshell cylinder z 0.0 0.0 ${r} INF INF units box
+
+fix     F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+
+fix     F_wall1 bug wall/region cylshell lj126 ${epsilon1} ${sig1} ${cutoff11} # Interaction between the lateral wall and the monomers.
+fix     F_wall2 crowd wall/region cylshell lj126 1.0 ${sig12}  ${cutoff12} # Interaction between the lateral wall and the crowders.
+
+fix     F_nve all nve
+fix     F_recenter bug recenter NULL NULL 0.0 shift all units box
+
+timestep    0.005
+thermo 10000
+
+dump     D_bug bug atom  5000 ${simname}.j2.bug.lammpstrj
+dump_modify D_bug scale no
+
+variable fname string input.lmp
+variable j loop 23 pad
+    label dump_loop
+    variable jname equal 14+${j}
+    dump         D_all all atom  10000 ${simname}.j${jname}.all.lammpstrj.gz
+    dump_modify D_all scale no pad 2
+    restart 5000000  ./restarts/restart.i${i}
+    run	10000000
+    undump D_all
+    next j
+    jump ${fname} dump_loop
+
+undump D_bug
+write_data ${simname}.all.data pair ij
+write_restart    ./restart_after
