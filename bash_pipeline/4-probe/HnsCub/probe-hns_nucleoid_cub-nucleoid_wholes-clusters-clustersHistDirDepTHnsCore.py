@@ -12,6 +12,6 @@ bug_pairs = organizer.sort_filenames(
     bug_pairs,
     fmts=['.' + group + '.data', '.' + group + '.lammpstrj']
     )
-for (bug_topo, bug_trj) in bug_pairs[2:-5]:
+for (bug_topo, bug_trj) in bug_pairs:
     prober.hns_nucleoid_cub_dis_hc_hc_cluster(
         bug_topo, bug_trj, lineage, save_to=save_to)

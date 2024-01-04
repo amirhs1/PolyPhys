@@ -9,7 +9,7 @@ import traceback
 
 save_to = './'
 wholes = organizer.sort_filenames(
-    glob("./N*/N*-nucleoid-distMatTMonHnsPatch.npy"), fmts=['npy'])
+    glob("./N*-nucleoid-distMatTMonHnsPatch.npy"), fmts=['npy'])
 for idx in range(len(wholes)):
     whole = wholes[idx][0]
     print(whole)
