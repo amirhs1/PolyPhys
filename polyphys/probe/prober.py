@@ -2707,7 +2707,7 @@ def hns_nucleoid_cub_dis_hc_hc_cluster(
         sliced_trj = cell.trajectory
         n_frames = cell.trajectory.n_frames
     # selecting atom groups:
-    hns_core = cell.select_atoms('type 3')  # the hns cores
+    hns_core: mda.AtomGroup = cell.select_atoms('type 3')  # the hns cores
     # defining collectors
     bonds_t = np.zeros((n_frames, sim_info.nhns), dtype=int)
     clusters_t = np.zeros((n_frames, sim_info.nhns + 1), dtype=int)
