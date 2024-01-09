@@ -10,13 +10,17 @@ if [ "$simtype" = "all" ]; then
 elif [ "$simtype" = "cont" ]; then
     trjdir=${name}-trjs_${simtype}
     logdir=${name}-logs_${simtype} # name of trjactories directory
+elif [ "$simtype" = "simulations" ]; then
+    trjdir=${name}-trjs_${simtype}
+    logdir=${name}-logs_${simtype} # name of trjactories directory
 else
-    echo "not a 'all_simulations' or 'cont_simulations' directory"
+    echo "not a 'all_simulations' or 'cont_simulations' or 'simulations_2nd_round' directory"
     exit 1
 fi
 echo "Trajectory directory: $trjdir"
 mkdir "$trjdir"
 mkdir "$logdir"
+echo "Start to extract ..."
 #for dir in al*[1-8].ring/; do # TransFociCub
 #for dir in eps*[1-8].ring/; do # TransFociCyl
 for dir in N*[1-8]/; do # SumRuleCyl
@@ -32,8 +36,12 @@ for dir in N*[1-8]/; do # SumRuleCyl
             allfile=${gzfile[*]:0: -3}
             mv "$allfile" ../"$trjdir"/"$fname"/
     done
-    cp ${fname}*.log ../"$logdir"/
+    cp ${fname}.incomplete.log  ../"$logdir"/${fname}.j01.log
+    cp ${fname}.restart.log ../"$logdir"/${fname}.j02.log
     cd ..
 done
 # move Lammps running files to run_files directory
+rundir=run_files-${name}
+mkdir "$rundir"
+mv ./*.data ./*.lmp ./*.sh "$rundir"
 echo "Finished!"

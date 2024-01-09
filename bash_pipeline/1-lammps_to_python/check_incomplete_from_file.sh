@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Path to the file
 file="incomplete.txt"
 
@@ -11,6 +12,7 @@ if [[ -f "$file" ]]; then
         # Add your code here to process each folder
         tail -n 2 ${folder}_res/log.lammps
         tail -n 1 ${folder}_res/slurm*
+#        ls ${folder}*/
         filename=${folder}_res/log.lammps
         echo $filename
         awk '/^Performance:/ {count++; if (count==2) {print; exit}}' $filename

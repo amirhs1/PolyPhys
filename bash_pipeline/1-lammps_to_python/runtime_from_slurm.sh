@@ -7,7 +7,7 @@ parent_dir=$(basename "$(pwd)")
 output_csv="${parent_dir}-runtime_slurm-summary.csv"
 
 # Write CSV header
-echo "Folder,Total Runtime (seconds),Number of Cores" > "$output_csv"
+echo "folder,total_runtime_sec,n_cores" > "$output_csv"
 
 # Iterate over slurm*out files in N*/ directories
 for file in N*/slurm*out; do
@@ -39,3 +39,5 @@ for file in N*/slurm*out; do
 done
 
 echo "CSV file created: $output_csv"
+
+
