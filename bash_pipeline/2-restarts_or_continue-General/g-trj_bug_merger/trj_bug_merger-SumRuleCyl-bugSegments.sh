@@ -1,3 +1,4 @@
+
 #!/bin/bash
 # incomfile (the main trj file) tstep (timestep ast which the merge is done) trjfile (the restart trj file)
 dumpStep=5000
@@ -5,21 +6,26 @@ echo "Start merging"
 for res in N*_res/;do
     dir=$(echo "$res" | cut -d _ -f 1 )
     echo "$dir"
-    #mkdir "$dir"
     mkdir "$dir"/test
-    #cp ./"${res}"*.lammpstrj ./"$dir"/
-    #cp ./"${res}"*.lammpstrj.gz ./"$dir"/
-    #cp ./"${res}"*.data ./"$dir"/
-    #cp ./"${res}"log.lammps ./"${dir}"/"${dir}".restart.log
-    #cp ./"${dir}"_incomplete/*.lammpstrj ./"$dir"/
-    #cp ./"${dir}"_incomplete/*.lammpstrj.gz ./"$dir"/
-    #cp ./"${dir}"_incomplete/log.lammps ./"${dir}"/"${dir}".incomplete.log
-    day=$(grep -oE "[0-9]{2}-[0-9]{2}:[0-9]{2}" ./"${dir}"_incomplete/submit.sh | cut -d '-' -f 1)
-    dayToHrs=$(( day * 24))
-    hoursMins=$(grep -oE "[0-9]{2}-[0-9]{2}:[0-9]{2}" ./"${dir}"_incomplete/submit.sh | cut -d '-' -f 2)
-    hours=$(echo "$hoursMins" | cut -d ':' -f 1)
-    totalHours=$(( hours + dayToHrs ))
-    mins=$(echo "$hoursMins" | cut -d ':' -f 2)
+    # Extract start and end times
+    file=$(find "${dir}_incomplete" -maxdepth 1 -name "slurm*" -type f)
+    start_time=$(grep -oP 'Starting run at: \K.*' "$file")
+    potential_end_time=$(grep -oP 'Program finished with exit code [0-9]+ at: \K.*|(?<=CANCELLED AT )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' "$file" | tail -1)
+
+    if [ "$potential_end_time" != "$start_time" ]; then
+        end_time="$potential_end_time"
+    else
+        "The end time was not found."
+    fi
+    # Convert times to seconds since epoch
+    start_sec=$(date -d "$start_time" '+%s')
+    end_sec=$(date -d "$end_time" '+%s')
+
+    # Calculate duration
+    duration=$((end_sec - start_sec))
+
+    # Convert duration to HH:MM:SS
+    formatted_duration=$(date -u -d "@$duration" '+%H:%M:%S')
     cd "$dir" || exit
         cp N*bug*lammpstrj ./test/
         cd test || exit
@@ -42,11 +48,11 @@ for res in N*_res/;do
             rm xx00
             tail -n $((nMol + 9)) "${dir}".j02.bug.lammpstrj | head -n 9
             echo
-            wc -l "${dir}".nucleoid.lammpstrj
+            wc -l "${dir}".j02.bug.lammpstrj
             echo
         cd ..
         sed -i '$d' "${dir}".incomplete.log
-        echo "Total wall time: ${totalHours}:${mins}:00" >> "${dir}".incomplete.log
+        echo "Total wall time: $formatted_duration" >> "${dir}".incomplete.log
         tail -n 2 N*.log
         echo
     cd ..
