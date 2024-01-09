@@ -26,6 +26,8 @@ allLine=38
 bugName=nucleoid
 w=N
 end=ring
+
+
 headLine=$((allLine - 3))
 nextLine=$((allLine + 1))
 
