@@ -1,3 +1,4 @@
+
 variable ljRcut equal 1.122462
 variable sig1 equal 1.0
 variable sig12 equal (${sig1}+${sig2})/2
@@ -7,7 +8,7 @@ variable cutoff22 equal ${sig2}*${ljRcut}
 
 variable vskin equal 0.2 # v stands for Verlet
 neighbor ${vskin} multi # using different ghost cutoffs  
-neigh_modify    delay 0 every 3 check yes 
+neigh_modify    delay 0 every 1 check yes 
 neigh_modify collection/type 2 1 2 # 1: small mons, 2: crowders
 variable gRcut1 equal ${cutoff11}+${vskin} # ghost cutoff: small monomer
 variable gRcut2 equal ${cutoff22}+${vskin} # ghost cutoff: large monomer
@@ -20,8 +21,8 @@ fix     F_langevin all langevin 1.0 1.0 10.0 ${randseed}
 fix     F_wall1 bug wall/region cylshell lj126 ${epsilon1} ${sig1} ${cutoff11} # Interaction between the lateral wall and the monomers.
 fix     F_wall2 crowd wall/region cylshell lj126 1.0 ${sig12}  ${cutoff12} # Interaction between the lateral wall and the crowders.
 
-fix     F_nve all nve
-fix     F_recenter bug recenter NULL NULL 0.0 shift all units box
+fix             F_nve all nve
+fix             F_recenter bug recenter NULL NULL 0.0 shift all units box
 
 timestep    0.005
 thermo 10000
@@ -35,7 +36,7 @@ variable j loop ${nloop} pad
     dump         D_all all atom  10000 ${simname}.j${j}.all.restart.lammpstrj.gz
     dump_modify D_all scale no pad 2
     restart 5000000  ./restarts/restart.new.i${i}
-    if "$j == $nloop" then "run 16000000" else "run 15000000"
+    run 15000000
     undump D_all
     next j
     jump ${fname} dump_loop

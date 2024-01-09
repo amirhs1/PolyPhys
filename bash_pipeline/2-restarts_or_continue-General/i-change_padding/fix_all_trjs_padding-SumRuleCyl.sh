@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Define the base directory and pattern
-for dirres in N*ens1_res; do
-    dir="${dirres::-4}"
+for dir in N*[1-8]; do
     cd "$dir"
     ls -l .
     file_count=$(ls ${dir}*.all.lammpstrj.gz | wc -l)

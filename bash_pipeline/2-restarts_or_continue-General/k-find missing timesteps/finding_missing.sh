@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Check if an input file name is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 input_file"
@@ -34,3 +35,4 @@ done < temp.txt
 
 # Output the result
 echo "Filtered lines are saved in $output_file"
+

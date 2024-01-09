@@ -1,7 +1,8 @@
 #!/bin/bash
 # create restart directories for all the directories in a parent directory.
 
-for dir in N*/; do # SumRuleCyl
+for dir in N*ens[1-8]/; do # SumRuleCyl
+#for dir in N*ring/; do # HnsCub HnsCyl
 #for dir in al*/; do # TransFociCub
 #for dir in eps*/; do # TransFociCyl
     file=$(echo "$dir" | cut -d / -f 1)
@@ -11,6 +12,4 @@ for dir in N*/; do # SumRuleCyl
     indir=${file}_incomplete
     mv "$dir" "$indir"
     mkdir "$file"
-    cp "${indir}"/input.lmp "$resdir"
-    cp "${indir}"/submit.sh "$resdir"
 done

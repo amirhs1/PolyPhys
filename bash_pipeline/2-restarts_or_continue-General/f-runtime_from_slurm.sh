@@ -15,13 +15,13 @@ for file in N*/slurm*out; do
     folder_name=$(dirname "$file")
 
     # Extract start and end times
-    start_time=$(grep -oP '\w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \w{3} \d{4}' "$file" | head -1)
-    potential_end_time=$(grep -oP '\w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \w{3} \d{4}' "$file" | tail -1)
+    start_time=$(grep -oP 'Starting run at: \K.*' "$file")
+    end_time=$(grep -oP 'Program finished with exit code [0-9]+ at: \K.*|(?<=CANCELLED AT )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' "$file" | tail -1)
 
     if [ "$potential_end_time" != "$start_time" ]; then
         end_time="$potential_end_time"
     else
-        end_time=$(grep -oP '\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' "$file" | tail -1)
+        print("The end time was not found.")
     fi
 
     # Convert times to seconds since epoch
@@ -39,5 +39,4 @@ for file in N*/slurm*out; do
 done
 
 echo "CSV file created: $output_csv"
-
 

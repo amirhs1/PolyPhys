@@ -40,4 +40,3 @@ done
 
 echo "CSV file created: $output_csv"
 
-

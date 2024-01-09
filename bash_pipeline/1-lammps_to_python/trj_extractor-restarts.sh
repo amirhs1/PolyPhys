@@ -32,12 +32,8 @@ for dir in N*[1-8]/; do # SumRuleCyl
             allfile=${gzfile[*]:0: -3}
             mv "$allfile" ../"$trjdir"/"$fname"/
     done
-    cp log.lammps  "$fname".log 
-    mv "$fname".log ../"$logdir"/
+    cp ${fname}*.log ../"$logdir"/
     cd ..
 done
 # move Lammps running files to run_files directory
-rundir=run_files-${name}
-mkdir "$rundir"
-mv ./*.data ./*.lmp ./*.sh "$rundir"
 echo "Finished!"

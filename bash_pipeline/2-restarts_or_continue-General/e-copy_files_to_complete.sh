@@ -5,7 +5,6 @@ for dir in N*.ring_incomplete/; do # HnsCub
 #for dir in al*_incomplete/; do # TransFociCub
 #for dir in eps*_encomplete/; do # TransFociCyl
     comdir=$(echo "$dir" | cut -d _ -f 1)
-    mkdir "${comdir}"
     cd "${comdir}"_incomplete || exit
         cp ./*.all.lammpstrj.gz ../"${comdir}"/
         #cp ./*.nucleoid.lammpstrj ../"${comdir}"/ # HnsCub 
