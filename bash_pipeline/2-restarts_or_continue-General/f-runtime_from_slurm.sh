@@ -16,7 +16,7 @@ for file in N*/slurm*out; do
 
     # Extract start and end times
     start_time=$(grep -oP 'Starting run at: \K.*' "$file")
-    end_time=$(grep -oP 'Program finished with exit code [0-9]+ at: \K.*|(?<=CANCELLED AT )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' "$file" | tail -1)
+    potential_end_time=$(grep -oP 'Program finished with exit code [0-9]+ at: \K.*|(?<=CANCELLED AT )\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}' "$file" | tail -1)
 
     if [ "$potential_end_time" != "$start_time" ]; then
         end_time="$potential_end_time"
