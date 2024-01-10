@@ -9,32 +9,27 @@
 # For TransFociCub project, allLine=31
 #allLine=31
 #bugName=bug
-#w=al
-#end=ring
+
 # For TransFociCyl project, allLine=31
 #allLine=31
 #bugName=bug
-#w=eps
-#end=ring
+
 # For SumRuleCyl project, allLine=26
-#allLine=26
-#bugName=bug
-#w=N
-#end=[1-8]
+allLine=26
+bugName=bug
+
 # For HnsCub HnsCyl project, allLine=38
-allLine=38
-bugName=nucleoid
-w=N
-end=ring
+#allLine=38
+#bugName=nucleoid
 
 
 headLine=$((allLine - 3))
 nextLine=$((allLine + 1))
 
 #for dir in eps*.ring/; do # TransFociCyl
-#for dir in N*.ring/; do # SumRuleCyl
+for dir in N*[1-8]/; do # SumRuleCyl
 #for dir in N*.ring/; do # HnsCub HnsCyl
-for dir in "${w}"*"${end}"/; do # TransFociCub
+#for dir in al*ring/; do # TransFociCub
     echo "${dir}"
     name=${dir:0:-1}
     # The sed command copies the first 10 lines of all.data to bug.data
