@@ -2,7 +2,7 @@
 #SBATCH --ntasks=32
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=3G
-#SBATCH --time=1-00:00   
+#SBATCH --time=2-00:00   
 #SBATCH --account=rrg-byha
 #SBATCH --mail-user=mr.a.h.saadeghi@gmail.com  
 #SBATCH --mail-type=ALL     
@@ -30,7 +30,7 @@ pip install --no-index MDAnalysis==2.2.0
 exe(){
 dir=${1}
 file=$(echo "$dir" | cut -d / -f 1)
-(cd "${file}" && python probe-sum_rule-all_in_one-trj_wholes_segments.py > "${file}"-probe-sum_rule-all_in_one-trj_wholes_segments.txt)
+(cd "${file}" && python probe-SumRuleCyl-bug-trj_wholes.py > "${file}"-probe-SumRuleCyl-bug-trj_wholes.txt)
 }
 
 echo "Starting run at: $(date)"
@@ -40,6 +40,6 @@ echo "Starting run at: $(date)"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-sum_rule-all_in_one-trj_wholes_segments.txt ::: N*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-SumRuleCyl-bug-trj_wholes.txt ::: N*/
 
 echo "Program glost_launch finished with exit code $? at: $(date)"
