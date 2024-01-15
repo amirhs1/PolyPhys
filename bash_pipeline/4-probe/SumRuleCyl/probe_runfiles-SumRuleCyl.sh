@@ -3,5 +3,5 @@
 cp ../PolyPhys/bash_pipeline/4-probe/SumRuleCyl/submit*.sh .
 cp ../PolyPhys/bash_pipeline/4-probe/SumRuleCyl/probe-*.py .
 cp ../PolyPhys/bash_pipeline/4-probe/SumRuleCyl/probe_gnuparallel*.sh .
-cp ../PolyPhys/bash_pipeline/4-probe/SumRuleCyl/create_probe_directories.sh .
+cp ../PolyPhys/bash_pipeline/4-probe/SumRuleCyl/create_probe_directories-SumRuleCyl.sh .
 cp -R ../PolyPhys/polyphys .

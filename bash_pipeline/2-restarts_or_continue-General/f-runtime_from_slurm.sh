@@ -21,7 +21,7 @@ for file in N*/slurm*out; do
     if [ "$potential_end_time" != "$start_time" ]; then
         end_time="$potential_end_time"
     else
-        print("The end time was not found.")
+        echo "The end time was not found."
     fi
 
     # Convert times to seconds since epoch

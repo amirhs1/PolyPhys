@@ -30,7 +30,7 @@ pip install --no-index MDAnalysis==2.2.0
 exe(){
 dir=${1}
 file=$(echo "$dir" | cut -d / -f 1)
-(cd "${file}" && python probe-sum_rule_bug-trj_wholes.py > "${file}"-probe-sum_rule_bug-trj_wholes.txt)
+(cd "${file}" && python probe-SumRuleCyl-bug-trj_wholes.py > "${file}"-probe-SumRuleCyl-bug-trj_wholes.txt)
 }
 
 echo "Starting run at: $(date)"
@@ -40,6 +40,6 @@ echo "Starting run at: $(date)"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe_sum_rule_bug-trj_wholes.txt ::: N*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-SumRuleCyl-bug-trj_wholes.txt ::: N*/
 
 echo "Program glost_launch finished with exit code $? at: $(date)"
