@@ -1,4 +1,10 @@
 #!/bin/bash
+# Formula to find the line number: 
+# LINE_NUMBER = (((TIME_STEP_OF_INTEREST - INITIAL_TIME_STEP) + 1)/ DUMP_FREQ) * (N_ATOMS + 9)
+# Seeing the heading of the time step of interest:
+# head -n LINE_NUMBER trj_file | tail -n (N_ATOMS + 9) | head -n 9
+
+
 # Check if an input file name is provided
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 input_file"
