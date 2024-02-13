@@ -59,10 +59,6 @@ ANALYSIS_DETAILS_NUCLEOID = {
             ('rfloryT', 'Mon', 'bug'),
             ('shapeT', 'Mon', 'bug'),
             ('asphericityT', 'Mon', 'bug')
-        ],
-        'hist_properties': [
-            # direction, species, group
-            ('rflory', 'Mon', 'bug')
         ]
     },
     'SumRuleCylWhole': {
@@ -85,10 +81,6 @@ ANALYSIS_DETAILS_NUCLEOID = {
             ('rfloryT', 'Mon', 'bug'),
             ('shapeT', 'Mon', 'bug'),
             ('asphericityT', 'Mon', 'bug')
-        ],
-        'hist_properties': [
-            # direction, species, group
-            ('rflory', 'Mon', 'bug')
         ]
     },
     'TransFociCylWhole': {
