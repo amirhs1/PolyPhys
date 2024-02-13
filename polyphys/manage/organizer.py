@@ -1768,9 +1768,6 @@ def space_sum_rule(
     'ensemble_averaged' dataframe, then it is inferred; otherwise, it should
     be passed to the function. See `bin_center` kw argument below.
 
-    Issues
-    ------
-    Currently, `direction` is only defined for 'cylindrical' geometry.
 
     Parameters
     ----------
@@ -1863,8 +1860,9 @@ def space_sum_rule(
             ens_avg = normalizer[direction](prop, ens_avg, method='max')
         else:
             ens_avg = normalizer[direction](prop, ens_avg)
-        ens_avg[prop + '-sumrule_constant'] = \
-            ens_avg[prop + '-normalizer'] / ens_avg[prop + '-scaler']
+        #ens_avg[prop + '-sumrule_constant'] = \
+        #    ens_avg[prop + '-normalizer'] / ens_avg[prop + '-scaler']
+        ens_avg[prop + '-sumrule_constant'] = ens_avg[prop + '-scaler']
         ens_avg['bin_center-norm'] = \
             ens_avg['bin_center'] / ens_avg['bin_center'].max()
         for attr_name in physical_attrs:
