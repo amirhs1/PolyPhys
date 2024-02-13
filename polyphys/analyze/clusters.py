@@ -406,8 +406,7 @@ def count_foci_bonds(dir_contacts: np.ndarray) -> np.ndarray:
     """
     n_atoms, _ = dir_contacts.shape
     bond_list = np.zeros(n_atoms, dtype=int)
-    # removing self-bonds:
-    bonds = dir_contacts.sum(axis=1) - 1
+    bonds = dir_contacts.sum(axis=1) - 1  # removing self-bonds
     bond_sizes, bond_counts = np.unique(bonds, return_counts=True)
     np.put(bond_list, bond_sizes, bond_counts)
     return bond_list
@@ -1113,7 +1112,7 @@ def split_binder_matrix(M_ij: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return D_ij, B_ij
 
 
-def find_binder_clusters(M_ij: np.ndarray) -> np.ndarray:
+def find_binder_clusters_need_attention(M_ij: np.ndarray, topology) -> np.ndarray:
     """Identifies clusters of binders in a polymer system based on their
     binding to the same or adjacent monomers.
 
@@ -1138,6 +1137,9 @@ def find_binder_clusters(M_ij: np.ndarray) -> np.ndarray:
     n_binders = M_ij.shape[1]
     n_monomers = M_ij.shape[0]
     B_ij = np.zeros((n_binders, n_binders), dtype=int)
+    print('need attention: see comments')
+    # diagonal elements have meaning here; if it is 0 means unbound hns/binder
+    # but if 1 means it bridged two momnomers or dangle from on monomer.
     np.fill_diagonal(B_ij, 1)
     # Check for binders connected to the same monomer
     for i in range(n_binders):
@@ -1148,6 +1150,11 @@ def find_binder_clusters(M_ij: np.ndarray) -> np.ndarray:
     # Check for binders connected to adjacent monomers
     for monomer in range(n_monomers - 1):
         adjacent_binders = np.where(M_ij[monomer] | M_ij[monomer + 1])[0]
+        for binder in adjacent_binders:
+            B_ij[binder, adjacent_binders] = 1
+
+    if topology == 'ring':
+        adjacent_binders = np.where(M_ij[0] | M_ij[-1])[0]
         for binder in adjacent_binders:
             B_ij[binder, adjacent_binders] = 1
 

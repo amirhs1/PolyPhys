@@ -93,6 +93,8 @@ for ens_avg_space_db in ens_avg_space_dbs:
             ens_avg = \
                 ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
                     [0.025, 0.05, 0.075, 0.125, 0.175]), :]
+        elif project in ['SumRuleCyl']:
+            pass
         else:
             raise ValueError("The 'phi_c drop' condition is not defined for "
                              f"'{project}' project.")
@@ -159,6 +161,8 @@ for ens_avg_space_db in ens_avg_space_dbs:
             ens_avg = \
                 ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
                     [0.025, 0.05, 0.075, 0.125, 0.175]), :]
+        elif project in ['SumRuleCyl']:
+            pass
         else:
             raise ValueError("The 'phi_c drop' condition is not defined for "
                              f"'{project}' project.")

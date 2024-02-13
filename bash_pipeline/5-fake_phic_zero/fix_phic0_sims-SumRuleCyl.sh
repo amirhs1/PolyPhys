@@ -1,11 +1,12 @@
 #!/bin/bash
 # 
+echo "ATTENTION: segemnt or whole?"
 read -rp "Enter old size of crowders > " sigOld
 read -rp "Enter new size of crowders > " sigNew
 read -rp "Enter new mass of crowders > " sigNewMass
 # The following part gives the col and row of the value of the "dcrowd" value.
-read -rp "column to replace dcrowd > " col # 10
-read -rp "column to replace mcrowd > " colMass # 19 
+read -rp "column to replace dcrowd > " col # bug whole: 10 bug segment: 11
+read -rp "column to replace mcrowd > " colMass # bug whole: 19 bug segment: 21 
 read -rp "row to replace > " row 
 # mac os x
 #rename -v dir -s "sig$sigOld" "sig$sigNew" N*

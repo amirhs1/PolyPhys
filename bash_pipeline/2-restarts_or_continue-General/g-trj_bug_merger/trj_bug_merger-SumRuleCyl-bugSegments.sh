@@ -23,9 +23,13 @@ for res in N*_res/;do
 
     # Calculate duration
     duration=$((end_sec - start_sec))
+    # Calculate hours, minutes, and seconds
+    hours=$((duration / 3600))
+    minutes=$(( (duration % 3600) / 60 ))
+    seconds=$((duration % 60))
 
-    # Convert duration to HH:MM:SS
-    formatted_duration=$(date -u -d "@$duration" '+%H:%M:%S')
+    # Format the duration
+    formatted_duration=$(printf "%02d:%02d:%02d" $hours $minutes $seconds)
     cd "$dir" || exit
         cp N*bug*lammpstrj ./test/
         cd test || exit
