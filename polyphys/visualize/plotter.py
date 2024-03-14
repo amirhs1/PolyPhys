@@ -292,12 +292,17 @@ ATTRIBUTE_LABELS = {
     'zPhi': r'$\phi(|z|)$',
     'rRho': r'$\rho(r)$',
     'zRho': r'$\rho(|z|)$',
+    'rPhi-alpha': r'$\phi_{\alpha}(r)$',
+    'zPhi-alpha': r'$\phi_{\alpha}(|z|)$',
+    'rRho-alpha': r'$\rho_{\alpha}(r)$',
+    'zRho-alpha': r'$\rho_{\alpha}(|z|)$',
     'rPhi-norm': r'$\phi(r)$',
     'rPhi-norm-Mon': r'$\phi_m(r)$',
     'rPhi-norm-Foci': r'$\phi_l(r)$',
     'rPhi-norm-Hns': r'$\phi_n(r)$',
     'rPhi-norm-Crd': r'$\phi_c(r)$',
     'rPhi-norm-Sum': r'$\sum_{\alpha}\phi_{\alpha}(r)/a_{\alpha}$',
+    'rPhi-norm-Sum-rescaler': r'$\sum_{\alpha}\phi_{\alpha}(0)/a_{\alpha}$',
     'rPhi-norm-Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$',
     'zPhi-norm': r'$\phi(|z|)$',
     'zPhi-norm-Mon': r'$\phi_m(|z|)$',
@@ -306,6 +311,7 @@ ATTRIBUTE_LABELS = {
     'zPhi-norm-Crd': r'$\phi_c(|z|)$',
     'zPhi-norm-Sum': r'$\sum_{\alpha}\phi_{\alpha}(|z|)/a_{\alpha}$',
     'zPhi-norm-Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$',
+    'zPhi-norm-Sum-rescaler': r'$\sum_{\alpha}\frac{\phi_{\alpha}(\infty)}{a_{\alpha}}=\frac{\phi_c(\infty)}{a_c}$',
     'rRho-norm': r'$\rho(r)$',
     'rRho-norm-Mon': r'$\rho_m(r)$',
     'rRho-norm-Foci': r'$\rho_l(r)$',
@@ -418,7 +424,7 @@ ATTRIBUTE_LABELS = {
     'bin_center-norm-r-cub': '${{r}}/{{r_{max}}}$',
     'bin_center-norm-corrected-r-cub': '${{r}}/{{r_{max}}}$',
     'bin_center-norm-dmon_large-r-cub': '${{r}}/{{a_l}}$',
-    'bin_center-gyr_mean-r-cub': r'${{r}}/{{\langle R_g(\phi_c)\rangle}}$',
+    'bin_center-gyr_mean-r-cub': r'${{r}}/{{\langle R_{{g,0}}\rangle}}$',
     'bin_center-dcrowd-r': '${{2r}}/{{a_c}}$',
     'bin_center-dcrowd-recentered-r': '${{(2r-a^{shift})}}/{{a_c}}$',
     'bin_center-z': '$z$',
@@ -426,7 +432,7 @@ ATTRIBUTE_LABELS = {
     'bin_center-norm-corrected-z': '${{2|z|}}/{{Z}}$',
     'bin_center-norm-dmon_large-z': '${{z}}/{{a_l}}$',
     'bin_center-dcrowd-z': '${{2|z|}}/{{Z}}$',
-    'bin_center-fsd_mean-z': r'${{2|z|}}/{{\langle L(\phi_c)\rangle}}$',
+    'bin_center-fsd_mean-z': r'${{2|z|}}/{{\langle L_{{0}}\rangle}}$',
     'bin_center-dcrowd-recentered-z': '${{2|z|}}/{{Z}}$',
     'bin_center-theta': r'$\theta$',
     'bin_center-dcrowd-theta': r'${{\theta}}/{{\pi}}$',
@@ -557,8 +563,8 @@ ATTRIBUTE_LABELS = {
 PAUL_TOL_BRIGHT = ['#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE',
                    '#AA3377', '#BBBBBB', '#000000']
 PAUL_TOL_HIGH_CONTRAST = ['#004488', '#DDAA33', '#BB5566', '#000000']
-PAUL_TOL_VIBRANT = ['#EE7733', '#0077BB', '#33BBEE', '#EE3377', '#CC3311',
-                    '#009988', '#BBBBBB', '#000000']
+PAUL_TOL_VIBRANT = ['#CC3311', '#0077BB', '#009988', '#EE3377', '#33BBEE', 
+                     '#EE7733', '#BBBBBB', '#000000']
 PAUL_TOL_MEDIUM_CONTRAST = ['#6699CC', '#004488', '#EECC66', '#994455',
                             '#997700', '#EE99AA', '#000000']
 PAUL_TOL_LIGHT = ['#77AADD', '#EE8866', '#EEDD88', '#FFAABB', '#99DDFF',
@@ -566,6 +572,8 @@ PAUL_TOL_LIGHT = ['#77AADD', '#EE8866', '#EEDD88', '#FFAABB', '#99DDFF',
 PAUL_TOL_MUTED = ['#CC6677', '#332288', '#DDCC77', '#117733', '#88CCEE',
                   '#882255', '#44AA99', '#999933', '#AA4499', '#DDDDDD',
                   '#000000']
+PAUL_TOL_MUTED_ORDER = ['#332288', '#88CCEE', '#44AA99', '#117733', '#999933',
+                        '#DDCC77', '#CC6677', '#882255', '#AA4499', '#DDDDDD']
 
 # https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-with-your-data
 DUTCH_FEILD_COLORS = ["#e60049", "#0bb4ff", "#50e991", "#9b19f5",
