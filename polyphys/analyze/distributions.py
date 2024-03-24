@@ -107,8 +107,8 @@ def sphere_sphere_intersection(
     r_max = max(r1, r2)
     r_min = min(r1, r2)
     # when one of the sphere has 0 radius, vol=0:
-    if r1 == 0 or r2 == 0:
-        vol = 0
+    if r1 == 0.0 or r2 == 0.0:
+        vol = 0.0
     # Spheres are either tangential to each other or do not intersect.
     elif d >= r_min + r_max:
         vol = 0.0

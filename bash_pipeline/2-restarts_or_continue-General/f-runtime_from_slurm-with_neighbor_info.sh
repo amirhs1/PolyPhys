@@ -7,7 +7,7 @@ parent_dir=$(basename "$(pwd)")
 output_csv="${parent_dir}-runtime_slurm-summary.csv"
 
 # Write CSV header
-echo "folder,total_runtime_sec,n_cores" > "$output_csv"
+echo "folder,total_runtime_sec,n_cores,avg_step_per_sec,bin_scheme,rskin" > "$output_csv"
 
 # Iterate over slurm*out files in N*/ directories
 for file in N*/slurm*out; do
@@ -34,9 +34,16 @@ for file in N*/slurm*out; do
     # Extract number of cores
     n_cores=$(grep -oP '#SBATCH --ntasks-per-node=\K\d+' "${folder_name}/submit.sh")
 
+    avg_tstep_per_sec=$(awk '/Performance/ {if (seen) {sum += $(NF-1); count++} else seen = 1} END {if (count > 0) print sum / count}' ${folder_name}/log.lammps)
+    #!/bin/bash
+
+    rskin=$(grep "neighbor" "${folder_name}/log.lammps" | awk '/neighbor/ && NF==3 {print $2}')
+    bin_scheme=$(grep "neighbor" "${folder_name}/log.lammps" | awk '/neighbor/ && NF==3 {print $3}')
+
     # Append to CSV
-    echo "$folder_name,$duration,$n_cores" >> "$output_csv"
+    echo "$folder_name,$duration,$n_cores,$avg_tstep_per_sec,$bin_scheme,$rskin" >> "$output_csv"
 done
 
 echo "CSV file created: $output_csv"
+
 
