@@ -29,7 +29,7 @@ for dir in N*[1-8]/; do # SumRuleCyl
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"
     cd "$dir" || exit
-    cp "$fname"*.bug.lammpstrj ../"$trjdir"/"$fname"/
+    cp "$fname".j*.bug.lammpstrj ../"$trjdir"/"$fname"/
     cp "$fname".all.data ../"$trjdir"/"$fname"/
     for gzfile in N*.all.lammpstrj.gz;do 
             gzip -dk "$gzfile"

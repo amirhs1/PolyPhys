@@ -40,3 +40,4 @@ for dir in N*[1-8].ring/; do # SumRuleCyl
     echo -e "#------------------------------------------------------#" >> ../"$rname".txt
     cd ..
 done
+echo "Finished!"
