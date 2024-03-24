@@ -1,5 +1,6 @@
 #!/bin/bash
-
+# CHECK: the total line number in bug file below
+# CHECK: the pattern of bug files 
 # Loop through directories matching the pattern "N*ens[1-4]"
 for dir in N*ens[1-4]; do
     # Check if the directory exists and is a directory
@@ -14,4 +15,4 @@ for dir in N*ens[1-4]; do
         fi
     fi
 done
-
+echo "Finished!"

@@ -46,3 +46,4 @@ for dir in N*[1-8]/; do # SumRuleCyl
     head -n "${allLine}" "${dir}${name}.all.data" | tail -n "${headLine}" >> "${dir}${name}.${bugName}.data"
     tail -n "+${nextLine}" nc0_fake_all.data >> "${dir}${name}.${bugName}.data"
 done
+echo "Finished!"

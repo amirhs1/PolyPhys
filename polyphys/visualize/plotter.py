@@ -564,7 +564,7 @@ PAUL_TOL_BRIGHT = ['#4477AA', '#EE6677', '#228833', '#CCBB44', '#66CCEE',
                    '#AA3377', '#BBBBBB', '#000000']
 PAUL_TOL_HIGH_CONTRAST = ['#004488', '#DDAA33', '#BB5566', '#000000']
 PAUL_TOL_VIBRANT = ['#CC3311', '#0077BB', '#009988', '#EE3377', '#33BBEE', 
-                     '#EE7733', '#BBBBBB', '#000000']
+                    '#EE7733', '#BBBBBB', '#000000']
 PAUL_TOL_MEDIUM_CONTRAST = ['#6699CC', '#004488', '#EECC66', '#994455',
                             '#997700', '#EE99AA', '#000000']
 PAUL_TOL_LIGHT = ['#77AADD', '#EE8866', '#EEDD88', '#FFAABB', '#99DDFF',

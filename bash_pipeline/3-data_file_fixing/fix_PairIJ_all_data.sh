@@ -21,3 +21,4 @@ for dir in N*[1-8]/; do # SumRuleCyl
     grep -n -E "Pair Coeffs" "${datafile}"
     cd ..
 done
+echo "Finished!"
