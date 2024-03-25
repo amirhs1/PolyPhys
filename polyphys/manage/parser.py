@@ -630,6 +630,7 @@ class SumRuleCyl(ParserBase):
                     " is valid name or not."
                 )
         self.mcrowd = self.dcrowd**3
+        warnings.warn("Mass is scaled with sized", UserWarning)
 
     def _set_parents(self) -> None:
         """
@@ -1083,6 +1084,7 @@ class TransFociCyl(ParserBase):
                 )
         setattr(self, "nmon", self.nmon_large + self.nmon_small)
         self.mcrowd = self.dcrowd**3
+        warnings.warn("Mass is scaled with sized", UserWarning)
 
     def _set_parents(self) -> None:
         """
@@ -1500,6 +1502,7 @@ class TransFociCub(ParserBase):
                 )
         setattr(self, "nmon", self.nmon_large + self.nmon_small)
         self.mcrowd = self.dcrowd**3
+        warnings.warn("Mass is scaled with sized", UserWarning)
 
     def _set_parents(self) -> None:
         """
@@ -1915,6 +1918,7 @@ class HnsCub(ParserBase):
                     " is valid name or not."
                 )
         self.mcrowd = self.dcrowd**3
+        warnings.warn("Mass is scaled with sized", UserWarning)
 
     def _set_parents(self) -> None:
         """
@@ -2355,6 +2359,7 @@ class HnsCyl(ParserBase):
                     " is valid name or not."
                 )
         self.mcrowd = self.dcrowd**3
+        warnings.warn("Mass is scaled with sized", UserWarning)
 
     def _set_parents(self) -> None:
         """
