@@ -1,5 +1,5 @@
 #!/bin/bash
-# 
+# Be Crefull about mcrowd; mcrowd=acrowd**3 is not always correct 
 read -rp "Enter old size of crowders > " sigOld
 read -rp "Enter new size of crowders > " sigNew
 # The following part gives the col and row of the value of the "dcrowd" value.
