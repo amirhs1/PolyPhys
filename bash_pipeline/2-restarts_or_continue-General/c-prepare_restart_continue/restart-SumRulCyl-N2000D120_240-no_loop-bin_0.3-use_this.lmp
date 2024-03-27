@@ -8,7 +8,7 @@ variable cutoff12 equal ((${sig1}+${sig2})/2.0)*${ljRcut}
 variable cutoff22 equal ${sig2}*${ljRcut}
 
 variable vskin equal 0.3 # v stands for Verlet
-neighbor ${vskin} bin` # using different ghost cutoffs  
+neighbor ${vskin} bin # using different ghost cutoffs  
 neigh_modify    delay 0 every 1 check yes 
 
 region  cylshell cylinder z 0.0 0.0 ${r} INF INF units box
