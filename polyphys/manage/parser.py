@@ -699,13 +699,21 @@ class SumRuleCyl(ParserBase):
         """
         computes some physical attributes of a lineage based on its
         primary attributes.
+
+        Note
+        ----
+        Under confinement, effective cell volume differs from the actual cell
+        volume, being set by the maximum radial center-to-center distance of
+        particles, i.e., self.dcyl-self.dx, where dx is the diameter (size) of
+        particle species 'x'.
         """
-        vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
+        vol_cell_m = np.pi * (self.dcyl - self.dmon)**2 * self.lcyl / 4.0
+        vol_cell_c = np.pi * (self.dcyl - self.dcrowd)**2 * self.lcyl / 4.0
         vol_mon = np.pi * self.dmon**3 / 6
-        self.rho_m_bulk = self.nmon / vol_cell
+        self.rho_m_bulk = self.nmon / vol_cell_m
         self.phi_m_bulk = self.rho_m_bulk * vol_mon
         vol_crowd = np.pi * self.dcrowd**3 / 6
-        self.rho_c_bulk = self.ncrowd / vol_cell
+        self.rho_c_bulk = self.ncrowd / vol_cell_c
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
 
 
@@ -1157,16 +1165,26 @@ class TransFociCyl(ParserBase):
         """
         computes some physical attributes of a lineage based on its
         primary attributes.
+        Note
+        ----
+        Under confinement, effective cell volume differs from the actual cell
+        volume, being set by the maximum radial center-to-center distance of
+        particles, i.e., self.dcyl-self.dx, where dx is the diameter (size) of
+        particle species 'x'.
         """
-        vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4.0
+        vol_cell_s = np.pi * (self.dcyl - self.dmon_small)**2 * self.lcyl / 4.0
+        vol_cell_l = np.pi * (self.dcyl - self.dmon_large)**2 * self.lcyl / 4.0
+        vol_cell_c = np.pi * (self.dcyl - self.dcrowd)**2 * self.lcyl / 4.0
         vol_mon_s = np.pi * self.dmon_small**3 / 6
         vol_mon_l = np.pi * self.dmon_large**3 / 6
-        self.rho_m_bulk = self.nmon / vol_cell
-        self.phi_m_bulk = (
-            vol_mon_s * self.nmon_small + vol_mon_l * self.nmon_large
-        ) / vol_cell
+        self.rho_s_bulk = self.nmon_small / vol_cell_s
+        self.rho_l_bulk = self.nmon_large / vol_cell_l
+        self.rho_m_bulk = self.rho_s_bulk + self.rho_l_bulk
+        self.phi_s_bulk = self.rho_s_bulk * vol_mon_s
+        self.phi_l_bulk = self.rho_l_bulk * vol_mon_l
+        self.phi_m_bulk = self.phi_s_bulk + self.phi_l_bulk
         vol_crowd = np.pi * self.dcrowd**3 / 6
-        self.rho_c_bulk = self.ncrowd / vol_cell
+        self.rho_c_bulk = self.ncrowd / vol_cell_c
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
 
 
@@ -2432,16 +2450,25 @@ class HnsCyl(ParserBase):
         """
         computes some physical attributes of a lineage based on its
         primary attributes.
+
+        Note
+        ----
+        Under confinement, effective cell volume differs from the actual cell
+        volume, being set by the maximum radial center-to-center distance of
+        particles, i.e., self.dcyl-self.dx, where dx is the diameter (size) of
+        particle species 'x'.
         """
-        vol_cell = np.pi * self.dcyl**2 * self.lcyl / 4
+        vol_cell_m = np.pi * (self.dcyl - self.dmon)**2 * self.lcyl / 4.0
+        vol_cell_hns = np.pi * (self.dcyl - self.dhns)**2 * self.lcyl / 4.0
+        vol_cell_c = np.pi * (self.dcyl - self.dcrowd)**2 * self.lcyl / 4.0
         vol_mon = np.pi * self.dmon**3 / 6
-        self.rho_m_bulk = self.nmon / vol_cell
-        self.phi_m_bulk = vol_mon * self.nmon / vol_cell
+        self.rho_m_bulk = self.nmon / vol_cell_m
+        self.phi_m_bulk = self.rho_m_bulk * vol_mon
         vol_hns = np.pi * self.dhns**3 / 6
-        self.rho_hns_bulk = self.nhns / vol_cell
-        self.phi_hns_bulk = vol_hns * self.nhns / vol_cell
+        self.rho_hns_bulk = self.nhns / vol_cell_hns
+        self.phi_hns_bulk = self.rho_hns_bulk * vol_hns
         vol_crowd = np.pi * self.dcrowd**3 / 6
-        self.rho_c_bulk = self.ncrowd / vol_cell
+        self.rho_c_bulk = self.ncrowd / vol_cell_c
         self.phi_c_bulk = self.rho_c_bulk * vol_crowd
 
 

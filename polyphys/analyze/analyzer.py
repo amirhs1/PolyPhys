@@ -251,6 +251,42 @@ ANALYSIS_DETAILS_ALL = all_details = {
             ('z', 'all'),
         ]
     },
+    'SumRuleCylWhole': {
+        'hierarchy': 'N*/N*',  # dir/file
+        'parser': SumRuleCyl,
+        'group': 'all',
+        'geometry': 'cylindrical',
+        'topology': 'linear',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('z', 'Crd', 'all'),
+            ('z', 'Mon', 'all'),
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('theta', 'Crd', 'all'),
+            ('theta', 'Mon', 'all'),
+        ],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all'),
+        ]
+    },
     'TransFociCylWhole': {
         'hierarchy': 'eps*/eps*',  # dir/file
         'parser': TransFociCyl,
