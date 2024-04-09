@@ -23,6 +23,6 @@ The following step are need if the ablove approach does not work - See the [arch
     2. Enter the **passcode** for **Graham** cluster.
     3. Run **rsync -axvH --no-g --no-p --exclude='.*' PACKAGE_NAME /destination** to copy directory, excluding hidden files.
 
-5. Request a computing node with **salloc --ntasks=1 --cpus-per-task=1 --mem=2G --time=0:30:0 --account=def-someuser**.
+5. Request a computing node with **salloc --ntasks=1 --cpus-per-task=1 --mem=3G --time=02:00:00 --account=def-someuser**.
 6. Active **daskEnv** by running **source ~/daskEnv/bin/activate**
 7. Run the **datafile_generator.py** in the **____-trjs** directory. This python script creates a **bug** data (topology) file for bug from bug trajectory file. The positions and velocities of atoms in this data file are not important since they are overwritten by the data from the trajectory file once read inby MDAnalyis; only, the topolgy and box information are important.
