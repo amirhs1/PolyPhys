@@ -15,4 +15,3 @@ for dir in N*/; do
     echo "Finished archiving ${dir}" >> archive_report.txt
 done
 echo "Program finished with exit code $? at: $(date)"
-
