@@ -24,7 +24,7 @@ from ..manage.parser import (
 PROJECT_DETAILS = {
     'SumRuleCyl': {
         'group': 'bug',
-        'divisor': 0.025,
+        'divisor': 0.001,
         'geometry': 'cylindrical',
         'geometry_name': 'cylindrical_confinement',
         'chain_name': 'homogeneous_linear',
@@ -329,7 +329,7 @@ ATTRIBUTE_LABELS = {
     'rRho-alpha': r'$\rho_{\alpha}(r)$',
     'zRho-alpha': r'$\rho_{\alpha}(|z|)$',
     'rPhi-norm': r'$\phi(r)$',
-    'rPhi-norm-Mon': r'$\phi_m(r)$',
+    'rPhi-norm-Mon': r'$\phi_s(r)$',
     'rPhi-norm-Foci': r'$\phi_l(r)$',
     'rPhi-norm-Hns': r'$\phi_n(r)$',
     'rPhi-norm-Crd': r'$\phi_c(r)$',
@@ -337,7 +337,7 @@ ATTRIBUTE_LABELS = {
     'rPhi-norm-Sum-rescaler': r'$\sum_{\alpha}\phi_{\alpha}(0)/a_{\alpha}$',
     'rPhi-norm-Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$',
     'zPhi-norm': r'$\phi(|z|)$',
-    'zPhi-norm-Mon': r'$\phi_m(|z|)$',
+    'zPhi-norm-Mon': r'$\phi_s(|z|)$',
     'zPhi-norm-Foci': r'$\phi_l(|z|)$',
     'zPhi-norm-Hns': r'$\phi_n(|z|)$',
     'zPhi-norm-Crd': r'$\phi_c(|z|)$',
@@ -345,7 +345,7 @@ ATTRIBUTE_LABELS = {
     'zPhi-norm-Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$',
     'zPhi-norm-Sum-rescaler': r'$\sum_{\alpha}\frac{\phi_{\alpha}(\infty)}{a_{\alpha}}=\frac{\phi_c(\infty)}{a_c}$',
     'rRho-norm': r'$\rho(r)$',
-    'rRho-norm-Mon': r'$\rho_m(r)$',
+    'rRho-norm-Mon': r'$\rho_s(r)$',
     'rRho-norm-Foci': r'$\rho_l(r)$',
     'rRho-norm-Hns': r'$\rho_n(r)$',
     'rRho-norm-Crd': r'$\rho_c(r)$',
@@ -354,14 +354,14 @@ ATTRIBUTE_LABELS = {
     'rRho-norm-Sum_constant':
         r'${(\sum_c\rho_c(\infty)a_c^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
     'zRho-norm': r'$\rho(|z|)$',
-    'zRho-norm-Mon': r'$\rho_m(|z|)$',
+    'zRho-norm-Mon': r'$\rho_s(|z|)$',
     'zRho-norm-Foci': r'$\rho_l(|z|)$',
     'zRho-norm-Crd': r'$\rho_c(|z|)$',
     'zRho-norm-Sum':
         r'${(\sum_i\rho_{\alpha}(|z|)a_{\alpha}^2)}/{(\sum_{\alpha}\rho_{\alpha}(\infty)a_{\alpha}^2)}$',
     'zRho-norm-Sum_constant':
         r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_{\alpha}(\infty)a_{\alpha}^2)}$',
-    'rPhi-norm-old-Mon': r'${{\phi_m(r)}}/{{\phi_m(0)}}$',
+    'rPhi-norm-old-Mon': r'${{\phi_s(r)}}/{{\phi_s(0)}}$',
     'rPhi-norm-old-Foci': r'${{\phi_l(r)}}/{{\phi_l(0)}}$',
     'rPhi-norm-old-Hns': r'${{\phi_n(r)}}/{{\phi_n(0)}}$',
     'rPhi-norm-old-Crd': r'${{\phi_c(r)}}/{{\phi_c(\infty)}}$',
@@ -369,14 +369,14 @@ ATTRIBUTE_LABELS = {
         r'${(\sum_{\alpha}\phi_{\alpha}(r)/a_{\alpha})}/{(\sum_{\alpha}\phi_{\alpha}(\infty)/a_{\alpha})}$',
     'rPhi-norm-old-Sum_constant':
         r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_i\phi_i(\infty)/a_i)}$',
-    'zPhi-norm-old-Mon': r'${{\phi_m(|z|)}}/{{\phi_m(0)}}$',
+    'zPhi-norm-old-Mon': r'${{\phi_s(|z|)}}/{{\phi_s(0)}}$',
     'zPhi-norm-old-Foci': r'${{\phi_l(|z|)}}/{{\phi_l(0)}}$',
     'zPhi-norm-old-Crd': r'${{\phi_c(|z|)}}/{{\phi_c(\infty)}}$',
     'zPhi-norm-old-Sum':
         r'${(\sum_{\alpha}\phi_{\alpha}(|z|)/a_{\alpha})}/{(\sum_{\alpha}\phi_{\alpha}(\infty)/a_{\alpha})}$',
     'zPhi-norm-old-Sum_constant':
         r'${(\sum_c\phi_c(\infty)/a_c)}/{(\sum_{\alpha}\phi_{\alpha}(\infty)/a_{\alpha})}$',
-    'rRho-norm-old-Mon': r'${{\rho_m(r)}}/{{\rho_m(0)}}$',
+    'rRho-norm-old-Mon': r'${{\rho_s(r)}}/{{\rho_s(0)}}$',
     'rRho-norm-old-Foci': r'${{\rho_l(r)}}/{{\rho_l(0)}}$',
     'rRho-norm-old-Hns': r'${{\rho_n(r)}}/{{\rho_n(0)}}$',
     'rRho-norm-old-Crd': r'${{\rho_c(r)}}/{{\rho_c(\infty)}}$',
@@ -384,7 +384,7 @@ ATTRIBUTE_LABELS = {
         r'${(\sum_i\rho_i(r)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
     'rRho-norm-old-Sum_constant':
         r'${(\sum_c\rho_c(\infty)a_c^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
-    'zRho-norm-old-Mon': r'${{\rho_m(|z|)}}/{{\rho_m(0)}}$',
+    'zRho-norm-old-Mon': r'${{\rho_s(|z|)}}/{{\rho_s(0)}}$',
     'zRho-norm-old-Foci': r'${{\rho_l(|z|)}}/{{\rho_l(0)}}$',
     'zRho-norm-old-Crd': r'${{\rho_c(|z|)}}/{{\rho_c(\infty)}}$',
     'zRho-norm-old-Sum':
@@ -405,12 +405,12 @@ ATTRIBUTE_LABELS = {
     'clustersHistFoci-norm-full_name': r'$p(x_c)$',
     'clustersHistFoci-norm-full_name-cdf': r'$\mathcal{P}(x_c)$',
     'pairDistHistFoci-legend_title':
-        r'$(n_i,n_j,\Delta n_{ij}/\langle l_m \rangle)$',
+        r'$(n_i,n_j,\Delta n_{ij}/\langle l_s \rangle)$',
     'pairDistHistFoci-legend_title-index_diff':
         r'$(n_i,n_j,\Delta n_{ij})$',
     'pairDistHistFoci': r'$\mathcal{H}(n_i,n_j,\Delta n_{ij})$',
     'pairDistRdfFoci-legend_title':
-        r'$(n_i,n_j,\Delta n_{ij}/\langle l_m \rangle)$',
+        r'$(n_i,n_j,\Delta n_{ij}/\langle l_s \rangle)$',
     'pairDistRdfFoci-legend_title-index_diff':
         r'$(n_i,n_j,\Delta n_{ij})$',
     'pairDistRdfFoci-short_name': r'$f$',
@@ -435,7 +435,7 @@ ATTRIBUTE_LABELS = {
     "dcrowd": "$a_c$",
     "dcyl": "$D$",
     "lcyl": "$Z$",
-    "nmon_small": "$N_m$",
+    "nmon_small": "$N_s$",
     "nmon_large": "$N_l$",
     'phi_c_bulk_norm': r"${a_m\phi_c}/{a_c}$",
     'genomic_distance':  r"$\Delta n/\langle l\rangle$",

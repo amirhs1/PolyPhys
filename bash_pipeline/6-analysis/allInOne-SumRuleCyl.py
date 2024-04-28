@@ -14,6 +14,8 @@ analysis_db = str(absolute_path) + "/"
 project_details = PSD[project]
 
 # Ensemble stamps
+print("Analyzing ensemble stamps ...")
+
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
     space_db + "/" for space_db in space_dbs if space_db.endswith(
@@ -32,6 +34,7 @@ allInOne_stamps.reset_index(inplace=True, drop=True)
 output = analysis_db + "allInOne-" + project + "-stamps-ensAvg.csv"
 allInOne_stamps.to_csv(output, index=False)
 # Whole stamps
+print("Analyzing whole stamps ...")
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
     space_db + "/" for space_db in space_dbs if space_db.endswith(
@@ -50,6 +53,7 @@ output = analysis_db + "allInOne-" + project + "-stamps-ens.csv"
 allInOne_stamps.to_csv(output, index=False)
 
 # Auto-correlation functions
+print("Analyzing ACFs ...")
 phase = 'ensAvg'
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
@@ -112,6 +116,7 @@ for ens_avg_space_db in ens_avg_space_dbs:
 
 
 # Time series
+print("Analyzing time series ...")
 phase = 'ensAvg'
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
@@ -176,6 +181,7 @@ for ens_avg_space_db in ens_avg_space_dbs:
     ens_avgs.to_parquet(output_name, index=False, compression='brotli')
 
 # Ensemble-averaged time-averaged properties
+print("Analyzing ensemble-averaged time-averaged properties ...")
 spaces = glob(analysis_db + project_details['space_pat'])
 spaces = sorted(
     list(set([space.split('/')[-1].split('-')[0] for space in spaces])))
@@ -203,6 +209,7 @@ ens_avg = api.all_in_one_equil_tseries_ens_avg(
 )
 
 # Sum-Rule
+print("Analyzing spatial distributions ...")
 phase = 'ensAvg'
 group = 'all'
 space_dbs = glob(analysis_db + project_details['space_pat'])

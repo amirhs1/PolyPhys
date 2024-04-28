@@ -21,7 +21,7 @@ PROJECTS_DETAILS = {
         'geometry': 'cylindrical',
         'topology': 'linear',
         'parser': SumRuleCyl,
-        'divisor': 0.025,
+        'divisor': 0.001,
         'space_pat': 'N*D*ac*',
         'hierarchy': 'N*',
         'directions': ['r', 'z'],
@@ -376,7 +376,7 @@ def normalize_data(
     if project in ['HnsCyl', 'HnsCub']:
         for space, prop in itertools.product(spaces, norm_props):
             space_con = df_copy['space'] == space
-            phi_c_con = df_copy['phi_c_bulk_round'] == 0
+            phi_c_con = df_copy['ncrowd'] == 0
             prop_0 = \
                 df_copy.loc[
                     space_con & phi_c_con, prop + "-mean"
@@ -404,7 +404,7 @@ def normalize_data(
     else:
         for space, prop in itertools.product(spaces, norm_props):
             space_con = df_copy['space'] == space
-            phi_c_con = df_copy['phi_c_bulk_round'] == 0
+            phi_c_con = df_copy['ncrowd'] == 0
             prop_0 = \
                 df_copy.loc[
                     space_con & phi_c_con, prop + "-mean"

@@ -20,7 +20,7 @@ pip install --no-index numpy
 pip install --no-index scipy
 pip install --no-index pandas
 pip install --no-index seaborn
-pip install --no-index symp
+pip install --no-index sympy
 pip install --no-index statsmodels
 pip install --no-index MDAnalysis==2.3.0
 # Create a function to execute your job
