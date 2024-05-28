@@ -103,6 +103,7 @@ for ens_avg_space_db in ens_avg_space_dbs:
             raise ValueError("The 'phi_c drop' condition is not defined for "
                              f"'{project}' project.")
         ens_avgs.append(ens_avg)
+        del ens_avg
     ens_avgs = pd.concat(ens_avgs, axis=1)
     # drop duplicated columns:
     ens_avgs = ens_avgs.loc[:, ~ens_avgs.columns.duplicated()]
@@ -113,6 +114,7 @@ for ens_avg_space_db in ens_avg_space_dbs:
          ]
     )
     ens_avgs.to_parquet(output_name, index=False, compression='brotli')
+    del ens_avgs
 
 
 # Time series
@@ -172,6 +174,7 @@ for ens_avg_space_db in ens_avg_space_dbs:
             raise ValueError("The 'phi_c drop' condition is not defined for "
                              f"'{project}' project.")
         ens_avgs.append(ens_avg)
+        del ens_avg
     ens_avgs = pd.concat(ens_avgs, axis=1)
     # drop duplicated columns:
     ens_avgs = ens_avgs.loc[:, ~ens_avgs.columns.duplicated()]
@@ -179,6 +182,7 @@ for ens_avg_space_db in ens_avg_space_dbs:
         [space,  project_details['group'], "chainSize.parquet.brotli"]
     )
     ens_avgs.to_parquet(output_name, index=False, compression='brotli')
+    del ens_avgs
 
 # Ensemble-averaged time-averaged properties
 print("Analyzing ensemble-averaged time-averaged properties ...")
@@ -279,3 +283,4 @@ for (prop, direction) in dir_prop_pairs:
     output += '-NormalizedScaled.parquet.brotli'
     output = analysis_db + output
     all_in_one.to_parquet(output, index=False, compression='brotli')
+    del all_in_one, all_in_one_list

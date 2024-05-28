@@ -6,7 +6,8 @@ if [ ! -d "incomplete" ]; then
 fi
 
 # Loop through directories starting with "N"
-for dir in N*/; do
+#for dir in N*/; do
+for dir in al*ring/; do
     # Find the file starting with "slurm" in the current directory
     slurm_file=$(find "$dir" -maxdepth 1 -name "slurm*" -type f)
 
