@@ -212,7 +212,7 @@ def all_in_one_equil_tseries(
     measures: List[Callable],
     kind: str = 'dataframe',
     topology: Optional[str] = None,
-    divisor: Optional[float] = 0.025,
+    divisor: Optional[float] = 0.0-1,
     round_to: Optional[int] = 3,
     save_space: Optional[bool] = False,
     save_to: Optional[str] = None,
@@ -376,7 +376,7 @@ def normalize_data(
     if project in ['HnsCyl', 'HnsCub']:
         for space, prop in itertools.product(spaces, norm_props):
             space_con = df_copy['space'] == space
-            phi_c_con = df_copy['ncrowd'] == 0
+            phi_c_con = df_copy['phi_c_bulk_round'] == 0
             prop_0 = \
                 df_copy.loc[
                     space_con & phi_c_con, prop + "-mean"
@@ -404,7 +404,7 @@ def normalize_data(
     else:
         for space, prop in itertools.product(spaces, norm_props):
             space_con = df_copy['space'] == space
-            phi_c_con = df_copy['ncrowd'] == 0
+            phi_c_con = df_copy['phi_c_bulk_round'] == 0
             prop_0 = \
                 df_copy.loc[
                     space_con & phi_c_con, prop + "-mean"
@@ -484,6 +484,7 @@ def all_in_one_equil_tseries_ens_avg(
     ens_avg = drop_unnecessary_columns(ens_avg, properties, attributes)
     # Ensemble-averaging all the measures of all the properties:
     ens_avg = ens_avg.groupby(attributes).agg(np.mean).reset_index()
+
     # Normalizing the mean values of each property in each ensemble in a
     # space by the value of the property ensemble with phi_c_bulk_round=0 in
     # that space:

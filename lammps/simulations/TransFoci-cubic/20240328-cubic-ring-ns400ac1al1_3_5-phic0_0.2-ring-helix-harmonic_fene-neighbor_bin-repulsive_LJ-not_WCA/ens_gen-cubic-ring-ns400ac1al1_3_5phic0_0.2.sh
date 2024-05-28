@@ -12,10 +12,8 @@ P[${#P[@]}]="400	55	1		0			30000		0.005		2000	5000	3 		5		27"
 P[${#P[@]}]="400	45	1		139229		30010		0.005		2000	5000	3 		5		27"
 P[${#P[@]}]="400	42	1		169798		30020		0.005		2000	5000	3 		5		27"
 P[${#P[@]}]="400	42	1		226397		30030		0.005		2000	5000	3 		5		27"
-
 ens='1 2 3 4' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 #ens='1' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
-
 for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
 	for ((j=0; j<${#P[@]}; j++ )); do
 		n_small=$(echo "${P[$j]}" | awk '{print $1}') # number of small monomers
@@ -71,6 +69,7 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		mv input.lmp "${dirname}"
 		cp ./*.data initial_config.data
 		mv initial_config.data "${dirname}"
+        cp submit_system_minimize.sh "${dirname}"
 
 		N=$((n_big+n_small))
 		if [ $((n_crowd+N)) -ne ${N} ]; 
