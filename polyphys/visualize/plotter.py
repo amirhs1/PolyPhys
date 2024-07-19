@@ -141,6 +141,33 @@ PROJECT_DETAILS = {
                              'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
                              'shapeMon-var', 'shapeMon-sem']
     },
+    'TransFociCub-InitialCompressed': {
+        'group': 'bug',
+        'divisor': 0.025,
+        'geometry': 'cubic',
+        'geometry_name': 'free_space',
+        'chain_name': 'heterogeneous_ring',
+        'topology': 'ring',
+        'parser': TransFociCub,
+        'space_pat': 'ns*nl*al*ac*',
+        'hierarchy': 'al*',
+        'species': ['Mon', 'Foci', 'Crd'],
+        'directions': ['r'],
+        'cross_section': ['xy', 'xz', 'yz'],
+        'edge_directions': ['x', 'y', 'z'],
+        'space_hierarchy': 'ns*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon_small',
+                       'nmon_large', 'dmon_large', 'dcrowd', 'phi_c_bulk'],
+        'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space',
+                             'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'],
+        'equil_properties': ['asphericityMon-mean', 'asphericityMon-var',
+                             'asphericityMon-sem', 'gyrMon-mean',
+                             'gyrMon-var', 'gyrMon-sem', 'shapeMon-mean',
+                             'shapeMon-var', 'shapeMon-sem']
+    },
     'HnsCub': {
         'group': 'nucleoid',
         'divisor': 0.025,
@@ -207,6 +234,11 @@ TITLE_STYLES = {
         'universe': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, a_c={s.dcrowd}$"
     },
     'TransFociCub-LJ_pow12': {
+        'title': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, a_c={s.dcrowd}$",
+        'short': lambda s: fr"$a_l={s.dmon_large}$",
+        'universe': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, a_c={s.dcrowd}$"
+    },
+    'TransFociCub-InitialCompressed': {
         'title': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, a_c={s.dcrowd}$",
         'short': lambda s: fr"$a_l={s.dmon_large}$",
         'universe': lambda s: fr"$N_s={s.nmon_small}, N_l={s.nmon_large}, a_c={s.dcrowd}$"
@@ -335,7 +367,9 @@ ATTRIBUTE_LABELS = {
     'rPhi-norm-Crd': r'$\phi_c(r)$',
     'rPhi-norm-Sum': r'$\sum_{\alpha}\phi_{\alpha}(r)/a_{\alpha}$',
     'rPhi-norm-Sum-rescaler': r'$\sum_{\alpha}\phi_{\alpha}(0)/a_{\alpha}$',
-    'rPhi-norm-Sum_constant': r'$\sum_c\phi_c(\infty)/a_c$',
+    'rPhi-norm-Sum_constant': r'$\sum_c\phi_c(0)/a_c$',
+    'rPhi-norm-Sum-rescaler-cub': r'$\sum_{\alpha}\phi_{\alpha}(\infty)/a_{\alpha}$',
+    'rPhi-norm-Sum_constant-cub': r'$\sum_{\alpha}\frac{\phi_{\alpha}(\infty)}{a_{\alpha}}=\frac{\phi_c(\infty)}{a_c}$',
     'zPhi-norm': r'$\phi(|z|)$',
     'zPhi-norm-Mon': r'$\phi_s(|z|)$',
     'zPhi-norm-Foci': r'$\phi_l(|z|)$',
@@ -353,14 +387,20 @@ ATTRIBUTE_LABELS = {
         r'${(\sum_i\rho_i(r)a_i^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
     'rRho-norm-Sum_constant':
         r'${(\sum_c\rho_c(\infty)a_c^2)}/{(\sum_i\rho_i(\infty)a_i^2)}$',
+    'rRho-norm-Sum-rescaler': r'${\sum_{\alpha}\rho_{\alpha}(0)a_{\alpha}^2}$',
+    'rRho-norm-Sum_constant-cub':
+        r'$\sum_{\alpha}\rho_{\alpha}(\infty)a_{\alpha}^2=\rho_c(\infty)a_c^2$',
+    'rRho-norm-Sum-rescaler-cub': r'${\sum_{\alpha}\rho_{\alpha}(\infty)a_{\alpha}^2}$',
     'zRho-norm': r'$\rho(|z|)$',
     'zRho-norm-Mon': r'$\rho_s(|z|)$',
     'zRho-norm-Foci': r'$\rho_l(|z|)$',
     'zRho-norm-Crd': r'$\rho_c(|z|)$',
     'zRho-norm-Sum':
-        r'${(\sum_i\rho_{\alpha}(|z|)a_{\alpha}^2)}/{(\sum_{\alpha}\rho_{\alpha}(\infty)a_{\alpha}^2)}$',
+        r'${(\sum_{\alpha}\rho_{\alpha}(|z|)a_{\alpha}^2)}/{(\sum_{\alpha}\rho_{\alpha}(\infty)a_{\alpha}^2)}$',
     'zRho-norm-Sum_constant':
-        r'${(\sum_c\rho_c(\infty)a_c^2)}//{(\sum_i\rho_{\alpha}(\infty)a_{\alpha}^2)}$',
+        r'${(\sum_c\rho_c(\infty)a_c^2)}/{(\sum_i\rho_{\alpha}(\infty)a_{\alpha}^2)}$',
+    'zRho-norm-Sum-rescaler':
+        r'$\sum_{\alpha}\rho_{\alpha}(\infty)a_{\alpha}^2=\rho_c(\infty)a_c^2$',
     'rPhi-norm-old-Mon': r'${{\phi_s(r)}}/{{\phi_s(0)}}$',
     'rPhi-norm-old-Foci': r'${{\phi_l(r)}}/{{\phi_l(0)}}$',
     'rPhi-norm-old-Hns': r'${{\phi_n(r)}}/{{\phi_n(0)}}$',
@@ -425,6 +465,8 @@ ATTRIBUTE_LABELS = {
     "space": "",
     "ensemble": "",
     "phi_c_bulk_round": r"$\phi_c$",
+    "phi_c_bulk_round-fixed": r"$\phi_c$",
+    "phi_c_bulk": r"$\phi_c$",
     "phi_c_bulk_round-corrected": r"$\phi_c$",
     "time": r"$t$",
     "t_norm": r"$t/t_{{T}}$",
@@ -452,6 +494,7 @@ ATTRIBUTE_LABELS = {
     'bin_center-r': '$r$',
     'bin_center-norm-dcyl-r': '${{2r}}/{{D}}$',
     'bin_center-fsd_mean-r': '${{2r}}/{{D}}$',
+    'bin_center-gyr_mean-r': '${{2r}}/{{D}}$',
     'bin_center-recentered-norm-dcyl-r': '${{(2r-a^{shift})}}/{{D}}$',
     'bin_center-norm-r-cub': '${{r}}/{{r_{max}}}$',
     'bin_center-norm-corrected-r-cub': '${{r}}/{{r_{max}}}$',
@@ -465,6 +508,7 @@ ATTRIBUTE_LABELS = {
     'bin_center-norm-dmon_large-z': '${{z}}/{{a_l}}$',
     'bin_center-dcrowd-z': '${{2|z|}}/{{Z}}$',
     'bin_center-fsd_mean-z': r'${{2|z|}}/{{\langle L_{{0}}\rangle}}$',
+    'bin_center-gyr_mean-z': r'${{2|z|}}/{{\langle R_{{g,0}}\rangle}}$',
     'bin_center-dcrowd-recentered-z': '${{2|z|}}/{{Z}}$',
     'bin_center-theta': r'$\theta$',
     'bin_center-dcrowd-theta': r'${{\theta}}/{{\pi}}$',

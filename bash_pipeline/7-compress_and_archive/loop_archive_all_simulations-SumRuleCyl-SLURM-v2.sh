@@ -40,7 +40,14 @@ process_directory() {
 }
 
 # Directory patterns to process
-directory_patterns=("N*[1-8]/" "N*[1-8]_res/" "N*[1-8]_incomplete/" "N*[1-8]_cont/")
+# SumRuleCyl
+#directory_patterns=("N*ens[1-8]/" "N*ens[1-8]_res/" "N*ens[1-8]_incomplete/" "N*ens[1-8]_cont/")
+# TransFociCyl
+#directory_patterns=("eps*ens[1-8]*ring/" "N*ens[1-8]*ring_res/" "N*ens[1-8]*ring_incomplete/" "N*ens[1-8]*ring_cont/")
+# TransFociCub
+directory_patterns=("al*ens[1-8]*ring/" "al*ens[1-8]*ring_res/" "al*ens[1-8]*ring_incomplete/" "al*ens[1-8]*ring_cont/")
+# SumRuleCubHetero
+#directory_patterns=("al*ens[1-8]*ring_res/" "al*ens[1-8]*ring_res/" "al*ens[1-8]*ring_incomplete/" "N*ens[1-8]_cont/")
 
 for pattern in "${directory_patterns[@]}"; do
     # Expanding the pattern to check for existing directories
