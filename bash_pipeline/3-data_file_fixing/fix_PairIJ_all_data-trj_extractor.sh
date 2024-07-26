@@ -8,7 +8,6 @@ for dir in N*[1-8]/; do # SumRuleCyl
     cd "$dir" || exit
     name=${dir:0:-1}
     datafile="$name".all.data
-    cp "${datafile}" "${name}".all.original.data
     # the sed command below (s)ubstitute the line starts with
     # "PairIJ Coeffs" with the "Pair Coeffs # lj_cut"
     # Here we assumed that the Pair Coeffs are for the "lj_cut"

@@ -17,7 +17,10 @@ fi
 echo "Trajectory directory: $trjdir"
 mkdir "$trjdir"
 mkdir "$logdir"
-for dir in N*[1-8].ring/; do
+#for dir in al*[1-8].ring/; do # TransFociCub
+#for dir in eps*[1-8].ring/; do # TransFociCyl
+for dir in N*[1-8]/; do # SumRuleCyl
+#for dir in N*[1-8].ring/; do
     echo "$dir"
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"
@@ -25,6 +28,8 @@ for dir in N*[1-8].ring/; do
     cp "$fname".nucleoid.lammpstrj ../"$trjdir"/"$fname"/
     cp "$fname".all.data ../"$trjdir"/"$fname"/
     for gzfile in N*.all.lammpstrj.gz;do 
+    #for gzfile in al*.all.lammpstrj.gz;do 
+    #for gzfile in eps*.all.lammpstrj.gz;do 
             gzip -dk "$gzfile"
             allfile=${gzfile[*]:0: -3}
             mv "$allfile" ../"$trjdir"/"$fname"/
