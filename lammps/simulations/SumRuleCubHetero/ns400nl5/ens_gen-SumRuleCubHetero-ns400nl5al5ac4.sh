@@ -1,19 +1,20 @@
 #!/bin/bash
-# Generated on date 20240725
+# Generated on date 20240726
 # ns lcube ac nc randseed_group dt b_dump a_dump al nl ml
-P[${#P[@]}]="400	45	4	2176	45000	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	3264	45010	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	4351	45020	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	4895	45030	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	5439	45040	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	5983	45050	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	6527	45060	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	7071	45070	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	7615	45080	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	8158	45090	0.005	2000	5000	5	5	216"
-P[${#P[@]}]="400	45	4	8702	45100	0.005	2000	5000	5	5	216"
+P[${#P[@]}]="400	45	4	2176	45000	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	3264	45010	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	4351	45020	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	4895	45030	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	5439	45040	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	5983	45050	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	6527	45060	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	7071	45070	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	7615	45080	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	8158	45090	0.005	2000	5000	5	5	125"
+P[${#P[@]}]="400	45	4	8702	45100	0.005	2000	5000	5	5	125"
 
-ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
+#ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
+ens=1
 # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
 for i in ${ens}; do 
 	for ((j=0; j<${#P[@]}; j++ )); do
@@ -29,7 +30,7 @@ for i in ${ens}; do
 		n_big=$(echo "${P[$j]}" | awk '{print $10}') # number of big monomers
 		m_big=$(echo "${P[$j]}" | awk '{print $11}')
 		dirname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring
-        simname=al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}
+        simname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}
 		
 		# modifying foci-ring-cylinder-init_config_minimize-harmonic.lmp
 		cp foci-ring-cubic-init_config_minimize-harmonic.lmp input.lmp
