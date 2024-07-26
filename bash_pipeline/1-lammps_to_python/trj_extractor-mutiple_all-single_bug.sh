@@ -28,6 +28,8 @@ for dir in N*[1-8]/; do # SumRuleCyl
     cp "$fname".bug.lammpstrj ../"$trjdir"/"$fname"/
     cp "$fname".all.data ../"$trjdir"/"$fname"/
     for gzfile in N*.all.lammpstrj.gz;do 
+    #for gzfile in al*.all.lammpstrj.gz;do 
+    #for gzfile in eps*.all.lammpstrj.gz;do 
             gzip -dk "$gzfile"
             allfile=${gzfile[*]:0: -3}
             mv "$allfile" ../"$trjdir"/"$fname"/
