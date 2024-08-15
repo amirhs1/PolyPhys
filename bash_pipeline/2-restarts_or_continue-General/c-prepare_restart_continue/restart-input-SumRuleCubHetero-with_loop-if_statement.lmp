@@ -1,21 +1,3 @@
-
-# Read restart
-#read_restart restart.3.83000000
-
-# Defining input parameters:
-variable all_dump equal 5000
-variable bug_dump equal 2000
-variable run_dt equal 0.005
-variable mass2 equal 125
-variable sig2 equal 5
-variable sig3 equal 1
-variable n_crowd equal 226397
-variable l equal 42
-variable i equal 3
-variable n_small equal 400
-variable randseed equal 21039
-variable n_big equal 5
-
 #---------- (1) Variables ----------
 # LJ inter-species sigma: sigma_ij
 # 1: small monomer, 2: large monomer, 3: crowder
@@ -57,18 +39,19 @@ fix F_langevin all langevin 1.0 1.0 10.0 ${randseed}
 fix F_nve all nve
 fix F_recenter bug recenter 0.0 0.0 0.0 shift all units box
 timestep ${run_dt}
+thermo_style multi
 thermo 10000
 
 dump D_bug bug atom  ${bug_dump} al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring.bug.restart.lammpstrj
 dump_modify D_bug scale no
 
 variable fname string input.lmp
-variable j loop 4 pad
+variable j loop ${nloop} pad
         label dump_loop
         dump D_all all atom ${all_dump} al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.j${j}.ring.all.restart.lammpstrj.gz
         dump_modify D_all scale no pad 2
         restart 1000000 ./restarts/restart.${i}
-        run     5000000
+        if "$j == ${nloop}" then "run 8000000" else "run 5000000"
         undump D_all
         next j
         jump ${fname} dump_loop # input.lmp is the input script itself to prevent any issues related to stdin and SELF.

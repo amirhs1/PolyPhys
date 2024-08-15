@@ -13,7 +13,7 @@ for dir in eps*/; do
     cd "$dir" || exit
     mv ./eps*.csv "../${probe}/$dir"
     mv ./eps*.npy "../${probe}/$dir"
-    mv ./*.txt "../${probe}/$dir"
+    mv ./esp*.txt "../${probe}/$dir"
     cd ..
 done
 echo "Finished!"
