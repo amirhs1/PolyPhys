@@ -40,6 +40,6 @@ echo "Starting run at: $(date)"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-trans_foci_bug_cub-bug_wholes.txt ::: al*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-trans_foci_bug_cub-bug_wholes.txt ::: al*ring/
 
 echo "Program glost_launch finished with exit code $? at: $(date)"
