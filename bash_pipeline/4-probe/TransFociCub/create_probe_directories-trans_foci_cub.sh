@@ -13,7 +13,7 @@ for dir in al*ring/; do
     cd "$dir" || exit
     mv ./al*.csv "../${probe}/$dir"
     mv ./al*.npy "../${probe}/$dir"
-    mv ./*.txt "../${probe}/$dir"
+    mv ./al*.txt "../${probe}/$dir"
     cd ..
 done
 echo "Finished!"

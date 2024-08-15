@@ -35,10 +35,10 @@ for incomplete_folder in al*_incomplete; do
     sed -i "1s/^/read_restart $res_file\n/" "${res_folder}/input.lmp"
     sed -i "1s/^/variable nloop equal $jcount\n/" "${res_folder}/input.lmp"
 
-    current_total_time_step=$(grep -B 10 "Performance" ${incomplete_folder}/log.lammps | tail -n 8 | head -n 1 | cut -d ' ' -f 9)
+    current_total_time_step=$(grep -B 10 "Performance" ${incomplete_folder}/log.lammps | tail -n 8 | head -n 1 | grep "Step" | awk '{print $3}')
     echo "current time step: $current_total_time_step"
 
-    avg_tstep_per_sec=$(awk '/Performance/ {if (seen) {sum += $(NF-1); count++} else seen = 1} END {if (count > 0) print sum / count}' ${incomplete_folder}/log.lammps)
+    avg_tstep_per_sec=$(awk '/Performance/ {if (seen) {sum += $(NF-3); count++} else seen = 1} END {if (count > 0) print sum / count}' ${incomplete_folder}/log.lammps)
     avg_tstep_per_sec=$(printf "%.0f" "$avg_tstep_per_sec")
     echo "avg time step per sec: $avg_tstep_per_sec"
 
