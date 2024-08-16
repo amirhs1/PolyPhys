@@ -35,7 +35,7 @@ process_directory() {
         fi
         mv "${directory}"*.gz "${zip_dir}/"
         tar_project="${dir_name}.tar"
-        tar -zcvf "${tar_project}" "${zip_dir}" >> "${report_name}"
+        tar -cvf "${tar_project}" "${zip_dir}" >> "${report_name}"
     done
 }
 
