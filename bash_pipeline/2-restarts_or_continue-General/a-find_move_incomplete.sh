@@ -6,8 +6,11 @@ if [ ! -d "incomplete" ]; then
 fi
 
 # Loop through directories starting with "N"
-#for dir in N*/; do
-for dir in al*ring/; do
+for dir in N*ens[1-8]/; do # SumRuleCyl
+#for dir in N*ring/; do # HnsCub HnsCyl
+#for dir in al*ring/; do # TransFociCub, SumRuleCubHeteroRing
+#for dir in al*linear/; do # TransFociCub, SumRuleCubHeteroLinear
+#for dir in eps*/; do # TransFociCyl
     # Find the file starting with "slurm" in the current directory
     slurm_file=$(find "$dir" -maxdepth 1 -name "slurm*" -type f)
 

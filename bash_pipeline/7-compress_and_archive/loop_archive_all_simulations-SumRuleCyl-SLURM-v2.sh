@@ -14,10 +14,12 @@ touch "$report_name"
 
 process_directory() {
     local pattern=$1
-    local dirs=( $pattern )
-    # Check if directories exist
+    #local dirs=( $pattern ) # old version
+    local dirs=( $(ls -d $pattern 2>/dev/null) )
+    
+     # Check if directories exist
     if [ ${#dirs[@]} -eq 0 ]; then
-        echo "No directories found for pattern: $pattern"
+        echo "No directories found for pattern: $pattern" >> "${report_name}"
         return
     fi
     

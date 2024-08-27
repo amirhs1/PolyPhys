@@ -1,21 +1,12 @@
 #!/bin/bash
+# Generated on date 20240726
+# ns lcube ac nc randseed_group dt b_dump a_dump al nl ml
+P[${#P[@]}]="400	75	1	0	61000	0.005	2000	5000	1	5	1"
 
-P[${#P[@]}]="400	45	6.0	0	56000	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	645	56010	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	967	56020	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	1290	56030	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	1451	56040	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	1612	56050	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	1773	56060	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	1934	56070	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	2095	56080	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	2257	56090	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	2418	56100	0.005	5000	2000	6.0	5	216"
-P[${#P[@]}]="400	45	6.0	2579	56110	0.005	5000	2000	6.0	5	216"
-
-ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
-
-for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
+#ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
+ens='1 2 3 4'
+# ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
+for i in ${ens}; do 
 	for ((j=0; j<${#P[@]}; j++ )); do
 		n_small=$(echo "${P[$j]}" | awk '{print $1}') # number of small monomers
 		l=$(echo "${P[$j]}" | awk '{print $2}') # range of x, y or z from -l to l
@@ -28,11 +19,11 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		sig2=$(echo "${P[$j]}" | awk '{print $9}') # big monomer size
 		n_big=$(echo "${P[$j]}" | awk '{print $10}') # number of big monomers
 		m_big=$(echo "${P[$j]}" | awk '{print $11}')
-		dirname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.ring
-        simname=al${sig2}nl${n_big}ml${mass2}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}
+		dirname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}.linear
+        simname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}
 		
-		# modifying foci-ring-cylinder-init_config_minimize-harmonic.lmp
-		cp foci-ring-cubic-init_config_minimize-harmonic.lmp input.lmp
+		# modifying foci-linear-cylinder-init_config_minimize-harmonic.lmp
+		cp foci-linear-cubic-init_config_minimize-harmonic.lmp input.lmp
         
 		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable randseed equal $((i+randseed_group))" | cat - input.lmp > temp && mv temp input.lmp
@@ -51,7 +42,7 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 		# rename the input.lmp to min_init_config.lmp
 		mv input.lmp minimize_initial_config.lmp
         
-        cp foci-ring-cubic-ac_equal-neigh_multi.lmp input.lmp
+        cp foci-linear-cubic-ac_equal-neigh_multi.lmp input.lmp
 
 		echo "variable simname string ${simname}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
@@ -105,3 +96,4 @@ for i in ${ens}; do # ${NAME} uses the value saved in variable called NAME; it i
 	done
 done
 
+		
