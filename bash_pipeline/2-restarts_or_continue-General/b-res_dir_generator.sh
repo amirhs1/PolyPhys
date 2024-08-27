@@ -3,7 +3,8 @@
 
 for dir in N*ens[1-8]/; do # SumRuleCyl
 #for dir in N*ring/; do # HnsCub HnsCyl
-#for dir in al*/; do # TransFociCub
+#for dir in al*ring/; do # TransFociCub, SumRuleCubHeteroRing
+#for dir in al*linear/; do # TransFociCub, SumRuleCubHeteroLinear
 #for dir in eps*/; do # TransFociCyl
     file=$(echo "$dir" | cut -d / -f 1)
     echo "$file"
