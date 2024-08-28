@@ -23,7 +23,7 @@ for i in ${ens}; do
         simname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}
 		
 		# modifying foci-linear-cylinder-init_config_minimize-harmonic.lmp
-		cp foci-linear-cubic-init_config_minimize-harmonic.lmp input.lmp
+		cp foci-linear-cubic-init_config_minimize-harmonic-neigh_bin-no_crowd.lmp input.lmp
         
 		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable randseed equal $((i+randseed_group))" | cat - input.lmp > temp && mv temp input.lmp
@@ -42,7 +42,7 @@ for i in ${ens}; do
 		# rename the input.lmp to min_init_config.lmp
 		mv input.lmp minimize_initial_config.lmp
         
-        cp foci-linear-cubic-ac_equal-neigh_multi.lmp input.lmp
+        cp foci-linear-cubic-ac_equal-neigh_bin-no_crowd input.lmp
 
 		echo "variable simname string ${simname}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
