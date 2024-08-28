@@ -1,10 +1,20 @@
 #!/bin/bash
-# Generated on date 20240726
+# Generated on date 20240828
 # ns lcube ac nc randseed_group dt b_dump a_dump al nl ml
-P[${#P[@]}]="400	75	1	0	61000	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	1114	61000	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	1671	61010	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	2228	61020	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	2507	61030	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	2785	61040	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	3064	61050	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	3342	61060	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	3620	61070	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	3899	61080	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	4177	61090	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	45	5	4456	61100	0.005	2000	5000	1	5	1"
 
 #ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
-ens='1 2 3 4'
+ens='1'
 # ${NAME} uses the value saved in variable called NAME; it is like the LAMMPS itself.
 for i in ${ens}; do 
 	for ((j=0; j<${#P[@]}; j++ )); do
@@ -23,7 +33,7 @@ for i in ${ens}; do
         simname=al${sig2}nl${n_big}ml${m_big}ns${n_small}ac${sig3}nc${n_crowd}l${l}dt${run_dt}bdump${bug_dump}adump${all_dump}ens${i}
 		
 		# modifying foci-linear-cylinder-init_config_minimize-harmonic.lmp
-		cp foci-linear-cubic-init_config_minimize-harmonic-neigh_bin-no_crowd.lmp input.lmp
+		cp foci-linear-cubic-init_config_minimize-harmonic.lmp input.lmp
         
 		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable randseed equal $((i+randseed_group))" | cat - input.lmp > temp && mv temp input.lmp
@@ -42,7 +52,7 @@ for i in ${ens}; do
 		# rename the input.lmp to min_init_config.lmp
 		mv input.lmp minimize_initial_config.lmp
         
-        cp foci-linear-cubic-ac_equal-neigh_bin-no_crowd input.lmp
+        cp foci-linear-cubic-ac_equal-neigh_multi.lmp input.lmp
 
 		echo "variable simname string ${simname}" | cat - input.lmp > temp && mv temp input.lmp
 		echo "variable n_big equal ${n_big}" | cat - input.lmp > temp && mv temp input.lmp
