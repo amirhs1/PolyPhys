@@ -1,11 +1,8 @@
 #!/bin/bash
-
 # Check if the incomplete directory exists, if not, create it
 if [ ! -d "incomplete" ]; then
     mkdir "incomplete"
 fi
-
-# Loop through directories starting with "N"
 for dir in N*ens[1-8]/; do # SumRuleCyl
 #for dir in N*ring/; do # HnsCub HnsCyl
 #for dir in al*ring/; do # TransFociCub, SumRuleCubHeteroRing

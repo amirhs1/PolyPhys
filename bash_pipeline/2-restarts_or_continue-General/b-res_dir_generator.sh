@@ -1,6 +1,5 @@
 #!/bin/bash
 # create restart directories for all the directories in a parent directory.
-
 for dir in N*ens[1-8]/; do # SumRuleCyl
 #for dir in N*ring/; do # HnsCub HnsCyl
 #for dir in al*ring/; do # TransFociCub, SumRuleCubHeteroRing
