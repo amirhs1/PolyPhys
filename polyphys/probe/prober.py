@@ -1,8 +1,8 @@
+import warnings
 from typing import Optional, Dict, Any, Union
+import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances as mda_dist
-import numpy as np
-
 from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
     )
@@ -10,7 +10,6 @@ from polyphys.manage.typer import ParserT
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
-import warnings
 
 
 def stamps_report_with_measures(
