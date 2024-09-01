@@ -23,7 +23,8 @@ from ..manage.organizer import (
     parents_stamps
 )
 from ..manage.parser import (
-    SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl
+    SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl,
+    SumRuleCubHeteroRing, SumRuleCubHeteroLinear
 )
 from ..manage.typer import (
     ParserT,
@@ -113,6 +114,55 @@ ANALYSIS_DETAILS_NUCLEOID = {
     'TransFociCubWhole': {
         'hierarchy': 'al*/al*',  # dir/file
         'parser': TransFociCub,
+        'group': 'bug',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'is_segment': False,
+        'has_stamp': True,
+        'nonscalar_hist_t_properties': [
+            # property_, species, group, avg_axis
+            ('bondsHistT', 'Foci', 'bug', 0),
+            ('clustersHistT', 'Foci', 'bug', 0)
+        ],
+        'nonscalar_mat_t_properties': [
+            # property_, species, group, avg_axis
+            ('distMatT', 'Foci', 'bug'),
+            ('principalT', 'Mon', 'bug')
+        ],
+        'acf_tseries_properties': [
+            ('gyrT', 'Mon', 'bug'),
+            ('shapeT', 'Mon', 'bug'),
+            ('asphericityT', 'Mon', 'bug')
+        ]
+    },
+    'SumRuleCubHeteroLinearWhole': {
+        'hierarchy': 'al*/al*',  # dir/file
+        'parser': SumRuleCubHeteroLinear,
+        'group': 'bug',
+        'geometry': 'cubic',
+        'topology': 'linear',
+        'is_segment': False,
+        'has_stamp': True,
+        'nonscalar_hist_t_properties': [
+            # property_, species, group, avg_axis
+            ('bondsHistT', 'Foci', 'bug', 0),
+            ('clustersHistT', 'Foci', 'bug', 0)
+        ],
+        'nonscalar_mat_t_properties': [
+            # property_, species, group, avg_axis
+            ('distMatT', 'Foci', 'bug'),
+            ('principalT', 'Mon', 'bug')
+        ],
+        'acf_tseries_properties': [
+            ('gyrT', 'Mon', 'bug'),
+            ('rfloryT', 'Mon', 'bug'),
+            ('shapeT', 'Mon', 'bug'),
+            ('asphericityT', 'Mon', 'bug')
+        ]
+    },
+    'SumRuleCubHeteroRingWhole': {
+        'hierarchy': 'al*/al*',  # dir/file
+        'parser': SumRuleCubHeteroRing,
         'group': 'bug',
         'geometry': 'cubic',
         'topology': 'ring',
@@ -360,6 +410,90 @@ ANALYSIS_DETAILS_ALL = all_details = {
         ]
     },
     'TransFociCubWhole': {
+        'hierarchy': 'al*/al*',  # dir/file
+        'parser': TransFociCub,
+        'group': 'all',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Foci', 'all'),
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('r', 'Dna', 'all'),
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Foci', 'all')],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xy', 'Dna', 'all'),
+            ('xy', 'Foci', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('xz', 'Dna', 'all'),
+            ('xz', 'Foci', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+            ('yz', 'Dna', 'all'),
+            ('yz', 'Foci', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all')
+        ]
+    },
+    'SumRuleCubHeteroLinearWhole': {
+        'hierarchy': 'al*/al*',  # dir/file
+        'parser': TransFociCub,
+        'group': 'all',
+        'geometry': 'cubic',
+        'topology': 'linear',
+        'is_segment': True,
+        'has_stamp': False,
+        'rho_phi_hist_properties': [
+            # direction, species, group
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Foci', 'all'),
+        ],
+        'hist_properties': [
+            # direction, species, group
+            ('r', 'Dna', 'all'),
+            ('r', 'Crd', 'all'),
+            ('r', 'Mon', 'all'),
+            ('r', 'Foci', 'all')],
+        'hist2d_properties': [
+            # direction, species, group
+            ('xy', 'Crd', 'all'),
+            ('xy', 'Mon', 'all'),
+            ('xy', 'Dna', 'all'),
+            ('xy', 'Foci', 'all'),
+            ('xz', 'Crd', 'all'),
+            ('xz', 'Mon', 'all'),
+            ('xz', 'Dna', 'all'),
+            ('xz', 'Foci', 'all'),
+            ('yz', 'Crd', 'all'),
+            ('yz', 'Mon', 'all'),
+            ('yz', 'Dna', 'all'),
+            ('yz', 'Foci', 'all'),
+        ],
+        'hist2d_edges': [
+            # direction, group
+            ('x', 'all'),
+            ('y', 'all'),
+            ('z', 'all')
+        ]
+    },
+    'SumRuleCubHeteroRingWhole': {
         'hierarchy': 'al*/al*',  # dir/file
         'parser': TransFociCub,
         'group': 'all',

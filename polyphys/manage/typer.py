@@ -1,8 +1,9 @@
-from typing import Type, Union, Tuple, Dict, NewType, List
+from typing import Type, Union, Tuple, Dict, NewType, List, TypeAlias
 import numpy as np
 import pandas as pd
 from .parser import (
-    ParserBase, SumRuleCyl, TransFociCyl, TransFociCub, HnsCyl, HnsCub
+    ParserBase, SumRuleCyl, TransFociCyl, TransFociCub, HnsCyl, HnsCub,
+    SumRuleCubHeteroLinear, SumRuleCubHeteroRing
     )
 
 # Define custom type aliases for clarity:
@@ -33,11 +34,14 @@ ParserBaseT = Type[ParserBase]
 TransFociCylT = Type[TransFociCyl]
 TransFociCubT = Type[TransFociCub]
 SumRuleCylT = Type[SumRuleCyl]
+SumRuleCubHeteroRingT = Type[SumRuleCubHeteroRing]
+SumRuleCubHeteroLinearT = Type[SumRuleCubHeteroLinear]
 HnsCubT = Type[HnsCub]
 HnsCylT = Type[HnsCyl]
 TransFociT = Union[TransFociCubT, TransFociCylT]
 HnsT = Union[HnsCubT, HnsCylT]
 # ParserT = Union[SumRuleCylT, TransFociCubT, TransFociCylT, HnsCubT, HnsCylT]
-ParserT = Union[SumRuleCyl, TransFociCub, TransFociCyl, HnsCub, HnsCyl]
+ParserT = Union[SumRuleCyl, TransFociCub, TransFociCyl, HnsCub, HnsCyl,
+                SumRuleCubHeteroLinear, SumRuleCubHeteroRing]
 ParserCylT = Union[SumRuleCylT, TransFociCylT, HnsCylT]
 ParserCubT = Union[TransFociCubT, HnsCubT]

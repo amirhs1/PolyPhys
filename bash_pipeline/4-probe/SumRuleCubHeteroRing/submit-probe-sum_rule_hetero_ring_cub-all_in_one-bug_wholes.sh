@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=3
+#SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=3G
-#SBATCH --time=0-06:00
+#SBATCH --time=1-00:00
 #SBATCH --account=def-group
 #SBATCH --mail-user=54184877+amirhs1@users.noreply.github.com
 #SBATCH --mail-type=ALL
@@ -30,7 +30,7 @@ pip install --no-index MDAnalysis==2.3.0
 exe(){
 dir=${1}
 file=$(echo "$dir" | cut -d / -f 1)
-(cd "${file}" && python probe-trans_foci_cub-all_in_one-bug_segments.py > "${file}"-probe-trans_foci_cub-all_in_one-bug_segments.txt)
+(cd "${file}" && python probe-sum_rule_hetero_ring_cub-all_in_one-bug_wholes.py)
 }
 
 echo "Starting run at: $(date)"
@@ -40,6 +40,6 @@ echo "Starting run at: $(date)"
 export -f exe
 
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-trans_foci_cub-all_in_one-bug_segments.txt ::: al*/
+parallel --will-cite --ungroup  --env _ exe {}-gnuparallel_out-probe-sum_rule_hetero_ring_cub-all_in_one-bug_wholes.txt ::: al*ring/
 
 echo "Program glost_launch finished with exit code $? at: $(date)"
