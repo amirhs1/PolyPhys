@@ -2,7 +2,8 @@
 
 # Define the base directory and pattern
 #for dir in N*[1-8]; do
-for dir in al*ring; do
+#for dir in al*ring; do
+for dir in al*linear; do
     cd "$dir"
     ls -l .
     file_count=$(ls ${dir::-5}*.all.lammpstrj | wc -l)

@@ -98,7 +98,7 @@ for i in ${ens}; do
 				cp submit_cpu32_gt250000_le300000.sh submit.sh && mv submit.sh "${dirname}"
 			fi
 		else
-			cp submit_nocrowd_8hrs.sh submit.sh && mv submit.sh "${dirname}"
+			cp submit_nocrowd.sh submit.sh && mv submit.sh "${dirname}"
 		fi
 		cd "${dirname}" || exit
 		[[ -d restarts ]] || mkdir restarts

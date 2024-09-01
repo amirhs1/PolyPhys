@@ -20,7 +20,7 @@ mkdir "$logdir"
 #for dir in al*[1-8].ring/; do # TransFociCub
 #for dir in eps*[1-8].ring/; do # TransFociCyl
 for dir in N*[1-8]/; do # SumRuleCyl
-#for dir in N*[1-8].ring/; do
+#for dir in N*[1-8].ring/; do # HnsCyl, HnsCub
     echo "$dir"
     fname=$(echo "$dir" | cut -d / -f 1)
     mkdir "$trjdir"/"$fname"

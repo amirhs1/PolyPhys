@@ -28,8 +28,9 @@ nextLine=$((allLine + 1))
 
 #for dir in eps*.ring/; do # TransFociCyl
 for dir in N*[1-8]/; do # SumRuleCyl
-#for dir in N*.ring/; do # HnsCub HnsCyl
-#for dir in al*ring/; do # TransFociCub
+#for dir in N*.ring/; do # HnsCub, HnsCyl
+#for dir in al*ring/; do # TransFociCub, SumRuleCubHeteroRing
+#for dir in al*linear/; do # SumRuleCubHeteroLinear
     echo "${dir}"
     name=${dir:0:-1}
     # The sed command copies the first 10 lines of all.data to bug.data

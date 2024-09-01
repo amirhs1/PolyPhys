@@ -1,3 +1,6 @@
+"""
+Does the `analysis` phase in a 'whole' probe directory.
+"""
 import os
 from polyphys.analyze import analyzer
 

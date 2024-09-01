@@ -2,7 +2,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=12G
 #SBATCH --time=0-04:00
-#SBATCH --account=rrg-byha
+#SBATCH --account=def-byha
 #SBATCH --mail-user=mr.a.h.saadeghi@gmail.com
 #SBATCH --mail-type=ALL
 

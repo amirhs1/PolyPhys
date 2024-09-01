@@ -2,7 +2,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem-per-cpu=12G
 #SBATCH --time=00-02:00   
-#SBATCH --account=rrg-byha
+#SBATCH --account=def-byha
 #SBATCH --mail-user=mr.a.h.saadeghi@gmail.com  
 #SBATCH --mail-type=ALL     
 
@@ -35,6 +35,5 @@ echo "Starting run at: $(date)"
 #export the function
 export -f exe
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-analysis_phase.txt ::: N*-bugSegment/
-
+parallel --will-cite --ungroup  --env _ exe {}-analysis_phase.txt ::: N*probe-bugSegment/
 echo "Program glost_launch finished with exit code $? at: $(date)"
