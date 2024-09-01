@@ -1,14 +1,17 @@
+"""
+Does the 'allInOne' step in the 'analysis' directory.
+"""
 import os
 from glob import glob
 from itertools import product
-import pandas as pd
 import numpy as np
+import pandas as pd
 from polyphys.manage import organizer
 import polyphys.api as api
 from polyphys.api import PROJECTS_DETAILS as PSD
 
 project = 'SumRuleCyl'
-analysis_db = './' + project + '-analysis/'
+analysis_db = './'
 absolute_path = os.path.abspath(analysis_db)
 analysis_db = str(absolute_path) + "/"
 project_details = PSD[project]

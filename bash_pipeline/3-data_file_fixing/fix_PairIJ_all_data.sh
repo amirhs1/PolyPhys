@@ -1,9 +1,10 @@
 #!/bin/bash
 # This part is different between different projects
-#for dir in al*.ring/; do # TransFociCub
+for dir in al*.linear/; do # SumRuleCubHeteroLinear
+#for dir in al*.ring/; do # TransFociCub, SumRuleCubHeteroRing
 #for dir in eps*.ring/; do # TransFociCyl
 #for dir in N*[1-8].ring/; do # HnsCub HnsCyl
-for dir in N*[1-8]/; do # SumRuleCyl
+#for dir in N*[1-8]/; do # SumRuleCyl
     echo "$dir"
     cd "$dir" || exit
     name=${dir:0:-1}

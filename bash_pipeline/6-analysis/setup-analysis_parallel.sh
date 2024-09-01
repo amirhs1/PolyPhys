@@ -16,7 +16,7 @@ case $project in
     TransFociCyl)
         dir_pattern="D*-probe*/"
         ;;
-    TransFociCub|SumRuleCubHetero)
+    TransFociCub|SumRuleCubHeteroRing|SumRuleCubHeteroLinear)
         dir_pattern="ns*-probe*/"
         ;;
     *)
