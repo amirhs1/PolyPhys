@@ -156,5 +156,5 @@ variable j loop 20 pad
 	jump ${fname} dump_loop
 
 undump D_bug
-write_data ${simname}.ring.all.data pair ij
+write_data ${simname}.linear.all.data pair ij
 write_restart ./restart_after.i${i}

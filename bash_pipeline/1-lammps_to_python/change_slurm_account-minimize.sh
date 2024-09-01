@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Search for directories starting with 'N'
 #for dir in al*[1-8].ring/; do # TransFociCub, SumRuleCubHeteroRing
 #for dir in al*[1-8].linear/; do # SumRuleCubHeteroLinear
 #for dir in N*.ring/; do #HnsCub
