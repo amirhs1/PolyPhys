@@ -6,11 +6,12 @@ from typing import (
     Optional
 )
 import warnings
-import numpy as np
 import itertools
+import numpy as np
 import pandas as pd
-from polyphys.manage.parser import (SumRuleCyl, TransFociCub, TransFociCyl,
-                                    HnsCub, HnsCyl)
+from polyphys.manage.parser import (
+    SumRuleCubHeteroLinear, SumRuleCubHeteroRing, SumRuleCyl, TransFociCub,
+    TransFociCyl, HnsCub, HnsCyl)
 from polyphys.analyze import analyzer
 from polyphys.analyze import measurer
 from polyphys.manage.utilizer import round_up_nearest
@@ -43,7 +44,7 @@ PROJECTS_DETAILS = {
             'fsdMon-mean', 'fsdMon-var', 'fsdMon-sem',
             'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
             'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem',
-            'rfloryMon-var', 'rfloryMon-sem', 'shapeMon-mean',
+            'rfloryMon-mean', 'rfloryMon-var', 'rfloryMon-sem',
             'transSizeMon-mean', 'transSizeMon-var', 'transSizeMon-sem'
             ],
         'rhosPhisNormalizedScaled': [('Mon', 'dmon'), ('Crd', 'dcrowd')]
@@ -86,6 +87,66 @@ PROJECTS_DETAILS = {
         'geometry': 'cubic',
         'topology': 'ring',
         'parser': TransFociCub,
+        'divisor': 0.025,
+        'space_pat': 'ns*nl*al*ac*',
+        'hierarchy': 'al*',
+        'directions': ['r'],
+        'props': ['Rho', 'Phi'],
+        'space_hierarchy': 'ns*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon_small',
+                       'nmon_large', 'dmon_large', 'dcrowd', 'phi_c_bulk'
+                       ],
+        'time_varying_props': ['asphericityTMon', 'gyrTMon', 'shapeTMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space',
+                             'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'
+                             ],
+        'equil_properties': [
+            'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
+            'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
+            'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem'
+            ],
+        'rhosPhisNormalizedScaled': [('Mon', 'dmon_small'), ('Crd', 'dcrowd'),
+                                     ('Foci', 'dmon_large')
+                                     ]
+    },
+    'SumRuleCubHeteroLinear': {
+        'group': 'bug',
+        'geometry': 'cubic',
+        'topology': 'linear',
+        'parser': SumRuleCubHeteroLinear,
+        'divisor': 0.025,
+        'space_pat': 'ns*nl*al*ac*',
+        'hierarchy': 'al*',
+        'directions': ['r'],
+        'props': ['Rho', 'Phi'],
+        'space_hierarchy': 'ns*',
+        'attributes': ['space', 'ensemble_long', 'ensemble', 'nmon_small',
+                       'nmon_large', 'dmon_large', 'dcrowd', 'phi_c_bulk'
+                       ],
+        'time_varying_props': ['rfloryTMon', 'asphericityTMon', 'gyrTMon', 
+                               'shapeTMon'],
+        'equil_measures': [np.mean, np.var, measurer.sem],
+        'equil_attributes': ['ensemble_long', 'ensemble', 'space',
+                             'dmon_large', 'nmon_large', 'nmon_small',
+                             'dcrowd', 'phi_c_bulk', 'phi_c_bulk_round'
+                             ],
+        'equil_properties': [
+            'asphericityMon-mean', 'asphericityMon-var', 'asphericityMon-sem',
+            'gyrMon-mean', 'gyrMon-var', 'gyrMon-sem',
+            'rfloryMon-mean', 'rfloryMon-var', 'rfloryMon-sem',
+            'shapeMon-mean', 'shapeMon-var', 'shapeMon-sem'
+            ],
+        'rhosPhisNormalizedScaled': [('Mon', 'dmon_small'), ('Crd', 'dcrowd'),
+                                     ('Foci', 'dmon_large')
+                                     ]
+    },
+    'SumRuleCubHeteroRing': {
+        'group': 'bug',
+        'geometry': 'cubic',
+        'topology': 'ring',
+        'parser': SumRuleCubHeteroRing,
         'divisor': 0.025,
         'space_pat': 'ns*nl*al*ac*',
         'hierarchy': 'al*',
