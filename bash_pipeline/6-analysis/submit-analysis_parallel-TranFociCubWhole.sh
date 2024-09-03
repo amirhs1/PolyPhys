@@ -35,5 +35,5 @@ echo "Starting run at: $(date)"
 #export the function
 export -f exe
 # run the loop in parallel
-parallel --will-cite --ungroup  --env _ exe {}-analysis_phase.txt ::: ns*probe-BugWhole/
+parallel --will-cite --ungroup  --env _ exe {}-analysis_phase.txt ::: ns*probe-bugWhole/
 echo "Program glost_launch finished with exit code $? at: $(date)"
