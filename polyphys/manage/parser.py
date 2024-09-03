@@ -1,7 +1,7 @@
 import os
 import re
 import warnings
-from typing import TypeVar, IO, Tuple, Dict, List
+from typing import TypeVar, IO, Tuple, Dict, List, Union
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from collections import OrderedDict
@@ -74,7 +74,7 @@ class ParserBase(ABC):
         A dictionary of `lineage` names. For each `lineage`, a list is defined
         that contains the parent-like lineage attributes of that `lineage`.
     """
-    _groups: List[str | None] = []
+    _groups: List[Union[str, None]] = []
     _lineage_attributes: Dict[str, Dict[str, str]] = {
         "segment": {},
         "whole": {},
