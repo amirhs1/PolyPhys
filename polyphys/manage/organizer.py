@@ -1432,6 +1432,8 @@ def space_tseries(
     dumping_freq = {
         'TransFociCyl': 'bdump',
         'TransFociCub': 'bdump',
+        'SumRuleCubHeteroLinear': 'bdump',
+        'SumRuleCubHeteroRing': 'bdump',
         'SumRuleCyl': 'bdump',
         'HnsCub': 'ndump',
         'HnsCyl': 'ndump'
