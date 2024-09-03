@@ -1,4 +1,4 @@
-from typing import Type, Union, Tuple, Dict, NewType, List, TypeAlias
+from typing import Type, Union, Tuple, Dict, NewType, List
 import numpy as np
 import pandas as pd
 from .parser import (
