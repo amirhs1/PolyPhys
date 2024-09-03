@@ -96,7 +96,8 @@ for ens_avg_space_db in ens_avg_space_dbs:
             ens_avg = \
                 ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
                     [0.025, 0.05, 0.075, 0.125, 0.175]), :]
-        elif project in ['SumRuleCyl']:
+        elif project in ['SumRuleCyl', 'SumRuleCubHeteroLinear', 
+                         'SumRuleCubHeteroRing']:
             pass
         else:
             raise ValueError("The 'phi_c drop' condition is not defined for "
@@ -163,10 +164,8 @@ for ens_avg_space_db in ens_avg_space_dbs:
             ens_avg = \
                 ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
                     [0.025, 0.05, 0.075, 0.125, 0.175]), :]
-        elif project in ['SumRuleCyl']:
-            pass
         else:
-            raise ValueError("The 'phi_c drop' condition is not defined for "
+            print("The 'phi_c drop' condition is not defined for "
                              f"'{project}' project.")
         ens_avgs.append(ens_avg)
     ens_avgs = pd.concat(ens_avgs, axis=1)
@@ -295,7 +294,7 @@ for (prop, direction) in dir_prop_pairs:
                 per_space['phi_c_bulk_round'].replace(0.31,0.32, inplace=True)
                 per_space = \
                     per_space.loc[~per_space['phi_c_bulk_round'].isin([0.06, 0.18]),:]
-            elif project in ['TransFociCyl','TransFociCub']:
+            elif project in ['TransFociCyl', 'TransFociCub']:
                 per_space = \
                     per_space.loc[~per_space['phi_c_bulk_round'].isin([0.025, 0.05, 0.075, 0.125, 0.175]),:]
             else:
