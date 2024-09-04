@@ -96,11 +96,8 @@ for ens_avg_space_db in ens_avg_space_dbs:
             ens_avg = \
                 ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
                     [0.025, 0.05, 0.075, 0.125, 0.175]), :]
-        elif project in ['SumRuleCyl', 'SumRuleCubHeteroLinear', 
-                         'SumRuleCubHeteroRing']:
-            pass
         else:
-            raise ValueError("The 'phi_c drop' condition is not defined for "
+            print("The 'phi_c drop' condition is not defined for "
                              f"'{project}' project.")
         ens_avgs.append(ens_avg)
     ens_avgs = pd.concat(ens_avgs, axis=1)
@@ -248,7 +245,6 @@ for prop, bin_center in hist_t_foci_bin_centers.items():
     ens_avgs.to_parquet(output, index=False, compression='brotli')
 
 # Spatial Distributions and the sum rule: **all** group
-
 phase = 'ensAvg'
 group = 'all'
 space_dbs = glob(analysis_db + project_details['space_pat'])
