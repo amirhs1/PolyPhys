@@ -18,6 +18,7 @@ analyzer.analyze_measures(
     project_details['topology'],
     project_details['is_segment'],
     project_details['has_stamp'],
+    nonscalar_hist_t_properties=project_details['nonscalar_hist_t_properties'],
     nonscalar_mat_t_properties=project_details[
         'nonscalar_mat_t_properties'],
     acf_tseries_properties=project_details[
