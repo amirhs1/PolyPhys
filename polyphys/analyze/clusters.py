@@ -11,7 +11,10 @@ import numpy as np
 import pandas as pd
 import numpy.linalg as npla
 
-from ..manage.parser import TransFociCub, TransFociCyl
+from ..manage.parser import (TransFociCub, TransFociCyl, 
+                             SumRuleCubHeteroLinear,
+                             SumRuleCubHeteroRing)
+
 
 
 def apply_pbc_orthogonal(
@@ -723,7 +726,8 @@ def foci_histogram(
 
 def whole_dist_mat_foci(
     whole_path: str,
-    whole_info: Union[TransFociCub, TransFociCyl]
+    whole_info: Union[TransFociCub, TransFociCyl,
+                      SumRuleCubHeteroRing, SumRuleCubHeteroLinear]
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Generates time series and histograms of foci distances from distance
     matrix of (large) monomers.
