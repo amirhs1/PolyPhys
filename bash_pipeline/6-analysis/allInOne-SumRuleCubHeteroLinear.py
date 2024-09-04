@@ -171,7 +171,7 @@ for ens_avg_space_db in ens_avg_space_dbs:
                     [0.025, 0.05, 0.075, 0.125, 0.175]), :]
         else:
             print("The 'phi_c drop' condition is not defined for "
-                             f"'{project}' project.")
+                  f"'{project}' project.")
         ens_avgs.append(ens_avg)
     ens_avgs = pd.concat(ens_avgs, axis=1)
     # drop duplicated columns:
