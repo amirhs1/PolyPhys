@@ -800,6 +800,16 @@ def distributions_generator(
             'Crd': 'dcrowd',
             'Foci': 'dmon_large'
         },
+        'SumRuleCubHeteroRing': {
+            'Mon': 'dmon_small',
+            'Crd': 'dcrowd',
+            'Foci': 'dmon_large'
+        },
+        'SumRuleCubHeteroLinear': {
+            'Mon': 'dmon_small',
+            'Crd': 'dcrowd',
+            'Foci': 'dmon_large'
+        },
         'HnsCub': {
             'Mon': 'dmon',
             'Hns': 'dhns',
@@ -814,6 +824,8 @@ def distributions_generator(
     lbox_attrs = {
         'cubic': {
             'TransFociCub': 'lcube',
+            'SumRuleCubHeteroLinear': 'lcube',
+            'SumRuleCubHeteroRing': 'lcube',
             'HnsCub': 'lcube'
         },
         'cylindrical': {
@@ -825,6 +837,8 @@ def distributions_generator(
     dbox_attrs = {
         'cubic': {
             'TransFociCub': 'N/A',
+            'SumRuleCubHeteroLinear': 'N/A',
+            'SumRuleCubHeteroRing': 'N/A',
             'HnsCub': 'N/A'
         },
         'cylindrical': {
