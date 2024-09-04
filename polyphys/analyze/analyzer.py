@@ -1417,7 +1417,9 @@ def nonscalar_time_series(
             # Here not only "T" is dropped but also the "property name" is
             # fully changed.
             if property_ == 'distMatT' and \
-                parser.__name__ in ['TransFociCub', 'TransFociCyl']:
+                parser.__name__ in ['TransFociCub', 'TransFociCyl',
+                                    'SumRuleCubHeteroRing',
+                                    'SumRuleCubHeteroLinear']:
                 wholes_hists, wholes_rdfs, wholes_tseries = \
                     whole_from_dist_mat_t(
                         whole_paths,
