@@ -17,6 +17,7 @@ analysis_db = str(absolute_path) + "/"
 project_details = PSD[project]
 
 # Ensemble stamps
+print("Essemble stamps...")
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
     space_db + "/" for space_db in space_dbs if space_db.endswith(
@@ -34,7 +35,9 @@ allInOne_stamps = pd.concat(allInOne_stamps, axis=0)
 allInOne_stamps.reset_index(inplace=True, drop=True)
 output = analysis_db + "allInOne-" + project + "-stamps-ensAvg.csv"
 allInOne_stamps.to_csv(output, index=False)
+print("done.")
 # Whole stamps
+print("Whole stamps...")
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
     space_db + "/" for space_db in space_dbs if space_db.endswith(
@@ -51,8 +54,9 @@ allInOne_stamps = pd.concat(allInOne_stamps, axis=0)
 allInOne_stamps.reset_index(inplace=True, drop=True)
 output = analysis_db + "allInOne-" + project + "-stamps-ens.csv"
 allInOne_stamps.to_csv(output, index=False)
-
+print("done.")
 # Auto-correlation functions
+print("ACFs...")
 phase = 'ensAvg'
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
@@ -70,9 +74,11 @@ if project == 'TransFociCyl':
     uniq_props_measures.remove('transSizeTMon-acfUpperCi')
 print(uniq_props_measures)
 for ens_avg_space_db in ens_avg_space_dbs:
+    print(ens_avg_space_db)
     ens_avgs = list()
     space = ens_avg_space_db.split('/')[-2].split('-')[0]
     for property_ in uniq_props_measures:
+        print(property_)
         ens_avg = organizer.space_tseries(
             ens_avg_space_db,
             property_,
@@ -110,8 +116,9 @@ for ens_avg_space_db in ens_avg_space_dbs:
          ]
     )
     ens_avgs.to_parquet(output_name, index=False, compression='brotli')
-
+print("done.")
 # Time series
+print("Time series...")
 phase = 'ensAvg'
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
@@ -133,11 +140,12 @@ props_tseries = list(
 if project == 'TransFociCyl':
     props_tseries.remove('transSizeTMon')
 print(props_tseries)
-
 for ens_avg_space_db in ens_avg_space_dbs:
+    print(ens_avg_space_db)
     ens_avgs = list()
     space = ens_avg_space_db.split('/')[-2].split('-')[0]
     for property_ in props_tseries:
+        print(property_)
         ens_avg = organizer.space_tseries(
             ens_avg_space_db,
             property_,
@@ -172,12 +180,13 @@ for ens_avg_space_db in ens_avg_space_dbs:
         [space,  project_details['group'], "chainSize.parquet.brotli"]
     )
     ens_avgs.to_parquet(output_name, index=False, compression='brotli')
-
+print("done.")
 # Ensemble-averaged time-averaged properties
 spaces = glob(analysis_db + project_details['space_pat'])
 spaces = sorted(
     list(set([space.split('/')[-1].split('-')[0] for space in spaces])))
 save_space = True
+print("Ensemble-averaged time-averaged properties...")
 equili_props_wholes = api.all_in_one_equil_tseries(
     project,
     analysis_db,
@@ -191,6 +200,8 @@ equili_props_wholes = api.all_in_one_equil_tseries(
     kind='dataframe',
     save_to=analysis_db,
 )
+print("done")
+print("Ensemble-averaged time-averaged properties ensAvg...")
 ens_avg = api.all_in_one_equil_tseries_ens_avg(
     project,
     equili_props_wholes,
@@ -199,8 +210,9 @@ ens_avg = api.all_in_one_equil_tseries_ens_avg(
     project_details['equil_attributes'],
     save_to=analysis_db
 )
-
+print("done.")
 # Clusters and bonds
+print("Cluster and bonds...")
 phase = 'ensAvg'
 space_dbs = glob(analysis_db + project_details['space_pat'])
 ens_avg_space_dbs = [
@@ -209,7 +221,6 @@ ens_avg_space_dbs = [
     )
 ]
 print(ens_avg_space_dbs)
-
 nmon_large = 5
 hist_t_foci_bin_centers = {
    'bondsHistFoci': np.arange(nmon_large),
@@ -217,6 +228,7 @@ hist_t_foci_bin_centers = {
 }
 
 for prop, bin_center in hist_t_foci_bin_centers.items():
+    print(prop)
     ens_avgs = list()
     for ens_avg_space_db in ens_avg_space_dbs:
         print(ens_avg_space_db)
@@ -243,9 +255,9 @@ for prop, bin_center in hist_t_foci_bin_centers.items():
     output =  "-".join(['allInOne', project, project_details['group'], prop + ".parquet.brotli"])
     output = analysis_db + output
     ens_avgs.to_parquet(output, index=False, compression='brotli')
-
+print("done.")
 # Spatial Distributions and the sum rule: **all** group
-
+print("Spatial Distributions and the sum rule...")
 phase = 'ensAvg'
 group = 'all'
 space_dbs = glob(analysis_db + project_details['space_pat'])
@@ -262,12 +274,14 @@ dir_prop_pairs = list(
             project_details['directions'])
 )
 print('dir_prop_pairs: ', dir_prop_pairs)
-
 for (prop, direction) in dir_prop_pairs:
+    print(prop, direction)
     all_in_one_list = list()
     for (species, size_attr) in species_dict:
+        print(species)
         per_species_list = list()
         for ens_avg_space_db in ens_avg_space_dbs:
+            print(ens_avg_space_db)
             space = ens_avg_space_db.split('/')[-2].split('-')[0]
             per_space = organizer.space_sum_rule(
                 ens_avg_space_db,
@@ -309,4 +323,4 @@ for (prop, direction) in dir_prop_pairs:
     output += '-NormalizedScaled.parquet.brotli'
     output = analysis_db + output
     all_in_one.to_parquet(output, index=False, compression='brotli')
-    
+print("done.")
