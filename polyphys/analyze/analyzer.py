@@ -287,7 +287,7 @@ ANALYSIS_DETAILS_NUCLEOID = {
         ]
     }
 }
-ANALYSIS_DETAILS_ALL = all_details = {
+ANALYSIS_DETAILS_ALL = {
     'SumRuleCylSegment': {
         'hierarchy': 'N*/N*',  # dir/file
         'parser': SumRuleCyl,
