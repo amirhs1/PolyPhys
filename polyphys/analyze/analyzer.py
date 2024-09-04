@@ -28,7 +28,6 @@ from ..manage.parser import (
 )
 from ..manage.typer import (
     ParserT,
-    TransFociT,
     TimeSeriesT,
     HistogramT,
     NonScalarHistT,
@@ -453,7 +452,7 @@ ANALYSIS_DETAILS_ALL = all_details = {
     },
     'SumRuleCubHeteroLinearWhole': {
         'hierarchy': 'al*/al*',  # dir/file
-        'parser': TransFociCub,
+        'parser': SumRuleCubHeteroLinear,
         'group': 'all',
         'geometry': 'cubic',
         'topology': 'linear',
@@ -495,7 +494,7 @@ ANALYSIS_DETAILS_ALL = all_details = {
     },
     'SumRuleCubHeteroRingWhole': {
         'hierarchy': 'al*/al*',  # dir/file
-        'parser': TransFociCub,
+        'parser': SumRuleCubHeteroRing,
         'group': 'all',
         'geometry': 'cubic',
         'topology': 'ring',
@@ -731,7 +730,7 @@ def time_series(
             if is_segment is True:
                 wholes = whole_from_segment(
                     property_ + species,
-                    tseries,
+                    tseries,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -741,7 +740,7 @@ def time_series(
                 )
             else:
                 wholes = whole_from_file(
-                    tseries,
+                    tseries,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -776,7 +775,7 @@ def time_series(
             if is_segment is True:
                 wholes = whole_from_segment(
                     property_ + species,
-                    tseries,
+                    tseries,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -786,7 +785,7 @@ def time_series(
                 )
             else:
                 wholes = whole_from_file(
-                    tseries,
+                    tseries,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -804,7 +803,7 @@ def time_series(
                 )
             acfs, lower_cls, upper_cls = acf_generator(
                 property_ + species,
-                ensembles,
+                ensembles,  # type: ignore
                 nlags,
                 alpha,
                 group,
@@ -917,7 +916,7 @@ def histograms(
             if is_segment is True:
                 wholes = whole_from_segment(
                     direction + 'Hist' + species,
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -927,7 +926,7 @@ def histograms(
                 )
                 edge_wholes = whole_from_segment(
                     direction + 'Edge' + species,
-                    edges,
+                    edges,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -937,14 +936,14 @@ def histograms(
                 )
             else:
                 wholes = whole_from_file(
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
                     topology
                 )
                 edge_wholes = whole_from_file(
-                    edges,
+                    edges,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -959,7 +958,7 @@ def histograms(
                 geometry,
                 topology,
                 direction,
-                parser,
+                parser,  # type: ignore
                 save_to=save_to_whole
             )
             ensembles = ensemble(
@@ -1032,7 +1031,7 @@ def histograms(
             if is_segment is True:
                 wholes = whole_from_segment(
                     direction + 'Hist' + species,
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1042,7 +1041,7 @@ def histograms(
                 )
                 edge_wholes = whole_from_segment(
                     direction + 'Edge' + species,
-                    edges,
+                    edges,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1052,14 +1051,14 @@ def histograms(
                 )
             else:
                 wholes = whole_from_file(
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
                     topology
                 )
                 edge_wholes = whole_from_file(
-                    edges,
+                    edges,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1093,7 +1092,7 @@ def histograms(
             if is_segment is True:
                 wholes = whole_from_segment(
                     direction + 'Hist' + species,
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1103,7 +1102,7 @@ def histograms(
                 )
             else:
                 wholes = whole_from_file(
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1187,7 +1186,7 @@ def histograms_2d(
             if is_segment is True:
                 wholes = whole_from_segment(
                     direction + 'Hist' + species,
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1197,7 +1196,7 @@ def histograms_2d(
                 )
             else:
                 wholes = whole_from_file(
-                    hists,
+                    hists,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1230,7 +1229,7 @@ def histograms_2d(
             if is_segment is True:
                 edge_wholes = whole_from_segment(
                     direction + 'Edge',
-                    edges,
+                    edges,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1240,7 +1239,7 @@ def histograms_2d(
                 )
             else:
                 edge_wholes = whole_from_file(
-                    edges,
+                    edges,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1347,7 +1346,7 @@ def nonscalar_time_series(
             if is_segment is True:
                 wholes = whole_from_segment(
                     property_ + species,
-                    tseries,
+                    tseries,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1357,7 +1356,7 @@ def nonscalar_time_series(
                 )
             else:
                 wholes = whole_from_file(
-                    tseries,
+                    tseries,  # type: ignore
                     parser,
                     geometry,
                     group,
@@ -1383,7 +1382,7 @@ def nonscalar_time_series(
             }
             # changing property_ name after averaging:
             property_old = property_
-            property_ = ''.join(property_.split('T'))
+            property_ = ''.join(property_.split('T'))  # type: ignore
             warnings.warn(
                 f"property name '{property_old}' changed to"
                 f" '{property_}' after averaging over time.",
@@ -1419,11 +1418,11 @@ def nonscalar_time_series(
             if property_ == 'distMatT' and \
                 parser.__name__ in ['TransFociCub', 'TransFociCyl',
                                     'SumRuleCubHeteroRing',
-                                    'SumRuleCubHeteroLinear']:
+                                    'SumRuleCubHeteroLinear']:  # type: ignore
                 wholes_hists, wholes_rdfs, wholes_tseries = \
                     whole_from_dist_mat_t(
-                        whole_paths,
-                        parser,
+                        whole_paths,  # type: ignore
+                        parser,  # type: ignore
                         geometry,
                         group,
                         topology
@@ -1498,7 +1497,7 @@ def nonscalar_time_series(
                 if is_segment is True:
                     wholes = whole_from_segment(
                         property_ + species,
-                        tseries,
+                        tseries,  # type: ignore
                         parser,
                         geometry,
                         group,
@@ -1508,7 +1507,7 @@ def nonscalar_time_series(
                     )
                 else:
                     wholes = whole_from_file(
-                        tseries,
+                        tseries,  # type: ignore
                         parser,
                         geometry,
                         group,
@@ -1735,7 +1734,7 @@ def analyze_measures(
     if has_stamp is True:
         stamp_files = sort_filenames(observations, fmts=['-stamps.csv'])
         stamps(
-            stamp_files,
+            stamp_files,  # type: ignore
             group,
             geometry,
             is_segment,
@@ -2170,7 +2169,8 @@ def ensemble_measure(ensemble_db: str, stat_func: Callable) -> pd.DataFrame:
     if file_ext == '.csv':
         property_ens = pd.read_csv(ensemble_db, header=0)
         ens_measures = property_ens.apply(stat_func, axis=0)
-        ens_measures = ens_measures.to_frame(name=stat_func.__name__)
+        ens_measures = \
+            ens_measures.to_frame(name=stat_func.__name__)  # type: ignore
     elif file_ext == '.npy':
         property_ens = np.load(ensemble_db)
         n_ens = property_ens.shape[0]
@@ -2267,7 +2267,7 @@ def space_measure(
     property_pat = '-' + property_ + suffix[kind]  # pattern of property files.
     property_paths = sort_filenames(
         property_paths, fmts=[property_pat]
-        )
+        )  # type: ignore
     if not property_paths:
         raise FileNotFoundError(
             f"No matching files found for property pattern '{property_pat}'in"
@@ -2297,17 +2297,17 @@ def space_measure(
         try:
             ens_measure = ensemble_measure(property_db[0], stat_func)
             spc_measure.append(ens_measure)
-        except Exception as e:
+        except Exception as e:  # type: ignore
             print(f"Error processing {property_db[0]}: {e}")
 
     if not spc_measure:
         raise RuntimeError("No valid ensembles found for processing.")
 
-    spc_measure = pd.concat(spc_measure)
-    spc_measure.rename(
+    spc_measure = pd.concat(spc_measure)   # type: ignore
+    spc_measure.rename(  # type: ignore
         columns={meas_name: equil_meas_name}, inplace=True
-    )
-    return spc_measure
+    )  # type: ignore
+    return spc_measure   # type: ignore
 
 
 def equilibrium_wholes(
@@ -2367,18 +2367,22 @@ def equilibrium_wholes(
             )
             for stat_func in stat_funcs
         ]
-        property_measurements = pd.concat(property_measurements, axis=1)
+        property_measurements = \
+            pd.concat(property_measurements, axis=1)  # type: ignore
         equil_properties.append(property_measurements)
 
-    equil_properties = pd.concat(equil_properties, axis=1)
-    equil_properties.reset_index(inplace=True)
-    equil_properties.rename(columns={"index": "whole"}, inplace=True)
+    equil_properties = pd.concat(equil_properties, axis=1)  # type: ignore
+    equil_properties.reset_index(inplace=True)  # type: ignore
+    equil_properties.rename(  # type: ignore
+        columns={"index": "whole"}, inplace=True)  # type: ignore
     if topology is not None:
-        equil_properties["whole"] = equil_properties["whole"] + '.' + topology
-    equil_properties = whole_stamps.merge(equil_properties, on="whole")
+        equil_properties["whole"] = \
+            equil_properties["whole"] + '.' + topology  # type: ignore
+    equil_properties = \
+        whole_stamps.merge(equil_properties, on="whole")  # type: ignore
     if output_path is not None:
         output_filename = '-'.join([space, "whole-equilProps"])
-        equil_properties.to_csv(
+        equil_properties.to_csv(  # type: ignore
             output_path + output_filename + ".csv", index=False
             )
-    return equil_properties
+    return equil_properties  # type: ignore
