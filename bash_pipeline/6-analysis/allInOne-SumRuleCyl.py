@@ -169,10 +169,8 @@ for ens_avg_space_db in ens_avg_space_dbs:
             ens_avg = \
                 ens_avg.loc[~ens_avg['phi_c_bulk_round'].isin(
                     [0.025, 0.05, 0.075, 0.125, 0.175]), :]
-        elif project in ['SumRuleCyl']:
-            pass
         else:
-            raise ValueError("The 'phi_c drop' condition is not defined for "
+            print("The 'phi_c drop' condition is not defined for "
                              f"'{project}' project.")
         ens_avgs.append(ens_avg)
         del ens_avg
@@ -265,10 +263,8 @@ for (prop, direction) in dir_prop_pairs:
                 per_space = \
                     per_space.loc[~per_space['phi_c_bulk_round'].isin(
                         [0.025, 0.05, 0.075, 0.125, 0.175]), :]
-            elif project in ['SumRuleCyl']:
-                pass
             else:
-                raise ValueError(
+                print(
                     "The 'phi_c drop' condition is not defined for"
                     f" '{project}' project."
                     )
