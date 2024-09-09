@@ -120,7 +120,7 @@ fix     F_recenter bug recenter 0.0 0.0 0.0 shift all units box # Recentering th
 thermo 10000
 thermo_style multi
 timestep 0.01
-run 500000
+run 1000000
 write_data minimized.initial.config.data
 
 # Wiping out commands

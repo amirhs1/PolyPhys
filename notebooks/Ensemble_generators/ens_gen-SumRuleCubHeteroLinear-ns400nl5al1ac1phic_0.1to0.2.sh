@@ -1,17 +1,9 @@
 #!/bin/bash
 # Generated on date 20240905
 # ns lcube ac nc randseed_group dt b_dump a_dump al nl ml
-P[${#P[@]}]="400	52	6	995	66000	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	1492	66010	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	1990	66020	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	2238	66030	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	2487	66040	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	2736	66050	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	2984	66060	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	3233	66070	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	3482	66080	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	3730	66090	0.005	2000	5000	1	5	1"
-P[${#P[@]}]="400	52	6	3979	66100	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	52	1	214834	61000	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	52	1	322250	61010	0.005	2000	5000	1	5	1"
+P[${#P[@]}]="400	52	1	429667	61020	0.005	2000	5000	1	5	1"
 
 #ens='1 2 3 4 5 6 7 8' # Here, we define a global variable called "ens" which is the total ensemble we use in our simulation.
 ens='1 2 3 4'
@@ -93,9 +85,13 @@ for i in ${ens}; do
 			elif [ $((n_crowd+N)) -gt 150000 ] && [ $((n_crowd+N)) -le 200000 ]; then
 				cp submit_cpu32_gt150000_le200000.sh submit.sh && mv submit.sh "${dirname}"
 			elif [ $((n_crowd+N)) -gt 200000 ] && [ $((n_crowd+N)) -le 250000 ]; then
-				cp submit_cpu32_gt200000_le250000.sh submit.sh && mv submit.sh "${dirname}"
+                cp submit_cpu32_gt200000_le250000.sh submit.sh && mv submit.sh "${dirname}"
+			elif [ $((n_crowd+N)) -gt 250000 ] && [ $((n_crowd+N)) -le 300000 ]; then
+                cp submit_cpu32_gt250000_le300000.sh submit.sh && mv submit.sh "${dirname}"
+			elif [ $((n_crowd+N)) -gt 300000 ] && [ $((n_crowd+N)) -le 400000 ]; then
+				cp submit_cpu32_gt300000_le400000.sh submit.sh && mv submit.sh "${dirname}"
 			else
-				cp submit_cpu32_gt250000_le300000.sh submit.sh && mv submit.sh "${dirname}"
+				cp submit_cpu32_gt400000_le500000.sh submit.sh && mv submit.sh "${dirname}"
 			fi
 		else
 			cp submit_nocrowd.sh submit.sh && mv submit.sh "${dirname}"
