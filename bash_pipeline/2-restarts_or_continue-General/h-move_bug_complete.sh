@@ -5,8 +5,8 @@ for dir in N*ens[1-8]/; do # SumRuleCyl
 #for dir in al*linear/; do # SumRuleCubHeteroLinear
 #for dir in eps*/; do # TransFociCyl
     cd $dir
-    rm ${dir}*bug*lammpstrj
-    mv test/${dir}*lammpstrj .
+    rm ${dir::-1}*bug*lammpstrj
+    mv test/${dir::-1}*lammpstrj .
     rm -r test
     cd ..
 done
