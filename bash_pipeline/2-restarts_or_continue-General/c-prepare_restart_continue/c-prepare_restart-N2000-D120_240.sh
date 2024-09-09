@@ -1,4 +1,5 @@
 #!/bin/bash
+initial_tstep=101000000
 res_tstep=5000000
 adump_res_ratio=3
 initial_total_time_step=301000000  # Example: 3*10^8
@@ -11,7 +12,7 @@ for incomplete_folder in N*_incomplete; do
     res_folder="${pattern}_res"
     # Count the number of .all.lammpstrj.gz files
     jdone=$(ls -l ${incomplete_folder}/${pattern}*.gz | wc -l)
-    file_tstep=$((adump_res_ratio*(jdone-1)*res_tstep))
+    file_tstep=$((initial_tstep+adump_res_ratio*(jdone-1)*res_tstep))
     ls -l ${incomplete_folder}/restarts/restart.*.${file_tstep}
     cp ${incomplete_folder}/restarts/restart.*.${file_tstep} ${res_folder}/
     cp ${incomplete_folder}/submit.sh ${res_folder}/
