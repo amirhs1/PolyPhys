@@ -5,7 +5,7 @@
 
 #SBATCH --ntasks=1
 #SBATCH --mem=3G
-#SBATCH --time=00-00:20
+#SBATCH --time=00-00:40
 #SBATCH --account=def-group
 #SBATCH --mail-user=54184877+amirhs1@users.noreply.github.com
 #SBATCH --mail-type=ALL
