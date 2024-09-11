@@ -16,12 +16,14 @@ for dir in N*[1-8]; do
             num=$(echo $file | sed -n 's/.*j\([0-9]*\).all.restart.lammpstrj.gz/\1/p')
             num=$((10#$num)) # Convert to decimal
             new_num=$((file_count - 1 + num))
+            new_num=$(printf "%02d" $new_num)
             new_file_name="${dir}.j${new_num}.all.lammpstrj.gz"
             mv "$file" "$new_file_name"
         done
     else
         single_file=$(echo $restart_files | head -1)
         new_num=$((file_count))
+        new_num=$(printf "%02d" $new_num)
         new_file_name="${dir}.j${new_num}.all.lammpstrj.gz"
         mv "$single_file" "$new_file_name"
     fi

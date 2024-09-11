@@ -22,7 +22,6 @@ bugName=bug
 #allLine=38
 #bugName=nucleoid
 
-
 headLine=$((allLine - 3))
 nextLine=$((allLine + 1))
 
