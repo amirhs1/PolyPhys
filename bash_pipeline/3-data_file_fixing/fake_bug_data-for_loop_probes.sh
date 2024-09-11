@@ -25,13 +25,18 @@ bugName=bug
 
 headLine=$((allLine - 3))
 nextLine=$((allLine + 1))
+
+
 # SumRuleCyl:
-#for dd in N*[1-8]-probe/; do
+#for dd in N*[1-8]-trjs/; do
 # HnsCub, HnsCyl:
-#for dd in N*ring-probe/; do
-# TransFociCub, TransFociCyl, SumRuleCubHeteroRing, SumRuleCubHeteroLinear:
-for dd in ns*-probe/; do
+#for dd in N*ring-trjs/; do
+# TransFociCub, TransFociCyl:
+for dd in ns*-trjs/; do
+# SumRuleCubHeteroRing, SumRuleCubHeteroLinear:
+for dd in ns*-all_simulations/; do
     echo $dd
+    cp nc0_fake_all.data  $dd
     cd $dd
     #for dir in eps*.ring/; do # TransFociCyl
     for dir in N*[1-8]/; do # SumRuleCyl
