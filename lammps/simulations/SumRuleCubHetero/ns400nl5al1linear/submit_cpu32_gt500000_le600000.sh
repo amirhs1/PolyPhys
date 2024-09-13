@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=32
 #SBATCH --mem=3G
-#SBATCH --time=06-00:00
+#SBATCH --time=09-00:00
 #SBATCH --account=def-byha
 #SBATCH --mail-user=mr.a.h.saadeghi@gmail.com
 #SBATCH --mail-type=ALL
