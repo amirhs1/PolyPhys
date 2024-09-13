@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=32
 #SBATCH --mem=3G
-#SBATCH --time=03-10:00
+#SBATCH --time=03-00:00
 #SBATCH --account=def-group
 #SBATCH --mail-user=54184877+amirhs1@users.noreply.github.com
 #SBATCH --mail-type=ALL
