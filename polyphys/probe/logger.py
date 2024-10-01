@@ -32,8 +32,6 @@ def string_to_float(input_string: str) -> float:
 
 
 class LammpsLog:
-    filepath: str
-    product_idx: int
     """
     Parse a Lammps log file.
     """
@@ -128,7 +126,7 @@ class LammpsLog:
         """
         # The thermodynamic keywords are a combination of alphabetic
         # characters and underscore:
-        kw_pat = re.compile("\b*([A-Za-z_]{2,})\b*")
+        kw_pat = re.compile(r"\b[a-zA-Z]+[a-zA-Z0-9_]*\b")
         first = self.thermo_heads[self.product_idx].end()
         last = self.thermo_foots[self.product_idx].start()
         chunk = self.log_txt[first:last-1]
@@ -255,5 +253,6 @@ class LammpsLog:
                     wall_t_hr = (int(h) * 3600 + int(m) * 60 + int(s)) / 3600
                     wall_time['wall_time_hr'] = [round(wall_t_hr, 2)]
                 iline += 1
+        print(run_data)
         self.run_stat = pd.DataFrame.from_dict(run_data)
         self.wall_time = pd.DataFrame.from_dict(wall_time)
