@@ -71,7 +71,7 @@ thermo_style    custom step temp press etotal pe ke epair evdwl ecouple &
 
 thermo_modify   colname c_e_m1_c e_m1_c colname c_e_m1_c[1] fx_m1_c & 
                 colname c_e_m1_c[2] fy_m1_c colname c_e_m1_c[3] fz_m1_c &
-                colname c_e_m2_c e_m1_c colname c_e_m2_c[1] fx_m1_c &
+                colname c_e_m2_c e_m2_c colname c_e_m2_c[1] fx_m2_c &
                 colname c_e_m2_c[2] fy_m2_c colname c_e_m2_c[3] fz_m2_c &
                 colname c_e_m1_m2 e_m1_m2 colname c_e_m1_m2[1] fx_m1_m2 &
                 colname c_e_m1_m2[2] fy_m1_m2 colname c_e_m1_m2[3] fz_m1_m2
