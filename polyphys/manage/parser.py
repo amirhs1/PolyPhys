@@ -446,7 +446,7 @@ class TwoMonDep(ParserBase):
     _lineage_attributes: Dict[str, Dict[str, str]] = {
         "segment": {  # dcyl twice of r
             "nmon": "nm",
-            "amon": "am",
+            "dmon": "am",
             "lcube": "hl",
             "dcrowd": "ac",
             "ncrowd": "nc",
@@ -460,7 +460,7 @@ class TwoMonDep(ParserBase):
         },
         "whole": {  # dcyl twice of r
             "nmon": "nm",
-            "amon": "am",
+            "dmon": "am",
             "lcube": "hl",
             "dcrowd": "ac",
             "ncrowd": "nc",
@@ -473,7 +473,7 @@ class TwoMonDep(ParserBase):
         },
         "ensemble_long": {  # dcyl twice of r
             "nmon": "nm",
-            "amon": "am",
+            "dmon": "am",
             "lcube": "hl",
             "dcrowd": "ac",
             "ncrowd": "nc",
