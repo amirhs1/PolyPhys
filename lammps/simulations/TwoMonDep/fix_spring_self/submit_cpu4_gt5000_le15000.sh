@@ -1,15 +1,12 @@
 #!/bin/bash
 
-# Test run to estimate the resources needed for the final submissions
-# Date:2019 March 13
-
-#SBATCH --ntasks=1
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
 #SBATCH --mem=3G
-#SBATCH --time=00-00:40
+#SBATCH --time=00-10:00
 #SBATCH --account=def-group
 #SBATCH --mail-user=54184877+amirhs1@users.noreply.github.com
 #SBATCH --mail-type=ALL
-
 # Load the module:
 
 module --force purge
@@ -23,4 +20,11 @@ lmp_output="minimize_initial_config-output.txt"
 
 srun ${lmp_exec} -log log.minimize_initial_config < ${lmp_input} > ${lmp_output}
 
+lmp_exec=lmp
+lmp_input="input.lmp"
+lmp_output="output.txt"
+
+srun ${lmp_exec} < ${lmp_input} > ${lmp_output}
+
 echo "Program finished with exit code $? at: $(date)"
+
