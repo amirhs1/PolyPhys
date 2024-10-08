@@ -35,7 +35,7 @@ P[${#P[@]}]="5.0	2	1.0	8953	12.5	2.9	10290"
 P[${#P[@]}]="5.0	2	1.0	8953	12.5	3.5	10310"
 P[${#P[@]}]="5.0	2	1.0	8953	12.5	4.0	10320"
 P[${#P[@]}]="5.0	2	1.0	8953	12.5	4.5	10330"
-P[${#P[@]}]="5.0	2	1.0	8953	12.5	5.0	10340"
+#P[${#P[@]}]="5.0	2	1.0	8953	12.5	5.0	10340"
 
 dt=0.0005
 adump=5000
@@ -43,7 +43,7 @@ bdump=2000
 tdump=2000
 
 # Initialize ensemble values
-ens='1 2 3 4' # Global variable defining total ensembles for simulation.
+ens='1' # Global variable defining total ensembles for simulation.
 
 # Loop through ensemble values
 for i in ${ens}; do 
