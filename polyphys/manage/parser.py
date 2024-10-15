@@ -555,7 +555,7 @@ class TwoMonDep(ParserBase):
         self.rho_m_bulk: float = -1
         self.dcrowd: float = -1
         self.ncrowd: int = -1
-        self.mcrowd: float = -1
+        self.mcrowd: float = self.dcrowd**3
         self.phi_c_bulk: float = -1
         self.rho_c_bulk: float = -1
         self.d_sur: float = -1
@@ -584,7 +584,7 @@ class TwoMonDep(ParserBase):
                     attr_value = float(attr_value)
                 else:
                     attr_value = int(float(attr_value))
-                if attr_kw == "lcube":
+                if attr_n == "lcube":
                     attr_value = 2 * attr_value
                 setattr(self, attr_n, attr_value)
             except ValueError:
