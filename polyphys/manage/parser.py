@@ -566,6 +566,7 @@ class TwoMonDep(ParserBase):
         self.bdump: int = -1
         self.adump: int = -1
         self.tdump: int = -1
+        self.eps_others: float = 1
         # geometry attributes:
         self.lcube: float = -1
 
