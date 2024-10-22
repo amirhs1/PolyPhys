@@ -1,0 +1,2 @@
+lineage_name,whole,ensemble_long,ensemble,space,nmon,dmon,lcube,dcrowd,ncrowd,d_sur,dt,bdump,adump,tdump,ensemble_id,mmon,mcrowd,phi_m_bulk,rho_m_bulk,phi_c_bulk,rho_c_bulk,n_frames
+am5.0nm2ac1.0nc8953hl12.5sd0.1dt0.0005bdump2000adump5000tdump5000ens1,am5.0nm2ac1.0nc8953hl12.5sd0.1dt0.0005bdump2000adump5000tdump5000ens1,am5.0nm2ac1.0nc8953hl12.5sd0.1dt0.0005bdump2000adump5000tdump5000,nm2am5.0ac1.0nc8953sd0.1,nm2am5.0ac1.0nc8953,2,5.0,25.0,1.0,8953,0.1,0.0005,2000,5000,5000,1,-1,1.0,0.008377580409572781,0.000128,0.3000179096276204,0.572992,10001
