@@ -14,40 +14,7 @@ import numpy.linalg as npla
 from ..manage.parser import (TransFociCub, TransFociCyl, 
                              SumRuleCubHeteroLinear,
                              SumRuleCubHeteroRing)
-
-
-
-def apply_pbc_orthogonal(
-    pbc_lengths: np.ndarray,
-    pbc_lengths_inverse: np.ndarray,
-    pbc: Dict[int, float]
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Updates the periodic boundary condition (PBC) information in the
-    dimensions (keys) by the length (values) passed by `pbc`. The key
-    are indexes of the `pbc_lengths` and `pbc_lengths_inverse` arrays.
-
-    Parameters
-    ----------
-    pbc_lengths: numpy.ndarray
-        An array of lengths/sizes in different directions.
-    pbc_lengths_inverse: numpy.ndarray
-        An array of the inverses of lengths/sizes in different directions.
-    pbc: dict
-        A dictionary of dimensions (keys) and lengths (values) in which
-        the pbc exists.
-
-    Return
-    ------
-    pbc_lengths: numpy.ndarray
-        The updated array of lengths/sizes in different directions.
-    pbc_lengths_inverse: numpy.ndarray
-        The updated array of the inverses of lengths/sizes in different
-        directions.
-    """
-    for dim, length in pbc.items():
-        pbc_lengths[dim] = length
-        pbc_lengths_inverse[dim] = 1 / length
-    return pbc_lengths, pbc_lengths_inverse
+from .measurer import apply_pbc_orthogonal
 
 
 def self_dist_array(

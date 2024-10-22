@@ -3,9 +3,91 @@ Contains tools for performing statistical measurements such as averaging,
 standard deviation, or the like on a given time series, correlation data,
 or histogram.
 """
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Optional
 import numpy as np
 import MDAnalysis as mda
+
+
+def apply_pbc_orthogonal(
+    pbc_lengths: np.ndarray,
+    pbc_lengths_inverse: np.ndarray,
+    pbc: Dict[int, float]
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Updates the periodic boundary condition (PBC) information in the
+    dimensions (keys) by the length (values) passed by `pbc`. The key
+    are indexes of the `pbc_lengths` and `pbc_lengths_inverse` arrays.
+
+    Parameters
+    ----------
+    pbc_lengths: numpy.ndarray
+        An array of lengths/sizes in different directions.
+    pbc_lengths_inverse: numpy.ndarray
+        An array of the inverses of lengths/sizes in different directions.
+    pbc: dict
+        A dictionary of dimensions (keys) and lengths (values) in which
+        the pbc exists.
+
+    Return
+    ------
+    pbc_lengths: numpy.ndarray
+        The updated array of lengths/sizes in different directions.
+    pbc_lengths_inverse: numpy.ndarray
+        The updated array of the inverses of lengths/sizes in different
+        directions.
+    """
+    for dim, length in pbc.items():
+        pbc_lengths[dim] = length
+        pbc_lengths_inverse[dim] = 1 / length
+    return pbc_lengths, pbc_lengths_inverse
+
+
+def pair_distance(
+    positions: np.ndarray,
+    pbc: Optional[Dict[int, float]] = None
+) -> np.ndarray:
+    """
+    Computes the pair distance between two particles along each axis in the 
+    Cartesian coordinate system, applying the minimum image convention if 
+    periodic boundary conditions (PBC) are provided.
+
+    Note
+    ----
+    The distance along each axis is the difference between the coordinates of
+    the second and the first particle. This function does not compute the 
+    Euclidean (absolute) distance but instead returns the distance vector 
+    components.
+
+    Parameters
+    ----------
+    positions : numpy.ndarray
+        A (2, n_dim) array containing the coordinates of the two atoms. 
+        The array should be sorted by atom number, with the first row 
+        corresponding to the first atom and the second row to the second atom.
+
+    pbc : Optional[Dict[int, float]], default None
+        A dictionary where the keys are the dimensions (0 for x, 1 for y, 
+        and 2 for z) and the values are the lengths of the simulation box 
+        in those dimensions. If provided, the minimum image convention 
+        will be applied.
+
+    Returns
+    -------
+    dr_ij: np.ndarray
+        A 1D numpy array containing the pair distances along each axis.
+    """
+    n_atoms, n_dims = positions.shape
+    if n_atoms != 2:
+        raise ValueError("'pair_distance' only works for two atoms.")
+    # Calculation in the center of geometry of the atom group.
+    positions = positions - np.mean(positions, axis=0)
+    if pbc is not None:
+        pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
+            np.zeros(n_dims), np.zeros(n_dims), pbc
+        )
+        positions -= pbc_lengths * np.around(pbc_lengths_inverse * positions)
+    # Using map to find the r_ij values
+    dr_ij = np.array(list(map(lambda i: positions[1, i] - positions[0, i], range(n_dims))))
+    return dr_ij
 
 
 def simple_stats(property_name, array) -> Dict[str, Any]:
