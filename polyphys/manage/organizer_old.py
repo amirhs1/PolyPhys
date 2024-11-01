@@ -223,146 +223,118 @@ from ..analyze.clusters import whole_dist_mat_foci
 from .utilizer import round_up_nearest, invalid_keyword
 
 
-def read_camel_case(word: str) -> List[Union[str, Tuple[str]]]:
+def camel_case_split(
+    word: str
+) -> List[str]:
     """
-    Splits a camelCase or CamelCase string into its component words.
+    Splits a camelCase or CamelCase `str` to its constituent sub-strings.
 
     Parameters
     ----------
-    word : str
-        The camelCase or CamelCase string to be split.
+    word: str
+        Word to be split.
 
-    Returns
-    -------
-    str
-        The split string with spaces inserted between words.
+    Return
+    ------
+    list: list of str
 
-    Examples
-    --------
-    >>> read_camel_case("camelCase")
-    ['camel', 'Case']
-    >>> read_camel_case("CamelCaseString")
-    ['Camel', 'Case', 'String']
+    Reference
+    ---------
+    https://stackoverflow.com/questions/29916065/how-to-do-camelcase-split-in-python
     """
     return re.findall(r'[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)', word)
 
 
-def to_float_if_possible(value: str) -> Union[float, str]:
+def isfloat(
+    string: str
+) -> Union[float, str]:
     """
-    Attempts to convert a string to a float. If conversion fails,
-    returns the original string.
+    Converts `string` to float if possible, otherwise returns the original
+    string.
 
     Parameters
     ----------
-    value : str
-        The string to attempt to convert to a float.
+    string : str
 
-    Returns
-    -------
-    Union[float, str]
-        The converted float if the input can be converted; otherwise, 
-        the original string.
+    Return
+    ------
+    possibly_float : str or float
+        the float-version of the string or the original string.
 
-    Examples
-    --------
-    >>> to_float_if_possible("3.14")
-    3.14
-    >>> to_float_if_possible("not_a_float")
-    'not_a_float'
-    >>> to_float_if_possible("42")
-    42.0
     """
     try:
-        return float(value)
+        possibly_float = float(string)
     except ValueError:
-        return value
+        possibly_float = string
+    return possibly_float
 
 
-def split_alphanumeric(alphanumeric: str) -> List[Union[int, str, float]]:
+def sort_by_alphanumeric(
+    alphanumeric: str
+) -> List[Union[int, str, float]]:
     """
-    Splits an alphanumeric string into a list of strings, integers, and floats.
-
-    This function identifies contiguous sections of digits, letters, and
-    decimal numbers, returning them as separate elements in a list, making the
-    string suitable for alphanumeric sorting.
+    Split an `alphanumeric` into words and integers.
 
     Parameters
     ----------
-    alphanumeric : str
-        An alphanumeric string to be split.
+    alphanumeric : char
+        an alphanumeric string.
 
-    Returns
-    -------
-    List[Union[int, str, float]]
-        A list of components including integers, floats, and strings.
-
-    Examples
-    --------
-    >>> split_alphanumeric("file20.5name10")
-    ['file', 20.5, 'name', 10]
+    Return
+    ------
+    mixed_alphanum : list of str, int, and float
+        a mixed list of words, integers, and floats.
     """
-    number_pattern = re.compile(r'(\d+\.*\d*)')
-    parts = number_pattern.split(alphanumeric)
-    return [
-        int(part) if part.isdigit() else to_float_if_possible(part)
-        for part in parts if part
-    ]
+    number_pattern = re.compile(r'(\d+\.*\d*)')  # a integer or float number
+    words = number_pattern.split(alphanumeric)
+    mixed_alphanum = \
+        [int(word) if word.isdigit() else isfloat(word) for word in words]
+    return mixed_alphanum
 
 
 def sort_filenames(
-    filenames: List[str],
-    formats: List[Union[str, Tuple[str, ...]]],
+    fnames: List[str],
+    fmts: List[str],
     report: Optional[bool] = False
 ) -> List[Tuple[str, ...]]:
     """
-    Groups and alphanumerically sorts filenames by specified formats.
+    Returns an alphanumerically sorted list of strings.
 
-    This function groups `filenames` by the extensions in `formats`, sorting
-    each  group alphanumerically. It then returns a list of tuples where each
-    tuple  contains filenames with matching base names across the specified
-    formats.
+    Groups `fnames` with the same names into tuples where the length of
+    tuples is the length of `fmts`. For instance, A LAMMPS molecular
+    dynamics simulation output usually is composed of two type of files;
+    a trajectory (trj or lammpstrj extensions) consisting of several
+    snapshots and a topology (data extension) containing information
+    about simulation box, particle and bond types.
 
     Parameters
     ----------
-    filenames : List[str]
-        A list of filenames to sort and group.
-    formats : List[Union[str, Tuple[str, ...]]]
-        A list specifying the file formats. Each item can be a single extension
-        (e.g., 'data') or a tuple of alternative extensions
-        (e.g., ('trj', 'lammpstrj')).
-    report : bool, optional
-        If True, prints a summary report of the sorted filenames, by default
-        False.
+    fnames : list of str
+        a list of filenames.
+    fmts : list of str or tuple, defualt=['data',('lammpstrj','trj')]
+        a list of formats where each format can have one or more extensions
+        (passed as a tuple).
+    report : bool, default=False
+        shows a report or not.
 
     Returns
     -------
-    List[Tuple[str, ...]]
-        A list of tuples where each tuple contains filenames grouped and sorted 
-        by the specified formats.
+    filenames_sorted: list of tuple of str
+        a sorted list of tuples where each tuple has `len(formats)` filenames.
 
-    Examples
-    --------
-    >>> sort_filenames(['file1.data', 'file2.trj', 'file1.trj', 'file2.data'], 
-                       ['data', ('lammpstrj', 'trj')])
-    [('file1.data', 'file1.trj'), ('file2.data', 'file2.trj')]
     """
-    filenames_by_format = []
-    # Group filenames by each format in `formats`
-    for exts in formats:
-        filenames_by_format.append([f for f in filenames if f.endswith(exts)])
-    # Sort each group of filenames alphanumerically
-    for idx, filenames_group in enumerate(filenames_by_format):
-        filenames_by_format[idx] = sorted(
-            filenames_group, key=split_alphanumeric)
-    # Combine sorted groups into tuples
-    filenames_sorted = list(zip(*filenames_by_format))
-
-    # Optional report output
+    fnames_by_fmt = []
+    # a nested list where each sublist has all the files with the same
+    # extension:
+    for exts in fmts:
+        fnames_by_fmt.append([f for f in fnames if f.endswith(exts)])
+    for idx, fnames_same_fmt in enumerate(fnames_by_fmt):
+        fnames_by_fmt[idx] = sorted(fnames_same_fmt, key=sort_by_alphanumeric)
+    fnames_sorted = list(zip(*fnames_by_fmt))
     if report:
-        print("Total number of file groups:", len(filenames_sorted))
-        print("First tuple of sorted files:",
-              filenames_sorted[0] if filenames_sorted else "None")
-    return filenames_sorted
+        print("Total number of files is ", len(fnames_sorted))
+        print("Path to the first tuple of the sorted file: ", fnames_sorted[0])
+    return fnames_sorted
 
 
 def save_parent(
@@ -405,78 +377,6 @@ def save_parent(
             )
     else:
         raise TypeError
-
-
-def save_parent(
-    name: str,
-    data: Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]],
-    property_: str,
-    save_to: str,
-    group: str = 'bug',
-    ext: str = 'csv'
-) -> None:
-    """
-    Saves the `data` to a specified file format, allowing structured file naming.
-
-    Parameters
-    ----------
-    name : str
-        The base name for the output file.
-    data : Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]]
-        Data to be saved. Accepted types:
-
-        - `np.ndarray`: Saved as a .npy file when `ext` is 'npy'.
-        - `pd.DataFrame`: Saved as a .csv file when `ext` is 'csv'.
-        - `dict` of `np.ndarray`: Each entry saved as a separate .npy file if
-          `ext` is 'dict_of_npy'.
-
-    property_ : str
-        The physical property name for the data (e.g., density).
-    save_to : str
-        Path to the directory where the file will be saved.
-    group : {'bug', 'nucleoid', 'all'}, optional
-        Type of the particle group. Default is 'bug'.
-    ext : {'csv', 'npy', 'dict_of_npy'}, optional
-        File extension for the saved file. Default is 'csv'.
-
-    Raises
-    ------
-    TypeError
-        If `data` type does not match the specified `ext` format.
-
-    Examples
-    --------
-    Save a numpy array to a `.npy` file in the specified directory:
-
-    >>> save_parent("output", np.array([1, 2, 3]), "density", "/data/", group="all", ext="npy")
-
-    Save a DataFrame to a `.csv` file:
-
-    >>> import pandas as pd
-    >>> df = pd.DataFrame({"A": [1, 2, 3]})
-    >>> save_parent("output", df, "density", "/data/", ext="csv")
-
-    """
-    # Validate extension
-    invalid_keyword(ext, ['csv', 'npy', 'dict_of_npy'])
-
-    # Construct filename
-    filename = "-".join([name, group, property_])
-    file_path = os.path.join(save_to, filename)
-
-    # Save data based on type and extension
-    if isinstance(data, pd.DataFrame) and ext == 'csv':
-        data.to_csv(f"{file_path}.csv", index=False)
-    elif isinstance(data, np.ndarray) and ext == 'npy':
-        np.save(f"{file_path}.npy", data)
-    elif isinstance(data, dict) and ext == 'dict_of_npy':
-        for prop_key, prop_data in data.items():
-            _, prop_measure = prop_key.split('-')
-            np.save(f"{file_path}-{prop_measure}.npy", prop_data)
-    else:
-        raise TypeError(
-            f"Data type {type(data).__name__} is incompatible with the specified extension '{ext}'."
-        )
 
 
 def database_path(
