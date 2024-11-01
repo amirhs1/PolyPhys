@@ -12,7 +12,7 @@ for incomplete_folder in al*_incomplete; do
     res_folder="${pattern}_res"
     # Count the number of .all.lammpstrj.gz files
     jdone=$(ls -l ${incomplete_folder}/${pattern::-5}*.gz | wc -l)
-    file_tstep=$((initial_tstep+adump_res_ratio*(jdone-1)*res_tstep))
+    file_tstep=$((adump_res_ratio*(jdone-1)*res_tstep))
     ls -l ${incomplete_folder}/restarts/restart.*.${file_tstep}
     cp ${incomplete_folder}/restarts/restart.*.${file_tstep} ${res_folder}/
     cp ${incomplete_folder}/submit.sh ${res_folder}/
@@ -36,20 +36,21 @@ for incomplete_folder in al*_incomplete; do
     sed -i "1s/^/read_restart $res_file\n/" "${res_folder}/input.lmp"
     sed -i "1s/^/variable nloop equal $jcount\n/" "${res_folder}/input.lmp"
 
-    current_total_time_step=$(grep -B 10 "Performance" ${incomplete_folder}/log.lammps | tail -n 8 | head -n 1 | grep "Step" | awk '{print $3}')
-    echo "current time step: $current_total_time_step"
-
     avg_tstep_per_sec=$(awk '/Performance/ {if (seen) {sum += $(NF-3); count++} else seen = 1} END {if (count > 0) print sum / count}' ${incomplete_folder}/log.lammps)
     avg_tstep_per_sec=$(printf "%.0f" "$avg_tstep_per_sec")
     echo "avg time step per sec: $avg_tstep_per_sec"
 
-    initial_runtime=$(grep "#SBATCH --time=" ${res_folder}/submit.sh | cut -d= -f2)
-    initial_days=$(echo $initial_runtime | cut -d- -f1)
-    initial_hours=$(echo $initial_runtime | cut -d- -f2 | cut -d: -f1)
+    total_initial_hours=$((initial_days * (jtotal + 1) + initial_hours))
+    initial_runtime=$(grep "#SBATCH --time=" "${res_folder}/submit.sh" | cut -d= -f2)
+    initial_days=$(echo "$initial_runtime" | cut -d- -f1 | sed 's/^0*//')
+    initial_hours=$(echo "$initial_runtime" | cut -d- -f2 | cut -d: -f1 | sed 's/^0*//')
+    # Handle cases where initial_days or initial_hours might be empty
+    initial_days=${initial_days:-0}
+    initial_hours=${initial_hours:-0}
     total_initial_hours=$((initial_days * (jtotal + 1) + initial_hours))
     echo "total time: $total_initial_hours"
-    
-    left_tsteps=$((initial_total_time_step - current_total_time_step))
+
+    left_tsteps=$((initial_total_time_step - file_tstep))
     left_runtime=$(echo "$left_tsteps / $avg_tstep_per_sec" | bc -l)
     left_runtime=$(printf "%.0f" "$left_runtime")
     left_runtime_hr=$(echo "$left_runtime / 3600" | bc -l)
