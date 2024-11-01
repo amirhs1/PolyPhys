@@ -12,7 +12,7 @@ for incomplete_folder in al*_incomplete; do
     res_folder="${pattern}_res"
     # Count the number of .all.lammpstrj.gz files
     jdone=$(ls -l ${incomplete_folder}/${pattern::-5}*all.lammpstrj | wc -l)
-    file_tstep=$((initial_tstep+adump_res_ratio*(jdone-1)*res_tstep))
+    file_tstep=$((adump_res_ratio*(jdone-1)*res_tstep))
     ls -l ${incomplete_folder}/restarts/restart.*.${file_tstep}
     cp ${incomplete_folder}/restarts/restart.*.${file_tstep} ${res_folder}/
     cp ${incomplete_folder}/submit.sh ${res_folder}/
@@ -43,12 +43,16 @@ for incomplete_folder in al*_incomplete; do
     avg_tstep_per_sec=$(printf "%.0f" "$avg_tstep_per_sec")
     echo "avg time step per sec: $avg_tstep_per_sec"
 
-    initial_runtime=$(grep "#SBATCH --time=" ${res_folder}/submit.sh | cut -d= -f2)
-    initial_days=$(echo $initial_runtime | cut -d- -f1)
-    initial_hours=$(echo $initial_runtime | cut -d- -f2 | cut -d: -f1)
+    total_initial_hours=$((initial_days * (jtotal + 1) + initial_hours))
+    initial_runtime=$(grep "#SBATCH --time=" "${res_folder}/submit.sh" | cut -d= -f2)
+    initial_days=$(echo "$initial_runtime" | cut -d- -f1 | sed 's/^0*//')
+    initial_hours=$(echo "$initial_runtime" | cut -d- -f2 | cut -d: -f1 | sed 's/^0*//')
+    # Handle cases where initial_days or initial_hours might be empty
+    initial_days=${initial_days:-0}
+    initial_hours=${initial_hours:-0}
     total_initial_hours=$((initial_days * (jtotal + 1) + initial_hours))
     echo "total time: $total_initial_hours"
-    
+
     left_tsteps=$((initial_total_time_step - current_total_time_step))
     left_runtime=$(echo "$left_tsteps / $avg_tstep_per_sec" | bc -l)
     left_runtime=$(printf "%.0f" "$left_runtime")

@@ -16,8 +16,13 @@ for slurm in al*[1-8].{linear,linear_res,linear_incomplete}/slurm*.out; do # Sum
 #for slurm in N*{[1-8],[1-8]_res,[1-8]_incomplete}/slurm*.out; do #SumRuleCul
 #for slurm in eps*{ring,ring_res,ring_incomplete}/slurm*.out; do #TransFociCyl
     # Extract folder name
+    if [ ! -e "$slurm" ]; then
+        echo "No matching files found for the pattern. Skipping."
+        continue
+    fi
+    # Extract folder name
     folder_name=$(dirname "$slurm")
-    file="${dirname}/log.lammps"
+    file="${folder_name}/log.lammps"
     # SLURM out file
     start_time=$(grep -oP '\w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \w{3} \d{4}' "$slurm" | head -1)
     potential_end_time=$(grep -oP '\w{3} \w{3} [ \d]\d \d\d:\d\d:\d\d \w{3} \d{4}' "$slurm" | tail -1)
