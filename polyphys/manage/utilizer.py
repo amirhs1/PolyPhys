@@ -10,6 +10,94 @@ from contextlib import contextmanager
 InputT = Union[GzipFile, TextIO, IO[Any]]
 
 
+def read_camel_case(word: str) -> List[Union[str, Tuple[str]]]:
+    """
+    Splits a camelCase or CamelCase string into its component words.
+
+    Parameters
+    ----------
+    word : str
+        The camelCase or CamelCase string to be split.
+
+    Returns
+    -------
+    str
+        The split string with spaces inserted between words.
+
+    Examples
+    --------
+    >>> read_camel_case("camelCase")
+    ['camel', 'Case']
+    >>> read_camel_case("CamelCaseString")
+    ['Camel', 'Case', 'String']
+    """
+    return re.findall(r"[A-Z]?[a-z]+|[A-Z]+(?=[A-Z]|$)", word)
+
+
+def to_float_if_possible(value: str) -> Union[float, str]:
+    """
+    Attempts to convert a string to a float. If conversion fails,
+    returns the original string.
+
+    Parameters
+    ----------
+    value : str
+        The string to attempt to convert to a float.
+
+    Returns
+    -------
+    Union[float, str]
+        The converted float if the input can be converted; otherwise,
+        the original string.
+
+    Examples
+    --------
+    >>> to_float_if_possible("3.14")
+    3.14
+    >>> to_float_if_possible("not_a_float")
+    'not_a_float'
+    >>> to_float_if_possible("42")
+    42.0
+    """
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def split_alphanumeric(alphanumeric: str) -> List[Union[int, str, float]]:
+    """
+    Splits an alphanumeric string into a list of strings, integers, and floats.
+
+    This function identifies contiguous sections of digits, letters, and
+    decimal numbers, returning them as separate elements in a list, making the
+    string suitable for alphanumeric sorting.
+
+    Parameters
+    ----------
+    alphanumeric : str
+        An alphanumeric string to be split.
+
+    Returns
+    -------
+    List[Union[int, str, float]]
+        A list of components including integers, floats, and strings.
+
+    Examples
+    --------
+    >>> split_alphanumeric("file20.5name10")
+    ['file', 20.5, 'name', 10]
+    """
+    number_pattern = re.compile(r"(\d+\.*\d*)")
+    parts = number_pattern.split(alphanumeric)
+    parts = [
+        int(part) if part.isdigit() else to_float_if_possible(part)
+        for part in parts
+        if part
+    ]
+    return parts
+
+
 def openany(
     filepath: str,
     mode: str = 'r'
