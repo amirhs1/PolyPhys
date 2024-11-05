@@ -145,180 +145,516 @@ def sphere_sphere_intersection(r1: float, r2: float, d: float) -> float:
     return vol
 
 
-class SpatialDistribution(object):
-    freqs: np.ndarray
-    edges: np.ndarray
-    hist_info: ParserT
-    radius_attr: str
-    lbox: str
-    dbox: str
-    geometry: str
-    direction: str
-    normalized: bool = False
+class ConsecutiveDiskBins:
     """
-    Computes the local number density of any species and the local volume
-    fraction of spherical species in 1D (cylinder with the periodic boundary
-    condition (PBC) along the longitudinal axis (z axis)), 2D (slit with the
-    PBC along the x and y axes (radial direction)), and 3D (cube with the PBC
-    along x, y, and z axes (spherical)).
+    Handle volume distribution for a bead in consecutive disk-like bins along a
+    longitudinal axis.
 
-    The radius of the species is needed for compute local volume fraction.
-
-    To-do List
-    ----------
-    Vectorize the for-loops.
+    This class manages bin boundaries and volume share calculations for beads
+    within consecutive disk-like bins along a specified axis (e.g., z-axis) in
+    a system with periodic boundary conditions (PBC). Assuming the bead resides
+    at the center of its bin, it may intersect several neighboring bins. This
+    class calculates the shared volume between the bead and each intersected
+    bin as the bead moves from the leftmost to the rightmost bin along the
+    longitudinal axis.
 
     Parameters
     ----------
-    freqs: np.ndarray
-        A 1D  array of frequencies in bins.
-    edges: np.ndarray
-        A 1D array of the bin edge where `len(edge)=len(freq)`.
-    hist_info: ParserT
-        A ParserT object that contains information about the system to which
-        `freq` belongs.
-    radius_attr: str
-        The name of an attribute of `hist_info` that contains the radius of the
-        species to which `freq` belongs.
-    radius_attr: str
-        The name of an attribute of `hist_info` that contains the radius of the
-        species to which `freq` belongs.
-    radius_attr: str
-        The name of an attribute of `hist_info` that contains the radius of the
-        species to which `freq` belongs.
-    geometry: str t
-        The shape of the simulation box
-    direction: str
-        The direction of interest in the `geometry` of interest.
-    normalized: bool
-        Whether normalizing the distributions to have a unit value total under
-        the distribution curve or not.
+    edges : np.ndarray
+        Array of bin edges along the longitudinal direction.
+    r_bead : float
+        Radius of the bead (particle) for volume calculations.
 
     Attributes
     ----------
-    self.frequencies: numpy.ndarray
-        Frequencies in different bins
-    self.edges: numpy.ndarray
-        The edges of the bins.
-    self.radius_attr: float
-        The radius of particle species for which distributions are computed.
-    self.geometry: str
-        The shape of the simulation box.
-    self.direction: str
-        The direction along which distribution are computed.
-    self.lbox: float
-        The side of a cubic box, the radius or side length of a rectangular or
-        cylindrical slit, or the longitudinal length of a cylinder.
-    self.dbox
-        The diameter of a cylindrical slit or a cylinder.
-    self.rho (pandas dataframe):
-        the dataframe of the local number
-        densities which has the same index, number of columns and names of
-        columns as self.frequencies. However, the column values are the local
-        number densities.
-    self.phi (pandas dataframe):
-        the dataframe of the local volume
-        fractions which has the same index, number of columns and names of
-        columns as self.frequencies. However, the column values are the local
-        volume fractions.
-    self.bounds: numpy.ndarray
-        Indices of the lower and upper boundaries of a bead that resides at
-        each of centers in `self.center`.
-    self.volume_shares: A two-fold nested dict
-        A nested dictionary in which keys are indices of `self.centers`
-        (the positions of a bead's center) and the values are themselves
-        dictionaries. In each of this dictionary, each key is one of the
-        indices of `self.centers` within the bounds (inclusively, i.e.
-        [A,B] includes A and B as well given by `self.bounds` and the
-        value of that key is the share of the bin of that center from the
-        volume of the bead. The sum of all the values in one inner
-        dictionary is equal to the volume of the bead.
-    self._args: dict
-        The arguments of each of the nine _integrands.
+    edges : np.ndarray
+        Array of bin edges along the longitudinal direction.
+    r_bead : float
+        Radius of the bead.
+    centers : np.ndarray
+        Array of bin centers calculated as midpoints between edges.
+    box_length : float
+        Total length of the simulation box (used for PBC adjustments).
+    bounds : np.ndarray
+        Array marking the leftmost and rightmost bins intersected by each bead.
+    volume_shares : Dict[int, Dict[int, float]]
+        Nested dictionary where each key is a bin index containing a dictionary
+        of volume shares for each intersected bin.
+
+    Methods
+    -------
+    _find_bounds()
+        Determine the left and right bounds of bins intersected by each bead.
+    _calculate_vol_shares()
+        Calculate the volume share for each bin intersected by each bead.
 
     Notes
     -----
-    To calculate the distribution of local volume fraction, we have to
-    consider how the volume of a bead (particle) intersect with the bins
-    defined in a given direction in a given coordinate system. This
-    problem has two steps:
-        1. Finding the bins (more precisely, the edges) by which the boundary
-        (or volume) of a particle intersects. In practice, the lower and
-        upper limits of these edges are found.
-        2. Calculating the share of each bin from the volume of a bead.
+    This class accounts for periodic boundary conditions, allowing particles
+    near the edges of the system to contribute volume shares to bins on both
+    ends of the axis.
+    """
+    def __init__(self, edges: np.ndarray, r_bead: float) -> None:
+        self.edges = edges
+        self.r_bead = r_bead
+        self.box_length = self.edges[-1] - self.edges[0]
+        self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
+        n_centers = len(self.centers)
+        self.bounds = np.empty([n_centers, 2])
+        self.volume_shares: Dict[int, Dict[int, float]] = {}
+        self.find_bounds()
+        self._calculate_vol_shares()
 
-    While COGs or COMs of beads can be anywhere in the system, it is assumed
-    that the COGs or COMs of all the beads reside in a bin are the center of
-    that bin. While this assumption produces some error in the local volume
-    distribution, it significantly reduces the computational cost. Moreover,
-    the error decrease by increase the number of bins at a fixed volume of the
-    system. By this assumption, all the beads in a bin are equivalent and it
-    is sufficient to do the two above steps only for one bead in a given
-    direction in a given geometry.
+    def find_bounds(self) -> None:
+        """
+        Find left- and right-most bin edges, a.k.a. bounds, by which a bead is
+        limited, adjusting bin bounds to account for periodic boundary
+        conditions.
+        """
+        # The left- and right-most bounds by which a bead is limited:
+        leftmost = self.centers - self.r_bead
+        rightmost = self.centers + self.r_bead
 
-    To find the upper and lower bounds on edges, the center of a bead with
-    radius `self.r_bead` is placed at one of `self.centers`. Using the
-    above assumption, for a given `self.r_bead`, a pair of lower and upper
-    bounds (`self.bounds`) can be found for each center. It is assumed
-    that a lower or upper bound is the leftmost, rightmost, innermost, or
-    outermost edges smaller than the boundary of bead in a given direction.
+        # Apply PBC to conserve volume
+        leftmost = np.where(
+            leftmost < self.edges[0],
+            leftmost + self.box_length,
+            leftmost
+        )
+        rightmost = np.where(
+            rightmost > self.edges[-1],
+            rightmost - self.box_length,
+            rightmost
+        )
+        # Initiate the leftmost with the lowest possible center index:
+        left_bound = np.zeros(len(leftmost), dtype=int)
+        # Initiate the rightmost with the highest possible center index:
+        right_bound = (len(rightmost) - 1) * np.ones(len(rightmost), dtype=int)
 
-    There are four bin schemes:
+        for i, left_val in enumerate(leftmost):
+            for edge_i in range(len(self.edges) - 1):
+                if self.edges[edge_i] <= left_val < self.edges[edge_i + 1]:
+                    # left_bound is the index of the smaller edges of
+                    # the leftmost bin
+                    left_bound[i] = edge_i
+                if self.edges[edge_i] <= rightmost[i] < self.edges[edge_i + 1]:
+                    # right_bound is the index of the smaller edges of
+                    # the rightmost bin
+                    right_bound[i] = edge_i
+        self.bounds = np.column_stack((left_bound, right_bound))
 
-        'concentric':
-            bins, edges, or centers are non-negative strictly increasing
-            arrays, creating concentric circles, spherical shells, or
-            cylindrical shells along the radial direction in the polar,
-            spherical, or cylindrical coordinate system respectively.
+    def _calculate_vol_shares(self) -> None:
+        """
+        Calculate the intersection volume between a bead and each intersected
+        bin, adjusting for periodic boundaries when necessary.
+        """
+        for center_idx, bounds_minmax in enumerate(self.bounds):
+            center = self.centers[center_idx]
+            self.volume_shares[center_idx] = {}
+            # A bead near the end of a system along a periodic direction
+            # contributes to bins at both ends of that direction. If
+            # bounds_minmax[0] > bounds_minmax[1], the BPC should be imposed:
+            if bounds_minmax[0] > bounds_minmax[1]:
+                # If the center is smaller than the half the box length, then
+                # the bead's center is moved to the right, so the volume of
+                # intersection can be calculated correctly:
+                if center_idx <= len(self.centers) // 2:
+                    center += self.box_length
+                # The first element of the bounds_minmax is larger:
+                for edge_idx in range(bounds_minmax[0], len(self.edges) - 1):
+                    # Distances of a bin's left and right edges of from the
+                    # center of the bead (in reality, the center of another
+                    # bin):
+                    left_dist = self.edges[edge_idx] - center
+                    right_dist = self.edges[edge_idx + 1] - center
+                    # the most right bound can be a spherical cap or
+                    # segment; the `spherical_segment` is used to find
+                    # the volume of intersection:
+                    self.volume_shares[center_idx][edge_idx] = \
+                        spherical_segment(self.r_bead, left_dist, right_dist)
+                # Reset center to its initial value to calculate the rest
+                # of shares:
+                center = self.centers[center_idx]
+                # If the center is larger the half the box length, then
+                # the bead's center is moved to the left, so the volume of
+                # intersection can be calculated correctly.
+                if center_idx > len(self.centers) // 2:
+                    center -= self.box_length
+                for edge_idx in range(bounds_minmax[1] + 1):
+                    left_dist = self.edges[edge_idx] - center
+                    right_dist = self.edges[edge_idx + 1] - center
+                    self.volume_shares[center_idx][edge_idx] = \
+                        spherical_segment(self.r_bead, left_dist, right_dist)
+            # When bounds_minmax[0] <= bounds_minmax[1], everything is normal
+            else:
+                for edge_idx in range(bounds_minmax[0], bounds_minmax[1] + 1):
+                    left_dist = self.edges[edge_idx] - center
+                    right_dist = self.edges[edge_idx + 1] - center
+                    self.volume_shares[center_idx][edge_idx] = \
+                        spherical_segment(self.r_bead, left_dist, right_dist)
 
-        'consecutive':
-            bins, edges, or centers are strictly increasing arrays,
-            creating consecutive slits with rectangular or circular cross
-            sections along the different directions in the cartesian
-            coordinate system or the longitudinal direction in the
-            cylindrical coordinate system respectively.
 
-        'periodic':
-            bins, edges, or centers are strictly increasing but bounded
-            by the period of the direction of interest, thus creating
-            periodic circular (or disk) sectors or spherical wedges along
-            the polar direction with period [0,2*Pi] in the polar and
-            cylindrical coordinate systems or the spherical coordinate
-            system respectively, or generating concentric.
+class ConcentricSphericalBins:
+    """
+    Handle volume distribution for a bead in concentric spherical bins along a
+    longitudinal axis.
 
-        'neighboring:
-            bins, edges, or centers are strictly increasing but bounded
-            by the period of the direction of interest, thus generating
-            sectors created by two neighboring azimuth (conic) planes
-            along the azimuth direction in the spherical coordinate system.
+    This class manages bin boundaries and volume share calculations for beads
+    within concentric spherical bins along the radial axis. Assuming the bead
+    resides at the center of its bin, it may intersect several neighboring
+    bins. This class calculates the shared volume between the bead and each
+    intersected bin as the bead moves from the innermost to the outermost bin
+    along the radial axis.
 
-    For each of this bin type, an algorithm is defined below to find the
-    lower and upper bounds.
+    Parameters
+    ----------
+    edges : np.ndarray
+        Array of bin edges along the radial direction.
+    r_bead : float
+        Radius of the bead (particle) for volume calculations.
 
-    Finding bond edges along a given direction is a 1D problem. Moreover,
-    the following assumptions about positions of beads (particles), bin
-    centers and edges are used in this class:
-    1. If a bead is in a bin, its position is assumed to be the center
-        of that bin, not its actual position.
-    2. len(self.edges) = len(self.centers) + 1
-    3. For a bin, we have: left_edge <= center < right_edge.
-    4. There is only one center between two consecutive edges.
-    5. The edge and center arrays are strictly increasing functions of
-        their indices.
-    6. The bins are equally spaced, son bin_size is the same between any
-        two consecutive edges.
+    Attributes
+    ----------
+    edges : np.ndarray
+        Array of bin edges along the radial direction.
+    r_bead : float
+        Radius of the bead.
+    centers : np.ndarray
+        Array of bin centers calculated as midpoints between edges.
+    bounds : np.ndarray
+        Array marking the inner and outer bin boundaries for each bead.
+    volume_shares : dict of dict
+        Nested dictionary where each key is a bin index containing a dictionary
+        of volume shares for each intersected bin.
 
-    To conserve the total volume of the beads, the periodic boundary condition
-    (PBS) is imposed if required (For instance, the z direction in the
-    cylindrical geometry). The PBC is impose in both step: finding the bounds
-    and calculating the volume shares.
+    Methods
+    -------
+    _find_bounds()
+        Determine the inner and outer bounds of bins intersected by each bead.
+    _calculate_vol_shares()
+        Calculate the volume share for each concentric bin intersected by each
+        bead.
+
+    """
+    def __init__(self, edges: np.ndarray, r_bead: float) -> None:
+        self.edges = edges
+        self.r_bead = r_bead
+        self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
+        n_centers = len(self.centers)
+        self.bounds = np.empty([n_centers, 2])
+        self.volume_shares: Dict[int, Dict[int, float]] = {}
+        self._find_bounds()
+        self._calculate_vol_shares()
+
+    def _find_bounds(self) -> None:
+        """
+        Find inner- and outer-most bin edges, a.k.a. bounds, by which a bead is
+        limited, constraining bounds within the edges range.
+        """
+        innermost = self.centers - self.r_bead
+        outermost = self.centers + self.r_bead
+
+        # Constrain bounds within edges range
+        innermost = \
+            np.where(innermost < self.edges[0], self.edges[0], innermost)
+        outermost = \
+            np.where(outermost > self.edges[-1], self.edges[-1], outermost)
+
+        # Initiate the innermost bound with the lowest possible bound
+        inner_bound = np.zeros(len(innermost), dtype=int)
+        # Initiate the outermost bound with the highest possible bound
+        outer_bound = (len(outermost) - 1) * np.ones(len(outermost), dtype=int)
+
+        for i, inner_val in enumerate(innermost):
+            for edge_i in range(len(self.edges) - 1):
+                if self.edges[edge_i] <= inner_val < self.edges[edge_i + 1]:
+                    # inner_bound is the index of the larger edge of the
+                    # innermost bin, since the intersection of the bead
+                    # and that edge is important:
+                    inner_bound[i] = edge_i + 1
+                if self.edges[edge_i] <= outermost[i] < self.edges[edge_i + 1]:
+                    # outer_bound is the index of the smaller edge of the
+                    # outermost bin, since the intersection of the bead
+                    # and that edge is important:
+                    outer_bound[i] = edge_i
+        self.bounds = np.column_stack((inner_bound, outer_bound))
+
+    def _calculate_vol_shares(self) -> None:
+        """
+        Calculate the intersection volume between a bead and each intersected
+        bin, adjusting for periodic boundaries when necessary.
+        """
+        for center_idx, bound_minmax in enumerate(self.bounds):
+            self.volume_shares[center_idx] = {}
+            # The intersection volume of the previous bin; for the innermost
+            # bin, there is no previous bin, so this quantity is initiated
+            # by 0:
+            intersect_vol_previous = 0.0
+            for edge_idx in range(bound_minmax[0], bound_minmax[1] + 2):
+                # The difference between the intersection volume of a bead
+                # with a bin edge with index idx and the previous bin is the
+                # volume share of the bin (or center) with index idx-1:
+                intersect_vol = sphere_sphere_intersection(
+                    self.r_bead, self.edges[edge_idx], self.centers[center_idx]
+                )
+                self.volume_shares[center_idx][edge_idx - 1] = (
+                    intersect_vol - intersect_vol_previous
+                )
+                intersect_vol_previous = intersect_vol
+
+
+class DistributionBase:
+    """
+    Base class for managing distributions in different geometries.
+
+    Parameters
+    ----------
+    frequencies : np.ndarray
+        Array of frequencies in each bin.
+    normalized : bool, optional
+        Whether to normalize distributions (default is False).
+
+    Attributes
+    ----------
+    frequencies : np.ndarray
+        Frequency values for bins.
+    normalized : bool
+        Flag indicating if normalization is applied.
+    rho : np.ndarray
+        Calculated local number densities.
+    phi : np.ndarray
+        Calculated local volume fractions.
+
+    Raises
+    ------
+    ValueError
+        If `frequencies` is not an ndarray.
+    """
+    def __init__(
+        self,
+        frequencies: np.ndarray,
+        edges: np.ndarray,
+        integrand: Callable,
+        args: Tuple[float, ...],
+        normalized: bool = False
+    ) -> None:
+        # Validate frequency and edge inputs
+        if not isinstance(frequencies, np.ndarray):
+            raise ValueError("frequencies must be an np.ndarray,"
+                             f" got {type(frequencies)}.")
+        self.frequencies = frequencies
+        self.n_bins = len(self.frequencies)
+        self.edges = edges
+        self.integrand = integrand
+        self.args = args
+        self.normalized = normalized
+        self.rho = np.zeros(self.n_bins)
+        self.phi = np.zeros(self.n_bins)
+    
+    def _number_density(self) -> None:
+        """
+        Calculate local number density along the specified direction.
+
+        Notes
+        -----
+        The local number density is averaged over time steps collected in each
+        simulation. For example, in a simulation with 7*10^7 total time steps
+        sampled every 5000 steps, there are 14001 measurements.
+        """
+        bin_vols = np.array([
+            integrate.quad(
+                self.integrand,
+                self.edges[idx],
+                self.edges[idx+1],
+                args=self.args
+            )[0] for idx in range(self.n_bins)
+        ])
+        self.rho = self.frequencies / bin_vols
+
+    def normalize_distributions(self) -> None:
+        """Normalize distributions."""
+        self.rho /= self.rho.sum()
+        self.phi /= self.phi.sum()
+
+
+class DistributionCylinder(DistributionBase):
+    """
+    Manage distributions (local number density and volume fraction) across a
+    cylinder
+
+    Parameters
+    ----------
+    frequencies : np.ndarray
+        Array of frequencies in each bin.
+    edges : np.ndarray
+        Array of bin edges along the longitudinal axis.
+    radius_attr : float
+        Radius of the particle species.
+    normalized : bool, optional
+        Whether to normalize distributions (default is False).
+
+    Attributes
+    ----------
+    volume_shares : dict of dict
+        Nested dictionary where each key is a bead index containing a
+        dictionary of volume shares for each intersected bin.
+    """
+    _directions = ['r', 'phi', 'z']
+    _integrands: Dict[str, Callable] = {
+        'r': lambda r, lcyl: 2 * np.pi * lcyl * r,
+        'phi': lambda theta, lcyl, dcyl: 0.25 * lcyl * dcyl**2,
+        'z': lambda z, dcyl: 0.25 * np.pi * dcyl**2
+    }
+
+    def __init__(
+        self,
+        frequencies: np.ndarray,
+        edges: np.ndarray,
+        rbead: float,
+        lcyl: float,
+        dcyl: float,
+        direction: str,
+        normalized: bool = False
+    ) -> None:
+        self.edges = edges
+        self.bin_handler = ConsecutiveDiskBins(edges, rbead)
+        self.lcyl = lcyl
+        self.dcyl = dcyl
+        if direction not in self._directions:
+            raise ValueError(
+                f"Invalid direction '{direction}'. "
+                f"Choose from {self._directions}."
+            )
+        self.direction = direction
+        self.args = self._set_args()
+        super().__init__(frequencies, normalized)
+        self._number_density()
+        self._calculate_volume_fraction()
+
+    def _set_args(self) -> Tuple[float, ...]:
+        """
+        Set integration arguments for different directions.
+
+        Notes
+        -----
+        The radius of the simulation box should be used as the radial argument
+        `r`. A pre-factor of 0.5 is applied to `lbox` and `dbox` in the
+        integrands for radial directions to maintain consistency.
+        """
+        direction_args: Dict[str, Tuple[float, ...]] = {
+            'r': (self.lcyl,),
+            'theta': (self.lcyl, self.dcyl),
+            'z': (self.lcyl,)
+        }
+        return direction_args[self.direction]
+
+    def _calculate_volume_fraction(self) -> None:
+        """Calculate volume fractions for cylindrical distributions."""
+        volume_shares = self.bin_handler.volume_shares
+        n_centers = len(self.frequencies)
+        self.rho = self.frequencies / self.bin_size
+        self.phi = np.zeros(n_centers)
+
+        for c_idx in range(n_centers):
+            for idx, vol in volume_shares[c_idx].items():
+                self.phi[c_idx] += self.rho[idx] * vol
+
+        # Apply normalization if requested
+        self.normalize_distributions()
+
+class SpatialDistribution:
+    """
+    Calculate local number density and volume fraction of spherical species.
+
+    This class computes the local number density and local volume fraction
+    of species within a 1D, 2D, or 3D space, with periodic boundary conditions
+    (PBC) along specific axes:
+
+    - 1D: Cylinder with PBC along z-axis (longitudinal).
+    - 2D: Slit with PBC along x and y axes (radial).
+    - 3D: Cube with PBC along x, y, and z axes (spherical).
+
+    The radius of each species is needed for computing the local volume
+    fraction.
+
+    To-do List
+    ----------
+    - Vectorize the for-loops.
+
+    Parameters
+    ----------
+    freqs : np.ndarray
+        A 1D array of frequencies in bins.
+    edges : np.ndarray
+        A 1D array of bin edges, where `len(edges) = len(freqs) + 1`.
+    hist_info : ParserT
+        Parser containing information about the system.
+    radius_attr : str
+        Attribute name in `hist_info` with the species radius.
+    lbox : str
+        Length attribute for the simulation box.
+    dbox : str
+        Diameter attribute for cylindrical or slit geometries.
+    geometry : str
+        Shape of the simulation box, one of ['cylindrical', 'slit', 'cubic'].
+    direction : str
+        Direction along which to compute distributions.
+    normalized : bool, optional
+        Normalize distributions to unit area under the curve (default is
+        False).
+
+    Attributes
+    ----------
+    frequencies : np.ndarray
+        Frequency values for bins.
+    edges : np.ndarray
+        Edges of the bins.
+    rho : pd.DataFrame
+        Local number densities with the same index and column layout as 
+        `frequencies`.
+    phi : pd.DataFrame
+        Local volume fractions, structured similarly to `frequencies`.
+    bounds : np.ndarray
+        Indices marking lower and upper bin bounds per bead center.
+    volume_shares : dict of dict
+        Nested dictionary mapping bin indices to the volume share of each bin
+        for particles centered within that bin.
+
+    Notes
+    -----
+    For calculating volume fractions, this class assumes that beads' centers
+    reside at bin centers. This assumption reduces computational cost, with
+    error decreasing as the number of bins increases for a fixed system volume.
+
+    Bin schemes:
+        - 'concentric': Concentric shellsin spherical or cylindrical geometry.
+        - 'consecutive': Consecutive slits (e.g., disks along the z direction
+        in the cylindrical coordinate system) in Cartesian or cylindrical
+        geometry.
+        - 'periodic': Bins with periodicity (e.g., the polar direction the
+        cylindrical coordinate system) in cylindrical or spherical
+        geometry.
+        - 'neighboring': Azimuthal sectors in spherical geometry.
+
+    The periodic boundary condition (PBC) is imposed as needed in each
+    direction and binning scheme.
+
+    It is assumed all the bins have the same size.
+
+    When `normalized` is set to `True`, the sum of `rho` is not equal to the
+    bulk number density when r approaches infinity, i.e. natom/vol_system. This
+    arises from the way we discretize the local number density. The sum of
+    `phi` is also not equal to the bulk volume fraction when r approaches
+    infinity, i.e, (natoms*vol_atom)/vol_system. This arises from the way we
+    discretize the local number density.
+
     """
     _directions = {
         'cubic': ['r', 'theta', 'phi'],
         'slit': ['r', 'phi', 'z'],
         'cylindrical': ['r', 'phi', 'z']
     }
-    _integrands = {
+    _integrands: Dict[str, Dict[str, Callable]] = {
         'cubic': {
             'r': lambda r, const: 4 * const * np.pi * r**2,
             # constant is redundant and merely defined to consistently use
@@ -367,387 +703,152 @@ class SpatialDistribution(object):
         direction: str,
         normalized: bool = False,
     ) -> None:
-        if isinstance(frequencies, np.ndarray):
-            self.frequencies = frequencies
-        else:
-            raise ValueError(
-                f"'{frequencies}'"
-                " is not a numpy.ndarray.")
-        if isinstance(edges, np.ndarray):
-            self.edges = edges
-            self.box_length = self.edges[-1] - self.edges[0]
-            self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
-            # assuming bin.edges are equally-spaced
-            self.bin_size = self.edges[1] - self.edges[0]
-        else:
-            raise ValueError(
-                f"'{edges}'"
-                " is not a numpy.ndarray.")
+        """
+        Initialize SpatialDistribution with frequency data and geometry settings.
+
+        Parameters
+        ----------
+        frequencies : np.ndarray
+            Array of frequencies in each bin.
+        edges : np.ndarray
+            Array of bin edges, where `len(edges) = len(frequencies) + 1`.
+        hist_info : ParserT
+            Parser containing system information.
+        radius_attr : str
+            Attribute name in `hist_info` with species radius.
+        lbox : str
+            Attribute name in `hist_info` for box length.
+        dbox : str
+            Attribute name in `hist_info` for box diameter in cylindrical/slit 
+            geometries.
+        geometry : str
+            Shape of the simulation box, one of ['cylindrical', 'slit', 'cubic'].
+        direction : str
+            Direction along which distributions are computed.
+        normalized : bool, optional
+            Normalize distributions to unit area (default is False).
+
+        Raises
+        ------
+        ValueError
+            If `frequencies` or `edges` is not an ndarray.
+            If `geometry` or `direction` is invalid.
+        """
+        # Validate frequency and edge inputs
+        if not isinstance(frequencies, np.ndarray):
+            raise ValueError("frequencies must be an np.ndarray,"
+                             f" got {type(frequencies)}.")
+        if not isinstance(edges, np.ndarray):
+            raise ValueError("edges must be an np.ndarray,"
+                             f" got {type(edges)}.")
+
+        self.frequencies = frequencies
+        self.edges = edges
+        self.box_length = self.edges[-1] - self.edges[0]
+        self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
+        self.bin_size = self.edges[1] - self.edges[0]
+
         self.hist_info = hist_info
         self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
         self.lbox = getattr(self.hist_info, lbox)
-        if dbox != 'N/A':
-            self.dbox = getattr(self.hist_info, dbox)
-        else:  # This is meaningless, fix it!
-            self.dbox = getattr(self.hist_info, lbox)
-        if geometry in ['cylindrical', 'slit']:
-            self.dbox = getattr(self.hist_info, dbox)
-        if geometry in self._directions.keys():
-            self.geometry = geometry
-        else:
-            geomteries_string = (
-                "'" + "', '".join(self._directions.keys()) + "'"
-                )
+        self.dbox = getattr(self.hist_info, dbox) \
+            if dbox != 'N/A' else getattr(self.hist_info, lbox)
+
+        # Validate geometry and direction
+        valid_geometries = list(self._directions.keys())
+        if geometry not in valid_geometries:
+            raise ValueError(f"Invalid geometry '{geometry}'. Choose from"
+                             f" {valid_geometries}.")
+        self.geometry = geometry
+
+        if direction not in self._directions[self.geometry]:
+            valid_directions = self._directions[self.geometry]
             raise ValueError(
-                f"'{geometry}' is not a valid geometry for the simulation box."
-                f" Please select one of {geomteries_string} geometries.")
-        if direction in self._directions[self.geometry]:
-            self.direction = direction
-        else:
-            directions_string = "'" + "', '".join(
-                self._directions[self.geometry]) + "'"
-            raise ValueError(
-                f"'{direction}' "
-                "is not a valid direction for "
-                f"'{self.geometry}' geometry. Please select one of "
-                f"{directions_string} directions.")
+                f"Invalid direction '{direction}' for '{geometry}'. "
+                f"Choose from {valid_directions}."
+            )
+        self.direction = direction
         self.normalized = normalized
+
+        # Initialize calculations
         self._set_args()
         self._number_density()
-        self._vol_shares_type()
+
+        if self.direction == 'z':
+            self.bin_handler = \
+                ConsecutiveDiskLikeBins(self.edges, self.r_bead)
+        elif self.direction == 'r':
+            self.bin_handler = \
+                ConcentricSphericalShellBins(self.edges, self.r_bead)
+        else:
+            raise ValueError(f"Unsupported direction '{self.direction}'.")
         self._volume_fraction()
-        if self.normalized is True:
-            # the sum of rho is not equal to the bulk number density when r
-            # approaches infinity, i.e. natom/vol_system. This arises from
-            # the way we discretize the local number density.
-            self.rho = self.rho / self.rho.sum()
-            # time averaging: the sum of histograms = natoms * nframes.
-            # normalization: the sum of the number density is now 1.
-            # the sum of phi is not equal to the bulk volume fraction when r
-            # approaches infinity, i.e, (natoms*vol_atom)/vol_system. This
-            # arises from the way we discretize the local number density.
-            self.phi = self.phi / self.phi.sum()
+
+        if self.normalized:
+            # Normalize rho and phi
+            self.rho /= self.rho.sum()
+            self.phi /= self.phi.sum()
 
     def _set_args(self) -> None:
         """
-        sets the arguments for the integrands along different directions
-        in different geometries.
+        Set integration arguments for each geometry and direction.
 
-        Note
-        ----
-        In a given geometry, The radius of the simulation box should be used as
-        the radial argument 'r'. Here, instead of halving 'lcube' or 'dcyl', we
-        introduced a 0.5 pre-factor in the definition of the integrand.
+        Notes
+        -----
+        The radius of the simulation box should be used as the radial argument
+        `r`. A pre-factor of 0.5 is applied to `lbox` and `dbox` in the
+        integrands for radial directions to maintain consistency.
         """
-        self._args = {
+        self._args: Dict[str, Dict[str, Tuple[float, ...]]] = {
             'cubic': {
-                'r': (1, ),
-                # For concentric spherical shells, the constant, i.e. 1,
-                # is redundant and merely defined to make the use of args
-                # parameter of scipi.integral.quad function consistent among
-                # integrands.
-                'theta': (self.lbox, ),
-                # In a box cubic or free space, the radius of the space
-                # is half of the length of simulation box.
-                'phi': (self.lbox, ),
-                # In a box cubic or free space, the radius of the space
-                # is half of the length of simulation box.
+                'r': (1,),
+                'theta': (self.lbox,),
+                'phi': (self.lbox,)
             },
             'cylindrical': {
-                'r': (self.lbox, ),
-                'theta': (self.lbox, self.dbox, ),
-                'z': (self.lbox, )
+                'r': (self.lbox,),
+                'theta': (self.lbox, self.dbox),
+                'z': (self.lbox,)
             }
         }
 
     def _number_density(self) -> None:
         """
-        Calculates the local number density along the given direction in
-        the given geometry.
+        Calculate local number density along the specified direction.
 
         Notes
         -----
-        The number density in each simulation is an average over the number
-        densities collected every X time steps, so there are N=L/X
-        measurements of the local number density in each simulation where L
-        is total number of time steps in the simulation; for instance, in
-        the cylindrical sum rule project X=5000 and the total number of
-        time steps is 7*10^7, so N=14001.
+        The local number density is averaged over time steps collected in each
+        simulation. For example, in a simulation with 7*10^7 total time steps
+        sampled every 5000 steps, there are 14001 measurements.
         """
-        integrand = self._integrands[self.geometry][self.direction]
-        arguments = self._args[self.geometry][self.direction]
-        bin_vols = np.array([integrate.quad(
-            integrand,
-            self.edges[idx],
-            self.edges[idx] + self.bin_size,
-            args=arguments)[0] for idx in range(len(self.edges[:-1]))
+        integrand: Callable = self._integrands[self.geometry][self.direction]
+        arguments: Tuple[float, ...] = \
+            self._args[self.geometry][self.direction]
+        bin_vols = np.array([
+            integrate.quad(
+                integrand, self.edges[idx], self.edges[idx] + self.bin_size, 
+                args=arguments
+            )[0] for idx in range(len(self.edges) - 1)
         ])
-        # histogram[col_name] and bin_vols have the same size, so:
         self.rho = self.frequencies / bin_vols
 
-    def _consecutive_bounds(self):
+    def _volume_fraction(self) -> None:
         """
-        Finds the indices of smallest and largest bin edges by which a
-        sphere, that resides at the center of that bin, intersects in a
-        'consecutive' bin scheme.
-
-        Attributes
-        ----------
-        self.bounds: np.ndarray
-            Indices of the leftmost and rightmost boundaries of a bead
-            that resides at each of centers in `self.center`. For each
-            center, the following four variables are used to
-            generate `self.bounds`:
-
-            'leftmost' is he value of the center of the bin in which the
-            leftmost boundary of a bead is located.
-
-            'left_bound' is he index of the 'smaller' edge of the bin in
-            which the leftmost boundary of a bead is located.
-
-            'rightmost' is the value of the center of the bin in which the
-            rightmost boundary of a bead is located.
-
-            'right_bound' is the index of the 'smaller' edge of the bin in
-            which the rightmost boundary of a bead is located.
-        """
-        # The left- and right-most bounds by which a bead is limited:
-        leftmost = self.centers - self.r_bead
-        rightmost = self.centers + self.r_bead
-        # Ensuring PBC to conserve total volume of all the beads:
-        leftmost = np.where(
-            leftmost < self.edges[0],
-            leftmost + self.box_length,
-            leftmost
-        )
-        rightmost = np.where(
-            rightmost > self.edges[-1],
-            rightmost - self.box_length,
-            rightmost
-        )
-        # Initiate the leftmost with the lowest possible center index:
-        left_bound = np.zeros(len(leftmost), dtype=int)
-        # Initiate the rightmost with the highest possible center index:
-        right_bound = (len(rightmost) - 1) * np.ones(len(rightmost), dtype=int)
-        for idx, leftmost_value in enumerate(leftmost):
-            for edge_idx in range(len(self.edges) - 1):
-                if (leftmost_value >= self.edges[edge_idx]) and \
-                        (leftmost_value < self.edges[edge_idx + 1]):
-                    # left_bound is the index of the smaller edges of
-                    # the leftmost bin
-                    left_bound[idx] = edge_idx
-                if (rightmost[idx] >= self.edges[edge_idx]) and \
-                        (rightmost[idx] < self.edges[edge_idx + 1]):
-                    # right_bound is the index of the smaller edges of
-                    # the rightmost bin
-                    right_bound[idx] = edge_idx
-        self.bounds = np.column_stack((left_bound, right_bound))
-
-    def _consecutive_vol_shares(self):
-        """
-        Computes the portion of the volume of a sphere in each of the
-        consecutive disk-like bins by which the bead intersects along the
-        longitudinal direction with the PBC in a cylindrical geometry.
-
-        Attributes
-        ----------
-        self.volume_shares: A two-fold nested dict
-            A nested dictionary in which keys are indices of `self.centers`
-            (the positions of a bead's center) and the values are themselves
-            dictionaries. In each of this dictionary, each key is one of the
-            indices of `self.centers` within the bounds (inclusively, i.e.
-            [A,B] includes A and B as well given by `self.bounds` and the
-            value of that key is the share of the bin of that center from the
-            volume of the bead. The sum of all the values in one inner
-            dictionary is equal to the volume of the bead.
-        """
-        self.volume_shares = {}
-        for center_idx, bounds_minmax in enumerate(self.bounds):
-            # A bead's center is the center of the bin in which it resides:
-            center = self.centers[center_idx]
-            self.volume_shares[center_idx] = {}
-            # A bead near the end of a system along a periodic direction
-            # contributes to bins at both ends of that direction. If
-            # bounds_minmax[0] > bounds_minmax[1], the BPC should be imposed:
-            if bounds_minmax[0] > bounds_minmax[1]:
-                # If the center is smaller than the half the box length, then
-                # the bead's center is moved to the right, so the volume of
-                # intersection can be calculated correctly:
-                if center_idx <= len(self.centers)//2:
-                    center = self.centers[center_idx] + self.box_length
-                # The first element of the bounds_minmax is larger:
-                for edge_idx in range(bounds_minmax[0], len(self.edges) - 1):
-                    # Distances of a bin's left and right edges of from the
-                    # center of the bead (in reality, the center of another
-                    # bin):
-                    left_distance = self.edges[edge_idx] - center
-                    right_distance = self.edges[edge_idx + 1] - center
-                    # the most right bound can be a spherical cap or
-                    # segment; the `spherical_segment` is used to find
-                    # the volume of intersection:
-                    self.volume_shares[center_idx][edge_idx] = \
-                        spherical_segment(
-                            self.r_bead,
-                            left_distance,
-                            right_distance
-                        )
-                # Reset center to its initial value to calculate the rest
-                # of shares:
-                center = self.centers[center_idx]
-                # If the center is larger the half the box length, then
-                # the bead's center is moved to the left, so the volume of
-                # intersection can be calculated correctly.
-                if center_idx > len(self.centers)//2:
-                    center = self.centers[center_idx] - self.box_length
-                for edge_idx in range(bounds_minmax[1] + 1):
-                    left_distance = self.edges[edge_idx] - center
-                    right_distance = self.edges[edge_idx+1] - center
-                    self.volume_shares[center_idx][edge_idx] = \
-                        spherical_segment(
-                            self.r_bead,
-                            left_distance,
-                            right_distance
-                        )
-            # When bounds_minmax[0] <= bounds_minmax[1], everything is normalL
-            else:
-                for edge_idx in range(bounds_minmax[0], bounds_minmax[1] + 1):
-                    left_distance = self.edges[edge_idx] - center
-                    right_distance = self.edges[edge_idx+1] - center
-                    self.volume_shares[center_idx][edge_idx] = \
-                        spherical_segment(
-                            self.r_bead,
-                            left_distance,
-                            right_distance
-                        )
-
-    def _concentric_bounds(self):
-        """
-        Finds the indices of smallest and largest bin edges by which a
-        bead, that resides at the center of that bin, intersects in a
-        'concentric' bin.
-
-        Instead of the leftmost/rightmost pairs (which are more appropriate
-        for the longitudinal direction), the innermost/outermost is used.
-        """
-        # The left- and right-most bounds by which a bead is limited:
-        innermost = self.centers - self.r_bead
-        outermost = self.centers + self.r_bead
-        # Ensuring the bounds in the interval[edges[0], edges[-1]]:
-        innermost = np.where(
-            innermost < self.edges[0],
-            self.edges[0],
-            innermost
-        )
-        outermost = np.where(
-            outermost > self.edges[-1],
-            self.edges[-1],
-            outermost
-        )
-        # Initiate the innermost bound with the lowest possible bound
-        inner_bound = np.zeros(len(innermost), dtype=int)
-        # Initiate the outermost bound with the highest possible bound
-        outer_bound = (len(outermost) - 1) * np.ones(len(outermost), dtype=int)
-        for idx, innermost_value in enumerate(innermost):
-            for edge_idx in range(len(self.edges) - 1):
-                if (innermost_value >= self.edges[edge_idx]) and \
-                        (innermost_value < self.edges[edge_idx + 1]):
-                    # inner_bound is the index of the larger edge of the
-                    # innermost bin, since the intersection of the bead
-                    # and that edge is important:
-                    inner_bound[idx] = edge_idx + 1
-                if (outermost[idx] >= self.edges[edge_idx]) and \
-                        (outermost[idx] < self.edges[edge_idx + 1]):
-                    # outer_bound is the index of the smaller edge of the
-                    # outermost bin, since the intersection of the bead
-                    # and that edge is important:
-                    outer_bound[idx] = edge_idx
-        self.bounds = np.column_stack((inner_bound, outer_bound))
-
-    def _concentric_vol_shares(self):
-        """
-        Computes the portion of the volume of a bead in each of
-        the concentric cylindrical-shell-like or spherical-shell-like
-        bins by which the bead intersects along the radial direction in
-        a cylindrical geometry.
+        Calculate the local volume fraction along the direction of interest.
 
         Notes
         -----
-        For the sake of simplicity, the sphere-sphere intersection is
-        also used for the sphere-cylinder intersection in the radial
-        direction in the cylindrical and slit geometries. Hence, the
-        concentric_vol_shares can be used in all these three different
-        radial directions.
-
-        This function can be used in calculation of the local volume
-        fraction of beads in two different situation:
-        1. The radial direction in the cubic geometry with the
-        sphere_sphere_intersection function as the intersection_calculator.
-        2. The radial direction in the cylindrical geometry with the
-        sphere_cylinder_intersection function as the intersection_calculator.
-        """
-        self.volume_shares = {}
-        for center_idx, bound_minmax in enumerate(self.bounds):
-            self.volume_shares[center_idx] = {}
-            # The intersection volume of the previous bin; for the innermost
-            # bin, there is no previous bin, so this quantity is initiated
-            # by 0:
-            intersect_vol_previous = 0
-            for edge_idx in range(bound_minmax[0], bound_minmax[1] + 2):
-                # The difference between the intersection volume of a bead
-                # with a bin edge with index idx and the previous bin is the
-                # volume share of the bin (or center) with index idx-1:
-                intersect_vol = \
-                    sphere_sphere_intersection(
-                        self.r_bead,
-                        self.edges[edge_idx],
-                        self.centers[center_idx]
-                    )
-                self.volume_shares[center_idx][edge_idx-1] = (
-                    intersect_vol - intersect_vol_previous)
-                intersect_vol_previous = intersect_vol
-
-    def _vol_shares_type(self):
-        """
-        chooses how the volume_shares should be measured based on the
-        given direction.
-
-        Notes
-        -----
-        Currently, the `_vol_shares` method is implemented in the 'radial'
-        direction in all the geometries (see the notes for
-        `_concentric_vol_shares`) and the 'longitudinal' direction in the
-        cylindrical geometry.
-        """
-        if self.direction == 'r':
-            self._concentric_bounds()
-            self._concentric_vol_shares()
-        elif self.direction == 'z':
-            self._consecutive_bounds()
-            self._consecutive_vol_shares()
-        else:
-            raise ValueError(
-                "'_vol_shares_type'"
-                f" is not defined in the {self.direction} direction."
-                )
-
-    def _volume_fraction(self):
-        """
-        Computes the local volume fraction along the direction of interest
-        in the given geometry.
-
-        Notes
-        -----
-        It is assumed that all the particles have the same shape. The local
-        volume fraction is normalized to give the integral of the local
-        volume fraction  along the direction of interest in the region of
-        interest. (See the explanation for the `_number_density` method and
-        `SpatialDistribution` class).
+        Assumes all particles have identical shapes. The local volume fraction 
+        is normalized, giving the integral over the volume of interest.
         """
         n_centers = len(self.rho)
+        volume_shares = self.bin_handler.volume_shares
         self.phi = np.zeros(n_centers)
+
         for c_idx in range(n_centers):
-            for idx, vol in self.volume_shares[c_idx].items():
-                self.phi[c_idx] = self.phi[c_idx] + (self.rho[idx] * vol)
+            for idx, vol in volume_shares[c_idx].items():
+                self.phi[c_idx] += self.rho[idx] * vol
 
 
 def distributions_generator(
