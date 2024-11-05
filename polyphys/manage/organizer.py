@@ -1535,8 +1535,8 @@ def space_tseries(
     group: Literal["bug", "nucleoid", "all"],
     geometry: Literal["cylindrical", "slit", "cubic"],
     topology: Literal["ring", "linear", "branched"],
-    divisor: Optional[float] = 0.025,
-    round_to: Optional[int] = 3,
+    divisor: float = 0.025,
+    round_to: int = 3,
     is_save: Optional[bool] = False,
 ) -> pd.DataFrame:
     """
@@ -1634,7 +1634,8 @@ def space_tseries(
         # Apply rounding to `phi_c_bulk`
         ens_avg["phi_c_bulk_round"] = \
             ens_avg["phi_c_bulk"].apply(
-                round_up_nearest, args=[divisor, round_to])
+            lambda x: round_up_nearest(x, divisor, round_to)
+        )
 
         property_csvs.append(ens_avg)
 
@@ -1664,8 +1665,8 @@ def space_hists(
     topology: Literal["ring", "linear", "branched"],
     bin_center: Optional[np.ndarray] = None,
     normalize: Optional[bool] = False,
-    divisor: Optional[float] = 0.025,
-    round_to: Optional[int] = 3,
+    divisor: float = 0.025,
+    round_to: int = 3,
     is_save: Optional[bool] = False,
 ) -> pd.DataFrame:
     """
