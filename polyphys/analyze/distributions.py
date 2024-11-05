@@ -19,111 +19,129 @@ import numpy as np
 from numpy.typing import ArrayLike
 import scipy.integrate as integrate
 from ..manage.typer import (ParserT, FreqDataT, EdgeDataT)
+from ..manage.organizer import make_database
 
 
-def spherical_segment(
-    r: float,
-    a: float,
-    b: float
-) -> float:
+def spherical_segment(r: float, a: float, b: float) -> float:
     """
-    computes the volume of a spherical segment.
+    Compute the volume of a spherical segment defined by two parallel planes.
 
     Parameters
     ----------
     r : float
-        Radius of the sphere.
+        Radius of the sphere. Must be positive.
     a : float
-        Distance of the first base from the center of the sphere.
+        Distance of the first plane from the center of the sphere, along the
+        axis of symmetry.
     b : float
-        Distance of the second base from the center of the sphere.
-
-    Return
-    ------
-    vol: float
-        Volume of the spherical segment.
-
-    Notes
-    -----
-    1. a and b can be negative or positive, depending on the position
-    with respect to the center of sphere in the range [-r,r].
-    2. When a=r or b=r, we have a spherical cap.
-
-    References
-    ----------
-    https://mathworld.wolfram.com/SphericalSegment.html
-    """
-    if r <= 0:
-        raise ValueError(
-            "The radius "
-            f"'{r}'"
-            " is not a positive number."
-        )
-    # The axis, on which left, center, and right reside, points to right.
-    lower = min(a, b)  # The lower bound of the volume integral
-    upper = max(a, b)  # The upper bound of the volume integral
-    if np.abs(upper) >= r:  # upper bound cannot larger than r.
-        upper = np.sign(upper) * r
-    if np.abs(lower) >= r:  # lower limit cannot less than -1*r.
-        lower = np.sign(lower) * r
-    vol = np.pi * (r**2 * (upper-lower) - (upper**3 - lower**3) / 3)
-    # if lower and upper bounds are both outside of [-r,r] and have the
-    # same signs, then vol=0:
-    if lower*upper >= r**2:
-        vol = 0.0
-    return vol
-
-
-def sphere_sphere_intersection(
-        r1: float,
-        r2: float,
-        d: float
-) -> float:
-    """
-    computes the volume of intersection of two spheres. The sphere with
-    radius `r1` has distance `d`from the other one with radius `r2`
-    along axis x, so the vector form of distance is indeed (d,0,0)
-    in cartesian coordinate system.
-
-    Parameters
-    ----------
-    r1: float
-        The radius of the one sphere.
-    r2: float
-        The radius of the other sphere.
-    d: float
-        The distance of the two spheres from each other along axis x.
+        Distance of the second plane from the center of the sphere, along the
+        axis of symmetry.
 
     Returns
     -------
-    vol: float
-        The intersection volume.
+    vol : float
+        Volume of the spherical segment.
+
+    Raises
+    ------
+    ValueError
+        If `r` is not a positive number.
+
+    Notes
+    -----
+    - `a` and `b` can be positive or negative values, as long as they fall
+    within the range `[-r, r]`.
+    - The function will adjust `a` and `b` to `-r` or `r` if they exceed these
+    bounds.
+    - If `a = r` or `b = r`, the spherical segment becomes a spherical cap.
+    - If both `a` and `b` lie outside the range `[-r, r]` and share the same
+    sign, the volume is zero.
 
     References
     ----------
-    https://mathworld.wolfram.com/Sphere-SphereIntersection.html
+    .. [1] Weisstein, Eric W. "Spherical Segment." From MathWorld--A Wolfram
+    Web Resource.
+       https://mathworld.wolfram.com/SphericalSegment.html
+
+    Examples
+    --------
+    >>> spherical_segment(3, 1, 2)
+    37.69911184307752
+    >>> spherical_segment(3, -3, 3)
+    113.09733552923255
     """
-    # By define r_max and r_min, we handle the situations in which d = 0:
+
+    if r <= 0:
+        raise ValueError(f"The radius 'r' must be positive. Got {r}.")
+
+    # Ensure the bounds are within [-r, r]
+    lower = max(min(a, b), -r)
+    upper = min(max(a, b), r)
+
+    # If both bounds are outside [-r, r] with the same sign, the volume is zero
+    if lower * upper >= r**2:
+        return 0.0
+    # Calculate the volume of the spherical segment
+    vol = np.pi * (r**2 * (upper - lower) - (upper**3 - lower**3) / 3)
+    return vol
+
+
+def sphere_sphere_intersection(r1: float, r2: float, d: float) -> float:
+    """
+    Compute the volume of intersection between two spheres.
+
+    The sphere with radius `r1` is separated from the sphere with radius `r2`
+    by a distance `d` along the x-axis. Thus, the vector form of the distance
+    between their centers is `(d, 0, 0)` in Cartesian coordinates.
+
+    Parameters
+    ----------
+    r1 : float
+        Radius of the first sphere.
+    r2 : float
+        Radius of the second sphere.
+    d : float
+        Distance between the centers of the two spheres along the x-axis.
+
+    Returns
+    -------
+    vol : float
+        Volume of the intersection between the two spheres.
+
+    References
+    ----------
+    .. [1] Weisstein, Eric W. "Sphere-Sphere Intersection."
+       From MathWorld--A Wolfram Web Resource.
+       https://mathworld.wolfram.com/Sphere-SphereIntersection.html
+
+    Examples
+    --------
+    >>> sphere_sphere_intersection(3, 4, 2)
+    75.39822368615503
+    >>> sphere_sphere_intersection(3, 4, 10)
+    0.0
+    """
+
     r_max = max(r1, r2)
     r_min = min(r1, r2)
-    # when one of the sphere has 0 radius, vol=0:
+
+    # Volume is zero if one sphere has a radius of zero or no intersection
+    # occurs:
     if r1 == 0.0 or r2 == 0.0:
-        vol = 0.0
-    # Spheres are either tangential to each other or do not intersect.
-    elif d >= r_min + r_max:
-        vol = 0.0
-    # Spheres intersect:
-    # Small sphere resides completely in the large one.
-    elif d <= r_max - r_min:
-        vol = 4 * np.pi * r_min**3 / 3
-    # Other scenarios:
-    else:
-        vol = (np.pi / (12*d)) * (r_max + r_min - d)**2 * (
-            d**2
-            + 2 * d * (r_max + r_min)
-            - 3 * (r_min**2 + r_max**2)
-            + 6 * r_min * r_max
-        )
+        return 0.0
+    if d >= r_min + r_max:
+        return 0.0
+    if d <= r_max - r_min:
+        # The smaller sphere is entirely contained within the larger one
+        return 4 * np.pi * r_min**3 / 3
+
+    # Calculate the intersection volume for overlapping spheres
+    vol = (np.pi / (12 * d)) * (r_max + r_min - d)**2 * (
+        d**2 + 2 * d * (r_max + r_min)
+        - 3 * (r_min**2 + r_max**2)
+        + 6 * r_min * r_max
+    )
+
     return vol
 
 
@@ -965,3 +983,412 @@ def looping_p(
         if bin_centers[i] <= (r_max + r_min):
             looped_probability += histo_collections[i]
     return looped_probability
+
+
+def normalize_z(
+    prop: str,
+    ens_avg: pd.DataFrame,
+    trans_symmetry: bool = True
+) -> pd.DataFrame:
+    """
+    Normalizes the ensemble-average local distribution `ens_avg` of the
+    specified property `prop` along the z-axis in cylindrical geometry.
+    Normalization is performed by dividing by the maximum value of `ens_avg`.
+    If `trans_symmetry` is `True`, it averages over the absolute values of bin
+    centers along the z-axis.
+
+
+    Parameters
+    ----------
+    prop : str
+        Name of the physical property to normalize.
+    ens_avg : pd.DataFrame
+        DataFrame containing the ensemble-average local distribution with a
+        column named `<prop>-scale`.
+    trans_symmetry : bool, default True
+        If `True`, the system has translational symmetry along the z axis, so
+        averaging is performed over absolute values of bin centers along this
+        axis. See *Notes* below.
+
+    Returns
+    -------
+    pd.DataFrame
+        Normalized ensemble-average local distribution. If `trans_symmetry` is
+        `True`, returns the averaged distribution over the absolute values of
+        bin centers; otherwise, returns the original DataFrame with
+        normalization applied.
+
+    Examples
+    --------
+    >>> data = pd.DataFrame({"bin_center": [-1, 0, 1],
+                             "density-scale": [0.5, 1.0, 0.5]})
+    >>> normalize_z("density", data)
+       bin_center  density-scale  density-normalizer  density-norm
+    0          -1            0.5                 1.0           0.5
+    1           0            1.0                 1.0           1.0
+    2           1            0.5                 1.0           0.5
+
+    Notes
+    -----
+    - This function assumes the z values range from negative to positive. If
+      this condition is not met, consider using the `normalize_r` function.
+
+    - **Bin Center Behavior After Averaging**:
+      If `trans_symmetry` is `True`, the function averages the data based on
+      the absolute values of bin centers along the z-axis. When the bin
+      centers are symmetrical (equal positive and negative values around
+      (:math:`z = 0`), the absolute values of bin centers remain unchanged in
+      the averaged output.
+
+      However, if bin centers are asymmetrical (unequal positive and negative
+      values), the output bin centers represent the mean of the absolute
+      values of each pair of positive and negative bin centers. For odd-length
+      DataFrames, the middle bin center is retained as is, as it represents
+      (:math:`z = 0`) or the closest value to zero.
+
+    - **Indexing Strategy**:
+      The function uses indexing to handle bin center pairs:
+        - For an odd-length `ens_avg`, the middle bin center value represents
+          (:math:`z = 0`) (or the closest to zero) and remains as is in the
+          final output while the average between each positive and negative bin
+          center pair is computed.
+        - For an even-length `ens_avg`, the average between each positive
+          and negative bin center pair is computed, with no (:math:`z = 0`)
+          center etained.
+
+    """
+    ens_avg_max = ens_avg[f'{prop}-scale'].max()
+    ens_avg[f'{prop}-normalizer'] = ens_avg_max
+
+    if ens_avg_max != 0:
+        ens_avg[f'{prop}-norm'] = ens_avg[f'{prop}-scale'] / ens_avg_max
+    else:
+        warnings.warn(
+            "All values are zero; normalized values set to zero.", UserWarning)
+        ens_avg[f'{prop}-norm'] = 0
+
+    if not trans_symmetry:
+        return ens_avg
+
+    df_len = len(ens_avg)
+    mid_point = df_len // 2
+    odd_length = bool(df_len % 2 == 1)
+
+    # Separate data into positive and negative z regions:
+    ens_neg = ens_avg.iloc[:mid_point].copy()
+    ens_neg.index = -1 * ens_neg.index
+    ens_neg.sort_index(inplace=True)
+    ens_neg.reset_index(inplace=True, drop=True)
+    ens_neg['bin_center'] *= -1
+
+    ens_pos = ens_avg.iloc[mid_point + odd_length:].copy()
+    ens_pos.reset_index(inplace=True, drop=True)
+
+    # Averaging over |z|>0:
+    ens_sum = 0.5 * (ens_pos + ens_neg)
+
+    # Handling z=0 or z close to 0:
+    if odd_length:
+        ens_sum.set_index('bin_center', inplace=True)
+        ens_sum.loc[0, :] = ens_avg.loc[mid_point, :]
+
+    ens_sum.sort_index(inplace=True)
+    ens_sum.reset_index(drop=True)
+
+    return ens_sum
+
+
+def normalize_r(
+    prop: str,
+    ens_avg: pd.DataFrame,
+    method: Literal['first', 'max', 'range_mean', 'range_max'] = 'first',
+    index_range: Optional[slice] = None
+) -> pd.DataFrame:
+    """
+    Normalizes the ensemble-average local distribution `ens_avg` of `prop`
+    along the radial (r) direction by a specified `method`.
+
+    Parameters
+    ----------
+    prop : str
+        Name of the physical property to normalize.
+    ens_avg : pd.DataFrame
+        DataFrame containing the ensemble-average local distribution, with a
+        column named `<prop>-scale`.
+    method : {'first', 'max', 'range_mean', 'range_max'}, default 'first'
+        Normalization method:
+
+        - 'first': Normalizes by the first value in `ens_avg`.
+        - 'max': Normalizes by the maximum value in `ens_avg`.
+        - 'range_mean': Normalizes by the mean of values within the range
+          specified by `index_range`.
+        - 'range_max': Normalizes by the maximum value within the range
+          specified by `index_range`.
+
+    index_range : Optional[slice], default None
+        A slice specifying the index range over which the mean or maximum of
+        `prop` in `ens_avg` is computed. Required if `method` is 'range_mean'
+        or 'range_max'.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with the normalized ensemble-average local distribution, 
+        where the new column `<prop>-norm` holds the normalized values.
+
+    Raises
+    ------
+    ValueError
+        If `index_range` is not specified when `method` is 'range_mean' or
+        'range_max'.
+
+    Examples
+    --------
+    >>> data = pd.DataFrame({"bin_center": [0, 1, 2],
+                             "density-scale": [1.0, 0.8, 0.6]})
+    >>> normalize_r("density", data, method="max")
+       bin_center  density-scale  density-normalizer  density-norm
+    0           0            1.0                 1.0           1.0
+    1           1            0.8                 1.0           0.8
+    2           2            0.6                 1.0           0.6
+
+    Notes
+    -----
+    - Ensure `index_range` is specified if using the 'range_mean' or
+    'range_max' methods. For instance, `index_range=slice(start, end)` allows
+    indexing over a defined section of `ens_avg`.
+    """
+    # Determine the normalizing value
+    if method == 'first':
+        normalizer = ens_avg[prop + '-scale'].iloc[0]
+    elif method == 'max':
+        normalizer = ens_avg[prop + '-scale'].max()
+    elif method == 'range_mean' and index_range is not None:
+        normalizer = ens_avg.loc[index_range, prop + '-scale'].mean()
+    elif method == 'range_max' and index_range is not None:
+        normalizer = ens_avg.loc[index_range, prop + '-scale'].max()
+    else:
+        invalid_keyword(method, ['first', 'max', 'range_mean', 'range_max'])
+
+    # Apply normalization
+    ens_avg[f'{prop}-normalizer'] = normalizer
+    if normalizer != 0:
+        ens_avg[f'{prop}-norm'] = ens_avg[f'{prop}-scale'] / normalizer
+    else:
+        warnings.warn(
+            "All values are zero; normalized values set to zero.",
+            UserWarning
+        )
+        ens_avg[f'{prop}-norm'] = 0
+
+    return ens_avg
+
+
+def space_sum_rule(
+    input_database: str,
+    property_: str,
+    parser: ParserT,
+    hierarchy: str,
+    physical_attrs: List[str],
+    species: Literal['Mon', 'Crd', 'Foci', 'Dna'],
+    size_attr: str,
+    group: Literal["bug", "nucleoid", "all"],
+    geometry: Literal["cylindrical", "slit", "cubic"],
+    topology: Literal["ring", "linear", "branched"],
+    direction: Literal["r", "z"],
+    divisor: float = 0.025,
+    round_to: int = 3,
+    is_save: bool = False
+) -> pd.DataFrame:
+    """
+    Processes ensemble-averaged local distributions of a given `property_`
+    in an `input_database`, applies normalization and scaling, and aggregates
+    attributes.
+
+    Each "ensemble-averaged" DataFrame contains columns like:
+    - `<long_ensemble>-<property_>[-<measure>]-<stat>`
+    - `bin_center`
+
+    where <measure> is a physical measurement such as the auto correlation
+    function (AFC) done on the physical 'property_'. [...] means this keyword
+    in the column name can be optional. The <stat> keyword is either 'mean',
+    'ver', or 'sem'. If the `bin_center` presents as a column in a
+    'ensemble_averaged' dataframe, then it is inferred; otherwise, it should
+    be passed to the function. See `bin_center` kw argument below.
+
+    "Scaling" changes the data range, and "normalizing" changes its
+    distribution. This function creates a normalized, scaled distribution for
+    a given particle species along the specified `direction`.
+
+    Parameters
+    ----------
+    input_database : str
+        Path to the directory containing the ensemble-averaged local
+        distributions.
+    property_ : str
+        Physical property of interest, e.g., 'density' or 'volume fraction'.
+    parser : ParserT
+        Parser instance for file path and attribute information.
+    hierarchy : str
+        Pattern prefix for filenames to select files, e.g., "N*".
+    physical_attrs : List[str]
+        List of physical attributes to add to the output DataFrame.
+    species : {'Mon', 'Crd', 'Foci', 'Dna'}
+        Particle species within the distribution:
+        - 'Mon': Monomers
+        - 'Crd': Crowders
+        - 'Foci': Large monomers
+        - 'Dna': DNA particles
+
+    size_attr : str
+        Size attribute (diameter) of the species for scaling.
+    group : {'bug', 'nucleoid', 'all'}
+        Particle group type.
+    geometry : {'cylindrical', 'slit', 'cubic'}
+        Simulation box geometry.
+    topology : {'ring', 'linear', 'branched'}
+        Polymer topology.
+    direction : {'r', 'z'}
+        Direction along which the operation is performed.
+    divisor : float, default 0.025
+        Step for rounding `phi_c_bulk` attribute values.
+    round_to : int, default 3
+        Decimal precision for `phi_c_bulk` attribute rounding.
+    is_save : bool, default False
+        If True, saves the output DataFrame to a CSV file.
+
+    Returns
+    -------
+    pd.DataFrame
+        Concatenated DataFrame of normalized, scaled distributions with
+        added attributes.
+
+    Raises
+    ------
+    NotImplementedError
+        If `property_` is neither 'Phi' nor 'Rho'.
+
+    Notes
+    -----
+    This function applies scaling based on particle size and species:
+    - `Phi` (volume fraction) is scaled by the particle size.
+    - `Rho` (density) is scaled by the particle size squared.
+
+    Examples
+    --------
+    >>> space_sum_rule(input_database="data/",
+                       property_="density",
+                       parser=my_parser,
+                       hierarchy="N*",
+                       physical_attrs=["temp", "phi_c_bulk"],
+                       species="Mon",
+                       size_attr="diameter",
+                       group="all",
+                       geometry="cylindrical",
+                       topology="linear",
+                       direction="r")
+    """
+    invalid_keyword(species, ['Mon', 'Crd', 'Foci', 'Dna'])
+    invalid_keyword(group, ["bug", "nucleoid", "all"])
+    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
+    invalid_keyword(topology, ["ring", "linear", "branched"])
+    invalid_keyword(direction, ["r", "z "])
+    # Normalizer based on direction
+    normalizer: Dict[str, Callable] = {
+        'r': normalize_r,
+        'z': normalize_z
+    }
+
+    # File extension pattern
+    property_ext = f"-{group}-{direction}{property_}{species}-ensAvg.csv"
+    prop = f"{direction}{property_}{species}"  # Full property name
+
+    # Collect ensemble-averaged CSVs
+    ens_avg_csvs = sort_filenames(
+        glob(f"{input_database}{hierarchy}{property_ext}"),
+        fmts=[property_ext])
+
+    property_dfs = []
+
+    for ens_avg_csv in ens_avg_csvs:
+        ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
+        property_info: ParserT = parser(
+            ens_avg_csv[0],
+            'ensemble_long',
+            geometry,
+            group,
+            topology
+        )
+
+        # Apply scaling based on property type
+        scaler = getattr(property_info, size_attr)
+        if property_ == 'Phi':
+            ens_avg[f"{prop}-scaler"] = scaler
+            ens_avg[f"{prop}-scale"] = ens_avg[f"{prop}-mean"] / scaler
+        elif property_ == 'Rho':
+            ens_avg[f"{prop}-scaler"] = scaler ** 2
+            ens_avg[f"{prop}-scale"] = ens_avg[f"{prop}-mean"] * scaler ** 2
+        else:
+            raise NotImplementedError(
+                "Sum rule scaler is only defined for 'Phi' (volume fraction)"
+                " or 'Rho' (density) properties."
+            )
+
+        # Normalizing the area under curve
+        ens_avg[f"{prop}-scale-normalized_curve"] = \
+            ens_avg[f"{prop}-scale"] / ens_avg[f"{prop}-scale"].sum()
+
+        # Normalize data using specified normalizer function
+        if direction == 'r' and geometry == 'cubic':
+            ens_avg = normalizer[direction](prop, ens_avg, method='max')
+        else:
+            ens_avg = normalizer[direction](prop, ens_avg)
+
+        # Add specified physical attributes
+        for attr_name in physical_attrs:
+            ens_avg[attr_name] = getattr(property_info, attr_name)
+
+        # Add additional attributes
+        ens_avg[f"{prop}-sumrule_constant"] = scaler
+        ens_avg['bin_center-norm'] = \
+            ens_avg['bin_center'] / ens_avg['bin_center'].max()
+        ens_avg['phi_c_bulk_round'] = \
+            ens_avg['phi_c_bulk'].apply(
+                round_up_nearest, args=[divisor, round_to]
+            )
+
+        # Additional processing for cylindrical geometry
+        if geometry == 'cylindrical':
+            ens_avg['temp'] = (
+                (ens_avg['dcyl'] % ens_avg['dcrowd']) /
+                (ens_avg['dcrowd'])
+            )
+            ens_avg['bin_center-dcrowd-recentered'] = (
+                ens_avg['bin_center-dcrowd'] - ens_avg['temp']
+            )
+            ens_avg['bin_center-recentered-norm'] = (
+                ens_avg['bin_center'] - (ens_avg['dcyl'] % ens_avg['dcrowd'])
+            )
+            ens_avg['bin_center-recentered-norm'] = (
+                ens_avg['bin_center-recentered-norm'] /
+                ens_avg['bin_center-recentered-norm'].max()
+            )
+            ens_avg.drop(columns=['temp'], inplace=True)
+
+        # Store processed DataFrame
+        property_dfs.append(ens_avg)
+
+    # Concatenate all processed data
+    property_db = pd.concat(property_dfs, axis=0)
+    property_db.reset_index(drop=True, inplace=True)
+
+    # Save DataFrame if requested
+    if is_save:
+        save_to_space = make_database(
+            input_database, "analysis", stage="space", group=group)
+        space = save_to_space.split("/")[-2].split("-")[0]
+        filepath = save_to_space + \
+            f"{space}-{group}-{property_}-{species}" + \
+            "-normalizedRescaled-space.csv"
+        property_db.to_csv(filepath, index=False)
+    return property_db
