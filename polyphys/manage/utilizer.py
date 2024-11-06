@@ -203,8 +203,8 @@ def round_up_nearest(
 
 
 def invalid_keyword(
-    keyword: Union[str, None],
-    valid_keywords: List[Union[str, None]],
+    keyword: str,
+    valid_keywords: List[str],
     message: Optional[str] = None
 ) -> None:
     """

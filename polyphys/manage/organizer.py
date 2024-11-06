@@ -364,16 +364,8 @@ def make_database(
     """
     invalid_keyword(
         phase,
-        [
-            "simAll",
-            "simCont",
-            "log",
-            "trj",
-            "probe",
-            "analysis",
-            "viz",
-            "galaxy",
-        ],
+        ["simAll", "simCont", "log", "trj", "probe", "analysis", "viz",
+         "galaxy"],
     )
     invalid_keyword(group, ["bug", "nucleoid", "all"])
     invalid_keyword(

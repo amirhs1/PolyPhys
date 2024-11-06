@@ -14,16 +14,12 @@ Currently, the following distribution are implemented:
     1. The local number density of hard beads.
     2. The local volume fraction of hard beads.
 """
-from glob import glob
-import warnings
-from abc import ABC, abstractmethod
-from typing import Dict, Tuple, Optional, Callable, Literal, List
+from typing import Dict, Tuple, Optional, Callable
 import numpy as np
-import pandas as pd
-from scipy import integrate
+from numpy.typing import ArrayLike
+import scipy.integrate as integrate
 from ..manage.typer import (ParserT, FreqDataT, EdgeDataT)
-from ..manage.organizer import make_database, sort_filenames
-from ..manage.utilizer import invalid_keyword, round_up_nearest
+from ..manage.organizer import make_database
 
 
 def spherical_segment(r: float, a: float, b: float) -> float:
@@ -187,15 +183,10 @@ class ConsecutiveDiskBins:
 
     Methods
     -------
-    _find_bounds() -> None
+    _find_bounds()
         Determine the left and right bounds of bins intersected by each bead.
-    _calculate_vol_shares() -> None
+    _calculate_vol_shares()
         Calculate the volume share for each bin intersected by each bead.
-
-    Raises
-    ------
-    TypeError
-        If `edges` is not an instance of `np.ndarray`.
 
     Notes
     -----
@@ -204,9 +195,6 @@ class ConsecutiveDiskBins:
     ends of the axis.
     """
     def __init__(self, edges: np.ndarray, r_bead: float) -> None:
-        if not isinstance(edges, np.ndarray):
-            raise TypeError("'edges' must be an 'np.ndarray',"
-                            f" got {type(edges)}.")
         self.edges = edges
         self.r_bead = r_bead
         self.box_length = self.edges[-1] - self.edges[0]
@@ -214,10 +202,10 @@ class ConsecutiveDiskBins:
         n_centers = len(self.centers)
         self.bounds = np.empty([n_centers, 2])
         self.volume_shares: Dict[int, Dict[int, float]] = {}
-        self._find_bounds()
+        self.find_bounds()
         self._calculate_vol_shares()
 
-    def _find_bounds(self) -> None:
+    def find_bounds(self) -> None:
         """
         Find left- and right-most bin edges, a.k.a. bounds, by which a bead is
         limited, adjusting bin bounds to account for periodic boundary
@@ -341,16 +329,12 @@ class ConcentricSphericalBins:
 
     Methods
     -------
-    _find_bounds() -> None
+    _find_bounds()
         Determine the inner and outer bounds of bins intersected by each bead.
-    _calculate_vol_shares() -> None
+    _calculate_vol_shares()
         Calculate the volume share for each concentric bin intersected by each
         bead.
 
-    Raises
-    ------
-    TypeError
-        If `edges` is not an instance of `np.ndarray`.
     """
     def __init__(self, edges: np.ndarray, r_bead: float) -> None:
         if not isinstance(edges, np.ndarray):
@@ -422,179 +406,93 @@ class ConcentricSphericalBins:
                 intersect_vol_previous = intersect_vol
 
 
-class DistributionBase(ABC):
+class DistributionBase:
     """
     Base class for managing distributions in different geometries.
-
-    This class provides core functionality for calculating local number density
-    (`rho`) and local volume fraction (`phi`) for various geometries. It
-    defines shared attributes and methods that are inherited by
-    geometry-specific subclasses, each of which implements geometry-specific
-    behavior via the `_get_geometry_args` method.
 
     Parameters
     ----------
     frequencies : np.ndarray
-        Array of frequencies in each bin, representing particle counts or
-        measurements within each bin.
-    edges : np.ndarray
-        Array of bin edges, where `len(edges) = len(frequencies) + 1`.
-    integrand : Callable
-        Integrand function specific to the geometry and direction for volume
-        integration.
-    volume_shares : Dict[int, Dict[int, float]]
-        Nested dictionary mapping each bin index to another dictionary that
-        contains the volume shares of particles within intersected bins.
-    normalize : bool, optional
-        If True, normalizes `rho` and `phi` to unit area under the distribution
-        (default is False).
+        Array of frequencies in each bin.
+    normalized : bool, optional
+        Whether to normalize distributions (default is False).
 
     Attributes
     ----------
     frequencies : np.ndarray
-        Frequency values for each bin, provided during initialization.
-    n_bins : int
-        The total number of bins, derived from `frequencies`.
-    edges : np.ndarray
-        Array of bin edges along the chosen direction.
-    bin_size : np.ndarray
-        Array of bin widths, calculated from consecutive differences in
-        `edges`.
-    integrand : Callable
-        The integrand function used for volume integration within bins.
-    args : tuple
-        Tuple of arguments specific to the geometry and direction, used by the
-        integrand.
-    volume_shares : Dict[int, Dict[int, float]]
-        Nested dictionary where each key is a bead index containing a
-        dictionary of volume shares for each intersected bin.
-    normalize : bool
-        Flag indicating whether the distributions should be normalized.
+        Frequency values for bins.
+    normalized : bool
+        Flag indicating if normalization is applied.
     rho : np.ndarray
-        Calculated local number density values for each bin, obtained by
-        dividing `frequencies` by the volume of each bin.
+        Calculated local number densities.
     phi : np.ndarray
-        Calculated local volume fraction values for each bin, representing the
-        fraction of bin volume occupied by particles.
-
-    Methods
-    -------
-    _set_args() -> Tuple[float, ...]
-        Sets up and returns geometry-specific arguments for the integrand by
-        calling the subclass-defined `_get_geometry_args`.
-    _get_geometry_args() -> Tuple[float, ...]
-        Abstract method; must be implemented by subclasses to return geometry-
-        specific arguments for the integrand.
-    _number_density() -> None
-        Calculates the local number density (`rho`) for each bin by dividing
-        the frequency values by bin volumes.
-    _volume_fraction() -> None
-        Calculates the local volume fraction (`phi`) for each bin by summing
-        the product of `rho` and volume shares across intersected bins.
-    _normalize_distributions() -> None
-        Normalizes the `rho` and `phi` arrays if `normalize` is set to True.
+        Calculated local volume fractions.
 
     Raises
     ------
-    TypeError
-        If `frequencies` or `edges` is not an instance of `np.ndarray`.
+    ValueError
+        If `frequencies` is not an ndarray.
     """
-
     def __init__(
         self,
         frequencies: np.ndarray,
         edges: np.ndarray,
         integrand: Callable,
+        args: Tuple[float, ...],
         volume_shares: Dict[int, Dict[int, float]],
         normalize: bool = False
     ) -> None:
+        # Validate frequency and edge inputs
         if not isinstance(frequencies, np.ndarray):
             raise TypeError("'frequencies' must be an 'np.ndarray',"
                             f" got {type(frequencies)}.")
         if not isinstance(edges, np.ndarray):
             raise TypeError("'edges' must be an 'np.ndarray',"
                             f" got {type(edges)}.")
-
         self.frequencies = frequencies
         self.n_bins = len(self.frequencies)
         self.edges = edges
         self.bin_size = self.edges[1:] - self.edges[:-1]
         self.integrand = integrand
+        self.args = args
         self.volume_shares = volume_shares
         self.normalize = normalize
         self.rho = np.zeros(self.n_bins)
         self.phi = np.zeros(self.n_bins)
-
-        # Set up geometry-specific arguments
-        self.args = self._set_args()
-
-        # Calculate number density and volume fraction
         self._number_density()
         self._volume_fraction()
-
-        if self.normalize:
+        if self.normalize is True:
             self._normalize_distributions()
-
-    def _set_args(self) -> Tuple[float, ...]:
-        """
-        Set up geometry-specific arguments for the integrand.
-
-        This method calls the subclass-specific `_get_geometry_args` method to
-        retrieve arguments that are unique to the geometry and direction.
-
-        Returns
-        -------
-        tuple
-            Geometry-specific integration arguments.
-        """
-        return self._get_geometry_args()
-
-    @abstractmethod
-    def _get_geometry_args(self) -> Tuple[float, ...]:
-        """
-        Abstract method to provide geometry-specific arguments.
-
-        This method must be implemented by subclasses to supply arguments
-        specific to the geometry being represented.
-
-        Returns
-        -------
-        tuple
-            Geometry-specific integration arguments.
-        """
 
     def _number_density(self) -> None:
         """
-        Calculate the local number density (`rho`) for each bin.
+        Calculate local number density along the specified direction.
 
-        Integrates the `integrand` over each bin to obtain bin volumes, and
-        then divides `frequencies` by the volumes to get `rho`.
+        Notes
+        -----
+        The local number density is averaged over time steps collected in each
+        simulation. For example, in a simulation with 7*10^7 total time steps
+        sampled every 5000 steps, there are 14001 measurements.
         """
         bin_vols = np.array([
             integrate.quad(
                 self.integrand,
                 self.edges[idx],
-                self.edges[idx + 1],
+                self.edges[idx+1],
                 args=self.args
             )[0] for idx in range(self.n_bins)
         ])
         self.rho = self.frequencies / bin_vols
 
     def _volume_fraction(self) -> None:
-        """
-        Calculate the local volume fraction (`phi`) for each bin.
-
-        Uses `volume_shares` to accumulate the fraction of each intersected bin
-        that the particles occupy, based on `rho` values.
-        """
+        """Calculate volume fractions for cylindrical distributions."""
+        volume_shares = self.volume_shares
         for c_idx in range(self.n_bins):
-            for idx, vol in self.volume_shares[c_idx].items():
+            for idx, vol in volume_shares[c_idx].items():
                 self.phi[c_idx] += self.rho[idx] * vol
 
     def _normalize_distributions(self) -> None:
-        """
-        Normalize distributions.
-        """
+        """Normalize distributions."""
         self.rho /= self.rho.sum()
         self.phi /= self.phi.sum()
 
@@ -602,65 +500,24 @@ class DistributionBase(ABC):
 class DistributionCylinder(DistributionBase):
     """
     Calculate local distributions (local number density and volume fraction)
-    within a cylindrical geometry.
-
-    This class handles calculations for `rho` (local number density) and `phi`
-    (local volume fraction) in a cylindrical system:
-
-        - Along the longitudinal axis, it utilizes consecutive disk-like bins
-        and handles periodic boundary conditions as necessary.
+    across a cylinder.
 
     Parameters
     ----------
     frequencies : np.ndarray
-        Array of frequencies in each bin, representing particle counts or
-        measurements within each bin.
+        Array of frequencies in each bin.
     edges : np.ndarray
-        Array of bin edges along the longitudinal axis, where
-        `len(edges) = len(frequencies) + 1`.
-    rbead : float
-        Radius of the particle species being measured.
-    lcyl : float
-        Length of the cylinder along the longitudinal axis.
-    dcyl : float
-        Diameter of the cylinder's cross-section.
-    direction : str
-        Direction of interest for the distribution calculation, which must be
-        one of ['r', 'phi', 'z'].
-    normalize : bool, optional
-        If True, normalizes `rho` and `phi` to a unit area under the
-        distribution (default is False).
+        Array of bin edges along the longitudinal axis.
+    radius_attr : float
+        Radius of the particle species.
+    normalized : bool, optional
+        Whether to normalize distributions (default is False).
 
     Attributes
     ----------
-    lcyl : float
-        Length of the cylinder, used as an argument in the integration.
-    dcyl : float
-        Diameter of the cylinder's cross-section, used for integration.
-    direction : {'r', 'phi', 'z'}
-        Direction along which the distribution is computed within the
-        cylindrical geometry
-    integrand : Callable
-        Integrand function used for volume integration, chosen based on
-        `direction`.
-    args : Tuple[float, ...]
-        Arguments specific to a cylindrical direction, set by
-        `_get_geometry_args`.
-    consecutive_bins : ConsecutiveDiskBins
-        Instance of `ConsecutiveDiskBins` used to manage volume shares of bins.
-
-    Methods
-    -------
-    _get_geometry_args() -> Tuple[float, ...]
-        Provides geometry-specific arguments for cylindrical integration,
-        based on the specified `direction`.
-
-    Raises
-    ------
-    ValueError
-        If `direction` has invalid values.
-    NotImplementedError
-        If `direction` is 'r' or 'phi'.
+    volume_shares : dict of dict
+        Nested dictionary where each key is a bead index containing a
+        dictionary of volume shares for each intersected bin.
     """
     _directions = ['r', 'phi', 'z']
     _integrands: Dict[str, Callable] = {
@@ -676,107 +533,58 @@ class DistributionCylinder(DistributionBase):
         rbead: float,
         lcyl: float,
         dcyl: float,
-        direction: Literal['r', 'phi', 'z'],
+        direction: str,
         normalize: bool = False
     ) -> None:
         self.lcyl = lcyl
         self.dcyl = dcyl
-        invalid_keyword(direction, self._directions)
-        if direction in ['r', 'phi']:
-            raise NotImplementedError(
-                "This class has not yet implemented for 'r' and 'phi'"
-                "directions"
+        if direction not in self._directions:
+            raise ValueError(
+                f"Invalid direction '{direction}'. "
+                f"Choose from {self._directions}."
             )
         self.direction = direction
-        self.integrand = self._integrands[direction]
-        self.consecutive_bins = ConsecutiveDiskBins(edges, rbead)
-
+        self.args = self._set_args()
+        self.consective_bins = ConsecutiveDiskBins(edges, rbead)
         super().__init__(
             frequencies,
             edges,
             self.integrand,
-            self.consecutive_bins.volume_shares,
+            self.args,
+            self.consective_bins.volume_shares,
             normalize=normalize
         )
 
-    def _get_geometry_args(self) -> Tuple[float, ...]:
-        """Provide arguments specific to the cylindrical geometry."""
-        direction_args = {
+    def _set_args(self) -> Tuple[float, ...]:
+        """
+        Set integration arguments for different directions.
+
+        Notes
+        -----
+        The radius of the simulation box should be used as the radial argument
+        `r`. A pre-factor of 0.5 is applied to `lbox` and `dbox` in the
+        integrands for radial directions to maintain consistency.
+        """
+        direction_args: Dict[str, Tuple[float, ...]] = {
             'r': (self.lcyl,),
-            'phi': (self.lcyl, self.dcyl),
+            'theta': (self.lcyl, self.dcyl),
             'z': (self.lcyl,)
         }
         return direction_args[self.direction]
 
 
-class DistributionSphere(DistributionBase):
+class DistributionSpherical(DistributionBase):
     """
-    Calculate local distributions (local number density and volume fraction)
-    within a spherical geometry.
-
-    This class handles calculations for `rho` (local number density) and `phi`
-    (local volume fraction) in a spherical system, using concentric spherical
-    bins. The spherical geometry can accommodate different directions (radial,
-    azimuthal, and polar).
-
-    Parameters
-    ----------
-    frequencies : np.ndarray
-        Array of frequencies in each bin, representing particle counts or
-        measurements within each bin.
-    edges : np.ndarray
-        Array of bin edges along the radial direction, where
-        `len(edges) = len(frequencies) + 1`.
-    rbead : float
-        Radius of the particle species being measured.
-    lcube : float
-        Length of the cube's side, used as an effective diameter for spherical
-        symmetry.
-    direction : str
-        Direction of interest for the distribution calculation, which must be
-        one of ['r', 'theta', 'phi'].
-    normalize : bool, optional
-        If True, normalizes `rho` and `phi` to a unit area under the
-        distribution (default is False).
-
-    Attributes
-    ----------
-    lcube : float
-        Effective radius or side length of the cube in which the spherical
-        distribution is computed.
-    direction : {'r', 'theta', 'phi'}
-        Direction along which the distribution is computed within the
-        spherical geometry.
-    integrand : Callable
-        Integrand function used for volume integration, chosen based on
-        `direction`.
-    args : Tuple[float, ...]
-        Arguments specific to the spherical geometry and direction, set by
-        `_get_geometry_args`.
-    concentric_bins : ConcentricSphericalBins
-        Instance of `ConcentricSphericalBins` used to manage volume shares of
-        bins.
-
-    Methods
-    -------
-    _get_geometry_args() -> Tuple[float, ...]
-        Provides geometry-specific arguments for spherical integration,
-        based on the specified `direction`.
-
-    Raises
-    ------
-    ValueError
-        If `direction` has invalid values.
-    NotImplementedError
-        If `direction` is 'theta' or 'phi'.
+    Calculte local distributions (number density and volume fraction) across a
+    sphere.
     """
     _directions = ['r', 'theta', 'phi']
     _integrands: Dict[str, Callable] = {
         'r': lambda r, const: 4 * const * np.pi * r**2,
         # constant is redundant and merely defined to consistently use
         # of 'args' parameter of "scipi.integral.quad" among integrands.
-        'theta': lambda theta, lcube: np.pi * lcube**3 * np.sin(theta) / 12,
-        'phi': lambda lcube: lcube**3 / 12
+        'theta': lambda theta, dcyl: np.pi * dcyl**3 * np.sin(theta) / 12,
+        'phi': lambda theta, dcyl: dcyl**3 / 12
     }
 
     def __init__(
@@ -785,36 +593,331 @@ class DistributionSphere(DistributionBase):
         edges: np.ndarray,
         rbead: float,
         lcube: float,
-        direction: Literal['r', 'theta', 'phi'],
+        direction: str,
         normalize: bool = False
     ) -> None:
         self.lcube = lcube
-        invalid_keyword(direction, self._directions)
-        if direction in ['theta', 'phi']:
-            raise NotImplementedError(
-                "This class has not yet implemented for 'r' and 'phi'"
-                "directions"
+        if direction not in self._directions:
+            raise ValueError(
+                f"Invalid direction '{direction}'. "
+                f"Choose from {self._directions}."
             )
         self.direction = direction
-        self.integrand = self._integrands[direction]
+        self.args = self._set_args()
         self.concentric_bins = ConcentricSphericalBins(edges, rbead)
-
         super().__init__(
             frequencies,
             edges,
             self.integrand,
+            self.args,
             self.concentric_bins.volume_shares,
             normalize=normalize
         )
 
-    def _get_geometry_args(self) -> Tuple[float, ...]:
-        """Provide arguments specific to the cylindrical geometry."""
+    def _set_args(self) -> Tuple[float, ...]:
+        """
+        Set integration arguments for different directions.
+
+        Notes
+        -----
+        The radius of the simulation box should be used as the radial argument
+        `r`. A pre-factor of 0.5 is applied to `lbox` and `dbox` in the
+        integrands for radial directions to maintain consistency.
+        """
         direction_args: Dict[str, Tuple[float, ...]] = {
             'r': (1,),  # set const to 1, see above for more discussion
             'theta': (self.lcube,),
             'phi': (self.lcube,)
         }
         return direction_args[self.direction]
+
+class SpatialDistribution:
+    """
+    Calculate local number density and volume fraction of spherical species.
+
+    This class computes the local number density and local volume fraction
+    of species within a 1D, 2D, or 3D space, with periodic boundary conditions
+    (PBC) along specific axes:
+
+    - 1D: Cylinder with PBC along z-axis (longitudinal).
+    - 2D: Slit with PBC along x and y axes (radial).
+    - 3D: Cube with PBC along x, y, and z axes (spherical).
+
+    The radius of each species is needed for computing the local volume
+    fraction.
+
+    To-do List
+    ----------
+    - Vectorize the for-loops.
+
+    Parameters
+    ----------
+    freqs : np.ndarray
+        A 1D array of frequencies in bins.
+    edges : np.ndarray
+        A 1D array of bin edges, where `len(edges) = len(freqs) + 1`.
+    hist_info : ParserT
+        Parser containing information about the system.
+    radius_attr : str
+        Attribute name in `hist_info` with the species radius.
+    lbox : str
+        Length attribute for the simulation box.
+    dbox : str
+        Diameter attribute for cylindrical or slit geometries.
+    geometry : str
+        Shape of the simulation box, one of ['cylindrical', 'slit', 'cubic'].
+    direction : str
+        Direction along which to compute distributions.
+    normalized : bool, optional
+        Normalize distributions to unit area under the curve (default is
+        False).
+
+    Attributes
+    ----------
+    frequencies : np.ndarray
+        Frequency values for bins.
+    edges : np.ndarray
+        Edges of the bins.
+    rho : pd.DataFrame
+        Local number densities with the same index and column layout as 
+        `frequencies`.
+    phi : pd.DataFrame
+        Local volume fractions, structured similarly to `frequencies`.
+    bounds : np.ndarray
+        Indices marking lower and upper bin bounds per bead center.
+    volume_shares : dict of dict
+        Nested dictionary mapping bin indices to the volume share of each bin
+        for particles centered within that bin.
+
+    Notes
+    -----
+    For calculating volume fractions, this class assumes that beads' centers
+    reside at bin centers. This assumption reduces computational cost, with
+    error decreasing as the number of bins increases for a fixed system volume.
+
+    Bin schemes:
+        - 'concentric': Concentric shellsin spherical or cylindrical geometry.
+        - 'consecutive': Consecutive slits (e.g., disks along the z direction
+        in the cylindrical coordinate system) in Cartesian or cylindrical
+        geometry.
+        - 'periodic': Bins with periodicity (e.g., the polar direction the
+        cylindrical coordinate system) in cylindrical or spherical
+        geometry.
+        - 'neighboring': Azimuthal sectors in spherical geometry.
+
+    The periodic boundary condition (PBC) is imposed as needed in each
+    direction and binning scheme.
+
+    It is assumed all the bins have the same size.
+
+    When `normalized` is set to `True`, the sum of `rho` is not equal to the
+    bulk number density when r approaches infinity, i.e. natom/vol_system. This
+    arises from the way we discretize the local number density. The sum of
+    `phi` is also not equal to the bulk volume fraction when r approaches
+    infinity, i.e, (natoms*vol_atom)/vol_system. This arises from the way we
+    discretize the local number density.
+
+    """
+    _directions = {
+        'cubic': ['r', 'theta', 'phi'],
+        'slit': ['r', 'phi', 'z'],
+        'cylindrical': ['r', 'phi', 'z']
+    }
+    _integrands: Dict[str, Dict[str, Callable]] = {
+        'cubic': {
+            'r': lambda r, const: 4 * const * np.pi * r**2,
+            # constant is redundant and merely defined to consistently use
+            # of 'args' parameter of "scipi.integral.quad" among integrands.
+            'theta': lambda theta, dcyl: np.pi * dcyl**3 * np.sin(theta) / 12,
+            'phi': lambda theta, dcyl: dcyl**3 / 12
+        },
+        'slit': {
+            'r': lambda r, lcyl: 2 * np.pi * lcyl * r,
+            'phi': lambda theta, lcyl, dcyl: 0.25 * lcyl * dcyl**2,
+            'z': lambda z, dcyl: 0.25 * np.pi * dcyl**2
+        },
+        'cylindrical': {
+            'r': lambda r, lcyl: 2 * np.pi * lcyl * r,
+            'phi': lambda theta, lcyl, dcyl: 0.25 * lcyl * dcyl**2,
+            'z': lambda z, dcyl: 0.25 * np.pi * dcyl**2
+        }
+    }
+    _fullnames = {
+        'cubic': {
+            'r': 'radial',
+            'theta': 'azimuthal',
+            'phi': 'polar'
+        },
+        'slit': {
+            'r': 'radial',
+            'phi': 'polar',
+            'z': 'longitudinal'
+        },
+        'cylindrical': {
+            'r': 'radial',
+            'phi': 'polar',
+            'z': 'longitudinal'
+        }
+    }
+
+    def __init__(
+        self,
+        frequencies: np.ndarray,
+        edges: np.ndarray,
+        hist_info: ParserT,
+        radius_attr: str,
+        lbox: str,
+        dbox: str,
+        geometry: str,
+        direction: str,
+        normalized: bool = False,
+    ) -> None:
+        """
+        Initialize SpatialDistribution with frequency data and geometry settings.
+
+        Parameters
+        ----------
+        frequencies : np.ndarray
+            Array of frequencies in each bin.
+        edges : np.ndarray
+            Array of bin edges, where `len(edges) = len(frequencies) + 1`.
+        hist_info : ParserT
+            Parser containing system information.
+        radius_attr : str
+            Attribute name in `hist_info` with species radius.
+        lbox : str
+            Attribute name in `hist_info` for box length.
+        dbox : str
+            Attribute name in `hist_info` for box diameter in cylindrical/slit 
+            geometries.
+        geometry : str
+            Shape of the simulation box, one of ['cylindrical', 'slit', 'cubic'].
+        direction : str
+            Direction along which distributions are computed.
+        normalized : bool, optional
+            Normalize distributions to unit area (default is False).
+
+        Raises
+        ------
+        ValueError
+            If `frequencies` or `edges` is not an ndarray.
+            If `geometry` or `direction` is invalid.
+        """
+        # Validate frequency and edge inputs
+        if not isinstance(frequencies, np.ndarray):
+            raise ValueError("frequencies must be an np.ndarray,"
+                             f" got {type(frequencies)}.")
+        if not isinstance(edges, np.ndarray):
+            raise ValueError("edges must be an np.ndarray,"
+                             f" got {type(edges)}.")
+
+        self.frequencies = frequencies
+        self.edges = edges
+        self.box_length = self.edges[-1] - self.edges[0]
+        self.centers = 0.5 * (self.edges[:-1] + self.edges[1:])
+        self.bin_size = self.edges[1] - self.edges[0]
+
+        self.hist_info = hist_info
+        self.r_bead = 0.5 * getattr(self.hist_info, radius_attr)
+        self.lbox = getattr(self.hist_info, lbox)
+        self.dbox = getattr(self.hist_info, dbox) \
+            if dbox != 'N/A' else getattr(self.hist_info, lbox)
+
+        # Validate geometry and direction
+        valid_geometries = list(self._directions.keys())
+        if geometry not in valid_geometries:
+            raise ValueError(f"Invalid geometry '{geometry}'. Choose from"
+                             f" {valid_geometries}.")
+        self.geometry = geometry
+
+        if direction not in self._directions[self.geometry]:
+            valid_directions = self._directions[self.geometry]
+            raise ValueError(
+                f"Invalid direction '{direction}' for '{geometry}'. "
+                f"Choose from {valid_directions}."
+            )
+        self.direction = direction
+        self.normalized = normalized
+
+        # Initialize calculations
+        self._set_args()
+        self._number_density()
+
+        if self.direction == 'z':
+            self.bin_handler = \
+                ConsecutiveDiskLikeBins(self.edges, self.r_bead)
+        elif self.direction == 'r':
+            self.bin_handler = \
+                ConcentricSphericalShellBins(self.edges, self.r_bead)
+        else:
+            raise ValueError(f"Unsupported direction '{self.direction}'.")
+        self._volume_fraction()
+
+        if self.normalized:
+            # Normalize rho and phi
+            self.rho /= self.rho.sum()
+            self.phi /= self.phi.sum()
+
+    def _set_args(self) -> None:
+        """
+        Set integration arguments for each geometry and direction.
+
+        Notes
+        -----
+        The radius of the simulation box should be used as the radial argument
+        `r`. A pre-factor of 0.5 is applied to `lbox` and `dbox` in the
+        integrands for radial directions to maintain consistency.
+        """
+        self._args: Dict[str, Dict[str, Tuple[float, ...]]] = {
+            'cubic': {
+                'r': (1,),
+                'theta': (self.lbox,),
+                'phi': (self.lbox,)
+            },
+            'cylindrical': {
+                'r': (self.lbox,),
+                'theta': (self.lbox, self.dbox),
+                'z': (self.lbox,)
+            }
+        }
+
+    def _number_density(self) -> None:
+        """
+        Calculate local number density along the specified direction.
+
+        Notes
+        -----
+        The local number density is averaged over time steps collected in each
+        simulation. For example, in a simulation with 7*10^7 total time steps
+        sampled every 5000 steps, there are 14001 measurements.
+        """
+        integrand: Callable = self._integrands[self.geometry][self.direction]
+        arguments: Tuple[float, ...] = \
+            self._args[self.geometry][self.direction]
+        bin_vols = np.array([
+            integrate.quad(
+                integrand, self.edges[idx], self.edges[idx] + self.bin_size, 
+                args=arguments
+            )[0] for idx in range(len(self.edges) - 1)
+        ])
+        self.rho = self.frequencies / bin_vols
+
+    def _volume_fraction(self) -> None:
+        """
+        Calculate the local volume fraction along the direction of interest.
+
+        Notes
+        -----
+        Assumes all particles have identical shapes. The local volume fraction 
+        is normalized, giving the integral over the volume of interest.
+        """
+        n_centers = len(self.rho)
+        volume_shares = self.bin_handler.volume_shares
+        self.phi = np.zeros(n_centers)
+
+        for c_idx in range(n_centers):
+            for idx, vol in volume_shares[c_idx].items():
+                self.phi[c_idx] += self.rho[idx] * vol
 
 
 def distributions_generator(
@@ -972,7 +1075,7 @@ def distributions_generator(
 
 
 def entropic_energy(
-    histo_collections: np.ndarray,
+    histo_collections: ArrayLike,
     beta: Optional[float] = 1.0
 ) -> np.ndarray:
     """
@@ -1003,75 +1106,53 @@ def entropic_energy(
     return free_energy
 
 
-def looping_prop(
+def looping_p(
     histo_collections: np.ndarray,
     bin_edges: np.ndarray,
     r_max: float,
     r_min: float
 ) -> float:
     """
-    Calculate the looping probability, defined as the probability that two
-    chain ends are within a specific distance range.
+    Looping entropy P_L is defined as the integral from r_min to r_max over
+    P(R)*4pi*R^2*dR; since P(R)*4pi*R^2 is equivalent to hitso_collection[i]
+    for the bin between bin_edges[i] and bin_edges[i+1] we have
+    P_L = integral from r_min to r_max over P(R)*4pi*R^2*dR ~ sum from r_min
+    to r_max over P(bin_center_i)*4pi*bin_centers_i^2*(bin_edges_i+1 -
+    bin_edges_i)=sum from r_min to r_max over hitso_collection_i*(bin_edges_i+1
+    - bin_edges_i)
 
-    The looping entropy, \( P_L \), is calculated as the integral from
-    `r_min` to `r_max` over the distribution \( P(R) \cdot 4 \pi R^2 \, dR \).
-    Since \( P(R) \cdot 4 \pi R^2 \) is approximated by `histo_collections[i]`
-    for each bin between `bin_edges[i]` and `bin_edges[i+1]`, the looping
-    probability is given by:
-
-    .. math::
-        P_L \\approx \\sum_{i} P(\\text{bin_center}_i) \\cdot 4\\pi
-        \\cdot \\text{bin_center}_i^2 \\cdot (\\text{bin_edges}_{i+1} -
-        \\text{bin_edges}_i).
+    Since the sizes of the bins are equal ((bin_edges_i+1 - bin_edges_i)
+    =constant), the effect of (bin_edges_i+1 - bin_edges_i) is cancelled out
+    upon normalization.
 
     Parameters
     ----------
-    histo_collections : np.ndarray
-        Array containing histogram values of the Flory radius or end-to-end
-        distance over the simulation.
-    bin_edges : np.ndarray
-        Array of bin edges corresponding to `histo_collections`.
-    r_max : float
-        Maximum center-to-center distance between two chain ends for looping
-        to occur.
-    r_min : float
-        Minimum center-to-center distance between two chain ends where crowders
-        cannot fit, allowing non-zero depletion forces.
+    histo_collections: a numpy array of the histograms of the Flory radius
+    or the end-to-end distance during the whole run (the total number of
+    data points is equal to the total number of time steps.)
+    bin_edges: the edges of the bins used in histograms.
+    r_max: the minimum center-to-center distance the two end-of-chain
+    monomers can have; Since they have the same size, this is usually equal
+    to their diameter (or size).
+    r_min: this is the size of the crowders that can reside between two
+    monomers. When the center-to-center distance between two monomers is
+    less than r_max+r_min, no crowders can be between two monomers and the
+    depletion force is non-zero.
 
-    Returns
-    -------
-    float
-        The probability of looping.
-
-    Notes
-    -----
-    - The function normalizes the histogram to ensure total probability equals
-    one.
-    - It is assumed that bins are eqaul in width, so they do not change the
-    probability after normalization.
-
-    Examples
-    --------
-    >>> histo_collections = np.array([0.1, 0.2, 0.3, 0.4])
-    >>> bin_edges = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
-    >>> r_max = 2.5
-    >>> r_min = 0.5
-    >>> looping_p(histo_collections, bin_edges, r_max, r_min)
-    0.6
+    Return
+    ------
+    The probability of looping.
     """
-    # Compute bin centers
     bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-
-    # Normalize the histogram by bin width and total count
-    bin_widths = bin_edges[1:] - bin_edges[:-1]
-    normalized_hists = histo_collections * bin_widths
-    normalized_hists /= np.sum(normalized_hists)
-
-    # Vectorized computation of looping probability
-    within_range = bin_centers <= (r_max + r_min)
-    prob = np.sum(normalized_hists[within_range])
-
-    return prob
+    histo_collections = np.multiply(
+        histo_collections, (bin_edges[1:] - bin_edges[:-1])
+        )
+    histo_collections = histo_collections / np.sum(histo_collections)
+    looped_probability = 0
+    for i in range(len(bin_centers)):
+        if bin_centers[i] <= (r_max + r_min):
+            looped_probability += histo_collections[i]
+    return looped_probability
 
 
 def normalize_z(
@@ -1222,7 +1303,7 @@ def normalize_r(
     Returns
     -------
     pd.DataFrame
-        DataFrame with the normalized ensemble-average local distribution,
+        DataFrame with the normalized ensemble-average local distribution, 
         where the new column `<prop>-norm` holds the normalized values.
 
     Raises
@@ -1443,7 +1524,7 @@ def space_sum_rule(
             ens_avg['bin_center'] / ens_avg['bin_center'].max()
         ens_avg['phi_c_bulk_round'] = \
             ens_avg['phi_c_bulk'].apply(
-                lambda x: round_up_nearest(x, divisor, round_to)
+                round_up_nearest, args=[divisor, round_to]
             )
 
         # Additional processing for cylindrical geometry
