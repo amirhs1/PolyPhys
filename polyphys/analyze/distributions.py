@@ -493,6 +493,10 @@ class DistributionBase(ABC):
         the product of `rho` and volume shares across intersected bins.
     _normalize_distributions() -> None
         Normalizes the `rho` and `phi` arrays if `normalize` is set to True.
+    save_number_density(filename: str) -> None
+        Saves the `rho` array (local number density) to a `.npy` file.
+    save_volume_fraction(filename: str) -> None
+        Saves the `phi` array (local volume fraction) to a `.npy` file.
 
     Raises
     ------
@@ -597,6 +601,39 @@ class DistributionBase(ABC):
         """
         self.rho /= self.rho.sum()
         self.phi /= self.phi.sum()
+
+    def save_number_density(self, filename: str) -> None:
+        """
+        Save the local number density (`rho`) to a `.npy` binary file.
+
+        Parameters
+        ----------
+        filename : str
+            Base filename or path to save the density data. A `.npy` extension
+            will be appended to the filename if it does not already have one.
+
+        Notes
+        -----
+        The `.npy` extension is handled internally by `np.save`.
+        """
+        np.save(filename, self.rho)
+
+    def save_volume_fraction(self, filename: str) -> None:
+        """
+        Save the local volume fraction density (`phi`) to a `.npy` binary file.
+
+        Parameters
+        ----------
+        filename : str
+            Base filename or path to save the volume fraction data. A `.npy`
+            extension will be appended to the filename if it does not already
+            have one.
+
+        Notes
+        -----
+        The `.npy` extension is handled internally by `np.save`.
+        """
+        np.save(filename, self.phi)
 
 
 class DistributionCylinder(DistributionBase):
@@ -707,6 +744,9 @@ class DistributionCylinder(DistributionBase):
             'z': (self.lcyl,)
         }
         return direction_args[self.direction]
+
+    #np.save(filaname+self.direction+, self.phi)
+    #    np.save(filaname, self.rho)
 
 
 class DistributionSphere(DistributionBase):
@@ -945,29 +985,25 @@ def distributions_generator(
             topology,
             ispath=False,
         )
-        distributions = SpatialDistribution(
-            freq,
-            bin_edges[whole],
-            whole_info,
-            radius_attrs[parser_name][species],
-            lbox_attrs[geometry][parser_name],
-            dbox_attrs[geometry][parser_name],
-            geometry,
-            direction,
-            normalized=normalized
-        )
+        if geometry == 'cubic':
+            distributions = DistributionSphere(
+                freq,
+                bin_edges[whole],
+                radius_attrs[parser_name][species],
+                lbox_attrs[geometry][parser_name],
+                dbox_attrs[geometry][parser_name],
+                direction,
+                normalized=normalized
+            )
+        else
         densities[whole] = distributions.rho
         vol_fractions[whole] = distributions.phi
+
         if save_to is not None:
-            filename = whole + '-' + group + '-' + direction
-            np.save(
-                save_to + filename + 'Rho' + species + '.npy',
-                distributions.rho
-            )
-            np.save(
-                save_to + filename + 'Phi' + species + '.npy',
-                distributions.phi
-            )
+            filename = f"{save_to}{whole}-{group}-{direction}"
+            distributions.save_number_density(f"{filename}Rho{species}")
+            distributions.save_volume_fraction(f"{filename}Phi{species}")
+
     return densities, vol_fractions
 
 
@@ -1013,11 +1049,11 @@ def looping_prop(
     Calculate the looping probability, defined as the probability that two
     chain ends are within a specific distance range.
 
-    The looping entropy, \( P_L \), is calculated as the integral from
-    `r_min` to `r_max` over the distribution \( P(R) \cdot 4 \pi R^2 \, dR \).
-    Since \( P(R) \cdot 4 \pi R^2 \) is approximated by `histo_collections[i]`
-    for each bin between `bin_edges[i]` and `bin_edges[i+1]`, the looping
-    probability is given by:
+    The looping entropy, :math:`P_L`, is calculated as the integral from
+    `r_min` to `r_max` over the distribution :math:`P(R) \\cdot 4 \\pi R^2 dR`.
+    Since :math:`P(R) \\cdot 4 \\pi R^2` is approximated by
+    `histo_collections[i]` for each bin between `bin_edges[i]` and
+    `bin_edges[i+1]`, the looping probability is given by:
 
     .. math::
         P_L \\approx \\sum_{i} P(\\text{bin_center}_i) \\cdot 4\\pi
@@ -1248,6 +1284,7 @@ def normalize_r(
     indexing over a defined section of `ens_avg`.
     """
     # Determine the normalizing value
+    normalizer: float = 0
     if method == 'first':
         normalizer = ens_avg[prop + '-scale'].iloc[0]
     elif method == 'max':
