@@ -1776,3 +1776,10 @@ def space_hists(
         property_db.to_csv(filepath, index=False)
 
     return property_db
+
+
+class ProjectBase:
+    __init__(
+        name: str,
+        space_attribute: 
+    )

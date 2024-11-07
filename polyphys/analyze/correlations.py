@@ -16,6 +16,7 @@ import MDAnalysis as mda
 
 from ..manage.utilizer import invalid_keyword
 from ..manage.organizer import (
+    create_fullname,
     save_parent,
     sort_filenames
 )
@@ -131,16 +132,14 @@ def acf_generator(
         lower_cls[ens_name] = lower_cl
         upper_cls[ens_name] = upper_cl
         if save_to is not None:
+            
             _ = dict(
                 map(
                     lambda ens: (ens[0],
                                  save_parent(
-                                    ens[0],
+                                    create_fullname(ens[0], group, property_+'-acf'),
                                     ens[1],
-                                    property_ + '-acf',
                                     save_to,
-                                    group=group,
-                                    ext='csv'
                                     )
                                  ),
                     acfs.items()
@@ -150,12 +149,9 @@ def acf_generator(
                 map(
                     lambda ens: (ens[0],
                                  save_parent(
-                                    ens[0],
+                                    create_fullname(ens[0], group, property_+'-acfLowerCi'),
                                     ens[1],
-                                    property_ + '-acfLowerCi',
                                     save_to,
-                                    group=group,
-                                    ext='csv'
                                     )
                                  ),
                     lower_cls.items()
@@ -165,12 +161,9 @@ def acf_generator(
                 map(
                     lambda ens: (ens[0],
                                  save_parent(
-                                    ens[0],
+                                    create_fullname(ens[0], group, property_+'-acfUpperCi'),
                                     ens[1],
-                                    property_ + '-acfUpperCi',
                                     save_to,
-                                    group=group,
-                                    ext='csv'
                                     )
                                  ),
                     upper_cls.items()
