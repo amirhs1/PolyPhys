@@ -1,4 +1,4 @@
-from typing import Type, Union, Tuple, Dict, NewType, List
+from typing import Type, Union, Tuple, Dict, NewType, List, TypeVar
 import numpy as np
 import pandas as pd
 from .parser import (
@@ -45,3 +45,7 @@ ParserT = Union[SumRuleCyl, TransFociCub, TransFociCyl, HnsCub, HnsCyl,
                 SumRuleCubHeteroLinear, SumRuleCubHeteroRing]
 ParserCylT = Union[SumRuleCylT, TransFociCylT, HnsCylT]
 ParserCubT = Union[TransFociCubT, HnsCubT]
+
+
+TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
+TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")

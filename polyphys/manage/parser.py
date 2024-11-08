@@ -9,9 +9,6 @@ import numpy as np
 import pandas as pd
 from .utilizer import invalid_keyword, openany_context, InputT
 
-TExcludedVolume = TypeVar("TExcludedVolume", bound="ExcludedVolume")
-TFreeEnergyVirial = TypeVar("TFreeEnergyVirial", bound="FreeEnergyVirial")
-
 
 def create_lineage_name(
         attributes: OrderedDict[str, Union[int, float]]) -> str:
