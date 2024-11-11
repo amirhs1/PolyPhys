@@ -46,28 +46,28 @@ def pair_distance(
     pbc: Optional[Dict[int, float]] = None
 ) -> np.ndarray:
     """
-    Computes the pair distance between two particles along each axis in the 
-    Cartesian coordinate system, applying the minimum image convention if 
+    Computes the pair distance between two particles along each axis in the
+    Cartesian coordinate system, applying the minimum image convention if
     periodic boundary conditions (PBC) are provided.
 
     Note
     ----
     The distance along each axis is the difference between the coordinates of
-    the second and the first particle. This function does not compute the 
-    Euclidean (absolute) distance but instead returns the distance vector 
+    the second and the first particle. This function does not compute the
+    Euclidean (absolute) distance but instead returns the distance vector
     components.
 
     Parameters
     ----------
     positions : numpy.ndarray
-        A (2, n_dim) array containing the coordinates of the two atoms. 
-        The array should be sorted by atom number, with the first row 
+        A (2, n_dim) array containing the coordinates of the two atoms.
+        The array should be sorted by atom number, with the first row
         corresponding to the first atom and the second row to the second atom.
 
     pbc : Optional[Dict[int, float]], default None
-        A dictionary where the keys are the dimensions (0 for x, 1 for y, 
-        and 2 for z) and the values are the lengths of the simulation box 
-        in those dimensions. If provided, the minimum image convention 
+        A dictionary where the keys are the dimensions (0 for x, 1 for y,
+        and 2 for z) and the values are the lengths of the simulation box
+        in those dimensions. If provided, the minimum image convention
         will be applied.
 
     Returns
@@ -86,7 +86,8 @@ def pair_distance(
         )
         positions -= pbc_lengths * np.around(pbc_lengths_inverse * positions)
     # Using map to find the r_ij values
-    dr_ij = np.array(list(map(lambda i: positions[1, i] - positions[0, i], range(n_dims))))
+    dr_ij = np.array(
+        list(map(lambda i: positions[1, i] - positions[0, i], range(n_dims))))
     return dr_ij
 
 
@@ -272,3 +273,162 @@ def size_ratio_equal(dcrowd, dmon=1):
     else:
         ratio = r"$a_c > 1$"
     return ratio
+
+
+import numpy as np
+
+def number_density_cube(n_atom: float, l_cube: float, pbc: bool = False) -> float:
+    """
+    Compute the bulk number density of a species in a cubic box.
+
+    Parameters
+    ----------
+    n_atom : float
+        Number of atoms or molecules in the cubic box.
+    l_cube : float
+        Length of one side of the cubic box.
+    pbc : bool, optional
+        Periodic boundary conditions along all box sides. If `True`, 
+        :math:`V_{avail} = l_{cube}^3`; otherwise,
+        :math:`V_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
+
+    Returns
+    -------
+    float
+        Bulk number density of the species in the cubic box.
+
+    Notes
+    -----
+    The bulk number density is calculated as :math:`n_{atom} / V_{avail`, 
+    where `V_{avail}` is the available volume based on the presence of 
+    periodic boundary conditions.
+    """
+    V_avail = l_cube ** 3 if pbc else (l_cube - d_atom) ** 3
+    return n_atom / V_avail
+
+
+def volume_fraction_cube(
+    d_atom: float,
+    n_atom: float,
+    l_cube: float,
+    pbc: bool = False
+) -> float:
+    """
+    Compute the volume fraction of a species in a cubic box.
+
+    Volume fraction is computed in the volume available to the center of
+    geometry of each particle. For point-like particles, the available volume
+    is the total volume of the system. For body particles, the available volume
+    depends on whether periodic boundary conditions (PBCs) are applied.
+
+    Parameters
+    ----------
+    d_atom : float
+        Diameter of the atom or molecule of the species.
+    n_atom : float
+        Number of atoms or molecules in the cubic box.
+    l_cube : float
+        Length of one side of the cubic box.
+    pbc : bool, optional
+        Periodic boundary conditions along all box sides. For body particles, 
+        if `True`, the available volume `V_avail` is the total volume, 
+        :math:`l_{cube}^3`. If `False`, the available volume is 
+        :math:`(l_{cube} - d_{atom})^3`, excluding the outer boundary to allow 
+        for particle size. Defaults to `False`.
+
+    Returns
+    -------
+    float
+        Volume fraction of the species in the cubic box.
+
+    Notes
+    -----
+    The volume fraction is computed as :math:`n_{atom} * (\\pi * d_{atom}**3 / 6) / V_{avail}`,
+    assuming spherical particles.
+    """
+    rho = number_density_cube(n_atom, l_cube, pbc)
+    return rho * np.pi * d_atom ** 3 / 6
+
+
+def number_density_cylinder(
+    n_atom: float,
+    l_cyl: float,
+    d_cyl: float,
+    d_atom: float,
+    pbc: bool = True
+) -> float:
+    """
+    Compute the bulk number density of a species in a cylindrical confinement.
+
+    Parameters
+    ----------
+    n_atom : float
+        Number of atoms or molecules in the cylindrical confinement.
+    l_cyl : float
+        Length of the cylindrical confinement.
+    d_cyl : float
+        Diameter of the cylindrical confinement.
+    d_atom : float
+        Diameter of the atom or molecule of the species.
+    pbc : bool, optional
+        Periodic boundary conditions along the longitudinal axis. If `True`, 
+        :math:`V_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`; 
+        otherwise, :math:`V_{avail} = \\pi * (l_{cyl} - d_{atom}) * (d_{cyl} - d_{atom})^2 / 4`.
+        Defaults to `True`.
+
+    Returns
+    -------
+    float
+        Bulk number density of the species in the cylindrical confinement.
+
+    Notes
+    -----
+    The bulk number density is calculated as :math:`n_{atom} / V_{avail}`, 
+    where `V_{avail}` is the available volume based on the presence of 
+    periodic boundary conditions.
+    """
+    V_avail = (
+        np.pi * l_cyl * (d_cyl - d_atom) ** 2 / 4 if pbc
+        else np.pi * (l_cyl - d_atom) * (d_cyl - d_atom) ** 2 / 4
+    )
+    return n_atom / V_avail
+
+
+def volume_fraction_cylinder(
+    d_atom: float,
+    n_atom: float,
+    l_cyl: float,
+    d_cyl: float,
+    pbc: bool = True
+) -> float:
+    """
+    Compute the volume fraction of a species in a cylindrical confinement.
+
+    Parameters
+    ----------
+    d_atom : float
+        Diameter of the atom or molecule of the species.
+    n_atom : float
+        Number of atoms or molecules in the cylindrical confinement.
+    l_cyl : float
+        Length of the cylindrical confinement.
+    d_cyl : float
+        Diameter of the cylindrical confinement.
+    pbc : bool, optional
+        Periodic boundary conditions along the longitudinal axis. If `True`,
+        :math:`V_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
+        otherwise, :math:`V_{avail} = \\pi * (l_cyl - d_{atom}) * (d_{cyl} - d_{atom})^2 / 4`.
+        Defaults to `True`.
+
+    Returns
+    -------
+    float
+        Volume fraction of the species in the cylindrical confinement.
+
+    Notes
+    -----
+    The volume fraction is computed as :math:`n_{atom} * (\\pi * d_{atom}**3 / 6) / V_{avail}`,
+    assuming spherical particles.
+    """
+    rho = number_density_cylinder(n_atom, l_cyl, d_cyl, d_atom, pbc)
+    return rho * np.pi * d_atom ** 3 / 6

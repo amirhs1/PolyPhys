@@ -1572,7 +1572,7 @@ class TransFociCub(ParserBase):
 
         segment: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
             One of multiple chunks of a complete simulation or measurement.
-        whole: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
+        whole: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
             A complete simulation or measurement; a collection of 'segments'.
         ensemble_long: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
             Long name of an ensemble.
@@ -2803,7 +2803,7 @@ class HnsCub(ParserBase):
             One of multiple chunks of a complete simulation or measurement.
         whole: N#kbmm#nh#ac#l#epshc#nc#ens.ring
             A complete simulation or measurement; a collection of 'segments'.
-        ensemble_long: N#kbmm#nh#ac#l#epshc#nc#.ring
+        ensemble_long: N#kbmm#nh#ac#l#epshc#nc#ens.ring
             Long name of an ensemble.
         ensemble: N#kbmm#nh#ac#epshc#nc#
             A collection of 'wholes' (complete simulations) that differs only
@@ -3904,7 +3904,7 @@ class FloryChain(object):
             self.chain_size = self.chain_size[limit_range]
 
 
-class LammpsDataTemplate(object):
+class LammpsDataTemplate:
     """Parse the filename of a LAMMPS template data file based on one of the
     following file name templates:
 
@@ -4067,7 +4067,7 @@ class LammpsDataTemplate(object):
 
 
 @dataclass
-class ExcludedVolume(object):
+class ExcludedVolume:
     """Parse a filepath/filename of a 'csv' file that contains the
     excluded-volume data of a monomer in crowded media and retrieve
     information about the exclude-volume data in that 'csv' file.
@@ -4228,7 +4228,7 @@ class ExcludedVolume(object):
 
 
 @dataclass
-class FreeEnergyVirial(object):
+class FreeEnergyVirial:
     """Parse a filepath/filename of a 'csv' file that contains the
     free energy approach data of a polymer in crowded cylindrical confinement
     and retrieve information about the chain size, inner and outer density of
@@ -4391,7 +4391,7 @@ class FreeEnergyVirial(object):
         self.r_chain_df["dcrowd"] = self.dcrowd
 
 
-class Snapshot():
+class Snapshot:
     """
     Read a single snapshot from a dump `file` object.
     """
