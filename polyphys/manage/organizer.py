@@ -1,166 +1,129 @@
-"""
-The `organizer` module provides tools for organizing and combining data from
-simulations or experiments, based on patterns in filenames and file structures.
-It supports various stages of post-processing, including assembling segmented
-data, grouping experiments into ensembles, consolidating ensembles into
-spaces, and building galaxies for high-level analysis.
+"""\
+==========================================================
+:mod:`polyphys.manage.organizer`
+==========================================================
+The :mod:`polyphys.manage.organizer` module provides tools for organizing and
+aggregating simulation data based on filename patterns, file structures, and
+processing stages. It facilitates handling segmented data, grouping experiments
+into ensembles, consolidating ensembles into spaces, and organizing spaces into
+galaxies for high-level analysis.
 
-This module introduces several key concepts and terminology to structure
-simulation output and maintain consistency across post-processing steps:
+The module is tailored for use with LAMMPS and similar simulation tools, where
+it automates data consolidation across hierarchical levels. It is particularly
+useful for organizing data generated in high-throughput simulations, enabling
+efficient post-processing, ensemble averaging, and preparation of data for
+statistical and comparative analysis.
 
 Terminology
------------
+===========
+The following terms are used throughout the module to structure and organize
+simulation output data:
 
-- **Experiment**:
-    A complete simulation or run using tools like LAMMPS. Each experiment may
-    generate multiple data segments or complete datasets representing a
-    particular physical property or system configuration.
+- **Experiment**: A complete simulation run, typically using tools like LAMMPS,
+  representing a specific set of conditions.
 
-- **Lineage**:
-    A hierarchical categorization of data files and directories based on
-    increasing levels of data aggregation. The main levels of lineage are:
+- **Lineage**: A hierarchical structure for organizing data across different
+  levels of aggregation:
 
-    - **Segment**:
-        Represents a chunk of data from a longer simulation. Segments are
-        typically smaller time or spatial units that together make up a
-        complete dataset or **whole**.
+    - **Segment**: A portion of data from a long simulation.
+    - **Whole** (Instance): A complete dataset made by combining multiple
+      segments.
+    - **Ensemble**: A set of wholes with identical macroscopic properties but
+      varied initial conditions (e.g., different random seeds).
+    - **Space**: A group of ensembles with identical attributes except for one,
+      which systematically varies across the space.
+    - **Galaxy**: The highest level of aggregation, representing a collection
+      of spaces with differing attributes.
 
-    - **Whole** (or "Instance"):
-        A single, complete dataset from a simulation, created by combining
-        multiple segments. Each whole represents a standalone data instance
-        for a particular set of conditions.
+- **Attributes**: Macroscopic characteristics such as box size or polymer
+  topology that remain constant within a space.
 
-    - **Ensemble**:
-        A collection of multiple whole datasets with identical macroscopic
-        properties but varying initial conditions (e.g., random seed values).
-        These represent thermodynamic states of the same system, enabling
-        ensemble averaging for statistical analysis.
+- **Properties**: Physical features measured during the simulation, like
+  density or radius of gyration, with optional associated measures (e.g.,
+  autocorrelation).
 
-    - **Space**:
-        An aggregation of ensembles where all conditions are fixed except one
-        macroscopic attribute (e.g., box size or temperature). Spaces allow
-        for systematic variation of a single attribute and support comparative
-        analysis across different conditions.
+- **Species**: The particle or molecular entity type, such as "Mon" for
+  monomers, each with specific behaviors or attributes as needed.
 
-    - **Galaxy**:
-        The broadest level, representing multiple spaces, each with varying
-        attributes and system configurations. Galaxies enable high-level
-        cross-attribute analyses, encompassing data from diverse experiments
-        within a unified framework.
+- **Phases**: Directories organized by processing phase, such as `logs`,
+  `trjs` (trajectories), `probe` (probing data), `analysis` (post-processing),
+  and `viz` (visualization-ready data).
 
-Attributes and Properties
--------------------------
+- **Stages**: Aggregation levels within each phase, e.g., `wholeSim`, `ens`,
+  or `ensAvg`.
 
-- **Attribute**:
-    A macroscopic characteristic of a system, such as box size, polymer
-    topology, or particle type. Attributes remain fixed within each space,
-    except for one that defines the specific space.
+Naming Conventions
+==================
+File and directory naming conventions in the `organizer` module provide
+structure to data organization across phases and lineage levels. Each name
+pattern encodes metadata about lineage, phase, group, property, and processing
+stage. Example patterns include:
 
-- **Property**:
-    A physical feature measured during a simulation, such as density or
-    radius of gyration. Properties may have associated measures (e.g.,
-    autocorrelation or distribution) that detail the property's behavior or
-    evolution.
+- `whole|segment.group.run.lammpstrj` for trajectory files.
+- `lineage-phase-group-property_stage.extension` for processed files.
 
-- **Species**:
-    Type of particle or molecular entity, such as "Mon" for monomers. The
-    module defines specific behavior or attributes for each species as
-    needed.
+Dependencies
+============
+- `numpy`: For numerical operations on arrays, such as summing or concatenating
+  segments.
+- `pandas`: For handling tabular data and DataFrames used in data aggregation.
+- `typing`: For type hints, including `Optional`, `List`, and `Literal` types.
 
-- **Direction**:
-    Indicates a spatial direction, such as "r" for radial in spherical
-    coordinates. Used to orient data appropriately based on coordinate
-    system.
+Functions
+=========
+.. autofunction:: sort_filenames
+.. autofunction:: create_fullname
+.. autofunction:: save_parent
+.. autofunction:: make_database
+.. autofunction:: whole_from_segments
+.. autofunction:: whole_from_file
+.. autofunction:: whole_from_dist_mat_t
+.. autofunction:: ens_from_bin_edge
+.. autofunction:: ens_from_vec
+.. autofunction:: ens_from_mat_t
+.. autofunction:: ens_from_df
+.. autofunction:: ensemble
+.. autofunction:: ens_avg_from_bin_edge
+.. autofunction:: ens_avg_from_ndarray
+.. autofunction:: ens_avg_from_df
+.. autofunction:: ensemble_avg
+.. autofunction:: children_stamps
+.. autofunction:: parents_stamps
+.. autofunction:: find_unique_properties
+.. autofunction:: space_tseries
+.. autofunction:: space_hists
 
-File Naming and Structure
--------------------------
-
-Files and directories generated at different phases of post-processing are
-organized according to the lineage and phase of the data they contain. This
-module relies on consistent naming conventions to streamline data handling.
-
-- **Phases**:
-    Directories are organized into several phases to manage data from
-    simulation to visualization:
-
-    - `simulationsAll`:
-        Contains all LAMMPS-related files for running simulations in a space.
-
-    - `logs`, `trjs`:
-        Store logs and trajectory data, respectively.
-
-    - `probe`:
-        Holds files created by directly probing simulation data, such as
-        time-series or histograms.
-
-    - `analyze`:
-        Contains files resulting from analyzing or averaging data across
-        ensembles, such as autocorrelation functions.
-
-    - `viz`:
-        Houses data files ready for visualization.
-
-- **Stages**:
-    Indicates the level of aggregation within each phase:
-
-    - `wholeSim`:
-        Combines all segments into a whole for each experiment.
-
-    - `ens`:
-        Collects whole files into an ensemble.
-
-    - `ensAvg`:
-        Holds ensemble-averaged files.
-
-- **Naming Conventions**:
-    Files and directories are named using consistent patterns, helping to
-    identify data lineage, phase, and attributes. Naming is organized by
-    the following patterns:
-
-    - `lineage-phase-group-property_stage.extension`
-
-    - `whole|segment.group.run.lammpstrj` (for trajectory files)
-
-Each name pattern provides quick insight into the contents of the file or
-directory, such as the type of data (e.g., segment or whole), its phase,
-and physical properties.
+Usage
+=====
+The :mod:`organizer` module streamlines organization and aggregation of
+simulation data. Users can assemble segmented data, organize data into
+ensembles, and generate ensemble-averaged data at various aggregation stages.
+Its multi-level organization supports comparative analysis across varied
+conditions within spaces and galaxies.
 
 Examples
---------
+========
+Example of grouping segments into a whole:
 
-1. **Whole File**:
-    A single dataset containing complete simulation results for a specific
-    condition, stored under the `wholeSim` stage.
+>>> segments = [("segment1.npy",), ("segment2.npy",)]
+>>> whole_data = whole_from_segments("density", segments, parser=my_parser,
+                                     geometry="cubic", group="bug",
+                                     topology="linear", relation="histogram")
 
-2. **Ensemble-Averaged Data**:
-    An averaged dataset across all whole files in an ensemble, saved in
-    `ensAvg`.
+Creating an ensemble from multiple wholes:
 
-3. **Space Group**:
-    A directory containing ensemble-averaged files with one varying attribute,
-    useful for comparative analysis across different ensemble groups.
-
-Each aggregation level (segment, whole, ensemble, space, galaxy) supports
-specific functions in this module to streamline data organization, enabling
-efficient post-processing of simulation results.
-
-Attributes for Consistency
---------------------------
-
-- `attribute`: A high-level system feature such as box size or topology.
-- `property_`: A physical property measured during simulation, like density.
-- `species`: Type of particle or entity in the simulation.
-- `direction`: Spatial direction relevant to the property.
-- `group`: A particle grouping in LAMMPS, like "bug".
-- `phase`: Data processing stage, from "simulations" to "visualization".
-- `stage`: Aggregation level, like "wholeSim" or "ensAvg".
+>>> wholes = {"whole1": np.array([1, 2, 3]), "whole2": np.array([2, 3, 4])}
+>>> ensemble_data = ensemble("density", wholes, parser=my_parser,
+                             geometry="cubic", group="bug",
+                             topology="linear", whole_type="vector")
 
 Notes
------
-This module is optimized for use with LAMMPS outputs and general simulation
-data. It includes functionalities to rename and organize files based on
-metadata extracted from their paths or names, facilitating systematic data
-exploration.
+=====
+- Filenames must follow consistent patterns for the `organizer` module to
+  accurately parse and organize data.
+- This module supports only cylindrical, slit, or cubic geometries.
+- Functions in this module rely on consistent naming conventions for groups,
+  properties, species, and stages.
 """
 
 import warnings
@@ -173,229 +136,10 @@ import pandas as pd
 
 from ..manage.typer import ParserT, TransFociT
 from ..analyze.clusters import whole_dist_mat_foci
-from .utilizer import split_alphanumeric, round_up_nearest, invalid_keyword
-
-
-def sort_filenames(
-    filenames: List[str], fmts: List[str]
-) -> List[Tuple[str, ...]]:
-    """
-    Groups and alphanumerically sorts filenames by specified formats.
-
-    This function groups `filenames` by the extensions in `formats`, sorting
-    each group alphanumerically. It then returns a list of tuples where each
-    tuple contains filenames with matching base names across the specified
-    formats.
-
-    Parameters
-    ----------
-    filenames : List[str]
-        A list of filenames to sort and group.
-    fmts : List[str]
-        A list specifying the file formats. Each item can be a single extension
-        (e.g., 'data') or a tuple of alternative extensions (e.g., ('trj',
-        'lammpstrj')).
-
-    Returns
-    -------
-    List[Tuple[str, ...]]
-        A list of tuples where each tuple contains filenames grouped and
-        sorted by the specified formats.
-
-    Examples
-    --------
-    >>> sort_filenames(['file1.data', 'file2.trj', 'file1.trj', 'file2.data'],
-                       ['data', ('lammpstrj', 'trj')])
-    [('file1.data', 'file1.trj'), ('file2.data', 'file2.trj')]
-    """
-    grouped_filenames = []
-    for exts in fmts:
-        grouped_filenames.append([f for f in filenames if f.endswith(exts)])
-    for idx, filenames_group in enumerate(grouped_filenames):
-        grouped_filenames[idx] = sorted(
-            filenames_group, key=split_alphanumeric
-        )
-    return list(zip(*grouped_filenames))
-
-
-def create_fullname(name: str, group: str, prop: str) -> str:
-    """
-    Creates a structured filename based on a base name, particle group,
-    and property.
-
-    Parameters
-    ----------
-    name : str
-        The base name for the output file.
-    group : str
-        Type of the particle group (e.g., 'bug' or 'nucleoid').
-    prop : str
-        The physical property name for the data (e.g., 'density').
-
-    Returns
-    -------
-    str
-        A string that combines `name`, `group`, and `prop` in a
-        hyphen-separated format, suitable for use as a filename.
-
-    Examples
-    --------
-    >>> create_fullname("sample", "bug", "density")
-    'sample-bug-density'
-    """
-    return "-".join([name, group, prop])
-
-
-def save_parent(
-    filename: str,
-    data: Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]],
-    save_to: str,
-) -> None:
-    """
-    Saves the `data` to a specified file format, allowing structured file
-    naming.
-
-    Parameters
-    ----------
-    filename : str
-        The output file name.
-    data : Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]]
-        Data to be saved. Accepted types:
-
-        - `np.ndarray`: Saved as a .npy file.
-        - `pd.DataFrame`: Saved as a .csv file.
-        - `dict` of `np.ndarray`: Each entry saved as a separate .npy file
-        with suffix.
-
-    save_to : str
-        Path to the directory where the file will be saved.
-
-    Raises
-    ------
-    TypeError
-        If `data` type does not match any of the supported formats.
-
-    Examples
-    --------
-    Save a numpy array to a `.npy` file in the specified directory:
-
-    >>> save_parent("output", np.array([1, 2, 3]), "density", "all", "/data/")
-
-    Save a DataFrame to a `.csv` file:
-
-    >>> import pandas as pd
-    >>> df = pd.DataFrame({"A": [1, 2, 3]})
-    >>> save_parent("output", df, "density", "all", "/data/")
-    """
-    file_path = os.path.join(save_to, filename)
-
-    # Save data based on type
-    if isinstance(data, pd.DataFrame):
-        data.to_csv(f"{file_path}.csv", index=False)
-    elif isinstance(data, np.ndarray):
-        np.save(f"{file_path}.npy", data)
-    elif isinstance(data, dict):
-        for prop_key, prop_data in data.items():
-            _, prop_measure = prop_key.split("-")
-            np.save(f"{file_path}-{prop_measure}.npy", prop_data)
-    else:
-        raise TypeError(
-            f"Unsupported data type {type(data).__name__}."
-            + "Expected pd.DataFrame, np.ndarray, or dict of np.ndarray."
-        )
-
-
-def make_database(
-    old_database: str,
-    phase: Literal[
-        "simAll", "simCont", "log", "trj", "probe", "analysis", "viz", "galaxy"
-    ],
-    stage: Literal["segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"],
-    group: Literal["bug", "nucleoid", "all"],
-) -> str:
-    """
-    Create a new directory path based on the provided `old_database` path and
-    specified parameters (`phase`, `group`, and `stage`). If the directory does
-    not already exist, it will be created.
-
-    The `old_database` is expected to follow a structured naming convention:
-    `prefix-old_phase-old_group-old_stage`, where each part represents an
-    aspect of the directory's role. This base structure helps generate the
-    new path.
-
-    The newly constructed directory name follows:
-        `prefix-phase-group-stage`
-
-    Parameters
-    ----------
-    old_database : str
-        Path to the reference directory whose structure will be used as a base.
-    phase : {"simAll", "simCont", "log", "trj", "probe", "analysis", "viz",
-            "galaxy"}
-        The new phase name for the directory, specifying its role in
-        the workflow.
-    stage : {"segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"}
-        The stage of processing or data type represented in the new directory.
-    group : {"bug", "nucleoid", "all"}
-        Type of particle group related to the data in the directory.
-
-    Returns
-    -------
-    str
-        The path to the newly created directory or the existing path if it
-        already exists.
-
-    Raises
-    ------
-    ValueError
-        If any parameter is not in its list of accepted values.
-
-    Examples
-    --------
-    Examples of directory transformation:
-        - Input: `old_database = root/parent1/.../parentN/old_phase/old_dir`
-        - Result: `new_database = root/parent1/.../parentN/phase/new_dir`
-
-    Construct a new directory path based on an existing database path:
-
-    >>> make_database('/root/data/old_analysis/simulations', 'analysis',
-                     'wholeSim', 'bug')
-    '/root/data/analysis/prefix-bug-wholeSim/'
-    """
-    invalid_keyword(
-        phase,
-        ["simAll", "simCont", "log", "trj", "probe", "analysis", "viz",
-         "galaxy"],
-    )
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(
-        stage, ["segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"]
-    )
-
-    old_path = pathlib.Path(old_database)
-
-    # Common prefix derived from old_database to create new directory name
-    prefix = old_path.parts[-1].split("*")[0].split("-")[0]
-    new_directory = "-".join([part for part in [prefix, group, stage] if part])
-
-    # Construct the new database path in the same parent directory level as
-    # the old one
-    new_database_parts = list(old_path.parts[:-2]) + [phase, new_directory]
-    new_database = pathlib.Path(*new_database_parts)
-
-    # Avoid double slashes at the start of the path
-    if str(new_database).startswith("//"):
-        new_database = pathlib.Path(str(new_database)[1:])
-
-    # Create the new directory if it doesn't already exist
-    try:
-        new_database.mkdir(parents=True, exist_ok=False)
-    except FileExistsError as error:
-        print(error)
-        print("Files are saved/overwritten in an existing directory.")
-
-    return str(new_database) + "/"
-
+from .utilizer import (
+    invalid_keyword
+    save_parent,
+)
 
 def whole_from_segments(
     property_: str,
@@ -1732,7 +1476,7 @@ def space_hists(
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         property_info = \
-            parser(ens_avg_csv[0], "ensemble_long", geometry, group, topology)
+            parser(ens_avg_csv[0], "ensemble_long", group)
 
         # Handle bin_center if provided
         if bin_center is not None:
