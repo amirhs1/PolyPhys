@@ -1,11 +1,87 @@
+"""\
+==========================================================
+:mod:`polyphys.analyze.measurer`
+==========================================================
+The :mod:`polyphys.analyze.measurer` module provides a suite of functions for
+performing a varietyof measurements and analyses on molecular or particle-based
+simulation data. This module is designed to assist with structural and
+geometric calculations, statistical analysis, and handling of periodic boundary
+conditions (PBCs) in orthogonal or confined simulation environments.
+
+The module is particularly useful in molecular dynamics (MD) simulations, where
+quantifying characteristics like end-to-end distance, transverse size, number
+density, and volume fraction can help describe the structure and behavior of
+polymers, macromolecules, or particle assemblies. Measurements span from single
+particle interactions to bulk properties in both cubic and cylindrical
+confinement geometries.
+
+Functions
+=========
+.. autofunction:: apply_pbc_orthogonal
+.. autofunction:: pair_distance
+.. autofunction:: end_to_end
+.. autofunction:: transverse_size
+.. autofunction:: max_distance
+.. autofunction:: fsd
+.. autofunction:: simple_stats
+.. autofunction:: sem
+.. autofunction:: number_density_cube
+.. autofunction:: volume_fraction_cube
+.. autofunction:: number_density_cylinder
+.. autofunction:: volume_fraction_cylinder
+
+Dependencies
+============
+- `numpy`: For numerical operations on arrays, such as distances, means, and
+  statistical calculations.
+- `typing`: For type hinting, particularly with `Optional` and `Literal` types
+  for enhanced function clarity.
+
+Usage
+=====
+The functions in this module allow users to perform essential measurements on
+spatial data, compute densities, apply boundary conditions, and gather
+statistical properties. Many functions are designed with flexibility in mind,
+allowing them to be applied across a range of MD simulation setups.
+
+Examples
+========
+Example of computing the end-to-end distance for a polymer chain:
+
+>>> import numpy as np
+>>> import measure
+>>> positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
+>>> distance = measure.end_to_end(positions)
+>>> print(distance)
+3.4641016151377544
+
+To calculate the volume fraction of particles in a cubic box with periodic
+boundary conditions:
+
+>>> n_atom = 100
+>>> d_atom = 1.0
+>>> l_cube = 10.0
+>>> fraction = measure.volume_fraction_cube(n_atom, d_atom, l_cube, pbc=True)
+>>> print(fraction)
+
+Notes
+=====
+Functions in this module frequently rely on assumptions about input data:
+- Atomic or particle positions are expected to be ordered and centered,
+  typically around a center of geometry (COG) for accurate geometric
+  calculations.
+- When using functions that apply periodic boundary conditions, ensure that the
+  PBC lengths are correctly specified to avoid calculation errors.
+
+References
+==========
+For Feret's statistical diameter:
+- Wang Y, Teraoka I, Hansen FY, Peters GH, Ole H. "A Theoretical Study of
+  the Separation Principle in Size Exclusion Chromatography." Macromolecules
+  2010, 43, 3, 1651-1659. https://doi.org/10.1021/ma902377g
 """
-Contains tools for performing statistical measurements such as averaging,
-standard deviation, or the like on a given time series, correlation data,
-or histogram.
-"""
-from typing import Any, Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional, Literal
 import numpy as np
-import MDAnalysis as mda
 
 
 def apply_pbc_orthogonal(
@@ -13,29 +89,37 @@ def apply_pbc_orthogonal(
     pbc_lengths_inverse: np.ndarray,
     pbc: Dict[int, float]
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Updates the periodic boundary condition (PBC) information in the
-    dimensions (keys) by the length (values) passed by `pbc`. The key
-    are indexes of the `pbc_lengths` and `pbc_lengths_inverse` arrays.
+    """
+    Updates the periodic boundary condition (PBC) lengths and their inverses
+    based on specified dimensions and lengths in `pbc`.
 
     Parameters
     ----------
-    pbc_lengths: numpy.ndarray
-        An array of lengths/sizes in different directions.
-    pbc_lengths_inverse: numpy.ndarray
-        An array of the inverses of lengths/sizes in different directions.
-    pbc: dict
-        A dictionary of dimensions (keys) and lengths (values) in which
-        the pbc exists.
+    pbc_lengths : numpy.ndarray
+        An array of lengths in each direction.
+    pbc_lengths_inverse : numpy.ndarray
+        An array of the inverses of lengths in each direction.
+    pbc : dict
+        A dictionary where keys are dimension indices and values are the
+        corresponding lengths for applying PBC.
 
     Return
     ------
-    pbc_lengths: numpy.ndarray
-        The updated array of lengths/sizes in different directions.
-    pbc_lengths_inverse: numpy.ndarray
-        The updated array of the inverses of lengths/sizes in different
-        directions.
+    pbc_lengths : numpy.ndarray
+        The updated array of lengths in each direction.
+    pbc_lengths_inverse : numpy.ndarray
+        The updated array of the inverse lengths in each direction.
+
+    Raises
+    ------
+    ZeroDivisionError
+        If a length value in `pbc` is zero, causing a division by zero in the
+        inverse calculation.
     """
     for dim, length in pbc.items():
+        if length == 0:
+            raise ZeroDivisionError(
+                f"Length for dimension {dim} cannot be zero.")
         pbc_lengths[dim] = length
         pbc_lengths_inverse[dim] = 1 / length
     return pbc_lengths, pbc_lengths_inverse
@@ -46,177 +130,187 @@ def pair_distance(
     pbc: Optional[Dict[int, float]] = None
 ) -> np.ndarray:
     """
-    Computes the pair distance between two particles along each axis in the
-    Cartesian coordinate system, applying the minimum image convention if
-    periodic boundary conditions (PBC) are provided.
-
-    Note
-    ----
-    The distance along each axis is the difference between the coordinates of
-    the second and the first particle. This function does not compute the
-    Euclidean (absolute) distance but instead returns the distance vector
-    components.
+    Computes the pair distance vector between two particles in Cartesian
+    coordinates.
 
     Parameters
     ----------
     positions : numpy.ndarray
-        A (2, n_dim) array containing the coordinates of the two atoms.
-        The array should be sorted by atom number, with the first row
-        corresponding to the first atom and the second row to the second atom.
-
+        Array of shape (2, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
     pbc : Optional[Dict[int, float]], default None
-        A dictionary where the keys are the dimensions (0 for x, 1 for y,
-        and 2 for z) and the values are the lengths of the simulation box
-        in those dimensions. If provided, the minimum image convention
-        will be applied.
+        A dictionary with dimension indices as keys (0 for x, 1 for y, and 2
+        for z) and lengths of the simulation box in those dimensions as values.
+        If provided, applies the minimum image convention.
 
     Returns
     -------
     dr_ij: np.ndarray
-        A 1D numpy array containing the pair distances along each axis.
+        1D array with pair distances along each axis.
+
+    Raises
+    ------
+    ValueError
+        If `positions` does not contain exactly two sets of coordinates.
+
+    Notes
+    -----
+    The distance along each axis is the difference between the coordinates of
+    the second and the first particle. This function does not compute the
+    Euclidean (absolute) distance but instead returns the distance vector
+    components.
     """
     n_atoms, n_dims = positions.shape
     if n_atoms != 2:
         raise ValueError("'pair_distance' only works for two atoms.")
-    # Calculation in the center of geometry of the atom group.
-    positions = positions - np.mean(positions, axis=0)
+    # Calculation in the center of geometry (cog) of the atom group.
+    com_no_pbc = np.mean(positions, axis=0)
+    shifts = -com_no_pbc
     if pbc is not None:
         pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
             np.zeros(n_dims), np.zeros(n_dims), pbc
         )
-        positions -= pbc_lengths * np.around(pbc_lengths_inverse * positions)
-    # Using map to find the r_ij values
-    dr_ij = np.array(
-        list(map(lambda i: positions[1, i] - positions[0, i], range(n_dims))))
-    return dr_ij
+        # Move the cog to the unit box
+        com_pbc = pbc_lengths * np.around(pbc_lengths_inverse * com_no_pbc)
+        # Find the shifts in the cog
+        shifts = com_pbc - com_no_pbc
+    # Apply the shifts
+    positions += shifts
+    return positions[1] - positions[0]
 
 
-def simple_stats(property_name, array) -> Dict[str, Any]:
+def end_to_end(positions: np.ndarray) -> float:
     """
-    Measures the mean, standard deviation, variance, and standard error
-    of the mean (sem) for an array.
-
-    Parameters
-    ----------
-    property_name : str
-        Name of physical property.
-    array: numpy array of float
-        Values of `property_name`.
-
-    Return
-    ------
-    stats: Dict[str, Any]
-        an dict of mean, std, var, and sem of `property_name`
-    """
-    # Unbiased std, var, and sem.
-    stat = {
-        property_name + '_mean': np.mean(array),
-        property_name + '_var': np.var(array, ddof=1),
-        property_name + '_sem': np.std(array, ddof=1) / np.sqrt(len(array))
-    }
-    return stat
-
-
-def end_to_end(positions) -> Any:
-    """
-    Measures the end-to-end distance of a linear polymer, in the frame of
+    Computes the end-to-end distance of a linear polymer, in the frame of
     reference located at the polymer's center of geometry.
 
-    `positions` is sorted by atom id, so the end-to-end distance is simply
-    the difference between last and first items in `positions`
-
     Parameters
     ----------
-    positions : numpy array of float
-        Positions (an n_atoms*n_dim  array) of the N atoms within an atom
-        group in a frame or snapshot or time step. `positions` is sorted
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atomic positions, and sorted
         by atom number form 1 to N.
 
-    Return
+    Returns
+    -------
+    float
+        End-to-end distance of the polymer.
+
+    Raises
     ------
-    end_to_end: numpy array of float
+    ValueError
+        If `positions` contains fewer than two atoms.
+
+    Notes
+    -----
+    The distance is calculated in a reference frame centered at the center of
+    geometry of atoms
     """
     # calculation in the center of geometry of the atom group.
-    positions = positions - np.mean(positions, axis=0)
-    positions = positions[-1] - positions[0]
-    return np.linalg.norm(positions)
+    if positions.shape[0] < 2:
+        raise ValueError("`positions` must contain at least two atoms.")
+    centered_positions = positions - np.mean(positions, axis=0)
+    return np.linalg.norm(centered_positions[-1] - centered_positions[0])
 
 
-def transverse_size(atomgroup: mda.AtomGroup) -> np.floating:
+def transverse_size(
+    positions: np.ndarray,
+    axis: Literal[0, 1, 2]
+) -> float:
     """
-    Measures the mean transverse size of a linear polymer, in the frame of
-    reference located at the polymer's center of geometry.
+    Computes the mean transverse size of a group of atoms in the plane
+    perpendicular to `axis`.
 
     Parameters
     ----------
-    atomgroup : atomgroup
-        An MDAnalysis AtomGroup for which the transverse size is measured.
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atomic positions, and sorted
+        by atom number form 1 to N.
+    axis: {0, 1, 2}
+        The axis (0 for x, 1 for y, and 2 for z) in the plane perpendicular to
+        which the transverse size is calculated.
 
-    Return
+    Returns
+    -------
+    float
+        Twice the mean transverse distance (a.k.a., diameter) in the plane
+        perpendicualr to `axis`.
+
+    Raises
     ------
-    float: Twice of the maximum of the transverse (radial) distances of a group
-    of atoms.
+    IndexError
+        If `axis` is out of bounds for `positions`.
+
+    Notes
+    -----
+    The distance is calculated in a reference frame centered at the center of
+    geometry of atoms in the plane perpendicaulr to a given axis.
     """
-    # calculation in the center of geometry of the atom group.
-    # coordinates change for each frame
-    transverse_pos = atomgroup.positions[:, :2]  # x,y not z
-    transverse_pos = transverse_pos - np.mean(transverse_pos, axis=0)
-    # times by 2, so we have the diameter not radius:
-    return 2 * np.mean(np.linalg.norm(transverse_pos, axis=1))
+    trans_axes = {0: [1, 2], 1: [0, 2], 2: [0, 1]}
+    if axis >= positions.shape[1]:
+        raise IndexError("Axis {axis} is out of bounds for positions array"
+                         f"with shape {positions.shape}.")
+    trans_pos = (positions[:, trans_axes[axis]]
+                 - np.mean(positions[:, trans_axes[axis]], axis=0))
+    # Times by 2, so we have the diameter not radius:
+    return 2 * np.mean(np.linalg.norm(trans_pos, axis=1))
 
 
 def max_distance(positions: np.ndarray) -> np.ndarray:
     """
-    Measures the maximum distance in each of the three Cartesian direction,
-    in the frame of reference located at the polymer's center of geometry.
-
-    The maximum distance is computed by subtracting the max and min of all
-    the particle in an atom group in a given frame or snapshot or time step.
+    Computes the maximum extent in each Cartesian axis.
 
     Parameters
     ----------
-    positions: numpy array of dtype float
-        Positions (an n_atoms*n_dim  array) of the N atoms within an atom
-        group in a frame or snapshot or time step. `positions` is sorted
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
         by atom number form 1 to N.
 
-    Return
+    Returns
+    -------
+    np.ndarray
+        Maximum extent in each dimension.
+
+    Raises
     ------
-    [xmax, ymax, zmax]: numpy array of  float
+    ValueError
+        If `positions` is empty.
+
+    Notes
+    -----
+    The distance is calculated in a reference frame centered at the center of
+    geometry of atoms.
     """
     # calculation in the center of geometry of the atom group.
-    positions = positions - np.mean(positions, axis=0)
-    xmax = np.abs(np.amax(positions[:, 0]) - np.amin(positions[:, 0]))
-    ymax = np.abs(np.amax(positions[:, 1]) - np.amin(positions[:, 1]))
-    zmax = np.abs(np.amax(positions[:, 2]) - np.amin(positions[:, 2]))
-    return np.array([xmax, ymax, zmax])
+    centered_positions = positions - np.mean(positions, axis=0)
+    return np.ptp(centered_positions, axis=0)
 
 
-def fsd(
-    positions: np.ndarray,
-    axis: int = 2
-) -> np.ndarray:
+def fsd(positions: np.ndarray, axis: Literal[0, 1, 2]) -> float:
     """
-    Calculates the average size/diameter of a polymer confined in a
-    cylindrical geometry based on the farthermost distance concept.
+    Computes the mean Feret's statistical diameter (FSD) along a specified
+    axis.
 
     fsd stands for Feret's statistical diameter: other names are the mean
     span dimension, the farthermost distance, or the mean caliper diameter.
 
     Parameters
     ----------
-    positions: numpy array of  float
-        Positions (an n_atoms*n_dim  array) of the N atoms within an atom
-        group in a frame or snapshot or time step. `positions` is sorted
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
         by atom number form 1 to N.
-    axis: int or tuple of int, default 2
-        The index of the axis of the cylinder; by default it is the z axis.
-        It can be any integer in the range of the spatial dimension of the
-        system.
 
-    Return
+    axis: {0, 1, 2}
+        Axis (0 for x, 1 for y, and 2 for z) along which to calculate FSD.
+
+    Returns
+    -------
+    float
+        Mean Feret's diameter along the specified axis.
+
+    Raises
     ------
-    fsd: numpy array of  float
+    IndexError
+        If `axis` is out of bounds for `positions`.
 
     References
     ----------
@@ -225,72 +319,96 @@ def fsd(
     I Hansen FY Peters GH Ole H. Macromolecules 2010, 43, 3, 1651-1659
     https://doi.org/10.1021/ma902377g
     """
+    if axis >= positions.shape[1]:
+        raise IndexError("Axis {axis} is out of bounds for positions array"
+                         f"with shape {positions.shape}.")
     # calculation in the center of geometry of the atom group:
     positions = positions - np.mean(positions, axis=0)
-    positions = np.ptp(positions[:, axis])
-    return positions
+    return np.ptp(positions[:, axis])
 
 
-def sem(data: np.ndarray) -> float:
-    """Calculates the standard error of mean for a given array-like sample
-    data.
-
-    ddof is set to 1 since the standard error of mean is measured for the
-    sample data not the population.
+def simple_stats(prop: str, array: np.ndarray) -> Dict[str, float]:
+    """
+    Measures the mean, standard deviation, variance, and standard error
+    of the mean (sem) for a property array.
 
     Parameters
     ----------
-    data: array-like
-        A array-like (or numpy 1D ndarray) data
+    prop : str
+        Name of the physical property.
+    array: np.ndarray
+        Array of property values.
 
-    Return
+    Returns
+    -------
+    Dict[str, flaot]
+        Dictionary with keys for mean, variance, and SEM of `prop`.
+
+    Raises
     ------
-    float:
-        The standard error of mean of `data`
-
-    Requirements
-    ------------
-    Numpy
+    ValueError
+        If `array` is empty.
     """
-    return np.std(data, ddof=1) / len(data) ** 0.5
+    if len(array) == 0:
+        raise ValueError("Input array must not be empty.")
+    # Unbiased std, var, and sem.
+    return {
+        prop + '_mean': np.mean(array),
+        prop + '_var': np.var(array, ddof=1),
+        prop + '_sem': np.std(array, ddof=1) / np.sqrt(len(array))
+    }
 
 
-def size_ratio(dcrowd, dmon=1):
-    """Set the type of size ratio of crowders to monomers."""
-    if dcrowd < dmon:
-        ratio = r"$a_c < 1$"
-    elif dcrowd == dmon:
-        ratio = r"$a_c = 1$"
-    else:
-        ratio = r"$a_c > 1$"
-    return ratio
+def sem(data: np.ndarray) -> float:
+    """
+    Calculates the standard error of the mean (SEM) for a sample.
+
+    Parameters
+    ----------
+    data: np.ndarray
+        1D array of sample data.
+
+    Returns
+    -------
+    float
+        Standard error of the mean.
+
+    Raises
+    ------
+    ValueError
+        If `data` is empty.
+
+    Notes
+    -----
+    SEM is calculated using sample standard deviation (ddof=1) and sample size.
+    """
+    if len(data) == 0:
+        raise ValueError("Input data array must not be empty.")
+
+    return np.std(data, ddof=1) / len(data)**0.5
 
 
-def size_ratio_equal(dcrowd, dmon=1):
-    """Set the type of size ratio of crowders to monomers."""
-    if dcrowd < dmon:
-        ratio = r"$a_c \leq 1$"
-    else:
-        ratio = r"$a_c > 1$"
-    return ratio
-
-
-import numpy as np
-
-def number_density_cube(n_atom: float, l_cube: float, pbc: bool = False) -> float:
+def number_density_cube(
+    n_atom: float,
+    d_atom: float,
+    l_cube: float,
+    pbc: Optional[bool] = False
+) -> float:
     """
     Compute the bulk number density of a species in a cubic box.
 
     Parameters
     ----------
     n_atom : float
-        Number of atoms or molecules in the cubic box.
+        Number of particles.
+    d_atom : float
+        Diameter of the particle of the species.
     l_cube : float
         Length of one side of the cubic box.
     pbc : bool, optional
-        Periodic boundary conditions along all box sides. If `True`, 
-        :math:`V_{avail} = l_{cube}^3`; otherwise,
-        :math:`V_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
+        Periodic boundary conditions along all box sides. If `True`,
+        :math:`v_{avail} = l_{cube}^3`; otherwise,
+        :math:`v_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
 
     Returns
     -------
@@ -299,42 +417,35 @@ def number_density_cube(n_atom: float, l_cube: float, pbc: bool = False) -> floa
 
     Notes
     -----
-    The bulk number density is calculated as :math:`n_{atom} / V_{avail`, 
-    where `V_{avail}` is the available volume based on the presence of 
-    periodic boundary conditions.
+    The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
+    where `v_{avail}` is the available volume to the center of geometry of a
+    particle based on the presence of periodic boundary conditions.
     """
-    V_avail = l_cube ** 3 if pbc else (l_cube - d_atom) ** 3
-    return n_atom / V_avail
+    v_avail = (l_cube - int(pbc) * d_atom) ** 3
+    return n_atom / v_avail
 
 
 def volume_fraction_cube(
-    d_atom: float,
     n_atom: float,
+    d_atom: float,
     l_cube: float,
-    pbc: bool = False
+    pbc: Optional[bool] = False
 ) -> float:
     """
     Compute the volume fraction of a species in a cubic box.
 
-    Volume fraction is computed in the volume available to the center of
-    geometry of each particle. For point-like particles, the available volume
-    is the total volume of the system. For body particles, the available volume
-    depends on whether periodic boundary conditions (PBCs) are applied.
-
     Parameters
     ----------
-    d_atom : float
-        Diameter of the atom or molecule of the species.
     n_atom : float
-        Number of atoms or molecules in the cubic box.
+        Number of particles.
+    d_atom : float
+        Diameter of the particle of the species.
     l_cube : float
         Length of one side of the cubic box.
     pbc : bool, optional
-        Periodic boundary conditions along all box sides. For body particles, 
-        if `True`, the available volume `V_avail` is the total volume, 
-        :math:`l_{cube}^3`. If `False`, the available volume is 
-        :math:`(l_{cube} - d_{atom})^3`, excluding the outer boundary to allow 
-        for particle size. Defaults to `False`.
+        Periodic boundary conditions along all box sides. If `True`,
+        :math:`v_{avail} = l_{cube}^3`; otherwise,
+        :math:`v_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
 
     Returns
     -------
@@ -343,19 +454,21 @@ def volume_fraction_cube(
 
     Notes
     -----
-    The volume fraction is computed as :math:`n_{atom} * (\\pi * d_{atom}**3 / 6) / V_{avail}`,
-    assuming spherical particles.
+    The volume fraction is computed in the volume available to the center of
+    geometry of each particle. For point-like particles, the notion of volume
+    fraction is meaningless. For finite-size particles, the available volume
+    depends on whether periodic boundary conditions (PBCs) are applied.
     """
-    rho = number_density_cube(n_atom, l_cube, pbc)
+    rho = number_density_cube(n_atom, d_atom, l_cube, pbc)
     return rho * np.pi * d_atom ** 3 / 6
 
 
 def number_density_cylinder(
     n_atom: float,
+    d_atom: float,
     l_cyl: float,
     d_cyl: float,
-    d_atom: float,
-    pbc: bool = True
+    pbc: Optional[bool] = False
 ) -> float:
     """
     Compute the bulk number density of a species in a cylindrical confinement.
@@ -363,18 +476,18 @@ def number_density_cylinder(
     Parameters
     ----------
     n_atom : float
-        Number of atoms or molecules in the cylindrical confinement.
+        Number of particles.
+    d_atom : float
+        Diameter of the particle of the species.
     l_cyl : float
         Length of the cylindrical confinement.
     d_cyl : float
         Diameter of the cylindrical confinement.
-    d_atom : float
-        Diameter of the atom or molecule of the species.
     pbc : bool, optional
-        Periodic boundary conditions along the longitudinal axis. If `True`, 
-        :math:`V_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`; 
-        otherwise, :math:`V_{avail} = \\pi * (l_{cyl} - d_{atom}) * (d_{cyl} - d_{atom})^2 / 4`.
-        Defaults to `True`.
+        Periodic boundary conditions along the longitudinal axis. If `True`,
+        :math:`v_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
+        otherwise, :math:`v_{avail} = \\pi * (l_{cyl} - d_{atom}) * (d_{cyl}
+        - d_{atom})^2 / 4`. Defaults to `False`.
 
     Returns
     -------
@@ -383,42 +496,39 @@ def number_density_cylinder(
 
     Notes
     -----
-    The bulk number density is calculated as :math:`n_{atom} / V_{avail}`, 
-    where `V_{avail}` is the available volume based on the presence of 
-    periodic boundary conditions.
+    The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
+    where `v_{avail}` is the available volume to the center of geometry of a
+    particle based on the presence of periodic boundary conditions.
     """
-    V_avail = (
-        np.pi * l_cyl * (d_cyl - d_atom) ** 2 / 4 if pbc
-        else np.pi * (l_cyl - d_atom) * (d_cyl - d_atom) ** 2 / 4
-    )
-    return n_atom / V_avail
+    v_avail = np.pi * (l_cyl - int(pbc) * d_atom) * (d_cyl - d_atom) ** 2 / 4
+    return n_atom / v_avail
 
 
 def volume_fraction_cylinder(
-    d_atom: float,
     n_atom: float,
+    d_atom: float,
     l_cyl: float,
     d_cyl: float,
-    pbc: bool = True
+    pbc: Optional[bool] = False
 ) -> float:
     """
     Compute the volume fraction of a species in a cylindrical confinement.
 
     Parameters
     ----------
-    d_atom : float
-        Diameter of the atom or molecule of the species.
     n_atom : float
-        Number of atoms or molecules in the cylindrical confinement.
+        Number of particles.
+    d_atom : float
+        Diameter of the particle of the species.
     l_cyl : float
         Length of the cylindrical confinement.
     d_cyl : float
         Diameter of the cylindrical confinement.
     pbc : bool, optional
         Periodic boundary conditions along the longitudinal axis. If `True`,
-        :math:`V_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
-        otherwise, :math:`V_{avail} = \\pi * (l_cyl - d_{atom}) * (d_{cyl} - d_{atom})^2 / 4`.
-        Defaults to `True`.
+        :math:`v_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
+        otherwise, :math:`v_{avail} = \\pi * (l_cyl - d_{atom}) * (d_{cyl}
+        - d_{atom})^2 / 4`. Defaults to `True`.
 
     Returns
     -------
@@ -427,8 +537,10 @@ def volume_fraction_cylinder(
 
     Notes
     -----
-    The volume fraction is computed as :math:`n_{atom} * (\\pi * d_{atom}**3 / 6) / V_{avail}`,
-    assuming spherical particles.
+    The volume fraction is computed in the volume available to the center of
+    geometry of each particle. For point-like particles, the notion of volume
+    fraction is meaningless. For finite-size particles, the available volume
+    depends on whether periodic boundary conditions (PBCs) are applied.
     """
-    rho = number_density_cylinder(n_atom, l_cyl, d_cyl, d_atom, pbc)
+    rho = number_density_cylinder(n_atom, d_atom, l_cyl, d_cyl, pbc)
     return rho * np.pi * d_atom ** 3 / 6
