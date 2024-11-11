@@ -1,10 +1,83 @@
+"""\
+==========================================================
+:mod:`polyphys.manage.parser`
+==========================================================
+
+This :mod:`~polyphys.manage.parser` module defines a suite of base and
+specialized parser classes for extracting structured, lineage-based information
+from filenames and file paths in molecular simulation projects. Each parser
+subclass represents a unique project type and geometry (e.g., cubic,
+cylindrical), allowing lineage-specific parsing of artifact attributes from
+filenames.
+
+The lineage attribute hierarchy includes the following levels: 'segment',
+'whole', 'ensemble_long', 'ensemble', and 'space'. Each level represents a
+different scope within the project, ranging from individual simulation segments
+to complete simulation spaces. Different classes support parsing of project
+attributes such as particle dimensions, densities, and simulation box
+dimensions. These classes employ various methods to dynamically interpret and
+calculate attributes based on parsed lineage and project requirements.
+
+Classes
+=======
+.. autoclass:: ParserBase
+   :members:
+   :undoc-members:
+.. autoclass:: TwoMonDep
+.. autoclass:: SumRuleCyl
+.. autoclass:: SumRuleCubHeteroRing
+.. autoclass:: SumRuleCubHeteroLinear
+.. autoclass:: TransFociCyl
+.. autoclass:: TransFociCub
+.. autoclass:: HnsCub
+.. autoclass:: HnsCyl
+
+Dependencies
+============
+- `os`: For handling file paths.
+- `re`: For regular expressions in filename parsing.
+- `typing`: For type hinting.
+- `abc`: For defining abstract base classes.
+- `collections`: For ordered dictionary functionality.
+- `.utilizer`: Utility functions, e.g., `invalid_keyword`.
+- `..analyze.measurer`: Measurement functions such as `number_density_cube` and
+  `volume_fraction_cube`.
+
+Usage
+=====
+Classes in this module are instantiated with artifact filenames, lineages, and
+group types, which they parse into a rich set of attributes. These classes
+facilitate programmatic access to file-based information for complex
+projects.
+
+Examples
+========
+>>> artifact = SumRuleCyl("N200D10.0ac2.0nc0", "ensemble", "all")
+>>> print(artifact.dcrowd)
+2.0
+
+>>> artifact = HnsCyl("N200D20.0nh16ac1.0epshc1.0nc0", "space", "nucleoid")
+>>> print(artifact.eps_hc)
+1.0
+
+Notes
+=====
+These classes use dynamic attribute setting based on parsed filename data.
+To handle attributes that may or may not exist at runtime, the `getattr`
+function is commonly used, ensuring robustness to varied filename patterns.
+"""
 import os
 import re
 from typing import Dict, List, Literal, ClassVar
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-import numpy as np
 from .utilizer import invalid_keyword
+from ..analyze.measurer import (
+    number_density_cube,
+    number_density_cylinder,
+    volume_fraction_cube,
+    volume_fraction_cylinder
+)
 
 
 class ParserBase(ABC):
@@ -519,15 +592,26 @@ class TwoMonDep(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-        vol_cell = getattr(self, "lcube") ** 3
-
-        vol_mon = np.pi * getattr(self, "dmon") ** 3 / 6
-        self.rho_bulk_m = getattr(self, "nmon") / vol_cell
-        self.phi_bulk_m = self.rho_bulk_m * vol_mon
-
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
+        self.rho_bulk_m = number_density_cube(
+            getattr(self, "nmon"),
+            getattr(self, "dmon"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m = volume_fraction_cube(
+            getattr(self, "nmon"),
+            getattr(self, "dmon"),
+            getattr(self, "lcube")
+        )
+        self.rho_bulk_c = number_density_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_c = volume_fraction_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
 
 
 class SumRuleCyl(ParserBase):
@@ -758,20 +842,30 @@ class SumRuleCyl(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-
-        vol_cell_m = (np.pi
-                      * (getattr(self, "dcyl") - getattr(self, "dmon"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_mon = np.pi * getattr(self, "dmon") ** 3 / 6
-        self.rho_bulk_m = getattr(self, "nmon") / vol_cell_m
-        self.phi_bulk_m = self.rho_bulk_m * vol_mon
-
-        vol_cell_c = (np.pi
-                      * (getattr(self, "dcyl") - getattr(self, "dcrowd"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell_c
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
+        self.rho_bulk_m = number_density_cylinder(
+            getattr(self, "nmon"),
+            getattr(self, "dmon"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_m = volume_fraction_cylinder(
+            getattr(self, "nmon"),
+            getattr(self, "dmon"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.rho_bulk_c = number_density_cylinder(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_c = volume_fraction_cylinder(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
 
 
 class SumRuleCubHeteroRing(ParserBase):
@@ -1025,23 +1119,40 @@ class SumRuleCubHeteroRing(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-        vol_cell = getattr(self, "lcube") ** 3
-
-        vol_mon_s = np.pi * getattr(self, "dmon_small") ** 3 / 6
-        self.rho_bulk_m_small = getattr(self, "nmon_small") / vol_cell
-        self.phi_bulk_m_small = vol_mon_s * self.rho_bulk_m_small
-
-        vol_mon_l = np.pi * getattr(self, "dmon_large") ** 3 / 6
-        self.rho_bulk_m_large = getattr(self, "nmon_large") / vol_cell
-        self.phi_bulk_m_large = vol_mon_l * self.rho_bulk_m_large
-
+        self.rho_bulk_m_small = number_density_cube(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m_small = volume_fraction_cube(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcube")
+        )
+        self.rho_bulk_m_large = number_density_cube(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m_large = volume_fraction_cube(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcube")
+        )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
         self.mcrowd = getattr(self, "dcrowd") ** 3
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
+        self.rho_bulk_c = number_density_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_c = volume_fraction_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
 
 
 class SumRuleCubHeteroLinear(ParserBase):
@@ -1295,23 +1406,40 @@ class SumRuleCubHeteroLinear(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-        vol_cell = getattr(self, "lcube") ** 3
-
-        vol_mon_s = np.pi * getattr(self, "dmon_small") ** 3 / 6
-        self.rho_bulk_m_small = getattr(self, "nmon_small") / vol_cell
-        self.phi_bulk_m_small = vol_mon_s * self.rho_bulk_m_small
-
-        vol_mon_l = np.pi * getattr(self, "dmon_large") ** 3 / 6
-        self.rho_bulk_m_large = getattr(self, "nmon_large") / vol_cell
-        self.phi_bulk_m_large = vol_mon_l * self.rho_bulk_m_large
-
+        self.rho_bulk_m_small = number_density_cube(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m_small = volume_fraction_cube(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcube")
+        )
+        self.rho_bulk_m_large = number_density_cube(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m_large = volume_fraction_cube(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcube")
+        )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
         self.mcrowd = getattr(self, "dcrowd") ** 3
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
+        self.rho_bulk_c = number_density_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_c = volume_fraction_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
 
 
 class TransFociCyl(ParserBase):
@@ -1590,32 +1718,46 @@ class TransFociCyl(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-        vol_cell_s = (np.pi
-                      * (getattr(self, "dcyl")
-                         - getattr(self, "dmon_small"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_mon_s = np.pi * getattr(self, "dmon_small") ** 3 / 6
-        self.rho_bulk_m_small = getattr(self, "nmon_small") / vol_cell_s
-        self.phi_bulk_m_small = vol_mon_s * self.rho_bulk_m_small
-
-        vol_cell_l = (np.pi
-                      * (getattr(self, "dcyl")
-                         - getattr(self, "dmon_large"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_mon_l = np.pi * getattr(self, "dmon_large") ** 3 / 6
-        self.rho_bulk_m_large = getattr(self, "nmon_large") / vol_cell_l
-        self.phi_bulk_m_large = vol_mon_l * self.rho_bulk_m_large
-
+        self.rho_bulk_m_small = number_density_cylinder(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_m_small = volume_fraction_cylinder(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.rho_bulk_m_large = number_density_cylinder(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_m_large = volume_fraction_cylinder(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
         self.mcrowd = getattr(self, "dcrowd") ** 3
-        vol_cell_c = (np.pi
-                      * (getattr(self, "dcyl") - getattr(self, "dcrowd"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell_c
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
+        self.rho_bulk_c = number_density_cylinder(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_c = volume_fraction_cylinder(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
 
 
 class TransFociCub(ParserBase):
@@ -1869,23 +2011,40 @@ class TransFociCub(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-        vol_cell = getattr(self, "lcube") ** 3
-
-        vol_mon_s = np.pi * getattr(self, "dmon_small") ** 3 / 6
-        self.rho_bulk_m_small = getattr(self, "nmon_small") / vol_cell
-        self.phi_bulk_m_small = vol_mon_s * self.rho_bulk_m_small
-
-        vol_mon_l = np.pi * getattr(self, "dmon_large") ** 3 / 6
-        self.rho_bulk_m_large = getattr(self, "nmon_large") / vol_cell
-        self.phi_bulk_m_large = vol_mon_l * self.rho_bulk_m_large
-
+        self.rho_bulk_m_small = number_density_cube(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m_small = volume_fraction_cube(
+            getattr(self, "nmon_small"),
+            getattr(self, "dmon_small"),
+            getattr(self, "lcube")
+        )
+        self.rho_bulk_m_large = number_density_cube(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m_large = volume_fraction_cube(
+            getattr(self, "nmon_large"),
+            getattr(self, "dmon_large"),
+            getattr(self, "lcube")
+        )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
         self.mcrowd = getattr(self, "dcrowd") ** 3
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
+        self.rho_bulk_c = number_density_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_c = volume_fraction_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
 
 
 class HnsCub(ParserBase):
@@ -2129,19 +2288,36 @@ class HnsCub(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-        vol_cell = getattr(self, "lcube") ** 3
-
-        vol_mon = np.pi * getattr(self, "dmon") ** 3 / 6
-        self.rho_bulk_m = getattr(self, "nmon") / vol_cell
-        self.phi_bulk_m = vol_mon * self.rho_bulk_m
-
-        vol_hns = np.pi * getattr(self, "dhns") ** 3 / 6
-        self.rho_bulk_hns = getattr(self, "nhns") / vol_cell
-        self.phi_bulk_hns = vol_hns * self.rho_bulk_hns
-
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
+        self.rho_bulk_m = number_density_cube(
+            getattr(self, "nmon"),
+            getattr(self, "dmon"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_m = volume_fraction_cube(
+            getattr(self, "nmon"),
+            getattr(self, "dmon"),
+            getattr(self, "lcube")
+        )
+        self.rho_bulk_hns = number_density_cube(
+            getattr(self, "nhns"),
+            getattr(self, "dhns"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_hns = volume_fraction_cube(
+            getattr(self, "nhns"),
+            getattr(self, "dhns"),
+            getattr(self, "lcube")
+        )
+        self.rho_bulk_c = number_density_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
+        self.phi_bulk_c = volume_fraction_cube(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcube")
+        )
 
 
 class HnsCyl(ParserBase):
@@ -2401,166 +2577,39 @@ class HnsCyl(ParserBase):
         """
         Calculates system attributes based on parsed values.
         """
-        vol_cell_m = (np.pi
-                      * (getattr(self, "dcyl") - getattr(self, "dmon"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_mon = np.pi * getattr(self, "dmon") ** 3 / 6
-        self.rho_bulk_m_small = getattr(self, "nmon") / vol_cell_m
-        self.phi_bulk_m_small = vol_mon * self.rho_bulk_m_small
-
-        vol_cell_h = (np.pi
-                      * (getattr(self, "dcyl") - getattr(self, "dhns"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_hns = np.pi * getattr(self, "dhns") ** 3 / 6
-        self.rho_bulk_hns = getattr(self, "nhns") / vol_cell_h
-        self.phi_bulk_hns = vol_hns * self.rho_bulk_hns
-
-        vol_cell_c = (np.pi
-                      * (getattr(self, "dcyl") - getattr(self, "dcrowd"))**2
-                      * getattr(self, "lcyl") / 4.0)
-        vol_crowd = np.pi * getattr(self, "dcrowd") ** 3 / 6
-        self.rho_bulk_c = getattr(self, "ncrowd") / vol_cell_c
-        self.phi_bulk_c = self.rho_bulk_c * vol_crowd
-
-def number_density_cube(n_atom: float, l_cube: float) -> float:
-    """
-    Compute the bulk number density of a species in a cubic box.
-
-    Parameters
-    ----------
-    n_atom : float
-        Number of atoms or molecules in the cubic box.
-    l_cube : float
-        Length of one side of the cubic box.
-
-    Returns
-    -------
-    float
-        Bulk number density of the species in the cubic box.
-
-    Notes
-    -----
-    The bulk number density is calculated as :math:`n_{atom} / l_{cube}**3`.
-    """
-    return n_atom / l_cube ** 3
-
-
-def volume_fraction_cube(
-    d_atom: float,
-    n_atom: float,
-    l_cube: float,
-    pbc: bool = False
-) -> float:
-    """
-    Compute the volume fraction of a species in a cubic box.
-
-    The volume fraction is meaningful for body-like not point-like particles.
-    It is measured based on the total volume in which the center of geometry of
-    the particle can freely move. If the confining box has periodic boundary
-    condition in all its direction or is infinite, then
-    :math:`V_{avail}=l_{cube}^3`, otherwise
-    :math:`V_{avail}=(l_{cube}-d_{atom})^3`.
-
-    Parameters
-    ----------
-    d_atom : float
-        Diameter of the atom or molecule of the species.
-    n_atom : float
-        Number of atoms or molecules in the cubic box.
-    l_cube : float
-        Length of one side of the cubic box.
-    pbc : bool, True
-       Periodic boundary conditions along the box sides, If True,
-       :math:`V_{aval}=l_{cube}^3`, otherwise
-       :math:`V_{aval}=(l_{cube}-d_{atom})^3`.
-
-    Returns
-    -------
-    tuple
-        Volume fraction of the species in the cylindrical confinement.
-
-    Notes
-    -----
-    The volume fraction is computed as :math:`n_{atom}  * (\\pi * d_{atom}**3 /
-    6) / v_{aval}`, assuming spherical particles.
-
-    This function works only if the PBCs are applied along all the directions.
-    """
-    rho = number_density_cube(n_atom, l_cube - int(pbc)*d_atom)
-    return rho * np.pi * d_atom ** 3 / 6
-
-
-def number_density_cylinder(
-    natom: float,
-    l_cyl: float,
-    d_cyl: float,
-) -> float:
-    """
-    Compute the bulk number density of a species in a cylindrical confinement.
-
-    Parameters
-    ----------
-    natom : float
-        Number of atoms or molecules in the cubic box.
-    l_cyl : float
-        Length of the cylindrical confinement.
-    d_cyl : float
-        Diameter of the cylindrical confinement.
-
-    Returns
-    -------
-    float
-        Bulk number density of the species in the cubic box.
-
-    Notes
-    -----
-    The bulk number density is calculated as :math:`n_{atom} / l_{cube}**3`.
-    """
-    return natom / (np.pi * l_cyl * d_cyl**2 / 4)
-
-
-def volume_fraction_cylinder(
-    d_atom: float,
-    n_atom: float,
-    l_cyl: float,
-    d_cyl: float,
-    pbc: bool = True
-) -> float:
-    """
-    Compute the volume fraction of a species in a cubic box.
-
-    The volume fraction is meaningful for body-like not point-like particles.
-    It is measured based on the total volume in which the center of geometry of
-    the particle can freely move. If the confining box has periodic boundary
-    condition in all its direction or is infinite, then
-    :math:`V_{aval}=\\pi*l_{cyl}*(d_{cyl}-d_{atom})^2/4`, otherwise
-    :math:`V_{aval}=\\pi*(l_{cyl}-d_{atom})*(d_{cyl}-d_{atom})^2/4`.
-
-    Parameters
-    ----------
-    d_atom : float
-        Diameter of the atom or molecule of the species.
-    n_atom : float
-        Number of atoms or molecules in the cubic box.
-    l_cyl : float
-        Length of the cylindrical confinement.
-    d_cyl : float
-        Diameter of the cylindrical confinement.
-    pbc : bool, True
-       Periodic boundary conditions along the longitudinal axis, If True,
-       :math:`V_{aval}=\\pi*l_{cyl}*(d_{cyl}-d_{atom})^2/4`, otherwise
-       :math:`V_{aval}=\\pi*(l_{cyl}-d_{atom})*(d_{cyl}-d_{atom})^2/4`.
-
-    Returns
-    -------
-    tuple
-        Volume fraction of the species in the cylindrical confinement.
-
-    Notes
-    -----
-    The volume fraction is computed as :math:`n_{atom}  * (\\pi * d_{atom}**3 /
-    6) / v_{aval}`, assuming spherical particles.
-    """
-    rho = number_density_cylinder(
-        n_atom, l_cyl - int(pbc)*d_atom, d_cyl - d_atom)
-    return rho * np.pi * d_atom ** 3 / 6
+        self.rho_bulk_m = number_density_cylinder(
+            getattr(self, "nmon"),
+            getattr(self, "dmon"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_m = volume_fraction_cylinder(
+            getattr(self, "nhns"),
+            getattr(self, "dhns"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.rho_bulk_hns = number_density_cylinder(
+            getattr(self, "nhns"),
+            getattr(self, "dhns"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_hns = volume_fraction_cylinder(
+            getattr(self, "nhns"),
+            getattr(self, "dhns"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.rho_bulk_c = number_density_cylinder(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
+        self.phi_bulk_c = volume_fraction_cylinder(
+            getattr(self, "ncrowd"),
+            getattr(self, "dcrowd"),
+            getattr(self, "lcyl"),
+            getattr(self, "dcyl")
+        )
