@@ -10,9 +10,8 @@ import glob
 import warnings
 import numpy as np
 import pandas as pd
-from ..manage.utilizer import invalid_keyword
+from ..manage.utilizer import invalid_keyword, sort_filenames
 from ..manage.organizer import (
-    sort_filenames,
     database_path,
     whole_from_file,
     whole_from_segment,
@@ -27,7 +26,7 @@ from ..manage.parser import (
     SumRuleCubHeteroRing, SumRuleCubHeteroLinear
 )
 from ..manage.typer import (
-    ParserT,
+    ParserType,
     TimeSeriesT,
     HistogramT,
     NonScalarHistT,

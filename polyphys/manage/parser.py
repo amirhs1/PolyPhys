@@ -113,31 +113,39 @@ class ParserBase(ABC):
     project_name : str
         The name of the project class (subclass of `ParserBase`), automatically
         assigned as the subclass's name.
+    lineage_genealogy: List[str]
+        List of parent lieages for an `artifact` with a given `lineage`.
+    lineage_attributes: List[str]
+        List of parsed/dynamically-defined attributes specific to an `artifact`
+        with a given `lineage`,
+    physical_attributes: List[str]
+        List of computed/system attributes specific to an `artifact` with a
+        given `lineage`, including computed attributes.
+    attributes: List[str]
+        List of attributes specific to an `artifact` with a given `lineage`,
+        including parsed and computed attributes.
 
     Class Attributes
     ----------------
-    _lineages : list of str
+    lineages : list of str
         List of valid lineage types.
-    _genealogy : dict of lists
+    genealogy : dict of lists
         Dictionary defining the hierarchical relationship between lineages.
         Each lineage points to its parent lineages in a hierarchy.
 
-    Abstract Properties
-    -------------------
-    _geometry : str
+    Abstract Class Properties
+    -------------------------
+    geometry : str
         Specifies geometry of the system
-    _topology : str
+    topology : str
         Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
+    groups : List[str]
         Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, OrderedDict[str, str]]
+    genealogy_attributes : Dict[str, OrderedDict[str, str]]
         Dictionary defining lineage-specific attributes for each lineage type.
-    _project_attributes : Dict[str, List[str]]
+    project_attributes : Dict[str, List[str]]
         Dictionary defining project-level attributes that remain constant but
         are not extractable from a filename.
-    _attributes : List[str]
-        List of all the attributs for an `artifact` with a given `lineage`,
-        containing both lineage and project attriubes.
 
     Methods
     -------
@@ -196,7 +204,7 @@ class ParserBase(ABC):
 
     @property
     @abstractmethod
-    def _project_attributes(self) -> List[str]:
+    def _project_attributes(self) -> Dict[str, List[str]]:
         """
         Dictionary of project attributes. Each key is a lineage type,
         and each value is an OrderedDict mapping attribute names to their
@@ -219,9 +227,12 @@ class ParserBase(ABC):
         self._lineage = lineage
         self._group = group
         self._project_name = self.__class__.__name__
-        self._attributes = (
-            list(self._genealogy_attributes[self._lineage].keys())
-            + self._project_attributes[self._lineage])
+        self._lineage_genealogy = self._genealogy[lineage]
+        self._lineage_attributes = \
+            list(self._genealogy_attributes[lineage].keys())
+        self._physical_attributes = self._project_attributes[lineage]
+        self._attributes = \
+            self._lineage_attributes + self._physical_attributes
         self._find_name()
 
     def __str__(self) -> str:
@@ -264,7 +275,7 @@ class ParserBase(ABC):
     @property
     def lineage(self) -> str:
         """
-        Gets the current lineage.
+        Returns the current lineage.
         """
         return self._lineage
 
@@ -301,11 +312,31 @@ class ParserBase(ABC):
         return self._project_name
 
     @property
-    def attributes(self) -> Dict[str, OrderedDict[str, str]]:
+    def attributes(self) -> List[str]:
         """
-        Returns lineage-specific attributes for instance `lineage`.
+        Returns lineage-specific andp project attributes for an artifact.
         """
         return self._attributes[self._lineage]
+
+    @property
+    def lineage_genealogy(self) -> List[str]:
+        """
+        Returns the parents of a given `lineage`.
+        """
+
+    @property
+    def lineage_attributes(self) -> List[str]:
+        """
+        Returns lineage-specific attributes for an artifact with a given
+        `lineage`.
+        """
+
+    @property
+    def physical_attributes(self) -> List[str]:
+        """
+        Returns project-level attributes for an artifact with a given
+        `lineage`.
+        """
 
     @property
     def genealogy_attributes(self) -> Dict[str, OrderedDict[str, str]]:
@@ -317,7 +348,7 @@ class ParserBase(ABC):
     @property
     def project_attributes(self) -> Dict[str, List[str]]:
         """
-        Returns project-level attributes.
+        Returns project-level attributes for the all the lineages.
         """
         return self._project_attributes
 
@@ -410,9 +441,6 @@ class TwoMonDep(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon : float
         Size (diameter) of a monomer. Its associated keyword is 'am'.
     nmon : int
@@ -465,19 +493,6 @@ class TwoMonDep(ParserBase):
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
 
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
-
     Examples
     --------
     Creating a instance to parse a filename with specified lineage and group.
@@ -497,14 +512,14 @@ class TwoMonDep(ParserBase):
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#.j#
         "segment": OrderedDict({
-            "nmon": "nm", "dmon": "am", "dcrowd": "ac", "ncrowd": "nc",
+            "dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc",
             "lcube": "hl", "d_sur": "sd", "dt": "dt", "bdump": "bdump",
             "adump": "adump", "tdump": "tdump", "ensemble_id": "ens",
             "segment_id": "j"}
             ),
         # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#
         "whole": OrderedDict({
-            "nmon": "nm", "dmon": "am", "dcrowd": "ac", "ncrowd": "nc",
+            "dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc",
             "lcube": "hl", "d_sur": "sd", "dt": "dt", "bdump": "bdump",
             "adump": "adump", "tdump": "tdump", "ensemble_id": "ens"}
             ),
@@ -516,12 +531,12 @@ class TwoMonDep(ParserBase):
             ),
         # Pattern: nm#am#ac#nc#sd :
         "ensemble": OrderedDict(
-            {"nmon": "nm", "dmon": "am", "dcrowd": "ac", "ncrowd": "nc",
+            {"dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc",
              "d_sur": "sd"}
              ),
         # pttern: nm#am#ac# :
         "space": OrderedDict(
-            {"nmon": "nm", "dmon": "am",  "dcrowd": "ac"}
+            {"dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc"}
             )
     }
 
@@ -544,7 +559,6 @@ class TwoMonDep(ParserBase):
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy = super()._genealogy[lineage]
         if self.lineage in ["segment", "whole", "ensemble_long"]:
             self._dependant_attributes()
 
@@ -653,9 +667,6 @@ class SumRuleCyl(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon : float
         Size (diameter) of a monomer. Its associated keyword is 'am'.
     nmon : int
@@ -709,19 +720,6 @@ class SumRuleCyl(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
 
     Notes
     -----
@@ -907,9 +905,6 @@ class SumRuleCubHeteroRing(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon_small: float
         Size (diameter) of a monomer
     nmon_small: int
@@ -975,19 +970,6 @@ class SumRuleCubHeteroRing(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
 
     Notes
     -----
@@ -1194,9 +1176,6 @@ class SumRuleCubHeteroLinear(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon_small: float
         Size (diameter) of a monomer
     nmon_small: int
@@ -1262,19 +1241,6 @@ class SumRuleCubHeteroLinear(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
 
     Notes
     -----
@@ -1481,9 +1447,6 @@ class TransFociCyl(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon_small: float
         Size (diameter) of a monomer
     nmon_small: int
@@ -1560,19 +1523,6 @@ class TransFociCyl(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
 
     Notes
     -----
@@ -1799,9 +1749,6 @@ class TransFociCub(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon_small: float
         Size (diameter) of a monomer
     nmon_small: int
@@ -1867,19 +1814,6 @@ class TransFociCub(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
 
     Notes
     -----
@@ -2086,9 +2020,6 @@ class HnsCub(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon: float
         Size (diameter) of a monomer
     nmon: int
@@ -2152,19 +2083,6 @@ class HnsCub(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
 
     Examples
     --------
@@ -2359,9 +2277,6 @@ class HnsCyl(ParserBase):
 
     Attributes
     ----------
-    attributes: List[str]
-        List of attributes specific to an `artifact` with a given `lineage`,
-        including parsed and computed attributes.
     dmon: float
         Size (diameter) of a monomer
     nmon: int
@@ -2430,19 +2345,6 @@ class HnsCyl(ParserBase):
         A whole's name if applicable, otherwise "N/A"
     segment : str, "N/A"
         A segment's name if applicable, otherwise "N/A"
-
-    Class Attributes
-    ----------------
-    _geometry : str
-        Specifies geometry of the system
-    _topology : str
-        Specifies how particles are connected (how) or not in the system.
-    _groups : List[str]
-        Specifies particle groups in the system
-    _genealogy_attributes : Dict[str, Dict[str, str]]
-        Maps `lineage` names to attribute keywords for parsing.
-    _project_attributes : Dict[str, List[Optional[str]]]
-        Specifies additional physical attributes for each `lineage`.
 
     Notes
     -----
