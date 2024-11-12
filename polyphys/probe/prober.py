@@ -1,5 +1,6 @@
 import warnings
-from typing import Optional, Dict, Any, Union
+from abc import ABC, abstractmethod
+from typing import Optional, Dict, Any, Union, List, Tuple
 import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances as mda_dist
@@ -7,51 +8,11 @@ from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl,
     SumRuleCubHeteroLinear, SumRuleCubHeteroRing, TwoMonDep
     )
-from polyphys.manage.typer import ParserType
+from polyphys.manage.typer import ParserType, ParserInstance
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
 
-
-def stamps_report(
-    report_name: str,
-    sim_info: ParserType,
-    n_frames: int
-) -> None:
-    """
-    Writes a summary of stamps (properties and attributes) of a simulation
-    to file.
-
-    `stamps_report` generates a dataset called `report_name` of the
-    values of some attributes of `sim_info`, the number of frames
-    `n_frames`, all the key and value pairs in all the given dictionaries
-    `measures`.
-
-    Parameters
-    ----------
-    report_name: str
-        Name of the report.
-    sim_info: ParserT
-        A SumRule object that contains information about the name, parents,
-        and physical attributes of a simulation.
-    n_frames: int
-        Number of frames/snapshots/configurations in a simulation.
-    """
-    with open(report_name, mode='w') as report:
-        # write header
-        for lineage_name in sim_info.genealogy:
-            report.write(f"{lineage_name},")
-        for attr_name in sim_info.attributes:
-            report.write(f"{attr_name},")
-        report.write("n_frames\n")
-        # write values
-        for lineage_name in sim_info.genealogy:
-            attr_value = getattr(sim_info, lineage_name)
-            report.write(f"{attr_value},")
-        for attr_name in sim_info.attributes:
-            attr_value = getattr(sim_info, attr_name)
-            report.write(f"{attr_value},")
-        report.write(f"{n_frames}")
 
 
 def bin_create(
@@ -266,13 +227,270 @@ def write_hists(
         # end of loop
     # end of loop
 
-def sum_rule_cyl_bug(
-    topology: str,
-    trajectory: str,
-    lineage: str,
-    save_to: str = './',
-    continuous: bool = False
-) -> None:
+
+class ProberBase(ABC):
+    @property
+    @abstractmethod
+    def _species(self) -> List[str]:
+        """
+        List of particle species in a molecular dynamics system.
+        """
+
+    @property
+    @abstractmethod
+    def _property_types(self) -> List[str]:
+        """
+        List of property types in a molecular dynamics system.
+        """
+
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        self._topology = topology
+        self._trajectory = trajectory
+        self._continuous = continuous
+        if (self._parser.lineage == 'segment') & (continuous is False):
+            warnings.warn(
+                "lineage is "
+                f"'{self.parser.lineage}' "
+                "and 'continuous' is "
+                f"'{continuous}. "
+                "Please ensure the "
+                f"'{trajectory}' is NOT part of a sequence of trajectories.",
+                RuntimeWarning)
+        self._save_to = save_to
+        self._n_frames, self._sliced_trj = self._set_trj_slice()
+
+    @property
+    def topology(self) -> str:
+        """
+        Returns the topology file associated with the molecular dynamics
+        system.
+        """
+        return self._topology
+
+    @property
+    @abstractmethod
+    def _collectors(self) -> Dict[str, np.ndarray]:
+        """
+        List of physical properties, i.e. physical measurement, extracted from
+        a molecular dynamics trajectory by the prober.
+        """
+
+    @property
+    def collectors(self) -> Dict[str, np.ndarray]:
+        """
+        Returns a list of physical properties, i.e. physical measurement,
+        extracted from a molecular dynamics trajectory by the prober.
+        """
+        return self._collectors
+
+    @property
+    def trajectory(self) -> str:
+        """
+        Returns the trajectory file associated with the molecular dynamics
+        system.
+        """
+        return self._trajectory
+
+    @property
+    def continuous(self) -> bool:
+        """
+        Shows whether the trajectory is whole or segment.
+        """
+        return self._continuous
+
+    @property
+    @abstractmethod
+    def _parser(self) -> ParserInstance:
+        """
+        A parser object, containing all the information a molecular dynamics
+        system, extracted from `trjectory` filename.
+        """
+
+    @property
+    def parser(self) -> ParserInstance:
+        """
+        Returns a parser object, containing all the information a molecular
+        dynamics system, extracted from `trjectory` filename.
+        """
+        return self._parser
+
+    @property
+    @abstractmethod
+    def _universe(self) -> mda.Universe:
+        """
+        an MDAnalysis Universe object, containing all the information
+        describing a molecular dynamics system.
+        """
+
+    @property
+    def universe(self) -> mda.Universe:
+        """
+        Returns an MDAnalysis Universe object, containing all the information
+        describing a molecular dynamics system.
+        """
+        return self._universe
+
+    @property
+    @abstractmethod
+    def time_unit(self) -> float:
+        """
+        Returns the time unit of a molecular dynamics system.
+        """
+
+    @property
+    def sliced_trj(self) -> mda.coordinates.base.FrameIteratorSliced:
+        """
+        Returns the sliced trajectory over which probing is performed.
+        """
+
+    @property
+    def n_frames(self) -> int:
+        """
+        Returns the total number of time frames in a molecular dynamics system.
+        """
+
+    @property
+    def save_to(self) -> str:
+        """
+        Returns the directory to which the artifacts, i.e. the files associated
+        with the `results` of probing a molecular dynamics system, are written.
+        """
+        return self._save_to
+
+    def simulation_report(self) -> None:
+        """
+        Writes a moecular dynamics simulation details to a file.
+
+        `stamps_report` generates a dataset called `report_name` of the
+        values of some attributes of `sim_info`, the number of frames
+        `n_frames`, all the key and value pairs in all the given dictionaries
+        `measures`.
+
+        Parameters
+        ----------
+        report_name: str
+            Name of the report.
+        sim_info: ParserT
+            A SumRule object that contains information about the name, parents,
+            and physical attributes of a simulation.
+        n_frames: int
+            Number of frames/snapshots/configurations in a simulation.
+        """
+        report_name = f"{self._save_to}{self._parser.name}-stamps.csv"
+        with open(report_name, mode='w') as report:
+            # write header
+            for attr in self._parser.attributes:
+                report.write(f"{attr},")
+            report.write("n_frames\n")
+            # write values
+            for lineage_name in self._parser.attributes:
+                attr_value = getattr(self._parser, lineage_name)
+                report.write(f"{attr_value},")
+            report.write(f"{self.n_frames}")
+        print("Simulation report written.")
+
+    @abstractmethod
+    def _atom_groups(self) -> None:
+        """
+        Defines atom groups in a molecular dynamics project.
+        """
+
+    def _set_trj_slice(
+        self
+    ) -> Tuple[int, mda.coordinates.base.FrameIteratorSliced]:
+        if self._continuous is True:
+            return self._universe.trajectory.n_frames - 1, self._universe.trajectory[0: -1]
+        return self._universe.trajectory.n_frames, self._universe.trajectory
+
+    @abstractmethod
+    def setup_bins(self) -> None:
+        """
+        Defines bin edges and initialize bins/histograms.
+        """
+
+    @abstractmethod
+    def _probe_frame(self, idx: int) -> None:
+        """
+        Probes a single frame for specific atom group and update collectors.
+
+        Parameters
+        ----------
+        idx: int
+            Index a trajectory frame (snapashot).
+        """
+
+    def run(self) -> None:
+        """
+        Probes all the frames selected via 
+
+        Parameters
+        ----------
+        atom_groups : dict
+            _description_
+        """
+        print(f"Probing '{self._parser.name}' ...")
+        for idx, _ in enumerate(self._sliced_trj):
+            self._probe_frame(idx)
+        print("done.")
+
+    def save_artifacts(self):
+        """
+        Save all relevant analysis data for the current simulation
+        """
+        for prop, artifact in self._collectors.items():
+            filename = f"{self._save_to}{self._parser.name}-{self._parser.group}-{prop}.npy"
+            np.save(filename, artifact)
+        print("Artifacts saved.")
+
+
+class TwoMonDepCubBugProber(ProberBase):
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        lineage: str,
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        self._parser = TwoMonDep(trajectory, lineage, 'bug')
+        super().__init__(topology, trajectory, save_to, continuous=continuous)
+        self.time_unit = \
+            getattr(self._parser, "bdump") * getattr(self._parser, "dt")
+        self._universe = mda.Universe(
+            topology,
+            trajectory,
+            topology_format='DATA',
+            format='LAMMPSDUMP',
+            lammps_coordinate_convention='unscaled',
+            atom_style="id type x y z",
+            dt=self.time_unit
+        )
+
+        self._collectors = {
+            "gyrTMon": np.zeros(self._n_frames),
+            "dxTMon": np.zeros(self._n_frames),
+            "dyTMon": np.zeros(self._n_frames),
+            "dzTMon": np.zeros(self._n_frames)
+        }
+
+    def _atom_groups(self) -> None:
+        # the two monomers:
+        self.bug: mda.AtomGroup = self._universe.select_atoms('type 1')
+
+    def _probe_frame(self, idx) -> None:
+        self._collectors["gyrTMon"][idx] = self.bug.radius_of_gyration()
+        self._collectors["dxTMon"][idx] = fsd(self.bug.positions, axis=0)
+        self._collectors["dyTMon"][idx] = fsd(self.bug.positions, axis=1)
+        self._collectors["dzTMon"][idx] = fsd(self.bug.positions, axis=2)
+
+
+class SumRuleCylProber(ProberBase):
     """
     Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
@@ -306,68 +524,60 @@ def sum_rule_cyl_bug(
         Whether a `trajectory` file is a part of a sequence of trajectory
         segments or not.
     """
-    if (lineage == 'segment') & (continuous is False):
-        warnings.warn(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.",
-            UserWarning)
-    print("Setting the name of analyze file...")
-    sim_info = SumRuleCyl(
-        trajectory,
-        lineage,
-        'cylindrical',
-        'bug',
-        'linear',
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon * np.sqrt(sim_info.mmon * sim_info.eps_others) \
-        # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt)
-    # selecting atom groups
-    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # the polymer
-    # slicing trajectory based the continuous condition
-    if continuous:
-        sliced_trj = cell.trajectory[0: -1]
-        n_frames = cell.trajectory.n_frames - 1
-    else:
-        sliced_trj = cell.trajectory
-        n_frames = cell.trajectory.n_frames
-    stamps_report(f"{save_to}{sim_name}-stamps.csv", sim_info, n_frames)
-    # collectors
-    results = {
-        "transSizeTMon": np.zeros(n_frames),
-        "fsdTMon": np.zeros(n_frames),
-        "gyrTMon": np.zeros(n_frames),
-        "rfloryTMon": np.zeros(n_frames),
-        "asphericityTMon": np.zeros(n_frames),
-        "shapeTMon": np.zeros(n_frames),
-        "principalTMon": np.zeros([n_frames, 3, 3])
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        parser: ParserInstance,
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        super().__init__(topology, trajectory, parser, save_to,
+                         continuous=continuous)
+        self.time_unit = self._parser.bdump * self._parser.dt
+        self._universe = mda.Universe(
+            topology,
+            trajectory,
+            topology_format='DATA',
+            format='LAMMPSDUMP',
+            lammps_coordinate_convention='unscaled',
+            atom_style="id resid type x y z",
+            dt=self.time_unit
+        )
+
+        self._collectors = {
+            "transSizeTMon": np.zeros(self._n_frames),
+            "fsdTMon": np.zeros(self._n_frames),
+            "gyrTMon": np.zeros(self._n_frames),
+            "rfloryTMon": np.zeros(self._n_frames),
+            "asphericityTMon": np.zeros(self._n_frames),
+            "shapeTMon": np.zeros(self._n_frames),
+            "principalTMon": np.zeros([self._n_frames, 3, 3])
         }
-    for _, _ in enumerate(sliced_trj):
-        results["transSizeTMon"] = transverse_size(bug.positions, axis=2)
-        results["fsdTMon"] = fsd(bug.positions, axis=2)
-        results["gyrTMon"] = bug.radius_of_gyration()
-        results["rfloryTMon"] = end_to_end(bug.positions)
-        results["asphericityTMon"] = bug.asphericity(wrap=False, unwrap=False)
-        results["shapeTMon"] = bug.shape_parameter(wrap=False)
-        results["principalTMon"] = bug.principal_axes(wrap=False)
 
-    for prop, value in results.items():
-        np.save(f"{save_to}{sim_name}-{prop}.npy", value)
+    def _atom_groups(self) -> None:
+        # the polymer:
+        self.bug: mda.AtomGroup = self._universe.select_atoms('resid 1')
 
-    print("done.")
+    def _set_trj_slice(
+        self
+    ) -> Tuple[int, mda.coordinates.base.FrameIteratorSliced]:
+        if self._continuous is True:
+            return self._universe.trajectory.n_frames - 1, self._universe.trajectory[0: -1]
+        return self._universe.trajectory.n_frames, self._universe.trajectory
+
+    def _probe_frame(self, idx) -> None:
+        self._collectors["transSizeTMon"][idx] = \
+            transverse_size(self.bug.positions, axis=2)
+        self._collectors["fsdTMon"][idx] = fsd(self.bug.positions, axis=2)
+        self._collectors["gyrTMon"][idx] = self.bug.radius_of_gyration()
+        self._collectors["rfloryTMon"][idx] = end_to_end(self.bug.positions)
+        self._collectors["asphericityTMon"][idx] = \
+            self.bug.asphericity(wrap=False, unwrap=False)
+        self._collectors["shapeTMon"][idx] = \
+            self.bug.shape_parameter(wrap=False)
+        self._collectors["principalTMon"][idx] = \
+            self.bug.principal_axes(wrap=False)
 
 
 def sum_rule_cyl_all(
@@ -411,25 +621,6 @@ def sum_rule_cyl_all(
         Whether a `trajectory` file is a part of a sequence of trajectory
         segments or not.
     """
-    if (lineage == 'segment') & (continuous is False):
-        warnings.warn(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.",
-            UserWarning)
-    print("Setting the name of analyze file...\n")
-    sim_info = SumRuleCyl(
-        trajectory,
-        lineage,
-        'cylindrical',
-        'all',
-        'linear'
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...")
     # dict of bin edges:
     bin_edges = {
         'rEdge': {
@@ -5305,120 +5496,6 @@ def hns_cyl_all(
         }
     }
     write_hists(hist_2d_groups, sim_name, save_to, std=False)
-    print('done.')
-
-
-def two_mon_dep_cub_bug(
-    topology: str,
-    trajectory: str,
-    lineage: str,
-    save_to: str = './',
-    continuous: bool = False
-) -> None:
-    """Runs various analyses on a `lineage` simulation of a 'bug' atom group in
-    the `geometry` of interest.
-
-    Note
-    ----
-    In this project, coordinates are wrapped and unscaled in a
-    trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
-    simulation box; and consequently, coordinates of all the particles in a
-    trajectory or topology file is recentered to fulfill this constraint.
-
-    In MDAnalysis, selections by `universe.select_atoms` always return an
-    AtomGroup with atoms sorted according to their index in the topology.
-    This feature is used below to measure the end-to-end distance (Flory
-    radius), genomic distance (index differnce along the backbone), and any
-    other measurement that needs the sorted indices of atoms,bonds, angles, and
-    any other attribute of an atom.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str, default './'
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory
-        segments or not.
-    """
-    if (lineage == 'segment') & (continuous is False):
-        warnings.warn(
-            "lineage is "
-            f"'{lineage}' "
-            "and 'continuous' is "
-            f"'{continuous}. "
-            "Please ensure the "
-            f"'{trajectory}' is NOT part of a sequence of trajectories.",
-            UserWarning
-        )
-    print("Setting the name of analyze file...")
-    sim_info = TwoMonDep(
-        trajectory,
-        lineage,
-        'cubic',
-        'bug',
-        'atom'
-    )
-    sim_name = sim_info.lineage_name + "-" + sim_info.group
-    print("\n" + sim_name + " is analyzing...\n")
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dcrowd * np.sqrt(
-        sim_info.mcrowd * sim_info.eps_others)  # LJ time unit
-    lj_nstep = sim_info.bdump  # Sampling steps via dump command in Lammps
-    lj_dt = sim_info.dt
-    sim_real_dt = lj_nstep * lj_dt * time_unit
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id type x y z", dt=sim_real_dt
-        )
-    # slicing trajectory based the continuous condition
-    if continuous:
-        sliced_trj = cell.trajectory[0: -1]
-        n_frames = cell.trajectory.n_frames - 1
-    else:
-        sliced_trj = cell.trajectory
-        n_frames = cell.trajectory.n_frames
-    # selecting atom groups
-    bug: mda.AtomGroup = cell.select_atoms('type 1')  # bug: small & large mon
-    # defining collectors
-    # -bug:
-    gyr_t = np.zeros(n_frames)
-    bug_x_t = np.zeros(n_frames)
-    bug_y_t = np.zeros(n_frames)
-    bug_z_t = np.zeros(n_frames)
-    principal_axes_t = np.empty([n_frames, 3, 3])
-    asphericity_t = np.zeros(n_frames)
-    shape_parameter_t = np.zeros(n_frames)
-    for idx, _ in enumerate(sliced_trj):
-        # bug:
-        # various measures of chain size
-        gyr_t[idx] = bug.radius_of_gyration()
-        bug_x_t[idx] = fsd(bug.positions,axis=0)
-        bug_y_t[idx] = fsd(bug.positions,axis=1)
-        bug_z_t[idx] = fsd(bug.positions,axis=2)
-        # shape parameters:
-        asphericity_t[idx] = bug.asphericity(wrap=False, unwrap=True)
-        principal_axes_t[idx] = bug.principal_axes(wrap=False)
-        shape_parameter_t[idx] = bug.shape_parameter(wrap=False)
-    # Saving collectors to memory
-    # -bug
-    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
-    np.save(save_to + sim_name + '-xTMon.npy', bug_x_t)
-    np.save(save_to + sim_name + '-yTMon.npy', bug_y_t)
-    np.save(save_to + sim_name + '-zTMon.npy', bug_z_t)
-    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
-    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
-    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
-    # Simulation stamps:
-    outfile = save_to + sim_name + "-stamps.csv"
-    stamps_report(outfile, sim_info, n_frames)
     print('done.')
 
 
