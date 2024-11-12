@@ -7,15 +7,64 @@ from polyphys.manage.parser import (
     SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl,
     SumRuleCubHeteroLinear, SumRuleCubHeteroRing, TwoMonDep
     )
-from polyphys.manage.typer import ParserType
+from polyphys.manage.typer import ParserT
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
 
 
+def stamps_report_with_measures(
+    report_name: str,
+    sim_info: Union[TransFociCub, TransFociCyl],
+    n_frames: int,
+    measures: Dict[str, float],
+) -> None:
+    """
+    Writes a summary of stamps (properties and attributes) of a simulation
+    to file.
+
+    `stamps_report` generates a dataset called `report_name` of the
+    values of some attributes of `sim_info`, the number of frames
+    `n_frames`, all the key and value pairs in all the given dictionaries
+    `measures`.
+
+    Parameters
+    ----------
+    report_name: str
+        Name of the report.
+    sim_info: ParserT
+        A ParserT instant object that contains information about the name,
+        parents,and physical attributes of a simulation.
+    n_frames: int
+        Number of frames/snapshots/configurations in a simulation.
+    measures: Dict
+        A dictionary of measures where a key and value pair is the name and
+        value of a physical property.
+    """
+    with open(report_name, mode='w') as report:
+        # write header
+        for lineage_name in sim_info._genealogy:
+            report.write(f"{lineage_name},")
+        for attr_name in sim_info.attributes:
+            report.write(f"{attr_name},")
+        for measure_name in measures.keys():  # each measure is a dict
+            report.write(f"{measure_name},")
+        report.write("n_frames\n")
+        # write values
+        for lineage_name in sim_info.genealogy:
+            attr_value = getattr(sim_info, lineage_name)
+            report.write(f"{attr_value},")
+        for attr_name in sim_info.attributes:
+            attr_value = getattr(sim_info, attr_name)
+            report.write(f"{attr_value},")
+        for measure_value in measures.values():
+            report.write(f"{measure_value},")
+        report.write(f"{n_frames}")
+
+
 def stamps_report(
     report_name: str,
-    sim_info: ParserType,
+    sim_info: ParserT,
     n_frames: int
 ) -> None:
     """
@@ -266,6 +315,7 @@ def write_hists(
         # end of loop
     # end of loop
 
+
 def sum_rule_cyl_bug(
     topology: str,
     trajectory: str,
@@ -335,8 +385,6 @@ def sum_rule_cyl_bug(
         topology, trajectory, topology_format='DATA',
         format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
         atom_style="id resid type x y z", dt=sim_real_dt)
-    # selecting atom groups
-    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # the polymer
     # slicing trajectory based the continuous condition
     if continuous:
         sliced_trj = cell.trajectory[0: -1]
@@ -344,30 +392,37 @@ def sum_rule_cyl_bug(
     else:
         sliced_trj = cell.trajectory
         n_frames = cell.trajectory.n_frames
-    stamps_report(f"{save_to}{sim_name}-stamps.csv", sim_info, n_frames)
+    # selecting atom groups
+    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # the polymer
     # collectors
-    results = {
-        "transSizeTMon": np.zeros(n_frames),
-        "fsdTMon": np.zeros(n_frames),
-        "gyrTMon": np.zeros(n_frames),
-        "rfloryTMon": np.zeros(n_frames),
-        "asphericityTMon": np.zeros(n_frames),
-        "shapeTMon": np.zeros(n_frames),
-        "principalTMon": np.zeros([n_frames, 3, 3])
-        }
-    for _, _ in enumerate(sliced_trj):
-        results["transSizeTMon"] = transverse_size(bug.positions, axis=2)
-        results["fsdTMon"] = fsd(bug.positions, axis=2)
-        results["gyrTMon"] = bug.radius_of_gyration()
-        results["rfloryTMon"] = end_to_end(bug.positions)
-        results["asphericityTMon"] = bug.asphericity(wrap=False, unwrap=False)
-        results["shapeTMon"] = bug.shape_parameter(wrap=False)
-        results["principalTMon"] = bug.principal_axes(wrap=False)
+    trans_size_t = np.zeros(n_frames)
+    fsd_t = np.zeros(n_frames)
+    rflory_t = np.zeros(n_frames)
+    gyr_t = np.zeros(n_frames)
+    asphericity_t = np.zeros(n_frames)
+    shape_parameter_t = np.zeros(n_frames)
+    principal_axes_t = np.empty([n_frames, 3, 3])
+    for idx, _ in enumerate(sliced_trj):
+        # various measures of chain size
+        trans_size_t[idx] = transverse_size(bug)
+        fsd_t[idx] = fsd(bug.positions)
+        gyr_t[idx] = bug.radius_of_gyration()
+        rflory_t[idx] = end_to_end(bug.positions)
+        asphericity_t[idx] = bug.asphericity(wrap=False, unwrap=False)
+        shape_parameter_t[idx] = bug.shape_parameter(wrap=False)
+        principal_axes_t[idx] = bug.principal_axes(wrap=False)
 
-    for prop, value in results.items():
-        np.save(f"{save_to}{sim_name}-{prop}.npy", value)
-
-    print("done.")
+    np.save(save_to + sim_name + '-transSizeTMon.npy', trans_size_t)
+    np.save(save_to + sim_name + '-fsdTMon.npy', fsd_t)
+    np.save(save_to + sim_name + '-gyrTMon.npy', gyr_t)
+    np.save(save_to + sim_name + '-rfloryTMon.npy', rflory_t)
+    np.save(save_to + sim_name + '-asphericityTMon.npy', asphericity_t)
+    np.save(save_to + sim_name + '-shapeTMon.npy', shape_parameter_t)
+    np.save(save_to + sim_name + '-principalTMon.npy', principal_axes_t)
+    # Simulation stamps:
+    outfile = save_to + sim_name + "-stamps.csv"
+    stamps_report(outfile, sim_info, n_frames)
+    print('done.')
 
 
 def sum_rule_cyl_all(
