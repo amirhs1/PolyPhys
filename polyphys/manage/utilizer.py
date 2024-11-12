@@ -1,14 +1,11 @@
 """Miscellaneous tools used by different modules.
 """
 import re
-import numpy as np
 import gzip
-from gzip import GzipFile
-import os
-from typing import Generator, Optional, List, IO, TextIO, Any, Union, Literal, Tuple
+from typing import Generator, Optional, List, Union, Tuple
 from contextlib import contextmanager
-
-InputT = Union[GzipFile, TextIO, IO[Any]]
+import numpy as np
+from .typer import InputType
 
 
 def read_camel_case(word: str) -> List[Union[str, Tuple[str]]]:
@@ -91,12 +88,8 @@ def split_alphanumeric(alphanumeric: str) -> List[Union[int, str, float]]:
     """
     number_pattern = re.compile(r"(\d+\.*\d*)")
     parts = number_pattern.split(alphanumeric)
-    parts = [
-        int(part) if part.isdigit() else to_float_if_possible(part)
-        for part in parts
-        if part
-    ]
-    return parts
+    return [int(part) if part.isdigit() else
+            to_float_if_possible(part) for part in parts if part]
 
 
 def sort_filenames(
@@ -141,191 +134,9 @@ def sort_filenames(
     return list(zip(*grouped_filenames))
 
 
-def create_fullname(name: str, group: str, prop: str) -> str:
+def openany(filepath: str, mode: str = 'r') -> InputType:
     """
-    Creates a structured filename based on a base name, particle group,
-    and property.
-
-    Parameters
-    ----------
-    name : str
-        The base name for the output file.
-    group : str
-        Type of the particle group (e.g., 'bug' or 'nucleoid').
-    prop : str
-        The physical property name for the data (e.g., 'density').
-
-    Returns
-    -------
-    str
-        A string that combines `name`, `group`, and `prop` in a
-        hyphen-separated format, suitable for use as a filename.
-
-    Examples
-    --------
-    >>> create_fullname("sample", "bug", "density")
-    'sample-bug-density'
-    """
-    return "-".join([name, group, prop])
-
-
-def save_parent(
-    filename: str,
-    data: Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]],
-    save_to: str,
-) -> None:
-    """
-    Saves the `data` to a specified file format, allowing structured file
-    naming.
-
-    Parameters
-    ----------
-    filename : str
-        The output file name.
-    data : Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]]
-        Data to be saved. Accepted types:
-
-        - `np.ndarray`: Saved as a .npy file.
-        - `pd.DataFrame`: Saved as a .csv file.
-        - `dict` of `np.ndarray`: Each entry saved as a separate .npy file
-        with suffix.
-
-    save_to : str
-        Path to the directory where the file will be saved.
-
-    Raises
-    ------
-    TypeError
-        If `data` type does not match any of the supported formats.
-
-    Examples
-    --------
-    Save a numpy array to a `.npy` file in the specified directory:
-
-    >>> save_parent("output", np.array([1, 2, 3]), "density", "all", "/data/")
-
-    Save a DataFrame to a `.csv` file:
-
-    >>> import pandas as pd
-    >>> df = pd.DataFrame({"A": [1, 2, 3]})
-    >>> save_parent("output", df, "density", "all", "/data/")
-    """
-    file_path = os.path.join(save_to, filename)
-
-    # Save data based on type
-    if isinstance(data, pd.DataFrame):
-        data.to_csv(f"{file_path}.csv", index=False)
-    elif isinstance(data, np.ndarray):
-        np.save(f"{file_path}.npy", data)
-    elif isinstance(data, dict):
-        for prop_key, prop_data in data.items():
-            _, prop_measure = prop_key.split("-")
-            np.save(f"{file_path}-{prop_measure}.npy", prop_data)
-    else:
-        raise TypeError(
-            f"Unsupported data type {type(data).__name__}."
-            + "Expected pd.DataFrame, np.ndarray, or dict of np.ndarray."
-        )
-
-
-def make_database(
-    old_database: str,
-    phase: Literal[
-        "simAll", "simCont", "log", "trj", "probe", "analysis", "viz", "galaxy"
-    ],
-    stage: Literal["segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"],
-    group: Literal["bug", "nucleoid", "all"],
-) -> str:
-    """
-    Create a new directory path based on the provided `old_database` path and
-    specified parameters (`phase`, `group`, and `stage`). If the directory does
-    not already exist, it will be created.
-
-    The `old_database` is expected to follow a structured naming convention:
-    `prefix-old_phase-old_group-old_stage`, where each part represents an
-    aspect of the directory's role. This base structure helps generate the
-    new path.
-
-    The newly constructed directory name follows:
-        `prefix-phase-group-stage`
-
-    Parameters
-    ----------
-    old_database : str
-        Path to the reference directory whose structure will be used as a base.
-    phase : {"simAll", "simCont", "log", "trj", "probe", "analysis", "viz",
-            "galaxy"}
-        The new phase name for the directory, specifying its role in
-        the workflow.
-    stage : {"segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"}
-        The stage of processing or data type represented in the new directory.
-    group : {"bug", "nucleoid", "all"}
-        Type of particle group related to the data in the directory.
-
-    Returns
-    -------
-    str
-        The path to the newly created directory or the existing path if it
-        already exists.
-
-    Raises
-    ------
-    ValueError
-        If any parameter is not in its list of accepted values.
-
-    Examples
-    --------
-    Examples of directory transformation:
-        - Input: `old_database = root/parent1/.../parentN/old_phase/old_dir`
-        - Result: `new_database = root/parent1/.../parentN/phase/new_dir`
-
-    Construct a new directory path based on an existing database path:
-
-    >>> make_database('/root/data/old_analysis/simulations', 'analysis',
-                     'wholeSim', 'bug')
-    '/root/data/analysis/prefix-bug-wholeSim/'
-    """
-    invalid_keyword(
-        phase,
-        ["simAll", "simCont", "log", "trj", "probe", "analysis", "viz",
-         "galaxy"],
-    )
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(
-        stage, ["segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"]
-    )
-
-    old_path = pathlib.Path(old_database)
-
-    # Common prefix derived from old_database to create new directory name
-    prefix = old_path.parts[-1].split("*")[0].split("-")[0]
-    new_directory = "-".join([part for part in [prefix, group, stage] if part])
-
-    # Construct the new database path in the same parent directory level as
-    # the old one
-    new_database_parts = list(old_path.parts[:-2]) + [phase, new_directory]
-    new_database = pathlib.Path(*new_database_parts)
-
-    # Avoid double slashes at the start of the path
-    if str(new_database).startswith("//"):
-        new_database = pathlib.Path(str(new_database)[1:])
-
-    # Create the new directory if it doesn't already exist
-    try:
-        new_database.mkdir(parents=True, exist_ok=False)
-    except FileExistsError as error:
-        print(error)
-        print("Files are saved/overwritten in an existing directory.")
-
-    return str(new_database) + "/"
-
-
-def openany(
-    filepath: str,
-    mode: str = 'r'
-) -> InputT:
-    """
-    Open a regular or gzipped file.
+    Opens a regular or gzipped file.
 
     Parameters
     ----------
@@ -339,21 +150,17 @@ def openany(
     Generator[IO, None, None]
         A file object.
     """
-    _, ext = os.path.splitext(filepath)
-    if ext == ".gz":
-        file = gzip.open(filepath, mode=mode)
-    else:
-        file = open(filepath, mode=mode)
-    return file
+    open_func = gzip.open if filepath.endswith(".gz") else open
+    return open_func(filepath, mode=mode)
 
 
 @contextmanager
 def openany_context(
     filepath: str,
     mode: str = 'r'
-) -> Generator[InputT, None, None]:
+) -> Generator[InputType, None, None]:
     """
-    Open a regular or gzipped file.
+    Opens a regular or gzipped file, providing a file-like object.
 
     Parameters
     ----------
@@ -364,23 +171,23 @@ def openany_context(
 
     Yields
     ------
-    Generator:
+    Generator[InputT, None, None]
         A file object.
     """
-    _, ext = os.path.splitext(filepath)
-    if ext == ".gz":
-        file = gzip.open(filepath, mode=mode)
-    else:
-        file = open(filepath, mode=mode)
+    open_func = gzip.open if filepath.endswith(".gz") else open
+    file = open_func(filepath, mode=mode)
     try:
         yield file
     except Exception as exp:
-        print(exp)
-    file.close()
+        print(f"Error opening {filepath}: {exp}")
+        raise
+    finally:
+        file.close()
 
 
 def round_down_first_non_zero(x: float) -> float:
-    """rounds down a number to its first non-zero digit.
+    """
+    Rounds down a number to its first non-zero digit.
 
     Parameters
     ----------
@@ -394,10 +201,9 @@ def round_down_first_non_zero(x: float) -> float:
     """
     if x == 0:
         return x
-    else:
-        exponent = np.floor(np.log10(abs(x)))
-        non_zero = 10 ** exponent
-        return round(np.floor(x/non_zero)*non_zero, int(abs(exponent)))
+    exponent = np.floor(np.log10(abs(x)))
+    non_zero = 10 ** exponent
+    return round(np.floor(x/non_zero)*non_zero, int(abs(exponent)))
 
 
 def round_up_nearest(
@@ -405,7 +211,8 @@ def round_up_nearest(
     divider: float,
     round_to: int
 ) -> float:
-    """rounds up `dividend` by `divider` up to `round_to` significant digits.
+    """
+    Rounds up `dividend` by `divider` up to `round_to` significant digits.
 
     Parameters
     ----------
@@ -416,8 +223,8 @@ def round_up_nearest(
     round_to: int
         The number of the significant digits.
 
-    Return
-    ------
+    Returns
+    -------
     float:
         The rounded number which is divisible by the divisor.
     """
@@ -440,6 +247,11 @@ def invalid_keyword(
         Array of valid keywords
     message: str
         Message to be printed.
+
+    Raises
+    ------
+    ValueError
+        If `keyword` is not in `valid_keywords`.
     """
     if message is None:
         message = " is an invalid option. Please select one of " + \

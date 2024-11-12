@@ -60,7 +60,7 @@ pattern encodes metadata about lineage, phase, group, property, and processing
 stage. Example patterns include:
 
 - `whole|segment.group.run.lammpstrj` for trajectory files.
-- `lineage-phase-group-property_stage.extension` for processed files.
+- `lineage-phase-group-prop_stage.extension` for processed files.
 
 Dependencies
 ============
@@ -133,21 +133,195 @@ import pathlib
 from glob import glob
 import numpy as np
 import pandas as pd
-
-from ..manage.typer import ParserT, TransFociT
+from ..manage.typer import GroupT, PropertyT, ParserType
 from ..analyze.clusters import whole_dist_mat_foci
-from .utilizer import (
-    invalid_keyword
-    save_parent,
-)
+from .utilizer import invalid_keyword, sort_filenames, round_up_nearest
+
+
+def create_fullname(name: str, group: GroupT, prop: PropertyT) -> str:
+    """
+    Creates a structured filename based on a base name, particle group,
+    and property.
+
+    Parameters
+    ----------
+    name : str
+        The base name.
+    group : str
+        Particle group (e.g., 'bug' or 'nucleoid').
+    prop : str
+        Physical property name (e.g., 'density').
+
+    Returns
+    -------
+    str
+        A string that combines `name`, `group`, and `prop` in a
+        hyphen-separated format.
+
+    Examples
+    --------
+    >>> create_fullname("sample", "bug", "density")
+    'sample-bug-density'
+    """
+    return "-".join([name, group, prop])
+
+
+def save_parent(
+    filename: str,
+    data: Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]],
+    save_to: str,
+) -> None:
+    """
+    Saves the `data` to a specified file format, allowing structured file
+    naming.
+
+    Parameters
+    ----------
+    filename : str
+        The output file name.
+    data : Union[np.ndarray, pd.DataFrame, Dict[str, np.ndarray]]
+        Data to be saved. Accepted types:
+
+        - `np.ndarray`: Saved as a .npy file.
+        - `pd.DataFrame`: Saved as a .csv file.
+        - `dict` of `np.ndarray`: Each entry saved as a separate .npy file
+        with suffix.
+
+    save_to : str
+        Path to the directory where the file will be saved.
+
+    Raises
+    ------
+    TypeError
+        If `data` type does not match any of the supported formats.
+
+    Examples
+    --------
+    Save a numpy array to a `.npy` file in the specified directory:
+
+    >>> save_parent("output", np.array([1, 2, 3]), "density", "all", "/data/")
+
+    Save a DataFrame to a `.csv` file:
+
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({"A": [1, 2, 3]})
+    >>> save_parent("output", df, "density", "all", "/data/")
+    """
+    file_path = os.path.join(save_to, filename)
+
+    # Save data based on type
+    if isinstance(data, pd.DataFrame):
+        data.to_csv(f"{file_path}.csv", index=False)
+    elif isinstance(data, np.ndarray):
+        np.save(f"{file_path}.npy", data)
+    elif isinstance(data, dict):
+        for prop_key, prop_data in data.items():
+            _, prop_measure = prop_key.split("-")
+            np.save(f"{file_path}-{prop_measure}.npy", prop_data)
+    else:
+        raise TypeError(
+            f"Unsupported data type {type(data).__name__}."
+            + "Expected pd.DataFrame, np.ndarray, or dict of np.ndarray."
+        )
+
+
+def make_database(
+    old_database: str,
+    phase: Literal[
+        "simAll", "simCont", "log", "trj", "probe", "analysis", "viz", "galaxy"
+    ],
+    stage: Literal["segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"],
+    group: Literal["bug", "nucleoid", "all"],
+) -> str:
+    """
+    Create a new directory path based on the provided `old_database` path and
+    specified parameters (`phase`, `group`, and `stage`). If the directory does
+    not already exist, it will be created.
+
+    The `old_database` is expected to follow a structured naming convention:
+    `prefix-old_phase-old_group-old_stage`, where each part represents an
+    aspect of the directory's role. This base structure helps generate the
+    new path.
+
+    The newly constructed directory name follows:
+        `prefix-phase-group-stage`
+
+    Parameters
+    ----------
+    old_database : str
+        Path to the reference directory whose structure will be used as a base.
+    phase : {"simAll", "simCont", "log", "trj", "probe", "analysis", "viz",
+            "galaxy"}
+        The new phase name for the directory, specifying its role in
+        the workflow.
+    stage : {"segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"}
+        The stage of processing or data type represented in the new directory.
+    group : {"bug", "nucleoid", "all"}
+        Type of particle group related to the data in the directory.
+
+    Returns
+    -------
+    str
+        The path to the newly created directory or the existing path if it
+        already exists.
+
+    Raises
+    ------
+    ValueError
+        If any parameter is not in its list of accepted values.
+
+    Examples
+    --------
+    Examples of directory transformation:
+        - Input: `old_database = root/parent1/.../parentN/old_phase/old_dir`
+        - Result: `new_database = root/parent1/.../parentN/phase/new_dir`
+
+    Construct a new directory path based on an existing database path:
+
+    >>> make_database('/root/data/old_analysis/simulations', 'analysis',
+                     'wholeSim', 'bug')
+    '/root/data/analysis/prefix-bug-wholeSim/'
+    """
+    invalid_keyword(
+        phase,
+        ["simAll", "simCont", "log", "trj", "probe", "analysis", "viz",
+         "galaxy"],
+    )
+    invalid_keyword(group, ["bug", "nucleoid", "all"])
+    invalid_keyword(
+        stage, ["segment", "wholeSim", "ens", "ensAvg", "space", "galaxy"]
+    )
+
+    old_path = pathlib.Path(old_database)
+
+    # Common prefix derived from old_database to create new directory name
+    prefix = old_path.parts[-1].split("*")[0].split("-")[0]
+    new_directory = "-".join([part for part in [prefix, group, stage] if part])
+
+    # Construct the new database path in the same parent directory level as
+    # the old one
+    new_database_parts = list(old_path.parts[:-2]) + [phase, new_directory]
+    new_database = pathlib.Path(*new_database_parts)
+
+    # Avoid double slashes at the start of the path
+    if str(new_database).startswith("//"):
+        new_database = pathlib.Path(str(new_database)[1:])
+
+    # Create the new directory if it doesn't already exist
+    try:
+        new_database.mkdir(parents=True, exist_ok=False)
+    except FileExistsError as error:
+        print(error)
+        print("Files are saved/overwritten in an existing directory.")
+
+    return str(new_database) + "/"
+
 
 def whole_from_segments(
-    property_: str,
+    prop: PropertyT,
     segments: List[Tuple[str]],
-    parser: ParserT,
-    geometry: Literal["cylindrical", "slit", "cubic"],
-    group: Literal["bug", "nucleoid", "all"],
-    topology: Literal["ring", "linear", "branched"],
+    parser: ParserType,
+    group: GroupT,
     relation: Literal["histogram", "tseries", "bin_edge"],
     save_to: Optional[str] = None,
 ) -> Dict[str, np.ndarray]:
@@ -158,21 +332,16 @@ def whole_from_segments(
 
     Parameters
     ----------
-    property_ : str
+    prop: PropertyT
         The physical property to process (e.g., "density").
     segments : List[Tuple[str]]
         List of tuples where each tuple contains at least one segment file path
-        (e.g., to CSV files) for the `property_`.
-    parser : ParserT
+        (e.g., to CSV files) for the `prop_`.
+    parser : ParserType
         A parser instance from `PolyPhys.manage.parser` module that interprets
         file paths or names and extracts attributes such as the `whole` name.
-    geometry : str
-        The simulation box geometry. Must be one of {'cylindrical', 'slit',
-        'cubic'}.
-    group : str
-        Type of the particle group. Must be one of {'bug', 'nucleoid', 'all'}.
-    topology : str
-        The polymer topology. Must be one of {'linear', 'ring', 'branched'}.
+    group : GroupT
+        Type of the particle group.
     relation : str
         Specifies how to combine segments into a whole. Accepted values:
 
@@ -202,7 +371,7 @@ def whole_from_segments(
     Raises
     ------
     ValueError
-        If `geometry`, `group`, or `relation` have invalid values.
+        If `relation` have invalid values.
 
     Notes
     -----
@@ -212,19 +381,14 @@ def whole_from_segments(
     Examples
     --------
     >>> whole_data = whole_from_segment(
-            property_='density',
-            segments=[('path/to/segment1.npy',), ('path/to/segment2.npy',)],
-            parser=my_parser_instance,
-            geometry='cubic',
-            group='bug',
-            topology='linear',
+            'density',
+            [('path/to/segment1.npy',), ('path/to/segment2.npy',)],
+            SumRuleCyl,
+            'bug',
             relation='histogram',
             save_to='/output/path'
         )
     """
-    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(topology, ["linear", "ring", "branched"])
     invalid_keyword(relation, ["histogram", "tseries", "bin_edge"])
 
     # Define combination strategies for each relation type
@@ -237,7 +401,7 @@ def whole_from_segments(
     # Combine segments into wholes based on segment names and relation type
     grouped_segments: Dict[str, List[np.ndarray]] = {}
     for seg_path in segments:
-        seg_info = parser(seg_path[0], "segment", geometry, group, topology)
+        seg_info = parser(seg_path[0], "segment", group)
         whole_name = getattr(seg_info, "whole")
         segment = np.load(seg_path[0])
 
@@ -254,7 +418,7 @@ def whole_from_segments(
 
     if save_to:
         for whole_name, whole_data in wholes.items():
-            whole_fullname = create_fullname(whole_name, group, property_)
+            whole_fullname = create_fullname(whole_name, group, prop)
             save_parent(whole_fullname, whole_data, save_to)
 
     return wholes
@@ -262,10 +426,8 @@ def whole_from_segments(
 
 def whole_from_file(
     whole_paths: List[Tuple[str]],
-    parser: ParserT,
-    geometry: Literal["cylindrical", "slit", "cubic"],
-    group: Literal["bug", "nucleoid", "all"],
-    topology: Literal["ring", "linear", "branched"],
+    parser: ParserType,
+    group: GroupT,
 ) -> Dict[str, np.ndarray]:
     """
     Loads data from "whole" files for a specified physical property of a
@@ -276,28 +438,19 @@ def whole_from_file(
     ----------
     whole_paths : List[Tuple[str]]
         List of tuples where each tuple contains the path to a single file
-        representing a whole dataset for the `property_`. Each file is loaded
+        representing a whole dataset for the `prop_`. Each file is loaded
         and processed independently.
-    parser : ParserT
+    parser : ParserType
         A parser instance from `PolyPhys.manage.parser` module that interprets
         file paths and extracts attributes such as the `whole` name.
-    geometry : {"cylindrical", "slit", "cubic"}
-        Shape of the simulation box, indicating spatial configuration.
-    group : {"bug", "nucleoid", "all"}
+    group : GroupT
         The particle group to which the data pertains.
-    topology : {"ring", "linear", "branched"}
-        The polymer topology associated with the data.
 
     Returns
     -------
     Dict[str, np.ndarray]
         Dictionary where keys are the `whole` names (derived from each file
         path)and values are numpy arrays containing the loaded data.
-
-    Raises
-    ------
-    ValueError
-        If `geometry`, `group`, or `topology` contain invalid values.
 
     Notes
     -----
@@ -313,19 +466,13 @@ def whole_from_file(
 
     >>> whole_data = whole_from_file(
             whole_paths=[('path/to/whole1.npy',), ('path/to/whole2.npy',)],
-            parser=my_parser_instance,
-            geometry='cubic',
-            group='bug',
-            topology='linear'
+            TransFociCyl,
+            'bug'
         )
     """
-    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(topology, ["linear", "ring", "branched"])
-
     wholes: Dict[str, np.ndarray] = {}
     for whole_path in whole_paths:
-        whole_info = parser(whole_path[0], "whole", geometry, group, topology)
+        whole_info = parser(whole_path[0], "whole", group)
         whole_name = getattr(whole_info, "whole")
         wholes[whole_name] = np.load(whole_path[0])
 
@@ -334,10 +481,8 @@ def whole_from_file(
 
 def whole_from_dist_mat_t(
     whole_paths: List[Tuple[str]],
-    parser: TransFociT,
-    geometry: Literal["cylindrical", "slit", "cubic"],
-    group: Literal["bug", "nucleoid", "all"],
-    topology: Literal["ring", "linear", "branched"],
+    parser: ParserType,
+    group: GroupT,
 ) -> Tuple[
     Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]
 ]:
@@ -355,12 +500,8 @@ def whole_from_dist_mat_t(
     parser : TransFociT
         A parser instance that processes file paths to extract attributes such
         as the whole name and distance matrix information.
-    geometry : {"cylindrical", "slit", "cubic"}
-        Shape of the simulation box, indicating spatial configuration.
-    group : {"bug", "nucleoid", "all"}
+    group : GroupT
         The particle group to which the data pertains.
-    topology : {"ring", "linear", "branched"}
-        The polymer topology associated with the data.
 
     Returns
     -------
@@ -388,22 +529,16 @@ def whole_from_dist_mat_t(
     Load distance matrix data for multiple physical properties:
 
     >>> freqs, rdfs, tseries = whole_from_dist_mat_t(
-            whole_paths=[('path/to/whole1.npy',), ('path/to/whole2.npy',)],
-            parser=my_parser_instance,
-            geometry='cubic',
-            group='bug',
-            topology='linear'
+            [('path/to/whole1.npy',), ('path/to/whole2.npy',)],
+            my_parser_instance,
+            'bug'
         )
     """
-    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(topology, ["linear", "ring", "branched"])
-
     wholes_freqs: Dict[str, pd.DataFrame] = {}
     wholes_rdfs: Dict[str, pd.DataFrame] = {}
     wholes_tseries: Dict[str, pd.DataFrame] = {}
     for whole_path in whole_paths:
-        whole_info = parser(whole_path[0], "whole", geometry, group, topology)
+        whole_info = parser(whole_path[0], "whole", group)
         whole_freqs, whole_rdfs, whole_tseries = whole_dist_mat_foci(
             whole_path[0], whole_info
         )
@@ -603,25 +738,23 @@ def ens_from_df(
 
 
 def ensemble(
-    property_: str,
+    prop: PropertyT,
     wholes: Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]],
-    parser: ParserT,
-    geometry: Literal["cylindrical", "slit", "cubic"],
-    group: Literal["bug", "nucleoid", "all"],
-    topology: Literal["ring", "linear", "branched"],
+    parser: ParserType,
+    group: GroupT,
     whole_type: Literal["vector", "matrix", "dataframe", "bin_edge"],
     whole_edges: Optional[Dict[str, np.ndarray]] = None,
     save_to: Optional[str] = None,
 ) -> Dict[str, Union[np.ndarray, pd.DataFrame]]:
     """
     Generates an ensemble by  merging "whole" data arrays or DataFrames
-    representing a specified `property_` of a particle `group` within a
+    representing a specified `prop_` of a particle `group` within a
     defined `geometry`. The `whole_type` determines the structure of each
     "whole" and the merging approach.
 
     Parameters
     ----------
-    property_ : str
+    prop: PropertyT
         The physical property for which the ensemble is generated (e.g.,
         "density").
     wholes : Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]]
@@ -630,12 +763,8 @@ def ensemble(
     parser : ParserT
         An instance of the parser class to infer attributes like ensemble name
         from each "whole".
-    geometry : {"cylindrical", "slit", "cubic"}
-        The geometry of the simulation box.
-    group : {"bug", "nucleoid", "all"}
+    group : GroupT
         Type of the particle group being processed.
-    topology : {"ring", "linear", "branched"}
-        The polymer topology.
     whole_type : {"vector", "matrix", "dataframe", "bin_edge"}
         Specifies the type of each "whole" and defines the merging method:
 
@@ -681,18 +810,14 @@ def ensemble(
             "whole2": np.array([2, 3, 4])
         }
     >>> ensembles = ensemble(
-            property_="density",
-            wholes=wholes,
-            parser=my_parser_instance,
-            geometry="cubic",
-            group="bug",
-            topology="linear",
+            "density",
+            wholes,
+            HnsCyl,
+            "bug",
             whole_type="vector",
             save_to="/output/path"
         )
     """
-    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
     invalid_keyword(whole_type, ["vector", "matrix", "dataframe", "bin_edge"])
 
     merging_func: Dict[str, Callable] = {
@@ -706,9 +831,7 @@ def ensemble(
     bin_centers: Dict[str, np.ndarray] = {}
     if whole_edges is not None:
         for whole_name, whole_data in wholes.items():
-            whole_info = parser(
-                whole_name, "whole", geometry, group, topology, ispath=False
-            )
+            whole_info = parser(whole_name, "whole", group)
             ens_name = getattr(whole_info, "ensemble_long")
             if ens_name not in ens_wholes:
                 ens_wholes[ens_name] = {}
@@ -718,9 +841,7 @@ def ensemble(
             )
     else:
         for whole_name, whole_data in wholes.items():
-            whole_info = parser(
-                whole_name, "whole", geometry, group, topology, ispath=False
-            )
+            whole_info = parser(whole_name, "whole", group)
             ens_name = getattr(whole_info, "ensemble_long")
             if ens_name not in ens_wholes:
                 ens_wholes[ens_name] = {}
@@ -733,7 +854,7 @@ def ensemble(
     # Save ensemble data object if save_to is specified
     if save_to:
         for ens_name, data in ensembles.items():
-            ens_fullname = create_fullname(ens_name, group, property_)
+            ens_fullname = create_fullname(ens_name, group, prop)
             save_parent(ens_fullname, data, save_to)
 
     return ensembles
@@ -895,29 +1016,26 @@ def ens_avg_from_df(
 
 
 def ensemble_avg(
-    property_: str,
+    prop: PropertyT,
     ensembles: Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]],
-    geometry: Literal["cylindrical", "slit", "cubic"],
-    group: Literal["bug", "nucleoid", "all"],
+    group: GroupT,
     ens_type: Literal["dataframe", "ndarray", "bin_edge"],
     exclude: Optional[List[str]] = None,
     save_to: Optional[str] = None,
 ) -> Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]]:
     """
-    Generates ensemble-averaged data for a specified `property_` by averaging
+    Generates ensemble-averaged data for a specified `prop_` by averaging
     "whole" data in each "ensemble" DataFrame or array within `ensembles`.
     Columns listed in `exclude` are omitted from averaging.
 
     Parameters
     ----------
-    property_ : str
+    prop: PropertyT
         The physical property for which ensemble averages are calculated.
     ensembles : Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]]
         A dictionary where each key is an ensemble name and each value is
         either a DataFrame or ndarray representing "whole" data.
-    geometry : {"cylindrical", "slit", "cubic"}
-        The shape of the simulation box.
-    group : {"bug", "nucleoid", "all"}
+    group : GroupT
         Type of the particle group.
     ens_type : {"dataframe", "ndarray", "bin_edge"}
         The data format for each ensemble:
@@ -955,18 +1073,14 @@ def ensemble_avg(
                                        "whole2": [4, 5, 6]})
         }
     >>> avg_ensembles = ensemble_avg(
-            property_="density",
-            ensembles=ensembles,
-            geometry="cubic",
-            group="bug",
+            "density",
+            ensembles,
+            "bug",
             ens_type="DataFrame",
             exclude=["bin_center"],
             save_to="/output/path"
         )
     """
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
-
     if exclude is None:
         exclude = ['bin_center']
 
@@ -978,19 +1092,18 @@ def ensemble_avg(
             ens_avgs[ens_name] = ens_avg  # type: ignore
     elif ens_type == "ndarray":
         for ens_name, ens_data in ensembles.items():
-            ens_avg = ens_avg_from_ndarray(property_, ens_data)  # type: ignore
+            ens_avg = ens_avg_from_ndarray(prop, ens_data)  # type: ignore
             ens_avgs[ens_name] = ens_avg  # type: ignore
     elif ens_type == "dataframe":
         for ens_name, ens_data in ensembles.items():
-            ens_avg = ens_avg_from_df(
-                property_, ens_data, exclude)  # type: ignore
-            ens_avgs[ens_name] = ens_avg  # type: ignore
+            ens_avg = ens_avg_from_df(prop, ens_data, exclude)
+            ens_avgs[ens_name] = ens_avg
     else:
         invalid_keyword(ens_type, ["dataframe", "ndarray", "bin_edge"])
 
     # Save averaged ensemble data if save_to path is provided
     if save_to is not None:
-        save_property = property_ + "-ensAvg"
+        save_property = prop + "-ensAvg"
         for ens_name, data in ens_avgs.items():
             ens_fullname = create_fullname(ens_name, group, save_property)
             save_parent(ens_fullname, data, save_to)
@@ -1242,10 +1355,10 @@ def find_unique_properties(
     uniq_prop_measures = set()
     for ext in extensions:
         for prop in props_measures:
-            property_name = \
+            prop_name = \
                 sep.join(
                     prop.split("/")[-1].split(ext)[0].split(sep)[prop_idx:])
-            uniq_prop_measures.add(property_name)
+            uniq_prop_measures.add(prop_name)
 
     if drop_properties is not None:
         uniq_prop_measures.difference_update(drop_properties)
@@ -1264,13 +1377,12 @@ def find_unique_properties(
 
 def space_tseries(
     input_database: str,
-    property_: str,
-    parser: ParserT,
+    prop: PropertyT,
+    parser: ParserType,
     hierarchy: str,
     physical_attrs: List[str],
-    group: Literal["bug", "nucleoid", "all"],
-    geometry: Literal["cylindrical", "slit", "cubic"],
-    topology: Literal["ring", "linear", "branched"],
+    group: GroupT,
+    dump_key: str,
     divisor: float = 0.025,
     round_to: int = 3,
     is_save: Optional[bool] = False,
@@ -1284,7 +1396,7 @@ def space_tseries(
     ----------
     input_database : str
         Path to the directory containing time-series data files.
-    property_ : str
+    prop : str
         Name of the physical property of interest.
     parser : ParserT
         Parser class to infer file-specific information from filenames or
@@ -1294,12 +1406,11 @@ def space_tseries(
     physical_attrs : List[str]
         List of physical attributes to add as new columns in the output
         DataFrame.
-    group : {'bug', 'nucleoid', 'all'}
+    group : GroupT
         Particle group type.
-    geometry : {'cylindrical', 'slit', 'cubic'}
-        Simulation box geometry.
-    topology : {}
-        Polymer topology.
+    dump_key : str
+        Dumping attribute/keyword used to extract dumping frequnecy from an
+        instance of the `parser`.
     divisor : float, default 0.025
         Rounding step for `phi_c_bulk` attribute.
     round_to : int, default 3
@@ -1327,45 +1438,25 @@ def space_tseries(
     - Requires a parser class with methods to retrieve attribute information
       for each file.
     """
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
-    invalid_keyword(topology, ["ring", "linear", "branched"])
-
-    property_ext = f"-{property_}-ensAvg.csv"
+    prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs = sort_filenames(
-        glob(input_database + hierarchy + property_ext), [property_ext])
-    property_csvs = []
-
-    parser_name = getattr(parser, "__name__", "unknown")
-    if parser_name == "unknown":
-        raise ValueError(f"'{parser}' does not have a name!")
-
-    # Mapping of dumping frequency based on parser names
-    dumping_freq = {
-        "TransFociCyl": "bdump",
-        "TransFociCub": "bdump",
-        "SumRuleCubHeteroLinear": "bdump",
-        "SumRuleCubHeteroRing": "bdump",
-        "SumRuleCyl": "bdump",
-        "HnsCub": "ndump",
-        "HnsCyl": "ndump",
-    }
+        glob(input_database + hierarchy + prop_ext), [prop_ext])
+    prop_csvs = []
 
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        property_info = \
-            parser(ens_avg_csv[0], "ensemble_long", geometry, group, topology)
+        prop_info = parser(ens_avg_csv[0], "ensemble_long", group)
 
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={"index": "t_index"}, inplace=True)
 
         # Calculate `t_index` and `time` columns based on `dumping_freq`
-        ens_avg["t_index"] *= getattr(property_info, dumping_freq[parser_name])
-        ens_avg["time"] = ens_avg["t_index"] * property_info.dt
+        ens_avg["t_index"] *= getattr(prop_info, dump_key)
+        ens_avg["time"] = ens_avg["t_index"] * prop_info.dt
 
         # Add physical attributes
         for attr_name in physical_attrs:
-            ens_avg[attr_name] = getattr(property_info, attr_name)
+            ens_avg[attr_name] = getattr(prop_info, attr_name)
 
         # Apply rounding to `phi_c_bulk`
         ens_avg["phi_c_bulk_round"] = \
@@ -1373,32 +1464,31 @@ def space_tseries(
             lambda x: round_up_nearest(x, divisor, round_to)
         )
 
-        property_csvs.append(ens_avg)
+        prop_csvs.append(ens_avg)
 
     # Concatenate all time-series DataFrames
-    property_db = pd.concat(property_csvs, axis=0)
-    property_db.reset_index(drop=True, inplace=True)
+    prop_db = pd.concat(prop_csvs, axis=0)
+    prop_db.reset_index(drop=True, inplace=True)
 
     # Optionally save to file
     if is_save:
         save_to_space = make_database(
             input_database, "analysis", stage="space", group=group)
         space = save_to_space.split("/")[-2].split("-")[0]
-        filepath = save_to_space + f"{space}-{group}-{property_}-space.csv"
-        property_db.to_csv(filepath, index=False)
+        filepath = \
+            save_to_space + f"{create_fullname(space, group, prop)}-space.csv"
+        prop_db.to_csv(filepath, index=False)
 
-    return property_db
+    return prop_db
 
 
 def space_hists(
     input_database: str,
-    property_: str,
-    parser: ParserT,
+    prop: PropertyT,
+    parser: ParserType,
     hierarchy: str,
     physical_attrs: List[str],
     group: Literal["bug", "nucleoid", "all"],
-    geometry: Literal["cylindrical", "slit", "cubic"],
-    topology: Literal["ring", "linear", "branched"],
     bin_center: Optional[np.ndarray] = None,
     normalize: Optional[bool] = False,
     divisor: float = 0.025,
@@ -1414,7 +1504,7 @@ def space_hists(
     ----------
     input_database : str
         Path to the directory containing histogram data files.
-    property_ : str
+    prop: str
         Name of the physical property of interest.
     parser : ParserT
         Parser class to infer file-specific information from filenames or
@@ -1424,12 +1514,8 @@ def space_hists(
     physical_attrs : List[str]
         List of physical attributes to add as new columns in the output
         DataFrame.
-    group : {'bug', 'nucleoid', 'all'}
+    group : GroupT
         Particle group type.
-    geometry : {'cylindrical', 'slit', 'cubic'}
-        Simulation box geometry.
-    topology : str
-        Polymer topology.
     bin_center : np.ndarray, optional
         Array of bin centers. If not provided, must be present in the
         DataFrames.
@@ -1464,19 +1550,14 @@ def space_hists(
       center, like "clustersHistTFoci" or "bondsHistTFoci" properties, the
       `bij_center` may not provided.
     """
-    invalid_keyword(group, ["bug", "nucleoid", "all"])
-    invalid_keyword(geometry, ["cylindrical", "slit", "cubic"])
-    invalid_keyword(topology, ["ring", "linear", "branched"])
-
-    property_ext = f"-{property_}-ensAvg.csv"
-    ens_avg_csvs_ungrouped = glob(input_database + hierarchy + property_ext)
-    ens_avg_csvs = sort_filenames(ens_avg_csvs_ungrouped, fmts=[property_ext])
-    property_csvs = []
+    prop_ext = f"-{prop}-ensAvg.csv"
+    ens_avg_csvs_ungrouped = glob(input_database + hierarchy + prop_ext)
+    ens_avg_csvs = sort_filenames(ens_avg_csvs_ungrouped, fmts=[prop_ext])
+    prop_csvs = []
 
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        property_info = \
-            parser(ens_avg_csv[0], "ensemble_long", group)
+        prop_info = parser(ens_avg_csv[0], "ensemble_long", group)
 
         # Handle bin_center if provided
         if bin_center is not None:
@@ -1486,37 +1567,38 @@ def space_hists(
 
         # Normalize data if specified
         if normalize:
-            normalizer = ens_avg[property_ + "-mean"].sum()
+            normalizer = ens_avg[prop + "-mean"].sum()
             if normalizer != 0:
-                ens_avg[property_ + "-norm"] = \
-                    ens_avg[property_ + "-mean"] / normalizer
+                ens_avg[prop + "-norm"] = \
+                    ens_avg[prop + "-mean"] / normalizer
             else:
                 warnings.warn(
                     "All values are zero; normalized values set to zero.",
                     UserWarning)
-                ens_avg[property_ + "-norm"] = 0
+                ens_avg[prop + "-norm"] = 0
 
         # Add physical attributes
         for attr_name in physical_attrs:
-            ens_avg[attr_name] = getattr(property_info, attr_name)
+            ens_avg[attr_name] = getattr(prop_info, attr_name)
 
         # Apply rounding to `phi_c_bulk`
         ens_avg["phi_c_bulk_round"] = ens_avg["phi_c_bulk"].apply(
             lambda x: round_up_nearest(x, divisor, round_to)
         )
 
-        property_csvs.append(ens_avg)
+        prop_csvs.append(ens_avg)
 
     # Concatenate all histograms
-    property_db = pd.concat(property_csvs, axis=0)
-    property_db.reset_index(drop=True, inplace=True)
+    prop_db = pd.concat(prop_csvs, axis=0)
+    prop_db.reset_index(drop=True, inplace=True)
 
     # Optionally save to file
     if is_save:
         save_to_space = make_database(
             input_database, "analysis", stage="space", group=group)
         space = save_to_space.split("/")[-2].split("-")[0]
-        filepath = save_to_space + f"{space}-{group}-{property_}-space.csv"
-        property_db.to_csv(filepath, index=False)
+        filepath = \
+            save_to_space + f"{create_fullname(space, group, prop)}-space.csv"
+        prop_db.to_csv(filepath, index=False)
 
-    return property_db
+    return prop_db
