@@ -70,7 +70,10 @@ FreqDataT = Dict[str, np.ndarray]
 EdgeDataT = Dict[str, np.ndarray]
 HnsStatDictT = Dict[str, Union[List[int], np.ndarray]]
 
-# Type aliases for individual parser classes
+# Union types
+InputType = Union[GzipFile, TextIO, IO[Any]]
+
+# Type aliases for classes (used when passing the class itself)
 ParserBaseT = Type[ParserBase]
 TwoMonDepT = Type[TwoMonDep]
 SumRuleCylT = Type[SumRuleCyl]
@@ -81,9 +84,26 @@ SumRuleCubHeteroLinearT = Type[SumRuleCubHeteroLinear]
 HnsCubT = Type[HnsCub]
 HnsCylT = Type[HnsCyl]
 
-# Union types
+# Union types for clases
 ParserType = Union[
     SumRuleCylT, TransFociCubT, TransFociCylT, HnsCubT, HnsCylT,
     SumRuleCubHeteroLinearT, SumRuleCubHeteroRingT, TwoMonDepT
 ]
-InputType = Union[GzipFile, TextIO, IO[Any]]
+
+# Type aliases for instances of the classes
+ParserBaseInstance = ParserBase
+TwoMonDepInstance = TwoMonDep
+SumRuleCylInstance = SumRuleCyl
+TransFociCylInstance = TransFociCyl
+TransFociCubInstance = TransFociCub
+SumRuleCubHeteroRingInstance = SumRuleCubHeteroRing
+SumRuleCubHeteroLinearInstance = SumRuleCubHeteroLinear
+HnsCubInstance = HnsCub
+HnsCylInstance = HnsCyl
+
+# Union types for class instances
+ParserInstance = Union[
+    SumRuleCylInstance, TransFociCubInstance, TransFociCylInstance,
+    HnsCubInstance, HnsCylInstance, SumRuleCubHeteroLinearInstance,
+    SumRuleCubHeteroRingInstance, TwoMonDepInstance
+]
