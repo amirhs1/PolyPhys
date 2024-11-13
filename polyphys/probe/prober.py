@@ -1,18 +1,16 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, Union, List, Tuple
+from typing import Optional, Dict, Any, Tuple
 import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances as mda_dist
-from polyphys.manage.parser import (
-    SumRuleCyl, TransFociCyl, TransFociCub, HnsCub, HnsCyl,
-    SumRuleCubHeteroLinear, SumRuleCubHeteroRing, TwoMonDep
-    )
-from polyphys.manage.typer import ParserType, ParserInstance
+from polyphys.manage.typer import (
+    ParserInstance,
+    SumRuleCylInstance,
+    TwoMonDepInstance)
 from polyphys.manage.organizer import invalid_keyword
 from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
-
 
 
 def bin_create(
@@ -229,29 +227,24 @@ def write_hists(
 
 
 class ProberBase(ABC):
-    @property
-    @abstractmethod
-    def _species(self) -> List[str]:
-        """
-        List of particle species in a molecular dynamics system.
-        """
+    """_summary_
 
-    @property
-    @abstractmethod
-    def _property_types(self) -> List[str]:
-        """
-        List of property types in a molecular dynamics system.
-        """
-
+    Parameters
+    ----------
+    ABC : _type_
+        _description_
+    """
     def __init__(
         self,
         topology: str,
         trajectory: str,
+        parser: ParserInstance,
         save_to: str,
         continuous: bool = False,
     ) -> None:
         self._topology = topology
         self._trajectory = trajectory
+        self._parser = parser
         self._continuous = continuous
         if (self._parser.lineage == 'segment') & (continuous is False):
             warnings.warn(
@@ -262,6 +255,7 @@ class ProberBase(ABC):
                 "Please ensure the "
                 f"'{trajectory}' is NOT part of a sequence of trajectories.",
                 RuntimeWarning)
+        self._atom_groups: Dict[str, mda.AtomGroup] = {}
         self._save_to = save_to
         self._n_frames, self._sliced_trj = self._set_trj_slice()
 
@@ -272,22 +266,6 @@ class ProberBase(ABC):
         system.
         """
         return self._topology
-
-    @property
-    @abstractmethod
-    def _collectors(self) -> Dict[str, np.ndarray]:
-        """
-        List of physical properties, i.e. physical measurement, extracted from
-        a molecular dynamics trajectory by the prober.
-        """
-
-    @property
-    def collectors(self) -> Dict[str, np.ndarray]:
-        """
-        Returns a list of physical properties, i.e. physical measurement,
-        extracted from a molecular dynamics trajectory by the prober.
-        """
-        return self._collectors
 
     @property
     def trajectory(self) -> str:
@@ -305,20 +283,20 @@ class ProberBase(ABC):
         return self._continuous
 
     @property
-    @abstractmethod
-    def _parser(self) -> ParserInstance:
-        """
-        A parser object, containing all the information a molecular dynamics
-        system, extracted from `trjectory` filename.
-        """
-
-    @property
     def parser(self) -> ParserInstance:
         """
         Returns a parser object, containing all the information a molecular
         dynamics system, extracted from `trjectory` filename.
         """
         return self._parser
+
+    @property
+    def save_to(self) -> str:
+        """
+        Returns the directory to which the artifacts, i.e. the files associated
+        with the `results` of probing a molecular dynamics system, are written.
+        """
+        return self._save_to
 
     @property
     @abstractmethod
@@ -338,10 +316,34 @@ class ProberBase(ABC):
 
     @property
     @abstractmethod
-    def time_unit(self) -> float:
+    def _damping_time(self) -> float:
+        """
+        The time difference between two consecutive time frames/snapshots in
+        the trajectory file of a molecular dynamics system.
+        """
+
+    @property
+    def damping_time(self) -> float:
         """
         Returns the time unit of a molecular dynamics system.
         """
+        return self._damping_time
+
+    @property
+    @abstractmethod
+    def _collectors(self) -> Dict[str, np.ndarray]:
+        """
+        List of physical properties, i.e. physical measurement, extracted from
+        a molecular dynamics trajectory by the prober.
+        """
+
+    @property
+    def collectors(self) -> Dict[str, np.ndarray]:
+        """
+        Returns a list of physical properties, i.e. physical measurement,
+        extracted from a molecular dynamics trajectory by the prober.
+        """
+        return self._collectors
 
     @property
     def sliced_trj(self) -> mda.coordinates.base.FrameIteratorSliced:
@@ -355,13 +357,13 @@ class ProberBase(ABC):
         Returns the total number of time frames in a molecular dynamics system.
         """
 
-    @property
-    def save_to(self) -> str:
-        """
-        Returns the directory to which the artifacts, i.e. the files associated
-        with the `results` of probing a molecular dynamics system, are written.
-        """
-        return self._save_to
+    def _set_trj_slice(
+        self
+    ) -> Tuple[int, mda.coordinates.base.FrameIteratorSliced]:
+        if self._continuous is True:
+            return self._universe.trajectory.n_frames - 1, \
+                self._universe.trajectory[0: -1]
+        return self._universe.trajectory.n_frames, self._universe.trajectory
 
     def simulation_report(self) -> None:
         """
@@ -395,18 +397,19 @@ class ProberBase(ABC):
             report.write(f"{self.n_frames}")
         print("Simulation report written.")
 
+    @property
+    def atom_groups(self) -> Dict[str, mda.AtomGroup]:
+        """
+        Returns the dict of atom groups and their associated MDAnalysis
+        atomgroup instances.
+        """
+        return self._atom_groups
+
     @abstractmethod
-    def _atom_groups(self) -> None:
+    def _define_atom_groups(self) -> None:
         """
         Defines atom groups in a molecular dynamics project.
         """
-
-    def _set_trj_slice(
-        self
-    ) -> Tuple[int, mda.coordinates.base.FrameIteratorSliced]:
-        if self._continuous is True:
-            return self._universe.trajectory.n_frames - 1, self._universe.trajectory[0: -1]
-        return self._universe.trajectory.n_frames, self._universe.trajectory
 
     @abstractmethod
     def setup_bins(self) -> None:
@@ -444,7 +447,8 @@ class ProberBase(ABC):
         Save all relevant analysis data for the current simulation
         """
         for prop, artifact in self._collectors.items():
-            filename = f"{self._save_to}{self._parser.name}-{self._parser.group}-{prop}.npy"
+            filename = f"{self._save_to}{self._parser.name}" \
+                + f"-{self._parser.group}-{prop}.npy"
             np.save(filename, artifact)
         print("Artifacts saved.")
 
@@ -454,13 +458,13 @@ class TwoMonDepCubBugProber(ProberBase):
         self,
         topology: str,
         trajectory: str,
-        lineage: str,
+        parser: TwoMonDepInstance,
         save_to: str,
         continuous: bool = False,
     ) -> None:
-        self._parser = TwoMonDep(trajectory, lineage, 'bug')
-        super().__init__(topology, trajectory, save_to, continuous=continuous)
-        self.time_unit = \
+        super().__init__(topology, trajectory, parser, save_to,
+                         continuous=continuous)
+        self._damping_time = \
             getattr(self._parser, "bdump") * getattr(self._parser, "dt")
         self._universe = mda.Universe(
             topology,
@@ -469,7 +473,7 @@ class TwoMonDepCubBugProber(ProberBase):
             format='LAMMPSDUMP',
             lammps_coordinate_convention='unscaled',
             atom_style="id type x y z",
-            dt=self.time_unit
+            dt=self._damping_time
         )
 
         self._collectors = {
@@ -479,18 +483,107 @@ class TwoMonDepCubBugProber(ProberBase):
             "dzTMon": np.zeros(self._n_frames)
         }
 
-    def _atom_groups(self) -> None:
+    def _define_atom_groups(self) -> None:
         # the two monomers:
-        self.bug: mda.AtomGroup = self._universe.select_atoms('type 1')
+        self._atom_groups['bug'] = self._universe.select_atoms('type 1')
 
     def _probe_frame(self, idx) -> None:
-        self._collectors["gyrTMon"][idx] = self.bug.radius_of_gyration()
-        self._collectors["dxTMon"][idx] = fsd(self.bug.positions, axis=0)
-        self._collectors["dyTMon"][idx] = fsd(self.bug.positions, axis=1)
-        self._collectors["dzTMon"][idx] = fsd(self.bug.positions, axis=2)
+        self._collectors["gyrTMon"][idx] = \
+            self._atom_groups['bug'].radius_of_gyration()
+        self._collectors["dxTMon"][idx] = \
+            fsd(self._atom_groups['bug'].positions, axis=0)
+        self._collectors["dyTMon"][idx] = \
+            fsd(self._atom_groups['bug'].positions, axis=1)
+        self._collectors["dzTMon"][idx] = \
+            fsd(self._atom_groups['bug'].positions, axis=2)
 
 
-class SumRuleCylProber(ProberBase):
+class SumRuleCylBugProber(ProberBase):
+    """
+    Runs various analyses on a `lineage` simulation of a 'bug' atom group in
+    the `geometry` of interest.
+
+    Note
+    ----
+    In this project, coordinates are wrapped and unscaled in a trajectory or
+    topology file; moreover, LAMMPS recenter is used to restrict the center of
+    mass of "bug" (monomers) to the center of simulation box; and consequently,
+    coordinates of all the particles in a trajectory or topology file is
+    recentered to fulfill this constraint.
+
+    In MDAnalysis, selections by `universe.select_atoms` always return an
+    AtomGroup with atoms sorted according to their index in the topology.
+    This feature is used below to measure the end-to-end distance (Flory
+    radius), genomic distance (index differnce along the backbone), and any
+    other measurement that needs the sorted indices of atoms,bonds, angles, and
+    any other attribute of an atom.
+
+    Parameters
+    ----------
+    topology: str
+        Name of the topology file.
+    trajectory: str
+        Name of the trajectory file.
+    lineage: {'segment', 'whole'}
+        Type of the input file.
+    save_to: str, default './'
+        The absolute/relative path of a directory to which outputs are saved.
+    continuous: bool, default False
+        Whether a `trajectory` file is a part of a sequence of trajectory
+        segments or not.
+    """
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        parser: SumRuleCylInstance,
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        super().__init__(topology, trajectory, parser, save_to,
+                         continuous=continuous)
+        self._damping_time = \
+            getattr(self._parser, "bdump") * getattr(self._parser, "dt")
+        self._universe = mda.Universe(
+            topology,
+            trajectory,
+            topology_format='DATA',
+            format='LAMMPSDUMP',
+            lammps_coordinate_convention='unscaled',
+            atom_style="id resid type x y z",
+            dt=self._damping_time
+        )
+        self._collectors = {
+            "transSizeTMon": np.zeros(self._n_frames),
+            "fsdTMon": np.zeros(self._n_frames),
+            "gyrTMon": np.zeros(self._n_frames),
+            "rfloryTMon": np.zeros(self._n_frames),
+            "asphericityTMon": np.zeros(self._n_frames),
+            "shapeTMon": np.zeros(self._n_frames),
+            "principalTMon": np.zeros([self._n_frames, 3, 3])
+        }
+
+    def _define_atom_groups(self) -> None:
+        self._atom_groups['bug'] = self._universe.select_atoms('resid 1')
+
+    def _probe_frame(self, idx) -> None:
+        self._collectors["transSizeTMon"][idx] = \
+            transverse_size(self._atom_groups['bug'].positions, axis=2)
+        self._collectors["fsdTMon"][idx] = \
+            fsd(self._atom_groups['bug'].positions, axis=2)
+        self._collectors["gyrTMon"][idx] = \
+            self._atom_groups['bug'].radius_of_gyration()
+        self._collectors["rfloryTMon"][idx] = \
+            end_to_end(self._atom_groups['bug'].positions)
+        self._collectors["asphericityTMon"][idx] = \
+            self._atom_groups['bug'].asphericity(wrap=False, unwrap=False)
+        self._collectors["shapeTMon"][idx] = \
+            self._atom_groups['bug'].shape_parameter(wrap=False)
+        self._collectors["principalTMon"][idx] = \
+            self._atom_groups['bug'].principal_axes(wrap=False)
+
+
+class SumRuleCylAllProber(ProberBase):
     """
     Runs various analyses on a `lineage` simulation of a 'bug' atom group in
     the `geometry` of interest.
@@ -534,7 +627,8 @@ class SumRuleCylProber(ProberBase):
     ) -> None:
         super().__init__(topology, trajectory, parser, save_to,
                          continuous=continuous)
-        self.time_unit = self._parser.bdump * self._parser.dt
+        self._damping_time = \
+            getattr(self._parser, "adump") * getattr(self._parser, "dt")
         self._universe = mda.Universe(
             topology,
             trajectory,
@@ -542,43 +636,30 @@ class SumRuleCylProber(ProberBase):
             format='LAMMPSDUMP',
             lammps_coordinate_convention='unscaled',
             atom_style="id resid type x y z",
-            dt=self.time_unit
+            dt=self._damping_time
         )
-
         self._collectors = {
-            "transSizeTMon": np.zeros(self._n_frames),
-            "fsdTMon": np.zeros(self._n_frames),
-            "gyrTMon": np.zeros(self._n_frames),
-            "rfloryTMon": np.zeros(self._n_frames),
-            "asphericityTMon": np.zeros(self._n_frames),
-            "shapeTMon": np.zeros(self._n_frames),
-            "principalTMon": np.zeros([self._n_frames, 3, 3])
         }
 
-    def _atom_groups(self) -> None:
-        # the polymer:
-        self.bug: mda.AtomGroup = self._universe.select_atoms('resid 1')
-
-    def _set_trj_slice(
-        self
-    ) -> Tuple[int, mda.coordinates.base.FrameIteratorSliced]:
-        if self._continuous is True:
-            return self._universe.trajectory.n_frames - 1, self._universe.trajectory[0: -1]
-        return self._universe.trajectory.n_frames, self._universe.trajectory
+    def _define_atom_groups(self) -> None:
+        self._atom_groups['crds'] = self._universe.select_atoms('resid 0')
+        self._atom_groups['bug'] = self._universe.select_atoms('resid 1')
 
     def _probe_frame(self, idx) -> None:
         self._collectors["transSizeTMon"][idx] = \
-            transverse_size(self.bug.positions, axis=2)
-        self._collectors["fsdTMon"][idx] = fsd(self.bug.positions, axis=2)
-        self._collectors["gyrTMon"][idx] = self.bug.radius_of_gyration()
-        self._collectors["rfloryTMon"][idx] = end_to_end(self.bug.positions)
+            transverse_size(self._atom_groups['bug'].positions, axis=2)
+        self._collectors["fsdTMon"][idx] = \
+            fsd(self._atom_groups['bug'].positions, axis=2)
+        self._collectors["gyrTMon"][idx] = \
+            self._atom_groups['bug'].radius_of_gyration()
+        self._collectors["rfloryTMon"][idx] = \
+            end_to_end(self._atom_groups['bug'].positions)
         self._collectors["asphericityTMon"][idx] = \
-            self.bug.asphericity(wrap=False, unwrap=False)
+            self._atom_groups['bug'].asphericity(wrap=False, unwrap=False)
         self._collectors["shapeTMon"][idx] = \
-            self.bug.shape_parameter(wrap=False)
+            self._atom_groups['bug'].shape_parameter(wrap=False)
         self._collectors["principalTMon"][idx] = \
-            self.bug.principal_axes(wrap=False)
-
+            self._atom_groups['bug'].principal_axes(wrap=False)
 
 def sum_rule_cyl_all(
     topology: str,
@@ -645,25 +726,7 @@ def sum_rule_cyl_all(
             'lmax': 0.5 * sim_info.dcyl
             }
     }
-    # LJ time difference between two consecutive frames:
-    time_unit = sim_info.dmon * np.sqrt(
-        sim_info.mmon * sim_info.eps_others)
-    # Sampling via LAMMPS dump every 'adump', so trajectory dt is:
-    sim_real_dt = sim_info.adump * sim_info.dt * time_unit
-    cell = mda.Universe(
-        topology, trajectory, topology_format='DATA',
-        format='LAMMPSDUMP', lammps_coordinate_convention='unscaled',
-        atom_style="id resid type x y z", dt=sim_real_dt
-        )
-    # slicing trajectory based the continuous condition
-    if continuous:
-        sliced_trj = cell.trajectory[0: -1]
-    else:
-        sliced_trj = cell.trajectory
-    # selecting atom groups
-    crds: mda.AtomGroup = cell.select_atoms('resid 0')  # crowders
-    bug: mda.AtomGroup = cell.select_atoms('resid 1')  # chain/monomers
-    # bin edges and histograms in different directions:
+
     # radial direction of the cylindrical coordinate system
     r_hist_crd_info = fixedsize_bins(
         sim_name,
