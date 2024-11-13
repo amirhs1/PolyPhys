@@ -273,6 +273,13 @@ class ParserBase(ABC):
         return self._filepath
 
     @property
+    def group(self) -> str:
+        """
+        Returns the current group.
+        """
+        return self._group
+    
+    @property
     def lineage(self) -> str:
         """
         Returns the current lineage.
