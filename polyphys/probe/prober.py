@@ -1,3 +1,4 @@
+from html import entities
 import warnings
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, Tuple, Literal, Union
@@ -203,7 +204,7 @@ def fixedsize_bins(
     bin_size: float,
     lmin: float,
     lmax: float,
-    bin_type: Literal["ordinary", "nonnegative", "periodic"] = "ordinary",
+    bin_type: Literal['ordinary', 'nonnegative', 'periodic'] = 'ordinary',
     save_bin_edges: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -217,15 +218,15 @@ def fixedsize_bins(
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    bin_type : {"ordinary", "nonnegative", "periodic"}, default "ordinary"
+    bin_type : {'ordinary', 'nonnegative', 'periodic'}, default 'ordinary'
         Type of bin:
-            - "ordinary": Extends `lmin` and `lmax` symmetrically. Examples are
+            - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
               Cartesian coordinates and spherical polar coordinate.
-            - "nonnegative": Extends `lmin` are `lmax` are symmetrically  if
+            - 'nonnegative': Extends `lmin` are `lmax` are symmetrically  if
               adjusted `lmin` is nonnegative; othervise, `lmin` is set to 0 and
               `lmax` is extended. Examples are radial directions in the polar,
               spherical, and cylindrical coordinate systems.
-            - "periodic": Periodic binning (e.g., azimuthal coordinate).
+            - 'periodic': Periodic binning (e.g., azimuthal coordinate).
               Examples are azimuthal directions in cylindrical and spherical
             coordinate systems.
     save_bin_edges : Optional[str], default None
@@ -240,7 +241,8 @@ def fixedsize_bins(
         - 'n_bins' : int
             Number of bins.
         - 'bin_edges' : np.ndarray
-            Array of bin edges.
+            A monotonically increasing array of bin edges, including the
+            rightmost edge.
         - 'collector' : np.ndarray
             Array initialized for histogram values.
         - 'collector_std' : np.ndarray
@@ -267,20 +269,20 @@ def fixedsize_bins(
     _length = lmax - lmin
     _delta = bin_size
     
-    if bin_type == "ordinary":
+    if bin_type == 'ordinary':
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)  # excess length
         # add half of the excess to each end:
         lmin_adj = lmin - dl
         lmax_adj = lmax + dl
         bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
-    elif bin_type == "nonnegative":
+    elif bin_type == 'nonnegative':
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)
         lmin_adj = max(0.0, lmin - dl)
         lmax_adj = lmax + 2 * dl if lmin_adj == 0 else lmax + dl
         bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
-    elif bin_type == "periodic":
+    elif bin_type == 'periodic':
         n_bins = int(np.ceil(_length / _delta))
         lmin_adj, lmax_adj = lmin, lmax
         bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta)
@@ -291,7 +293,7 @@ def fixedsize_bins(
             # delta={_delta}, not 'n_bins', are used to created 'bin_edges'.
             warnings.warn("'n_bins' is set to 'len(bin_edges)-1'", UserWarning)
     else:
-        invalid_keyword(bin_type, ["ordinary", 'nonnagative', "periodic"])
+        invalid_keyword(bin_type, ['ordinary', 'nonnagative', 'periodic'])
 
     hist_collectors = np.zeros(n_bins, dtype=np.int16)
     hist_collectors_std = np.zeros(n_bins, dtype=np.int16)
@@ -300,11 +302,11 @@ def fixedsize_bins(
         np.save(save_bin_edges, bin_edges)
     
     return {
-        "n_bins": n_bins,
-        "bin_edges": bin_edges,
-        "collector": hist_collectors,
-        "collector_std": hist_collectors_std,
-        "range": (lmin_adj, lmax_adj)
+        'n_bins': n_bins,
+        'bin_edges': bin_edges,
+        'collector': hist_collectors,
+        'collector_std': hist_collectors_std,
+        'range': (lmin_adj, lmax_adj)
     }
 
 
@@ -327,10 +329,6 @@ def write_hists(
         Directory path to save the histogram data.
     std : bool, default False
         If True, saves the standard deviation data alongside the histogram data.
-
-    Returns
-    -------
-    None
     """
     for direction, entities in hist_infos.items():
         for entity, hist_data in entities.items():
@@ -343,6 +341,180 @@ def write_hists(
                 collector_std_filename = f"{save_to}{sim_name}-{direction}Std{entity}.npy"
                 np.save(collector_std_filename, hist_data['collector_std'])
 
+
+def radial_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    range: Tuple[float, float],
+) -> np.ndarray:
+    """
+    Compute the histogram of radial distances from the origin in the spherical coordinate system.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : 
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+
+    Returns
+    -------
+    np.ndarray
+        Histogram data
+    """
+    return np.histogram(
+        np.linalg.norm(positions, axis=1),
+        bins=edges,
+        range=range)
+
+
+def radial_cyl_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    range: Tuple[float, float],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the histogram of radial distances from the longitudinal axis along
+    `dim` inthe cylindrical coordinate system.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : 
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+    dim : {0, 1, 2}, optional
+        The longitudinal axis (0=x, 1=y, 2=z).
+
+    Returns
+    -------
+    np.ndarray
+        Histogram data
+    """
+    invalid_keyword(str(dim), [str(d) for d in [0, 1, 2]])
+    t_dims = np.roll(np.arange(3), -dim)[1:] # selecting transverse axes
+    return np.histogram(
+        np.linalg.norm(positions[:, t_dims], axis=1),
+        bins=edges,
+        range=range)
+
+
+def axial_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    range: Tuple[float, float],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the histogram of distances from the origin an axis in direction
+    `dim`.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : 
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+    dim : {0, 1, 2}, optional
+        Axis direction (0=x, 1=y, 2=z).
+
+    Returns
+    -------
+    np.ndarray
+        Histogram data
+    """
+    invalid_keyword(str(dim), [str(d) for d in [0, 1, 2]])
+    return np.histogram(positions[:, dim], bins=edges, range=range)
+
+
+def azimuth_cyl_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    range: Tuple[float, float],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the histogram of azimuth angles in the cylindrical coordinate
+    system with the longitudinal axis along `dim`.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : 
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+    dim : {0, 1, 2}, optional
+        The longitudinal axis (0=x, 1=y, 2=z).
+
+    Returns
+    -------
+    np.ndarray
+        Histogram data
+    """
+    invalid_keyword(str(dim), [str(d) for d in [0, 1, 2]])
+    t_dims = np.roll(np.arange(3), -dim)[1:] # selecting transverse axes
+    return np.histogram(
+        np.arctan2(positions[:, t_dims[1]], positions[:, t_dims[0]]),
+        bins=edges,
+        range=range)
+
+
+def planar_cartesian_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    range: Tuple[float, float],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the bi-dimensional histogram in the plan perpendicular to the axis
+    along `dim` in the Cartersian coordinate system.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : 
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+    dim : {0, 1, 2}, optional
+        Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
+        planar axes to the `np.histogram2d`: When `dim=0` (x), `dim=1` (y) and
+        `dim=2` (z) values are passed respectively. When `dim=1` (y), `dim=2`
+        (z) and `dim=0` (x) values are passed respectively. When `dim=2` (z),
+        `dim=0` (x) and `dim=1` (y) values are passed respectively. 
+
+    Returns
+    -------
+    np.ndarray
+        Histogram data
+    """
+    invalid_keyword(str(dim), [str(d) for d in [0, 1, 2]])
+    t_dims = np.roll(np.arange(3), -dim)[1:] # selecting transverse axes
+    return np.histogram2d(
+        positions[:, t_dims[0]],
+        positions[:, t_dims[1]],
+        bins=edges,
+        range=range)
 
 class ProberBase(ABC):
     """_summary_
@@ -513,7 +685,7 @@ class ProberBase(ABC):
         `measures`.
         """
         report_name = f"{self._sim_name}-stamps.csv"
-        with open(report_name, mode="w", encoding="utf-8") as report:
+        with open(report_name, mode='w', encoding="utf-8") as report:
             # write header
             for attr in self._parser.attributes:
                 report.write(f"{attr},")
@@ -591,7 +763,7 @@ class TwoMonDepCubBugProber(ProberBase):
         super().__init__(topology, trajectory, parser, save_to,
                          continuous=continuous)
         self._damping_time = \
-            getattr(self._parser, "bdump") * getattr(self._parser, "dt")
+            getattr(self._parser, 'bdump') * getattr(self._parser, 'dt')
         self._universe = mda.Universe(
             topology,
             trajectory,
@@ -608,20 +780,20 @@ class TwoMonDepCubBugProber(ProberBase):
 
     def _setup_collectors(self) -> None:
         self._collectors = {
-            "gyrTMon": np.zeros(self._n_frames),
-            "dxTMon": np.zeros(self._n_frames),
-            "dyTMon": np.zeros(self._n_frames),
-            "dzTMon": np.zeros(self._n_frames)
+            'gyrTMon': np.zeros(self._n_frames),
+            'dxTMon': np.zeros(self._n_frames),
+            'dyTMon': np.zeros(self._n_frames),
+            'dzTMon': np.zeros(self._n_frames)
         }
 
     def _probe_frame(self, idx) -> None:
-        self._collectors["gyrTMon"][idx] = \
+        self._collectors['gyrTMon'][idx] = \
             self._atom_groups['bug'].radius_of_gyration()
-        self._collectors["dxTMon"][idx] = \
+        self._collectors['dxTMon'][idx] = \
             fsd(self._atom_groups['bug'].positions, axis=0)
-        self._collectors["dyTMon"][idx] = \
+        self._collectors['dyTMon'][idx] = \
             fsd(self._atom_groups['bug'].positions, axis=1)
-        self._collectors["dzTMon"][idx] = \
+        self._collectors['dzTMon'][idx] = \
             fsd(self._atom_groups['bug'].positions, axis=2)
 
 
@@ -634,7 +806,7 @@ class SumRuleCylBugProber(ProberBase):
     ----
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, LAMMPS recenter is used to restrict the center of
-    mass of "bug" (monomers) to the center of simulation box; and consequently,
+    mass of 'bug' (monomers) to the center of simulation box; and consequently,
     coordinates of all the particles in a trajectory or topology file is
     recentered to fulfill this constraint.
 
@@ -670,7 +842,7 @@ class SumRuleCylBugProber(ProberBase):
         super().__init__(topology, trajectory, parser, save_to,
                          continuous=continuous)
         self._damping_time = \
-            getattr(self._parser, "bdump") * getattr(self._parser, "dt")
+            getattr(self._parser, 'bdump') * getattr(self._parser, 'dt')
         self._universe = mda.Universe(
             topology,
             trajectory,
@@ -686,29 +858,29 @@ class SumRuleCylBugProber(ProberBase):
 
     def _setup_collectors(self) -> None:
         self._collectors = {
-            "transSizeTMon": np.zeros(self._n_frames),
-            "fsdTMon": np.zeros(self._n_frames),
-            "gyrTMon": np.zeros(self._n_frames),
-            "rfloryTMon": np.zeros(self._n_frames),
-            "asphericityTMon": np.zeros(self._n_frames),
-            "shapeTMon": np.zeros(self._n_frames),
-            "principalTMon": np.zeros([self._n_frames, 3, 3])
+            'transSizeTMon': np.zeros(self._n_frames),
+            'fsdTMon': np.zeros(self._n_frames),
+            'gyrTMon': np.zeros(self._n_frames),
+            'rfloryTMon': np.zeros(self._n_frames),
+            'asphericityTMon': np.zeros(self._n_frames),
+            'shapeTMon': np.zeros(self._n_frames),
+            'principalTMon': np.zeros([self._n_frames, 3, 3])
         }
 
     def _probe_frame(self, idx) -> None:
-        self._collectors["transSizeTMon"][idx] = \
+        self._collectors['transSizeTMon'][idx] = \
             transverse_size(self._atom_groups['bug'].positions, axis=2)
-        self._collectors["fsdTMon"][idx] = \
+        self._collectors['fsdTMon'][idx] = \
             fsd(self._atom_groups['bug'].positions, axis=2)
-        self._collectors["gyrTMon"][idx] = \
+        self._collectors['gyrTMon'][idx] = \
             self._atom_groups['bug'].radius_of_gyration()
-        self._collectors["rfloryTMon"][idx] = \
+        self._collectors['rfloryTMon'][idx] = \
             end_to_end(self._atom_groups['bug'].positions)
-        self._collectors["asphericityTMon"][idx] = \
+        self._collectors['asphericityTMon'][idx] = \
             self._atom_groups['bug'].asphericity(wrap=False, unwrap=False)
-        self._collectors["shapeTMon"][idx] = \
+        self._collectors['shapeTMon'][idx] = \
             self._atom_groups['bug'].shape_parameter(wrap=False)
-        self._collectors["principalTMon"][idx] = \
+        self._collectors['principalTMon'][idx] = \
             self._atom_groups['bug'].principal_axes(wrap=False)
 
 
@@ -721,7 +893,7 @@ class SumRuleCylAllProber(ProberBase):
     ----
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, LAMMPS recenter is used to restrict the center of
-    mass of "bug" (monomers) to the center of simulation box; and consequently,
+    mass of 'bug' (monomers) to the center of simulation box; and consequently,
     coordinates of all the particles in a trajectory or topology file is
     recentered to fulfill this constraint.
 
@@ -746,6 +918,7 @@ class SumRuleCylAllProber(ProberBase):
         Whether a `trajectory` file is a part of a sequence of trajectory
         segments or not.
     """
+    _entities = ['Mon', 'Crd']
     def __init__(
         self,
         topology: str,
@@ -757,7 +930,7 @@ class SumRuleCylAllProber(ProberBase):
         super().__init__(topology, trajectory, parser, save_to,
                          continuous=continuous)
         self._damping_time = \
-            getattr(self._parser, "adump") * getattr(self._parser, "dt")
+            getattr(self._parser, 'adump') * getattr(self._parser, 'dt')
         self._universe = mda.Universe(
             topology,
             trajectory,
@@ -769,178 +942,132 @@ class SumRuleCylAllProber(ProberBase):
         )
 
     def _define_atom_groups(self) -> None:
-        self._atom_groups['Crd'] = self._universe.select_atoms('resid 0')
-        self._atom_groups['Mon'] = self._universe.select_atoms('resid 1')
+        self._atom_groups['Crd'] = self._universe.select_atoms("resid 0")
+        self._atom_groups['Mon'] = self._universe.select_atoms("resid 1")
 
     def _setup_bins(self) -> None:
         self._bin_edges = {
-            "rEdge": {
-                "bin_size":  0.1 * min(getattr(self._parser, 'dmon'),
+            'rEdge': {
+                'bin_size':  0.1 * min(getattr(self._parser, 'dmon'),
                                        getattr(self._parser, 'dcrowd')),
-                "lmin": 0,
-                "lmax": 0.5 * getattr(self._parser, 'dcyl'),
+                'lmin': 0,
+                'lmax': 0.5 * getattr(self._parser, 'lcyl'),
                 },
-            "zEdge": {
-                "bin_size":  0.5 * min(getattr(self._parser, 'dmon'),
+            'zEdge': {
+                'bin_size':  0.5 * min(getattr(self._parser, 'dmon'),
                                        getattr(self._parser, 'dcrowd')),
-                "lmin": -0.5 * getattr(self._parser, 'lcyl'),
-                "lmax": 0.5 * getattr(self._parser, 'lcyl'),
+                'lmin': -0.5 * getattr(self._parser, 'lcyl'),
+                'lmax': 0.5 * getattr(self._parser, 'lcyl'),
                 },
-            "thetaEdge": {
-                "bin_size":  np.pi / 36,
-                "lmin": -1 * np.pi,
-                "lmax": np.pi
+            'thetaEdge': {
+                'bin_size':  np.pi / 36,
+                'lmin': -1 * np.pi,
+                'lmax': np.pi
                 },
-            "lEdge": {
+            'lEdge': {
                 # edges for 2d hist in x and y direction
-                "bin_size":  0.1 * min(getattr(self._parser, 'dmon'),
+                'bin_size':  0.1 * min(getattr(self._parser, 'dmon'),
                                        getattr(self._parser, 'dcrowd')),
-                "lmin": -0.5 * getattr(self._parser, 'dcyl'),
-                "lmax": 0.5 * getattr(self._parser, 'dcyl')
+                'lmin': -0.5 * getattr(self._parser, 'dcyl'),
+                'lmax': 0.5 * getattr(self._parser, 'dcyl')
                 }
         }
-        entities = ["Mon", "Crd"]
         hist1d_bin_type = \
-            {"r": "nonnegative", "z": "ordinary", "theta": "periodic"}
-        hist2d_planes_dirs = ["xy": "z", "xz": "y", "yz": "x"]
+            {'r': 'nonnegative', 'z': 'ordinary', 'theta': 'periodic'}
+        hist2d_planes_dirs = ['xy': 'z', 'zx': 'y', 'yz': 'x']
         for ent in entities:
             for dir, edge_t in hist1d_bin_type.items():
                 output = f"{self._save_to}{self._sim_name}-{dir}Edge{ent}"
                 self._collectors[f"{dir}Hist{ent}"] = fixedsize_bins(
-                    self._bin_edges[f"{dir}Edge"]["bin_size"],
-                    self._bin_edges[f"{dir}Edge"]["lmin"],
-                    self._bin_edges[f"{dir}Edge"]["lmax"],
+                    self._bin_edges[f"{dir}Edge"]['bin_size'],
+                    self._bin_edges[f"{dir}Edge"]['lmin'],
+                    self._bin_edges[f"{dir}Edge"]['lmax'],
                     bin_type=edge_t,
                     save_bin_edges=output
                 )
             for plane, dir in hist2d_planes_dirs.items():
                 # different bin size in xy plane (z direction):
-                if plane == "xy":
-                    edge_name = "zEdge"
+                if plane == 'xy':
+                    edge_name = 'zEdge'
                 else:
-                    edge_name = "lEdge"
+                    edge_name = 'lEdge'
                 output = f"{self._save_to}{self._sim_name}-{edge_name}{ent}"
                 self._collectors[f"{plane}Hist{ent}"] = fixedsize_bins(
-                    self._bin_edges[edge_name]["bin_size"],
-                    self._bin_edges[edge_name]["lmin"],
-                    self._bin_edges[edge_name]["lmax"],
+                    self._bin_edges[edge_name]['bin_size'],
+                    self._bin_edges[edge_name]['lmin'],
+                    self._bin_edges[edge_name]['lmax'],
                     bin_type='ordinary',
                     save_bin_edges=output
                 )
 
     def _probe_frame(self, idx) -> None:
         # r
-        # # Crd
-        pos_hist, _ = np.histogram(
-            np.linalg.norm(self._atom_groups['Crd'].positions[:, :2], axis=1),
-            bins=self._collectors['rHistCrd']['bin_edges'],
-            range=self._collectors['rHistCrd']['range']
-        )
-        self._collectors['rHistCrd']['collector'] += pos_hist
-        self._collectors['rHistCrd']['collector_std'] += np.square(pos_hist)
-        # # Mon
-        pos_hist, _ = np.histogram(
-            np.linalg.norm(self._atom_groups['Mon'].positions[:, :2], axis=1),
-            bins=self._collectors['rHistMon']['bin_edges'],
-            range=self._collectors['rHistMon']['range']
-        )
-        self._collectors['rHistMon']['collector'] += pos_hist
-        self._collectors['rHistMon']['collector_std'] += np.square(pos_hist)
+        for ent in self._entities:
+            pos_hist, _ = radial_cyl_histogram(
+                self._atom_groups[f'{ent}'].positions,
+                self._collectors[f'rHist{ent}']['bin_edges'],
+                self._collectors[f'rHist{ent}']['range'],
+                2
+            )
+            self._collectors[f'rHist{ent}']['collector'] += pos_hist
+            self._collectors[f'rHist{ent}']['collector_std'] += \
+                np.square(pos_hist)
+    
         # z
-        # # Crd
-        pos_hist, _ = np.histogram(
-            self._atom_groups['Crd'].positions[:, 2],
-            bins=self._collectors['zHistCrd']['bin_edges'],
-            range=self._collectors['zHistCrd']['range']
-        )
-        self._collectors['zHistCrd']['collector'] += pos_hist
-        self._collectors['zHistCrd']['collector_std'] += np.square(pos_hist)
-        # # Mon
-        pos_hist, _ = np.histogram(
-            self._atom_groups['Mon'].positions[:, 2],
-            bins=self._collectors['zHistMon']['bin_edges'],
-            range=self._collectors['zHistMon']['range']
-        )
-        self._collectors['zHistMon']['collector'] += pos_hist
-        self._collectors['zHistMon']['collector_std'] += np.square(pos_hist)
+        for ent in self._entities:
+            pos_hist, _ = axial_histogram(
+                self._atom_groups[f'{ent}'].positions,
+                self._collectors[f'zHist{ent}']['bin_edges'],
+                self._collectors[f'zHist{ent}']['range'],
+                2
+            )
+            self._collectors[f'zHist{ent}']['collector'] += pos_hist
+            self._collectors[f'zHist{ent}']['collector_std'] += \
+                np.square(pos_hist)
         # theta
-        # # Crd
-        pos_hist, _ = np.histogram(
-            np.arctan2(
-                self._atom_groups['Crd'].positions[:, 1],
-                self._atom_groups['Crd'].positions[:, 0]),
-            bins=self._collectors['thetaHistCrd']['bin_edges'],
-            range=self._collectors['thetaHistCrd']['range']
-        )
-        self._collectors['thetaHistCrd']['collector'] += pos_hist
-        self._collectors['thetaHistCrd']['collector_std'] += np.square(pos_hist)
-        # # Mon
-        pos_hist, _ = np.histogram(
-            np.arctan2(
-                self._atom_groups['Mon'].positions[:, 1],
-                self._atom_groups['Mon'].positions[:, 0]),
-            bins=self._collectors['thetaHistMon']['bin_edges'],
-            range=self._collectors['thetaHistMon']['range']
-        )
-        self._collectors['thetaHistMon']['collector'] += pos_hist
-        self._collectors['thetaHistMon']['collector_std'] += np.square(pos_hist)
-        # xy
-        # # Crd
-        pos_hist, _ = np.histogram2d(
-            self._atom_groups['Crd'].positions[:, 0],
-            self._atom_groups['Crd'].positions[:, 1],
-            bins=self._collectors['xyHistCrd']['bin_edges'],
-            range=self._collectors['xyHistCrd']['range']
-        )
-        self._collectors['xyHistCrd']['collector'] += pos_hist
-        self._collectors['xyHistCrd']['collector_std'] += np.square(pos_hist)
-        # # Mon
-        pos_hist, _ = np.histogram2d(
-            self._atom_groups['Mon'].positions[:, 0],
-            self._atom_groups['Mon'].positions[:, 1],
-            bins=self._collectors['xyHistMon']['bin_edges'],
-            range=self._collectors['xyHistMon']['range']
-        )
-        self._collectors['xyHistMon']['collector'] += pos_hist
-        self._collectors['xyHistMon']['collector_std'] += np.square(pos_hist)
-        # xz
-        # # Crd
-        pos_hist, _ = np.histogram2d(
-            self._atom_groups['Crd'].positions[:, 0],
-            self._atom_groups['Crd'].positions[:, 2],
-            bins=self._collectors['xzHistCrd']['bin_edges'],
-            range=self._collectors['xzHistCrd']['range']
-        )
-        self._collectors['xzHistCrd']['collector'] += pos_hist
-        self._collectors['xzHistCrd']['collector_std'] += np.square(pos_hist)
-        # # Mon
-        pos_hist, _ = np.histogram2d(
-            self._atom_groups['Mon'].positions[:, 0],
-            self._atom_groups['Mon'].positions[:, 2],
-            bins=self._collectors['xzHistMon']['bin_edges'],
-            range=self._collectors['xzHistMon']['range']
-        )
-        self._collectors['xzHistMon']['collector'] += pos_hist
-        self._collectors['xzHistMon']['collector_std'] += np.square(pos_hist)
+        for ent in self._entities:
+            pos_hist, _ = azimuth_cyl_histogram(
+                self._atom_groups[f'{ent}'].positions,
+                self._collectors[f'thetaHist{ent}']['bin_edges'],
+                self._collectors[f'thetaHist{ent}']['range'],
+                2
+            )
+            self._collectors[f'thetaHist{ent}']['collector'] += pos_hist
+            self._collectors[f'thetaHist{ent}']['collector_std'] += \
+                np.square(pos_hist)
         # yz
-        # # Crd
-        pos_hist, _ = np.histogram2d(
-            self._atom_groups['Crd'].positions[:, 1],
-            self._atom_groups['Crd'].positions[:, 2],
-            bins=self._collectors['yzHistCrd']['bin_edges'],
-            range=self._collectors['yzHistCrd']['range']
-        )
-        self._collectors['yzHistCrd']['collector'] += pos_hist
-        self._collectors['yzHistCrd']['collector_std'] += np.square(pos_hist)
-        # # Mon
-        pos_hist, _ = np.histogram2d(
-            self._atom_groups['Mon'].positions[:, 1],
-            self._atom_groups['Mon'].positions[:, 2],
-            bins=self._collectors['yzHistMon']['bin_edges'],
-            range=self._collectors['yzHistMon']['range']
-        )
-        self._collectors['yzHistMon']['collector'] += pos_hist
-        self._collectors['yzHistMon']['collector_std'] += np.square(pos_hist)
+        for ent in self._entities:
+            pos_hist, _ = planar_cartesian_histogram(
+                self._atom_groups[f'{ent}'].positions,
+                self._collectors[f'yzHist{ent}']['bin_edges'],
+                self._collectors[f'yzHist{ent}']['range'],
+                0
+            )
+            self._collectors[f'yzHist{ent}']['collector'] += pos_hist
+            self._collectors[f'yzHist{ent}']['collector_std'] += \
+                np.square(pos_hist)
+        # zx
+        for ent in self._entities:
+            pos_hist, _ = planar_cartesian_histogram(
+                self._atom_groups[f'{ent}'].positions,
+                self._collectors[f'zxHist{ent}']['bin_edges'],
+                self._collectors[f'zxHist{ent}']['range'],
+                1
+            )
+            self._collectors[f'zxHist{ent}']['collector'] += pos_hist
+            self._collectors[f'zxHist{ent}']['collector_std'] += \
+                np.square(pos_hist)
+        # xy:
+        for ent in self._entities:
+            pos_hist, _ = planar_cartesian_histogram(
+                self._atom_groups[f'{ent}'].positions,
+                self._collectors[f'xyHist{ent}']['bin_edges'],
+                self._collectors[f'xyHist{ent}']['range'],
+                2
+            )
+            self._collectors[f'xyHist{ent}']['collector'] += pos_hist
+            self._collectors[f'xyHist{ent}']['collector_std'] += \
+                np.square(pos_hist)
 
 
 def sum_rule_cyl_all(
@@ -1123,7 +1250,7 @@ def trans_foci_cyl_bug(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -1262,7 +1389,7 @@ def trans_foci_cyl_all(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -1309,26 +1436,26 @@ def trans_foci_cyl_all(
     print("\n" + sim_name + " is analyzing...\n")
     # dict of bin edges:
     bin_edges = {
-        "rEdge": {
-            "bin_size":  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": 0,
-            "lmax": 0.5 * sim_info.dcyl
+        'rEdge': {
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.dcyl
             },
-        "zEdge": {
-            "bin_size":  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.lcyl,
-            "lmax": 0.5 * sim_info.lcyl
+        'zEdge': {
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcyl,
+            'lmax': 0.5 * sim_info.lcyl
             },
-        "thetaEdge": {
-            "bin_size":  np.pi / 36,
-            "lmin": -1 * np.pi,
-            "lmax": np.pi
+        'thetaEdge': {
+            'bin_size':  np.pi / 36,
+            'lmin': -1 * np.pi,
+            'lmax': np.pi
             },
-        "lEdge": {
+        'lEdge': {
             # edges for 2d hist in x and y direction
-            "bin_size":  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.dcyl,
-            "lmax": 0.5 * sim_info.dcyl
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.dcyl,
+            'lmax': 0.5 * sim_info.dcyl
             }
         }
     # LJ time difference between two consecutive frames:
@@ -1356,141 +1483,141 @@ def trans_foci_cyl_all(
     r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_foci_info = fixedsize_bins(
         sim_name,
         'rEdgeFoci',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_dna_info = fixedsize_bins(
         sim_name,
         'rEdgeDna',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     # z direction of the cylindrical coordinate system
     z_hist_crd_info = fixedsize_bins(
         sim_name,
         'zEdgeCrd',
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     z_hist_mon_info = fixedsize_bins(
         sim_name,
         'zEdgeMon',
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     z_hist_foci_info = fixedsize_bins(
         sim_name,
         'zEdgeFoci',
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     z_hist_dna_info = fixedsize_bins(
         sim_name,
         'zEdgeDna',
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # theta of the cylindrical coordinate system
     theta_hist_crd_info = fixedsize_bins(
         sim_name,
         'thetaEdgeCrd',
-        bin_edges["thetaEdge"]["bin_size"],
-        bin_edges["thetaEdge"]["lmin"],
-        bin_edges["thetaEdge"]["lmax"],
-        bin_type="periodic",
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
         save_to=save_to
         )  # in radians
     theta_hist_mon_info = fixedsize_bins(
         sim_name,
         'thetaEdgeMon',
-        bin_edges["thetaEdge"]["bin_size"],
-        bin_edges["thetaEdge"]["lmin"],
-        bin_edges["thetaEdge"]["lmax"],
-        bin_type="periodic",
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
         save_to=save_to
         )  # in radians
     theta_hist_foci_info = fixedsize_bins(
         sim_name,
         'thetaEdgeFoci',
-        bin_edges["thetaEdge"]["bin_size"],
-        bin_edges["thetaEdge"]["lmin"],
-        bin_edges["thetaEdge"]["lmax"],
-        bin_type="periodic",
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
         save_to=save_to
         )  # in radians
     theta_hist_dna_info = fixedsize_bins(
         sim_name,
         'thetaEdgeDna',
-        bin_edges["thetaEdge"]["bin_size"],
-        bin_edges["thetaEdge"]["lmin"],
-        bin_edges["thetaEdge"]["lmax"],
-        bin_type="periodic",
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
         save_to=save_to
         )  # in radians
     # x direction of the cartesian coordinate system
     x_hist_info = fixedsize_bins(
         sim_name,
-        "xEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # y direction of the cartesian coordinate system
     y_hist_info = fixedsize_bins(
         sim_name,
-        "yEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cartesian coordinate system
     z_hist_info = fixedsize_bins(
         sim_name,
-        "zEdge",
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        'zEdge',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # check if any of the histograms are empty or not.
@@ -1994,7 +2121,7 @@ def trans_foci_cub_bug(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -2127,7 +2254,7 @@ def trans_foci_cub_all(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -2174,15 +2301,15 @@ def trans_foci_cub_all(
     print("\n" + sim_name + " is analyzing...\n")
     # dict of bin edges:
     bin_edges = {
-        "rEdge": {  # edges for distance r from the box center
-            "bin_size":  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": 0,
-            "lmax": 0.5 * sim_info.lcube
+        'rEdge': {  # edges for distance r from the box center
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.lcube
             },
-        "lEdge": {  # edges in cartesian coordinates
-            "bin_size":  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.lcube,
-            "lmax": 0.5 * sim_info.lcube
+        'lEdge': {  # edges in cartesian coordinates
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcube,
+            'lmax': 0.5 * sim_info.lcube
             },
         }
     # LJ time difference between two consecutive frames:
@@ -2210,67 +2337,67 @@ def trans_foci_cub_all(
     r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_foci_info = fixedsize_bins(
         sim_name,
         'rEdgeFoci',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_dna_info = fixedsize_bins(
         sim_name,
         'rEdgeDna',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     # x direction of the cartesian coordinate system
     x_hist_info = fixedsize_bins(
         sim_name,
-        "xEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # y direction of the cartesian coordinate system
     y_hist_info = fixedsize_bins(
         sim_name,
-        "yEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cartesian coordinate system
     z_hist_info = fixedsize_bins(
         sim_name,
-        "zEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'zEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # check if any of the histograms are empty or not.
@@ -2684,7 +2811,7 @@ def sum_rule_hetero_ring_cub_bug(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -2817,7 +2944,7 @@ def sum_rule_hetero_ring_cub_all(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -2864,15 +2991,15 @@ def sum_rule_hetero_ring_cub_all(
     print("\n" + sim_name + " is analyzing...\n")
     # dict of bin edges:
     bin_edges = {
-        "rEdge": {  # edges for distance r from the box center
-            "bin_size":  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": 0,
-            "lmax": 0.5 * sim_info.lcube
+        'rEdge': {  # edges for distance r from the box center
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.lcube
             },
-        "lEdge": {  # edges in cartesian coordinates
-            "bin_size":  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.lcube,
-            "lmax": 0.5 * sim_info.lcube
+        'lEdge': {  # edges in cartesian coordinates
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcube,
+            'lmax': 0.5 * sim_info.lcube
             },
         }
     # LJ time difference between two consecutive frames:
@@ -2900,67 +3027,67 @@ def sum_rule_hetero_ring_cub_all(
     r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_foci_info = fixedsize_bins(
         sim_name,
         'rEdgeFoci',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_dna_info = fixedsize_bins(
         sim_name,
         'rEdgeDna',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     # x direction of the cartesian coordinate system
     x_hist_info = fixedsize_bins(
         sim_name,
-        "xEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # y direction of the cartesian coordinate system
     y_hist_info = fixedsize_bins(
         sim_name,
-        "yEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cartesian coordinate system
     z_hist_info = fixedsize_bins(
         sim_name,
-        "zEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'zEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # check if any of the histograms are empty or not.
@@ -3374,7 +3501,7 @@ def sum_rule_hetero_linear_cub_bug(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -3510,7 +3637,7 @@ def sum_rule_hetero_linear_cub_all(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -3557,15 +3684,15 @@ def sum_rule_hetero_linear_cub_all(
     print("\n" + sim_name + " is analyzing...\n")
     # dict of bin edges:
     bin_edges = {
-        "rEdge": {  # edges for distance r from the box center
-            "bin_size":  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": 0,
-            "lmax": 0.5 * sim_info.lcube
+        'rEdge': {  # edges for distance r from the box center
+            'bin_size':  0.1 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.lcube
             },
-        "lEdge": {  # edges in cartesian coordinates
-            "bin_size":  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.lcube,
-            "lmax": 0.5 * sim_info.lcube
+        'lEdge': {  # edges in cartesian coordinates
+            'bin_size':  0.5 * min(sim_info.dmon_small, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcube,
+            'lmax': 0.5 * sim_info.lcube
             },
         }
     # LJ time difference between two consecutive frames:
@@ -3593,67 +3720,67 @@ def sum_rule_hetero_linear_cub_all(
     r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_foci_info = fixedsize_bins(
         sim_name,
         'rEdgeFoci',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_dna_info = fixedsize_bins(
         sim_name,
         'rEdgeDna',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     # x direction of the cartesian coordinate system
     x_hist_info = fixedsize_bins(
         sim_name,
-        "xEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # y direction of the cartesian coordinate system
     y_hist_info = fixedsize_bins(
         sim_name,
-        "yEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cartesian coordinate system
     z_hist_info = fixedsize_bins(
         sim_name,
-        "zEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'zEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # check if any of the histograms are empty or not.
@@ -4066,9 +4193,9 @@ def hns_nucleoid_cub(
     Note
     ----
     In the HNS-DNA-Crowder project, we have a single semi-flexible ring
-    polymer (called "bug") and several H-NS proteins (each formed of a core and
+    polymer (called 'bug') and several H-NS proteins (each formed of a core and
     two poles or patches) crowded by soft LJ spheres (crowders) in free
-    ("cubic" geometry) or confined ("cylindrical" geometry) space.
+    ('cubic' geometry) or confined ('cylindrical' geometry) space.
 
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to
@@ -4255,9 +4382,9 @@ def hns_nucleoid_cub_dis_hc_hc_cluster(
     Note
     ----
     In the HNS-DNA-Crowder project, we have a single semi-flexible ring
-    polymer (called "bug") and several H-NS proteins (each formed of a core and
+    polymer (called 'bug') and several H-NS proteins (each formed of a core and
     two poles or patches) crowded by soft LJ spheres (crowders) in free
-    ("cubic" geometry) or confined ("cylindrical" geometry) space.
+    ('cubic' geometry) or confined ('cylindrical' geometry) space.
 
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to
@@ -4356,9 +4483,9 @@ def hns_cub_all(
     Note
     ----
     In the HNS-DNA-Crowder project, we have a single semi-flexible ring
-    polymer (called "bug") and several H-NS proteins (each formed of a core and
+    polymer (called 'bug') and several H-NS proteins (each formed of a core and
     two poles or patches) crowded by soft LJ spheres (crowders) in free
-    ("cubic" geometry) or confined ("cylindrical" geometry) space.
+    ('cubic' geometry) or confined ('cylindrical' geometry) space.
 
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to the
@@ -4407,17 +4534,17 @@ def hns_cub_all(
     print("\n" + sim_name + " is analyzing...\n")
     # dict of bin edges:
     bin_edges = {
-        "rEdge": {  # edges for distance r from the box center
-            "bin_size":  0.1 * min(
+        'rEdge': {  # edges for distance r from the box center
+            'bin_size':  0.1 * min(
                 sim_info.dmon, sim_info.dhns, sim_info.dcrowd),
-            "lmin": 0,
-            "lmax": 0.5 * sim_info.lcube
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.lcube
             },
-        "lEdge": {
+        'lEdge': {
             # edges for 2d hist in x and y direction
-            "bin_size":  0.5 * min(sim_info.dmon, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.lcube,
-            "lmax": 0.5 * sim_info.lcube
+            'bin_size':  0.5 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcube,
+            'lmax': 0.5 * sim_info.lcube
             }
         }
     # LJ time difference between two consecutive frames:
@@ -4444,58 +4571,58 @@ def hns_cub_all(
     r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_hns_info = fixedsize_bins(
         sim_name,
         'rEdgeHns',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     # x direction of the cartesian coordinate system
     x_hist_info = fixedsize_bins(
         sim_name,
-        "xEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # y direction of the cartesian coordinate system
     y_hist_info = fixedsize_bins(
         sim_name,
-        "yEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cartesian coordinate system
     z_hist_info = fixedsize_bins(
         sim_name,
-        "zEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'zEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # check if any of the histograms are empty or not.
@@ -4816,9 +4943,9 @@ def hns_nucleoid_cyl(
     Note
     ----
     In the HNS-DNA-Crowder project, we have a single semi-flexible ring
-    polymer (called "bug") and several H-NS proteins (each formed of a core
+    polymer (called 'bug') and several H-NS proteins (each formed of a core
     and two poles or patches) crowded by soft LJ spheres (crowders) in
-    free ("cubic" geometry) or confined ("cylindrical" geometry) space.
+    free ('cubic' geometry) or confined ('cylindrical' geometry) space.
 
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to the
@@ -5013,9 +5140,9 @@ def hns_cyl_all(
     Note
     ----
     In the HNS-DNA-Crowder project, we have a single semi-flexible ring
-    polymer (called "bug") and several H-NS proteins (each formed of a core
+    polymer (called 'bug') and several H-NS proteins (each formed of a core
     and two poles or patches) crowded by soft LJ spheres (crowders) in
-    free ("cubic" geometry) or confined ("cylindrical" geometry) space.
+    free ('cubic' geometry) or confined ('cylindrical' geometry) space.
 
     In this project, coordinates are wrapped and unscaled in a trajectory or
     topology file; moreover, the coordinated are recentered with respect to the
@@ -5064,26 +5191,26 @@ def hns_cyl_all(
     print("\n" + sim_name + " is analyzing...\n")
     # dict of bin edges:
     bin_edges = {
-        "rEdge": {
-            "bin_size":  0.1 * min(sim_info.dmon, sim_info.dcrowd),
-            "lmin": 0,
-            "lmax": 0.5 * sim_info.dcyl
+        'rEdge': {
+            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.dcyl
             },
-        "zEdge": {
-            "bin_size":  0.5 * min(sim_info.dmon, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.lcyl,
-            "lmax": 0.5 * sim_info.lcyl
+        'zEdge': {
+            'bin_size':  0.5 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcyl,
+            'lmax': 0.5 * sim_info.lcyl
             },
-        "thetaEdge": {
-            "bin_size":  np.pi / 36,
-            "lmin": -1 * np.pi,
-            "lmax": np.pi
+        'thetaEdge': {
+            'bin_size':  np.pi / 36,
+            'lmin': -1 * np.pi,
+            'lmax': np.pi
             },
-        "lEdge": {
+        'lEdge': {
             # edges for 2d hist in x and y direction
-            "bin_size":  0.1 * min(sim_info.dmon, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.dcyl,
-            "lmax": 0.5 * sim_info.dcyl
+            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.dcyl,
+            'lmax': 0.5 * sim_info.dcyl
             }
     }
     # LJ time difference between two consecutive frames:
@@ -5110,114 +5237,114 @@ def hns_cyl_all(
     r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_hns_info = fixedsize_bins(
         sim_name,
         'rEdgeHns',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     # longitudinal direction of the cylindrical coordinate system
     z_hist_crd_info = fixedsize_bins(
         sim_name,
         'zEdgeCrd',
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     z_hist_mon_info = fixedsize_bins(
         sim_name,
         'zEdgeMon',
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     z_hist_hns_info = fixedsize_bins(
         sim_name,
         'zEdgeHns',
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # theta of the cylindrical coordinate system
     theta_hist_crd_info = fixedsize_bins(
         sim_name,
         'thetaEdgeCrd',
-        bin_edges["thetaEdge"]["bin_size"],
-        bin_edges["thetaEdge"]["lmin"],
-        bin_edges["thetaEdge"]["lmax"],
-        bin_type="periodic",
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
         save_to=save_to
         )  # in radians
     theta_hist_mon_info = fixedsize_bins(
         sim_name,
         'thetaEdgeMon',
-        bin_edges["thetaEdge"]["bin_size"],
-        bin_edges["thetaEdge"]["lmin"],
-        bin_edges["thetaEdge"]["lmax"],
-        bin_type="periodic",
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
         save_to=save_to
         )  # in radians
     theta_hist_hns_info = fixedsize_bins(
         sim_name,
         'thetaEdgeHns',
-        bin_edges["thetaEdge"]["bin_size"],
-        bin_edges["thetaEdge"]["lmin"],
-        bin_edges["thetaEdge"]["lmax"],
-        bin_type="periodic",
+        bin_edges['thetaEdge']['bin_size'],
+        bin_edges['thetaEdge']['lmin'],
+        bin_edges['thetaEdge']['lmax'],
+        bin_type='periodic',
         save_to=save_to
         )  # in radians
     # x direction of the cartesian coordinate system
     x_hist_info = fixedsize_bins(
         sim_name,
-        "xEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # y direction of the cartesian coordinate system
     y_hist_info = fixedsize_bins(
         sim_name,
-        "yEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cartesian coordinate system
     z_hist_info = fixedsize_bins(
         sim_name,
-        "zEdge",
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
+        'zEdge',
+        bin_edges['zEdge']['bin_size'],
+        bin_edges['zEdge']['lmin'],
+        bin_edges['zEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # check if any of the histograms are empty or not.
@@ -5610,7 +5737,7 @@ def two_mon_dep_cub_all(
     ----
     In this project, coordinates are wrapped and unscaled in a
     trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
+    restrict the center of mass of 'bug' (monomers) to the center of
     simulation box; and consequently, coordinates of all the particles in a
     trajectory or topology file is recentered to fulfill this constraint.
 
@@ -5657,15 +5784,15 @@ def two_mon_dep_cub_all(
     print("\n" + sim_name + " is analyzing...\n")
     # dict of bin edges:
     bin_edges = {
-        "rEdge": {  # edges for distance r from the box center
-            "bin_size":  0.1 * min(sim_info.dmon, sim_info.dcrowd),
-            "lmin": 0,
-            "lmax": 0.5 * sim_info.lcube
+        'rEdge': {  # edges for distance r from the box center
+            'bin_size':  0.1 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmin': 0,
+            'lmax': 0.5 * sim_info.lcube
             },
-        "lEdge": {  # edges in cartesian coordinates
-            "bin_size":  0.5 * min(sim_info.dmon, sim_info.dcrowd),
-            "lmin": -0.5 * sim_info.lcube,
-            "lmax": 0.5 * sim_info.lcube
+        'lEdge': {  # edges in cartesian coordinates
+            'bin_size':  0.5 * min(sim_info.dmon, sim_info.dcrowd),
+            'lmin': -0.5 * sim_info.lcube,
+            'lmax': 0.5 * sim_info.lcube
             },
         }
     # LJ time difference between two consecutive frames:
@@ -5693,49 +5820,49 @@ def two_mon_dep_cub_all(
     r_hist_crd_info = fixedsize_bins(
         sim_name,
         'rEdgeCrd',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     r_hist_mon_info = fixedsize_bins(
         sim_name,
         'rEdgeMon',
-        bin_edges["rEdge"]["bin_size"],
-        bin_edges["rEdge"]["lmin"],
-        bin_edges["rEdge"]["lmax"],
-        bin_type="nonnegative",
+        bin_edges['rEdge']['bin_size'],
+        bin_edges['rEdge']['lmin'],
+        bin_edges['rEdge']['lmax'],
+        bin_type='nonnegative',
         save_to=save_to
     )
     # x direction of the cartesian coordinate system
     x_hist_info = fixedsize_bins(
         sim_name,
-        "xEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'xEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # y direction of the cartesian coordinate system
     y_hist_info = fixedsize_bins(
         sim_name,
-        "yEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'yEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # z direction of the cartesian coordinate system
     z_hist_info = fixedsize_bins(
         sim_name,
-        "zEdge",
-        bin_edges["lEdge"]["bin_size"],
-        bin_edges["lEdge"]["lmin"],
-        bin_edges["lEdge"]["lmax"],
-        bin_type="ordinary",
+        'zEdge',
+        bin_edges['lEdge']['bin_size'],
+        bin_edges['lEdge']['lmin'],
+        bin_edges['lEdge']['lmax'],
+        bin_type='ordinary',
         save_to=save_to
     )
     # check if any of the histograms are empty or not.
