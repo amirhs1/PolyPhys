@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, Literal, Union
 import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.analysis import distances as mda_dist
@@ -13,181 +13,299 @@ from polyphys.analyze import clusters, correlations
 from polyphys.analyze.measurer import transverse_size, fsd, end_to_end
 
 
-def bin_create(
-    sim_name: str,
-    edge_name: str,
-    bin_size: float,
-    lmin: float,
-    lmax: float,
-    save_to: str
-) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Generates arrays of bins and histograms
+def new_mean(old_mean: float, data: float, length: int) -> float:
+    r"""Compute the arithmetic mean of a series iteratively.
+
+    Compute the arithmetic mean of n samples based on an existing mean of n-1 and the
+    n-th value.
+
+    Given the mean of a data series
+
+    .. math::
+
+        \bar x_N = \frac{1}{N} \sum_{n=1}^N x_n
+
+    we seperate the last value
+
+    .. math::
+
+        \bar x_N = \frac{1}{N} \sum_{n=1}^{N-1} x_n + \frac{x_N}{N}
+
+    and multiply 1 = (N - 1)/(N - 1)
+
+    .. math::
+
+        \bar x_N = \frac{N-1}{N} \frac{1}{N-1} \\ \sum_{n=1}^{N-1} x_n + \frac{x_N}{N}
+
+    The first term can be identified as the mean of the first N - 1 values and we arrive
+    at
+
+    .. math::
+
+        \bar x_N = \frac{N-1}{N} \bar x_{N-1} + \frac{x_N}{N}
+
 
     Parameters
     ----------
-    sim_name: str
-        Name of the simulation.
-    edge_name: str
-        Name of the variable for which the histogram is computed.
+    old_mean : float
+        arithmetic mean of the first n - 1 samples.
+    data : float
+        n-th value of the series.
+    length : int
+        Length of the updated series, here called n.
+
+    Returns
+    -------
+    new_mean : float
+        Updated mean of the series of n values.
+
+    Examples
+    --------
+    The mean of a data set can easily be calculated from the data points. However this
+    requires one to keep all data points on hand until the end of the calculation.
+
+    >>> np.mean([1, 3, 5, 7])
+    4.0
+
+    Alternatively, one can update an existing mean, this requires only knowledge of the
+    total number of samples.
+
+    >>> new_mean(np.mean([1, 3, 5]), data=7, length=4)
+    4.0
+    """
+    return ((length - 1) * old_mean + data) / length
+
+
+def new_variance(
+    old_variance: Union[float, np.ndarray],
+    old_mean: Union[float, np.ndarray],
+    new_mean: Union[float, np.ndarray],
+    data: Union[float, np.ndarray],
+    length: int,
+) -> Union[float, np.ndarray]:
+    r"""Calculate the variance of a timeseries iteratively.
+
+    The variance of a timeseries :math:`x_n` can be calculated iteratively by using the
+    following formula:
+
+    .. math::
+
+        S_n = S_n-1 + (n-1) * (x_n - \bar{x}_n-1)^2 / (n-1)
+
+    Here, :math:`\bar{x}_n` is the mean of the timeseries up to the :math:`n`-th value.
+
+    Floating point imprecision can lead to slight negative variances leading non defined
+    standard deviations. Therefore a negetaive variance is set to 0.
+
+    Parameters
+    ----------
+    old_variance : float, numpy.ndarray
+        The variance of the first n-1 samples.
+    old_mean : float
+        The mean of the first n-1 samples.
+    new_mean : float, numpy.ndarray
+        The mean of the full n samples.
+    data : float, numpy.ndarray
+        The n-th value of the series.
+    length : int
+        Length of the updated series, here called n.
+
+    Returns
+    -------
+    new_variance : float
+        Updated variance of the series of n values.
+
+    Examples
+    --------
+    The data set ``[1, 5, 5, 1]`` has a variance of ``4.0``
+
+    >>> np.var([1, 5, 5, 1])
+    4.0
+
+    Knowing the total number of data points, this operation can be performed
+    iteratively.
+
+    >>> new_variance(
+    ...     old_variance=np.var([1, 5, 5]),
+    ...     old_mean=np.mean([1, 5, 5]),
+    ...     new_mean=np.mean([1, 5, 5, 1]),
+    ...     data=1,
+    ...     length=4,
+    ... )
+    4.0
+    """
+    S_old = old_variance * (length - 1)
+    S_new = S_old + (data - old_mean) * (data - new_mean)
+
+    if type(S_new) is np.ndarray:
+        S_new[S_new < 0] = 0
+    else:
+        if S_new < 0:
+            S_new = 0
+
+    return S_new / length
+
+
+def create_bin_edge_and_hist(
+    bin_size: float,
+    lmin: float,
+    lmax: float,
+    output: Optional[str] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Create bin edges and an empty histogram for data processing.
+
+    Parameters
+    ----------
     bin_size : float
         Size of each bin.
     lmin : float
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    save_to : str
-        Whether save outputs to memory as csv files or not.
+    outout : str
+        Filename (including filepath) to which bin edges array is saved. A
+        `.npy` extension will be appended to the filename if it does not
+        already have one.
 
-    Return
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        bin_edges : np.ndarray
+            The edges to pass into a histogram.
+        hist : np.ndarray
+            An empty histogram array initialized with zeros. 
+
+    Raises
     ------
-    bin_edges : numpy array of float
-        The edges to pass into a histogram. Save `bin_edges` to file if
-        `save_to` is not None.
-    hist: array of int
-        An empty histogram
+    ValueError
+        If `lmin` is not less than `lmax`.
+
+    Notes
+    -----
+    The `.npy` extension is handled internally by `np.save`.
     """
+    if lmin >= lmax:
+        raise ValueError("Lower bound `lmin` must be less than upper bound `lmax`.")
+    
     bin_edges = np.arange(lmin, lmax + bin_size, bin_size)
     hist = np.zeros(len(bin_edges) - 1, dtype=np.int16)
-    np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
+    
+    if output is not None:
+        # Save bin edges to file if save_to path is provided
+        # f"{save_to}{sim_name}-{edge_name}.npy"
+        np.save(output, bin_edges)
+    
     return bin_edges, hist
 
 
 def fixedsize_bins(
-    sim_name: str,
-    edge_name: str,
     bin_size: float,
     lmin: float,
     lmax: float,
-    bin_type: str = "ordinary",
-    save_to: Optional[str] = None,
+    bin_type: Literal["ordinary", "nonnegative", "periodic"] = "ordinary",
+    save_bin_edges: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Generates arrays of bins and histograms, ensuring that the `bin_size`
-    guaranteed. To achieve this, it extends the `lmin` and `lmax` limits.
-
-    To-do List
-    ----------
-    1. Following the idea used:
-    https://docs.mdanalysis.org/1.1.1/_modules/MDAnalysis/lib/util.html#fixedwidth_bins
-    Makes input array-like so bins can be calculated for 1D data (then all
-    parameters are simple floats) or nD data (then parameters are supplied
-    as arrays, with each entry corresponding to one dimension).
-    2. Eliminate the if-statement for the periodic_bin_edges.
+    Generate bin edges and an empty histogram, adjusting `lmin` and `lmax` to ensure consistent `bin_size`.
 
     Parameters
     ----------
-    sim_name: str
-        Name of the simulation.
-    edge_name: str
-        Name of the variable for which the histogram is computed.
     bin_size : float
         Size of each bin.
     lmin : float
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    bin_type: {"ordinary", "nonnegative", "periodic"}, default "ordinary"
-        The type of bin in a given direction in a given coordinate system:
+    bin_type : {"ordinary", "nonnegative", "periodic"}, default "ordinary"
+        Type of bin:
+            - "ordinary": Extends `lmin` and `lmax` symmetrically. Examples are
+              Cartesian coordinates and spherical polar coordinate.
+            - "nonnegative": Extends `lmin` are `lmax` are symmetrically  if
+              adjusted `lmin` is nonnegative; othervise, `lmin` is set to 0 and
+              `lmax` is extended. Examples are radial directions in the polar,
+              spherical, and cylindrical coordinate systems.
+            - "periodic": Periodic binning (e.g., azimuthal coordinate).
+              Examples are azimuthal directions in cylindrical and spherical
+            coordinate systems.
+    save_bin_edges : Optional[str], default None
+        Filename (including filepath) to which bin edges array is saved. A
+        `.npy` extension will be appended to the filename if it does not
+        already have one.
 
-        "ordinary"
-            A bounded or unbounded coordinate such as any of the cartesian
-            coordinates or the polar coordinate in the spherical coordinate
-            system. For such coordinates, the `lmin` and `lmax` limits are
-            equally extended to ensure the `bin_size`.
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary with keys:
+        - 'n_bins' : int
+            Number of bins.
+        - 'bin_edges' : np.ndarray
+            Array of bin edges.
+        - 'collector' : np.ndarray
+            Array initialized for histogram values.
+        - 'collector_std' : np.ndarray
+            Array initialized for standard deviation values.
+        - 'range' : Tuple[float, float]
+            Updated range of bins (`lmin`, `lmax`).
 
-        "nonnegative"
-            A nonnegative coordinate such as the r direction in the polar
-            or spherical coordinate system. For such coordinates, ONLY `lmax`
-            limit is extended to ensure the `bin_size`. `lmin` is either 0.0
-            or a positive number smaller than `lmax`.
-
-        "periodic"
-            A periodic coordinate such as the azimuthal direction in the
-            spherical coordinate. It is assumed that 'period'=`lmax`-`lmin`;
-            therefore, if 'period' is not a multiple of `bin_size`, then an
-            array of bin_edges is used; otherwise, n_bins is used.
-
-    save_to : str, default None
-        Whether save outputs to memory as npy files or not.
-
-    Return
+    Raises
     ------
-    bin_edges : numpy array of  float
-        The edges to pass into a histogram. Save `bin_edges` to file if
-        `save_to` is not None.
-    hist: array of  int
-        An empty histogram
+    ValueError
+        If `lmin` is not less than `lmax`.
 
-    Reference:
+    Notes
+    -----
+    The `.npy` extension is handled internally by `np.save`.
+
+    References
+    ----------
     https://docs.mdanalysis.org/1.1.1/documentation_pages/lib/util.html#MDAnalysis.analysis.density.fixedwidth_bins
     """
-    hist_collectors = 0
-    bin_edges = 0
-    bin_types = ["ordinary", 'nonnagative', "periodic"]
     if lmin >= lmax:
-        raise ValueError('Boundaries are not sane: should be xmin < xmax.')
+        raise ValueError("Lower bound `lmin` must be less than upper bound `lmax`.")
+    
+    _length = lmax - lmin
     _delta = bin_size
-    _lmin = lmin
-    _lmax = lmax
-    _length = _lmax - _lmin
-    n_bins: int = 0
+    
     if bin_type == "ordinary":
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)  # excess length
         # add half of the excess to each end:
-        _lmin = _lmin - dl
-        _lmax = _lmax + dl
-        # create empty grid with the right dimensions (and get the edges)
-        hist_collectors, bin_edges = np.histogram(
-            np.zeros(1),
-            bins=n_bins,
-            range=(_lmin, _lmax)
-        )
+        lmin_adj = lmin - dl
+        lmax_adj = lmax + dl
+        bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
     elif bin_type == "nonnegative":
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)
-        _lmin = _lmin - dl
-        _lmax = _lmax + dl
-        if _lmin <= 0.0:
-            _lmin = 0.0
-            # add full of the excess to upper end:
-            _lmax = _lmax + 2 * dl
-        hist_collectors, bin_edges = np.histogram(
-            np.zeros(1),
-            bins=n_bins,
-            range=(_lmin, _lmax)
-        )
-    elif bin_type == "periodic":  # Assuming that the _length=period:
+        lmin_adj = max(0.0, lmin - dl)
+        lmax_adj = lmax + 2 * dl if lmin_adj == 0 else lmax + dl
+        bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
+    elif bin_type == "periodic":
         n_bins = int(np.ceil(_length / _delta))
-        warnings.warn(
-            f"Number of bins (n_bins='{n_bins}')"
-            " is more than or equal to the actual number of bins in "
-            f""periodic" bin type because the 'period=lmax-min={_length}'"
-            f"and delta='{_delta}'"
-            ",not 'n_bins', are used to created 'bin_edges'.",
-            UserWarning
-            )
-        bin_edges = np.arange(_lmin, _lmax + _delta, _delta)
-        hist_collectors, bin_edges = np.histogram(
-            np.zeros(1),
-            bins=bin_edges,
-            range=(_lmin, _lmax)
-        )
+        lmin_adj, lmax_adj = lmin, lmax
+        bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta)
+        if (len(bin_edges) - 1) != n_bins:
+            # Number of bins (n_bins='{n_bins}') is different from the actual
+            # number of bins (n_edges-1={len(bin_edges)-1}) for the 'periodic'
+            # bin type because period, i.e., 'lmax-lmin={_length}', and
+            # delta={_delta}, not 'n_bins', are used to created 'bin_edges'.
+            warnings.warn("'n_bins' is set to 'len(bin_edges)-1'", UserWarning)
     else:
-        invalid_keyword(bin_type, bin_types)
-    hist_collectors = hist_collectors * 0
-    hist_collectors_std = hist_collectors * 0
-    if save_to is not None:
-        np.save(save_to + sim_name + '-' + edge_name + '.npy', bin_edges)
-    results = {
-        'n_bins': n_bins,
-        'bin_edges': bin_edges,
-        'collector': hist_collectors,
-        'collector_std': hist_collectors_std,
-        'range': (_lmin, _lmax)
+        invalid_keyword(bin_type, ["ordinary", 'nonnagative', "periodic"])
+
+    hist_collectors = np.zeros(n_bins, dtype=np.int16)
+    hist_collectors_std = np.zeros(n_bins, dtype=np.int16)
+
+    if save_bin_edges is not None:
+        np.save(save_bin_edges, bin_edges)
+    
+    return {
+        "n_bins": n_bins,
+        "bin_edges": bin_edges,
+        "collector": hist_collectors,
+        "collector_std": hist_collectors_std,
+        "range": (lmin_adj, lmax_adj)
     }
-    return results
 
 
 def write_hists(
@@ -197,33 +315,33 @@ def write_hists(
     std: bool = False
 ) -> None:
     """
-    Writes histogram per entity per direction to file.
+    Save histogram data to file for each direction and entity in `hist_infos`.
 
     Parameters
     ----------
     hist_infos : Dict[str, Any]
-        A dict of dicts that contains the information about direction, entities,
-         and histograms.
-    sim_name: str
-        The name of simulation file to which the `hist_infos` belongs.
-    save_to: str
-        The absolute/relative path of a directory to which outputs are saved.
+        A dictionary containing histogram data for different directions and entities.
+    sim_name : str
+        Simulation name to use in the output file names.
+    save_to : str
+        Directory path to save the histogram data.
     std : bool, default False
-        _description_, by default False
+        If True, saves the standard deviation data alongside the histogram data.
+
+    Returns
+    -------
+    None
     """
-    for dir_ in hist_infos.keys():
-        for entity, hist in hist_infos[dir_].items():
-            np.save(
-                save_to + sim_name + '-' + dir_ + entity + '.npy',
-                hist['collector']
-            )
-            if std is True:
-                np.save(
-                    save_to + sim_name + '-' + dir_ + 'Std' + entity + '.npy',
-                    hist['collector_std']
-                )
-        # end of loop
-    # end of loop
+    for direction, entities in hist_infos.items():
+        for entity, hist_data in entities.items():
+            # Save collector histogram
+            collector_filename = f"{save_to}{sim_name}-{direction}{entity}.npy"
+            np.save(collector_filename, hist_data['collector'])
+
+            # Optionally save collector standard deviation
+            if std:
+                collector_std_filename = f"{save_to}{sim_name}-{direction}Std{entity}.npy"
+                np.save(collector_std_filename, hist_data['collector_std'])
 
 
 class ProberBase(ABC):
@@ -651,8 +769,8 @@ class SumRuleCylAllProber(ProberBase):
         )
 
     def _define_atom_groups(self) -> None:
-        self._atom_groups['crds'] = self._universe.select_atoms('resid 0')
-        self._atom_groups['bug'] = self._universe.select_atoms('resid 1')
+        self._atom_groups['Crd'] = self._universe.select_atoms('resid 0')
+        self._atom_groups['Mon'] = self._universe.select_atoms('resid 1')
 
     def _setup_bins(self) -> None:
         self._bin_edges = {
@@ -687,103 +805,148 @@ class SumRuleCylAllProber(ProberBase):
         hist2d_planes_dirs = ["xy": "z", "xz": "y", "yz": "x"]
         for ent in entities:
             for dir, edge_t in hist1d_bin_type.items():
-                collector_info = fixedsize_bins(
-                    self._sim_name,
-                    f"{dir}Edge",
+                output = f"{self._save_to}{self._sim_name}-{dir}Edge{ent}"
+                self._collectors[f"{dir}Hist{ent}"] = fixedsize_bins(
                     self._bin_edges[f"{dir}Edge"]["bin_size"],
                     self._bin_edges[f"{dir}Edge"]["lmin"],
                     self._bin_edges[f"{dir}Edge"]["lmax"],
                     bin_type=edge_t,
-                    save_to=self._save_to
+                    save_bin_edges=output
                 )
-                self._collectors[f"{dir}Hist{ent}"] = \
-                    np.zeros(collector_info['n_bins'])
             for plane, dir in hist2d_planes_dirs.items():
-                collector_info = fixedsize_bins(
-                    self._sim_name,
-                    f"{dir}Edge",
-                    self._bin_edges[f"lEdge"]["bin_size"],
-                    self._bin_edges[f"lEdge"]["lmin"],
-                    self._bin_edges[f"lEdge"]["lmax"],
+                # different bin size in xy plane (z direction):
+                if plane == "xy":
+                    edge_name = "zEdge"
+                else:
+                    edge_name = "lEdge"
+                output = f"{self._save_to}{self._sim_name}-{edge_name}{ent}"
+                self._collectors[f"{plane}Hist{ent}"] = fixedsize_bins(
+                    self._bin_edges[edge_name]["bin_size"],
+                    self._bin_edges[edge_name]["lmin"],
+                    self._bin_edges[edge_name]["lmax"],
                     bin_type='ordinary',
-                    save_to=self._save_to
+                    save_bin_edges=output
                 )
-                self._collectors[f"{plane}Hist{ent}"] = 0
-
 
     def _probe_frame(self, idx) -> None:
-        self._collectors["transSizeTMon"][idx] = \
-            transverse_size(self._atom_groups['bug'].positions, axis=2)
-        self._collectors["fsdTMon"][idx] = \
-            fsd(self._atom_groups['bug'].positions, axis=2)
-        self._collectors["gyrTMon"][idx] = \
-            self._atom_groups['bug'].radius_of_gyration()
-        self._collectors["rfloryTMon"][idx] = \
-            end_to_end(self._atom_groups['bug'].positions)
-        self._collectors["asphericityTMon"][idx] = \
-            self._atom_groups['bug'].asphericity(wrap=False, unwrap=False)
-        self._collectors["shapeTMon"][idx] = \
-            self._atom_groups['bug'].shape_parameter(wrap=False)
-        self._collectors["principalTMon"][idx] = \
-            self._atom_groups['bug'].principal_axes(wrap=False)
+        # r
+        # # Crd
+        pos_hist, _ = np.histogram(
+            np.linalg.norm(self._atom_groups['Crd'].positions[:, :2], axis=1),
+            bins=self._collectors['rHistCrd']['bin_edges'],
+            range=self._collectors['rHistCrd']['range']
+        )
+        self._collectors['rHistCrd']['collector'] += pos_hist
+        self._collectors['rHistCrd']['collector_std'] += np.square(pos_hist)
+        # # Mon
+        pos_hist, _ = np.histogram(
+            np.linalg.norm(self._atom_groups['Mon'].positions[:, :2], axis=1),
+            bins=self._collectors['rHistMon']['bin_edges'],
+            range=self._collectors['rHistMon']['range']
+        )
+        self._collectors['rHistMon']['collector'] += pos_hist
+        self._collectors['rHistMon']['collector_std'] += np.square(pos_hist)
+        # z
+        # # Crd
+        pos_hist, _ = np.histogram(
+            self._atom_groups['Crd'].positions[:, 2],
+            bins=self._collectors['zHistCrd']['bin_edges'],
+            range=self._collectors['zHistCrd']['range']
+        )
+        self._collectors['zHistCrd']['collector'] += pos_hist
+        self._collectors['zHistCrd']['collector_std'] += np.square(pos_hist)
+        # # Mon
+        pos_hist, _ = np.histogram(
+            self._atom_groups['Mon'].positions[:, 2],
+            bins=self._collectors['zHistMon']['bin_edges'],
+            range=self._collectors['zHistMon']['range']
+        )
+        self._collectors['zHistMon']['collector'] += pos_hist
+        self._collectors['zHistMon']['collector_std'] += np.square(pos_hist)
+        # theta
+        # # Crd
+        pos_hist, _ = np.histogram(
+            np.arctan2(
+                self._atom_groups['Crd'].positions[:, 1],
+                self._atom_groups['Crd'].positions[:, 0]),
+            bins=self._collectors['thetaHistCrd']['bin_edges'],
+            range=self._collectors['thetaHistCrd']['range']
+        )
+        self._collectors['thetaHistCrd']['collector'] += pos_hist
+        self._collectors['thetaHistCrd']['collector_std'] += np.square(pos_hist)
+        # # Mon
+        pos_hist, _ = np.histogram(
+            np.arctan2(
+                self._atom_groups['Mon'].positions[:, 1],
+                self._atom_groups['Mon'].positions[:, 0]),
+            bins=self._collectors['thetaHistMon']['bin_edges'],
+            range=self._collectors['thetaHistMon']['range']
+        )
+        self._collectors['thetaHistMon']['collector'] += pos_hist
+        self._collectors['thetaHistMon']['collector_std'] += np.square(pos_hist)
+        # xy
+        # # Crd
+        pos_hist, _ = np.histogram2d(
+            self._atom_groups['Crd'].positions[:, 0],
+            self._atom_groups['Crd'].positions[:, 1],
+            bins=self._collectors['xyHistCrd']['bin_edges'],
+            range=self._collectors['xyHistCrd']['range']
+        )
+        self._collectors['xyHistCrd']['collector'] += pos_hist
+        self._collectors['xyHistCrd']['collector_std'] += np.square(pos_hist)
+        # # Mon
+        pos_hist, _ = np.histogram2d(
+            self._atom_groups['Mon'].positions[:, 0],
+            self._atom_groups['Mon'].positions[:, 1],
+            bins=self._collectors['xyHistMon']['bin_edges'],
+            range=self._collectors['xyHistMon']['range']
+        )
+        self._collectors['xyHistMon']['collector'] += pos_hist
+        self._collectors['xyHistMon']['collector_std'] += np.square(pos_hist)
+        # xz
+        # # Crd
+        pos_hist, _ = np.histogram2d(
+            self._atom_groups['Crd'].positions[:, 0],
+            self._atom_groups['Crd'].positions[:, 2],
+            bins=self._collectors['xzHistCrd']['bin_edges'],
+            range=self._collectors['xzHistCrd']['range']
+        )
+        self._collectors['xzHistCrd']['collector'] += pos_hist
+        self._collectors['xzHistCrd']['collector_std'] += np.square(pos_hist)
+        # # Mon
+        pos_hist, _ = np.histogram2d(
+            self._atom_groups['Mon'].positions[:, 0],
+            self._atom_groups['Mon'].positions[:, 2],
+            bins=self._collectors['xzHistMon']['bin_edges'],
+            range=self._collectors['xzHistMon']['range']
+        )
+        self._collectors['xzHistMon']['collector'] += pos_hist
+        self._collectors['xzHistMon']['collector_std'] += np.square(pos_hist)
+        # yz
+        # # Crd
+        pos_hist, _ = np.histogram2d(
+            self._atom_groups['Crd'].positions[:, 1],
+            self._atom_groups['Crd'].positions[:, 2],
+            bins=self._collectors['yzHistCrd']['bin_edges'],
+            range=self._collectors['yzHistCrd']['range']
+        )
+        self._collectors['yzHistCrd']['collector'] += pos_hist
+        self._collectors['yzHistCrd']['collector_std'] += np.square(pos_hist)
+        # # Mon
+        pos_hist, _ = np.histogram2d(
+            self._atom_groups['Mon'].positions[:, 1],
+            self._atom_groups['Mon'].positions[:, 2],
+            bins=self._collectors['yzHistMon']['bin_edges'],
+            range=self._collectors['yzHistMon']['range']
+        )
+        self._collectors['yzHistMon']['collector'] += pos_hist
+        self._collectors['yzHistMon']['collector_std'] += np.square(pos_hist)
+
 
 def sum_rule_cyl_all(
-    topology: str,
-    trajectory: str,
-    lineage: str,
     save_to: str = "./",
-    continuous: Optional[bool] = False
 ) -> None:
-    """
-    Runs various analyses on a `lineage` simulation of an 'all' atom
-    group in the `geometry` of interest, and saves a variety of
-    outputs (mostly in the csv format) to the `save_to` directory.
-
-    Note
-    ----
-    In this project, coordinates are wrapped and unscaled in a
-    trajectory or topology file; moreover, LAMMPS recenter is used to
-    restrict the center of mass of "bug" (monomers) to the center of
-    simulation box; and consequently, coordinates of all the particles in a
-    trajectory or topology file is recentered to fulfill this constraint.
-
-    In MDAnalysis, selections by `universe.select_atoms` always return an
-    AtomGroup with atoms sorted according to their index in the topology.
-    This feature is used below to measure the end-to-end distance (Flory
-    radius), genomic distance (index differnce along the backbone), and any
-    other measurement that needs the sorted indices of atoms,bonds, angles, and
-    any other attribute of an atom.
-
-    Parameters
-    ----------
-    topology: str
-        Name of the topology file.
-    trajectory: str
-        Name of the trajectory file.
-    lineage: {'segment', 'whole'}
-        Type of the input file.
-    save_to: str
-        The absolute/relative path of a directory to which outputs are saved.
-    continuous: bool, default False
-        Whether a `trajectory` file is a part of a sequence of trajectory
-        segments or not.
-    """
-
-    # radial direction of the cylindrical coordinate system
-    # longitudinal direction of the cylindrical coordinate system
-    # z direction of the cartesian coordinate system
-    z_hist_info = fixedsize_bins(
-        sim_name,
-        "zEdge",
-        bin_edges["zEdge"]["bin_size"],
-        bin_edges["zEdge"]["lmin"],
-        bin_edges["zEdge"]["lmax"],
-        bin_type="ordinary",
-        save_to=save_to
-    )
-    # x direction of the cartesian coordinate system
-    # y direction of the cartesian coordinate system
-    # check if any of the histograms are empty or not.
+    
     if any([
             r_hist_mon_info['collector'].any() != 0,
             r_hist_crd_info['collector'].any() != 0,
@@ -911,105 +1074,6 @@ def sum_rule_cyl_all(
     }
     yz_hist_mon_info['collector'] = np.zeros(yz_hist_mon_info['n_bins'])
     yz_hist_mon_info['collector'] *= 0
-    for _ in sliced_trj:
-        # crds
-        # # r
-        pos_hist, _ = np.histogram(
-            np.linalg.norm(crds.positions[:, :2], axis=1),
-            bins=r_hist_crd_info['bin_edges'],
-            range=r_hist_crd_info['range']
-        )
-        r_hist_crd_info['collector'] += pos_hist
-        r_hist_crd_info['collector_std'] += np.square(pos_hist)
-        # # z
-        pos_hist, _ = np.histogram(
-            crds.positions[:, 2],
-            bins=z_hist_crd_info['bin_edges'],
-            range=z_hist_crd_info['range']
-        )
-        z_hist_crd_info['collector'] += pos_hist
-        z_hist_crd_info['collector_std'] += np.square(pos_hist)
-        # # theta in radians
-        pos_hist, _ = np.histogram(
-            np.arctan2(crds.positions[:, 1], crds.positions[:, 0]),
-            bins=theta_hist_crd_info['bin_edges'],
-            range=theta_hist_crd_info['range']
-        )
-        theta_hist_crd_info['collector'] += pos_hist
-        theta_hist_crd_info['collector_std'] += np.square(pos_hist)
-        # # xy
-        pos_hist, _, _ = np.histogram2d(
-            crds.positions[:, 0],
-            crds.positions[:, 1],
-            bins=xy_hist_crd_info['bin_edges'],
-            range=xy_hist_crd_info['range'],
-        )
-        xy_hist_crd_info['collector'] += pos_hist
-        # # xz
-        pos_hist, _, _ = np.histogram2d(
-            crds.positions[:, 0],
-            crds.positions[:, 2],
-            bins=xz_hist_crd_info['bin_edges'],
-            range=xz_hist_crd_info['range'],
-        )
-        xz_hist_crd_info['collector'] += pos_hist
-        # # yz
-        pos_hist, _, _ = np.histogram2d(
-            crds.positions[:, 1],
-            crds.positions[:, 2],
-            bins=yz_hist_crd_info['bin_edges'],
-            range=yz_hist_crd_info['range'],
-        )
-        yz_hist_crd_info['collector'] += pos_hist
-        # bug
-        # # r
-        pos_hist, _ = np.histogram(
-            np.linalg.norm(bug.positions[:, :2], axis=1),
-            bins=r_hist_mon_info['bin_edges'],
-            range=r_hist_mon_info['range']
-        )
-        r_hist_mon_info['collector'] += pos_hist
-        r_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # # z
-        pos_hist, _ = np.histogram(
-            bug.positions[:, 2],
-            bins=z_hist_mon_info['bin_edges'],
-            range=z_hist_mon_info['range']
-        )
-        z_hist_mon_info['collector'] += pos_hist
-        z_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # # theta in radian
-        pos_hist, _ = np.histogram(
-            np.arctan2(bug.positions[:, 1], bug.positions[:, 0]),
-            bins=theta_hist_mon_info['bin_edges'],
-            range=theta_hist_mon_info['range']
-        )
-        theta_hist_mon_info['collector'] += pos_hist
-        theta_hist_mon_info['collector_std'] += np.square(pos_hist)
-        # # xy
-        pos_hist, _, _ = np.histogram2d(
-            bug.positions[:, 0],
-            bug.positions[:, 1],
-            bins=xy_hist_mon_info['bin_edges'],
-            range=xy_hist_mon_info['range'],
-        )
-        xy_hist_mon_info['collector'] += pos_hist
-        # # xz
-        pos_hist, _, _ = np.histogram2d(
-            bug.positions[:, 0],
-            bug.positions[:, 2],
-            bins=xz_hist_mon_info['bin_edges'],
-            range=xz_hist_mon_info['range'],
-        )
-        xz_hist_mon_info['collector'] += pos_hist
-        # # yz
-        pos_hist, _, _ = np.histogram2d(
-            bug.positions[:, 1],
-            bug.positions[:, 2],
-            bins=yz_hist_mon_info['bin_edges'],
-            range=yz_hist_mon_info['range'],
-        )
-        yz_hist_mon_info['collector'] += pos_hist
 
     # end of loop
     hist_1d_groups = {
