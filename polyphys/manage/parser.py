@@ -52,11 +52,11 @@ projects.
 
 Examples
 ========
->>> artifact = SumRuleCyl("N200D10.0ac2.0nc0", "ensemble", "all")
+>>> artifact = SumRuleCyl("N200D10.0ac2.0nc0", 'ensemble', 'all')
 >>> print(artifact.dcrowd)
 2.0
 
->>> artifact = HnsCyl("N200D20.0nh16ac1.0epshc1.0nc0", "space", "nucleoid")
+>>> artifact = HnsCyl("N200D20.0nh16ac1.0epshc1.0nc0", 'space', 'nucleoid')
 >>> print(artifact.eps_hc)
 1.0
 
@@ -155,7 +155,7 @@ class ParserBase(ABC):
         Sets pattern names for each `lineage` based on `_genealogy`.
     _initiate_attributes() -> None
         Defines and initializes subclass-specific attributes. (Abstract method)
-    _parse_lineage_name() -> None
+    _parse_name() -> None
         Parses lineage-specific attributes based on the filename.
         (Abstract method)
     _bulk_attributes() -> None
@@ -163,13 +163,13 @@ class ParserBase(ABC):
         attributes. (Abstract method)
     """
     _lineages: ClassVar[List[str]] = \
-        ["segment", "whole", "ensemble_long", "ensemble", "space"]
+        ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
     _genealogy: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["segment", "whole", "ensemble_long", "ensemble", "space"],
-        "whole": ["whole", "ensemble_long", "ensemble", "space"],
-        "ensemble_long": ["ensemble_long", "ensemble", "space"],
-        "ensemble": ["ensemble", "space"],
-        "space": ["space"],
+        'segment': ['segment', 'whole', 'ensemble_long', 'ensemble', 'space'],
+        'whole': ['whole', 'ensemble_long', 'ensemble', 'space'],
+        'ensemble_long': ['ensemble_long', 'ensemble', 'space'],
+        'ensemble': ['ensemble', 'space'],
+        'space': ['space'],
     }
 
     @property
@@ -214,8 +214,8 @@ class ParserBase(ABC):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal["segment", "whole", "ensemble_long", "ensemble",
-                         "space"],
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
         group: str
     ) -> None:
         self._filepath, self._filename = (
@@ -278,7 +278,7 @@ class ParserBase(ABC):
         Returns the current group.
         """
         return self._group
-    
+
     @property
     def lineage(self) -> str:
         """
@@ -298,7 +298,7 @@ class ParserBase(ABC):
         - For 'ensemble_long', 'ensemble', and 'space', names are derived
           from the first substring in the filename.
         """
-        if self._lineage in ["segment", "whole"]:
+        if self._lineage in ['segment', 'whole']:
             self._name = \
                 self.filename.split("." + self._group)[0].split("-")[0]
         else:
@@ -323,13 +323,14 @@ class ParserBase(ABC):
         """
         Returns lineage-specific andp project attributes for an artifact.
         """
-        return self._attributes[self._lineage]
+        return self._attributes
 
     @property
     def lineage_genealogy(self) -> List[str]:
         """
         Returns the parents of a given `lineage`.
         """
+        return self._lineage_genealogy
 
     @property
     def lineage_attributes(self) -> List[str]:
@@ -337,6 +338,7 @@ class ParserBase(ABC):
         Returns lineage-specific attributes for an artifact with a given
         `lineage`.
         """
+        return self._lineage_attributes
 
     @property
     def physical_attributes(self) -> List[str]:
@@ -344,6 +346,7 @@ class ParserBase(ABC):
         Returns project-level attributes for an artifact with a given
         `lineage`.
         """
+        return self._physical_attributes
 
     @property
     def genealogy_attributes(self) -> Dict[str, OrderedDict[str, str]]:
@@ -443,7 +446,7 @@ class TwoMonDep(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {"bug", "all"}
+    group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -506,67 +509,68 @@ class TwoMonDep(ParserBase):
 
     >>> artifact = (
     ..."nm2am5.0ac1.0"
-    ..."space",
-    ..."bug"
+    ...'space',
+    ...'bug'
     ... )
     >>> print(artifact.nmon)
     2
     """
-    _geometry: ClassVar[str] = "cubic"
-    _topology: ClassVar[str] = "atomic"
-    _groups: ClassVar[List[str]] = ["bug", "all"]
+    _geometry: ClassVar[str] = 'cubic'
+    _topology: ClassVar[str] = 'atomic'
+    _groups: ClassVar[List[str]] = ['bug', 'all']
 
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#.j#
-        "segment": OrderedDict({
-            "dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc",
-            "lcube": "hl", "d_sur": "sd", "dt": "dt", "bdump": "bdump",
-            "adump": "adump", "tdump": "tdump", "ensemble_id": "ens",
-            "segment_id": "j"}
+        'segment': OrderedDict({
+            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
+            'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
+            'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens',
+            'segment_id': 'j'}
             ),
         # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#
-        "whole": OrderedDict({
-            "dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc",
-            "lcube": "hl", "d_sur": "sd", "dt": "dt", "bdump": "bdump",
-            "adump": "adump", "tdump": "tdump", "ensemble_id": "ens"}
+        'whole': OrderedDict({
+            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
+            'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
+            'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens'}
             ),
         # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump# :
-        "ensemble_long": OrderedDict({
-            "dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc",
-            "lcube": "hl", "d_sur": "sd", "dt": "dt", "bdump": "bdump",
-            "adump": "adump", "tdump": "tdump"}
+        'ensemble_long': OrderedDict({
+            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
+            'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
+            'adump': 'adump', 'tdump': 'tdump'}
             ),
         # Pattern: nm#am#ac#nc#sd :
-        "ensemble": OrderedDict(
-            {"dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc",
-             "d_sur": "sd"}
+        'ensemble': OrderedDict(
+            {'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
+             'd_sur': 'sd'}
              ),
         # pttern: nm#am#ac# :
-        "space": OrderedDict(
-            {"dmon": "am", "nmon": "nm", "dcrowd": "ac", "ncrowd": "nc"}
+        'space': OrderedDict(
+            {'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc'}
             )
     }
 
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["phi_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "whole": ["phi_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble_long": ["phi_bulk_m", "rho_bulk_m", "phi_bulk_c",
-                          "rho_bulk_c"],
-        "ensemble": [],
-        "space": []
+        'segment': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'whole': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble_long': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                          'rho_bulk_c'],
+        'ensemble': [],
+        'space': []
         }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["bug", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -577,7 +581,7 @@ class TwoMonDep(ParserBase):
         -----
         The negative initial values are unphysical.
         """
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m: float = -1
             self.rho_bulk_m: float = -1
             self.phi_bulk_c: float = -1
@@ -596,14 +600,14 @@ class TwoMonDep(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["dmon", "lcube", "dcrowd", "dt", "d_sur"]
+        attrs_float = ['dmon', 'lcube', 'dcrowd', 'dt', 'd_sur']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "hl":
+                if keyword == 'hl':
                     # Cube full side from its half-side
                     setattr(self, attr, 2 * getattr(self, attr))
             except ValueError:
@@ -614,24 +618,24 @@ class TwoMonDep(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cube(
-            getattr(self, "nmon"),
-            getattr(self, "dmon"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m = volume_fraction_cube(
-            getattr(self, "nmon"),
-            getattr(self, "dmon"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_c = number_density_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
 
 
@@ -669,7 +673,7 @@ class SumRuleCyl(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {"bug", "all"}
+    group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -741,61 +745,61 @@ class SumRuleCyl(ParserBase):
 
     >>> artifact = SumRuleCyl(
     ..."N200D10.0ac2.0nc0"
-    ..."ensemble",
-    ..."all"
+    ...'ensemble',
+    ...'all'
     ... )
     >>> print(artifact.dcrowd)
     2.0
     """
-    _geometry: ClassVar[str] = "cylindrical"
-    _topology: ClassVar[str] = "linear"
-    _groups: ClassVar[List[str]] = ["bug", "all"]
+    _geometry: ClassVar[str] = 'cylindrical'
+    _topology: ClassVar[str] = 'linear'
+    _groups: ClassVar[List[str]] = ['bug', 'all']
 
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
-        "segment":  OrderedDict(
-            {"nmon": "N", "epsilon": "epsilon", "dcyl": "r", "lcyl": "lz",
-             "dcrowd": "sig", "ncrowd": "nc", "dt": "dt", "bdump": "bdump",
-             "adump": "adump", "ensemble_id": "ens", "segment_id": "j"}),
+        'segment':  OrderedDict(
+            {'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
+             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
+             'adump': 'adump', 'ensemble_id': 'ens', 'segment_id': 'j'}),
         # Pattern: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#
-        "whole":  OrderedDict(
-            {"nmon": "N", "epsilon": "epsilon", "dcyl": "r", "lcyl": "lz",
-             "dcrowd": "sig", "ncrowd": "nc", "dt": "dt", "bdump": "bdump",
-             "adump": "adump", "ensemble_id": "ens"}),
+        'whole':  OrderedDict(
+            {'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
+             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
+             'adump': 'adump', 'ensemble_id': 'ens'}),
         # Pattern: N#epsilon#r#lz#sig#nc#dt#bdump#adump#
-        "ensemble_long":  OrderedDict(
-            {"nmon": "N", "epsilon": "epsilon", "dcyl": "r", "lcyl": "lz",
-             "dcrowd": "sig", "ncrowd": "nc", "dt": "dt", "bdump": "bdump",
-             "adump": "adump"}),
+        'ensemble_long':  OrderedDict(
+            {'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
+             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
+             'adump': 'adump'}),
         # Pattern: N#D#ac#nc#
-        "ensemble":  OrderedDict(
-            {"nmon": "N", "dcyl": "D", "dcrowd": "ac", "ncrowd": "nc"}),
+        'ensemble':  OrderedDict(
+            {'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac', 'ncrowd': 'nc'}),
         # Pattern: N#D#ac#
-        "space":  OrderedDict({"nmon": "N", "dcyl": "D", "dcrowd": "ac"})
+        'space':  OrderedDict({'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac'})
     }
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["dmon", "phi_bulk_m", "rho_bulk_m", "phi_bulk_c",
-                    "rho_bulk_c"],
-        "whole": ["dmon",  "phi_bulk_m", "rho_bulk_m", "phi_bulk_c",
-                  "rho_bulk_c"],
-        "ensemble_long": ["dmon", "phi_bulk_m", "rho_bulk_m", "phi_bulk_c",
-                          "rho_bulk_c"],
-        "ensemble": ["dmon"],
-        "space": ["dmon"]
+        'segment': ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                    'rho_bulk_c'],
+        'whole': ['dmon',  'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                  'rho_bulk_c'],
+        'ensemble_long': ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                          'rho_bulk_c'],
+        'ensemble': ['dmon'],
+        'space': ['dmon']
     }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["bug", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy = super()._genealogy[self.lineage]
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -807,13 +811,13 @@ class SumRuleCyl(ParserBase):
         The negative initial values are unphysical.
         """
         self.dmon: float = 1
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m: float = -1
             self.rho_bulk_m: float = -1
             self.phi_bulk_c: float = -1
             self.rho_bulk_c: float = -1
 
-    def _parse_lineage_name(self) -> None:
+    def _parse_name(self) -> None:
         """
         Parses lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
@@ -826,17 +830,17 @@ class SumRuleCyl(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["dmon", "dcyl", "lcyl", "epsilon", "dcrowd", "dt"]
+        attrs_float = ['dmon', 'dcyl', 'lcyl', 'epsilon', 'dcrowd', 'dt']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "lz":
+                if keyword == 'lz':
                     # Cylinder full length from its half-length
                     setattr(self, attr, 2 * getattr(self, attr))
-                if keyword == "r":
+                if keyword == 'r':
                     # Cylinder size is twice its radius, correcting for
                     # wall-forming particles with size 1
                     setattr(self, attr, 2 * getattr(self, attr) - 1.0)
@@ -848,28 +852,28 @@ class SumRuleCyl(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cylinder(
-            getattr(self, "nmon"),
-            getattr(self, "dmon"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_m = volume_fraction_cylinder(
-            getattr(self, "nmon"),
-            getattr(self, "dmon"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.rho_bulk_c = number_density_cylinder(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_c = volume_fraction_cylinder(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
 
 
@@ -907,7 +911,7 @@ class SumRuleCubHeteroRing(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {"bug", "all"}
+    group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -990,71 +994,71 @@ class SumRuleCubHeteroRing(ParserBase):
 
     >>> artifact = SumRuleCubHeteroRing(
     ..."ns400nl5am5.0ac1.0"
-    ..."space",
-    ..."bug"
+    ...'space',
+    ...'bug'
     ... )
     >>> print(artifact.dcrowd)
     1.0
     """
-    _geometry: ClassVar[str] = "cubic"
-    _topology: ClassVar[str] = "ring"
-    _groups: ClassVar[List[str]] = ["bug", "all"]
+    _geometry: ClassVar[str] = 'cubic'
+    _topology: ClassVar[str] = 'ring'
+    _groups: ClassVar[List[str]] = ['bug', 'all']
 
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-        "segment": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc",
-             "lcube": "l", "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens", "segment_id": "j"}),
+        'segment': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
+             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens', 'segment_id': 'j'}),
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
-        "whole": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc", "lcube": "l",
-             "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens"}),
+        'whole': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
+             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens'}),
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
-        "ensemble_long": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc",
-             "lcube": "l", "dt": "dt", "bdump": "bdump", "adump": "adump"}),
+        'ensemble_long': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
+             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
         # Pattern: ns#nl#al#ac#nc#
-        "ensemble": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcrowd": "ac", "ncrowd": "nc"}),
+        'ensemble': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcrowd': 'ac', 'ncrowd': 'nc'}),
         # Pattern: ns#nl#al#ac#
-        "space": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcrowd": "ac"})
+        'space': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcrowd': 'ac'})
     }
 
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                    "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                    "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "whole": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                  "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                  "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble_long": ["dmon_small", "mmon_small",  "mcrowd",
-                          "phi_bulk_m_small", "rho_bulk_m_small",
-                          "phi_bulk_m_large", "phi_bulk_m_large", "rho_bulk_m",
-                          "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble": ["dmon_small", "mmon_small", "mcrowd"],
-        "space": ["dmon_small", "mmon_small", "mcrowd"]
+        'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
+                          'phi_bulk_m_small', 'rho_bulk_m_small',
+                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
+                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
+        'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["bug", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy: List[str] = super()._genealogy[self.lineage]
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -1068,7 +1072,7 @@ class SumRuleCubHeteroRing(ParserBase):
         self.dmon_small: float = 1
         self.mmon_small: float = self.dmon_small**3
         self.mcrowd: float = -1
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m_small: float = -1
             self.rho_bulk_m_small: float = -1
             self.phi_bulk_m_large: float = -1
@@ -1091,14 +1095,14 @@ class SumRuleCubHeteroRing(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["dmon_large", "lcube", "mmon_large", "dcrowd", "dt"]
+        attrs_float = ['dmon_large', 'lcube', 'mmon_large', 'dcrowd', 'dt']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "l":
+                if keyword == 'l':
                     # Cube full side from its half-side
                     setattr(self, attr, 2 * getattr(self, attr))
             except ValueError:
@@ -1109,38 +1113,38 @@ class SumRuleCubHeteroRing(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cube(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m_small = volume_fraction_cube(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_m_large = number_density_cube(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m_large = volume_fraction_cube(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
-        self.mcrowd = getattr(self, "dcrowd") ** 3
+        self.mcrowd = getattr(self, 'dcrowd') ** 3
         self.rho_bulk_c = number_density_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
 
 
@@ -1178,7 +1182,7 @@ class SumRuleCubHeteroLinear(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {"bug", "all"}
+    group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -1261,71 +1265,71 @@ class SumRuleCubHeteroLinear(ParserBase):
 
     >>> artifact = SumRuleCubHeteroLinear(
     ..."ns800nl5am6.0ac3.0"
-    ..."space",
-    ..."all"
+    ...'space',
+    ...'all'
     ... )
     >>> print(artifact.dmon_large)
     6.0
     """
-    _geometry: ClassVar[str] = "cubic"
-    _topology: ClassVar[str] = "linear"
-    _groups: ClassVar[List[str]] = ["bug", "all"]
+    _geometry: ClassVar[str] = 'cubic'
+    _topology: ClassVar[str] = 'linear'
+    _groups: ClassVar[List[str]] = ['bug', 'all']
 
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-        "segment": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc",
-             "lcube": "l", "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens", "segment_id": "j"}),
+        'segment': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
+             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens', 'segment_id': 'j'}),
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
-        "whole": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc", "lcube": "l",
-             "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens"}),
+        'whole': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
+             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens'}),
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
-        "ensemble_long": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc",
-             "lcube": "l", "dt": "dt", "bdump": "bdump", "adump": "adump"}),
+        'ensemble_long': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
+             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
         # Pattern: ns#nl#al#ac#nc#
-        "ensemble": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcrowd": "ac", "ncrowd": "nc"}),
+        'ensemble': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcrowd': 'ac', 'ncrowd': 'nc'}),
         # Pattern: ns#nl#al#ac#
-        "space": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcrowd": "ac"})
+        'space': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcrowd': 'ac'})
     }
 
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                    "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                    "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "whole": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                  "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                  "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble_long": ["dmon_small", "mmon_small",  "mcrowd",
-                          "phi_bulk_m_small", "rho_bulk_m_small",
-                          "phi_bulk_m_large", "phi_bulk_m_large", "rho_bulk_m",
-                          "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble": ["dmon_small", "mmon_small", "mcrowd"],
-        "space": ["dmon_small", "mmon_small", "mcrowd"]
+        'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
+                          'phi_bulk_m_small', 'rho_bulk_m_small',
+                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
+                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
+        'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["bug", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy: List[str] = super()._genealogy[self.lineage]
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -1339,7 +1343,7 @@ class SumRuleCubHeteroLinear(ParserBase):
         self.dmon_small: float = 1
         self.mmon_small: float = self.dmon_small**3
         self.mcrowd: float = -1
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m_small: float = -1
             self.rho_bulk_m_small: float = -1
             self.phi_bulk_m_large: float = -1
@@ -1362,14 +1366,14 @@ class SumRuleCubHeteroLinear(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["dmon_large", "lcube", "mmon_large", "dcrowd", "dt"]
+        attrs_float = ['dmon_large', 'lcube', 'mmon_large', 'dcrowd', 'dt']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "l":
+                if keyword == 'l':
                     # Cube full side from its half-side
                     setattr(self, attr, 2 * getattr(self, attr))
             except ValueError:
@@ -1380,38 +1384,38 @@ class SumRuleCubHeteroLinear(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cube(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m_small = volume_fraction_cube(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_m_large = number_density_cube(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m_large = volume_fraction_cube(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
-        self.mcrowd = getattr(self, "dcrowd") ** 3
+        self.mcrowd = getattr(self, 'dcrowd') ** 3
         self.rho_bulk_c = number_density_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
 
 
@@ -1549,74 +1553,74 @@ class TransFociCyl(ParserBase):
 
     >>> artifact = TransFociCyl(
     ..."ns500nl5al3.0D20.0ac2.0nc0"
-    ..."ensemble",
-    ..."bug"
+    ...'ensemble',
+    ...'bug'
     ... )
     >>> print(artifact.dcyl)
     20.0
     """
-    _geometry: ClassVar[str] = "cylindrical"
-    _topology: ClassVar[str] = "ring"
-    _groups: ClassVar[List[str]] = ["bug", "all"]
+    _geometry: ClassVar[str] = 'cylindrical'
+    _topology: ClassVar[str] = 'ring'
+    _groups: ClassVar[List[str]] = ['bug', 'all']
 
-    _lineage_attributes: Dict[str, OrderedDict[str, str]] = {
+    _genealogy_attributes: Dict[str, OrderedDict[str, str]] = {
         # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#.ring
-        "segment": OrderedDict(
-            {"epsilon_small": "epss", "epsilon_large": "epsl", "dcyl": "r",
-             "dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc", "lcyl": "lz",
-             "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens", "segment_id": "j"}),
+        'segment': OrderedDict(
+            {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
+             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcyl': 'lz',
+             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens', 'segment_id': 'j'}),
         # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.ring
-        "whole": OrderedDict(
-            {"epsilon_small": "epss", "epsilon_large": "epsl", "dcyl": "r",
-             "dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc", "lcyl": "lz",
-             "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens"}),
+        'whole': OrderedDict(
+            {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
+             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcyl': 'lz',
+             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens'}),
         # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#.ring
-        "ensemble_long": OrderedDict(
-            {"epsilon_small": "epss", "epsilon_large": "epsl", "dcyl": "r",
-             "dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc", "lcyl": "lz",
-             "dt": "dt", "bdump": "bdump", "adump": "adump"}),
+        'ensemble_long': OrderedDict(
+            {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
+             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcyl': 'lz',
+             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
         # Pattern: ns#nl#al#D#ac#nc#
-        "ensemble": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcyl": "D", "dcrowd": "ac", "ncrowd": "nc"}),
+        'ensemble': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcyl': 'D', 'dcrowd': 'ac', 'ncrowd': 'nc'}),
         # Pattern: ns#nl#al#D#ac#
-        "space": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcrowd": "ac"})
+        'space': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcrowd': 'ac'})
     }
 
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                    "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                    "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "whole": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                  "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                  "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble_long": ["dmon_small", "mmon_small",  "mcrowd",
-                          "phi_bulk_m_small", "rho_bulk_m_small",
-                          "phi_bulk_m_large", "phi_bulk_m_large", "rho_bulk_m",
-                          "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble": ["dmon_small", "mmon_small", "mcrowd"],
-        "space": ["dmon_small", "mmon_small", "mcrowd"]
+        'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
+                          'phi_bulk_m_small', 'rho_bulk_m_small',
+                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
+                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
+        'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["bug", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy: List[str] = super()._genealogy[self.lineage]
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -1630,7 +1634,7 @@ class TransFociCyl(ParserBase):
         self.dmon_small: float = 1
         self.mmon_small: float = self.dmon_small**3
         self.mcrowd: float = -1
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m_small: float = -1
             self.rho_bulk_m_small: float = -1
             self.phi_bulk_m_large: float = -1
@@ -1653,18 +1657,18 @@ class TransFociCyl(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["dmon_large", "dcyl", "lcyl", "epsilon_small",
-                       "epsilon_large", "mmon_large", "dcrowd", "dt"]
+        attrs_float = ['dmon_large', 'dcyl', 'lcyl', 'epsilon_small',
+                       'epsilon_large', 'mmon_large', 'dcrowd', 'dt']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "lz":
+                if keyword == 'lz':
                     # Cylinder full length from its half-length
                     setattr(self, attr, 2 * getattr(self, attr))
-                if keyword == "r":
+                if keyword == 'r':
                     # Cylinder size is twice its radius, correcting for
                     # wall-forming particles with size 1
                     setattr(self, attr, 2 * getattr(self, attr) - 1.0)
@@ -1676,44 +1680,44 @@ class TransFociCyl(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cylinder(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_m_small = volume_fraction_cylinder(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.rho_bulk_m_large = number_density_cylinder(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_m_large = volume_fraction_cylinder(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
-        self.mcrowd = getattr(self, "dcrowd") ** 3
+        self.mcrowd = getattr(self, 'dcrowd') ** 3
         self.rho_bulk_c = number_density_cylinder(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_c = volume_fraction_cylinder(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
 
 
@@ -1751,7 +1755,7 @@ class TransFociCub(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {"bug", "all"}
+    group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -1834,71 +1838,71 @@ class TransFociCub(ParserBase):
 
     >>> artifact = TransFociCub(
     ..."al5.0nl5ml125.0ns400ac1.0nc0l100.0dt0.005bdump2000adump5000.ring"
-    ..."ensemble_long",
-    ..."all"
+    ...'ensemble_long',
+    ...'all'
     ... )
     >>> print(artifact.nc)
     0
     """
-    _geometry: ClassVar[str] = "cubic"
-    _topology: ClassVar[str] = "ring"
-    _groups: ClassVar[List[str]] = ["bug", "all"]
+    _geometry: ClassVar[str] = 'cubic'
+    _topology: ClassVar[str] = 'ring'
+    _groups: ClassVar[List[str]] = ['bug', 'all']
 
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-        "segment": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc",
-             "lcube": "l", "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens", "segment_id": "j"}),
+        'segment': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
+             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens', 'segment_id': 'j'}),
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-        "whole": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc", "lcube": "l",
-             "dt": "dt", "bdump": "bdump", "adump": "adump",
-             "ensemble_id": "ens"}),
+        'whole': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
+             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
+             'ensemble_id': 'ens'}),
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
-        "ensemble_long": OrderedDict(
-            {"dmon_large": "al", "nmon_large": "nl", "mmon_large": "ml",
-             "nmon_small": "ns", "dcrowd": "ac", "ncrowd": "nc",
-             "lcube": "l", "dt": "dt", "bdump": "bdump", "adump": "adump"}),
+        'ensemble_long': OrderedDict(
+            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
+             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
+             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
         # Pattern: ns#nl#al#ac#nc#
-        "ensemble": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcrowd": "ac", "ncrowd": "nc"}),
+        'ensemble': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcrowd': 'ac', 'ncrowd': 'nc'}),
         # Pattern: ns#nl#al#ac#
-        "space": OrderedDict(
-            {"nmon_small": "ns", "nmon_large": "nl", "dmon_large": "al",
-             "dcrowd": "ac"})
+        'space': OrderedDict(
+            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
+             'dcrowd': 'ac'})
     }
 
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                    "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                    "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "whole": ["dmon_small", "mmon_small", "mcrowd", "phi_bulk_m_small",
-                  "rho_bulk_m_small", "phi_bulk_m_large", "phi_bulk_m_large",
-                  "rho_bulk_m", "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble_long": ["dmon_small", "mmon_small",  "mcrowd",
-                          "phi_bulk_m_small", "rho_bulk_m_small",
-                          "phi_bulk_m_large", "phi_bulk_m_large", "rho_bulk_m",
-                          "rho_bulk_m", "phi_bulk_c", "rho_bulk_c"],
-        "ensemble": ["dmon_small", "mmon_small", "mcrowd"],
-        "space": ["dmon_small", "mmon_small", "mcrowd"]
+        'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
+                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
+                          'phi_bulk_m_small', 'rho_bulk_m_small',
+                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
+                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
+        'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["bug", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy: List[str] = super()._genealogy[self.lineage]
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -1912,7 +1916,7 @@ class TransFociCub(ParserBase):
         self.dmon_small: float = 1
         self.mmon_small: float = self.dmon_small**3
         self.mcrowd: float = -1
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m_small: float = -1
             self.rho_bulk_m_small: float = -1
             self.phi_bulk_m_large: float = -1
@@ -1935,14 +1939,14 @@ class TransFociCub(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["dmon_large", "lcube", "mmon_large", "dcrowd", "dt"]
+        attrs_float = ['dmon_large', 'lcube', 'mmon_large', 'dcrowd', 'dt']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "l":
+                if keyword == 'l':
                     # Cube full side from its half-side
                     setattr(self, attr, 2 * getattr(self, attr))
             except ValueError:
@@ -1953,38 +1957,38 @@ class TransFociCub(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cube(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m_small = volume_fraction_cube(
-            getattr(self, "nmon_small"),
-            getattr(self, "dmon_small"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_small'),
+            getattr(self, 'dmon_small'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_m_large = number_density_cube(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m_large = volume_fraction_cube(
-            getattr(self, "nmon_large"),
-            getattr(self, "dmon_large"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon_large'),
+            getattr(self, 'dmon_large'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
 
-        self.mcrowd = getattr(self, "dcrowd") ** 3
+        self.mcrowd = getattr(self, 'dcrowd') ** 3
         self.rho_bulk_c = number_density_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
 
 
@@ -2022,7 +2026,7 @@ class HnsCub(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {"nucleoid", "all"}
+    group : {'nucleoid', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -2097,67 +2101,67 @@ class HnsCub(ParserBase):
 
     >>> artifact = HnsCub(
     ..."N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring"
-    ..."whole",
-    ..."nucleoid"
+    ...'whole',
+    ...'nucleoid'
     ... )
     >>> print(artifact.nhns)
     8
     """
-    _geometry: ClassVar[str] = "cubic"
-    _topology: ClassVar[str] = "ring"
-    _groups: ClassVar[List[str]] = ["nucleoid", "all"]
+    _geometry: ClassVar[str] = 'cubic'
+    _topology: ClassVar[str] = 'ring'
+    _groups: ClassVar[List[str]] = ['nucleoid', 'all']
 
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: N#kbmm#nh#ac#l#epshc#nc#ens#.#j#.ring
-        "segment": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "nhns": "nh", "dcrowd": "ac",
-             "lcube": "l", "eps_hc": "epshc", "ncrowd": "nc",
-             "ensemble_id": "ens", "segment_id": "j"}),
+        'segment': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
+             'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc',
+             'ensemble_id': 'ens', 'segment_id': 'j'}),
         # Pattern: N#kbmm#nh#ac#l#epshc#nc#ens#.ring
-        "whole": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "nhns": "nh", "dcrowd": "ac",
-             "lcube": "l", "eps_hc": "epshc", "ncrowd": "nc",
-             "ensemble_id": "ens"}),
+        'whole': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
+             'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc',
+             'ensemble_id': 'ens'}),
         # Pattern: N#kbmm#nh#ac#l#epshc#nc#.ring
-        "ensemble_long": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "nhns": "nh", "dcrowd": "ac",
-             "lcube": "l", "eps_hc": "epshc", "ncrowd": "nc"}),
+        'ensemble_long': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
+             'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc'}),
         # Pattern: N#kbmm#nh#ac#epshc#nc#
-        "ensemble": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "nhns": "nh", "dcrowd": "ac",
-             "eps_hc": "epshc", "ncrowd": "nc"}),
+        'ensemble': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
+             'eps_hc': 'epshc', 'ncrowd': 'nc'}),
         # Pattern: N#kbmm#nh#ac#epshc#ring
-        "space": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "nhns": "nh", "dcrowd": "ac",
-             "eps_hc": "epshc"})
+        'space': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
+             'eps_hc': 'epshc'})
     }
 
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["dmon", "dhns", "phi_bulk_m", "rho_bulk_m"
-                    "phi_bulk_c", "rho_bulk_c", "phi_bulk_hns",
-                    "rho_bulk_hns", "dt", "ndump", "adump", "eps_hm"],
-        "whole": ["dmon", "dhns", "phi_bulk_m", "rho_bulk_m", "phi_bulk_c",
-                  "rho_bulk_c", "phi_bulk_hns", "rho_bulk_hns", "dt", "ndump",
-                  "adump", "eps_hm"],
-        "ensemble_long": ["dmon", "dhns", "phi_bulk_m", "rho_bulk_m",
-                          "phi_bulk_c", "rho_bulk_c", "phi_bulk_hns",
-                          "rho_bulk_hns", "dt", "ndump", "adump", "eps_hm"],
-        "ensemble": ["dmon", "dhns", "dt", "ndump", "adump", "eps_hm"],
-        "space": ["dmon", "dhns", "dt", "ndump", "adump", "eps_hm"]
+        'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m'
+                    'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
+                    'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'ndump',
+                  'adump', 'eps_hm'],
+        'ensemble_long': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
+                          'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
     }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["nucleoid", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['nucleoid', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy: List[str] = super()._genealogy[self.lineage]
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -2175,7 +2179,7 @@ class HnsCub(ParserBase):
         self.bdump: int = 5000
         self.adump: int = 10000
         self.eps_hm: float = 29
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m: float = -1
             self.rho_bulk_m: float = -1
             self.phi_bulk_hns: float = -1
@@ -2196,14 +2200,14 @@ class HnsCub(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["kbmm", "lcube", "dcrowd", "epshc"]
+        attrs_float = ['kbmm', 'lcube', 'dcrowd', 'epshc']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "l":
+                if keyword == 'l':
                     # Cube full side from its half-side
                     setattr(self, attr, 2 * getattr(self, attr))
             except ValueError:
@@ -2214,34 +2218,34 @@ class HnsCub(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cube(
-            getattr(self, "nmon"),
-            getattr(self, "dmon"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_m = volume_fraction_cube(
-            getattr(self, "nmon"),
-            getattr(self, "dmon"),
-            getattr(self, "lcube")
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_hns = number_density_cube(
-            getattr(self, "nhns"),
-            getattr(self, "dhns"),
-            getattr(self, "lcube")
+            getattr(self, 'nhns'),
+            getattr(self, 'dhns'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_hns = volume_fraction_cube(
-            getattr(self, "nhns"),
-            getattr(self, "dhns"),
-            getattr(self, "lcube")
+            getattr(self, 'nhns'),
+            getattr(self, 'dhns'),
+            getattr(self, 'lcube')
         )
         self.rho_bulk_c = number_density_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
         self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcube")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcube')
         )
 
 
@@ -2279,7 +2283,7 @@ class HnsCyl(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {"nucleoid", "all"}
+    group : {'nucleoid', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -2366,67 +2370,67 @@ class HnsCyl(ParserBase):
 
     >>> artifact = HnsCyl(
     ..."N200D20.0nh16ac1.0epshc1.0nc0"
-    ..."space",
-    ..."nucleoid"
+    ...'space',
+    ...'nucleoid'
     ... )
     >>> print(artifact.eps_hc)
     1.0
     """
-    _geometry: ClassVar[str] = "cylindrical"
-    _topology: ClassVar[str] = "ring"
-    _groups: ClassVar[List[str]] = ["nucleoid", "all"]
+    _geometry: ClassVar[str] = 'cylindrical'
+    _topology: ClassVar[str] = 'ring'
+    _groups: ClassVar[List[str]] = ['nucleoid', 'all']
 
     _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
         # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.j#.ring
-        "segment": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "dcyl": "r", "nhns": "nh",
-             "dcrowd": "ac", "lcyl": "lz", "eps_hc": "epshc", "ncrowd": "nc",
-             "ensemble_id": "ens", "segment_id": "j"}),
+        'segment': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
+             'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc',
+             'ensemble_id': 'ens', 'segment_id': 'j'}),
         # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.ring
-        "whole": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "dcyl": "r", "nhns": "nh",
-             "dcrowd": "ac", "lcyl": "lz", "eps_hc": "epshc", "ncrowd": "nc",
-             "ensemble_id": "ens"}),
+        'whole': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
+             'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc',
+             'ensemble_id': 'ens'}),
         # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#.ring
-        "ensemble_long": OrderedDict(
-            {"nmon": "N", "bend_mm": "kbmm", "dcyl": "r", "nhns": "nh",
-             "dcrowd": "ac", "lcyl": "lz", "eps_hc": "epshc", "ncrowd": "nc"}),
+        'ensemble_long': OrderedDict(
+            {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
+             'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc'}),
         # Pattern: N#D#nh#ac#epshc#nc#
-        "ensemble": OrderedDict(
-            {"nmon": "N", "dcyl": "D", "nhns": "nh", "dcrowd": "ac",
-             "eps_hc": "epshc", "ncrowd": "nc"}),
+        'ensemble': OrderedDict(
+            {'nmon': 'N', 'dcyl': 'D', 'nhns': 'nh', 'dcrowd': 'ac',
+             'eps_hc': 'epshc', 'ncrowd': 'nc'}),
         # Pattern: N#D#nh#ac#epshc#nc#
-        "space": OrderedDict(
-            {"nmon": "N", "dcyl": "D", "nhns": "nh", "dcrowd": "ac",
-             "eps_hc": "epshc"})
+        'space': OrderedDict(
+            {'nmon': 'N', 'dcyl': 'D', 'nhns': 'nh', 'dcrowd': 'ac',
+             'eps_hc': 'epshc'})
     }
 
     _project_attributes: ClassVar[Dict[str, List[str]]] = {
-        "segment": ["dmon", "dhns", "phi_bulk_m", "rho_bulk_m"
-                    "phi_bulk_c", "rho_bulk_c", "phi_bulk_hns",
-                    "rho_bulk_hns", "dt", "ndump", "adump", "eps_hm"],
-        "whole": ["dmon", "dhns", "phi_bulk_m", "rho_bulk_m", "phi_bulk_c",
-                  "rho_bulk_c", "phi_bulk_hns", "rho_bulk_hns", "dt", "ndump",
-                  "adump", "eps_hm"],
-        "ensemble_long": ["dmon", "dhns", "phi_bulk_m", "rho_bulk_m",
-                          "phi_bulk_c", "rho_bulk_c", "phi_bulk_hns",
-                          "rho_bulk_hns", "dt", "ndump", "adump", "eps_hm"],
-        "ensemble": ["dmon", "dhns", "dt", "ndump", "adump", "eps_hm"],
-        "space": ["dmon", "dhns", "dt", "ndump", "adump", "eps_hm"]
+        'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m'
+                    'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
+                    'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'ndump',
+                  'adump', 'eps_hm'],
+        'ensemble_long': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
+                          'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
     }
 
     def __init__(
         self,
         artifact: str,
-        lineage: str,
-        group: Literal["nucleoid", "all"]
+        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
+                         'space'],
+        group: Literal['nucleoid', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
-        self._lineage_genealogy: List[str] = super()._genealogy[self.lineage]
-        if self.lineage in ["segment", "whole", "ensemble_long"]:
+        if self.lineage in ['segment', 'whole', 'ensemble_long']:
             self._dependant_attributes()
 
     def _initiate_attributes(self) -> None:
@@ -2444,7 +2448,7 @@ class HnsCyl(ParserBase):
         self.bdump: int = 5000
         self.adump: int = 10000
         self.eps_hm: float = 29
-        if self._lineage in ["segment", "whole", "ensemble_long"]:
+        if self._lineage in ['segment', 'whole', 'ensemble_long']:
             self.phi_bulk_m: float = -1
             self.rho_bulk_m: float = -1
             self.phi_bulk_hns: float = -1
@@ -2465,17 +2469,17 @@ class HnsCyl(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self._name)
-        attrs_float = ["bend_mm", "dcyl", "lcyl", "dcrowd", "eps_hc"]
+        attrs_float = ['bend_mm', 'dcyl', 'lcyl', 'dcrowd', 'eps_hc']
         for attr, keyword in self._genealogy_attributes[self._lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
                 setattr(self,
                         attr,
                         float(val) if attr in attrs_float else int(float(val)))
-                if keyword == "lz":
+                if keyword == 'lz':
                     # Cylinder full length from its half-length
                     setattr(self, attr, 2 * getattr(self, attr))
-                if keyword == "r":
+                if keyword == 'r':
                     # Cylinder size is twice its radius, correcting for
                     # wall-forming particles with size 1
                     setattr(self, attr, 2 * getattr(self, attr) - 1.0)
@@ -2487,38 +2491,38 @@ class HnsCyl(ParserBase):
         Calculates system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cylinder(
-            getattr(self, "nmon"),
-            getattr(self, "dmon"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_m = volume_fraction_cylinder(
-            getattr(self, "nhns"),
-            getattr(self, "dhns"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nhns'),
+            getattr(self, 'dhns'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.rho_bulk_hns = number_density_cylinder(
-            getattr(self, "nhns"),
-            getattr(self, "dhns"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nhns'),
+            getattr(self, 'dhns'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_hns = volume_fraction_cylinder(
-            getattr(self, "nhns"),
-            getattr(self, "dhns"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'nhns'),
+            getattr(self, 'dhns'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.rho_bulk_c = number_density_cylinder(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
         self.phi_bulk_c = volume_fraction_cylinder(
-            getattr(self, "ncrowd"),
-            getattr(self, "dcrowd"),
-            getattr(self, "lcyl"),
-            getattr(self, "dcyl")
+            getattr(self, 'ncrowd'),
+            getattr(self, 'dcrowd'),
+            getattr(self, 'lcyl'),
+            getattr(self, 'dcyl')
         )
