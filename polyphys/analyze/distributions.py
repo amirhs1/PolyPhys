@@ -21,132 +21,10 @@ from typing import Dict, Tuple, Optional, Callable, Literal, List
 import numpy as np
 import pandas as pd
 from scipy import integrate
-from ..manage.typer import (ParserT, FreqDataT, EdgeDataT)
+from ..manage.typer import ParserType, FreqDataT, EdgeDataT
 from ..manage.organizer import make_database, sort_filenames
 from ..manage.utilizer import invalid_keyword, round_up_nearest
-
-
-def spherical_segment(r: float, a: float, b: float) -> float:
-    """
-    Compute the volume of a spherical segment defined by two parallel planes.
-
-    Parameters
-    ----------
-    r : float
-        Radius of the sphere. Must be positive.
-    a : float
-        Distance of the first plane from the center of the sphere, along the
-        axis of symmetry.
-    b : float
-        Distance of the second plane from the center of the sphere, along the
-        axis of symmetry.
-
-    Returns
-    -------
-    vol : float
-        Volume of the spherical segment.
-
-    Raises
-    ------
-    ValueError
-        If `r` is not a positive number.
-
-    Notes
-    -----
-    - `a` and `b` can be positive or negative values, as long as they fall
-    within the range `[-r, r]`.
-    - The function will adjust `a` and `b` to `-r` or `r` if they exceed these
-    bounds.
-    - If `a = r` or `b = r`, the spherical segment becomes a spherical cap.
-    - If both `a` and `b` lie outside the range `[-r, r]` and share the same
-    sign, the volume is zero.
-
-    References
-    ----------
-    .. [1] Weisstein, Eric W. "Spherical Segment." From MathWorld--A Wolfram
-    Web Resource.
-       https://mathworld.wolfram.com/SphericalSegment.html
-
-    Examples
-    --------
-    >>> spherical_segment(3, 1, 2)
-    37.69911184307752
-    >>> spherical_segment(3, -3, 3)
-    113.09733552923255
-    """
-
-    if r <= 0:
-        raise ValueError(f"The radius 'r' must be positive. Got {r}.")
-
-    # Ensure the bounds are within [-r, r]
-    lower = max(min(a, b), -r)
-    upper = min(max(a, b), r)
-
-    # If both bounds are outside [-r, r] with the same sign, the volume is zero
-    if lower * upper >= r**2:
-        return 0.0
-    # Calculate the volume of the spherical segment
-    vol = np.pi * (r**2 * (upper - lower) - (upper**3 - lower**3) / 3)
-    return vol
-
-
-def sphere_sphere_intersection(r1: float, r2: float, d: float) -> float:
-    """
-    Compute the volume of intersection between two spheres.
-
-    The sphere with radius `r1` is separated from the sphere with radius `r2`
-    by a distance `d` along the x-axis. Thus, the vector form of the distance
-    between their centers is `(d, 0, 0)` in Cartesian coordinates.
-
-    Parameters
-    ----------
-    r1 : float
-        Radius of the first sphere.
-    r2 : float
-        Radius of the second sphere.
-    d : float
-        Distance between the centers of the two spheres along the x-axis.
-
-    Returns
-    -------
-    vol : float
-        Volume of the intersection between the two spheres.
-
-    References
-    ----------
-    .. [1] Weisstein, Eric W. "Sphere-Sphere Intersection."
-       From MathWorld--A Wolfram Web Resource.
-       https://mathworld.wolfram.com/Sphere-SphereIntersection.html
-
-    Examples
-    --------
-    >>> sphere_sphere_intersection(3, 4, 2)
-    75.39822368615503
-    >>> sphere_sphere_intersection(3, 4, 10)
-    0.0
-    """
-
-    r_max = max(r1, r2)
-    r_min = min(r1, r2)
-
-    # Volume is zero if one sphere has a radius of zero or no intersection
-    # occurs:
-    if r1 == 0.0 or r2 == 0.0:
-        return 0.0
-    if d >= r_min + r_max:
-        return 0.0
-    if d <= r_max - r_min:
-        # The smaller sphere is entirely contained within the larger one
-        return 4 * np.pi * r_min**3 / 3
-
-    # Calculate the intersection volume for overlapping spheres
-    vol = (np.pi / (12 * d)) * (r_max + r_min - d)**2 * (
-        d**2 + 2 * d * (r_max + r_min)
-        - 3 * (r_min**2 + r_max**2)
-        + 6 * r_min * r_max
-    )
-
-    return vol
+from ..analyze.measurer import spherical_segment, sphere_sphere_intersection
 
 
 class ConsecutiveDiskBins:
@@ -865,7 +743,7 @@ def distributions_generator(
     geometry: str,
     topology: str,
     direction: str,
-    parser: Callable,
+    parser: ParserType,
     save_to: Optional[str] = None,
     normalized: bool = False
 ) -> Tuple[Dict, Dict]:
@@ -996,8 +874,8 @@ def distributions_generator(
                 normalized=normalized
             )
         else:
-        densities[whole] = distributions.rho
-        vol_fractions[whole] = distributions.phi
+            densities[whole] = distributions.rho
+            vol_fractions[whole] = distributions.phi
 
         if save_to is not None:
             filename = f"{save_to}{whole}-{group}-{direction}"
@@ -1313,7 +1191,7 @@ def normalize_r(
 def space_sum_rule(
     input_database: str,
     property_: str,
-    parser: ParserT,
+    parser: ParserType,
     hierarchy: str,
     physical_attrs: List[str],
     species: Literal['Mon', 'Crd', 'Foci', 'Dna'],
@@ -1438,7 +1316,7 @@ def space_sum_rule(
 
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        property_info: ParserT = parser(
+        property_info: ParserType = parser(
             ens_avg_csv[0],
             'ensemble_long',
             geometry,

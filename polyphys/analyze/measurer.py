@@ -3,75 +3,76 @@
 :mod:`polyphys.analyze.measurer`
 ==========================================================
 The :mod:`polyphys.analyze.measurer` module provides a suite of functions for
-performing a varietyof measurements and analyses on molecular or particle-based
-simulation data. This module is designed to assist with structural and
-geometric calculations, statistical analysis, and handling of periodic boundary
-conditions (PBCs) in orthogonal or confined simulation environments.
-
-The module is particularly useful in molecular dynamics (MD) simulations, where
-quantifying characteristics like end-to-end distance, transverse size, number
-density, and volume fraction can help describe the structure and behavior of
-polymers, macromolecules, or particle assemblies. Measurements span from single
-particle interactions to bulk properties in both cubic and cylindrical
-confinement geometries.
+performing measurements and analyses on molecular or particle-based simulation
+data.
 
 Functions
 =========
+Core Geometric and Structural Measurements:
+--------------------------------------------
 .. autofunction:: apply_pbc_orthogonal
 .. autofunction:: pair_distance
 .. autofunction:: end_to_end
 .. autofunction:: transverse_size
 .. autofunction:: max_distance
 .. autofunction:: fsd
+
+Statistical Analysis:
+---------------------
 .. autofunction:: simple_stats
 .. autofunction:: sem
+
+Density and Volume Calculations:
+--------------------------------
 .. autofunction:: number_density_cube
 .. autofunction:: volume_fraction_cube
 .. autofunction:: number_density_cylinder
 .. autofunction:: volume_fraction_cylinder
 
+Advanced Geometric Calculations:
+--------------------------------
+.. autofunction:: spherical_segment
+.. autofunction:: sphere_sphere_intersection
+
+Binning for histogram processing
+--------------------------------
+.. autofunction:: create_bin_edge_and_hist
+.. autofunction:: fixedsize_bins
+.. autofunction:: radial_histogram
+.. autofunction:: radial_cyl_histogram
+.. autofunction:: axial_histogram
+.. autofunction:: azimuth_histogram
+.. autofunction:: planar_cartesian_histogram
+
 Dependencies
 ============
-- `numpy`: For numerical operations on arrays, such as distances, means, and
-  statistical calculations.
-- `typing`: For type hinting, particularly with `Optional` and `Literal` types
-  for enhanced function clarity.
+- `numpy`
+- `typing`
+- `warnings`
 
 Usage
 =====
-The functions in this module allow users to perform essential measurements on
-spatial data, compute densities, apply boundary conditions, and gather
-statistical properties. Many functions are designed with flexibility in mind,
-allowing them to be applied across a range of MD simulation setups.
+The functions in this module allow users to:
+- Perform essential measurements on spatial data (e.g., end-to-end distance,
+  transverse size).
+- Compute densities and volume fractions in cubic or cylindrical geometries,
+  with or without periodic boundary conditions.
+- Analyze statistical properties such as mean, variance, and standard error
+  of the mean (SEM).
+- Execute advanced geometric calculations, such as spherical segments and
+  sphere-sphere intersections.
+- Create and manage fixed-size bins for histogram processing.
 
 Examples
 ========
 Example of computing the end-to-end distance for a polymer chain:
 
 >>> import numpy as np
->>> import measure
+>>> import measurer
 >>> positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
->>> distance = measure.end_to_end(positions)
+>>> distance = measurer.end_to_end(positions)
 >>> print(distance)
 3.4641016151377544
-
-To calculate the volume fraction of particles in a cubic box with periodic
-boundary conditions:
-
->>> n_atom = 100
->>> d_atom = 1.0
->>> l_cube = 10.0
->>> fraction = measure.volume_fraction_cube(n_atom, d_atom, l_cube, pbc=True)
->>> print(fraction)
-
-Notes
-=====
-Functions in this module frequently rely on assumptions about input data:
-- Atomic or particle positions are expected to be ordered and centered,
-  typically around a center of geometry (COG) for accurate geometric
-  calculations.
-- When using functions that apply periodic boundary conditions, ensure that the
-  PBC lengths are correctly specified to avoid calculation errors.
 
 References
 ==========
@@ -79,9 +80,19 @@ For Feret's statistical diameter:
 - Wang Y, Teraoka I, Hansen FY, Peters GH, Ole H. "A Theoretical Study of
   the Separation Principle in Size Exclusion Chromatography." Macromolecules
   2010, 43, 3, 1651-1659. https://doi.org/10.1021/ma902377g
+
+For spherical segment calculations:
+- Weisstein, Eric W. "Spherical Segment." From MathWorld--A Wolfram Web
+  Resource. https://mathworld.wolfram.com/SphericalSegment.html
+
+For sphere-sphere intersection:
+- Weisstein, Eric W. "Sphere-Sphere Intersection." From MathWorld--A Wolfram
+  Web Resource. https://mathworld.wolfram.com/Sphere-SphereIntersection.html
 """
-from typing import Dict, Tuple, Optional, Literal
+import warnings
+from typing import Dict, Tuple, Optional, Literal, Union, Any, List
 import numpy as np
+from ..manage.utilizer import invalid_keyword
 
 
 def apply_pbc_orthogonal(
@@ -179,7 +190,7 @@ def pair_distance(
     return positions[1] - positions[0]
 
 
-def end_to_end(positions: np.ndarray) -> float:
+def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
     """
     Computes the end-to-end distance of a linear polymer, in the frame of
     reference located at the polymer's center of geometry.
@@ -392,7 +403,7 @@ def number_density_cube(
     n_atom: float,
     d_atom: float,
     l_cube: float,
-    pbc: Optional[bool] = False
+    pbc: bool = False
 ) -> float:
     """
     Compute the bulk number density of a species in a cubic box.
@@ -405,7 +416,7 @@ def number_density_cube(
         Diameter of the particle of the species.
     l_cube : float
         Length of one side of the cubic box.
-    pbc : bool, optional
+    pbc : bool
         Periodic boundary conditions along all box sides. If `True`,
         :math:`v_{avail} = l_{cube}^3`; otherwise,
         :math:`v_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
@@ -429,7 +440,7 @@ def volume_fraction_cube(
     n_atom: float,
     d_atom: float,
     l_cube: float,
-    pbc: Optional[bool] = False
+    pbc: bool = False
 ) -> float:
     """
     Compute the volume fraction of a species in a cubic box.
@@ -442,7 +453,7 @@ def volume_fraction_cube(
         Diameter of the particle of the species.
     l_cube : float
         Length of one side of the cubic box.
-    pbc : bool, optional
+    pbc : bool
         Periodic boundary conditions along all box sides. If `True`,
         :math:`v_{avail} = l_{cube}^3`; otherwise,
         :math:`v_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
@@ -468,7 +479,7 @@ def number_density_cylinder(
     d_atom: float,
     l_cyl: float,
     d_cyl: float,
-    pbc: Optional[bool] = False
+    pbc: bool = False
 ) -> float:
     """
     Compute the bulk number density of a species in a cylindrical confinement.
@@ -483,7 +494,7 @@ def number_density_cylinder(
         Length of the cylindrical confinement.
     d_cyl : float
         Diameter of the cylindrical confinement.
-    pbc : bool, optional
+    pbc : bool
         Periodic boundary conditions along the longitudinal axis. If `True`,
         :math:`v_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
         otherwise, :math:`v_{avail} = \\pi * (l_{cyl} - d_{atom}) * (d_{cyl}
@@ -509,7 +520,7 @@ def volume_fraction_cylinder(
     d_atom: float,
     l_cyl: float,
     d_cyl: float,
-    pbc: Optional[bool] = False
+    pbc: bool = False
 ) -> float:
     """
     Compute the volume fraction of a species in a cylindrical confinement.
@@ -524,11 +535,11 @@ def volume_fraction_cylinder(
         Length of the cylindrical confinement.
     d_cyl : float
         Diameter of the cylindrical confinement.
-    pbc : bool, optional
+    pbc : bool
         Periodic boundary conditions along the longitudinal axis. If `True`,
         :math:`v_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
         otherwise, :math:`v_{avail} = \\pi * (l_cyl - d_{atom}) * (d_{cyl}
-        - d_{atom})^2 / 4`. Defaults to `True`.
+        - d_{atom})^2 / 4`. Defaults to `False`.
 
     Returns
     -------
@@ -544,3 +555,533 @@ def volume_fraction_cylinder(
     """
     rho = number_density_cylinder(n_atom, d_atom, l_cyl, d_cyl, pbc)
     return rho * np.pi * d_atom ** 3 / 6
+
+
+def spherical_segment(r: float, a: float, b: float) -> float:
+    """
+    Compute the volume of a spherical segment defined by two parallel planes.
+
+    Parameters
+    ----------
+    r : float
+        Radius of the sphere. Must be positive.
+    a : float
+        Distance of the first plane from the center of the sphere, along the
+        axis of symmetry.
+    b : float
+        Distance of the second plane from the center of the sphere, along the
+        axis of symmetry.
+
+    Returns
+    -------
+    vol : float
+        Volume of the spherical segment.
+
+    Raises
+    ------
+    ValueError
+        If `r` is not a positive number.
+
+    Notes
+    -----
+    - `a` and `b` can be positive or negative values, as long as they fall
+    within the range `[-r, r]`.
+    - The function will adjust `a` and `b` to `-r` or `r` if they exceed these
+    bounds.
+    - If `a = r` or `b = r`, the spherical segment becomes a spherical cap.
+    - If both `a` and `b` lie outside the range `[-r, r]` and share the same
+    sign, the volume is zero.
+
+    References
+    ----------
+    .. [1] Weisstein, Eric W. "Spherical Segment." From MathWorld--A Wolfram
+    Web Resource.
+       https://mathworld.wolfram.com/SphericalSegment.html
+
+    Examples
+    --------
+    >>> spherical_segment(3, 1, 2)
+    37.69911184307752
+    >>> spherical_segment(3, -3, 3)
+    113.09733552923255
+    """
+
+    if r <= 0:
+        raise ValueError(f"The radius 'r' must be positive. Got {r}.")
+
+    # Ensure the bounds are within [-r, r]
+    lower = max(min(a, b), -r)
+    upper = min(max(a, b), r)
+
+    # If both bounds are outside [-r, r] with the same sign, the volume is zero
+    if lower * upper >= r**2:
+        return 0.0
+    # Calculate the volume of the spherical segment
+    vol = np.pi * (r**2 * (upper - lower) - (upper**3 - lower**3) / 3)
+    return vol
+
+
+def sphere_sphere_intersection(r1: float, r2: float, d: float) -> float:
+    """
+    Compute the volume of intersection between two spheres.
+
+    The sphere with radius `r1` is separated from the sphere with radius `r2`
+    by a distance `d` along the x-axis. Thus, the vector form of the distance
+    between their centers is `(d, 0, 0)` in Cartesian coordinates.
+
+    Parameters
+    ----------
+    r1 : float
+        Radius of the first sphere.
+    r2 : float
+        Radius of the second sphere.
+    d : float
+        Distance between the centers of the two spheres along the x-axis.
+
+    Returns
+    -------
+    vol : float
+        Volume of the intersection between the two spheres.
+
+    References
+    ----------
+    .. [1] Weisstein, Eric W. "Sphere-Sphere Intersection."
+       From MathWorld--A Wolfram Web Resource.
+       https://mathworld.wolfram.com/Sphere-SphereIntersection.html
+
+    Examples
+    --------
+    >>> sphere_sphere_intersection(3, 4, 2)
+    75.39822368615503
+    >>> sphere_sphere_intersection(3, 4, 10)
+    0.0
+    """
+
+    r_max = max(r1, r2)
+    r_min = min(r1, r2)
+
+    # Volume is zero if one sphere has a radius of zero or no intersection
+    # occurs:
+    if r1 == 0.0 or r2 == 0.0:
+        return 0.0
+    if d >= r_min + r_max:
+        return 0.0
+    if d <= r_max - r_min:
+        # The smaller sphere is entirely contained within the larger one
+        return 4 * np.pi * r_min**3 / 3
+
+    # Calculate the intersection volume for overlapping spheres
+    vol = (np.pi / (12 * d)) * (r_max + r_min - d)**2 * (
+        d**2 + 2 * d * (r_max + r_min)
+        - 3 * (r_min**2 + r_max**2)
+        + 6 * r_min * r_max
+    )
+
+    return vol
+
+
+def create_bin_edge_and_hist(
+    bin_size: float,
+    lmin: float,
+    lmax: float,
+    output: Optional[str] = None
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Create bin edges and an empty histogram for data processing.
+
+    Parameters
+    ----------
+    bin_size : float
+        Size of each bin.
+    lmin : float
+        Lower bound of the system in the direction of interest.
+    lmax : float
+        Upper bound of the system in the direction of interest.
+    outout : str
+        Filename (including filepath) to which bin edges array is saved. A
+        `.npy` extension will be appended to the filename if it does not
+        already have one.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        bin_edges : np.ndarray
+            The edges to pass into a histogram.
+        hist : np.ndarray
+            An empty histogram array initialized with zeros.
+
+    Raises
+    ------
+    ValueError
+        If `lmin` is not less than `lmax`.
+
+    Notes
+    -----
+    The `.npy` extension is handled internally by `np.save`.
+    """
+    if lmin >= lmax:
+        raise ValueError("'lmin' must be less than 'lmax'.")
+    bin_edges = np.arange(lmin, lmax + bin_size, bin_size)
+    hist = np.zeros(len(bin_edges) - 1, dtype=np.int16)
+
+    if output is not None:
+        # Save bin edges to file if save_to path is provided
+        # f"{save_to}{sim_name}-{edge_name}.npy"
+        np.save(output, bin_edges)
+
+    return bin_edges, hist
+
+
+def fixedsize_bins(
+    bin_size: float,
+    lmin: float,
+    lmax: float,
+    bin_type: Literal['ordinary', 'nonnegative', 'periodic'] = 'ordinary',
+    save_bin_edges: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Generate bin edges and an empty histogram, adjusting `lmin` and `lmax` to
+    ensure consistent `bin_size`.
+
+    Parameters
+    ----------
+    bin_size : float
+        Size of each bin.
+    lmin : float
+        Lower bound of the system in the direction of interest.
+    lmax : float
+        Upper bound of the system in the direction of interest.
+    bin_type : {'ordinary', 'nonnegative', 'periodic'}, default 'ordinary'
+        Type of bin:
+            - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
+              Cartesian coordinates and spherical polar coordinate.
+            - 'nonnegative': Extends `lmin` are `lmax` are symmetrically  if
+              adjusted `lmin` is nonnegative; othervise, `lmin` is set to 0 and
+              `lmax` is extended. Examples are radial directions in the polar,
+              spherical, and cylindrical coordinate systems.
+            - 'periodic': Periodic binning (e.g., azimuthal coordinate).
+              Examples are azimuthal directions in cylindrical and spherical
+            coordinate systems.
+    save_bin_edges : Optional[str], default None
+        Filename (including filepath) to which bin edges array is saved. A
+        `.npy` extension will be appended to the filename if it does not
+        already have one.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Dictionary with keys:
+        - 'n_bins' : int
+            Number of bins.
+        - 'bin_edges' : np.ndarray
+            A monotonically increasing array of bin edges, including the
+            rightmost edge.
+        - 'collector' : np.ndarray
+            Array initialized for histogram values.
+        - 'collector_std' : np.ndarray
+            Array initialized for standard deviation values.
+        - 'range' : Tuple[float, float]
+            Updated range of bins (`lmin`, `lmax`).
+
+    Raises
+    ------
+    ValueError
+        If `lmin` is not less than `lmax`.
+
+    Notes
+    -----
+    The `.npy` extension is handled internally by `np.save`.
+
+    References
+    ----------
+    https://docs.mdanalysis.org/1.1.1/documentation_pages/lib/util.html#MDAnalysis.analysis.density.fixedwidth_bins
+    """
+    if lmin >= lmax:
+        raise ValueError("'lmin' must be less than 'lmax'.")
+
+    _length = lmax - lmin
+    _delta = bin_size
+
+    if bin_type == 'ordinary':
+        n_bins = int(np.ceil(_length / _delta))
+        dl = 0.5 * (n_bins * _delta - _length)  # excess length
+        # add half of the excess to each end:
+        lmin_adj = lmin - dl
+        lmax_adj = lmax + dl
+        bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
+    elif bin_type == 'nonnegative':
+        n_bins = int(np.ceil(_length / _delta))
+        dl = 0.5 * (n_bins * _delta - _length)
+        lmin_adj = max(0.0, lmin - dl)
+        lmax_adj = lmax + 2 * dl if lmin_adj == 0 else lmax + dl
+        bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
+    elif bin_type == 'periodic':
+        n_bins = int(np.ceil(_length / _delta))
+        lmin_adj, lmax_adj = lmin, lmax
+        bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta)
+        if (len(bin_edges) - 1) != n_bins:
+            # Number of bins (n_bins='{n_bins}') is different from the actual
+            # number of bins (n_edges-1={len(bin_edges)-1}) for the 'periodic'
+            # bin type because period, i.e., 'lmax-lmin={_length}', and
+            # delta={_delta}, not 'n_bins', are used to created 'bin_edges'.
+            warnings.warn("'n_bins' is set to 'len(bin_edges)-1'", UserWarning)
+    else:
+        invalid_keyword(bin_type, ['ordinary', 'nonnagative', 'periodic'])
+
+    hist_collectors = np.zeros(n_bins, dtype=np.int16)
+    hist_collectors_std = np.zeros(n_bins, dtype=np.int16)
+
+    if save_bin_edges is not None:
+        np.save(save_bin_edges, bin_edges)
+
+    return {
+        'n_bins': n_bins,
+        'bin_edges': bin_edges,
+        'collector': hist_collectors,
+        'collector_std': hist_collectors_std,
+        'range': (lmin_adj, lmax_adj)
+    }
+
+
+def radial_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    bin_range: Tuple[float, float],
+) -> np.ndarray:
+    """
+    Compute the histogram of radial distances from the origin in the spherical
+    coordinate system.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : np.ndarray
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    bin_range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+
+    Returns
+    -------
+    hist: np.ndarray
+        Histogram data
+
+    Raises
+    ------
+    ValueError
+        If the positions array is not two-dimensional.
+    """
+    if positions.ndim != 2:
+        raise ValueError(
+            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+
+    rad_distances = np.linalg.norm(positions, axis=1)
+    hist, _ = np.histogram(rad_distances, bins=edges, range=bin_range)
+    return hist
+
+
+def radial_cyl_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    bin_range: Tuple[float, float],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the histogram of radial distances from the longitudinal axis along
+    `dim` in the cylindrical coordinate system.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : np.ndarray
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    bin_range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+    dim : {0, 1, 2}
+        The longitudinal axis (0=x, 1=y, 2=z).
+
+    Returns
+    -------
+    hist: np.ndarray
+        Histogram data
+
+    Raises
+    ------
+    ValueError
+        If `dim` is not one of {0, 1, 2}.
+    ValueError
+        If the positions array is not two-dimensional.
+    """
+    if dim not in {0, 1, 2}:
+        raise ValueError("'dim' must be one of {0, 1, 2}.")
+    if positions.ndim != 2:
+        raise ValueError(
+            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+
+    trans_axes = np.roll(np.arange(3), -dim)[1:]  # selecting transverse axes
+    trans_distances = np.linalg.norm(positions[:, trans_axes], axis=1)
+    hist, _ = np.histogram(trans_distances, bins=edges, range=bin_range)
+    return hist
+
+
+def axial_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    bin_range: Tuple[float, float],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the histogram of distances from the origin an axis in direction
+    `dim`.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : np.ndarray
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    bin_range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+        The lower and upper ranges of the bins.
+    dim : {0, 1, 2}
+        Axis direction (0=x, 1=y, 2=z).
+
+    Returns
+    -------
+    hist: np.ndarray
+        Histogram data
+
+    Raises
+    ------
+    ValueError
+        If `dim` is not one of {0, 1, 2}.
+    ValueError
+        If the positions array is not two-dimensional.
+    """
+    if dim not in {0, 1, 2}:
+        raise ValueError("'dim' must be one of {0, 1, 2}.")
+    if positions.ndim != 2:
+        raise ValueError(
+            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+
+    hist, _ = np.histogram(positions[:, dim], bins=edges, range=bin_range)
+    return hist
+
+
+def azimuth_cyl_histogram(
+    positions: np.ndarray,
+    edges: np.ndarray,
+    bin_range: Tuple[float, float],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the histogram of azimuth angles in the cylindrical coordinate
+    system with the longitudinal axis along `dim`.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : np.ndarray
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    bin_range : Tuple[float, float]
+        The lower and upper ranges of the bins.
+    dim : {0, 1, 2}
+        The longitudinal axis (0=x, 1=y, 2=z).
+
+    Returns
+    -------
+    hist: np.ndarray
+        Histogram data
+
+    Raises
+    ------
+    ValueError
+        If `dim` is not one of {0, 1, 2}.
+    ValueError
+        If the positions array is not two-dimensional.
+    """
+    if dim not in {0, 1, 2}:
+        raise ValueError("'dim' must be one of {0, 1, 2}.")
+    if positions.ndim != 2:
+        raise ValueError(
+            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+
+    transverse_axes = np.roll(np.arange(3), -dim)[1:]
+    azimuthal_angles = np.arctan2(
+        positions[:, transverse_axes[1]], positions[:, transverse_axes[0]]
+        )
+    hist, _ = np.histogram(azimuthal_angles, bins=edges, range=bin_range)
+    return hist
+
+
+def planar_cartesian_histogram(
+    positions: np.ndarray,
+    edges: List[np.ndarray],
+    bin_ranges: List[Tuple[int, int]],
+    dim: Literal[0, 1, 2]
+) -> np.ndarray:
+    """
+    Compute the bi-dimensional histogram in the plan perpendicular to the axis
+    along `dim` in the Cartersian coordinate system.
+
+    Parameters
+    ----------
+    positions : np.ndarray
+        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
+        by atom number form 1 to N.
+    edges : List[np.ndarray]
+        A monotonically increasing array of bin edges, including the rightmost
+        edge.
+    bin_range : List[Tuple[float, float]]
+        The list of the lower and upper ranges of the bins in the transverse
+        directions within the plane.
+    dim : {0, 1, 2}
+        Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
+        planar axes to the `np.histogram2d`: When `dim=0` (x), `dim=1` (y) and
+        `dim=2` (z) values are passed respectively. When `dim=1` (y), `dim=2`
+        (z) and `dim=0` (x) values are passed respectively. When `dim=2` (z),
+        `dim=0` (x) and `dim=1` (y) values are passed respectively.
+
+    Returns
+    -------
+    hist: np.ndarray
+        Histogram data
+
+    Raises
+    ------
+    ValueError
+        If `dim` is not one of {0, 1, 2}.
+    ValueError
+        If the positions array is not two-dimensional.
+    ValueError
+        If the length of `edges` or `bin_ranges` is not two.
+    """
+    if dim not in {0, 1, 2}:
+        raise ValueError("'dim' must be one of {0, 1, 2}.")
+    if positions.ndim != 2:
+        raise ValueError(
+            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+    if len(edges) != 2:
+        raise ValueError("'edges' must contain two arrays, one for each axis.")
+    if len(bin_ranges) != 2:
+        raise ValueError(
+            "'bin_edges' must contain two tuples, one for each axis."
+        )
+
+    t_dims = np.roll(np.arange(3), -dim)[1:]  # selecting transverse axes
+    hist, _, _ = np.histogram2d(
+        positions[:, t_dims[0]],
+        positions[:, t_dims[1]],
+        bins=edges,
+        range=bin_ranges)
+    return hist
