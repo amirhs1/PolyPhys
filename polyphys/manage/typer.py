@@ -38,21 +38,23 @@ Type hints defined in this module enable the use of static type checkers,
 such as `mypy`, which verify the correctness of data types in the code
 before runtime.
 """
-from typing import Type, Union, Tuple, Dict, List, TextIO, IO, Any
+from typing import Type, Union, Tuple, Dict, List, TextIO, IO, Any, Literal
 from gzip import GzipFile
 import numpy as np
 import pandas as pd
 from .parser import (
     ParserBase, SumRuleCyl, TransFociCyl, TransFociCub, HnsCyl, HnsCub,
-    SumRuleCubHeteroLinear, SumRuleCubHeteroRing, TwoMonDep
+    SumRuleCubHeteroLinear, SumRuleCubHeteroRing, TwoMonDepCub
 )
 
 # Type aliases for clarity
 PropertyT = str
-SpeciesT = str
+EntityT = str
 GroupT = str
-DirectionT = str
-AxisT = int
+DirectionT = Literal['x', 'y', 'z', 'r', 'theta']
+PlaneT = Literal['xy', 'yz', 'zx']
+BinT = Literal['ordinary', 'nonnegative', 'periodic']
+AxisT = Literal[0, 1, 2]
 PhaseT = str
 WholeName = str
 EnsembleName = str
@@ -75,7 +77,7 @@ InputType = Union[GzipFile, TextIO, IO[Any]]
 
 # Type aliases for classes (used when passing the class itself)
 ParserBaseT = Type[ParserBase]
-TwoMonDepT = Type[TwoMonDep]
+TwoMonDepCubT = Type[TwoMonDepCub]
 SumRuleCylT = Type[SumRuleCyl]
 TransFociCylT = Type[TransFociCyl]
 TransFociCubT = Type[TransFociCub]
@@ -87,12 +89,12 @@ HnsCylT = Type[HnsCyl]
 # Union types for clases
 ParserType = Union[
     SumRuleCylT, TransFociCubT, TransFociCylT, HnsCubT, HnsCylT,
-    SumRuleCubHeteroLinearT, SumRuleCubHeteroRingT, TwoMonDepT
+    SumRuleCubHeteroLinearT, SumRuleCubHeteroRingT, TwoMonDepCubT
 ]
 
 # Type aliases for instances of the classes
 ParserBaseInstance = ParserBase
-TwoMonDepInstance = TwoMonDep
+TwoMonDepCubInstance = TwoMonDepCub
 SumRuleCylInstance = SumRuleCyl
 TransFociCylInstance = TransFociCyl
 TransFociCubInstance = TransFociCub
@@ -105,5 +107,5 @@ HnsCylInstance = HnsCyl
 ParserInstance = Union[
     SumRuleCylInstance, TransFociCubInstance, TransFociCylInstance,
     HnsCubInstance, HnsCylInstance, SumRuleCubHeteroLinearInstance,
-    SumRuleCubHeteroRingInstance, TwoMonDepInstance
+    SumRuleCubHeteroRingInstance, TwoMonDepCubInstance
 ]

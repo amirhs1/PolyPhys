@@ -412,7 +412,7 @@ class ParserBase(ABC):
         """
 
 
-class TwoMonDep(ParserBase):
+class TwoMonDepCub(ParserBase):
     """
     Extracts structured information about an artifact from its name in the
     *TwoMonDep* project, utilizing specific filename patterns.
@@ -435,10 +435,10 @@ class TwoMonDep(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
@@ -662,10 +662,10 @@ class SumRuleCyl(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
@@ -900,10 +900,10 @@ class SumRuleCubHeteroRing(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
@@ -1171,10 +1171,10 @@ class SumRuleCubHeteroLinear(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
@@ -1442,10 +1442,10 @@ class TransFociCyl(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
@@ -1744,10 +1744,10 @@ class TransFociCub(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
@@ -2015,10 +2015,10 @@ class HnsCub(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
@@ -2272,10 +2272,10 @@ class HnsCyl(ParserBase):
     attributes where their values (shown by "#" sign) are float or integer
     number. See `genealogy_attributes` below for long names of attribues.
 
-    Other than attributes inhertied from the parent class `ParserBase` as
-    explained below, this class dynamically defines new attributes based on the
-    list of physical attributes of a given `lineage` as define in the
-    `genealogy_attributes` class attribute.
+    Other than attributes inhertied from the parent class `ParserBase`, this
+    class dynamically defines new attributes based on the list of physical
+    attributes of a given `lineage` as define in the `genealogy_attributes`
+    class attribute.
 
     Parameters
     ----------
