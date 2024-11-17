@@ -1,7 +1,7 @@
 import warnings
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Tuple, Literal, Optional, List
+from typing import Dict, Any, Tuple, Literal, Optional, List, Callable
 import numpy as np
 import MDAnalysis as mda
 from polyphys.analyze import clusters, correlations
@@ -22,6 +22,7 @@ from polyphys.manage.typer import (
     DirectionT,
     PlaneT,
     EntityT,
+    ParserType,
     SumRuleCylInstance,
     TwoMonDepCubInstance,
     TransFociCylInstance,
@@ -49,20 +50,26 @@ class CylindricalHistogramMixIn(ABC):
     Mixin for histograms in cylindrical coordinate systems. Handles histograms
     for `r`, `z`, and `theta`.
     """
-    _hist1d_bin_types: Dict[str, str] = {
-        'r': 'nonnegative',
-        'z': 'ordinary',
-        'theta': 'periodic'
-    }
+    _hist1d_bin_types: Dict[DirectionT, BinT] = \
+        {'r': 'nonnegative', 'z': 'ordinary', 'theta': 'periodic'}
 
     @abstractmethod
     def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
         """
+        Computes bin edge configurations for calculating one dimentional histograms based on simulation parameters.
+
         Must be implemented in subclasses to supply cylindrical-specific bin configurations.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
         """
 
-    def _initialize_collectors_1d(
+    def _initialize_hist_collectors_1d(
         self,
+        entity: EntityT,
         bin_edges: Dict[str, Dict[str, Any]]
     ) -> None:
         """
@@ -70,43 +77,50 @@ class CylindricalHistogramMixIn(ABC):
 
         Parameters
         ----------
+        entity : EntityT
+            Particle entity (e.g., `Mon` or `Crd`).
         bin_edges : Dict[str, Dict[str, Any]]
             Bin edge configurations for cylindrical directions.
         """
-        for ent in self._entities:
-            for direction, bin_type in self._hist1d_bin_types.items():
-                edge_key = f"{direction}Edge"
-                hist_data = fixedsize_bins(
-                    bin_edges[edge_key]['bin_size'],
-                    bin_edges[edge_key]['lmin'],
-                    bin_edges[edge_key]['lmax'],
-                    bin_type=bin_type
-                )
-                self._hist1d_props[f"{direction}Hist{ent}"] = {
-                    'n_bins': hist_data['n_bins'],
-                    'bin_edges': hist_data['bin_edges'],
-                    'range': hist_data['range'],
-                }
-                self._collectors[f"{direction}Hist{ent}"] = hist_data['collector']
+        for direction, bin_type in self._hist1d_bin_types.items():
+            edge_key = f"{direction}Edge"
+            output = f"{self.save_to}{self.sim_name}-{edge_key}{entity}"
+            hist_data = fixedsize_bins(
+                bin_edges[edge_key]['bin_size'],
+                bin_edges[edge_key]['lmin'],
+                bin_edges[edge_key]['lmax'],
+                bin_type=bin_type,
+                save_bin_edges=output
+            )
+            self._hist1d_props[f"{direction}Hist{entity}"] = {
+                'n_bins': hist_data['n_bins'],
+                'bin_edges': hist_data['bin_edges'],
+                'range': hist_data['range'],
+            }
+            self._collectors[f"{direction}Hist{entity}"] = \
+                hist_data['collector']
+            self._collectors[f'{direction}HistStd{entity}'] = \
+                hist_data['collector_std']
 
     def _update_histogram_1d(
-        self, direction: str,
-        histogram_func,
-        entity: str,
-        axis: int
+        self,
+        direction: DirectionT,
+        histogram_func: Callable,
+        entity: EntityT,
+        axis: AxisT
     ) -> None:
         """
         Updates a 1D histogram in cylindrical coordinates.
 
         Parameters
         ----------
-        direction : str
+        direction : DirectionT
             The spatial direction (`r`, `z`, or `theta`).
         histogram_func : Callable
             Function to compute the histogram.
-        entity : str
+        entity : EntityT
             Particle entity (e.g., `Mon` or `Crd`).
-        axis : int
+        axis : AxisT
             Spatial axis corresponding to the direction.
         """
         pos_hist, _ = histogram_func(
@@ -116,6 +130,171 @@ class CylindricalHistogramMixIn(ABC):
             axis
         )
         self._collectors[f"{direction}Hist{entity}"] += pos_hist
+        self._collectors[f'{direction}HistStd{entity}'] += np.square(pos_hist)
+
+
+class SphericalHistogramMixin(ABC):
+    """
+    Mixin for 1D histograms in spherical coordinate systems. Currently, only handles histograms for `r`.
+    """
+    _hist1d_bin_types: Dict[DirectionT, BinT] = {'r': 'nonnegative'}
+
+    @abstractmethod
+    def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations for calculating one dimentional histograms based on simulation parameters.
+
+        Must be implemented in subclasses to supply spherical-specific bin configurations.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+
+    def _initialize_hist_collectors_1d(
+        self,
+        entity: EntityT,
+        bin_edges: Dict[str, Dict[str, Any]]
+    ) -> None:
+        """
+        Initializes collectors for 1D histograms in spherical coordinates.
+
+        Parameters
+        ----------
+        entity : EntityT
+            Particle entity (e.g., `Mon` or `Crd`).
+        bin_edges : Dict[str, Dict[str, Any]]
+            Bin edge configurations for spherical directions.
+        """
+        for direction, bin_type in self._hist1d_bin_types.items():
+            edge_key = f"{direction}Edge"
+            output = f"{self.save_to}{self.sim_name}-{edge_key}{entity}"
+            hist_data = fixedsize_bins(
+                bin_edges[edge_key]['bin_size'],
+                bin_edges[edge_key]['lmin'],
+                bin_edges[edge_key]['lmax'],
+                bin_type=bin_type,
+                save_bin_edges=output
+            )
+            self._hist1d_props[f"{direction}Hist{entity}"] = {
+                'n_bins': hist_data['n_bins'],
+                'bin_edges': hist_data['bin_edges'],
+                'range': hist_data['range'],
+            }
+            self._collectors[f"{direction}Hist{entity}"] = \
+                hist_data['collector']
+            self._collectors[f'{direction}HistStd{entity}'] = \
+                hist_data['collector_std']
+
+    def _update_histogram_1d(
+        self,
+        direction: DirectionT,
+        histogram_func: Callable,
+        entity: EntityT,
+    ) -> None:
+        """
+        Updates a 1D histogram in spherical coordinates.
+
+        Parameters
+        ----------
+        direction : DirectionT
+            The spatial direction (`r`).
+        histogram_func : Callable
+            Function to compute the histogram.
+        entity : EntityT
+            Particle entity (e.g., `Mon` or `Crd`).
+        """
+        pos_hist, _ = histogram_func(
+            self._atom_groups[entity].positions,
+            self._hist1d_props[f"{direction}Hist{entity}"]['bin_edges'],
+            self._hist1d_props[f"{direction}Hist{entity}"]['range'],
+        )
+        self._collectors[f"{direction}Hist{entity}"] += pos_hist
+        self._collectors[f'{direction}HistStd{entity}'] += np.square(pos_hist)
+
+
+class CartesianHistogram2DMixin(ABC):
+    """
+    Mixin for 2D histograms in Cartesian coordinate systems.
+    Handles histograms for `xy`, `yz`, and `zx` planes.
+    """
+    _hist2d_planes_dirs: Dict[PlaneT, DirectionT] = \
+        {'xy': 'z', 'yz': 'x', 'zx': 'y'}
+    _hist2d_planes_axes: Dict[PlaneT, AxisT] = {'xy': 2, 'yz': 0, 'zx': 1}
+
+    @abstractmethod
+    def _initialize_bin_edges_2d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations based on simulation parameters.
+
+        Must be implemented in subclasses to supply Cartesian-specific bin configurations.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+
+    def _initialize_hist_collectors_2d(
+        self,
+        entity: EntityT,
+        bin_edges: Dict[str, Dict[str, Any]]
+    ) -> None:
+        """
+        Initializes collectors for 2D histograms in Cartesian coordinates.
+
+        Parameters
+        ----------
+        entity : EntityT
+            Particle entity (e.g., `Mon` or `Crd`).
+        bin_edges : Dict[str, Dict[str, Any]]
+            Bin edge configurations for Cartesian planes.
+        """
+        for plane in self._hist2d_planes_dirs:
+            self._hist2d_props[f'{plane}Hist{entity}'] = \
+                    {'n_bins': [], 'bin_edges': [], 'range': []}
+            for axis in plane:
+                edge_key = f"{axis}Edge"
+                output = f"{self.save_to}{self.sim_name}-{edge_key}{entity}"
+                hist_data = fixedsize_bins(
+                    bin_edges[edge_key]['bin_size'],
+                    bin_edges[edge_key]['lmin'],
+                    bin_edges[edge_key]['lmax'],
+                    bin_type='ordinary',
+                    save_bin_edges=output,
+                )
+                self._hist2d_props[f'{plane}Hist{entity}']['n_bins']\
+                    .append(hist_data['n_bins'])
+                self._hist2d_props[f'{plane}Hist{entity}']['bin_edges']\
+                    .append(hist_data['bin_edges'])
+                self._hist2d_props[f'{plane}Hist{entity}']['range']\
+                    .append(hist_data['range'])
+
+            self._collectors[f'{plane}Hist{entity}'] = np.zeros(
+                self._hist2d_props[f'{plane}Hist{entity}']['n_bins']
+            )
+
+    def _update_histogram_2d(self, plane: PlaneT, entity: EntityT) -> None:
+        """
+        Updates a 2D histogram in Cartesian coordinates.
+
+        Parameters
+        ----------
+        plane : PlaneT
+            A Cartesian plane ('xy', 'yz', or 'zx') for the histogram.
+        entity : EntityT
+            The type of entity ('Mon' for monomers, 'Crd' for crowders).
+        """
+        pos_hist, _ = planar_cartesian_histogram(
+            self._atom_groups[entity].positions,
+            self._hist2d_props[f"{plane}Hist{entity}"]['bin_edges'],
+            self._hist2d_props[f"{plane}Hist{entity}"]['range'],
+            self._hist2d_planes_axes[plane],
+        )
+        self._collectors[f"{plane}Hist{entity}"] += pos_hist
 
 
 class ProberBase(ABC):
@@ -216,6 +395,16 @@ class ProberBase(ABC):
         If accessing uninitialized properties `_parser`, `_universe`, or
         `_damping_time`.
     """
+    _entities: Optional[List[EntityT]] = None
+    @property
+    def entities(self) -> List[EntityT]:
+        """
+        Returns the list particle entities in  the molecular dynamics system.
+        """
+        if self._entities is None:
+            raise AttributeError("'_entities' has not been initialized.")
+        return self._entities
+
     def __init__(
         self,
         topology: str,
@@ -243,7 +432,7 @@ class ProberBase(ABC):
         self._universe: Optional[mda.Universe] = None
         self._sim_name: str = f"{self.parser.name}-{self.parser.group}"
         self._n_frames, self._sliced_trj = self._set_trj_slice()
-        self._atom_groups: Dict[EntityT, mda.AtomGroup] = {}
+        self._atom_groups: Optional[Dict[EntityT, mda.AtomGroup]] = None
         self._define_atom_groups()
         self._collectors: Dict[str, Any] = {}
         self._prepare()
@@ -312,6 +501,8 @@ class ProberBase(ABC):
         Returns a dictionary of atom groups and their associated MDAnalysis
         AtomGroup instances.
         """
+        if self._atom_groups is None:
+            raise AttributeError("'_atom_groups' has not been initialized.")
         return self._atom_groups
 
     @property
@@ -537,7 +728,11 @@ class TwoMonDepCubBugProber(ProberBase):
             fsd(self._atom_groups['Mon'].positions, axis=2)
 
 
-class TwoMonDepCubAllProber(ProberBase):
+class TwoMonDepCubAllProber(
+    SphericalHistogramMixin,
+    CartesianHistogram2DMixin,
+    ProberBase
+):
     """
     Probes simulations of the LAMMPS 'all' atom group in the *TwoMonDepCub*
     molecular dynamics project to extract spatial distributions of particles.
@@ -601,10 +796,6 @@ class TwoMonDepCubAllProber(ProberBase):
     >>> prober.save_artifacts()
     """
     _entities: List[EntityT] = ['Mon', 'Crd']
-    _hist1d_bin_types: Dict[DirectionT, BinT] = {'r': 'nonnegative'}
-    _hist2d_planes_dirs: Dict[PlaneT, DirectionT] = \
-        {'xy': 'z', 'yz': 'x', 'zx': 'y'}
-    _hist2d_planes_axes: Dict[PlaneT, AxisT] = {'xy': 2, 'yz': 0, 'zx': 1}
 
     def __init__(
         self,
@@ -640,10 +831,15 @@ class TwoMonDepCubAllProber(ProberBase):
     def _prepare(self) -> None:
         self._hist1d_props: Dict[str, Dict[str, Any]] = {}
         self._hist2d_props: Dict[str, Dict[str, Any]] = {}
-        bin_edges = self._initialize_bin_edges()
-        self._initialize_collectors(bin_edges)
+        bin_edges_1d = self._initialize_bin_edges_1d()
+        bin_edges_2d = self._initialize_bin_edges_2d()
+        for entity in self._entities:
+            self._initialize_hist_collectors_1d(entity, bin_edges_1d)
+            self._initialize_hist_collectors_2d(entity, bin_edges_2d)
+        print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
+                  " 'rEdge') saved to storage for each particle entity.")
 
-    def _initialize_bin_edges(self) -> Dict[str, Dict[str, Any]]:
+    def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
         """
         Computes bin edge configurations based on simulation parameters.
 
@@ -660,6 +856,22 @@ class TwoMonDepCubAllProber(ProberBase):
             'rEdge': {'bin_size': 0.1 * min(dmon, dcrowd), 
                       'lmin': 0,
                       'lmax': 0.5 * lcube},
+        }
+
+    def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations based on simulation parameters.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+        dmon = getattr(self._parser, 'dmon')
+        dcrowd = getattr(self._parser, 'dcrowd')
+        lcube = getattr(self._parser, 'lcube')
+        return {
             'zEdge': {'bin_size': 0.5 * min(dmon, dcrowd),
                       'lmin': -0.5 * lcube,
                       'lmax': 0.5 * lcube},
@@ -670,116 +882,6 @@ class TwoMonDepCubAllProber(ProberBase):
                       'lmin': -0.5 * lcube,
                       'lmax': 0.5 * lcube},
         }
-
-    def _initialize_collectors(
-            self,
-            bin_edges: Dict[str, Dict[str, Any]]
-    ) -> None:
-        """
-        Initializes histogram properties and collectors.
-
-        Parameters
-        ----------
-        bin_edges : Dict[str, Dict[str, Any]]
-            A dictionary of bin edge configurations for spatial dimensions.
-        """
-        for ent in self._entities:
-            # 1D histograms
-            for direction, bin_type in self._hist1d_bin_types.items():
-                edge_key = f"{direction}Edge"
-                output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                hist_data = fixedsize_bins(
-                    bin_edges[edge_key]['bin_size'],
-                    bin_edges[edge_key]['lmin'],
-                    bin_edges[edge_key]['lmax'],
-                    bin_type=bin_type,
-                    save_bin_edges=output,
-                )
-                self._hist1d_props[f'{direction}Hist{ent}'] = {
-                    'n_bins': hist_data['n_bins'],
-                    'bin_edges': hist_data['bin_edges'],
-                    'range': hist_data['range']
-                    }
-                self._collectors[f'{direction}Hist{ent}'] = \
-                    hist_data['collector']
-                self._collectors[f'{direction}HistStd{ent}'] = \
-                    hist_data['collector_std']
-
-            # 2D histograms
-            for plane in self._hist2d_planes_dirs:
-                self._hist2d_props[f'{plane}Hist{ent}'] = \
-                    {'n_bins': [], 'bin_edges': [], 'range': []}
-                for axis in plane:
-                    edge_key = f"{axis}Edge"
-                    output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                    hist_data = fixedsize_bins(
-                        bin_edges[edge_key]['bin_size'],
-                        bin_edges[edge_key]['lmin'],
-                        bin_edges[edge_key]['lmax'],
-                        bin_type='ordinary',
-                        save_bin_edges=output,
-                    )
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']\
-                        .append(hist_data['n_bins'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['bin_edges']\
-                        .append(hist_data['bin_edges'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['range']\
-                        .append(hist_data['range'])
-
-                self._collectors[f'{plane}Hist{ent}'] = np.zeros(
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']
-                )
-            print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
-                  " 'rEdge') saved to storage for each particle entity.")
-
-    def _update_histogram(
-        self,
-        direction: DirectionT,
-        histogram_func,
-        entity: EntityT,
-    ) -> None:
-        """
-        Updates a one-dimensional histogram for a specific direction.
-
-        Parameters
-        ----------
-        direction : DirectionT
-            The spatial direction ('r', 'z', or 'theta') for the histogram.
-        histogram_func : Callable
-            The histogram computation function to use (e.g., radial histogram).
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        """
-        pos_hist, _ = histogram_func(
-            self._atom_groups[entity].positions,
-            self._hist1d_props[f'{direction}Hist{entity}']['bin_edges'],
-            self._hist1d_props[f'{direction}Hist{entity}']['range']
-        )
-        self._collectors[f'{direction}Hist{entity}'] += pos_hist
-        self._collectors[f'{direction}HistStd{entity}'] += np.square(pos_hist)
-
-    def _update_histogram_2d(
-        self,
-        plane: PlaneT,
-        entity: EntityT,
-    ) -> None:
-        """
-        Updates a two-dimensional histogram for a Cartesian plane.
-
-        Parameters
-        ----------
-        plane : PlaneT
-            A Cartesian plane ('xy', 'yz', or 'zx') for the histogram.
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        """
-        pos_hist, _ = planar_cartesian_histogram(
-            self._atom_groups[entity].positions,
-            self._hist2d_props[f'{plane}Hist{entity}']['bin_edges'],
-            self._hist2d_props[f'{plane}Hist{entity}']['range'],
-            self._hist2d_planes_axes[plane],
-        )
-        self._collectors[f'{plane}Hist{entity}'] += pos_hist
 
     def _probe_frame(self, idx: int) -> None:
         """
@@ -792,13 +894,10 @@ class TwoMonDepCubAllProber(ProberBase):
         """
         for ent in self._entities:
             # 1D histograms
-            self._update_histogram('r', radial_histogram, ent)
-
+            self._update_histogram_1d('r', radial_histogram, ent)
             # 2D histograms
             for plane in self._hist2d_planes_dirs:
                 self._update_histogram_2d(plane, ent)
-
-
 
 class SumRuleCylBugProber(ProberBase):
     """
@@ -923,7 +1022,11 @@ class SumRuleCylBugProber(ProberBase):
             self._atom_groups['Mon'].principal_axes(wrap=False)
 
 
-class SumRuleCylAllProber(ProberBase):
+class SumRuleCylAllProber(
+    CylindricalHistogramMixIn,
+    CartesianHistogram2DMixin,
+    ProberBase
+):
     """
     Probes simulations of the LAMMPS 'all' atom group in the *SumRuleCyl*
     molecular dynamics project to extract spatial distributions of particles.
@@ -991,11 +1094,6 @@ class SumRuleCylAllProber(ProberBase):
     >>> prober.save_artifacts()
     """
     _entities: List[EntityT] = ['Mon', 'Crd']
-    _hist1d_bin_types: Dict[DirectionT, BinT] = \
-        {'r': 'nonnegative', 'z': 'ordinary', 'theta': 'periodic'}
-    _hist2d_planes_dirs: Dict[PlaneT, DirectionT] = \
-        {'xy': 'z', 'yz': 'x', 'zx': 'y'}
-    _hist2d_planes_axes: Dict[PlaneT, AxisT] = {'xy': 2, 'yz': 0, 'zx': 1}
 
     def __init__(
         self,
@@ -1031,12 +1129,17 @@ class SumRuleCylAllProber(ProberBase):
     def _prepare(self) -> None:
         self._hist1d_props: Dict[str, Dict[str, Any]] = {}
         self._hist2d_props: Dict[str, Dict[str, Any]] = {}
-        bin_edges = self._initialize_bin_edges()
-        self._initialize_collectors(bin_edges)
+        bin_edges_1d = self._initialize_bin_edges_1d()
+        bin_edges_2d = self._initialize_bin_edges_2d()
+        for entity in self._entities:
+            self._initialize_hist_collectors_1d(entity, bin_edges_1d)
+            self._initialize_hist_collectors_2d(entity, bin_edges_2d)
+        print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
+                  " 'rEdge') saved to storage for each particle entity.")
 
-    def _initialize_bin_edges(self) -> Dict[str, Dict[str, Any]]:
+    def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
         """
-        Computes bin edge configurations based on simulation parameters.
+        Computes bin edge configurations for calculating one dimentional histograms based on simulation parameters.
 
         Returns
         -------
@@ -1049,131 +1152,42 @@ class SumRuleCylAllProber(ProberBase):
         lcyl = getattr(self._parser, 'lcyl')
         dcyl = getattr(self._parser, 'dcyl')
         return {
-            'rEdge': {'bin_size': 0.1 * min(dmon, dcrowd), 'lmin': 0,
-                      'lmax': 0.5 * lcyl},
-            'zEdge': {'bin_size': 0.5 * min(dmon, dcrowd), 'lmin': -0.5 * lcyl,
-                      'lmax': 0.5 * lcyl},
-            'thetaEdge': {'bin_size': np.pi / 36, 'lmin': -np.pi,
-                          'lmax': np.pi},
-            'xEdge': {'bin_size': 0.1 * min(dmon, dcrowd), 'lmin': -0.5 * dcyl,
+            'rEdge': {'bin_size': 0.1 * min(dmon, dcrowd),
+                      'lmin': 0,
                       'lmax': 0.5 * dcyl},
-            'yEdge': {'bin_size': 0.1 * min(dmon, dcrowd), 'lmin': -0.5 * dcyl,
+            'zEdge': {'bin_size': 0.5 * min(dmon, dcrowd),
+                      'lmin': -0.5 * lcyl,
+                      'lmax': 0.5 * lcyl},
+            'thetaEdge': {'bin_size': np.pi / 36,
+                          'lmin': -np.pi,
+                          'lmax': np.pi},
+        }
+    
+    def _initialize_bin_edges_2d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations for calculating two dimentional histograms based on simulation parameters.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+        dmon = getattr(self._parser, 'dmon')
+        dcrowd = getattr(self._parser, 'dcrowd')
+        lcyl = getattr(self._parser, 'lcyl')
+        dcyl = getattr(self._parser, 'dcyl')
+        return {
+            'zEdge': {'bin_size': 0.5 * min(dmon, dcrowd),
+                      'lmin': -0.5 * lcyl,
+                      'lmax': 0.5 * lcyl},
+            'xEdge': {'bin_size': 0.1 * min(dmon, dcrowd),
+                      'lmin': -0.5 * dcyl,
+                      'lmax': 0.5 * dcyl},
+            'yEdge': {'bin_size': 0.1 * min(dmon, dcrowd),
+                      'lmin': -0.5 * dcyl,
                       'lmax': 0.5 * dcyl},
         }
-
-    def _initialize_collectors(
-            self,
-            bin_edges: Dict[str, Dict[str, Any]]
-    ) -> None:
-        """
-        Initializes histogram properties and collectors.
-
-        Parameters
-        ----------
-        bin_edges : Dict[str, Dict[str, Any]]
-            A dictionary of bin edge configurations for spatial dimensions.
-        """
-        for ent in self._entities:
-            # 1D histograms
-            for direction, bin_type in self._hist1d_bin_types.items():
-                edge_key = f"{direction}Edge"
-                output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                hist_data = fixedsize_bins(
-                    bin_edges[edge_key]['bin_size'],
-                    bin_edges[edge_key]['lmin'],
-                    bin_edges[edge_key]['lmax'],
-                    bin_type=bin_type,
-                    save_bin_edges=output,
-                )
-                self._hist1d_props[f'{direction}Hist{ent}'] = {
-                    'n_bins': hist_data['n_bins'],
-                    'bin_edges': hist_data['bin_edges'],
-                    'range': hist_data['range']
-                    }
-                self._collectors[f'{direction}Hist{ent}'] = \
-                    hist_data['collector']
-                self._collectors[f'{direction}HistStd{ent}'] = \
-                    hist_data['collector_std']
-
-            # 2D histograms
-            for plane in self._hist2d_planes_dirs:
-                self._hist2d_props[f'{plane}Hist{ent}'] = \
-                    {'n_bins': [], 'bin_edges': [], 'range': []}
-                for axis in plane:
-                    edge_key = f"{axis}Edge"
-                    output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                    hist_data = fixedsize_bins(
-                        bin_edges[edge_key]['bin_size'],
-                        bin_edges[edge_key]['lmin'],
-                        bin_edges[edge_key]['lmax'],
-                        bin_type='ordinary',
-                        save_bin_edges=output,
-                    )
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']\
-                        .append(hist_data['n_bins'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['bin_edges']\
-                        .append(hist_data['bin_edges'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['range']\
-                        .append(hist_data['range'])
-
-                self._collectors[f'{plane}Hist{ent}'] = np.zeros(
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']
-                )
-            print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
-                  " 'rEdge') saved to storage for each particle entity.")
-
-    def _update_histogram(
-        self,
-        direction: DirectionT,
-        histogram_func,
-        entity: EntityT,
-        axis: int
-    ) -> None:
-        """
-        Updates a one-dimensional histogram for a specific direction.
-
-        Parameters
-        ----------
-        direction : DirectionT
-            The spatial direction ('r', 'z', or 'theta') for the histogram.
-        histogram_func : Callable
-            The histogram computation function to use (e.g., radial histogram).
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        axis : int
-            The spatial axis corresponding to the direction.
-        """
-        pos_hist, _ = histogram_func(
-            self._atom_groups[entity].positions,
-            self._hist1d_props[f'{direction}Hist{entity}']['bin_edges'],
-            self._hist1d_props[f'{direction}Hist{entity}']['range'],
-            axis,
-        )
-        self._collectors[f'{direction}Hist{entity}'] += pos_hist
-        self._collectors[f'{direction}HistStd{entity}'] += np.square(pos_hist)
-
-    def _update_histogram_2d(
-        self,
-        plane: PlaneT,
-        entity: EntityT,
-    ) -> None:
-        """
-        Updates a two-dimensional histogram for a Cartesian plane.
-
-        Parameters
-        ----------
-        plane : PlaneT
-            A Cartesian plane ('xy', 'yz', or 'zx') for the histogram.
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        """
-        pos_hist, _ = planar_cartesian_histogram(
-            self._atom_groups[entity].positions,
-            self._hist2d_props[f'{plane}Hist{entity}']['bin_edges'],
-            self._hist2d_props[f'{plane}Hist{entity}']['range'],
-            self._hist2d_planes_axes[plane],
-        )
-        self._collectors[f'{plane}Hist{entity}'] += pos_hist
 
     def _probe_frame(self, idx: int) -> None:
         """
@@ -1186,9 +1200,9 @@ class SumRuleCylAllProber(ProberBase):
         """
         for ent in self._entities:
             # 1D histograms
-            self._update_histogram('r', radial_cyl_histogram, ent, axis=2)
-            self._update_histogram('z', axial_histogram, ent, axis=2)
-            self._update_histogram('theta', azimuth_cyl_histogram, ent, axis=2)
+            self._update_histogram_1d('r', radial_cyl_histogram, ent, 2)
+            self._update_histogram_1d('z', axial_histogram, ent, 2)
+            self._update_histogram_1d('theta', azimuth_cyl_histogram, ent, 2)
 
             # 2D histograms
             for plane in self._hist2d_planes_dirs:
@@ -1359,7 +1373,11 @@ class TransFociCylBugProber(ProberBase):
         clusters_stat = clusters.count_foci_clusters(contacts)
         self._collectors['clustersHistTFoci'][idx] = clusters_stat
 
-class TransFociCylAllProber(ProberBase):
+class TransFociCylAllProber(
+    CylindricalHistogramMixIn,
+    CartesianHistogram2DMixin,
+    ProberBase
+):
     """
     Probes simulations of the LAMMPS 'all' atom group in the *TransFociCyl*
     molecular dynamics project to extract spatial distributions of particles.
@@ -1430,11 +1448,6 @@ class TransFociCylAllProber(ProberBase):
     >>> prober.save_artifacts()
     """
     _entities: List[EntityT] = ['Mon', 'Dna', 'Foci', 'Crd']
-    _hist1d_bin_types: Dict[DirectionT, BinT] = \
-        {'r': 'nonnegative', 'z': 'ordinary', 'theta': 'periodic'}
-    _hist2d_planes_dirs: Dict[PlaneT, DirectionT] = \
-        {'xy': 'z', 'yz': 'x', 'zx': 'y'}
-    _hist2d_planes_axes: Dict[PlaneT, AxisT] = {'xy': 2, 'yz': 0, 'zx': 1}
 
     def __init__(
         self,
@@ -1473,10 +1486,15 @@ class TransFociCylAllProber(ProberBase):
     def _prepare(self) -> None:
         self._hist1d_props: Dict[str, Dict[str, Any]] = {}
         self._hist2d_props: Dict[str, Dict[str, Any]] = {}
-        bin_edges = self._initialize_bin_edges()
-        self._initialize_collectors(bin_edges)
+        bin_edges_1d = self._initialize_bin_edges_1d()
+        bin_edges_2d = self._initialize_bin_edges_2d()
+        for entity in self._entities:
+            self._initialize_hist_collectors_1d(entity, bin_edges_1d)
+            self._initialize_hist_collectors_2d(entity, bin_edges_2d)
+        print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
+                  " 'rEdge') saved to storage for each particle entity.")
 
-    def _initialize_bin_edges(self) -> Dict[str, Dict[str, Any]]:
+    def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
         """
         Computes bin edge configurations based on simulation parameters.
 
@@ -1493,134 +1511,40 @@ class TransFociCylAllProber(ProberBase):
         return {
             'rEdge': {'bin_size': 0.1 * min(dmon_small, dcrowd), 
                       'lmin': 0,
-                      'lmax': 0.5 * lcyl},
+                      'lmax': 0.5 * dcyl},
             'zEdge': {'bin_size': 0.5 * min(dmon_small, dcrowd),
                       'lmin': -0.5 * lcyl,
                       'lmax': 0.5 * lcyl},
             'thetaEdge': {'bin_size': np.pi / 36,
                           'lmin': -np.pi,
-                          'lmax': np.pi},
+                          'lmax': np.pi}
+        }
+    
+    def _initialize_bin_edges_2d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations based on simulation parameters.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+        dmon_small = getattr(self._parser, 'dmon_small')
+        dcrowd = getattr(self._parser, 'dcrowd')
+        lcyl = getattr(self._parser, 'lcyl')
+        dcyl = getattr(self._parser, 'dcyl')
+        return {
+            'zEdge': {'bin_size': 0.5 * min(dmon_small, dcrowd),
+                      'lmin': -0.5 * lcyl,
+                      'lmax': 0.5 * lcyl},
             'xEdge': {'bin_size': 0.1 * min(dmon_small, dcrowd),
                       'lmin': -0.5 * dcyl,
                       'lmax': 0.5 * dcyl},
             'yEdge': {'bin_size': 0.1 * min(dmon_small, dcrowd),
                       'lmin': -0.5 * dcyl,
-                      'lmax': 0.5 * dcyl},
+                      'lmax': 0.5 * dcyl}
         }
-
-    def _initialize_collectors(
-            self,
-            bin_edges: Dict[str, Dict[str, Any]]
-    ) -> None:
-        """
-        Initializes histogram properties and collectors.
-
-        Parameters
-        ----------
-        bin_edges : Dict[str, Dict[str, Any]]
-            A dictionary of bin edge configurations for spatial dimensions.
-        """
-        for ent in self._entities:
-            # 1D histograms
-            for direction, bin_type in self._hist1d_bin_types.items():
-                edge_key = f"{direction}Edge"
-                output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                hist_data = fixedsize_bins(
-                    bin_edges[edge_key]['bin_size'],
-                    bin_edges[edge_key]['lmin'],
-                    bin_edges[edge_key]['lmax'],
-                    bin_type=bin_type,
-                    save_bin_edges=output,
-                )
-                self._hist1d_props[f'{direction}Hist{ent}'] = {
-                    'n_bins': hist_data['n_bins'],
-                    'bin_edges': hist_data['bin_edges'],
-                    'range': hist_data['range']
-                    }
-                self._collectors[f'{direction}Hist{ent}'] = \
-                    hist_data['collector']
-                self._collectors[f'{direction}HistStd{ent}'] = \
-                    hist_data['collector_std']
-
-            # 2D histograms
-            for plane in self._hist2d_planes_dirs:
-                self._hist2d_props[f'{plane}Hist{ent}'] = \
-                    {'n_bins': [], 'bin_edges': [], 'range': []}
-                for axis in plane:
-                    edge_key = f"{axis}Edge"
-                    output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                    hist_data = fixedsize_bins(
-                        bin_edges[edge_key]['bin_size'],
-                        bin_edges[edge_key]['lmin'],
-                        bin_edges[edge_key]['lmax'],
-                        bin_type='ordinary',
-                        save_bin_edges=output,
-                    )
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']\
-                        .append(hist_data['n_bins'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['bin_edges']\
-                        .append(hist_data['bin_edges'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['range']\
-                        .append(hist_data['range'])
-
-                self._collectors[f'{plane}Hist{ent}'] = np.zeros(
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']
-                )
-            print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
-                  " 'rEdge') saved to storage for each particle entity.")
-
-    def _update_histogram(
-        self,
-        direction: DirectionT,
-        histogram_func,
-        entity: EntityT,
-        axis: int
-    ) -> None:
-        """
-        Updates a one-dimensional histogram for a specific direction.
-
-        Parameters
-        ----------
-        direction : DirectionT
-            The spatial direction ('r', 'z', or 'theta') for the histogram.
-        histogram_func : Callable
-            The histogram computation function to use (e.g., radial histogram).
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        axis : int
-            The spatial axis corresponding to the direction.
-        """
-        pos_hist, _ = histogram_func(
-            self._atom_groups[entity].positions,
-            self._hist1d_props[f'{direction}Hist{entity}']['bin_edges'],
-            self._hist1d_props[f'{direction}Hist{entity}']['range'],
-            axis,
-        )
-        self._collectors[f'{direction}Hist{entity}'] += pos_hist
-        self._collectors[f'{direction}HistStd{entity}'] += np.square(pos_hist)
-
-    def _update_histogram_2d(
-        self,
-        plane: PlaneT,
-        entity: EntityT,
-    ) -> None:
-        """
-        Updates a two-dimensional histogram for a Cartesian plane.
-
-        Parameters
-        ----------
-        plane : PlaneT
-            A Cartesian plane ('xy', 'yz', or 'zx') for the histogram.
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        """
-        pos_hist, _ = planar_cartesian_histogram(
-            self._atom_groups[entity].positions,
-            self._hist2d_props[f'{plane}Hist{entity}']['bin_edges'],
-            self._hist2d_props[f'{plane}Hist{entity}']['range'],
-            self._hist2d_planes_axes[plane],
-        )
-        self._collectors[f'{plane}Hist{entity}'] += pos_hist
 
     def _probe_frame(self, idx: int) -> None:
         """
@@ -1633,16 +1557,356 @@ class TransFociCylAllProber(ProberBase):
         """
         for ent in self._entities:
             # 1D histograms
-            self._update_histogram('r', radial_cyl_histogram, ent, axis=2)
-            self._update_histogram('z', axial_histogram, ent, axis=2)
-            self._update_histogram('theta', azimuth_cyl_histogram, ent, axis=2)
+            self._update_histogram_1d('r', radial_cyl_histogram, ent, 2)
+            self._update_histogram_1d('z', axial_histogram, ent, 2)
+            self._update_histogram_1d('theta', azimuth_cyl_histogram, ent, 2)
 
             # 2D histograms
             for plane in self._hist2d_planes_dirs:
                 self._update_histogram_2d(plane, ent)
 
 
-class TransFociCubBugProber(ProberBase):
+class SumRuleCubHeteroBugProberBase(ProberBase):
+    """
+    Base class for probing simulations of the LAMMPS 'bug' atom group in the *TransFociCub*, *SumRuleCubHeteroRing*, and *SumRuleCubHeteroLinear* molecular dynamics projects to extract specific physical properties.
+
+    Physical Properties Extracted
+    -----------------------------
+    The particle entity 'Mon' represents both small and large monomers, while 
+    the particle entity 'Foci' represents large monomers. For these entities, 
+    the following physical properties are extracted:
+
+    For the `Mon` entity:
+    - `gyrTMon` : numpy.ndarray
+        Radius of gyration of the polymer for each frame.
+    - `asphericityTMon` : numpy.ndarray
+        Asphericity of the polymer's configuration for each frame.
+    - `shapeTMon` : numpy.ndarray
+        Shape parameter of the polymer for each frame.
+    - `principalTMon` : numpy.ndarray
+        Principal axes of the polymer for each frame.
+
+    For the `Foci` entity:
+    - `distMatTFoci` : numpy.ndarray
+        Pairwise distance matrix for large monomers in the `Foci` entity.
+    - `directContactsMatTFoci` : numpy.ndarray
+        Direct contact matrix for large monomers based on the cut-off distance.
+    - `bondsHistTFoci` : numpy.ndarray
+        Histogram of the number of direct contacts for each large monomer.
+    - `clustersHistTFoci` : numpy.ndarray
+        Histogram of cluster sizes for large monomers in each frame.
+
+    Parameters
+    ----------
+    topology : str
+        Path to the topology file of the molecular system.
+    trajectory : str
+        Path to the trajectory file of the molecular system.
+    lineage : {'segment', 'whole'}
+        Specifies the type of lineage associated with the trajectory file.
+    save_to : str
+        Directory where artifacts (e.g., physical property files) will be
+        saved.
+    continuous : bool, default False
+        Indicates whether the trajectory is part of a continuous sequence.
+
+    Notes
+    -----
+    - Atoms with `resid 1` in the LAMMPS dump format represent `Mon`(monomers).
+    - Coordinates are wrapped and unscaled. The polymer's center of mass is
+      recentered to the simulation box's center.
+    """
+    parser_cls: Optional[ParserType] = None  # Define in subclasses
+
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        lineage: Literal["segment", "whole"],
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        super().__init__(topology, trajectory, lineage, save_to,
+                         continuous=continuous)
+        if self.parser_cls is None:
+            raise NotImplementedError(
+                f"{self.__class__.__name__} must define the `parser_cls` attribute."
+            )
+        self._parser = self.parser_cls(trajectory, lineage, 'bug')
+        self._damping_time = (
+            getattr(self.parser, 'bdump') * getattr(self.parser, 'dt')
+        )
+        self._cluster_cutoff = (
+            getattr(self.parser, 'dmon_large') + getattr(self.parser, 'dcrowd')
+        ) 
+        self._universe = mda.Universe(
+            topology,
+            trajectory,
+            topology_format='DATA',
+            format='LAMMPSDUMP',
+            lammps_coordinate_convention='unscaled',
+            atom_style="id resid type x y z",
+            dt=self.damping_time
+        )
+
+    @property
+    def cluster_cutoff(self) -> float:
+        """
+        Return the cut-off distance for considering two large monomers in
+        direct contact.
+        """
+        return self._cluster_cutoff
+
+    def _define_atom_groups(self) -> None:
+        self._atom_groups['Mon'] = \
+            self.universe.select_atoms('resid 1')  # small and large monomers
+        self._atom_groups['Foci'] = \
+            self.universe.select_atoms('type 2')  # large monomers
+
+    def _prepare(self) -> None:
+        nmon_large = getattr(self.parser, 'dmon_large')
+        self._collectors = {
+            'gyrTMon': np.zeros(self._n_frames),
+            'asphericityTMon': np.zeros(self._n_frames),
+            'shapeTMon': np.zeros(self._n_frames),
+            'principalTMon': np.zeros([self._n_frames, 3, 3]),
+            'distMatTFoci': np.zeros((self.n_frames, nmon_large, nmon_large)),
+            'directContactsMatTFoci': \
+                np.zeros((self.n_frames, nmon_large, nmon_large), dtype=int),
+            'bondsHistTFoci': np.zeros((self.n_frames, nmon_large), dtype=int),
+            'clustersHistTFoci': \
+                np.zeros((self.n_frames, nmon_large+1), dtype=int),
+        }
+
+    def _probe_frame(self, idx) -> None:
+        """
+        Probes a single trajectory frame and updates histogram collectors.
+
+        Parameters
+        ----------
+        idx : int
+            The index of the trajectory frame to probe.
+        """
+        self._collect_gyration_data(idx)
+        self._collect_foci_contact_data(idx)
+    
+    def _collect_gyration_data(self, idx: int) -> None:
+        """
+        Collects gyration-related data for the 'Mon' entity.
+
+        Parameters
+        ----------
+        idx : int
+            The index of the trajectory frame to probe.
+        """
+        self._collectors['gyrTMon'][idx] = \
+            self._atom_groups['Mon'].radius_of_gyration()
+        self._collectors['asphericityTMon'][idx] = \
+            self._atom_groups['Mon'].asphericity(wrap=False, unwrap=True)
+        self._collectors['shapeTMon'][idx] = \
+            self._atom_groups['Mon'].shape_parameter(wrap=False)
+        self._collectors['principalTMon'][idx] = \
+            self._atom_groups['Mon'].principal_axes(wrap=False)
+
+    def _collect_foci_contact_data(self, idx: int) -> None:
+        """
+        Collects contact-related data for the 'Foci' entity.
+
+        Parameters
+        ----------
+        idx : int
+            The index of the trajectory frame to probe.
+        """
+        dist_mat = \
+            clusters.self_dist_array(self._atom_groups['Foci'].positions)
+        foci_pair_dist = np.triu(dist_mat, 1)
+        np.fill_diagonal(foci_pair_dist, self._atom_groups['Foci'].atoms.ids)
+        self._collectors['distMatTFoci'][idx] = foci_pair_dist
+        dir_contacts = clusters.find_direct_contacts(dist_mat, self.cluster_cutoff)
+        self._collectors['directContactsMatTFoci'][idx] = dir_contacts
+        bonds_stat = clusters.count_foci_bonds(dir_contacts)
+        self._collectors['bondsHistTFoci'][idx] = bonds_stat
+        contacts = clusters.generate_contact_matrix(dir_contacts)
+        clusters_stat = clusters.count_foci_clusters(contacts)
+        self._collectors['clustersHistTFoci'][idx] = clusters_stat
+
+class SumRuleCubHeteroAllProberBase(
+    SphericalHistogramMixin,
+    CartesianHistogram2DMixin,
+    ProberBase
+):
+    """
+    Base class for probing simulations of the LAMMPS 'all' atom group in the in the *TransFociCub*, *SumRuleCubHeteroRing*, and *SumRuleCubHeteroLinear* molecular dynamics projects to extract spatial distributions of particles.
+
+    Physical Properties Extracted
+    -----------------------------
+    For each <entity> (`Mon` for both small and large monomers, `Dna` for small 
+    monomers, `Foci` for large monomers, and `Crd` for crowders), the following 
+    spatial distributions are extracted:
+
+    - `rHist<entity>` : numpy.ndarray
+        Radial histogram in spherical coordinates.
+    - `xyHist<entity>` : numpy.ndarray
+        2D histogram in the xy-plane.
+    - `yzHist<entity>` : numpy.ndarray
+        2D histogram in the yz-plane.
+    - `zxHist<entity>` : numpy.ndarray
+        2D histogram in the zx-plane.
+
+    Parameters
+    ----------
+    topology : str
+        Path to the topology file of the molecular system.
+    trajectory : str
+        Path to the trajectory file of the molecular system.
+    lineage : {'segment', 'whole'}
+        Specifies the type of lineage associated with the trajectory file.
+    save_to : str
+        Directory where artifacts (e.g., histogram files) will be saved.
+    continuous : bool, default False
+        Indicates whether the trajectory is part of a continuous sequence.
+
+    Methods
+    -------
+    _initialize_bin_edges() -> Dict[str, Dict[str, Any]]
+        Computes bin edge configurations for histograms.
+    _initialize_collectors(bin_edges: Dict[str, Dict[str, Any]]) -> None
+        Initializes histogram properties and collectors.
+    _update_histogram(direction: DirectionT, histogram_func, entity: EntityT,
+                    axis: int) -> None
+        Updates a one-dimensional histogram for a specific direction.
+    _update_histogram_2d(plane: PlaneT, entity: EntityT) -> None
+        Updates a two-dimensional histogram for a specific plane.
+
+    Notes
+    -----
+    - Atoms with `resid 0` in the LAMMPS dump format represent `Crd`
+    (crowders), while atoms with `resid 1` represent `Mon` (monomers).
+    - Coordinates are wrapped and unscaled. The center of mass of the `bug`
+    group is recentered to the simulation box's center.
+
+    Examples
+    --------
+    Creating an instance of `TransFociCubAllProber` for a specific simulation:
+
+    >>> prober = TransFociCubAllProber(
+    ...     topology="topology.all.data",
+    ...     trajectory="trajectory.all.lammpstrj",
+    ...     lineage="whole",
+    ...     save_to="./results/",
+    ...     continuous=False
+    ... )
+    >>> prober.run()
+    >>> prober.save_artifacts()
+    """
+    _entities: List[EntityT] = ['Mon', 'Dna', 'Foci', 'Crd']
+    
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        lineage: Literal["segment", "whole"],
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        super().__init__(topology, trajectory, lineage, save_to,
+                         continuous=continuous)
+        
+        self._damping_time = \
+            getattr(self.parser, 'adump') * getattr(self.parser, 'dt')
+        self._universe = mda.Universe(
+            topology,
+            trajectory,
+            topology_format='DATA',
+            format='LAMMPSDUMP',
+            lammps_coordinate_convention='unscaled',
+            atom_style="id resid type x y z",
+            dt=self.damping_time,
+        )
+
+    def _define_atom_groups(self) -> None:
+        self._atom_groups['Crd'] = \
+            self.universe.select_atoms("resid 0")  # crowders
+        self._atom_groups['Mon'] = \
+            self.universe.select_atoms("resid 1")  # small and large monomers
+        self._atom_groups['Dna'] = \
+            self.universe.select_atoms("type 1")  # small monomers
+        self._atom_groups['Foci'] = \
+            self.universe.select_atoms("type 2")  # large monomers
+
+    def _prepare(self) -> None:
+        self._hist1d_props: Dict[str, Dict[str, Any]] = {}
+        self._hist2d_props: Dict[str, Dict[str, Any]] = {}
+        bin_edges_1d = self._initialize_bin_edges_1d()
+        bin_edges_2d = self._initialize_bin_edges_2d()
+        for entity in self._entities:
+            self._initialize_hist_collectors_1d(entity, bin_edges_1d)
+            self._initialize_hist_collectors_2d(entity, bin_edges_2d)
+        print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
+                  " 'rEdge') saved to storage for each particle entity.")
+
+    def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations based on simulation parameters.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+        dmon_small = getattr(self._parser, 'dmon_small')
+        dcrowd = getattr(self._parser, 'dcrowd')
+        lcube = getattr(self._parser, 'lcube')
+        return {
+            'rEdge': {'bin_size': 0.1 * min(dmon_small, dcrowd), 
+                      'lmin': 0,
+                      'lmax': 0.5 * lcube},
+        }
+    
+    def _initialize_bin_edges_2d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations based on simulation parameters.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+        dmon_small = getattr(self._parser, 'dmon_small')
+        dcrowd = getattr(self._parser, 'dcrowd')
+        lcube = getattr(self._parser, 'lcube')
+        return {
+            'zEdge': {'bin_size': 0.5 * min(dmon_small, dcrowd),
+                      'lmin': -0.5 * lcube,
+                      'lmax': 0.5 * lcube},
+            'xEdge': {'bin_size': 0.5 * min(dmon_small, dcrowd),
+                      'lmin': -0.5 * lcube,
+                      'lmax': 0.5 * lcube},
+            'yEdge': {'bin_size': 0.5 * min(dmon_small, dcrowd),
+                      'lmin': -0.5 * lcube,
+                      'lmax': 0.5 * lcube},
+        }
+
+    def _probe_frame(self, idx: int) -> None:
+        """
+        Probes a single trajectory frame and updates histogram collectors.
+
+        Parameters
+        ----------
+        idx : int
+            The index of the trajectory frame to probe.
+        """
+        for ent in self._entities:
+            # 1D histograms
+            self._update_histogram_1d('r', radial_histogram, ent)
+            # 2D histograms
+            for plane in self._hist2d_planes_dirs:
+                self._update_histogram_2d(plane, ent)
+
+
+class TransFociCubBugProber(SumRuleCubHeteroBugProberBase):
     """
     Probes simulations of the LAMMPS 'bug' atom group in the *TransFociCub*
     molecular dynamics project to extract specific physical properties.
@@ -1707,8 +1971,6 @@ class TransFociCubBugProber(ProberBase):
     >>> prober.run()
     >>> prober.save_artifacts()
     """
-    _entities: List[EntityT] = ['Foci', 'Mon']
-
     def __init__(
         self,
         topology: str,
@@ -1719,85 +1981,15 @@ class TransFociCubBugProber(ProberBase):
     ) -> None:
         super().__init__(topology, trajectory, lineage, save_to,
                          continuous=continuous)
-        self._parser: TransFociCubInstance = TransFociCub(trajectory, lineage, 'bug')
-        self._damping_time = (
-            getattr(self.parser, 'bdump') * getattr(self.parser, 'dt')
-        )
-        self._cluster_cutoff = (
-            getattr(self.parser, 'dmon_large') + getattr(self.parser, 'dcrowd')
-        ) 
-        self._universe = mda.Universe(
-            topology,
-            trajectory,
-            topology_format='DATA',
-            format='LAMMPSDUMP',
-            lammps_coordinate_convention='unscaled',
-            atom_style="id resid type x y z",
-            dt=self.damping_time
-        )
-
-    @property
-    def cluster_cutoff(self) -> float:
-        """
-        Return the cut-off distance for considering two large monomers in
-        direct contact.
-        """
-        return self._cluster_cutoff
-
-    def _define_atom_groups(self) -> None:
-        self._atom_groups['Mon'] = \
-            self.universe.select_atoms('resid 1')  # small and large monomers
-        self._atom_groups['Foci'] = \
-            self.universe.select_atoms('type 2')  # large monomers
-
-    def _prepare(self) -> None:
-        nmon_large = getattr(self.parser, 'dmon_large')
-        self._collectors = {
-            'gyrTMon': np.zeros(self._n_frames),
-            'asphericityTMon': np.zeros(self._n_frames),
-            'shapeTMon': np.zeros(self._n_frames),
-            'principalTMon': np.zeros([self._n_frames, 3, 3]),
-            'distMatTFoci': np.zeros((self.n_frames, nmon_large, nmon_large)),
-            'directContactsMatTFoci': \
-                np.zeros((self.n_frames, nmon_large, nmon_large), dtype=int),
-            'bondsHistTFoci': np.zeros((self.n_frames, nmon_large), dtype=int),
-            'clustersHistTFoci': \
-                np.zeros((self.n_frames, nmon_large+1), dtype=int),
-        }
-
-    def _probe_frame(self, idx) -> None:
-        """
-        Probes a single trajectory frame and updates histogram collectors.
-
-        Parameters
-        ----------
-        idx : int
-            The index of the trajectory frame to probe.
-        """
-        self._collectors['gyrTMon'][idx] = \
-            self._atom_groups['Mon'].radius_of_gyration()
-        self._collectors['asphericityTMon'][idx] = \
-            self._atom_groups['Mon'].asphericity(wrap=False, unwrap=True)
-        self._collectors['shapeTMon'][idx] = \
-            self._atom_groups['Mon'].shape_parameter(wrap=False)
-        self._collectors['principalTMon'][idx] = \
-            self._atom_groups['Mon'].principal_axes(wrap=False)
-        dist_mat = \
-            clusters.self_dist_array(self._atom_groups['Foci'].positions)
-        foci_pair_dist = np.triu(dist_mat, 1)
-        np.fill_diagonal(foci_pair_dist, self._atom_groups['Foci'].atoms.ids)
-        self._collectors['distMatTFoci'][idx] = foci_pair_dist
-        dir_contacts = \
-            clusters.find_direct_contacts(dist_mat, self.cluster_cutoff)
-        self._collectors['directContactsMatTFoci'][idx] = dir_contacts
-        bonds_stat = clusters.count_foci_bonds(dir_contacts)
-        self._collectors['bondsHistTFoci'][idx] = bonds_stat
-        contacts = clusters.generate_contact_matrix(dir_contacts)
-        clusters_stat = clusters.count_foci_clusters(contacts)
-        self._collectors['clustersHistTFoci'][idx] = clusters_stat
+        self._parser: TransFociCubInstance = \
+            TransFociCub(trajectory, lineage, 'bug')
 
 
-class TransFociCubAllProber(ProberBase):
+class TransFociCubAllProber(
+    SphericalHistogramMixin,
+    CartesianHistogram2DMixin,
+    ProberBase
+):
     """
     Probes simulations of the LAMMPS 'all' atom group in the *TransFociCub*
     molecular dynamics project to extract spatial distributions of particles.
@@ -1864,11 +2056,7 @@ class TransFociCubAllProber(ProberBase):
     >>> prober.save_artifacts()
     """
     _entities: List[EntityT] = ['Mon', 'Dna', 'Foci', 'Crd']
-    _hist1d_bin_types: Dict[DirectionT, BinT] = {'r': 'nonnegative'}
-    _hist2d_planes_dirs: Dict[PlaneT, DirectionT] = \
-        {'xy': 'z', 'yz': 'x', 'zx': 'y'}
-    _hist2d_planes_axes: Dict[PlaneT, AxisT] = {'xy': 2, 'yz': 0, 'zx': 1}
-
+    
     def __init__(
         self,
         topology: str,
@@ -1907,10 +2095,15 @@ class TransFociCubAllProber(ProberBase):
     def _prepare(self) -> None:
         self._hist1d_props: Dict[str, Dict[str, Any]] = {}
         self._hist2d_props: Dict[str, Dict[str, Any]] = {}
-        bin_edges = self._initialize_bin_edges()
-        self._initialize_collectors(bin_edges)
+        bin_edges_1d = self._initialize_bin_edges_1d()
+        bin_edges_2d = self._initialize_bin_edges_2d()
+        for entity in self._entities:
+            self._initialize_hist_collectors_1d(entity, bin_edges_1d)
+            self._initialize_hist_collectors_2d(entity, bin_edges_2d)
+        print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
+                  " 'rEdge') saved to storage for each particle entity.")
 
-    def _initialize_bin_edges(self) -> Dict[str, Dict[str, Any]]:
+    def _initialize_bin_edges_1d(self) -> Dict[str, Dict[str, Any]]:
         """
         Computes bin edge configurations based on simulation parameters.
 
@@ -1927,6 +2120,22 @@ class TransFociCubAllProber(ProberBase):
             'rEdge': {'bin_size': 0.1 * min(dmon_small, dcrowd), 
                       'lmin': 0,
                       'lmax': 0.5 * lcube},
+        }
+    
+    def _initialize_bin_edges_2d(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Computes bin edge configurations based on simulation parameters.
+
+        Returns
+        -------
+        Dict[str, Dict[str, Any]]
+            A dictionary of bin edge settings, including bin size, min, and max
+            for each spatial dimension.
+        """
+        dmon_small = getattr(self._parser, 'dmon_small')
+        dcrowd = getattr(self._parser, 'dcrowd')
+        lcube = getattr(self._parser, 'lcube')
+        return {
             'zEdge': {'bin_size': 0.5 * min(dmon_small, dcrowd),
                       'lmin': -0.5 * lcube,
                       'lmax': 0.5 * lcube},
@@ -1937,116 +2146,6 @@ class TransFociCubAllProber(ProberBase):
                       'lmin': -0.5 * lcube,
                       'lmax': 0.5 * lcube},
         }
-
-    def _initialize_collectors(
-            self,
-            bin_edges: Dict[str, Dict[str, Any]]
-    ) -> None:
-        """
-        Initializes histogram properties and collectors.
-
-        Parameters
-        ----------
-        bin_edges : Dict[str, Dict[str, Any]]
-            A dictionary of bin edge configurations for spatial dimensions.
-        """
-        for ent in self._entities:
-            # 1D histograms
-            for direction, bin_type in self._hist1d_bin_types.items():
-                edge_key = f"{direction}Edge"
-                output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                hist_data = fixedsize_bins(
-                    bin_edges[edge_key]['bin_size'],
-                    bin_edges[edge_key]['lmin'],
-                    bin_edges[edge_key]['lmax'],
-                    bin_type=bin_type,
-                    save_bin_edges=output,
-                )
-                self._hist1d_props[f'{direction}Hist{ent}'] = {
-                    'n_bins': hist_data['n_bins'],
-                    'bin_edges': hist_data['bin_edges'],
-                    'range': hist_data['range']
-                    }
-                self._collectors[f'{direction}Hist{ent}'] = \
-                    hist_data['collector']
-                self._collectors[f'{direction}HistStd{ent}'] = \
-                    hist_data['collector_std']
-
-            # 2D histograms
-            for plane in self._hist2d_planes_dirs:
-                self._hist2d_props[f'{plane}Hist{ent}'] = \
-                    {'n_bins': [], 'bin_edges': [], 'range': []}
-                for axis in plane:
-                    edge_key = f"{axis}Edge"
-                    output = f"{self.save_to}{self.sim_name}-{edge_key}{ent}"
-                    hist_data = fixedsize_bins(
-                        bin_edges[edge_key]['bin_size'],
-                        bin_edges[edge_key]['lmin'],
-                        bin_edges[edge_key]['lmax'],
-                        bin_type='ordinary',
-                        save_bin_edges=output,
-                    )
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']\
-                        .append(hist_data['n_bins'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['bin_edges']\
-                        .append(hist_data['bin_edges'])
-                    self._hist2d_props[f'{plane}Hist{ent}']['range']\
-                        .append(hist_data['range'])
-
-                self._collectors[f'{plane}Hist{ent}'] = np.zeros(
-                    self._hist2d_props[f'{plane}Hist{ent}']['n_bins']
-                )
-            print("bin edges data ('xEdge', 'yEdge', 'zEdge', 'thetaEdge',"
-                  " 'rEdge') saved to storage for each particle entity.")
-
-    def _update_histogram(
-        self,
-        direction: DirectionT,
-        histogram_func,
-        entity: EntityT,
-    ) -> None:
-        """
-        Updates a one-dimensional histogram for a specific direction.
-
-        Parameters
-        ----------
-        direction : DirectionT
-            The spatial direction ('r', 'z', or 'theta') for the histogram.
-        histogram_func : Callable
-            The histogram computation function to use (e.g., radial histogram).
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        """
-        pos_hist, _ = histogram_func(
-            self._atom_groups[entity].positions,
-            self._hist1d_props[f'{direction}Hist{entity}']['bin_edges'],
-            self._hist1d_props[f'{direction}Hist{entity}']['range']
-        )
-        self._collectors[f'{direction}Hist{entity}'] += pos_hist
-        self._collectors[f'{direction}HistStd{entity}'] += np.square(pos_hist)
-
-    def _update_histogram_2d(
-        self,
-        plane: PlaneT,
-        entity: EntityT,
-    ) -> None:
-        """
-        Updates a two-dimensional histogram for a Cartesian plane.
-
-        Parameters
-        ----------
-        plane : PlaneT
-            A Cartesian plane ('xy', 'yz', or 'zx') for the histogram.
-        entity : EntityT
-            The type of entity ('Mon' for monomers, 'Crd' for crowders).
-        """
-        pos_hist, _ = planar_cartesian_histogram(
-            self._atom_groups[entity].positions,
-            self._hist2d_props[f'{plane}Hist{entity}']['bin_edges'],
-            self._hist2d_props[f'{plane}Hist{entity}']['range'],
-            self._hist2d_planes_axes[plane],
-        )
-        self._collectors[f'{plane}Hist{entity}'] += pos_hist
 
     def _probe_frame(self, idx: int) -> None:
         """
@@ -2059,22 +2158,179 @@ class TransFociCubAllProber(ProberBase):
         """
         for ent in self._entities:
             # 1D histograms
-            self._update_histogram('r', radial_histogram, ent, axis=2)
-
+            self._update_histogram_1d('r', radial_histogram, ent)
             # 2D histograms
             for plane in self._hist2d_planes_dirs:
                 self._update_histogram_2d(plane, ent)
 
-class SumRuleHeteroLinearCubBugProber(ProberBase):
+
+class SumRuleCubHeteroLinearBugProber(SumRuleCubHeteroBugProberBase):
+    """
+    Probes simulations of the LAMMPS 'bug' atom group in the
+    *SumRuleCubHeteroLinear* molecular dynamics project to extract specific
+    physical properties.
+
+    Physical Properties Extracted
+    -----------------------------
+    The particle entity 'Mon' represents both small and large monomers, while 
+    the particle entity 'Foci' represents large monomers. For these entities, 
+    the following physical properties are extracted:
+
+    For the `Mon` entity:
+    - `gyrTMon` : numpy.ndarray
+        Radius of gyration of the polymer for each frame.
+    - `asphericityTMon` : numpy.ndarray
+        Asphericity of the polymer's configuration for each frame.
+    - `shapeTMon` : numpy.ndarray
+        Shape parameter of the polymer for each frame.
+    - `principalTMon` : numpy.ndarray
+        Principal axes of the polymer for each frame.
+
+    For the `Foci` entity:
+    - `distMatTFoci` : numpy.ndarray
+        Pairwise distance matrix for large monomers in the `Foci` entity.
+    - `directContactsMatTFoci` : numpy.ndarray
+        Direct contact matrix for large monomers based on the cut-off distance.
+    - `bondsHistTFoci` : numpy.ndarray
+        Histogram of the number of direct contacts for each large monomer.
+    - `clustersHistTFoci` : numpy.ndarray
+        Histogram of cluster sizes for large monomers in each frame.
+
+    Parameters
+    ----------
+    topology : str
+        Path to the topology file of the molecular system.
+    trajectory : str
+        Path to the trajectory file of the molecular system.
+    lineage : {'segment', 'whole'}
+        Specifies the type of lineage associated with the trajectory file.
+    save_to : str
+        Directory where artifacts (e.g., physical property files) will be
+        saved.
+    continuous : bool, default False
+        Indicates whether the trajectory is part of a continuous sequence.
+
+    Notes
+    -----
+    - Atoms with `resid 1` in the LAMMPS dump format represent `Mon`(monomers).
+    - Coordinates are wrapped and unscaled. The polymer's center of mass is
+      recentered to the simulation box's center.
+
+    Examples
+    --------
+    Creating an instance of `SumRuleCubHeteroLinearBugProber` for a specific
+    simulation:
+
+    >>> prober = SumRuleCubHeteroLinearBugProber(
+    ...     topology="topology.bug.data",
+    ...     trajectory="trajectory.bug.lammpstrj",
+    ...     lineage="whole",
+    ...     save_to="./results/",
+    ...     continuous=False
+    ... )
+    >>> prober.run()
+    >>> prober.save_artifacts()
+    """
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        lineage: Literal["segment", "whole"],
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        super().__init__(topology, trajectory, lineage, save_to,
+                         continuous=continuous)
+        self._parser: SumRuleCubHeteroLinearInstance = \
+            SumRuleCubHeteroLinear(trajectory, lineage, 'bug')
 
 
-class SumRuleHeteroLinearCubAllProber(ProberBase):
+class SumRuleCubHeteroLinearAllProber(ProberBase):
 
 
-class SumRuleHeteroRingCubBugProber(ProberBase):
+class SumRuleHeteroCubRingBugProber(SumRuleCubHeteroBugProberBase):
+    """
+    Probes simulations of the LAMMPS 'bug' atom group in the *SumRuleCubHeteroRing* molecular dynamics project to extract specific
+    physical properties.
 
+    Physical Properties Extracted
+    -----------------------------
+    The particle entity 'Mon' represents both small and large monomers, while 
+    the particle entity 'Foci' represents large monomers. For these entities, 
+    the following physical properties are extracted:
 
-class SumRuleHeteroRingCubAllProber(ProberBase):
+    For the `Mon` entity:
+    - `gyrTMon` : numpy.ndarray
+        Radius of gyration of the polymer for each frame.
+    - `asphericityTMon` : numpy.ndarray
+        Asphericity of the polymer's configuration for each frame.
+    - `shapeTMon` : numpy.ndarray
+        Shape parameter of the polymer for each frame.
+    - `principalTMon` : numpy.ndarray
+        Principal axes of the polymer for each frame.
+
+    For the `Foci` entity:
+    - `distMatTFoci` : numpy.ndarray
+        Pairwise distance matrix for large monomers in the `Foci` entity.
+    - `directContactsMatTFoci` : numpy.ndarray
+        Direct contact matrix for large monomers based on the cut-off distance.
+    - `bondsHistTFoci` : numpy.ndarray
+        Histogram of the number of direct contacts for each large monomer.
+    - `clustersHistTFoci` : numpy.ndarray
+        Histogram of cluster sizes for large monomers in each frame.
+
+    Parameters
+    ----------
+    topology : str
+        Path to the topology file of the molecular system.
+    trajectory : str
+        Path to the trajectory file of the molecular system.
+    lineage : {'segment', 'whole'}
+        Specifies the type of lineage associated with the trajectory file.
+    save_to : str
+        Directory where artifacts (e.g., physical property files) will be
+        saved.
+    continuous : bool, default False
+        Indicates whether the trajectory is part of a continuous sequence.
+
+    Notes
+    -----
+    - Atoms with `resid 1` in the LAMMPS dump format represent `Mon`(monomers).
+    - Coordinates are wrapped and unscaled. The polymer's center of mass is
+      recentered to the simulation box's center.
+
+    Examples
+    --------
+    Creating an instance of `SumRuleHeteroCubRingBugProber` for a specific
+    simulation:
+
+    >>> prober = SumRuleHeteroRingCubBugProber(
+    ...     topology="topology.bug.data",
+    ...     trajectory="trajectory.bug.lammpstrj",
+    ...     lineage="whole",
+    ...     save_to="./results/",
+    ...     continuous=False
+    ... )
+    >>> prober.run()
+    >>> prober.save_artifacts()
+    """
+    _entities: List[EntityT] = ['Foci', 'Mon']
+
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        lineage: Literal["segment", "whole"],
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        super().__init__(topology, trajectory, lineage, save_to,
+                         continuous=continuous)
+        self._parser: SumRuleCubHeteroRingInstance = \
+            SumRuleCubHeteroRing(trajectory, lineage, 'bug')
+        
+
+class SumRuleCubHeteroRingAllProber(ProberBase):
 
 
 class HnsCylNucleoidProber(ProberBase):
