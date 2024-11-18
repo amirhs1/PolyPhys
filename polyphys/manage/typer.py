@@ -8,7 +8,7 @@ aliases to support clarity, type safety, and documentation for the data
 structures and classes used within :mod:`polyphys` package.
 
 Custom types here define domain-specific concepts such as `PropertyT`,
-`SpeciesT`, `DirectionT`, and others, which clarify the usage of fundamental
+`EntityT`, `DirectionT`, and others, which clarify the usage of fundamental
 types like `str`, `int`, and `bool` throughout the :mod:`polyphys` package.
 
 The module defines composite types, such as tuples and dictionaries
@@ -51,20 +51,24 @@ from .parser import (
 PropertyT = str
 EntityT = str
 GroupT = str
-DirectionT = Literal['x', 'y', 'z', 'r', 'theta']
-PlaneT = Literal['xy', 'yz', 'zx']
-BinT = Literal['ordinary', 'nonnegative', 'periodic']
-AxisT = Literal[0, 1, 2]
+GeometryT = Literal['cubic', 'cylindrical']
 PhaseT = str
 WholeName = str
 EnsembleName = str
 HasEdgeT = bool
+TopologyT = str
+DirectionT = Literal['x', 'y', 'z', 'r', 'theta']
+LineageT = Literal['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
+PrimitiveLineageT = Literal['segment', 'whole']
+PlaneT = Literal['xy', 'yz', 'zx']
+BinT = Literal['ordinary', 'nonnegative', 'periodic']
+AxisT = Literal[0, 1, 2]
 
 # Type aliases for data structures
-TimeSeriesT = Tuple[PropertyT, SpeciesT, GroupT]
-NonScalarHistT = Tuple[PropertyT, SpeciesT, GroupT, AxisT]
-NonScalarMatT = Tuple[PropertyT, SpeciesT, GroupT]
-HistogramT = Tuple[DirectionT, SpeciesT, GroupT]
+TimeSeriesT = Tuple[PropertyT, EntityT, GroupT]
+NonScalarHistT = Tuple[PropertyT, EntityT, GroupT, AxisT]
+NonScalarMatT = Tuple[PropertyT, EntityT, GroupT]
+HistogramT = Tuple[DirectionT, EntityT, GroupT]
 EdgeT = Tuple[DirectionT, GroupT]
 WholeT = Dict[WholeName, Union[np.ndarray, pd.DataFrame]]
 EnsembleT = Tuple[EnsembleName, Union[np.ndarray, pd.DataFrame]]
