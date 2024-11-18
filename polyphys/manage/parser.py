@@ -68,7 +68,7 @@ function is commonly used, ensuring robustness to varied filename patterns.
 """
 import os
 import re
-from typing import Dict, List, Literal, ClassVar
+from typing import Dict, List, Literal, ClassVar, Optional
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from .utilizer import invalid_keyword
@@ -78,6 +78,7 @@ from ..analyze.measurer import (
     volume_fraction_cube,
     volume_fraction_cylinder
 )
+from .typer import LineageT, TopologyT, GroupT, GeometryT
 
 
 class ParserBase(ABC):
@@ -162,61 +163,27 @@ class ParserBase(ABC):
         Computes physical attributes for the current lineage based on primary
         attributes. (Abstract method)
     """
-    _lineages: ClassVar[List[str]] = \
+    _lineages: ClassVar[List[LineageT]] = \
         ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
-    _genealogy: ClassVar[Dict[str, List[str]]] = {
+    _genealogy: ClassVar[Dict[LineageT, List[LineageT]]] = {
         'segment': ['segment', 'whole', 'ensemble_long', 'ensemble', 'space'],
         'whole': ['whole', 'ensemble_long', 'ensemble', 'space'],
         'ensemble_long': ['ensemble_long', 'ensemble', 'space'],
         'ensemble': ['ensemble', 'space'],
         'space': ['space'],
     }
-
-    @property
-    @abstractmethod
-    def _geometry(self) -> str:
-        """
-        Defines the system geometry for the parser subclass.
-        """
-
-    @property
-    @abstractmethod
-    def _groups(self) -> List[str]:
-        """
-        List of valid group names for the subclass.
-        """
-
-    @property
-    @abstractmethod
-    def _topology(self) -> str:
-        """
-        Defines the polymer topology for the parser subclass.
-        """
-
-    @property
-    @abstractmethod
-    def _genealogy_attributes(self) -> Dict[str, OrderedDict[str, str]]:
-        """
-        Dictionary of lineage-specific attributes. Each key is a lineage type,
-        and each value is an OrderedDict mapping attribute names to their
-        short-form representations.
-        """
-
-    @property
-    @abstractmethod
-    def _project_attributes(self) -> Dict[str, List[str]]:
-        """
-        Dictionary of project attributes. Each key is a lineage type,
-        and each value is an OrderedDict mapping attribute names to their
-        short-form representations.
-        """
+    _geometry: ClassVar[Optional[GeometryT]] = None
+    _topology: ClassVar[Optional[TopologyT]] = None
+    _groups: ClassVar[Optional[List[GroupT]]] = None
+    _genealogy_attributes: ClassVar[Dict[LineageT, OrderedDict[str, str]]] = \
+        None
+    _project_attributes: ClassVar[Dict[str, List[str]]] = None
 
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
-        group: str
+        lineage: LineageT,
+        group: GroupT
     ) -> None:
         self._filepath, self._filename = (
             ("N/A", artifact) if '/' not in artifact and '\\' not in artifact
@@ -227,7 +194,7 @@ class ParserBase(ABC):
         self._lineage = lineage
         self._group = group
         self._project_name = self.__class__.__name__
-        self._lineage_genealogy = self._genealogy[lineage]
+        self._lineage_genealogy: List[LineageT] = self._genealogy[lineage]
         self._lineage_attributes = \
             list(self._genealogy_attributes[lineage].keys())
         self._physical_attributes = self._project_attributes[lineage]
@@ -258,6 +225,57 @@ class ParserBase(ABC):
         )
 
     @property
+    def geometry(self) -> GeometryT:
+        """
+        System geometry in a molecular dynamics system.
+        """
+        if self._geometry is None:
+            raise AttributeError("'_geometry' has not been initialized.")
+        return self._geometry
+
+    @property
+    def groups(self) -> List[GroupT]:
+        """
+        List of valid group names for the subclass.
+        """
+        if self._groups is None:
+            raise AttributeError("'_groups' has not been initialized.")
+        return self._groups
+
+    @property
+    def topology(self) -> TopologyT:
+        """
+        Defines the polymer topology for the parser subclass.
+        """
+        if self._topology is None:
+            raise AttributeError("'_topology' has not been initialized.")
+        return self._topology
+
+    @property
+    def genealogy_attributes(self) -> Dict[LineageT, OrderedDict[str, str]]:
+        """
+        Dictionary of lineage-specific attributes. Each key is a lineage type,
+        and each value is an OrderedDict mapping attribute names to their
+        short-form representations.
+        """
+        if self._topology is None:
+            raise AttributeError(
+                "'_genealogy_attributes' has not been initialized.")
+        return self._genealogy_attributes
+
+    @property
+    def project_attributes(self) -> Dict[str, List[str]]:
+        """
+        Dictionary of project attributes. Each key is a lineage type,
+        and each value is an OrderedDict mapping attribute names to their
+        short-form representations.
+        """
+        if self._topology is None:
+            raise AttributeError(
+                "'_project_attributes' has not been initialized.")
+        return self._project_attributes
+
+    @property
     def filename(self) -> str:
         """
         Returns the filename, either extracted from the path or the name
@@ -273,36 +291,18 @@ class ParserBase(ABC):
         return self._filepath
 
     @property
-    def group(self) -> str:
+    def group(self) -> GroupT:
         """
         Returns the current group.
         """
         return self._group
 
     @property
-    def lineage(self) -> str:
+    def lineage(self) -> LineageT:
         """
         Returns the current lineage.
         """
         return self._lineage
-
-    def _find_name(self) -> None:
-        """
-        Parses and sets the unique `lineage_name` from the filename
-        based on the `lineage` and `group`.
-
-        Notes
-        -----
-        - For 'segment' and 'whole' lineages, names typically end with the
-          group keyword or a hyphen.
-        - For 'ensemble_long', 'ensemble', and 'space', names are derived
-          from the first substring in the filename.
-        """
-        if self._lineage in ['segment', 'whole']:
-            self._name = \
-                self.filename.split("." + self._group)[0].split("-")[0]
-        else:
-            self._name = self._filename.split("-")[0]
 
     @property
     def name(self) -> str:
@@ -326,7 +326,7 @@ class ParserBase(ABC):
         return self._attributes
 
     @property
-    def lineage_genealogy(self) -> List[str]:
+    def lineage_genealogy(self) -> List[LineageT]:
         """
         Returns the parents of a given `lineage`.
         """
@@ -348,19 +348,23 @@ class ParserBase(ABC):
         """
         return self._physical_attributes
 
-    @property
-    def genealogy_attributes(self) -> Dict[str, OrderedDict[str, str]]:
+    def _find_name(self) -> None:
         """
-        Returns lineage-specific attributes for the all the lineages.
-        """
-        return self._genealogy_attributes
+        Parses and sets the unique `lineage_name` from the filename
+        based on the `lineage` and `group`.
 
-    @property
-    def project_attributes(self) -> Dict[str, List[str]]:
+        Notes
+        -----
+        - For 'segment' and 'whole' lineages, names typically end with the
+          group keyword or a hyphen.
+        - For 'ensemble_long', 'ensemble', and 'space', names are derived
+          from the first substring in the filename.
         """
-        Returns project-level attributes for the all the lineages.
-        """
-        return self._project_attributes
+        if self._lineage in ['segment', 'whole']:
+            self._name = \
+                self.filename.split("." + self._group)[0].split("-")[0]
+        else:
+            self._name = self._filename.split("-")[0]
 
     @abstractmethod
     def _initiate_attributes(self) -> None:
@@ -515,11 +519,11 @@ class TwoMonDepCub(ParserBase):
     >>> print(artifact.nmon)
     2
     """
-    _geometry: ClassVar[str] = 'cubic'
-    _topology: ClassVar[str] = 'atomic'
-    _groups: ClassVar[List[str]] = ['bug', 'all']
+    _geometry = 'cubic'
+    _topology = 'atomic'
+    _groups = ['bug', 'all']
 
-    _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
+    _genealogy_attributes = {
         # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#.j#
         'segment': OrderedDict({
             'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
@@ -550,7 +554,7 @@ class TwoMonDepCub(ParserBase):
             )
     }
 
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
@@ -562,8 +566,7 @@ class TwoMonDepCub(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
@@ -751,11 +754,11 @@ class SumRuleCyl(ParserBase):
     >>> print(artifact.dcrowd)
     2.0
     """
-    _geometry: ClassVar[str] = 'cylindrical'
-    _topology: ClassVar[str] = 'linear'
-    _groups: ClassVar[List[str]] = ['bug', 'all']
+    _geometry = 'cylindrical'
+    _topology = 'linear'
+    _groups = ['bug', 'all']
 
-    _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
+    _genealogy_attributes = {
         # Pattern: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
         'segment':  OrderedDict(
             {'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
@@ -777,7 +780,7 @@ class SumRuleCyl(ParserBase):
         # Pattern: N#D#ac#
         'space':  OrderedDict({'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac'})
     }
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c'],
         'whole': ['dmon',  'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
@@ -791,8 +794,7 @@ class SumRuleCyl(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
@@ -1000,11 +1002,11 @@ class SumRuleCubHeteroRing(ParserBase):
     >>> print(artifact.dcrowd)
     1.0
     """
-    _geometry: ClassVar[str] = 'cubic'
-    _topology: ClassVar[str] = 'ring'
-    _groups: ClassVar[List[str]] = ['bug', 'all']
+    _geometry = 'cubic'
+    _topology = 'ring'
+    _groups = ['bug', 'all']
 
-    _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
+    _genealogy_attributes = {
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
         'segment': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
@@ -1032,7 +1034,7 @@ class SumRuleCubHeteroRing(ParserBase):
              'dcrowd': 'ac'})
     }
 
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
                     'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
@@ -1050,8 +1052,7 @@ class SumRuleCubHeteroRing(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
@@ -1271,11 +1272,11 @@ class SumRuleCubHeteroLinear(ParserBase):
     >>> print(artifact.dmon_large)
     6.0
     """
-    _geometry: ClassVar[str] = 'cubic'
-    _topology: ClassVar[str] = 'linear'
-    _groups: ClassVar[List[str]] = ['bug', 'all']
+    _geometry = 'cubic'
+    _topology = 'linear'
+    _groups = ['bug', 'all']
 
-    _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
+    _genealogy_attributes = {
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
         'segment': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
@@ -1303,7 +1304,7 @@ class SumRuleCubHeteroLinear(ParserBase):
              'dcrowd': 'ac'})
     }
 
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
                     'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
@@ -1321,8 +1322,7 @@ class SumRuleCubHeteroLinear(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
@@ -1559,9 +1559,9 @@ class TransFociCyl(ParserBase):
     >>> print(artifact.dcyl)
     20.0
     """
-    _geometry: ClassVar[str] = 'cylindrical'
-    _topology: ClassVar[str] = 'ring'
-    _groups: ClassVar[List[str]] = ['bug', 'all']
+    _geometry = 'cylindrical'
+    _topology = 'ring'
+    _groups = ['bug', 'all']
 
     _genealogy_attributes: Dict[str, OrderedDict[str, str]] = {
         # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#.ring
@@ -1594,7 +1594,7 @@ class TransFociCyl(ParserBase):
              'dcrowd': 'ac'})
     }
 
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
                     'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
@@ -1612,8 +1612,7 @@ class TransFociCyl(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
@@ -1844,11 +1843,11 @@ class TransFociCub(ParserBase):
     >>> print(artifact.nc)
     0
     """
-    _geometry: ClassVar[str] = 'cubic'
-    _topology: ClassVar[str] = 'ring'
-    _groups: ClassVar[List[str]] = ['bug', 'all']
+    _geometry = 'cubic'
+    _topology = 'ring'
+    _groups = ['bug', 'all']
 
-    _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
+    _genealogy_attributes = {
         # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
         'segment': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
@@ -1876,7 +1875,7 @@ class TransFociCub(ParserBase):
              'dcrowd': 'ac'})
     }
 
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
                     'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
@@ -1894,8 +1893,7 @@ class TransFociCub(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['bug', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
@@ -2107,11 +2105,11 @@ class HnsCub(ParserBase):
     >>> print(artifact.nhns)
     8
     """
-    _geometry: ClassVar[str] = 'cubic'
-    _topology: ClassVar[str] = 'ring'
-    _groups: ClassVar[List[str]] = ['nucleoid', 'all']
+    _geometry = 'cubic'
+    _topology = 'ring'
+    _groups = ['nucleoid', 'all']
 
-    _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
+    _genealogy_attributes = {
         # Pattern: N#kbmm#nh#ac#l#epshc#nc#ens#.#j#.ring
         'segment': OrderedDict(
             {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
@@ -2136,7 +2134,7 @@ class HnsCub(ParserBase):
              'eps_hc': 'epshc'})
     }
 
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m'
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
                     'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
@@ -2153,8 +2151,7 @@ class HnsCub(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['nucleoid', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
@@ -2376,11 +2373,11 @@ class HnsCyl(ParserBase):
     >>> print(artifact.eps_hc)
     1.0
     """
-    _geometry: ClassVar[str] = 'cylindrical'
-    _topology: ClassVar[str] = 'ring'
-    _groups: ClassVar[List[str]] = ['nucleoid', 'all']
+    _geometry = 'cylindrical'
+    _topology = 'ring'
+    _groups = ['nucleoid', 'all']
 
-    _genealogy_attributes: ClassVar[Dict[str, OrderedDict[str, str]]] = {
+    _genealogy_attributes = {
         # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.j#.ring
         'segment': OrderedDict(
             {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
@@ -2405,7 +2402,7 @@ class HnsCyl(ParserBase):
              'eps_hc': 'epshc'})
     }
 
-    _project_attributes: ClassVar[Dict[str, List[str]]] = {
+    _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m'
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
                     'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
@@ -2422,8 +2419,7 @@ class HnsCyl(ParserBase):
     def __init__(
         self,
         artifact: str,
-        lineage: Literal['segment', 'whole', 'ensemble_long', 'ensemble',
-                         'space'],
+        lineage: LineageT,
         group: Literal['nucleoid', 'all']
     ) -> None:
         super().__init__(artifact, lineage, group)
