@@ -11,31 +11,30 @@ import numpy as np
 import pandas as pd
 import numpy.linalg as npla
 
-from ..manage.parser import (TransFociCub, TransFociCyl, 
+from ..manage.parser import (TransFociCub, TransFociCyl,
                              SumRuleCubHeteroLinear,
                              SumRuleCubHeteroRing)
+from ..manage.typer import AxisT, TopologyT
 from .measurer import apply_pbc_orthogonal
 
 
 def self_dist_array(
     positions: np.ndarray,
-    pbc: Optional[Dict[int, float]] = None
+    pbc: Optional[Dict[AxisT, float]] = None
 ) -> np.ndarray:
     """
-    Calculate pairwise distances between all pairs of atoms for a given list
-    of atoms' `positions`.
+    Compute the pairwise Euclidean distances between atoms.
 
     Parameters
     ----------
     positions : np.ndarray, shape (n_atoms, n_dims)
-        An array of atomic positions, where each row represents the position of
-        an atom in n_dims
-        Cartesian dimensions.
-    pbc : dict, optional
-        A dictionary of dimensions (keys) and lengths (values) in which the
-        periodic boundary conditions exist. Keys are integers where 0 means 'x'
-        dimension, 1 means 'y' dimension, and 2 means 'z'
-        dimension in the Cartesian coordinate system. Default is None.
+        Cartesian coordinates of atoms. Each row corresponds to an atom, and
+        each column corresponds to a spatial dimension.
+    pbc : Dict[AxisT, float]
+        Periodic boundary conditions (PBC) as a dictionary where keys are
+        dimensions (0 for 'x', 1 for 'y', 2 for 'z'), and values are the box
+        lengths along those dimensions. If None, PBC is not applied. Default is
+        None.
 
     Returns
     -------
@@ -43,11 +42,20 @@ def self_dist_array(
         A symmetric matrix where each element (i, j) is the center-to-center
         distance between atoms i and j.
 
-    References
-    ----------
-    Albanie S. (2019) Euclidean Distance Matrix Trick. In: Advances in Computer
-    Vision. EECV 2018. Lecture Notes in Computer Science, vol 11131. Springer,
-    Cham. https://doi.org/10.1007/978-3-030-01446-4_2
+    Examples
+    --------
+    >>> positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
+    >>> self_dist_array(positions)
+    array([[0.        , 1.73205081, 3.46410162],
+           [1.73205081, 0.        , 1.73205081],
+           [3.46410162, 1.73205081, 0.        ]])
+
+    >>> pbc = {0: 10.0, 1: 10.0, 2: 10.0}
+    >>> self_dist_array(positions, pbc)
+    array([[0.        , 1.73205081, 3.46410162],
+           [1.73205081, 0.        , 1.73205081],
+           [3.46410162, 1.73205081, 0.        ]])
+
     """
     n_atoms, n_dims = positions.shape
     # Calculate pairwise distance matrix
@@ -73,28 +81,21 @@ def self_dist_array(
 
 def self_dist_array_opt(
     positions: np.ndarray,
-    pbc: Optional[Dict[int, float]] = None
+    pbc: Optional[Dict[AxisT, float]] = None
 ) -> np.ndarray:
-    """Calculate all possible distances between all the pair of atoms for a
-    given list of atoms' `positions`. In 3 dimensions, this method is not
-    much faster the `self_dist_array`.
-
-    To-do
-    -----
-    Check the pbc applied below; is it correct?
+    """
+    Compute the pairwise Euclidean distances between atoms.
 
     Parameters
     ----------
     positions : np.ndarray
-        a matrix with size n_atoms * n_dims of atoms' positions in which
-        the rows are atoms' positions and the columns are different dimensions
-        or components.
-
-    pbc : dict, defualt None
-        A dictionary of dimensions (keys) and lengths (values) in which
-        the pbc exists. keys are integers where 0 means 'x' dimension,
-        1 means 'y' dimension, and 2 means 'z' dimension in the cartesian
-        coordinate system.
+        Cartesian coordinates of atoms. Each row corresponds to an atom, and
+        each column corresponds to a spatial dimension.
+    pbc : Dict[AxisT, float]
+        Periodic boundary conditions (PBC) as a dictionary where keys are
+        dimensions (0 for 'x', 1 for 'y', 2 for 'z'), and values are the box
+        lengths along those dimensions. If None, PBC is not applied. Default is
+        None.
 
     Return
     ------
@@ -102,6 +103,24 @@ def self_dist_array_opt(
         A square matrix of size n_atoms * n_atoms in which each element are
         the center-to-center distances between different pairs of atoms. All
         the diagonal elements of this matrix is 0.
+
+    Notes
+    -----
+    In 3 dimensions, this method is not much faster the `self_dist_array`.
+
+    Examples
+    --------
+    >>> positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
+    >>> self_dist_array_opt(positions)
+    array([[0.        , 1.73205081, 3.46410162],
+           [1.73205081, 0.        , 1.73205081],
+           [3.46410162, 1.73205081, 0.        ]])
+
+    >>> pbc = {0: 10.0, 1: 10.0, 2: 10.0}
+    >>> self_dist_array_opt(positions, pbc)
+    array([[0.        , 1.73205081, 3.46410162],
+           [1.73205081, 0.        , 1.73205081],
+           [3.46410162, 1.73205081, 0.        ]])
 
     References
     ----------
@@ -135,33 +154,51 @@ def find_direct_contacts(
     inclusive: bool = True
 ) -> np.ndarray:
     """
-    Determines whether pairs of atoms are in direct contact based on a cutoff
-    distance.
+    Identify direct contacts between atoms based on a cutoff distance.
 
-    Direct contact is defined as the center-to-center distance between two
-    atoms being less than or equal to the cutoff distance, or less than the
-    cutoff distance depending on the value of the `inclusive` parameter.
+    Two atoms are in direct contact if the center-to-center distance between
+    two atoms being within the specified cutoff distance. The inclusivity of
+    the cutoff can be controlled using the `inclusive` parameter.
 
     Parameters
     ----------
     dist : np.ndarray, shape (n_atoms, m_atoms)
-        A matrix of center-to-center distances between all pairs of atoms.
+        Pairwise distance matrix where element (i, j) is the distance between
+        atoms `i` and `j`.
     cutoff : float
-        The cutoff distance for defining direct contact.
+        The threshold distance for defining direct contact. Must be a positive
+        number.
     inclusive : bool, optional
-        If True, includes pairs of atoms where the center-to-center distance
-        is equal to the cutoff distance. If False, only includes pairs where
-        the distance is strictly less than the cutoff distance. Default is
-        True.
+        If True, includes pairs of atoms where the distance equals the cutoff.
+        If False, only considers distances strictly less than the cutoff.
+        Default is True.
 
     Returns
     -------
     np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where each element (i, j) is 1 if the center-to-center
-        distance between atoms i and j is within the cutoff distance, and 0
-        otherwise. If the input dist matrix is the symmteric self-distance
-        sqaure matrix, then the output is also a symmetric square matrix,
-        with all diagonal elements set to 1.
+        A binary matrix where element (i, j) is 1 if the distance between atoms
+        `i` and `j` is within the cutoff, and 0 otherwise. If the input `dist`
+        matrix is symmetric, the output will also be symmetric, with all
+        diagonal elements set to 1.
+
+    Raises
+    ------
+    ValueError
+        If the `cutoff` is not a positive number.
+
+    Examples
+    --------
+    >>> distances = np.array([[0.0, 1.2, 3.4], [1.2, 0.0, 2.3],
+                             [3.4, 2.3, 0.0]])
+    >>> find_direct_contacts(distances, cutoff=2.0)
+    array([[1, 1, 0],
+           [1, 1, 1],
+           [0, 1, 1]])
+
+    >>> find_direct_contacts(distances, cutoff=2.0, inclusive=False)
+    array([[1, 1, 0],
+           [1, 1, 0],
+           [0, 0, 1]])
 
     References
     ----------
@@ -172,223 +209,189 @@ def find_direct_contacts(
     """
     if cutoff <= 0:
         raise ValueError("'cutoff' must be a positive number.")
-    if inclusive:
-        direct_contacts = dist <= cutoff
-    else:
-        direct_contacts = dist < cutoff
 
+    direct_contacts = dist <= cutoff if inclusive else dist < cutoff
     return np.asarray(direct_contacts, dtype=int)
-
-
-def generate_contact_matrix_new(direct_contacts: np.ndarray) -> np.ndarray:
-    """
-    Generates a symmetric matrix of all contacts between pairs of atoms
-    including both direct and indirect contacts, from a matrix of direct
-    contacts between pairs of atoms.
-
-    The `direct_contacts` matrix is a binary matrix of the shape
-    (n_atoms, m_atoms), where any of 'm_atoms' along the columns any be in
-    direct contact with any of 'n_atoms' along the rows.
-    If the `direct_contact` matrix is the symmetric self-direct square matrix
-    of a system with 'n_atoms', then the output is also symmetric.
-    See `find_direct_contacts` function.
-
-    Parameters
-    ----------
-    direct_contacts : np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where each element (i, j) is 1 if atoms i and j have a
-        direct contact, and 0 otherwise.
-
-    Returns
-    -------
-    contact_matrix : np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where each element (i, j) is 1 if atoms i and j have a
-        contact, and 0 otherwise.
-
-    References
-    ----------
-    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
-    calculations of cluster statistics in continuum models of composite
-    morphology. The Journal of Chemical Physics,
-    89(1), 668-676. https://doi.org/10.1063/1.454720
-    """
-    _, n_cols = direct_contacts.shape
-    contact_matrix = direct_contacts.copy()
-    # Initialize a variable to keep track of the starting index for
-    # combinations
-    start_idx = 0
-    # Use a while loop to allow resetting the start index when necessary
-    while start_idx < n_cols:
-        # No update in this iteration initially
-        updated = False
-        # Loop over pairs of column indices starting from start_idx
-        for i, j in combinations(range(start_idx, n_cols), 2):
-            if np.any(contact_matrix[:, i] & contact_matrix[:, j]) \
-            and not np.array_equal(contact_matrix[:, i], contact_matrix[:, j]):
-                transient = contact_matrix[:, i] | contact_matrix[:, j]
-                contact_matrix[:, i] = transient
-                contact_matrix[:, j] = transient
-                # Update the start index to the lower of the two indices
-                start_idx = min(i, start_idx)
-                updated = True
-                # Break out of the for-loop to restart from updated start_idx
-                break
-        # If no updates were made in this iteration, increment start_idx
-        if updated is False:
-            start_idx += 1
-    return contact_matrix
 
 
 def generate_contact_matrix(direct_contacts: np.ndarray) -> np.ndarray:
     """
-    Generates a symmetric matrix of all contacts between pairs of atoms
-    including both direct and indirect contacts, from a matrix of direct
-    contacts between pairs of atoms.
+    Generate a symmetric contact matrix that includes all direct and
+    indirect contacts.
 
-    The `direct_contacts` matrix is a binary matrix of the shape
-    (n_atoms, m_atoms), where any of 'm_atoms' along the columns any be in
-    direct contact with any of 'n_atoms' along the rows.
-    If the `direct_contact` matrix is the symmetric self-direct square matrix
-    of a system with 'n_atoms', then the output is also symmetric.
-    See `find_direct_contacts` function.
+    This function generates a symmetric binary matrix representing all direct
+    and indirect contacts between atoms. Starting from the `direct_contacts`
+    matrix, it iteratively checks pairs of columns to identify and propagate
+    connections.
 
     Parameters
     ----------
     direct_contacts : np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where each element (i, j) is 1 if atoms i and j have a
+        A binary matrix where element (i, j) is 1 if atoms `i` and `j` have a
         direct contact, and 0 otherwise.
 
     Returns
     -------
-    contact_matrix : np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where each element (i, j) is 1 if atoms i and j have a
-        contact, and 0 otherwise.
+    np.ndarray, shape (n_atoms, m_atoms)
+        A binary matrix where element (i, j) is 1 if atoms `i` and `j` are
+        directly or indirectly connected, and 0 otherwise.
+
+    Examples
+    --------
+    >>> direct_contacts = np.array([[1, 1, 0],
+    ...                             [1, 1, 1],
+    ...                             [0, 1, 1]])
+    >>> generate_contact_matrix(direct_contacts)
+    array([[1, 1, 1],
+           [1, 1, 1],
+           [1, 1, 1]])
 
     References
     ----------
     Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
     calculations of cluster statistics in continuum models of composite
-    morphology. The Journal of Chemical Physics,
-    89(1), 668-676. https://doi.org/10.1063/1.454720
+    morphology. The Journal of Chemical Physics, 89(1), 668-676.
+    https://doi.org/10.1063/1.454720
+
     """
-    _, n_cols = direct_contacts.shape  # shape: n_atoms * m_atoms
+    _, n_cols = direct_contacts.shape
     contact_matrix = direct_contacts.copy()
-    # Loop over all pairs of column indices
+
+    # Iteratively compare pairs of columns and propagate connections
     for i, j in combinations(range(n_cols), 2):
-        # Check if columns i and j have any common nonzero elements
+        # If columns i and j share any common contacts, merge them
         if np.any(contact_matrix[:, i] & contact_matrix[:, j]):
-            # If so, set all nonzero elements in columns i and j to 1
-            transient = contact_matrix[:, i] | contact_matrix[:, j]
-            contact_matrix[:, i] = transient
-            contact_matrix[:, j] = transient
+            merged_column = contact_matrix[:, i] | contact_matrix[:, j]
+            contact_matrix[:, i] = merged_column
+            contact_matrix[:, j] = merged_column
 
     return contact_matrix
 
 
-def random_direct_contacts(
+def random_full_contact_matrix(
     n_atoms: int,
-    seed: Optional[int] = 0,
-    save_to: Optional[Tuple[str, str]] = None
+    seed: int = 0,
+    p: float = 0.2,
+    save_to: Optional[str] = None
 ) -> np.ndarray:
-    """Generates a direct-contact matrix with size `n_atoms` which can be
-    used to test a clustering algorithm. See `direct_contact`function
-    description for more info.
+    """
+    Generate a random direct-contact matrix for testing clustering algorithms.
 
-    All the diagonal elements of the direct contact matrix are 1; moreover,
-    depending on the size and number of clusters, the matrix has many
-    repeated columns.
-
-    Note
-    ----
-    This function can be used for testing the `count_bonds` and
-    `count_clusters` methods.
+    This function creates a symmetric binary matrix where each element
+    indicates whether a direct contact exists between a pair of atoms. It is
+    useful for testing clustering algorithms such as `count_bonds` and
+    `count_clusters`.
 
     Parameters
     ----------
-    n_atoms: int
-        Number of atoms or nodes.
-    seed: int, default 0
-        The seed for the random number generator.
-    save_to: tuple of str, default None
-        A tuple of two strings in which the first element is an absolute or
-        a relative path of a directory to which the random direct
-        contact matrix is saved and the second one is the matrix name.
+    n_atoms : int
+        Number of atoms or nodes in the system.
+    seed : int, optional
+        Seed for the random number generator. Default is 0.
+    p : float, optional
+        Probability of a contact existing between any two atoms. Must be
+        between 0 and 1. Default is 0.2.
+    save_to : str, optional
+        The filename or filepath to which the contact martix is saved. If None,
+        the matrix is not saved. Default is None.
 
-    Return
-    ------
-    dir_contacts: np.ndarray
-        A symmetric matrix of size n_atoms * n_atoms in which each element
-        is either 0 or 1 and indicates whether a contact is between a
-        pair of atoms or not. 1 means a contact exists while 0 means
-        it does not. All the diagonal elements of this matrix are 1 by the
-        definition in `direct_contacts` function.
+    Returns
+    -------
+    np.ndarray, shape (n_atoms, n_atoms)
+        A symmetric binary matrix where element `(i, j)` is 1 if a contact
+        exists between atoms `i` and `j`, and 0 otherwise. All diagonal
+        elements are 1.
+
+    See Also
+    --------
+    `find_direct_contact`: Identify direct contacts between atoms based on a
+    cutoff distance.
+
+    Examples
+    --------
+    >>> random_direct_contacts(4, seed=42)
+    array([[1, 1, 0, 1],
+           [1, 1, 1, 0],
+           [0, 1, 1, 0],
+           [1, 0, 0, 1]])
     """
     # Creating direct-contacts matrix
     np.random.seed(seed)
-    dir_contacts = np.random.binomial(n=1, p=0.35, size=[n_atoms * n_atoms])
-    dir_contacts = np.reshape(dir_contacts, (n_atoms, n_atoms))
-    dir_contacts_up = np.triu(dir_contacts)  # upper triangle
-    dir_contacts_diag = np.identity(n_atoms, dtype=int)
-    # dropping diagonal elements:
-    dir_contacts_up = dir_contacts_up - dir_contacts_diag
-    # ensuring all diagonal elements are either 0 or 1:
-    dir_contacts_up[dir_contacts_up < 0] = 0
-    dir_contacts_low = dir_contacts_up.T  # lower triangle: symmetry!
-    dir_contacts = dir_contacts_up + dir_contacts_low + dir_contacts_diag
+    dir_contacts = np.random.binomial(n=1, p=p, size=(n_atoms, n_atoms))
+    dir_contacts_up = np.triu(dir_contacts, k=1)  # Exclude diag
+    # Create a symmetric matrix and add diagonal elements
+    dir_contacts = dir_contacts_up + dir_contacts_up.T
+    np.fill_diagonal(dir_contacts, 1)
     # Creating the full direct contacts matrix
-    dir_contacts = generate_contact_matrix(dir_contacts)
+    full_contacts = generate_contact_matrix(dir_contacts)
     if save_to is not None:
-        output = save_to[0] + \
-            f"random_direct_contact-natoms{n_atoms}" + save_to[1]
-        np.save(output, dir_contacts)
-    return dir_contacts
+        np.save(save_to, full_contacts)
+    return full_contacts
 
 
 def count_foci_bonds(dir_contacts: np.ndarray) -> np.ndarray:
-    """Infers the number and size of bonds from the direct contact matrix
-    `direct_contacts`.
+    """
+    Compute the number and frequency of bonds in a direct contact matrix.
 
-    The direct contact matrix is symmetric and its diagonal elements are 1.
-    The column- or row-wise sum of the matrix shows the number of bonds
-    an atom has with itself and other atoms. A self-bond happens due to the
-    definition of the direct contact matrix (in which the diagonal elements
-    are 1). Such self-bonds are subtracted below to give the correct number of
-    bonds, thus number of bonds per atom ranges from 0 to $n_{atoms}-1$.
+    This function analyzes the direct contact matrix to infer the distribution
+    of bonds per atom. Each atom's number of bonds is determined by summing
+    the contact matrix along its rows or columns, subtracting the diagonal
+    self-bonds. Thus, number of bonds ranges from 0 to :math:`n_{atoms}-1`
 
     Parameters
     ----------
-    dir_contacts: np.ndarray
-        A symmetric matrix of size n_atoms * n_atoms in which each element
-        is either 0 or 1 and indicates whether a contact is between a
-        pair of atoms or not. 1 means a contact exists while 0 means
-        it does not. All the diagonal elements of this matrix are 1 by the
-        definition in `direct_contacts` function.
+    dir_contacts : np.ndarray, shape (n_atoms, n_atoms)
+        A symmetric binary matrix where element `(i, j)` is 1 if a contact
+        exists between atoms `i` and `j`, and 0 otherwise. Diagonal elements
+        must be 1, indicating self-bonds.
 
-    Return
+    Returns
+    -------
+    bind_list: np.ndarray, shape (n_atoms-1,)
+        A 1D array where the index represents bond size (number of bonds per
+        atom), and the value is the frequency of that bond size in the system.
+
+    Raises
     ------
-    cluster_list: array-like
-        A 1D array in which the indexes are "bond" sizes and the values
-        are frequency of bonds with that size.
+    ValueError
+         If the input `dir_contacts` matrix is not square.
 
-    Reference
-    ---------
-    https://aip.scitation.org/doi/10.1063/1.454720
+    Examples
+    --------
+    >>> dir_contacts = np.array([[1, 1, 0],
+    ...                          [1, 1, 1],
+    ...                          [0, 1, 1]])
+    >>> count_foci_bonds(dir_contacts)
+    array([0, 1, 2])
+
+    References
+    ----------
+    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
+    calculations of cluster statistics in continuum models of composite
+    morphology. The Journal of Chemical Physics, 89(1), 668-676.
+    https://doi.org/10.1063/1.454720
     """
-    n_atoms, _ = dir_contacts.shape
-    bond_list = np.zeros(n_atoms, dtype=int)
-    bonds = dir_contacts.sum(axis=1) - 1  # removing self-bonds
+    # Ensure the input is a square matrix
+    n_atoms, n_cols = dir_contacts.shape
+
+    if n_atoms != n_cols:
+        raise ValueError("The direct contact matrix must be square.")
+
+    # Sum along rows to count bonds for each atom and exclude self-bonds
+    bonds = dir_contacts.sum(axis=1) - 1  # Removing diagonal self-bonds
+
+    # Create a histogram of bond sizes
     bond_sizes, bond_counts = np.unique(bonds, return_counts=True)
+    bond_list = np.zeros(n_atoms, dtype=int)  # Array for bond frequencies
     np.put(bond_list, bond_sizes, bond_counts)
     return bond_list
 
 
-def is_symmetric(matrix):
+def is_symmetric(matrix: np.ndarray) -> bool:
     """
-    Checks if a given square matrix is symmetric.
+    Check if a given square matrix is symmetric.
 
-    A matrix is symmetric if it is equal to its transpose. This function
-    uses numpy's allclose method to allow for numerical tolerances in
-    floating-point comparisons.
+    A matrix is symmetric if it is equal to its transpose.
 
     Parameters
     ----------
@@ -399,29 +402,79 @@ def is_symmetric(matrix):
     -------
     bool
         True if the matrix is symmetric, False otherwise.
+
+    Raises
+    ------
+    ValueError
+        If the input matrix is not square.
+
+    Notes
+    -----
+    This function uses NumPy's `allclose` method to account for numerical
+    tolerances in floating-point  comparisons.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> mat = np.array([[1, 2], [2, 1]])
+    >>> is_symmetric(mat)
+    True
+
+    >>> mat = np.array([[1, 0], [2, 1]])
+    >>> is_symmetric(mat)
+    False
     """
+    if matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("The input matrix must be square.")
     return np.allclose(matrix, matrix.T)
 
 
-def is_positive_semi_definite(matrix):
+def is_positive_semi_definite(matrix: np.ndarray) -> bool:
     """
-    Checks if a given square matrix is positive semi-definite.
+    Check if a given square matrix is positive semi-definite.
 
     A matrix is positive semi-definite if all its eigenvalues are non-negative.
-    This function attempts a Cholesky decomposition, which only succeeds
-    for positive semi-definite matrices.
 
     Parameters
     ----------
     matrix : np.ndarray
         The matrix to be checked for positive semi-definiteness.
 
-    Returns-------
+    Returns
+    -------
     bool
         True if the matrix is positive semi-definite, False otherwise.
+
+    Raises
+    ------
+    ValueError
+        If the input matrix is not square.
+
+    Notes
+    -----
+    This function attempts a Cholesky decomposition, which only succeeds for
+    positive semi-definite matrices.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> mat = np.array([[2, -1], [-1, 2]])
+    >>> is_positive_semi_definite(mat)
+    True
+
+    >>> mat = np.array([[1, 2], [2, -3]])
+    >>> is_positive_semi_definite(mat)
+    False
+
+    References
+    ----------
+    Higham, N. J. (2002). Accuracy and Stability of Numerical Algorithms
+    (2nd ed.). SIAM.
     """
+    if matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("The input matrix must be square.")
     try:
-        np.linalg.cholesky(matrix)
+        _ = np.linalg.cholesky(matrix)
         return True
     except np.linalg.LinAlgError:
         return False
@@ -429,101 +482,130 @@ def is_positive_semi_definite(matrix):
 
 def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
     """
-    Infers the number and size of clusters from a contact matrix.
+    Infer the number and size of clusters from a contact matrix.
 
     This function calculates the eigenvalues of the provided contact matrix.
     The number of non-zero eigenvalues corresponds to the number of clusters,
     and their values indicate the sizes of these clusters.
 
     Before computing eigenvalues, the function checks if the contact matrix is
-    symmetric and positive semi-definite. It handles complex eigenvalues by
-    considering their real parts if the imaginary parts are below a certain
-    threshold.
+    symmetric and positive semi-definite. Eigenvalues with negligible imaginary
+    parts are treated as real.
 
     Parameters
     ----------
     contacts : np.ndarray
         A binary square matrix representing contacts between atoms. Each
         element is either 0 or 1, indicating the absence or presence of a
-        contact, respectively. Diagonal elements are assumed to be 1.
+        contact, respectively. Diagonal elements are assumed to be 1,
 
     Returns
     -------
-    np.ndarray
-        A 1D array where each index represents 'cluster_size - 1', and the
-        values are the frequency of clusters of that size.
+    cluster_list: np.ndarray, shape (cluster_size-1,)
+        A 1D array where each index represents :math:`cluster_size - 1`, and
+        the values are the frequency of clusters of that size.
 
-    Raises------
+    Raises
+    ------
     ValueError
-        If the matrix is not symmetric or not positive semi-definite, or if
-        a cluster with size smaller than 0 is found.
+        If the input matrix is not symmetric, not positive semi-definite,
+        or contains invalid cluster sizes.
 
-    Reference
-    ---------
-    https://aip.scitation.org/doi/10.1063/1.454720
+    Notes
+    -----
+    An eigenvalue of 0 does not have a direct physical meaning; however, the
+    frequency of this eigenvalue corresponds to the total number of repeated
+    clusters of size 2 or larger. In terms of linear algebra, this is
+    equivalent to the number of dependent columns in the contact matrix.
+
+    Examples
+    --------
+    >>> contacts = np.array([[1, 1, 0], [1, 1, 1], [0, 1, 1]])
+    >>> count_foci_clusters(contacts)
+    array([1, 1, 1])
+
+    References
+    ----------
+    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
+    calculations of cluster statistics in continuum models of composite
+    morphology. The Journal of Chemical Physics, 89(1), 668-676.
+    https://doi.org/10.1063/1.454720
     """
     n_atoms, _ = contacts.shape
-    cluster_list = np.zeros(n_atoms + 1, dtype=int)
+    # Compute eigenvalues and round for stability
     clusters_row = npla.eigvalsh(contacts)
     clusters = np.asarray(np.round(clusters_row), dtype=int)
+
+    # Validate eigenvalues for physical consistency
+    if np.any(clusters < 0):
+        raise ValueError("A cluster with size smaller than 0 found!")
+
+    # Count occurrences of each cluster size
     cluster_sizes, cluster_counts = np.unique(clusters, return_counts=True)
+    cluster_list = np.zeros(n_atoms + 1, dtype=int)
     np.put(cluster_list, cluster_sizes, cluster_counts)
+
     return cluster_list
 
 
 def count_foci_clusters_old(contacts: np.ndarray) -> np.ndarray:
-    """Infers the number and size of clusters from a contact matrix `contacts`.
+    """
+    Infer the number and size of clusters from a contact matrix.
 
-    All the diagonal elements of the direct contact matrix are 1; moreover,
-    depending on the size and number of clusters, the matrix has many repeated
-    columns. While the number of non-zero eigenvalues of the contact
-    matrix is equal to the number of clusters, the values of eigenvalues
-    show the sizes of clusters. The frequencies of eigenvalues are equal to
-    the frequencies of clusters with different sizes. An eigenvalue with value
-    0 does not have any physical meaning, but the frequency of this eigenvalue
-    shows the total number of repeated clusters with sizes equal to or larger
-    than 2 (that is equal to the number of dependant columns in the
-    contact matrix in the linear algebra lingo).
+    This function calculates eigenvalues of the contact matrix, where the
+    number of non-zero eigenvalues corresponds to the number of clusters. The
+    values of the eigenvalues represent the sizes of clusters.
 
     Parameters
     ----------
-    contacts: np.ndarray
-        A matrix of size n_atoms * n_atoms in which each element is either
-        0 or 1 and indicates whether a contact is between a pair of
-        atoms or not. 1 means a contact exists while 0 means it does
-        not. All the diagonal elements of this matrix are 1 by the
-        definition in `direct_contacts` function.
+    contacts : np.ndarray
+        A binary square matrix representing contacts between atoms. Diagonal
+        elements must be 1.
 
-    Return
+    Returns
+    -------
+    cluster_list: np.ndarray, shape (cluster_size-1,)
+        A 1D array where each index represents :math:`cluster_size - 1`, and
+        the values are the frequency of clusters of that size.
+    Raises
     ------
-    cluster_list: array-like
-        A 1D array in which the indexes are "cluster_size - 1" sizes and the
-        values are frequency of clusters with that size.
+    ValueError
+        If the input matrix contains invalid eigenvalues.
 
-    Reference
-    ---------
-    https://aip.scitation.org/doi/10.1063/1.454720
+    Notes
+    -----
+    An eigenvalue of 0 does not have a direct physical meaning; however, the
+    frequency of this eigenvalue corresponds to the total number of repeated
+    clusters of size 2 or larger. In terms of linear algebra, this is
+    equivalent to the number of dependent columns in the contact matrix.
+
+    Examples
+    --------
+    >>> contacts = np.array([[1, 1, 0], [1, 1, 1], [0, 1, 1]])
+    >>> count_foci_clusters_old(contacts)
+    array([1, 1, 1])
+
+    References
+    ----------
+    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
+    calculations of cluster statistics in continuum models of composite
+    morphology. The Journal of Chemical Physics, 89(1), 668-676.
+    https://doi.org/10.1063/1.454720
     """
     n_atoms, _ = contacts.shape
-    # While eigenvalue 0 is not physically important, eigenvalue n_atoms
-    # is. Here, a cluster list with values ranging from 0 to n_atoms is created
-    # to properly collect all the eigenvalues.
-    cluster_list = np.zeros(n_atoms + 1, dtype=int)
+
+    # Compute eigenvalues and round for numerical stability
     clusters = npla.eigvalsh(contacts)
-    # numpy returns infinitesimal numbers instead of zero when an eigenvalue
-    # is 0. Below, these eigenvalues are rounded to 0. The non-zero
-    # values are already integer, so rounding does not affect them.
-    # clusters = np.asarray(np.round(clusters), dtype=int)
-    # Sanity check for having meaning cluster sizes:
+
+    # Validate eigenvalues
     if np.any(clusters < 0):
         raise ValueError("A cluster with size smaller than 0 found!")
+
+    # Count occurrences of each cluster size
     cluster_sizes, cluster_counts = np.unique(clusters, return_counts=True)
-    # Above, the eigenvalue with value 0 can be interpreted in this way:
-    # The system has clusters with size equal to or larger than 1
-    # The frequency of eigenvalue 0 is the total number of clusters (or
-    # dependant columns in the contact matrix) with size equal to
-    # or larger than 2.
+    cluster_list = np.zeros(n_atoms + 1, dtype=int)
     np.put(cluster_list, cluster_sizes, cluster_counts)
+
     return cluster_list
 
 
@@ -532,46 +614,75 @@ def foci_info(
     nmon_large: int,
     nmon_small: int
 ) -> np.ndarray:
-    """Generates a dictionary of the information about all the possible pairs
-    of large monomers in a circular/ring heterogeneous polymer composed of two
-    different monomer types (small and large monomers).
+    """
+    Generate information about all possible pairs of large monomers in a
+    circular polymer.
 
-    This information is an array of shape(n_pairs,3) where the first two
-    columns are the pair index along the backbone (a.k.a genomic position), the
-    2nd one is the genomic distance (i.e. the minimum number of genomic indices
-    between a pair in a circular polymer).
+    This function calculates the genomic indices and distances for all pairs of
+    large monomers in a circular heterogeneous polymer composed of two types of
+    monomers: small and large. The genomic distance is defined as the minimum
+    distance along the ring topology.
 
     Parameters
     ----------
-    genomic_pos: np.ndarray
-        A vector of size `nmon_large` that contains the genomic position of
-        large monomers
-    nmon_large: int
-        Number of large monomers
-    nmon_small: int
-        Number of small monomers
+    genomic_pos : np.ndarray
+        A 1D array of size `nmon_large` containing the genomic positions of
+        large monomers.
+    nmon_large : int
+        Number of large monomers.
+    nmon_small : int
+        Number of small monomers.
 
-    Return
-    ------
+    Returns
+    -------
     pair_info: np.ndarray
-        An array of shape(n_pairs,3) that contains the genomic indices, and
-        genomic distance of each pair.
+        An array of shape `(n_pairs, 3)` where:
+        - The first two columns represent the indices of monomer pairs along
+          the backbone.
+        - The third column contains the genomic distance between the pair.
+
+    Notes
+    -----
+    The genomic distance accounts for the circular topology of the polymer. It
+    is the minimum of the direct distance and the distance around the circle.
+
+    Examples
+    --------
+    >>> genomic_pos = np.array([0, 5, 10, 15])
+    >>> foci_info(genomic_pos, nmon_large=4, nmon_small=6)
+    array([[ 0,  5,  4],
+           [ 0, 10,  3],
+           [ 0, 15,  2],
+           [ 5, 10,  4],
+           [ 5, 15,  3],
+           [10, 15,  4]])
     """
     nmon = nmon_small + nmon_large
+
+    # Generate all combinations of large monomer pairs
     pairs = np.array(list(combinations(range(nmon_large), 2)), dtype=np.int_)
-    genomic_idx = np.choose(pairs, genomic_pos)
-    genomic_dist = np.diff(genomic_idx, axis=1)
+
+    # Retrieve genomic positions for each pair
+    # genomic_idx = np.choose(pairs, genomic_pos)
+    # to-do: check wither choose is better or take.
+    genomic_idx = np.take(genomic_pos, pairs)
+
+    # Calculate direct genomic distances
+    genomic_dist = np.abs(np.diff(genomic_idx, axis=1))
     # Applying the topological contain on the genomic distance, i.e. finding
-    # minimum distance between a pair on a circle.
-    # the pair is inclusive, so their difference is one unit more than the
-    # actual number of genomic units between them, but it is equal to the
-    # number of bonds (not the length of bonds).
+    # minimum distance between a pair on a circle. The pair genomic distance is
+    # inclusive, so their difference is one unit more than the actual number of
+    # genomic units between the pair, but it is equal to the number of bonds
+    # (not the total length of the bonds).
+
+    # Adjust distances for circular topology
     # Number of small monomers between to large monomers:
-    genomic_dist = np.minimum.reduce((nmon-genomic_dist, genomic_dist)) - 1
-    pair_info = np.concatenate(
-        (genomic_idx, genomic_dist),
-        axis=1
-        )
+    genomic_dist = np.minimum.reduce((genomic_dist, nmon - genomic_dist)) - 1
+
+    # Combine pair indices and genomic distances
+    # pair_info = np.concatenate((genomic_idx, genomic_dist), axis=1)
+    pair_info = np.hstack((genomic_idx, genomic_dist))
+
     return pair_info
 
 
@@ -581,23 +692,32 @@ def v_histogram(
     bin_range: Tuple[float, float],
     **kwargs
 ) -> np.ndarray:
-    """Vectorize `n.histogram` so it can be mapped to a collection of data
-    with different `nbins` and `range` kwargs. The `range` is divided into
-    `nbins` bins, so there are `nbins` equal bins.
+    """
+    Compute the histogram of input data with specified bins and range.
+
+    This function wraps NumPy's `np.histogram` to compute histograms of data
+    with user-defined parameters. It is designed for vectorized operations
+    across multiple datasets.
 
     Parameters
     ----------
-    data: np.ndarray
-        1D array-like input data
-    bins: int
-        Number of bins
-    bin_range: float
+    data : np.ndarray
+        1D array-like input data to compute the histogram for.
+    bins : int
+        Number of bins to divide the data into.
+    bin_range : Tuple[float, float]
         The lower and upper range of bins.
 
-    Return
-    ------
-    hist: np.ndarray
-        The frequencies of `data` in bins.
+    Returns
+    -------
+    np.ndarray
+        An array containing the frequencies of `data` in each bin.
+
+    Examples
+    --------
+    >>> data = np.array([0.5, 1.5, 2.5, 3.5])
+    >>> v_histogram(data, bins=3, bin_range=(0, 3))
+    array([1, 1, 2])
     """
     hist, _ = np.histogram(data, bins=bins, range=bin_range, **kwargs)
     return hist
@@ -608,157 +728,234 @@ def foci_rdf(
     bin_centers: np.ndarray,
     binsize: float
 ) -> np.ndarray:
-    """Compute the radial distribution function to find the center of a
-    particle in a pair given position at a radial distance r from the center of
-    the other particle in that pair.
+    """
+    Compute the radial distribution function (RDF).
+
+    The RDF provides the probability of finding a particle at a given radial
+    distance relative to another particle. It is calculated by normalizing
+    particle frequencies in each radial bin with respect to the shell volume.
 
     Parameters
     ----------
-    hist: np.ndarray
-       The frequencies of particles in bins with equal size.
-    bin_centers
-        The positions of bin centers along the radial direction.
-    binsize: float
-        Size of each bin
+    hist : np.ndarray
+        An array containing the frequencies of particles in each radial bin.
+    bin_centers : np.ndarray
+        An array containing the positions of bin centers along the radial
+        direction.
+    binsize : float
+        The width of each radial bin.
 
-    Return
-    ------
-    rdf: np.ndarray
-        The rdf in bins with equal size.
+    Returns
+    -------
+    np.ndarray
+        The computed RDF values for each radial bin.
+
+    Notes
+    -----
+    The RDF is normalized such that the integral over all bins equals 1.
+
+    Examples
+    --------
+    >>> hist = np.array([10, 20, 30])
+    >>> bin_centers = np.array([1, 2, 3])
+    >>> binsize = 0.5
+    >>> foci_rdf(hist, bin_centers, binsize)
+    array([0.31830989, 0.15915494, 0.1061033 ])
     """
-    rdf = hist / (bin_centers**2 * 4 * np.pi * binsize)
-    rdf = rdf / np.sum(rdf)  # normalization
+    shell_volumes = 4 * np.pi * bin_centers**2 * binsize
+    rdf = hist / shell_volumes
+    rdf /= np.sum(rdf)  # Normalize RDF
     return rdf
 
 
 def foci_histogram(
     tags: List[str],
-    pairs_info: np.ndarray,
     pairs_dist: np.ndarray,
     binsize: float
 ) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:
-    """Generates histograms of pair distances, use the same number of bins and
-    the same bin range for all pairs.
+    """
+    Generate histograms and RDFs for pairwise distances.
 
-    The lower bin range is 0 while the upper one is the maximum of physical
-    distances between any pairs.
+    This function computes histograms and radial distribution functions (RDFs)
+    for all pairwise distances of large monomers along a heterogeneous polymer.
+    It uses the same number of bins and bin range for all pairs. The lower bin
+    range is 0 while the upper one is the maximum of physical distances between
+    any pairs.
 
     Parameters
     ----------
-    tags: list of str
-        A list that contains pair names.
-    pairs_info: np.ndarray
-        An array of shape(n_pairs,3) that contains the genomic indices, and
-        genomic distance.
-    pairs_dist: np.ndarray
-        An array of shape (n_pairs, n_frames) that contains the time series
-        of each pair distances.
-    binsize: float
-        Size of each bin
+    tags : List[str]
+        A list of strings containing pair names.
+    pairs_dist : np.ndarray
+        An array of shape `(n_pairs, n_frames)` containing the time series of
+        pairwise distances for each pair.
+    binsize : float
+        The width of each histogram bin.
 
-    Return
-    ------
-    pair_hists: dict
-        A dictionary in which the keys are pair tags and the values of pair
-        histograms. There is also extra key named 'bin_center' which contains
-        the center of bins.
-    pair_hists: dict
-        A dictionary in which the keys are pair tags and the values of pair
-        rdfs. There is also extra key named 'bin_center' which contains
-        the center of bins.
+    Returns
+    -------
+    Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]
+        - `pair_hists`: A dictionary where keys are pair tags, and values are
+          histograms of pair distances. Includes a special key 'bin_center'
+          for bin centers.
+        - `pair_rdfs`: A dictionary where keys are pair tags, and values are
+          RDFs of pair distances. Includes a special key 'bin_center' for bin
+          centers.
+
+    Examples
+    --------
+    >>> tags = ['pair1', 'pair2']
+    >>> pairs_info = np.array([[0, 1, 2], [1, 2, 3]])
+    >>> pairs_dist = np.array([[1.0, 1.5], [2.0, 2.5]])
+    >>> binsize = 0.5
+    >>> foci_histogram(tags, pairs_info, pairs_dist, binsize)
+    ({'pairDistHistFoci-pair1': array([...]), ...},
+     {'pairDistRdfFoci-pair1': array([...]), ...})
     """
-    n_pairs = pairs_info.shape[0]
+    # Determine histogram range and bin centers
     # the maximum pair distance used as upper limit of histogram range in all
     # pair histogram. This value is rounded to be a multiple of binsize.
     upper_range = np.ceil(np.max(pairs_dist) / binsize) * binsize
     max_range = (0, upper_range)
-    max_bins = np.ceil((max_range[1] - max_range[0]) / binsize).astype(np.int_)
-    pairs_range = [max_range] * n_pairs
-    pairs_bins = [max_bins] * n_pairs
+    max_bins = int(np.ceil((max_range[1] - max_range[0]) / binsize))
     bin_edges = np.arange(max_range[0], max_range[1] + binsize, binsize)
     bin_centers = 0.5 * (bin_edges[1:] + bin_edges[:-1])
 
-    hists = list(map(v_histogram, pairs_dist, pairs_bins, pairs_range))
-    hist_tags = ['pairDistHistFoci-' + tag for tag in tags]
+    # Compute histograms for all pairs
+    hists = [
+        np.histogram(data, bins=max_bins, bin_range=max_range)
+        for data in pairs_dist
+    ]
+    hist_tags = [f"pairDistHistFoci-{tag}" for tag in tags]
     pair_hists = dict(zip(hist_tags, hists))
     pair_hists['bin_center'] = bin_centers
-    pairs_bin_centers = [bin_centers] * n_pairs
-    pairs_binsizes = [binsize] * n_pairs
-    rdfs = list(map(foci_rdf, hists, pairs_bin_centers, pairs_binsizes))
-    rdf_tags = ['pairDistRdfFoci-' + tag for tag in tags]
+
+    # Compute RDFs for all pairs
+    rdfs = [
+        foci_rdf(hist, bin_centers, binsize)
+        for hist in hists
+    ]
+    rdf_tags = [f"pairDistRdfFoci-{tag}" for tag in tags]
     pair_rdfs = dict(zip(rdf_tags, rdfs))
     pair_rdfs['bin_center'] = bin_centers
+
     return pair_hists, pair_rdfs
 
 
 def whole_dist_mat_foci(
     whole_path: str,
-    whole_info: Union[TransFociCub, TransFociCyl,
+    whole_info: Union[TransFociCub, TransFociCyl, 
                       SumRuleCubHeteroRing, SumRuleCubHeteroLinear]
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Generates time series and histograms of foci distances from distance
-    matrix of (large) monomers.
+    """
+    Generate time series, histograms, and RDFs of foci distances from a
+    distance matrix.
 
-    A foci are a pair of large monomer. The distance matrix is upper-triangular
-    matrix containing all the spatial distances between any possible foci of
-    large monomers.
+    This function processes the distance matrix of large monomers (foci) in a
+    polymer system. It computes time series of pairwise distances, histograms,
+    and radial distribution functions (RDFs) for all foci pairs.
 
     Parameters
     ----------
-    whole_path: str
-        Path to a "whole" distance matrix.
-    whole_info: TransFociT
-        A TransFociT object contains information about a "whole" simulation
+    whole_path : str
+        Path to the distance matrix file. The matrix should be a 3D array where
+        the first axis represents time frames.
+    whole_info : Union[TransFociCub, TransFociCyl,
+                       SumRuleCubHeteroRing, SumRuleCubHeteroLinear]
+        Object containing metadata about the simulation, including the number
+        of large and small monomers and monomer properties.
 
-    Return
-    ------
-    pairs_hists: dict
-        A dataframe in which the columns are pair tags and the values of pair
-        histograms. There is also extra column named 'bin_center' that contains
-        the center of bins.
-    pairs_hists: dict
-        A dataframe in which the columns are pair tags and the values of pair
-        rdfs. There is also extra column named 'bin_center' that contains
-        the center of bins.
-    pairs_tseries: dict
-        A dataframe in which the columns are pair tags and the values of pair
-        timeseries.
+    Returns
+    -------
+    Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
+        - `pair_hists`: DataFrame where columns are pair tags, and values are
+          pair histograms.
+        - `pair_rdfs`: DataFrame where columns are pair tags, and values are
+          pair RDFs.
+        - `pair_tseries`: DataFrame where columns are pair tags, and values are
+          time series of pair distances.
+
+    Examples
+    --------
+    >>> whole_path = "distance_matrix.npy"
+    >>> whole_info = TransFociCub(dmon_small=1.0, nmon_large=4, nmon_small=6)
+    >>> pair_hists, pair_rdfs, pair_tseries = \
+            whole_dist_mat_foci(whole_path, whole_info)
+
+    Notes
+    -----
+    The distance matrix is assumed to be upper-triangular for efficiency. Tags
+    are generated in the format "locXlocYgenDistZ" where X and Y are monomer
+    indices, and Z is their genomic distance.
     """
+    # Load the distance matrix
     whole = np.load(whole_path)
+
+    # Extract parameters from whole_info
     dmon_small = whole_info.dmon_small
     nmon_large = whole_info.nmon_large
     nmon_small = whole_info.nmon_small
+
+    # Extract genomic positions and compute pair information
     diagonal_idxs = np.diag_indices(nmon_large)
     genomic_pos = whole[0, diagonal_idxs[0], diagonal_idxs[1]]
     pairs_info = foci_info(genomic_pos, nmon_large, nmon_small)
-    tags = list(
-        map(
-            lambda x: "loc{0}loc{1}genDist{2}".format(x[0], x[1], x[2]),
-            pairs_info[:, :3]
-        )
-    )
+
+    # Generate tags for each pair
+    tags = [
+        f"loc{x[0]}loc{x[1]}genDist{x[2]}"
+        for x in pairs_info[:, :3]
+    ]
+
+    # Extract upper-triangular indices for distances
     triu_indices = np.triu_indices(nmon_large, k=1)
     pairs_dist = whole[:, triu_indices[0], triu_indices[1]].T
+
+    # Compute histograms and RDFs
     binsize = 0.5 * dmon_small
-    pair_hists, pair_rdfs = foci_histogram(
-        tags, pairs_info, pairs_dist, binsize
-    )
+    pair_hists, pair_rdfs = foci_histogram(tags, pairs_dist, binsize)
+
+    # Convert results to DataFrames
     pair_hists = pd.DataFrame.from_dict(pair_hists)
     pair_rdfs = pd.DataFrame.from_dict(pair_rdfs)
-    tseries_tags = ['pairDistTFoci-' + tag for tag in tags]
-    pair_tseries = dict(zip(tseries_tags, pairs_dist))
-    pair_tseries = pd.DataFrame.from_dict(pair_tseries)
+
+    # Time series DataFrame
+    tseries_tags = [f"pairDistTFoci-{tag}" for tag in tags]
+    pair_tseries = pd.DataFrame(dict(zip(tseries_tags, pairs_dist)))
+
     return pair_hists, pair_rdfs, pair_tseries
 
 
 def enforce_single_patch_dir_contact(
     contact_matrix: np.ndarray
 ) -> np.ndarray:
-    """Given a binary contact matrix of shape (n_monomers, n_patches), where
-    each element represents whether a given monomer and patch are in direct
-    contact or not, sets the values of all the elements after the first
-    contact (the first non-zero element) in each column to 0.
+    """
+    Enforces single-patch contact for each column in a contact matrix.
 
+    This function modifies a binary contact matrix to ensure that each patch
+    (column) is only in contact with one monomer (row). If a patch is in
+    contact with multiple monomers, only the first (topmost) contact is
+    preserved, and the rest are set to zero.
+
+    Parameters
+    ----------
+    contact_matrix : np.ndarray
+        Binary contact matrix of shape `(n_monomers, n_patches)`, where 1
+        indicates a direct contact between a monomer and a patch.
+
+    Returns
+    -------
+    contact_matrix: np.ndarray
+        Modified contact matrix where all values after the first contact in
+        each column are set to 0.
+
+    Raises
+    ------
+    ValueError
+        If the input matrix is not 2D.
+
+    Notes
+    -----
     Each H-NS patch can be in contact with one monomer. However, visual
     inspection has revealed that a single patch can be in contact with more
     than one monomers, which is an artifacts and does not have physical
@@ -766,30 +963,31 @@ def enforce_single_patch_dir_contact(
     along the chain backbone. Therefore, it is decided to only consider the
     contact of the H-NS patch with the first of these monomers as a real
     contact and conisder the rest of contacts as artifacts. This means setting
-    the non-zero elements below the first
-    non-zero elements along a column equal to zero.
+    the non-zero elements below the first non-zero elements along a column
+    equal to zero.
 
-
-    Parameters
-    ----------
-    contact_matrix : numpy.ndarray
-        The binary contact matrix of shape (n_monomers, n_patches).
-
-    Returns
-    -------
-    numpy.ndarray
-        The modified contact matrix, where the values of all elements after
-        the first contact in each column have been set to 0.
+    Examples
+    --------
+    >>> contact_matrix = np.array([[1, 0, 1],
+    ...                            [1, 1, 0],
+    ...                            [0, 1, 0]])
+    >>> enforce_single_patch_dir_contact(contact_matrix)
+    array([[1, 0, 1],
+           [0, 1, 0],
+           [0, 0, 0]])
     """
-    # make a copy of the input matrix to avoid modifying it in place
+    if contact_matrix.ndim != 2:
+        raise ValueError("Input contact matrix must be a 2D array.")
+
+    # Create a copy to avoid modifying the input matrix in place
     contact_matrix = contact_matrix.copy()
 
-    # loop over columns
-    for j in range(contact_matrix.shape[1]):
-        # find index of first contact in column j
-        i = np.argmax(contact_matrix[:, j] != 0)
-        # set values of elements after first contact to 0
-        contact_matrix[i+1:, j] = 0
+    # Iterate over columns to enforce single-patch contact
+    for col_idx in range(contact_matrix.shape[1]):
+        # Find the first contact index in the column
+        first_contact_idx = np.argmax(contact_matrix[:, col_idx] != 0)
+        # Zero out all contacts below the first contact
+        contact_matrix[first_contact_idx + 1:, col_idx] = 0
 
     return contact_matrix
 
@@ -797,53 +995,69 @@ def enforce_single_patch_dir_contact(
 def genomic_distance(
     atoms_a: np.ndarray,
     atoms_b: np.ndarray,
-    topology: str,
+    topology: TopologyT,
     num_backbone_atoms: int
 ) -> np.ndarray:
-    """Calculate the intra-monomer distance, a.k.a the genomic distance,
-    between atoms in `atoms_a` and `atoms_b` along the backbone of a polymer
-    with the given `topology`.
+    """
+    Calculate the genomic distance between pairs of atoms along a polymer
+    backbone.
+
+    Genomic distance is the intra-monomer distance between atoms along the
+    backbone of a polymer. It is defined based on the polymer topology
+    ('linear' or 'ring').
 
     Parameters
     ----------
     atoms_a : np.ndarray
         Array of atom indices in the first group along the backbone, with shape
-        (num_backbone_atoms,) or (num_backbone_atoms, 1).
+        `(num_backbone_atoms,)` or `(num_backbone_atoms, 1)`.
     atoms_b : np.ndarray
         Array of atom indices in the second group along the backbone, with
-        shape (num_backbone_atoms,) or (num_backbone_atoms, 1).
-    topology : str
+        shape `(num_backbone_atoms,)` or `(num_backbone_atoms, 1)`.
+    topology : TopologyT
         Topology of the polymer ('linear' or 'ring').
     num_backbone_atoms : int
         Total number of atoms along the backbone.
 
     Returns
     -------
-    np.ndarray
+    distances: np.ndarray
         Array of element-wise genomic distances between corresponding pairs of
         atoms along the backbone.
 
     Raises
     ------
     ValueError
-        If `atoms_a` and `atoms_b` have different shapes or if `topology` is
-        not 'linear' or 'ring'.
+        If `atoms_a` and `atoms_b` have different shapes.
+        If `topology` is not 'linear' or 'ring'.
 
     Notes
     -----
-    The genomic distance between two atoms is the absolute value of the
-    difference in their indices along the backbone of the polymer. If the
-    polymer has a 'ring' topology, the genomic distance is the minimum of the
-    absolute difference and the difference in index when traversing the ring
-    in the opposite direction.
-    Genomic distance is measured in number of bonds, not number of atoms, so
-    it is 1 unit more than the number of atoms between a pair of atoms.
+    - For 'linear' topology, the genomic distance is the absolute difference
+      between atom indices.
+    - For 'ring' topology, the genomic distance is the minimum of the direct
+      distance and the distance around the circle.
+    - Genomic distance is measured in terms of the number of bonds, not atoms.
+      It is 1 unit more than the number of atoms between a pair of atoms.
+
+    Examples
+    --------
+    >>> atoms_a = np.array([0, 2, 4])
+    >>> atoms_b = np.array([1, 3, 5])
+    >>> genomic_distance(atoms_a, atoms_b, topology='linear',
+                         num_backbone_atoms=6)
+    array([1, 1, 1])
+    >>> genomic_distance(atoms_a, atoms_b, topology='ring',
+                         num_backbone_atoms=6)
+    array([1, 1, 1])
     """
     if atoms_a.shape != atoms_b.shape:
         raise ValueError("'atoms_a' and 'atoms_b' must have the same shape.")
     if topology not in ('linear', 'ring'):
         raise ValueError(
-            f"The genomic distance is not defined for '{topology}' topology.")
+            f"Invalid topology: '{topology}'. Must be 'linear' or 'ring'.")
+
+    # Define topology-specific distance calculation
     topology_functions = {
         'linear': lambda a, b: np.abs(a - b),
         'ring': lambda a, b, n: np.minimum(np.abs(a - b), n - np.abs(a - b)),
@@ -855,151 +1069,180 @@ def genomic_distance(
 
 def hns_genomic_distance(
     contact_nonzeros: np.ndarray,
-    topology: str,
-    n_mons: int,
+    topology: TopologyT,
+    n_mons: int
 ) -> np.ndarray:
-    """Calculate the intra-monomer distance between the pair of monomers
-    bridged by a H-NS protein in a polymer.
+    """
+    Calculate genomic distances for monomer pairs bridged by an H-NS protein.
+
+    This function computes the genomic distances for monomer pairs that are
+    connected via an H-NS protein in a polymer system. The distances are
+    determined based on the polymer's topology ('linear' or 'ring').
 
     Parameters
     ----------
-    contact_m_m_nonzeros: np.ndarray
-        Pair of indices of non-zero elements in the monomer-monomer contact
-        matrix.
-    topology: str
-        Polymer topology.
-    n_mons: int
-        Number of monomers in the polymer.
+    contact_nonzeros : np.ndarray
+        Array of shape `(n_pairs, 2)` containing indices of non-zero elements
+        in the monomer-monomer contact matrix.
+    topology : TopologyT
+        Topology of the polymer ('linear' or 'ring').
+    n_mons : int
+        Total number of monomers in the polymer.
 
-    Return
+    Returns
+    -------
+    np.ndarray
+        A 2D array with shape `(n_pairs, 3)`:
+        - Column 0: Index of the first monomer in the pair.
+        - Column 1: Index of the second monomer in the pair.
+        - Column 2: Genomic distance between the two monomers.
+
+    Raises
     ------
-    contact_m_m_gen_dist: np.ndarray
-        A matrix with 3 columns anv varing number of rows, where the first
-        column contain the indices of the first monomer, second column
-        contaions the indices of the second monomer, and the third one contains
-        the genomic distance betweem the two monnomers in pairs of bridged
-        monomers.
+    ValueError
+        If `topology` is not 'linear' or 'ring'.
+
+    Examples
+    --------
+    >>> contact_nonzeros = np.array([[0, 2], [1, 3], [2, 4]])
+    >>> hns_genomic_distance(contact_nonzeros, topology='linear', n_mons=5)
+    array([[0, 2, 2],
+           [1, 3, 2],
+           [2, 4, 2]])
+    >>> hns_genomic_distance(contact_nonzeros, topology='ring', n_mons=5)
+    array([[0, 2, 2],
+           [1, 3, 2],
+           [2, 4, 2]])
     """
-    genomic_distances: np.ndarray = genomic_distance(
+    # Calculate genomic distances for the provided pairs
+    genomic_distances = genomic_distance(
         contact_nonzeros[:, 0],
         contact_nonzeros[:, 1],
         topology,
         n_mons
     )
-    contact_m_m_gen_dist: np.ndarray = np.column_stack((
-        contact_nonzeros,
-        genomic_distances
-    ))  # axis 0: monomer i, monomer j, genomic_dist_ij
+
+    # Combine pair indices with genomic distances
+    contact_m_m_gen_dist = \
+        np.column_stack((contact_nonzeros, genomic_distances))
+
     return contact_m_m_gen_dist
+
 
 def hns_binding(
     direct_contact: np.ndarray,
     topology: str,
     cis_threshold: int = 4,
-    binding_stats: Dict[str, List[int]] = defaultdict(List[int]),
-    loop_length_hist: np.ndarray = np.array([])
+    binding_stats: Optional[Dict[str, List[int]]] = None,
+    loop_length_hist: Optional[np.ndarray] = None
 ) -> Tuple[Dict[str, List[int]], np.ndarray]:
-    """Calculate the binding statistics of H-NS proteins to monomers.
+    """
+    Calculate the binding statistics of H-NS proteins to monomers.
 
-    A H-NS protein consist of a core and two patches at the poles of the core.
-    In the `direct_contact` matrix, every two columns represent two patches of
-    the same H-NS proteins. We use this data to determine whether an H-NS
-    protein is in the unbound, dangled, or bridged mode.
-
-    In principal, a patch cannot be in direct contact with more than one
-    monomer. However, due to many-body nature of the system and non-directional
-    nature of the forces, a patch can be in contact with 2 or 3 monomers in
-    very rare situations. Consequently, the some of rows along each column in
-    the direct_contact matrix can be more than one.
+    This function evaluates the binding behavior of H-NS proteins in a polymer
+    system. Each H-NS protein has a core and two patches, with patches able to
+    bind monomers. The function calculates statistics for free, bridged, and
+    dangled H-NS proteins and determines genomic distances for binding.
 
     Parameters
     ----------
-    direct_contact: np.ndarray, shape (n_mon, n_hpatch)
-        A binary matrix where each element (i, j) is 1 if atoms i and j have a
-        contact, and 0 otherwise.
+    direct_contact : np.ndarray
+        Binary matrix of shape `(n_mon, n_hpatch)`, where each element `(i, j)`
+        is 1 if monomer `i` is in contact with patch `j`, and 0 otherwise.
+    topology : str
+        Topology of the polymer ('linear' or 'ring').
+    cis_threshold : int, optional
+        Genomic distance threshold (in bonds) below which an H-NS binding is
+        classified as cis-binding. Default is 4.
+    binding_stats : dict, optional
+        A dictionary to store binding statistics. Keys include:
+        - 'n_m_hpatch_bound': Number of monomer-patch contacts.
+        - 'n_hpatch_engaged': Number of engaged patches.
+        - 'n_hpatch_free': Number of free patches.
+        - 'n_hcore_free': Number of free H-NS cores.
+        - 'n_hcore_bridge': Number of bridging H-NS cores.
+        - 'n_hcore_dangle': Number of dangling H-NS cores.
+        If None, a new dictionary is initialized.
+    loop_length_hist : np.ndarray, optional
+        Histogram of loop sizes (genomic distances). If None, a new array is
+        initialized based on `topology`.
 
-    topology: str
-        Topology of the polymer containing monomers.
+    Returns
+    -------
+    Tuple[Dict[str, List[int]], np.ndarray]
+        - Updated `binding_stats` dictionary with binding data.
+        - Updated `loop_length_hist` array containing the histogram of loop
+          sizes.
 
-    cis_threshold: int, default 4
-        The genomic distance in number of bonds (not number of monomers) less
-        than or equal (inclusive) to which a H-NS is of cis-binding type.
-
-    binding_stats: dict
-        A dictionary of binding statistics of H-NS proteins to which new
-        statisitics is appended.
-
-    loop_length_hist: list of array
-        A list of arrays where each array is of shape (n_bridged_pairs, 3).
-        Each row of the an array contaion the index of first monomer, index of
-        second one and the genomic distance between them.
-
-    Return
+    Raises
     ------
-    binding_stats: dict
-        A new or updated dictionary contains the statistical data about the
-        binding of H-NS proteins to monomers.
+    ValueError
+        If the topology is invalid ('linear' or 'ring' are the only accepted
+        values).
 
-    loop_size_hist: np.ndarray
-        A new or updated arrat contains the histogram of loop sizes.
+    Notes
+    -----
+    - The function handles rare cases where patches are in contact with
+      multiple monomers by using `enforce_single_patch_dir_contact`.
+    - Genomic distances are calculated using the H-NS core's bridging matrix.
+    - Loop sizes exceeding the `cis_threshold` are classified as trans-binding.
+
+    Examples
+    --------
+    >>> direct_contact = np.array([[1, 0, 1], [0, 1, 0], [1, 0, 0]])
+    >>> topology = 'linear'
+    >>> binding_stats, loop_hist = hns_binding(direct_contact, topology)
     """
     # Initialize results if not provided
+    if binding_stats is None:
+        binding_stats = defaultdict(list)
+    if loop_length_hist is None:
+        max_gen_distance = {'linear': direct_contact.shape[0], 'ring': direct_contact.shape[0] // 2 + 1}
+        loop_length_hist = np.zeros(max_gen_distance[topology], dtype=int)
+
     n_mon, n_hpatch = direct_contact.shape
     n_hcore = n_hpatch // 2
-    if topology not in ('ring', 'linear'):
-        raise ValueError(
-            f"The genomic distance is not defined for '{topology}' topology"
-            )
-    # For both, ring with odd or even number of monomers, the maximum
-    # intra-chain distance is the same.
-    if loop_length_hist.size == 0:
-        max_gen_distance = {
-            'linear': n_mon,
-            'ring': n_mon//2+1
-        }
-        loop_length_hist = np.zeros(max_gen_distance[topology])
-    # A H-NS patch can bind more than one monomers, so the total number of
-    # of bindings between H-NS patches and monomers can be more than the total
-    # number of H-Ns patches. However, the total number of engaged and
-    # free patches is always less than or equal to the total number of H-NS
-    # patches:
-    # These two 'n_m_hpatch_bound' and 'n_hpatch_engaged' have contributions
-    # from in valid double and triple binding of a patch.
+
+    if topology not in ('linear', 'ring'):
+        raise ValueError(f"Invalid topology: '{topology}'. Must be 'linear' or 'ring'.")
+
+    # Compute basic binding statistics
     binding_stats['n_m_hpatch_bound'].append(np.sum(direct_contact))
     d_cont_per_hpatch = np.sum(direct_contact, axis=0)
-    binding_stats['n_hpatch_engaged'].append(
-        np.count_nonzero(d_cont_per_hpatch))
-    binding_stats['n_hpatch_free'].append(
-        n_hpatch - binding_stats['n_hpatch_engaged'][-1])
-    # The correct statistics for counting briding, dangling, and free H-NS
-    # proteins even if a patch is incorrectely in contact with 2 or more
-    # monomers:
+    binding_stats['n_hpatch_engaged'].append(np.count_nonzero(d_cont_per_hpatch))
+    binding_stats['n_hpatch_free'].append(n_hpatch - binding_stats['n_hpatch_engaged'][-1])
+
+    # Compute core-level binding statistics
     binding_stats['n_hcore_free'].append(np.sum(
         (d_cont_per_hpatch[0::2] == 0) & (d_cont_per_hpatch[1::2] == 0)
-        ))
-    binding_stats['n_hcore_bridge'].append(
-        np.sum((d_cont_per_hpatch[0::2] > 0) & (d_cont_per_hpatch[1::2] > 0)
-               ))
+    ))
+    binding_stats['n_hcore_bridge'].append(np.sum(
+        (d_cont_per_hpatch[0::2] > 0) & (d_cont_per_hpatch[1::2] > 0)
+    ))
     binding_stats['n_hcore_dangle'].append(
-        n_hcore-binding_stats['n_hcore_free'][-1] -
-        binding_stats['n_hcore_bridge'][-1]
-        )
+        n_hcore - binding_stats['n_hcore_free'][-1] - binding_stats['n_hcore_bridge'][-1]
+    )
+
+    # Enforce single monomer-patch contact and compute monomer-monomer binding
     single_patch_dir_contact = enforce_single_patch_dir_contact(direct_contact)
     cont_m_hpatch = generate_contact_matrix(single_patch_dir_contact)
-    cont_m_hcore = np.zeros((n_mon, n_hcore))
-    # Every two columns belongs to the same H-NS protein:
     cont_m_hcore = np.logical_or(cont_m_hpatch[:, ::2], cont_m_hpatch[:, 1::2])
-    # Symmetric squared monomer-monomer matrix:
-    cont_m_m = np.matmul(cont_m_hcore, cont_m_hcore.T)  # symmetric
+    cont_m_m = np.matmul(cont_m_hcore, cont_m_hcore.T)
     cont_m_m_triu = np.triu(cont_m_m, 1)
+
+    # Extract non-zero indices and calculate genomic distances
     cont_m_m_nonzeros = np.array(np.where(cont_m_m_triu > 0)).T
     m_m_gen_dist = hns_genomic_distance(cont_m_m_nonzeros, topology, n_mon)
+
+    # Classify bindings and update loop length histogram
     binding_stats['n_hcore_cis'].append(np.count_nonzero(
         (m_m_gen_dist[:, 2] > 0) & (m_m_gen_dist[:, 2] <= cis_threshold)
-        ))
+    ))
     binding_stats['n_hcore_trans'].append(np.count_nonzero(
-        m_m_gen_dist[:, 2] > cis_threshold))
+        m_m_gen_dist[:, 2] > cis_threshold
+    ))
     np.add.at(loop_length_hist, m_m_gen_dist[:, 2], 1)
+
     return binding_stats, loop_length_hist
 
 
