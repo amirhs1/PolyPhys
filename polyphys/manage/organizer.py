@@ -140,7 +140,7 @@ from .utilizer import invalid_keyword, sort_filenames, round_up_nearest
 
 def create_fullname(name: str, group: GroupT, prop: PropertyT) -> str:
     """
-    Creates a structured filename based on a base name, particle group,
+    Create a structured filename based on a base name, particle group,
     and property.
 
     Parameters
@@ -172,7 +172,7 @@ def save_parent(
     save_to: str,
 ) -> None:
     """
-    Saves the `data` to a specified file format, allowing structured file
+    Save the `data` to a specified file format, allowing structured file
     naming.
 
     Parameters
@@ -346,7 +346,7 @@ def whole_from_segments(
         Specifies how to combine segments into a whole. Accepted values:
 
         - 'histogram'
-            'segemnt' is an N-dimensional histogram-like file, so the segments
+            'segment' is an N-dimensional histogram-like file, so the segments
             of a 'whole' should be sum along "axis=0" in numpy lingo. In the
             two-dimensional space, a histogram has a (x_nbins, y_nbins) shape.
 
@@ -357,7 +357,7 @@ def whole_from_segments(
         - 'bin_edge'
             'segment' is a bin-edge file. All the the segments are similar,
             so one 'whole' bin-edge file is created by picking one of
-            segements.
+            segments.
 
     save_to : str, optional
         Directory path where the output files are saved, if specified.
@@ -430,7 +430,7 @@ def whole_from_file(
     group: GroupT,
 ) -> Dict[str, np.ndarray]:
     """
-    Loads data from "whole" files for a specified physical property of a
+    Load data from "whole" files for a specified physical property of a
     particle `group` within a given `geometry`. Each file path in `whole_paths`
     points to a single whole file.
 
@@ -487,7 +487,7 @@ def whole_from_dist_mat_t(
     Dict[str, pd.DataFrame], Dict[str, pd.DataFrame], Dict[str, pd.DataFrame]
 ]:
     """
-    Loads pair distance matrix data for "whole" files from given file paths,
+    Load pair distance matrix data for "whole" files from given file paths,
     processing specific distance-related physical properties (e.g.,
     frequencies, radial distribution functions, time series). Each data type
     is extracted and stored in separate dictionaries by whole name.
@@ -553,7 +553,7 @@ def ens_from_bin_edge(
     ens_data: Tuple[str, Dict[str, np.ndarray]]
 ) -> Tuple[str, np.ndarray]:
     """
-    Combines multiple bin edge arrays into a single unique array for an
+    Combine multiple bin edge arrays into a single unique array for an
     "ensemble" by removing duplicates. This is typically used when bin edges
     are identical across "whole" datasets in an ensemble.
 
@@ -562,7 +562,7 @@ def ens_from_bin_edge(
     ens_data : Tuple[str, Dict[str, np.ndarray]]
         A tuple where the first element is the ensemble name (str) and the
         second element is a dictionary of bin edge arrays from different
-        "whole" datasets within that ensemble. Whitin the dictionary, keys are
+        "whole" datasets within that ensemble. Within the dictionary, keys are
         whole names while values are whole bin edges.
 
     Returns
@@ -589,7 +589,7 @@ def ens_from_vec(
     ens_data: Tuple[str, Dict[str, np.ndarray]]
 ) -> Tuple[str, pd.DataFrame]:
     """
-    Converts a dictionary of 1D arrays (representing different "whole"
+    Convert a dictionary of 1D arrays (representing different "whole"
     datasets) into a single ensemble-level DataFrame. This is useful when each
     "whole" dataset in the ensemble contains a vector (1D array) of
     measurements.
@@ -631,7 +631,7 @@ def ens_from_mat_t(
     ens_data: Tuple[str, Dict[str, np.ndarray]]
 ) -> Tuple[str, np.ndarray]:
     """
-    Combines multiple 2D arrays into a single 3D array for a specified
+    Combine multiple 2D arrays into a single 3D array for a specified
     "ensemble", where each 2D array corresponds to a "whole" dataset in the
     ensemble.
 
@@ -669,7 +669,7 @@ def ens_from_df(
     ens_data: Tuple[str, Dict[str, pd.DataFrame]]
 ) -> Tuple[str, pd.DataFrame]:
     """
-    Averages multiple DataFrames in an ensemble by grouping them into a single
+    Average multiple DataFrames in an ensemble by grouping them into a single
     averaged DataFrame. Each DataFrame corresponds to a "whole" dataset in the
     ensemble.
 
@@ -747,7 +747,7 @@ def ensemble(
     save_to: Optional[str] = None,
 ) -> Dict[str, Union[np.ndarray, pd.DataFrame]]:
     """
-    Generates an ensemble by  merging "whole" data arrays or DataFrames
+    Generate an ensemble by  merging "whole" data arrays or DataFrames
     representing a specified `prop_` of a particle `group` within a
     defined `geometry`. The `whole_type` determines the structure of each
     "whole" and the merging approach.
@@ -862,7 +862,7 @@ def ensemble(
 
 def ens_avg_from_bin_edge(ens_data: np.ndarray) -> np.ndarray:
     """
-    Generates a unique set of bin edges for an "ensemble" dataset based on
+    Generate a unique set of bin edges for an "ensemble" dataset based on
     the bin edges in `ens_data`. This function assumes that the bin edges
     across the ensemble are identical and selects one representative set.
 
@@ -898,7 +898,7 @@ def ens_avg_from_ndarray(
     ens_data: np.ndarray
 ) -> Dict[str, np.ndarray]:
     """
-    Computes ensemble statistics (mean, variance, and standard error of the
+    Compute ensemble statistics (mean, variance, and standard error of the
     mean)across an "ensemble" 3D array where each slice along the first axis
     (axis=0) represents a "whole" data matrix. The statistics are calculated
     along this axis.
@@ -959,7 +959,7 @@ def ens_avg_from_df(
     exclude: List[str]
 ) -> pd.DataFrame:
     """
-    Calculates the mean, variance, and standard error of the mean (SEM) for
+    Calculate the mean, variance, and standard error of the mean (SEM) for
     columns representing "whole" data within an "ensemble" DataFrame. The
     resulting DataFrame retains excluded columns (e.g., bin_center), while
     replacing "whole" columns with computed statistics.
@@ -1024,7 +1024,7 @@ def ensemble_avg(
     save_to: Optional[str] = None,
 ) -> Union[Dict[str, np.ndarray], Dict[str, pd.DataFrame]]:
     """
-    Generates ensemble-averaged data for a specified `prop_` by averaging
+    Generate ensemble-averaged data for a specified `prop_` by averaging
     "whole" data in each "ensemble" DataFrame or array within `ensembles`.
     Columns listed in `exclude` are omitted from averaging.
 
@@ -1117,7 +1117,7 @@ def children_stamps(
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
     """
-    Combines individual "stamp" CSV files into a single DataFrame for a given
+    Combine individual "stamp" CSV files into a single DataFrame for a given
     `lineage` in a *space*. Optionally, saves the resulting
     DataFrame to a specified directory.
 
@@ -1190,7 +1190,7 @@ def parents_stamps(
     save_to: Optional[str] = None
 ) -> pd.DataFrame:
     """
-    Aggregates data from child "stamps" into a parent stamp by applying
+    Aggregate data from child "stamps" into a parent stamp by applying
     specified aggregation functions in a *space*. Optionally, saves the
     resulting DataFrame to a CSV file.
 
@@ -1298,7 +1298,7 @@ def find_unique_properties(
     sep: str = "-"
 ) -> Tuple[List[str], List[str]]:
     """
-    Extracts unique physical properties and property-measures from filenames
+    Extract unique physical properties and property-measures from filenames
     matched by a glob pattern. The function identifies unique segments in
     filenames based on specified extensions and index position, then sorts and
     returns them.
@@ -1388,7 +1388,7 @@ def space_tseries(
     is_save: Optional[bool] = False,
 ) -> pd.DataFrame:
     """
-    Aggregates ensemble-averaged time-series data for a specified physical
+    Aggregate ensemble-averaged time-series data for a specified physical
     property across multiple files, adds specified physical attributes as
     columns, and concatenates into a single DataFrame.
 
@@ -1496,7 +1496,7 @@ def space_hists(
     is_save: Optional[bool] = False,
 ) -> pd.DataFrame:
     """
-    Aggregates ensemble-averaged histogram data for a specified physical
+    Aggregate ensemble-averaged histogram data for a specified physical
     property across multiple files, normalizes data if specified, and
     concatenates into a single DataFrame.
 

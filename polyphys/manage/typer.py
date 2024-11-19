@@ -18,25 +18,6 @@ together for structured data handling.
 The module also provides type aliases for different classes, such as
 `SumRuleCyl`. These types are used when passing the classes (not their
 instances) to functions that need to distinguish between various parser types.
-
-Dependencies
-============
-- `numpy`
-- `pandas`
-- `typing`
-- `polyphys.manage.parser`: Import parser classes such as `SumRuleCyl`,
-  `TransFociCub`, etc.
-
-Usage
-=====
-Type aliases and class types are used throughout the :mode:`polyphys` package
-to annotate function parameters, variables, and return types.
-
-Notes
-=====
-Type hints defined in this module enable the use of static type checkers,
-such as `mypy`, which verify the correctness of data types in the code
-before runtime.
 """
 from typing import Type, Union, Tuple, Dict, List, TextIO, IO, Any, Literal
 from gzip import GzipFile

@@ -115,7 +115,7 @@ class ParserBase(ABC):
         The name of the project class (subclass of `ParserBase`), automatically
         assigned as the subclass's name.
     lineage_genealogy: List[str]
-        List of parent lieages for an `artifact` with a given `lineage`.
+        List of parent lineages for an `artifact` with a given `lineage`.
     lineage_attributes: List[str]
         List of parsed/dynamically-defined attributes specific to an `artifact`
         with a given `lineage`,
@@ -151,16 +151,16 @@ class ParserBase(ABC):
     Methods
     -------
     _find_name() -> None
-        Parses and sets the unique name based on `lineage` and `group`.
+        Parse and sets the unique name based on `lineage` and `group`.
     _set_parents() -> None
-        Sets pattern names for each `lineage` based on `_genealogy`.
+        Set pattern names for each `lineage` based on `_genealogy`.
     _initiate_attributes() -> None
-        Defines and initializes subclass-specific attributes. (Abstract method)
+        Define and initializes subclass-specific attributes. (Abstract method)
     _parse_name() -> None
-        Parses lineage-specific attributes based on the filename.
+        Parse lineage-specific attributes based on the filename.
         (Abstract method)
     _bulk_attributes() -> None
-        Computes physical attributes for the current lineage based on primary
+        Compute physical attributes for the current lineage based on primary
         attributes. (Abstract method)
     """
     _lineages: ClassVar[List[LineageT]] = \
@@ -204,10 +204,10 @@ class ParserBase(ABC):
 
     def __str__(self) -> str:
         """
-        Provides a formatted summary of the parser instance.
+        Provide a formatted summary of the parser instance.
         """
         observation = (
-            f"Arifact:\n"
+            f"Artifact:\n"
             f"    Name: '{self.filename}',\n"
             f"    Geometry: '{self._geometry}',\n"
             f"    Group: '{self._group}',\n"
@@ -245,7 +245,7 @@ class ParserBase(ABC):
     @property
     def topology(self) -> TopologyT:
         """
-        Defines the polymer topology for the parser subclass.
+        Define the polymer topology for the parser subclass.
         """
         if self._topology is None:
             raise AttributeError("'_topology' has not been initialized.")
@@ -278,7 +278,7 @@ class ParserBase(ABC):
     @property
     def filename(self) -> str:
         """
-        Returns the filename, either extracted from the path or the name
+        Return the filename, either extracted from the path or the name
         itself.
         """
         return self._filename
@@ -286,56 +286,56 @@ class ParserBase(ABC):
     @property
     def filepath(self) -> str:
         """
-        Returns the full filepath or 'N/A' if not a valid path.
+        Return the full filepath or 'N/A' if not a valid path.
         """
         return self._filepath
 
     @property
     def group(self) -> GroupT:
         """
-        Returns the current group.
+        Return the current group.
         """
         return self._group
 
     @property
     def lineage(self) -> LineageT:
         """
-        Returns the current lineage.
+        Return the current lineage.
         """
         return self._lineage
 
     @property
     def name(self) -> str:
         """
-        Returns the unique name parsed from the filename.
+        Return the unique name parsed from the filename.
         """
         return self._name
 
     @property
     def project_name(self) -> str:
         """
-        Returns the project (parser class) name,
+        Return the project (parser class) name,
         """
         return self._project_name
 
     @property
     def attributes(self) -> List[str]:
         """
-        Returns lineage-specific andp project attributes for an artifact.
+        Return lineage-specific andp project attributes for an artifact.
         """
         return self._attributes
 
     @property
     def lineage_genealogy(self) -> List[LineageT]:
         """
-        Returns the parents of a given `lineage`.
+        Return the parents of a given `lineage`.
         """
         return self._lineage_genealogy
 
     @property
     def lineage_attributes(self) -> List[str]:
         """
-        Returns lineage-specific attributes for an artifact with a given
+        Return lineage-specific attributes for an artifact with a given
         `lineage`.
         """
         return self._lineage_attributes
@@ -343,14 +343,14 @@ class ParserBase(ABC):
     @property
     def physical_attributes(self) -> List[str]:
         """
-        Returns project-level attributes for an artifact with a given
+        Return project-level attributes for an artifact with a given
         `lineage`.
         """
         return self._physical_attributes
 
     def _find_name(self) -> None:
         """
-        Parses and sets the unique `lineage_name` from the filename
+        Parse and set the unique `lineage_name` from the filename
         based on the `lineage` and `group`.
 
         Notes
@@ -369,13 +369,13 @@ class ParserBase(ABC):
     @abstractmethod
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes. Lineage attributes are
+        Define and initiate the project attributes. Lineage attributes are
         set dynamically via `_parse_name` method.
         """
 
     def _set_parents(self) -> None:
         """
-        Sets parent lineage names for each lineage type, following the
+        Set parent lineage names for each lineage type, following the
         hierarchy defined in `_genealogy`.
 
         Notes
@@ -399,7 +399,7 @@ class ParserBase(ABC):
     @abstractmethod
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -412,13 +412,13 @@ class ParserBase(ABC):
     @abstractmethod
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
 
 
 class TwoMonDepCub(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *TwoMonDep* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -435,11 +435,11 @@ class TwoMonDepCub(ParserBase):
     - `space`: nm#am#ac#
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -578,7 +578,7 @@ class TwoMonDepCub(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -592,7 +592,7 @@ class TwoMonDepCub(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -618,7 +618,7 @@ class TwoMonDepCub(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cube(
             getattr(self, 'nmon'),
@@ -644,7 +644,7 @@ class TwoMonDepCub(ParserBase):
 
 class SumRuleCyl(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *SumRuleCyl* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -806,7 +806,7 @@ class SumRuleCyl(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -821,7 +821,7 @@ class SumRuleCyl(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -851,7 +851,7 @@ class SumRuleCyl(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cylinder(
             getattr(self, 'nmon'),
@@ -881,7 +881,7 @@ class SumRuleCyl(ParserBase):
 
 class SumRuleCubHeteroRing(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *SumRuleCubHeteroRing* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -1064,7 +1064,7 @@ class SumRuleCubHeteroRing(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -1085,7 +1085,7 @@ class SumRuleCubHeteroRing(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -1111,7 +1111,7 @@ class SumRuleCubHeteroRing(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cube(
             getattr(self, 'nmon_small'),
@@ -1151,7 +1151,7 @@ class SumRuleCubHeteroRing(ParserBase):
 
 class SumRuleCubHeteroLinear(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *SumRuleCubHeteroRing* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -1334,7 +1334,7 @@ class SumRuleCubHeteroLinear(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -1355,7 +1355,7 @@ class SumRuleCubHeteroLinear(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -1381,7 +1381,7 @@ class SumRuleCubHeteroLinear(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cube(
             getattr(self, 'nmon_small'),
@@ -1421,7 +1421,7 @@ class SumRuleCubHeteroLinear(ParserBase):
 
 class TransFociCyl(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *TransFociCyl* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -1624,7 +1624,7 @@ class TransFociCyl(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -1645,7 +1645,7 @@ class TransFociCyl(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -1676,7 +1676,7 @@ class TransFociCyl(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cylinder(
             getattr(self, 'nmon_small'),
@@ -1722,7 +1722,7 @@ class TransFociCyl(ParserBase):
 
 class TransFociCub(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *TransFociCub* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -1905,7 +1905,7 @@ class TransFociCub(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -1926,7 +1926,7 @@ class TransFociCub(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -1952,7 +1952,7 @@ class TransFociCub(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m_small = number_density_cube(
             getattr(self, 'nmon_small'),
@@ -1992,7 +1992,7 @@ class TransFociCub(ParserBase):
 
 class HnsCub(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *HnsCub* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -2163,7 +2163,7 @@ class HnsCub(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -2186,7 +2186,7 @@ class HnsCub(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -2212,7 +2212,7 @@ class HnsCub(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cube(
             getattr(self, 'nmon'),
@@ -2248,7 +2248,7 @@ class HnsCub(ParserBase):
 
 class HnsCyl(ParserBase):
     """
-    Extracts structured information about an artifact from its name in the
+    Extract structured information about an artifact from its name in the
     *HnsCyl* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
@@ -2431,7 +2431,7 @@ class HnsCyl(ParserBase):
 
     def _initiate_attributes(self) -> None:
         """
-        Defines and initiates the project attributes.
+        Define and initiates the project attributes.
 
         Notes
         -----
@@ -2454,7 +2454,7 @@ class HnsCyl(ParserBase):
 
     def _parse_name(self) -> None:
         """
-        Parses lineage attributes from the `name` attribute, assigning them
+        Parse lineage attributes from the `name` attribute, assigning them
         dynamically as class attributes.
 
         Notes
@@ -2484,7 +2484,7 @@ class HnsCyl(ParserBase):
 
     def _dependant_attributes(self) -> None:
         """
-        Calculates system attributes based on parsed values.
+        Calculate system attributes based on parsed values.
         """
         self.rho_bulk_m = number_density_cylinder(
             getattr(self, 'nmon'),
