@@ -3,24 +3,25 @@ Cluster analysis --- :mod:`polyphys.analyze.clusters`
 =====================================================
 
 
-A submodule to detect and analyze particle clusters in a given system. It is
-worth noting there is a difference analyzing particle clusters and
-trajectory (or ensemble) clusters.
+A submodule to detect and analyze particle clusters in a given system.
 
 Functions
 ---------
 
-
+Notes
+-----
+Many of functions in this sub-module are limited to a specific need in a
+specific project.
 """
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Union, Callable
 from itertools import combinations
-from collections import defaultdict
 import numpy as np
 import pandas as pd
 from ..manage.parser import (TransFociCub, TransFociCyl,
                              SumRuleCubHeteroLinear,
                              SumRuleCubHeteroRing)
 from ..manage.typer import TopologyT
+from ..manage.utilizer import invalid_keyword
 from .contacts import generate_contact_matrix
 
 
@@ -139,67 +140,6 @@ def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
     clusters = np.asarray(np.round(clusters_row), dtype=int)
 
     # Validate eigenvalues for physical consistency
-    if np.any(clusters < 0):
-        raise ValueError("A cluster with size smaller than 0 found!")
-
-    # Count occurrences of each cluster size
-    cluster_sizes, cluster_counts = np.unique(clusters, return_counts=True)
-    cluster_list = np.zeros(n_atoms + 1, dtype=int)
-    np.put(cluster_list, cluster_sizes, cluster_counts)
-
-    return cluster_list
-
-
-def count_foci_clusters_old(contacts: np.ndarray) -> np.ndarray:
-    """
-    Infer the number and size of clusters from a contact matrix.
-
-    This function calculates eigenvalues of the contact matrix, where the
-    number of non-zero eigenvalues corresponds to the number of clusters. The
-    values of the eigenvalues represent the sizes of clusters.
-
-    Parameters
-    ----------
-    contacts : np.ndarray
-        A binary square matrix representing contacts between atoms. Diagonal
-        elements must be 1.
-
-    Returns
-    -------
-    cluster_list: np.ndarray, shape (cluster_size-1,)
-        A 1D array where each index represents :math:`cluster_size - 1`, and
-        the values are the frequency of clusters of that size.
-    Raises
-    ------
-    ValueError
-        If the input matrix contains invalid eigenvalues.
-
-    Notes
-    -----
-    An eigenvalue of 0 does not have a direct physical meaning; however, the
-    frequency of this eigenvalue corresponds to the total number of repeated
-    clusters of size 2 or larger. In terms of linear algebra, this is
-    equivalent to the number of dependent columns in the contact matrix.
-
-    Examples
-    --------
-    >>> contacts = np.array([[1, 1, 0], [1, 1, 1], [0, 1, 1]])
-    >>> count_foci_clusters_old(contacts)
-    array([1, 1, 1])
-
-    References
-    ----------
-    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
-    calculations of cluster statistics in continuum models of composite
-    morphology. The Journal of Chemical Physics, 89(1), 668-676.
-    https://doi.org/10.1063/1.454720
-    """
-    n_atoms, _ = contacts.shape
-
-    # Compute eigenvalues and round for numerical stability
-    clusters = np.linalg.eigvalsh(contacts)
-
-    # Validate eigenvalues
     if np.any(clusters < 0):
         raise ValueError("A cluster with size smaller than 0 found!")
 
@@ -388,7 +328,7 @@ def foci_histogram(
 
     # Compute histograms for all pairs
     hists = [
-        np.histogram(data, bins=max_bins, bin_range=max_range)
+        np.histogram(data, bins=max_bins, range=max_range)[0]
         for data in pairs_dist
     ]
     hist_tags = [f"pairDistHistFoci-{tag}" for tag in tags]
@@ -396,10 +336,7 @@ def foci_histogram(
     pair_hists['bin_center'] = bin_centers
 
     # Compute RDFs for all pairs
-    rdfs = [
-        foci_rdf(hist, bin_centers, binsize)
-        for hist in hists
-    ]
+    rdfs = [foci_rdf(hist, bin_centers, binsize) for hist in hists]
     rdf_tags = [f"pairDistRdfFoci-{tag}" for tag in tags]
     pair_rdfs = dict(zip(rdf_tags, rdfs))
     pair_rdfs['bin_center'] = bin_centers
@@ -623,7 +560,7 @@ def genomic_distance(
             f"Invalid topology: '{topology}'. Must be 'linear' or 'ring'.")
 
     # Define topology-specific distance calculation
-    topology_functions = {
+    topology_functions: Dict[TopologyT, Callable] = {
         'linear': lambda a, b: np.abs(a - b),
         'ring': lambda a, b, n: np.minimum(np.abs(a - b), n - np.abs(a - b)),
     }
@@ -632,183 +569,137 @@ def genomic_distance(
     return distances
 
 
-def hns_genomic_distance(
-    contact_nonzeros: np.ndarray,
-    topology: TopologyT,
-    n_mons: int
-) -> np.ndarray:
-    """
-    Calculate genomic distances for monomer pairs bridged by an H-NS protein.
-
-    This function computes the genomic distances for monomer pairs that are
-    connected via an H-NS protein in a polymer system. The distances are
-    determined based on the polymer's topology ('linear' or 'ring').
-
-    Parameters
-    ----------
-    contact_nonzeros : np.ndarray
-        Array of shape `(n_pairs, 2)` containing indices of non-zero elements
-        in the monomer-monomer contact matrix.
-    topology : TopologyT
-        Topology of the polymer ('linear' or 'ring').
-    n_mons : int
-        Total number of monomers in the polymer.
-
-    Returns
-    -------
-    np.ndarray
-        A 2D array with shape `(n_pairs, 3)`:
-        - Column 0: Index of the first monomer in the pair.
-        - Column 1: Index of the second monomer in the pair.
-        - Column 2: Genomic distance between the two monomers.
-
-    Raises
-    ------
-    ValueError
-        If `topology` is not 'linear' or 'ring'.
-
-    Examples
-    --------
-    >>> contact_nonzeros = np.array([[0, 2], [1, 3], [2, 4]])
-    >>> hns_genomic_distance(contact_nonzeros, topology='linear', n_mons=5)
-    array([[0, 2, 2],
-           [1, 3, 2],
-           [2, 4, 2]])
-    >>> hns_genomic_distance(contact_nonzeros, topology='ring', n_mons=5)
-    array([[0, 2, 2],
-           [1, 3, 2],
-           [2, 4, 2]])
-    """
-    # Calculate genomic distances for the provided pairs
-    genomic_distances = genomic_distance(
-        contact_nonzeros[:, 0],
-        contact_nonzeros[:, 1],
-        topology,
-        n_mons
-    )
-
-    # Combine pair indices with genomic distances
-    contact_m_m_gen_dist = \
-        np.column_stack((contact_nonzeros, genomic_distances))
-
-    return contact_m_m_gen_dist
-
-
 def hns_binding(
     direct_contact: np.ndarray,
-    topology: str,
+    topology: TopologyT,
     cis_threshold: int = 4,
-    binding_stats: Optional[Dict[str, List[int]]] = None,
-    loop_length_hist: Optional[np.ndarray] = None
-) -> Tuple[Dict[str, List[int]], np.ndarray]:
+) -> Tuple[Dict[str, int], np.ndarray]:
     """
-    Calculate the binding statistics of H-NS proteins to monomers.
+    Calculate the binding statistics of H-NS proteins in a polymer system.
 
-    This function evaluates the binding behavior of H-NS proteins in a polymer
-    system. Each H-NS protein has a core and two patches, with patches able to
-    bind monomers. The function calculates statistics for free, bridged, and
-    dangled H-NS proteins and determines genomic distances for binding.
+    This function evaluates the binding behavior of H-NS proteins, which
+    consist of a core and two patches capable of binding monomers in the
+    polymer. It computes statistics for free, bridged, and dangling H-NS
+    proteins, and determines genomic distances between monomers bridged by H-NS
+    cores.
+
+    The genomic distance is classified as 'cis' or 'trans' based on the
+    `cis_threshold`, and a histogram of genomic distances (loop sizes) is
+    updated accordingly.
 
     Parameters
     ----------
     direct_contact : np.ndarray
-        Binary matrix of shape `(n_mon, n_hpatch)`, where each element `(i, j)`
-        is 1 if monomer `i` is in contact with patch `j`, and 0 otherwise.
-    topology : str
-        Topology of the polymer ('linear' or 'ring').
+        A binary matrix of shape `(n_mon, n_hpatch)` where:
+        - `n_mon` is the number of monomers.
+        - `n_hpatch` is the number of H-NS patches (twice the number of H-NS cores).
+        Each element `(i, j)` is `1` if monomer `i` is in contact with patch
+        `j`, and `0` otherwise.
+
+    topology : TopologyT
+        The topology of the polymer, either 'linear' or 'ring'.
+
     cis_threshold : int, optional
-        Genomic distance threshold (in bonds) below which an H-NS binding is
-        classified as cis-binding. Default is 4.
-    binding_stats : dict, optional
-        A dictionary to store binding statistics. Keys include:
-        - 'n_m_hpatch_bound': Number of monomer-patch contacts.
-        - 'n_hpatch_engaged': Number of engaged patches.
-        - 'n_hpatch_free': Number of free patches.
-        - 'n_hcore_free': Number of free H-NS cores.
-        - 'n_hcore_bridge': Number of bridging H-NS cores.
-        - 'n_hcore_dangle': Number of dangling H-NS cores.
-        If None, a new dictionary is initialized.
-    loop_length_hist : np.ndarray, optional
-        Histogram of loop sizes (genomic distances). If None, a new array is
-        initialized based on `topology`.
+        The genomic distance threshold (in bonds) below which an H-NS binding
+        is classified as 'cis'. Default is `4`.
 
     Returns
     -------
-    Tuple[Dict[str, List[int]], np.ndarray]
-        - Updated `binding_stats` dictionary with binding data.
-        - Updated `loop_length_hist` array containing the histogram of loop
-          sizes.
+    Tuple[Dict[str, int], np.ndarray]
+        - `stats`: A dictionary containing various binding statistics:
+          - 'nBoundHnsPatch': Total number of monomer-patch contacts.
+          - 'nEngagedHnsPatch': Total number of engaged patches.
+          - 'nFreeHnsPatch': Total number of free patches.
+          - 'nFreeHnsCore': Total number of free H-NS cores.
+          - 'nBridgeHnsCore': Total number of bridging H-NS cores.
+          - 'nDangleHnsCore': Total number of dangling H-NS cores.
+          - 'nCisHnsCore': Total number of cis-binding H-NS cores.
+          - 'nTransHnsCore': Total number of trans-binding H-NS cores.
+
+        - `hist`: A 1D array representing a histogram of genomic distances
+          (loop sizes).
 
     Raises
     ------
     ValueError
-        If the topology is invalid ('linear' or 'ring' are the only accepted
-        values).
+        If the provided topology is invalid ('linear' or 'ring' are the only
+        valid options).
 
     Notes
     -----
-    - The function handles rare cases where patches are in contact with
-      multiple monomers by using `enforce_single_patch_dir_contact`.
-    - Genomic distances are calculated using the H-NS core's bridging matrix.
-    - Loop sizes exceeding the `cis_threshold` are classified as trans-binding.
-
-    Examples
-    --------
-    >>> direct_contact = np.array([[1, 0, 1], [0, 1, 0], [1, 0, 0]])
-    >>> topology = 'linear'
-    >>> binding_stats, loop_hist = hns_binding(direct_contact, topology)
+    - An H-NS core is considered free if neither of its two patches is bound.
+    - A core is considered bridging if both patches are bound to different
+      monomers.
+    - A core is considered dangling if only one of its patches is bound.
+    - Genomic distances are computed between monomer pairs bridged by H-NS cores.
+    - For a 'linear' topology, the genomic distance is the absolute difference
+      between monomer indices.
+    - For a 'ring' topology, the genomic distance is the minimum of the direct
+      distance and the distance around the circle.
     """
-    # Initialize results if not provided
-    if binding_stats is None:
-        binding_stats = defaultdict(list)
-    if loop_length_hist is None:
-        max_gen_distance = {'linear': direct_contact.shape[0], 'ring': direct_contact.shape[0] // 2 + 1}
-        loop_length_hist = np.zeros(max_gen_distance[topology], dtype=int)
-
+    invalid_keyword(topology, ['linear', 'ring'])
     n_mon, n_hpatch = direct_contact.shape
     n_hcore = n_hpatch // 2
 
-    if topology not in ('linear', 'ring'):
-        raise ValueError(f"Invalid topology: '{topology}'. Must be 'linear' or 'ring'.")
+    # Initialize stats and histogram
+    stats: Dict[str, int] = {
+        'nBoundTHnsPatch': 0,
+        'nEngagedHnsPatch': 0,
+        'nFreeHnsPatch': 0,
+        'nFreeHnsCore': 0,
+        'nBridgeHnsCore': 0,
+        'nDangleHnsCore': 0,
+        'nCisHnsCore': 0,
+        'nTransHnsCore': 0,
+    }
+    max_gen_distance = {'linear': n_mon, 'ring': n_mon // 2 + 1}
+    hist = np.zeros(max_gen_distance[topology], dtype=int)
 
-    # Compute basic binding statistics
-    binding_stats['n_m_hpatch_bound'].append(np.sum(direct_contact))
+    # Compute patch-level and core-level stats
     d_cont_per_hpatch = np.sum(direct_contact, axis=0)
-    binding_stats['n_hpatch_engaged'].append(np.count_nonzero(d_cont_per_hpatch))
-    binding_stats['n_hpatch_free'].append(n_hpatch - binding_stats['n_hpatch_engaged'][-1])
+    stats['nBoundHnsPatch'] = np.sum(direct_contact)
+    stats['nEngagedHnsPatch'] = np.count_nonzero(d_cont_per_hpatch)
+    stats['nFreeHnsPatch'] = n_hpatch - stats['nEngagedHnsPatch']
 
-    # Compute core-level binding statistics
-    binding_stats['n_hcore_free'].append(np.sum(
-        (d_cont_per_hpatch[0::2] == 0) & (d_cont_per_hpatch[1::2] == 0)
-    ))
-    binding_stats['n_hcore_bridge'].append(np.sum(
-        (d_cont_per_hpatch[0::2] > 0) & (d_cont_per_hpatch[1::2] > 0)
-    ))
-    binding_stats['n_hcore_dangle'].append(
-        n_hcore - binding_stats['n_hcore_free'][-1] - binding_stats['n_hcore_bridge'][-1]
-    )
+    free_cores = \
+        np.sum((d_cont_per_hpatch[0::2] == 0) & (d_cont_per_hpatch[1::2] == 0))
+    bridged_cores = \
+        np.sum((d_cont_per_hpatch[0::2] > 0) & (d_cont_per_hpatch[1::2] > 0))
+    dangling_cores = n_hcore - free_cores - bridged_cores
 
-    # Enforce single monomer-patch contact and compute monomer-monomer binding
+    stats['nFreeHnsCore'] = free_cores
+    stats['nBridgeHnsCore'] = bridged_cores
+    stats['nDangleHnsCore'] = dangling_cores
+
+    # Enforce single-patch binding and calculate genomic distances
     single_patch_dir_contact = enforce_single_patch_dir_contact(direct_contact)
     cont_m_hpatch = generate_contact_matrix(single_patch_dir_contact)
     cont_m_hcore = np.logical_or(cont_m_hpatch[:, ::2], cont_m_hpatch[:, 1::2])
     cont_m_m = np.matmul(cont_m_hcore, cont_m_hcore.T)
-    cont_m_m_triu = np.triu(cont_m_m, 1)
+    cont_m_m_nonzeros = np.array(np.where(np.triu(cont_m_m, 1) > 0)).T
+    # Calculate genomic distances for monomer pairs bridged by an H-NS protein:
+    genomic_distances = genomic_distance(
+        cont_m_m_nonzeros[:, 0],
+        cont_m_m_nonzeros[:, 1],
+        topology,
+        n_mon
+    )
+    # A 2D array with shape `(n_pairs, 3)`: Column 0 is the index of the first
+    # monomer in the pair. Column 1 is the index of the second monomer in the
+    # pair. And, column 3 is the genomic distance between the two monomers:
+    m_m_gen_dist = np.column_stack((cont_m_m_nonzeros, genomic_distances))
 
-    # Extract non-zero indices and calculate genomic distances
-    cont_m_m_nonzeros = np.array(np.where(cont_m_m_triu > 0)).T
-    m_m_gen_dist = hns_genomic_distance(cont_m_m_nonzeros, topology, n_mon)
+    # Classify bindings and update histogram
+    cis_bindings = \
+        np.count_nonzero(
+            (m_m_gen_dist[:, 2] > 0) & (m_m_gen_dist[:, 2] <= cis_threshold)
+            )
+    trans_bindings = np.count_nonzero(m_m_gen_dist[:, 2] > cis_threshold)
+    stats['nCisHnsCore'] = cis_bindings
+    stats['nTransHnsCore'] = trans_bindings
+    np.add.at(hist, m_m_gen_dist[:, 2], 1)
 
-    # Classify bindings and update loop length histogram
-    binding_stats['n_hcore_cis'].append(np.count_nonzero(
-        (m_m_gen_dist[:, 2] > 0) & (m_m_gen_dist[:, 2] <= cis_threshold)
-    ))
-    binding_stats['n_hcore_trans'].append(np.count_nonzero(
-        m_m_gen_dist[:, 2] > cis_threshold
-    ))
-    np.add.at(loop_length_hist, m_m_gen_dist[:, 2], 1)
-
-    return binding_stats, loop_length_hist
+    return stats, hist
 
 
 def generate_mon_bind_direct(
