@@ -1,17 +1,26 @@
 """
-Distance computations --- :mod:`polyphys.analyze.distances`
+Distance Computations --- :mod:`polyphys.analyze.distances`
 ===========================================================
 
+The :mod:`polyphys.analyze.distances` module provides functions for calculating
+pairwise distances from molecular coordinates.
+Functions
+=========
+.. autofunction:: self_dist_array
+.. autofunction:: self_dist_array_opt
 
-Functions for calculate arrays of distances or angles from coordinate
-arrays. Distance functions accept a NumPy :class:`np.ndarray`.
+Notes
+=====
+- Distance calculations can account for periodic boundary conditions, ensuring
+  correct measurements in periodic simulation boxes.
+- Optimized versions of functions are available for improved performance in
+  certain dimensions and scenarios.
 
-Linear algebra
---------------
-
-.. autofunction:: is_symmetric
-.. autofunction:: is_positive_semi_definite
-
+References
+==========
+- Albanie, S. (2019). Euclidean Distance Matrix Trick. In Advances in Computer
+  Vision. Lecture Notes in Computer Science, vol 11131. Springer, Cham.
+  https://doi.org/10.1007/978-3-030-01446-4_2
 """
 from typing import Optional, Dict
 import numpy as np
