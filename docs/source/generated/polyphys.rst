@@ -1,6 +1,0 @@
-﻿polyphys
-========
-
-.. automodule:: polyphys
-
-   
