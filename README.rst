@@ -2,8 +2,6 @@
 polyphys
 ========
 
-
-A package in Python for polymer physics.
-
+A Python package for managing polymer physics and molecular dynamics projects, focusing on computational modeling of bacterial chromosome organization
 
 * Free software: MIT license
