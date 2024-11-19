@@ -1,17 +1,41 @@
 """
-Cluster analysis --- :mod:`polyphys.analyze.clusters`
-=====================================================
+==========================================================
+Cluster Analysis --- :mod:`polyphys.analyze.clusters`
+==========================================================
 
-
-A submodule to detect and analyze particle clusters in a given system.
+The :mod:`polyphys.analyze.clusters` module provides a collection of functions
+for analyzing and detecting particle clusters in polymer systems. These
+functions are tailored to specific analysis needs, particularly for H-NS
+proteins and other binding interactions in polymer simulations.
 
 Functions
----------
+=========
+
+.. autofunction:: count_foci_bonds
+.. autofunction:: count_foci_clusters
+.. autofunction:: foci_info
+.. autofunction:: foci_rdf
+.. autofunction:: foci_histogram
+.. autofunction:: whole_dist_mat_foci
+.. autofunction:: genomic_distance
+.. autofunction:: hns_binding
+.. autofunction:: enforce_single_patch_dir_contact
+.. autofunction:: generate_mon_bind_direct
+.. autofunction:: split_binder_matrix
+.. autofunction:: find_binder_clusters_need_attention
+.. autofunction:: find_binder_clusters_need_attention_old
 
 Notes
------
-Many of functions in this sub-module are limited to a specific need in a
-specific project.
+=====
+Many of the functions in this submodule are highly specific to certain analysis
+tasks within the broader polymer physics simulations.
+
+References
+==========
+- Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
+  calculations of cluster statistics in continuum models of composite
+  morphology. The Journal of Chemical Physics, 89(1), 668-676.
+  https://doi.org/10.1063/1.454720
 """
 from typing import Dict, List, Tuple, Union, Callable
 from itertools import combinations
@@ -346,7 +370,7 @@ def foci_histogram(
 
 def whole_dist_mat_foci(
     whole_path: str,
-    whole_info: Union[TransFociCub, TransFociCyl, 
+    whole_info: Union[TransFociCub, TransFociCyl,
                       SumRuleCubHeteroRing, SumRuleCubHeteroLinear]
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
@@ -592,9 +616,10 @@ def hns_binding(
     direct_contact : np.ndarray
         A binary matrix of shape `(n_mon, n_hpatch)` where:
         - `n_mon` is the number of monomers.
-        - `n_hpatch` is the number of H-NS patches (twice the number of H-NS cores).
-        Each element `(i, j)` is `1` if monomer `i` is in contact with patch
-        `j`, and `0` otherwise.
+        - `n_hpatch` is the number of H-NS patches (twice the number of H-NS
+          cores).
+        - Each element `(i, j)` is `1` if monomer `i` is in contact with patch
+          `j`, and `0` otherwise.
 
     topology : TopologyT
         The topology of the polymer, either 'linear' or 'ring'.
@@ -631,7 +656,8 @@ def hns_binding(
     - A core is considered bridging if both patches are bound to different
       monomers.
     - A core is considered dangling if only one of its patches is bound.
-    - Genomic distances are computed between monomer pairs bridged by H-NS cores.
+    - Genomic distances are computed between monomer pairs bridged by H-NS
+      cores.
     - For a 'linear' topology, the genomic distance is the absolute difference
       between monomer indices.
     - For a 'ring' topology, the genomic distance is the minimum of the direct
@@ -706,31 +732,43 @@ def generate_mon_bind_direct(
     mon_patch_dir: np.ndarray,
     patch_per_binder: int
 ) -> np.ndarray:
-    """Creates monomer-binder direct contact matrix from monomer-patch direct
+    """
+    Create a monomer-binder direct contact matrix from a monomer-patch direct
     contact matrix.
 
     Parameters
     ----------
-    mon_patch_direcy : np.ndarray
-        Monomer-patch direct contact matrix of size n_monomer *
-        (patch_per_binder)*n_binder
+    mon_patch_dir : np.ndarray
+        Binary matrix of shape `(n_monomer, patch_per_binder * n_binder)`,
+        where each element `(i, j)` is `1` if monomer `i` is in contact
+        with patch `j`, and `0` otherwise.
+    patch_per_binder : int
+        Number of patches per binder.
 
     Returns
     -------
     np.ndarray
-        Monomer-binder direct contact matrix of size n_monomer * n_binder
+        Binary matrix of shape `(n_monomer, n_binder)` where each element
+        `(i, j)` is `1` if monomer `i` is in contact with binder `j`, and `0`
+        otherwise.
+
+    Raises
+    ------
+    ValueError
+        If the input matrix dimensions are invalid or not a multiple of
+        `patch_per_binder`.
     """
-    if len(mon_patch_dir.shape) != 2:
-        raise ValueError(
-            "The monomer-patch direct contact matrix is not a matrix!")
+    if mon_patch_dir.ndim != 2:
+        raise ValueError("Input monomer-patch matrix must be 2D.")
     if mon_patch_dir.shape[1] % patch_per_binder != 0:
         raise ValueError(
-            "The number of columns is nut a multiplier of"
-            f"'n={patch_per_binder}'"
-            )
+            f"Number of columns ({mon_patch_dir.shape[1]}) is not a multiple"
+            f" of patch_per_binder ({patch_per_binder})."
+        )
 
+    # Reshape and apply any operation to determine binder contact
     n_bind = mon_patch_dir.shape[1] // patch_per_binder
-    mon_bind_dir = np.zeros((mon_patch_dir.shape[0], n_bind), dtype=np.int_)
+    mon_bind_dir = np.zeros((mon_patch_dir.shape[0], n_bind), dtype=np.integer)
 
     for i in range(n_bind):
         start_col = patch_per_binder * i
@@ -742,90 +780,162 @@ def generate_mon_bind_direct(
     return mon_bind_dir
 
 
-def split_binder_matrix(M_ij: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """Splits the Monomer-Binder direct contact matrix into two matrices based
+def split_binder_matrix(m_ij: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Split the monomer-binder direct contact matrix into two matrices based
     on whether a binder is a bridger or a dangler.
 
     Parameters
     ----------
-    M_ij (numpy.ndarray):
-        The monomer-binder direct contact matrix, where each row represents a
-        monomer and each column represents a binder. The matrix is binary,
-        with '1' indicating direct contact.
+    m_ij : np.ndarray
+        Binary matrix of shape `(n_monomer, n_binder)` where each element
+        `(i, j)` is `1` if monomer `i` is in contact with binder `j`, and `0`
+        otherwise.
 
     Returns
     -------
-    Tuple of two numpy.ndarrays:
-        D_ij: The matrix representing dangling binders, where each binder is
-        attached to the polymer chain through only one patch.
-        B_ij: The matrix representing bridging binders, where each binder
-        connects two monomers using both patches.
+    Tuple[np.ndarray, np.ndarray]
+        - `d_ij`: Matrix representing dangling binders (sum = 1 per column).
+        - `b_ij`: Matrix representing bridging binders (sum = 2 per column).
 
-    The function calculates the sum of each column in M_ij to classify each
-    binder as dangling (sum = 1) or bridging (sum = 2) and populates the D_ij
-    and B_ij matrices accordingly.
+    Raises
+    ------
+    ValueError
+        If the input matrix is not binary.
     """
-    n_monomers, n_binders = M_ij.shape
-    D_ij = np.zeros_like(M_ij)  # Dangling binders matrix
-    B_ij = np.zeros_like(M_ij)  # Bridging binders matrix
+    if not np.array_equal(m_ij, m_ij.astype(bool)):
+        raise ValueError("Input matrix must be binary.")
 
-    # Calculate the sum of each column to classify binders
-    column_sums = np.sum(M_ij, axis=0)
+    column_sums = np.sum(m_ij, axis=0)
+    danglers = column_sums == 1
+    bridgers = column_sums == 2
 
-    # Populate the D_ij and B_ij matrices
-    for binder in range(n_binders):
-        if column_sums[binder] == 1:
-            D_ij[:, binder] = M_ij[:, binder]
-        elif column_sums[binder] == 2:
-            B_ij[:, binder] = M_ij[:, binder]
+    d_ij = m_ij * danglers
+    b_ij = m_ij * bridgers
 
-    return D_ij, B_ij
+    return d_ij, b_ij
 
 
-def find_binder_clusters_need_attention(M_ij: np.ndarray, topology) -> np.ndarray:
-    """Identifies clusters of binders in a polymer system based on their
+def find_binder_clusters_need_attention(
+    m_ij: np.ndarray,
+    topology: TopologyT
+) -> np.ndarray:
+    """
+    Identify clusters of binders in a polymer system based on their
     binding to the same or adjacent monomers.
 
-    Parameters
-    ----------
-    M_ij (numpy.ndarray)
-        Monomer-binder direct contact matrix, where rows represent monomers and
-        columns represent binders. It is a binary matrix with '1' indicating
-        direct contact.
-
-    Returns:
-    numpy.ndarray:
-        A square binary matrix where each element (i, j) is 1 if binders i and
-        j are part of the same cluster, and 0 otherwise. This matrix is
-        symmetric.
-
-    The function sets all diagonal elements of the output matrix to 1,
+    This function sets all diagonal elements of the output matrix to 1,
     indicating each binder forms a cluster with itself. It then iterates over
     all pairs of binders, checking for direct connections to the same monomer
     or connections via adjacent monomers.
+
+    Parameters
+    ----------
+    m_ij : np.ndarray
+        Binary matrix of shape `(n_monomer, n_binder)` where each element
+        `(i, j)` is `1` if monomer `i` is in contact with binder `j`, and `0`
+        otherwise.
+    topology : TopologyT
+        The topology of the polymer ('linear' or 'ring').
+
+    Returns
+    -------
+    np.ndarray
+        Binary square matrix of shape `(n_binder, n_binder)`. Each element
+        `(i, j)` is `1` if binders `i` and `j` are part of the same cluster,
+        and `0` otherwise.
+
+    Notes
+    -----
+    - Diagonal elements indicate whether a binder is bound (`1`) or unbound
+      (`0`).
+    - Adjacent monomers in a 'ring' topology include the first and last
+      monomers.
     """
-    n_binders = M_ij.shape[1]
-    n_monomers = M_ij.shape[0]
-    B_ij = np.zeros((n_binders, n_binders), dtype=int)
-    print('need attention: see comments')
+    print('This function has not yet tested')
+    _, n_binders = m_ij.shape
+    b_ij = np.zeros((n_binders, n_binders), dtype=int)
+
+    # Diagonal: 1 if the binder is bound to at least one monomer, 0 otherwise
+    b_ij[np.arange(n_binders), np.arange(n_binders)] = \
+        m_ij.any(axis=0).astype(int)
+
+    # Same-monomer clusters
+    binder_pairs = m_ij.T @ m_ij  # Shape: (n_binder, n_binder)
+    b_ij |= binder_pairs > 0
+
+    # Adjacent-monomer clusters (linear topology)
+    adjacent_binders = m_ij[:-1] | m_ij[1:]
+    adjacent_pairs = adjacent_binders.T @ adjacent_binders
+    b_ij |= adjacent_pairs > 0
+
+    # Wrap-around clusters (ring topology)
+    if topology == 'ring':
+        wrap_binders = m_ij[0] | m_ij[-1]
+        wrap_pairs = np.outer(wrap_binders, wrap_binders)
+        b_ij |= wrap_pairs
+
+    return b_ij
+
+
+def find_binder_clusters_need_attention_old(
+    m_ij: np.ndarray,
+    topology: TopologyT
+) -> np.ndarray:
+    """
+    Identify clusters of binders in a polymer system based on their
+    binding to the same or adjacent monomers.
+
+    This function sets all diagonal elements of the output matrix to 1,
+    indicating each binder forms a cluster with itself. It then iterates over
+    all pairs of binders, checking for direct connections to the same monomer
+    or connections via adjacent monomers.
+
+    Parameters
+    ----------
+    m_ij : np.ndarray
+        Binary matrix of shape `(n_monomer, n_binder)` where each element
+        `(i, j)` is `1` if monomer `i` is in contact with binder `j`, and `0`
+        otherwise.
+    topology : TopologyT
+        The topology of the polymer ('linear' or 'ring').
+
+    Returns
+    -------
+    np.ndarray
+        Binary square matrix of shape `(n_binder, n_binder)`. Each element
+        `(i, j)` is `1` if binders `i` and `j` are part of the same cluster,
+        and `0` otherwise.
+
+    Notes
+    -----
+    - Diagonal elements indicate whether a binder is bound (`1`) or unbound
+      (`0`).
+    - Adjacent monomers in a 'ring' topology include the first and last
+      monomers.
+    """
+    print('This function has not yet tested')
+    n_binders = m_ij.shape[1]
+    n_monomers = m_ij.shape[0]
+    b_ij = np.zeros((n_binders, n_binders), dtype=int)
     # diagonal elements have meaning here; if it is 0 means unbound hns/binder
     # but if 1 means it bridged two momnomers or dangle from on monomer.
-    np.fill_diagonal(B_ij, 1)
+    np.fill_diagonal(b_ij, 1)
     # Check for binders connected to the same monomer
     for i in range(n_binders):
         for j in range(i + 1, n_binders):
-            if np.any(M_ij[:, i] & M_ij[:, j]):
-                B_ij[i, j] = B_ij[j, i] = 1
+            if np.any(m_ij[:, i] & m_ij[:, j]):
+                b_ij[i, j] = b_ij[j, i] = 1
 
     # Check for binders connected to adjacent monomers
     for monomer in range(n_monomers - 1):
-        adjacent_binders = np.where(M_ij[monomer] | M_ij[monomer + 1])[0]
+        adjacent_binders = np.where(m_ij[monomer] | m_ij[monomer + 1])[0]
         for binder in adjacent_binders:
-            B_ij[binder, adjacent_binders] = 1
+            b_ij[binder, adjacent_binders] = 1
 
     if topology == 'ring':
-        adjacent_binders = np.where(M_ij[0] | M_ij[-1])[0]
+        adjacent_binders = np.where(m_ij[0] | m_ij[-1])[0]
         for binder in adjacent_binders:
-            B_ij[binder, adjacent_binders] = 1
+            b_ij[binder, adjacent_binders] = 1
 
-    return B_ij
+    return b_ij

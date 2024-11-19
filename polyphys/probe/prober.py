@@ -453,7 +453,8 @@ class FociContactDataMixin:
 
 class HnsBindingMixin:
     """
-    Mixin for calculating the binding statistics of H-NS proteins in a polymer system.
+    Mixin for calculating the binding statistics of H-NS proteins in a polymer
+    system.
 
     This mixin enables calculation of H-NS binding behavior, handling
     statistics for free, bridged, and dangling H-NS proteins. It also computes
@@ -463,11 +464,12 @@ class HnsBindingMixin:
     Requirements
     ------------
     - The class using this mixin must define the following attributes:
-        - `_atom_groups`: Dict[str, MDAnalysis.AtomGroup]
+        - `atom_groups`: Dict[str, MDAnalysis.AtomGroup]
             Atom groups for 'Mon' (monomers) and 'Hns' (H-NS proteins).
         - `collectors`: Dict[str, List or np.ndarray]
             Dictionary to store collected data.
-        - `parser`: Instance of a parser providing simulation metadata.
+        - `parser`: ParserTypeInstance
+            Instance of a parser providing simulation metadata.
         - `cis_threshold`: int
             Distance threshold for cis-binding classification.
         - `r_cutoff`: float
@@ -477,6 +479,15 @@ class HnsBindingMixin:
     -------
     _collect_hns_binding(idx: int) -> None
         Collects H-NS binding statistics for a single trajectory frame.
+
+    Notes
+    -----
+    - An H-NS core is considered free if neither of its two patches is bound.
+    - A core is considered bridging if both patches are bound to different
+      monomers.
+    - A core is considered dangling if only one of its patches is bound.
+    - Genomic distances are computed between monomer pairs bridged by H-NS
+      cores.
     """
     
     def _collect_hns_binding(self, idx: int) -> None:
@@ -491,9 +502,12 @@ class HnsBindingMixin:
         Updates
         -------
         Collectors:
-        - `distMatTMonHnsPatch`: Distance matrix between monomers and H-NS patches.
-        - `nBoundTHnsPatch`, `nEngagedTHnsPatch`, `nFreeTHnsPatch`: Patch-level stats.
-        - `nFreeTHnsCore`, `nBridgeTHnsCore`, `nDangleTHnsCore`: Core-level stats.
+        - `distMatTMonHnsPatch`: Distance matrix between monomers and H-NS
+           patches.
+        - `nBoundTHnsPatch`, `nEngagedTHnsPatch`, `nFreeTHnsPatch`: 
+           Patch-level stats.
+        - `nFreeTHnsCore`, `nBridgeTHnsCore`, `nDangleTHnsCore`: Core-level
+           stats.
         - `nCisTHnsCore`, `nTransTHnsCore`: Cis/trans-binding stats.
         - Histogram of genomic distances: Updated with loop sizes.
         """
@@ -553,138 +567,6 @@ class HnsBindingMixin:
             (m_m_gen_dist[:, 2] > 0) & (m_m_gen_dist[:, 2] <= self.cis_threshold)
         )
         trans_bindings = np.count_nonzero(m_m_gen_dist[:, 2] > self.cis_threshold)
-        self.collectors['nCisTHnsCore'][idx] = cis_bindings
-        self.collectors['nTransTHnsCore'][idx] = trans_bindings
-        np.add.at(hist, m_m_gen_dist[:, 2], 1)
-
-
-class HnsBindingMixin:
-    """
-    Calculate the binding statistics of H-NS proteins in a polymer system.
-
-    This function evaluates the binding behavior of H-NS proteins, which
-    consist of a core and two patches capable of binding monomers in the
-    polymer. It computes statistics for free, bridged, and dangling H-NS
-    proteins, and determines genomic distances between monomers bridged by H-NS
-    cores.
-
-    The genomic distance is classified as 'cis' or 'trans' based on the
-    `cis_threshold`, and a histogram of genomic distances (loop sizes) is
-    updated accordingly.
-
-    Parameters
-    ----------
-    direct_contact : np.ndarray
-        A binary matrix of shape `(n_mon, n_hpatch)` where:
-        - `n_mon` is the number of monomers.
-        - `n_hpatch` is the number of H-NS patches (twice the number of H-NS cores).
-        Each element `(i, j)` is `1` if monomer `i` is in contact with patch
-        `j`, and `0` otherwise.
-
-    topology : TopologyT
-        The topology of the polymer, either 'linear' or 'ring'.
-
-    cis_threshold : int, optional
-        The genomic distance threshold (in bonds) below which an H-NS binding
-        is classified as 'cis'. Default is `4`.
-
-    Returns
-    -------
-    Tuple[Dict[str, int], np.ndarray]
-        - `stats`: A dictionary containing various binding statistics:
-          - 'nBoundHnsPatch': Total number of monomer-patch contacts.
-          - 'nEngagedHnsPatch': Total number of engaged patches.
-          - 'nFreeHnsPatch': Total number of free patches.
-          - 'nFreeHnsCore': Total number of free H-NS cores.
-          - 'nBridgeHnsCore': Total number of bridging H-NS cores.
-          - 'nDangleHnsCore': Total number of dangling H-NS cores.
-          - 'nCisHnsCore': Total number of cis-binding H-NS cores.
-          - 'nTransHnsCore': Total number of trans-binding H-NS cores.
-
-        - `hist`: A 1D array representing a histogram of genomic distances
-          (loop sizes).
-
-    Raises
-    ------
-    ValueError
-        If the provided topology is invalid ('linear' or 'ring' are the only
-        valid options).
-
-    Notes
-    -----
-    - An H-NS core is considered free if neither of its two patches is bound.
-    - A core is considered bridging if both patches are bound to different
-      monomers.
-    - A core is considered dangling if only one of its patches is bound.
-    - Genomic distances are computed between monomer pairs bridged by H-NS cores.
-    - For a 'linear' topology, the genomic distance is the absolute difference
-      between monomer indices.
-    - For a 'ring' topology, the genomic distance is the minimum of the direct
-      distance and the distance around the circle.
-    """
-    def _collect_hns_binding(self, idx: int) -> None:
-        pair_dist_mat = mda_dist.distance_array(
-            self._atom_groups['Mon'], 
-            self._atom_groups['Hns']
-        )
-        self.collectors['distMatTMonHnsPatch'].append(pair_dist_mat)
-        dir_cont_m_hpatch = clusters.find_direct_contacts(
-            pair_dist_mat, self.r_cutoff, inclusive=False
-        )      
-        n_mon, n_hpatch = dir_cont_m_hpatch.shape
-        n_hcore = n_hpatch // 2
-
-        max_gen_distance = {'linear': n_mon, 'ring': n_mon // 2 + 1}
-        hist = np.zeros(max_gen_distance[self.parser.topology], dtype=int)
-
-        # Compute patch-level and core-level stats
-        d_cont_per_hpatch = np.sum(pair_dist_mat, axis=0)
-        n_engaged_hpatch = np.count_nonzero(d_cont_per_hpatch)
-        self.collectors['nBoundTHnsPatch'][idx] = np.sum(pair_dist_mat)
-        self.collectors['nEngagedTHnsPatch'][idx] = n_engaged_hpatch 
-        self.collectors['nFreeTHnsPatch'][idx] = n_hpatch - n_engaged_hpatch
-
-        free_cores = \
-            np.sum(
-                (d_cont_per_hpatch[0::2] == 0) & (d_cont_per_hpatch[1::2] == 0)
-                )
-        bridged_cores = \
-            np.sum(
-                (d_cont_per_hpatch[0::2] > 0) & (d_cont_per_hpatch[1::2] > 0)
-                )
-        dangling_cores = n_hcore - free_cores - bridged_cores
-
-        self.collectors['nFreeTHnsCore'][idx] = free_cores
-        self.collectors['nBridgeTHnsCore'][idx] = bridged_cores
-        self.collectors['nDangleTHnsCore'][idx] = dangling_cores
-
-        # Enforce single-patch binding and calculate genomic distances
-        single_patch_dir_contact = \
-            clusters.enforce_single_patch_dir_contact(pair_dist_mat)
-        cont_m_hpatch = \
-            clusters.generate_contact_matrix(single_patch_dir_contact)
-        cont_m_hcore = np.logical_or(cont_m_hpatch[:, ::2], cont_m_hpatch[:, 1::2])
-        cont_m_m = np.matmul(cont_m_hcore, cont_m_hcore.T)
-        cont_m_m_nonzeros = np.array(np.where(np.triu(cont_m_m, 1) > 0)).T
-        # Calculate genomic distances for monomer pairs bridged by an H-NS protein:
-        genomic_distances = clusters.genomic_distance(
-            cont_m_m_nonzeros[:, 0],
-            cont_m_m_nonzeros[:, 1],
-            self.parser.topology,
-            n_mon
-        )
-        # A 2D array with shape `(n_pairs, 3)`: Column 0 is the index of the first
-        # monomer in the pair. Column 1 is the index of the second monomer in the
-        # pair. And, column 3 is the genomic distance between the two monomers:
-        m_m_gen_dist = np.column_stack((cont_m_m_nonzeros, genomic_distances))
-
-        # Classify bindings and update histogram
-        cis_bindings = np.count_nonzero(
-            (m_m_gen_dist[:, 2] > 0) & 
-            (m_m_gen_dist[:, 2] <= self.cis_threshold)
-         )
-        trans_bindings = np.count_nonzero(
-            m_m_gen_dist[:, 2] > self.cis_threshold)
         self.collectors['nCisTHnsCore'][idx] = cis_bindings
         self.collectors['nTransTHnsCore'][idx] = trans_bindings
         np.add.at(hist, m_m_gen_dist[:, 2], 1)
