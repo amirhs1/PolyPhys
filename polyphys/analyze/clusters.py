@@ -1,332 +1,27 @@
-"""A submodule to detect and analyze particle clusters in a given system. It is
+"""
+Cluster analysis --- :mod:`polyphys.analyze.clusters`
+=====================================================
+
+
+A submodule to detect and analyze particle clusters in a given system. It is
 worth noting there is a difference analyzing particle clusters and
 trajectory (or ensemble) clusters.
-Below, different algorithms found in literature are implemented in scientific
-Python.
+
+Functions
+---------
+
+
 """
 from typing import Dict, List, Tuple, Optional, Union
 from itertools import combinations
 from collections import defaultdict
 import numpy as np
 import pandas as pd
-import numpy.linalg as npla
-
 from ..manage.parser import (TransFociCub, TransFociCyl,
                              SumRuleCubHeteroLinear,
                              SumRuleCubHeteroRing)
-from ..manage.typer import AxisT, TopologyT
-from .measurer import apply_pbc_orthogonal
-
-
-def self_dist_array(
-    positions: np.ndarray,
-    pbc: Optional[Dict[AxisT, float]] = None
-) -> np.ndarray:
-    """
-    Compute the pairwise Euclidean distances between atoms.
-
-    Parameters
-    ----------
-    positions : np.ndarray, shape (n_atoms, n_dims)
-        Cartesian coordinates of atoms. Each row corresponds to an atom, and
-        each column corresponds to a spatial dimension.
-    pbc : Dict[AxisT, float]
-        Periodic boundary conditions (PBC) as a dictionary where keys are
-        dimensions (0 for 'x', 1 for 'y', 2 for 'z'), and values are the box
-        lengths along those dimensions. If None, PBC is not applied. Default is
-        None.
-
-    Returns
-    -------
-    np.ndarray, shape (n_atoms, n_atoms)
-        A symmetric matrix where each element (i, j) is the center-to-center
-        distance between atoms i and j.
-
-    Examples
-    --------
-    >>> positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
-    >>> self_dist_array(positions)
-    array([[0.        , 1.73205081, 3.46410162],
-           [1.73205081, 0.        , 1.73205081],
-           [3.46410162, 1.73205081, 0.        ]])
-
-    >>> pbc = {0: 10.0, 1: 10.0, 2: 10.0}
-    >>> self_dist_array(positions, pbc)
-    array([[0.        , 1.73205081, 3.46410162],
-           [1.73205081, 0.        , 1.73205081],
-           [3.46410162, 1.73205081, 0.        ]])
-
-    """
-    n_atoms, n_dims = positions.shape
-    # Calculate pairwise distance matrix
-    pos_t = positions.T
-    pos_i = np.reshape(pos_t, (n_dims, 1, n_atoms))
-    pos_j = np.reshape(pos_t, (n_dims, n_atoms, 1))
-    dist_ji = pos_j - pos_i
-
-    # Calculate PBC lengths and inverses, and apply PBCs if PBCs are present
-    if pbc is not None:
-        pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
-            np.zeros(n_dims), np.zeros(n_dims), pbc
-            )
-        pbc_lengths = pbc_lengths.reshape(n_dims, 1, 1)
-        pbc_lengths_inverse = pbc_lengths_inverse.reshape(n_dims, 1, 1)
-        dist_ji -= pbc_lengths * np.around(pbc_lengths_inverse * dist_ji)
-
-    # Calculate squared distances and return square root of matrix
-    dist_ji = np.sqrt(np.sum(np.square(dist_ji), axis=0))
-    np.fill_diagonal(dist_ji, 0)
-    return dist_ji
-
-
-def self_dist_array_opt(
-    positions: np.ndarray,
-    pbc: Optional[Dict[AxisT, float]] = None
-) -> np.ndarray:
-    """
-    Compute the pairwise Euclidean distances between atoms.
-
-    Parameters
-    ----------
-    positions : np.ndarray
-        Cartesian coordinates of atoms. Each row corresponds to an atom, and
-        each column corresponds to a spatial dimension.
-    pbc : Dict[AxisT, float]
-        Periodic boundary conditions (PBC) as a dictionary where keys are
-        dimensions (0 for 'x', 1 for 'y', 2 for 'z'), and values are the box
-        lengths along those dimensions. If None, PBC is not applied. Default is
-        None.
-
-    Return
-    ------
-    np.ndarray
-        A square matrix of size n_atoms * n_atoms in which each element are
-        the center-to-center distances between different pairs of atoms. All
-        the diagonal elements of this matrix is 0.
-
-    Notes
-    -----
-    In 3 dimensions, this method is not much faster the `self_dist_array`.
-
-    Examples
-    --------
-    >>> positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
-    >>> self_dist_array_opt(positions)
-    array([[0.        , 1.73205081, 3.46410162],
-           [1.73205081, 0.        , 1.73205081],
-           [3.46410162, 1.73205081, 0.        ]])
-
-    >>> pbc = {0: 10.0, 1: 10.0, 2: 10.0}
-    >>> self_dist_array_opt(positions, pbc)
-    array([[0.        , 1.73205081, 3.46410162],
-           [1.73205081, 0.        , 1.73205081],
-           [3.46410162, 1.73205081, 0.        ]])
-
-    References
-    ----------
-    Albanie S. (2019) Euclidean Distance Matrix Trick. In: Advances in Computer
-    Vision. EECV 2018. Lecture Notes in Computer Science, vol 11131. Springer,
-    Cham. https://doi.org/10.1007/978-3-030-01446-4_2
-    """
-    n_atoms, n_dims = positions.shape
-    # Redefining the shapes of different arrays to combine linear algebra
-    # with numpy broadcasting.
-    gram = np.matmul(positions, positions.T)
-    dist_sq = np.diag(gram).reshape(n_atoms, 1) + \
-        np.diag(gram).reshape(1, n_atoms) - 2 * gram
-
-    # Calculate PBC lengths and inverses, and apply PBCs if PBCs are present
-    if pbc is not None:
-        pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
-            np.zeros(n_dims), np.zeros(n_dims), pbc
-        )
-        pbc_lengths = pbc_lengths**2
-        pbc_lengths_inverse = pbc_lengths_inverse**2
-        dist_sq = dist_sq - pbc_lengths * np.around(
-            pbc_lengths_inverse * dist_sq
-            )
-    return np.sqrt(dist_sq)
-
-
-def find_direct_contacts(
-    dist: np.ndarray,
-    cutoff: float,
-    inclusive: bool = True
-) -> np.ndarray:
-    """
-    Identify direct contacts between atoms based on a cutoff distance.
-
-    Two atoms are in direct contact if the center-to-center distance between
-    two atoms being within the specified cutoff distance. The inclusivity of
-    the cutoff can be controlled using the `inclusive` parameter.
-
-    Parameters
-    ----------
-    dist : np.ndarray, shape (n_atoms, m_atoms)
-        Pairwise distance matrix where element (i, j) is the distance between
-        atoms `i` and `j`.
-    cutoff : float
-        The threshold distance for defining direct contact. Must be a positive
-        number.
-    inclusive : bool, optional
-        If True, includes pairs of atoms where the distance equals the cutoff.
-        If False, only considers distances strictly less than the cutoff.
-        Default is True.
-
-    Returns
-    -------
-    np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where element (i, j) is 1 if the distance between atoms
-        `i` and `j` is within the cutoff, and 0 otherwise. If the input `dist`
-        matrix is symmetric, the output will also be symmetric, with all
-        diagonal elements set to 1.
-
-    Raises
-    ------
-    ValueError
-        If the `cutoff` is not a positive number.
-
-    Examples
-    --------
-    >>> distances = np.array([[0.0, 1.2, 3.4], [1.2, 0.0, 2.3],
-                             [3.4, 2.3, 0.0]])
-    >>> find_direct_contacts(distances, cutoff=2.0)
-    array([[1, 1, 0],
-           [1, 1, 1],
-           [0, 1, 1]])
-
-    >>> find_direct_contacts(distances, cutoff=2.0, inclusive=False)
-    array([[1, 1, 0],
-           [1, 1, 0],
-           [0, 0, 1]])
-
-    References
-    ----------
-    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
-    calculations of cluster statistics in continuum models of composite
-    morphology. The Journal of Chemical Physics, 89(1), 668-676.
-    https://aip.scitation.org/doi/10.1063/1.454720 .
-    """
-    if cutoff <= 0:
-        raise ValueError("'cutoff' must be a positive number.")
-
-    direct_contacts = dist <= cutoff if inclusive else dist < cutoff
-    return np.asarray(direct_contacts, dtype=int)
-
-
-def generate_contact_matrix(direct_contacts: np.ndarray) -> np.ndarray:
-    """
-    Generate a symmetric contact matrix that includes all direct and
-    indirect contacts.
-
-    This function generates a symmetric binary matrix representing all direct
-    and indirect contacts between atoms. Starting from the `direct_contacts`
-    matrix, it iteratively checks pairs of columns to identify and propagate
-    connections.
-
-    Parameters
-    ----------
-    direct_contacts : np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where element (i, j) is 1 if atoms `i` and `j` have a
-        direct contact, and 0 otherwise.
-
-    Returns
-    -------
-    np.ndarray, shape (n_atoms, m_atoms)
-        A binary matrix where element (i, j) is 1 if atoms `i` and `j` are
-        directly or indirectly connected, and 0 otherwise.
-
-    Examples
-    --------
-    >>> direct_contacts = np.array([[1, 1, 0],
-    ...                             [1, 1, 1],
-    ...                             [0, 1, 1]])
-    >>> generate_contact_matrix(direct_contacts)
-    array([[1, 1, 1],
-           [1, 1, 1],
-           [1, 1, 1]])
-
-    References
-    ----------
-    Sevick, E. M., Monson, P. A., & Ottino, J. M. (1988). Monte Carlo
-    calculations of cluster statistics in continuum models of composite
-    morphology. The Journal of Chemical Physics, 89(1), 668-676.
-    https://doi.org/10.1063/1.454720
-
-    """
-    _, n_cols = direct_contacts.shape
-    contact_matrix = direct_contacts.copy()
-
-    # Iteratively compare pairs of columns and propagate connections
-    for i, j in combinations(range(n_cols), 2):
-        # If columns i and j share any common contacts, merge them
-        if np.any(contact_matrix[:, i] & contact_matrix[:, j]):
-            merged_column = contact_matrix[:, i] | contact_matrix[:, j]
-            contact_matrix[:, i] = merged_column
-            contact_matrix[:, j] = merged_column
-
-    return contact_matrix
-
-
-def random_full_contact_matrix(
-    n_atoms: int,
-    seed: int = 0,
-    p: float = 0.2,
-    save_to: Optional[str] = None
-) -> np.ndarray:
-    """
-    Generate a random direct-contact matrix for testing clustering algorithms.
-
-    This function creates a symmetric binary matrix where each element
-    indicates whether a direct contact exists between a pair of atoms. It is
-    useful for testing clustering algorithms such as `count_bonds` and
-    `count_clusters`.
-
-    Parameters
-    ----------
-    n_atoms : int
-        Number of atoms or nodes in the system.
-    seed : int, optional
-        Seed for the random number generator. Default is 0.
-    p : float, optional
-        Probability of a contact existing between any two atoms. Must be
-        between 0 and 1. Default is 0.2.
-    save_to : str, optional
-        The filename or filepath to which the contact martix is saved. If None,
-        the matrix is not saved. Default is None.
-
-    Returns
-    -------
-    np.ndarray, shape (n_atoms, n_atoms)
-        A symmetric binary matrix where element `(i, j)` is 1 if a contact
-        exists between atoms `i` and `j`, and 0 otherwise. All diagonal
-        elements are 1.
-
-    See Also
-    --------
-    `find_direct_contact`: Identify direct contacts between atoms based on a
-    cutoff distance.
-
-    Examples
-    --------
-    >>> random_direct_contacts(4, seed=42)
-    array([[1, 1, 0, 1],
-           [1, 1, 1, 0],
-           [0, 1, 1, 0],
-           [1, 0, 0, 1]])
-    """
-    # Creating direct-contacts matrix
-    np.random.seed(seed)
-    dir_contacts = np.random.binomial(n=1, p=p, size=(n_atoms, n_atoms))
-    dir_contacts_up = np.triu(dir_contacts, k=1)  # Exclude diag
-    # Create a symmetric matrix and add diagonal elements
-    dir_contacts = dir_contacts_up + dir_contacts_up.T
-    np.fill_diagonal(dir_contacts, 1)
-    # Creating the full direct contacts matrix
-    full_contacts = generate_contact_matrix(dir_contacts)
-    if save_to is not None:
-        np.save(save_to, full_contacts)
-    return full_contacts
+from ..manage.typer import TopologyT
+from .contacts import generate_contact_matrix
 
 
 def count_foci_bonds(dir_contacts: np.ndarray) -> np.ndarray:
@@ -387,99 +82,6 @@ def count_foci_bonds(dir_contacts: np.ndarray) -> np.ndarray:
     return bond_list
 
 
-def is_symmetric(matrix: np.ndarray) -> bool:
-    """
-    Check if a given square matrix is symmetric.
-
-    A matrix is symmetric if it is equal to its transpose.
-
-    Parameters
-    ----------
-    matrix : np.ndarray
-        The matrix to be checked for symmetry.
-
-    Returns
-    -------
-    bool
-        True if the matrix is symmetric, False otherwise.
-
-    Raises
-    ------
-    ValueError
-        If the input matrix is not square.
-
-    Notes
-    -----
-    This function uses NumPy's `allclose` method to account for numerical
-    tolerances in floating-point  comparisons.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> mat = np.array([[1, 2], [2, 1]])
-    >>> is_symmetric(mat)
-    True
-
-    >>> mat = np.array([[1, 0], [2, 1]])
-    >>> is_symmetric(mat)
-    False
-    """
-    if matrix.shape[0] != matrix.shape[1]:
-        raise ValueError("The input matrix must be square.")
-    return np.allclose(matrix, matrix.T)
-
-
-def is_positive_semi_definite(matrix: np.ndarray) -> bool:
-    """
-    Check if a given square matrix is positive semi-definite.
-
-    A matrix is positive semi-definite if all its eigenvalues are non-negative.
-
-    Parameters
-    ----------
-    matrix : np.ndarray
-        The matrix to be checked for positive semi-definiteness.
-
-    Returns
-    -------
-    bool
-        True if the matrix is positive semi-definite, False otherwise.
-
-    Raises
-    ------
-    ValueError
-        If the input matrix is not square.
-
-    Notes
-    -----
-    This function attempts a Cholesky decomposition, which only succeeds for
-    positive semi-definite matrices.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> mat = np.array([[2, -1], [-1, 2]])
-    >>> is_positive_semi_definite(mat)
-    True
-
-    >>> mat = np.array([[1, 2], [2, -3]])
-    >>> is_positive_semi_definite(mat)
-    False
-
-    References
-    ----------
-    Higham, N. J. (2002). Accuracy and Stability of Numerical Algorithms
-    (2nd ed.). SIAM.
-    """
-    if matrix.shape[0] != matrix.shape[1]:
-        raise ValueError("The input matrix must be square.")
-    try:
-        _ = np.linalg.cholesky(matrix)
-        return True
-    except np.linalg.LinAlgError:
-        return False
-
-
 def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
     """
     Infer the number and size of clusters from a contact matrix.
@@ -533,7 +135,7 @@ def count_foci_clusters(contacts: np.ndarray) -> np.ndarray:
     """
     n_atoms, _ = contacts.shape
     # Compute eigenvalues and round for stability
-    clusters_row = npla.eigvalsh(contacts)
+    clusters_row = np.linalg.eigvalsh(contacts)
     clusters = np.asarray(np.round(clusters_row), dtype=int)
 
     # Validate eigenvalues for physical consistency
@@ -595,7 +197,7 @@ def count_foci_clusters_old(contacts: np.ndarray) -> np.ndarray:
     n_atoms, _ = contacts.shape
 
     # Compute eigenvalues and round for numerical stability
-    clusters = npla.eigvalsh(contacts)
+    clusters = np.linalg.eigvalsh(contacts)
 
     # Validate eigenvalues
     if np.any(clusters < 0):
@@ -684,43 +286,6 @@ def foci_info(
     pair_info = np.hstack((genomic_idx, genomic_dist))
 
     return pair_info
-
-
-def v_histogram(
-    data: np.ndarray,
-    bins: int,
-    bin_range: Tuple[float, float],
-    **kwargs
-) -> np.ndarray:
-    """
-    Compute the histogram of input data with specified bins and range.
-
-    This function wraps NumPy's `np.histogram` to compute histograms of data
-    with user-defined parameters. It is designed for vectorized operations
-    across multiple datasets.
-
-    Parameters
-    ----------
-    data : np.ndarray
-        1D array-like input data to compute the histogram for.
-    bins : int
-        Number of bins to divide the data into.
-    bin_range : Tuple[float, float]
-        The lower and upper range of bins.
-
-    Returns
-    -------
-    np.ndarray
-        An array containing the frequencies of `data` in each bin.
-
-    Examples
-    --------
-    >>> data = np.array([0.5, 1.5, 2.5, 3.5])
-    >>> v_histogram(data, bins=3, bin_range=(0, 3))
-    array([1, 1, 2])
-    """
-    hist, _ = np.histogram(data, bins=bins, range=bin_range, **kwargs)
-    return hist
 
 
 def foci_rdf(
