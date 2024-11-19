@@ -1,13 +1,15 @@
-"""\
+"""
 ==========================================================
 :mod:`polyphys.analyze.measurer`
 ==========================================================
+
+
 The :mod:`polyphys.analyze.measurer` module provides a suite of functions for
-performing measurements and analyses on molecular or particle-based simulation
-data.
+performing measurements and analyses on molecular simulation data.
 
 Functions
 =========
+
 Core Geometric and Structural Measurements:
 --------------------------------------------
 .. autofunction:: apply_pbc_orthogonal
@@ -43,36 +45,6 @@ Binning for histogram processing
 .. autofunction:: axial_histogram
 .. autofunction:: azimuth_histogram
 .. autofunction:: planar_cartesian_histogram
-
-Dependencies
-============
-- `numpy`
-- `typing`
-- `warnings`
-
-Usage
-=====
-The functions in this module allow users to:
-- Perform essential measurements on spatial data (e.g., end-to-end distance,
-  transverse size).
-- Compute densities and volume fractions in cubic or cylindrical geometries,
-  with or without periodic boundary conditions.
-- Analyze statistical properties such as mean, variance, and standard error
-  of the mean (SEM).
-- Execute advanced geometric calculations, such as spherical segments and
-  sphere-sphere intersections.
-- Create and manage fixed-size bins for histogram processing.
-
-Examples
-========
-Example of computing the end-to-end distance for a polymer chain:
-
->>> import numpy as np
->>> import measurer
->>> positions = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
->>> distance = measurer.end_to_end(positions)
->>> print(distance)
-3.4641016151377544
 
 References
 ==========
