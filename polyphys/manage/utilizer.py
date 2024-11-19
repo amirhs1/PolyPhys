@@ -10,7 +10,7 @@ from .typer import InputType
 
 def read_camel_case(word: str) -> List[Union[str, Tuple[str]]]:
     """
-    Splits a camelCase or CamelCase string into its component words.
+    Split a camelCase or CamelCase string into its component words.
 
     Parameters
     ----------
@@ -34,7 +34,7 @@ def read_camel_case(word: str) -> List[Union[str, Tuple[str]]]:
 
 def to_float_if_possible(value: str) -> Union[float, str]:
     """
-    Attempts to convert a string to a float. If conversion fails,
+    Attempt to convert a string to a float. If conversion fails,
     returns the original string.
 
     Parameters
@@ -65,7 +65,7 @@ def to_float_if_possible(value: str) -> Union[float, str]:
 
 def split_alphanumeric(alphanumeric: str) -> List[Union[int, str, float]]:
     """
-    Splits an alphanumeric string into a list of strings, integers, and floats.
+    Split an alphanumeric string into a list of strings, integers, and floats.
 
     This function identifies contiguous sections of digits, letters, and
     decimal numbers, returning them as separate elements in a list, making the
@@ -96,7 +96,7 @@ def sort_filenames(
     filenames: List[str], fmts: List[str]
 ) -> List[Tuple[str, ...]]:
     """
-    Groups and alphanumerically sorts filenames by specified formats.
+    Group and alphanumerically sort filenames by specified formats.
 
     This function groups `filenames` by the extensions in `formats`, sorting
     each group alphanumerically. It then returns a list of tuples where each
@@ -136,7 +136,7 @@ def sort_filenames(
 
 def openany(filepath: str, mode: str = 'r') -> InputType:
     """
-    Opens a regular or gzipped file.
+    Open a regular or gzipped file.
 
     Parameters
     ----------
@@ -160,7 +160,7 @@ def openany_context(
     mode: str = 'r'
 ) -> Generator[InputType, None, None]:
     """
-    Opens a regular or gzipped file, providing a file-like object.
+    Open a regular or gzipped file, providing a file-like object.
 
     Parameters
     ----------
@@ -187,7 +187,7 @@ def openany_context(
 
 def round_down_first_non_zero(x: float) -> float:
     """
-    Rounds down a number to its first non-zero digit.
+    Round down a number to its first non-zero digit.
 
     Parameters
     ----------
@@ -212,7 +212,7 @@ def round_up_nearest(
     round_to: int
 ) -> float:
     """
-    Rounds up `dividend` by `divider` up to `round_to` significant digits.
+    Round up `dividend` by `divider` up to `round_to` significant digits.
 
     Parameters
     ----------
@@ -237,7 +237,7 @@ def invalid_keyword(
     message: Optional[str] = None
 ) -> None:
     """
-    Raises an error if `keyword` is not in `valid_keywords`.
+    Raise an error if `keyword` is not in `valid_keywords`.
 
     Parameters
     ----------
