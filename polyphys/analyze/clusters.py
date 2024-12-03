@@ -37,14 +37,11 @@ References
   morphology. The Journal of Chemical Physics, 89(1), 668-676.
   https://doi.org/10.1063/1.454720
 """
-from typing import Dict, List, Tuple, Union, Callable
+from typing import Dict, List, Tuple, Callable
 from itertools import combinations
 import numpy as np
 import pandas as pd
-from ..manage.parser import (TransFociCub, TransFociCyl,
-                             SumRuleCubHeteroLinear,
-                             SumRuleCubHeteroRing)
-from ..manage.typer import TopologyT
+from ..manage.typer import TopologyT, ClusterParserInstance
 from ..manage.utilizer import invalid_keyword
 from .contacts import generate_contact_matrix
 
@@ -370,8 +367,7 @@ def foci_histogram(
 
 def whole_dist_mat_foci(
     whole_path: str,
-    whole_info: Union[TransFociCub, TransFociCyl,
-                      SumRuleCubHeteroRing, SumRuleCubHeteroLinear]
+    whole_info: ClusterParserInstance
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Generate time series, histograms, and RDFs of foci distances from a
@@ -386,10 +382,12 @@ def whole_dist_mat_foci(
     whole_path : str
         Path to the distance matrix file. The matrix should be a 3D array where
         the first axis represents time frames.
-    whole_info : Union[TransFociCub, TransFociCyl,
-                       SumRuleCubHeteroRing, SumRuleCubHeteroLinear]
-        Object containing metadata about the simulation, including the number
-        of large and small monomers and monomer properties.
+    whole_info : ClusterParserInstance
+        A instance from a parser class in one of the projects that needs
+        cluster information about particle entities. The parser instance
+        contains metadata about the molecular dynamics simulation project,
+        including the number of large and small monomers and monomer
+        properties.
 
     Returns
     -------
@@ -418,9 +416,9 @@ def whole_dist_mat_foci(
     whole = np.load(whole_path)
 
     # Extract parameters from whole_info
-    dmon_small = whole_info.dmon_small
-    nmon_large = whole_info.nmon_large
-    nmon_small = whole_info.nmon_small
+    dmon_small = getattr(whole_info, 'dmon_small')
+    nmon_large = getattr(whole_info, 'nmon_large')
+    nmon_small = getattr(whole_info, 'nmon_small')
 
     # Extract genomic positions and compute pair information
     diagonal_idxs = np.diag_indices(nmon_large)
@@ -439,11 +437,11 @@ def whole_dist_mat_foci(
 
     # Compute histograms and RDFs
     binsize = 0.5 * dmon_small
-    pair_hists, pair_rdfs = foci_histogram(tags, pairs_dist, binsize)
+    pair_hists_dict, pair_rdfs_dict = foci_histogram(tags, pairs_dist, binsize)
 
     # Convert results to DataFrames
-    pair_hists = pd.DataFrame.from_dict(pair_hists)
-    pair_rdfs = pd.DataFrame.from_dict(pair_rdfs)
+    pair_hists = pd.DataFrame.from_dict(pair_hists_dict)
+    pair_rdfs = pd.DataFrame.from_dict(pair_rdfs_dict)
 
     # Time series DataFrame
     tseries_tags = [f"pairDistTFoci-{tag}" for tag in tags]
@@ -488,7 +486,7 @@ def enforce_single_patch_dir_contact(
     grounds. The inspection has revealed these monomers are adjacent monomers
     along the chain backbone. Therefore, it is decided to only consider the
     contact of the H-NS patch with the first of these monomers as a real
-    contact and conisder the rest of contacts as artifacts. This means setting
+    contact and consider the rest of contacts as artifacts. This means setting
     the non-zero elements below the first non-zero elements along a column
     equal to zero.
 
@@ -919,7 +917,7 @@ def find_binder_clusters_need_attention_old(
     n_monomers = m_ij.shape[0]
     b_ij = np.zeros((n_binders, n_binders), dtype=int)
     # diagonal elements have meaning here; if it is 0 means unbound hns/binder
-    # but if 1 means it bridged two momnomers or dangle from on monomer.
+    # but if 1 means it bridged two monomers or dangle from on monomer.
     np.fill_diagonal(b_ij, 1)
     # Check for binders connected to the same monomer
     for i in range(n_binders):

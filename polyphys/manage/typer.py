@@ -34,6 +34,9 @@ EntityT = str
 GroupT = str
 GeometryT = Literal['cubic', 'cylindrical']
 PhaseT = str
+# PhaseT = Literal['simAll', 'simCont', 'log', 'trj', 'probe', 'analysis',
+#                 'viz', 'galaxy']
+StageT = Literal['segment', 'wholeSim', 'ens', 'ensAvg', 'space', 'galaxy']
 WholeName = str
 EnsembleName = str
 HasEdgeT = bool
@@ -71,7 +74,11 @@ SumRuleCubHeteroLinearT = Type[SumRuleCubHeteroLinear]
 HnsCubT = Type[HnsCub]
 HnsCylT = Type[HnsCyl]
 
-# Union types for clases
+# Union types for classes
+ClusterParserType = Union[
+    TransFociCubT, TransFociCylT, SumRuleCubHeteroLinearT,
+    SumRuleCubHeteroRingT
+]
 ParserType = Union[
     SumRuleCylT, TransFociCubT, TransFociCylT, HnsCubT, HnsCylT,
     SumRuleCubHeteroLinearT, SumRuleCubHeteroRingT, TwoMonDepCubT
@@ -89,6 +96,10 @@ HnsCubInstance = HnsCub
 HnsCylInstance = HnsCyl
 
 # Union types for class instances
+ClusterParserInstance = Union[
+    TransFociCubInstance, TransFociCylInstance, SumRuleCubHeteroLinearInstance,
+    SumRuleCubHeteroRingInstance
+]
 ParserInstance = Union[
     SumRuleCylInstance, TransFociCubInstance, TransFociCylInstance,
     HnsCubInstance, HnsCylInstance, SumRuleCubHeteroLinearInstance,
