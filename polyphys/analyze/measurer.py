@@ -216,7 +216,7 @@ def transverse_size(
     -------
     float
         Twice the mean transverse distance (a.k.a., diameter) in the plane
-        perpendicualr to `axis`.
+        perpendicular to `axis`.
 
     Raises
     ------
@@ -226,7 +226,7 @@ def transverse_size(
     Notes
     -----
     The distance is calculated in a reference frame centered at the center of
-    geometry of atoms in the plane perpendicaulr to a given axis.
+    geometry of atoms in the plane perpendicular to a given axis.
     """
     trans_axes = {0: [1, 2], 1: [0, 2], 2: [0, 1]}
     if axis >= positions.shape[1]:
@@ -324,7 +324,7 @@ def simple_stats(prop: str, array: np.ndarray) -> Dict[str, float]:
 
     Returns
     -------
-    Dict[str, flaot]
+    Dict[str, float]
         Dictionary with keys for mean, variance, and SEM of `prop`.
 
     Raises
@@ -669,7 +669,7 @@ def create_bin_edge_and_hist(
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    outout : str
+    output : str
         Filename (including filepath) to which bin edges array is saved. A
         `.npy` extension will be appended to the filename if it does not
         already have one.
@@ -728,7 +728,7 @@ def fixedsize_bins(
             - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
               Cartesian coordinates and spherical polar coordinate.
             - 'nonnegative': Extends `lmin` are `lmax` are symmetrically  if
-              adjusted `lmin` is nonnegative; othervise, `lmin` is set to 0 and
+              adjusted `lmin` is nonnegative; otherwise, `lmin` is set to 0 and
               `lmax` is extended. Examples are radial directions in the polar,
               spherical, and cylindrical coordinate systems.
             - 'periodic': Periodic binning (e.g., azimuthal coordinate).
@@ -798,7 +798,7 @@ def fixedsize_bins(
             # delta={_delta}, not 'n_bins', are used to created 'bin_edges'.
             warnings.warn("'n_bins' is set to 'len(bin_edges)-1'", UserWarning)
     else:
-        invalid_keyword(bin_type, ['ordinary', 'nonnagative', 'periodic'])
+        invalid_keyword(bin_type, ['ordinary', 'nonnegative', 'periodic'])
 
     hist_collectors = np.zeros(n_bins, dtype=np.int16)
     hist_collectors_std = np.zeros(n_bins, dtype=np.int16)
@@ -1004,7 +1004,7 @@ def planar_cartesian_histogram(
 ) -> np.ndarray:
     """
     Compute the bi-dimensional histogram in the plan perpendicular to the axis
-    along `dim` in the Cartersian coordinate system.
+    along `dim` in the Cartesian coordinate system.
 
     Parameters
     ----------
