@@ -2,7 +2,7 @@
 """
 import re
 import gzip
-from typing import Generator, Optional, List, Union, Tuple
+from typing import Generator, Optional, List, Union, Tuple, Any
 from contextlib import contextmanager
 import numpy as np
 from .typer import InputType
@@ -143,10 +143,10 @@ def openany(filepath: str, mode: str = 'r') -> InputType:
     filepath : str
         Path to the file.
     mode : str, optional
-        The mode by the file is opened, by default 'r'
+        The mode by the file is opened, by default 'r'.
 
-    Yields
-    ------
+    Returns
+    -------
     Generator[IO, None, None]
         A file object.
     """
@@ -233,7 +233,7 @@ def round_up_nearest(
 
 def invalid_keyword(
     keyword: str,
-    valid_keywords: List[str],
+    valid_keywords: List[Any],
     message: Optional[str] = None
 ) -> None:
     """

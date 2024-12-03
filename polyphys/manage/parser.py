@@ -21,8 +21,7 @@ calculate attributes based on parsed lineage and project requirements.
 Classes
 =======
 .. autoclass:: ParserBase
-   :members:
-   :undoc-members:
+:members:
 .. autoclass:: TwoMonDep
 .. autoclass:: SumRuleCyl
 .. autoclass:: SumRuleCubHeteroRing
@@ -68,7 +67,7 @@ function is commonly used, ensuring robustness to varied filename patterns.
 """
 import os
 import re
-from typing import Dict, List, Literal, ClassVar, Optional
+from typing import Dict, List, ClassVar, Optional
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from .utilizer import invalid_keyword
@@ -175,9 +174,9 @@ class ParserBase(ABC):
     _geometry: ClassVar[Optional[GeometryT]] = None
     _topology: ClassVar[Optional[TopologyT]] = None
     _groups: ClassVar[Optional[List[GroupT]]] = None
-    _genealogy_attributes: ClassVar[Dict[LineageT, OrderedDict[str, str]]] = \
-        None
-    _project_attributes: ClassVar[Dict[str, List[str]]] = None
+    _genealogy_attributes: \
+        ClassVar[Optional[Dict[LineageT, OrderedDict[str, str]]]] = None
+    _project_attributes: ClassVar[Optional[Dict[str, List[str]]]] = None
 
     def __init__(
         self,
@@ -189,15 +188,15 @@ class ParserBase(ABC):
             ("N/A", artifact) if '/' not in artifact and '\\' not in artifact
             else os.path.split(artifact)
         )
-        invalid_keyword(lineage, self._lineages)
-        invalid_keyword(group, self._groups)
+        invalid_keyword(lineage, self.lineages)
+        invalid_keyword(group, self.groups)
         self._lineage = lineage
         self._group = group
         self._project_name = self.__class__.__name__
         self._lineage_genealogy: List[LineageT] = self._genealogy[lineage]
         self._lineage_attributes = \
-            list(self._genealogy_attributes[lineage].keys())
-        self._physical_attributes = self._project_attributes[lineage]
+            list(self.genealogy_attributes[lineage].keys())
+        self._physical_attributes = self.project_attributes[lineage]
         self._attributes = \
             self._lineage_attributes + self._physical_attributes
         self._find_name()
@@ -223,6 +222,20 @@ class ParserBase(ABC):
             f" lineage '{self._lineage}' and"
             f" topology '{self._topology}')"
         )
+
+    @property
+    def lineages(self) -> List[LineageT]:
+        """
+        List of all the acceptable lineages.
+        """
+        return self._lineages
+
+    @property
+    def genealogy(self) -> Dict[LineageT, List[LineageT]]:
+        """
+        Dictionary of lineages and their parent lineages.
+        """
+        return self._genealogy
 
     @property
     def geometry(self) -> GeometryT:
@@ -258,7 +271,7 @@ class ParserBase(ABC):
         and each value is an OrderedDict mapping attribute names to their
         short-form representations.
         """
-        if self._topology is None:
+        if self._genealogy_attributes is None:
             raise AttributeError(
                 "'_genealogy_attributes' has not been initialized.")
         return self._genealogy_attributes
@@ -270,7 +283,7 @@ class ParserBase(ABC):
         and each value is an OrderedDict mapping attribute names to their
         short-form representations.
         """
-        if self._topology is None:
+        if self._project_attributes is None:
             raise AttributeError(
                 "'_project_attributes' has not been initialized.")
         return self._project_attributes
@@ -321,7 +334,7 @@ class ParserBase(ABC):
     @property
     def attributes(self) -> List[str]:
         """
-        Return lineage-specific andp project attributes for an artifact.
+        Return lineage-specific and project attributes for an artifact.
         """
         return self._attributes
 
@@ -388,9 +401,9 @@ class ParserBase(ABC):
         """
         for lineage_name in self._lineages:
             lineage_value = "N/A"
-            if lineage_name in self._genealogy[self._lineage]:
+            if lineage_name in self.genealogy[self._lineage]:
                 lineage_value = ""
-                lineage_attr = self._genealogy_attributes[lineage_name]
+                lineage_attr = self.genealogy_attributes[lineage_name]
                 for attr_long, attr_short in lineage_attr.items():
                     lineage_value += \
                             f"{attr_short}{getattr(self, attr_long)}"
@@ -465,7 +478,7 @@ class TwoMonDepCub(ParserBase):
         Number of crowders. Its associated keyword is 'nc'.
     lcube : float
         Length of the simulation box, inferred from 'hl' keyword
-        (half-length of hthe simulation box).
+        (half-length of the simulation box).
     d_sur : float
         Surface-to-surface distance between two monomers fixed in space.
         Its associated keyword is 'sd'.
@@ -478,7 +491,7 @@ class TwoMonDepCub(ParserBase):
         Frequency by which 'all' configurations are dumped in a 'segment'
         trajectory file. Its associated keyword is 'adump'.
     tdump : int
-        Frequency by which 'themo' variables are written in a 'lammps'
+        Frequency by which 'thermo' variables are written in a 'lammps'
         log file. Its associated keyword is 'tdump'.
     ensemble_id : int
         The ensemble number of a 'whole' artifact in an ensemble. Its
@@ -548,7 +561,7 @@ class TwoMonDepCub(ParserBase):
             {'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
              'd_sur': 'sd'}
              ),
-        # pttern: nm#am#ac# :
+        # pattern: nm#am#ac# :
         'space': OrderedDict(
             {'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc'}
             )
@@ -567,7 +580,7 @@ class TwoMonDepCub(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['bug', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
@@ -661,11 +674,11 @@ class SumRuleCyl(ParserBase):
     - `space`: N#D#ac#
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -795,7 +808,7 @@ class SumRuleCyl(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['bug', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
@@ -898,11 +911,11 @@ class SumRuleCubHeteroRing(ParserBase):
     - `space`: ns#nl#al#ac#
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -940,7 +953,7 @@ class SumRuleCubHeteroRing(ParserBase):
         Mass of a crowder.
     lcube : float
         Length of the simulation box, inferred from 'l' keyword
-        (half-length of hthe simulation box).
+        (half-length of the simulation box).
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
@@ -1053,7 +1066,7 @@ class SumRuleCubHeteroRing(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['bug', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
@@ -1168,11 +1181,11 @@ class SumRuleCubHeteroLinear(ParserBase):
     - `space`: ns#nl#al#ac#
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -1210,7 +1223,7 @@ class SumRuleCubHeteroLinear(ParserBase):
         Mass of a crowder.
     lcube : float
         Length of the simulation box, inferred from 'l' keyword
-        (half-length of hthe simulation box).
+        (half-length of the simulation box).
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
@@ -1323,7 +1336,7 @@ class SumRuleCubHeteroLinear(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['bug', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
@@ -1438,11 +1451,11 @@ class TransFociCyl(ParserBase):
     - `space`: ns#nl#al#ac#
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -1453,7 +1466,7 @@ class TransFociCyl(ParserBase):
         Name to be parsed, either a filename or filepath.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
         Type of the lineage of the name.
-    group : {'bugg', 'all'}
+    group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
 
     Attributes
@@ -1563,7 +1576,7 @@ class TransFociCyl(ParserBase):
     _topology = 'ring'
     _groups = ['bug', 'all']
 
-    _genealogy_attributes: Dict[str, OrderedDict[str, str]] = {
+    _genealogy_attributes = {
         # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#.ring
         'segment': OrderedDict(
             {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
@@ -1613,7 +1626,7 @@ class TransFociCyl(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['bug', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
@@ -1739,11 +1752,11 @@ class TransFociCub(ParserBase):
     - `space`: ns#nl#al#ac#
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -1781,7 +1794,7 @@ class TransFociCub(ParserBase):
         Mass of a crowder.
     lcube : float
         Length of the simulation box, inferred from 'l' keyword
-        (half-length of hthe simulation box).
+        (half-length of the simulation box).
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
@@ -1894,7 +1907,7 @@ class TransFociCub(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['bug', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
@@ -2009,11 +2022,11 @@ class HnsCub(ParserBase):
     - `space`: N#kbmm#nh#ac#epshc#ring
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -2053,7 +2066,7 @@ class HnsCub(ParserBase):
         crowders. Its associated keyword is 'epshc'.
     lcube : float
         Length of the simulation box, inferred from 'l' keyword
-        (half-length of hthe simulation box).
+        (half-length of the simulation box).
     dt : float, default 0.005
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int, default 5000
@@ -2152,7 +2165,7 @@ class HnsCub(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['nucleoid', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
@@ -2265,11 +2278,11 @@ class HnsCyl(ParserBase):
     - `space`: N#D#nh#ac#epshc#nc#
       A 'space' artifact.
 
-    For the above four lineages, the short names (eywords) are physical
+    For the above four lineages, the short names (keywords) are physical
     attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attribues.
+    number. See `genealogy_attributes` below for long names of attributes.
 
-    Other than attributes inhertied from the parent class `ParserBase`, this
+    Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
     attributes of a given `lineage` as define in the `genealogy_attributes`
     class attribute.
@@ -2420,7 +2433,7 @@ class HnsCyl(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: Literal['nucleoid', 'all']
+        group: GroupT
     ) -> None:
         super().__init__(artifact, lineage, group)
         self._initiate_attributes()
