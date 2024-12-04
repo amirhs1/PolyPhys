@@ -5,7 +5,10 @@ from typing import Callable, List, Tuple, Optional, Union, Dict, Any
 
 import numpy as np
 
-from ..manage.typer import ParserInstance, GroupT, PropertyT
+from ..manage.typer import (
+    ParserInstance, GroupT, PropertyT, EntityT
+
+)
 from ..manage.utilizer import invalid_keyword, sort_filenames
 from ..manage import organizer
 from .distributions import distributions_generator
@@ -38,7 +41,7 @@ class AnalyzerBase:
         input_database: str,
         hierarchy: str,
         has_stamp: bool,
-        properties: Dict[str, Tuple[Any, ...]],
+        properties: Dict[str, List[Tuple[Any, ...]]],
         group: GroupT,
         is_segment: bool,
     ):
@@ -118,7 +121,8 @@ class AnalyzerBase:
         }
 
     def analyze_measures(self) -> None:
-        """read in the 'probe' artifacts of the 'group' particles based on the
+        
+        """read in the 'probe' observations of the 'group' particles based on the
         `hierarchy` of directories and files from the `input_database` path to the
         'probe' phase of a 'space' and creates the 'analysis' phase at that parent
         directory of the 'probe' of that 'space', infers 'space' names from
@@ -126,32 +130,88 @@ class AnalyzerBase:
         in the 'analysis' directory for both 'bug' and 'all' groups.
 
         `tseries_properties`, `hists_properties`, `rho_phi_hists_properties` are
-        list of tuples in which each tuple has three string members. The first
+        list of tuples in which each tuple has three string members. the first
         string is the name of a physical property, the second one is the particle
         type, and the last one is `group` type.
 
-        Parameters
+        parameters
         ----------
         input_database: str
-            Path to the input_database; a 'space' directory at a given 'phase'.
+            path to the input_database; a 'space' directory at a given 'phase'.
         hierarchy: str
-            Hierarchy of the directories and files within the `input_database`;
-            for instance, "/N*/N*" means files that starts with "N" and are
-            located in directories starting with "N".
-        parser: ParserT
-            A class from 'PolyPhys.manage.parser' module that parses filenames
+            hierarchy of the directories and files within the `input_database`;
+            for instance, "/n*/n*" means files that starts with "n" and are
+            located in directories starting with "n".
+        parser: parsert
+            a class from 'polyphys.manage.parser' module that parses filenames
             or filepaths to infer information about a file.
         group : {'bug', 'nucleoid', 'all'}, default cylindrical
-            Shape of the simulation box.
+            shape of the simulation box.
         geometry : {'cylindrical', 'slit', 'cubic'}
-            Shape of the simulation box.
+            shape of the simulation box.
         topology:
-            Topology of the polymer
+            topology of the polymer
         is_segment: bool
-            Whether `artifacts` are 'segment' (True) or 'whole' (False)
+            whether `observations` are 'segment' (true) or 'whole' (false)
         has_stamp: bool.
-            Whether `artifacts` have 'stamp' files (True) or 'whole' (False).
+            whether `observations` have 'stamp' files (true) or 'whole' (false).
+        tseries_properties: list of timeseriest, default none
+            a list of tuples in which each tuple has three string members. the
+            first string is the name of a physical property, the second one is
+            the particle type, and the last one is `group` type. these physical
+            properties are all time-series form.
+        acf_tseries_properties: list of timeseriest, default none
+            a list of tuples where each tuple has three members: the property
+            name, species, and group of a 'time-series' property. for
+            `cls_tseries_properties`, the auto correlation function (afc) is
+            also computed.
+        hist_properties: list of histogramt, default none
+            a list of tuples in which each tuple has three string members. the
+            first string is the name of a physical property, the second one is
+            the particle type, and the last one is `group` type. these physical
+            properties are all histogram form.
+        hist_properties_no_edge: list of histogramt default none
+            a list of tuples where each tuple has three members: the direction,
+            species, and group of a 'histogram' property. this type of histrograms
+            does not have an accopanying edge.
+        hist2d_properties: list of histogramt, default none
+            a list of tuples in which each tuple has three string members. the
+            first string is the name of a physical property, the second one is
+            the particle type, and the last one is `group` type. these physical
+            properties are all 2d-histogram form.
+        hist2d_edges: list of edget, default none
+            a list of tuples in which each tuple has two string members. the
+            first string is the name of a physical property, and the second one is
+            `group` type. these physical properties are all histogram edge
+            form.
+        rho_phi_hist_properties: list of histogramt, default none
+            a list of tuples in which each tuple has three string members. the
+            first string is the name of a physical property, the second one is
+            the particle type, and the last one is `group` type. these physical
+            properties are all histogram form; however, in contrast to
+            `hists_properties`, the local number density and volume fraction of
+            `rho_phi_hists_properties` are also calculated.
+        nonscalar_hist_t_properties: list of nonscalartimeseriest, default none
+            a list of tuples in which each tuple has four string members. the
+            first string is the name of a physical property, the second one is
+            the particle type, the third one is `group` type, and the last one
+            is the axis over which these physical properties are all of
+            nonscalar form.
+        nonscalar_mat_t_properties: list of nonscalartimeseriest, default none
+            a list of tuples in which each tuple has three string members. the
+            first string is the name of a physical property, the second one is
+            the particle type, and the last one is `group` type. these physical
+            properties are all of nonscalar form.
+        nlags: int, default 7000
+            maximum lag in the auto correlation function (afc).
+        alpha: float, default 0.05
+            if a number is given, the confidence intervals for the given level
+            are returned. for instance if alpha=.05, 95 % confidence intervals
+            are returned where the standard deviation is computed according to
+            bartlett's formula.
         """
+
+        
         artifacts = glob.glob(self.input_database + self.hierarchy)
         if not artifacts:
             raise ValueError(
@@ -175,15 +235,15 @@ class AnalyzerBase:
             self._stamps()
 
         # Dynamically call methods based on property types in kwargs
-        for prop_type, prop_value in kwargs.items():
+        for prop_type, prop_value in self._properties.items():
             if prop_value is not None:
                 method = self.methods.get(prop_type)
                 if method:
-                    method(**kwargs)
+                    method(properties)
 
     def time_series(
         self,
-        properties: List[Tuple[str, str, str]],
+        properties: List[Tuple[PropertyT, EntityT, GroupT]],
     ) -> None:
         """Runs various statistical analyses on `artifacts` of
         each of `TimeSeriesT` types in a given `geometry` and then
