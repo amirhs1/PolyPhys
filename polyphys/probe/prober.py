@@ -2721,7 +2721,7 @@ class HnsCylNucleoidProber(
         lj_cut = 2**(1/6)
         dmon = getattr(self.parser, 'dmon')
         self.dhns_patch = getattr(self.parser, 'dhns_patch') 
-        self.r_cutoff = np.round(0.5 * lj_cut * (dmon + dhns_patch), 3)
+        self.r_cutoff = np.round(0.5 * lj_cut * (dmon + self.dhns_patch), 3)
         self._n_bonds = len(self._atom_groups['Mon'].bonds.indices)
         self._collectors = {
             'transSizeTMon': np.zeros(self.n_frames),
@@ -2992,7 +2992,9 @@ class HnsCubAllProber(
     ProberBase
 ):
     """
-    Base class for probing simulations of the LAMMPS 'all' atom group in the in the *TransFociCub*, *SumRuleCubHeteroRing*, and *HnsCubAll* molecular dynamics projects to extract spatial distributions of particles.
+    Base class for probing simulations of the LAMMPS 'all' atom group in the in
+    the *TransFociCub*, *SumRuleCubHeteroRing*, and *HnsCubAll* molecular
+    dynamics projects to extract spatial distributions of particles.
 
     Physical Properties Extracted
     -----------------------------
