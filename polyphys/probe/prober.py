@@ -48,7 +48,7 @@ from polyphys.analyze.measurer import (
 )
 
 
-class CylindricalHistogramMixIn(ABC):
+class CylindricalHistogramMixin(ABC):
     """
     Mixin for histograms in cylindrical coordinate systems. Handles histograms
     for `r`, `z`, and `theta`.
@@ -1293,7 +1293,7 @@ class SumRuleCylBugProber(
 
 
 class SumRuleCylAllProber(
-    CylindricalHistogramMixIn,
+    CylindricalHistogramMixin,
     CartesianHistogram2DMixin,
     ProberBase
 ):
@@ -1628,7 +1628,7 @@ class TransFociCylBugProber(
         
 
 class TransFociCylAllProber(
-    CylindricalHistogramMixIn,
+    CylindricalHistogramMixin,
     CartesianHistogram2DMixin,
     ProberBase
 ):
@@ -2793,7 +2793,7 @@ class HnsCylNucleoidProber(
 
 
 class HnsCylAllProber(
-    CylindricalHistogramMixIn,
+    CylindricalHistogramMixin,
     CartesianHistogram2DMixin,
     ProberBase
 ):
