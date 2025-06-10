@@ -2620,9 +2620,10 @@ class SumRuleCubHeteroRingAllProber(ProberBase):
 class HnsCylNucleoidProber(
     BiaxialConfinementSizeMixin,
     GyrationDataMixin,
+    HnsBindingMixin,
     ProberBase):
     """
-    Probes simulations of the LAMMPS 'bug' atom group in the *HnsCyl*
+    Probes simulations of the LAMMPS 'nucleoid' atom group in the *HnsCyl*
     molecular dynamics project to extract specific physical properties.
 
     Physical Properties Extracted
@@ -2983,8 +2984,173 @@ class HnsCylAllProber(
                 self._update_histogram_2d(plane, ent)
 
 
-class HnsCubNucleoidProber(ProberBase):
+class HnsCubNucleoidProber(
+    GyrationDataMixin,
+    HnsBindingMixin,
+    ProberBase):
+    """
+    Probes simulations of the LAMMPS 'nucleoid' atom group in the *HnsCub*
+    molecular dynamics project to extract specific physical properties.
 
+    Physical Properties Extracted
+    -----------------------------
+    For the particle entity 'Mon' (representing monomers):
+    - `gyrTMon` : numpy.ndarray
+        Radius of gyration of the polymer for each frame.
+    - `asphericityTMon` : numpy.ndarray
+        Asphericity of the polymer's configuration for each frame.
+    - `shapeTMon` : numpy.ndarray
+        Shape parameter of the polymer for each frame.
+    - `principalTMon` : numpy.ndarray
+        Principal axes of the polymer for each frame.
+
+    Parameters
+    ----------
+    topology : str
+        Path to the topology file of the molecular system.
+    trajectory : str
+        Path to the trajectory file of the molecular system.
+    lineage : {'segment', 'whole'}
+        Specifies the type of lineage associated with the trajectory file.
+    save_to : str
+        Directory where artifacts (e.g., physical property files) will be
+        saved.
+    continuous : bool, default False
+        Indicates whether the trajectory is part of a continuous sequence.
+
+    Notes
+    -----
+    - Atoms with `resid 1` in the LAMMPS dump format represent `Mon`(monomers).
+    - Coordinates are wrapped and unscaled. The polymer's center of mass is
+      recentered to the simulation box's center.
+
+    Examples
+    --------
+    Creating an instance of `HnsCubNucleoidProber` for a specific simulation:
+
+    >>> prober = HnsCubNucleoidProber(
+    ...     topology="topology.bug.data",
+    ...     trajectory="trajectory.bug.lammpstrj",
+    ...     lineage="whole",
+    ...     save_to="./results/",
+    ...     continuous=False
+    ... )
+    >>> prober.run()
+    >>> prober.save_artifacts()
+    """
+    _entities: List[EntityT] = ['Mon', 'Hns']
+
+    def __init__(
+        self,
+        topology: str,
+        trajectory: str,
+        lineage: PrimitiveLineageT,
+        save_to: str,
+        continuous: bool = False,
+    ) -> None:
+        super().__init__(topology, trajectory, lineage, save_to,
+                         continuous=continuous)
+        self._parser: HnsCylInstance = HnsCyl(trajectory, lineage, 'nucleoid')
+        self._damping_time = \
+            getattr(self.parser, 'ndump') * getattr(self.parser, 'dt')
+        self._universe = mda.Universe(
+            topology,
+            trajectory,
+            topology_format='DATA',
+            format='LAMMPSDUMP',
+            lammps_coordinate_convention='unscaled',
+            atom_style="id resid type x y z",
+            dt=self.damping_time
+        )
+
+    def _define_atom_groups(self) -> None:
+        self._atom_groups['Mon'] = \
+            self.universe.select_atoms('resid 1')  # monomers
+        self._atom_groups['Hns'] = \
+            self.universe.select_atoms('type 2')  # monomers
+
+    @property
+    def n_bonds(self) -> int:
+        """
+        Returns the number of bonds between monomers in a polymer.
+        """
+        return self._n_bonds
+
+    def _prepare(self) -> None:
+        self.cis_threshold = 4
+        dist_m_hpatch = []
+        lj_cut = 2**(1/6)
+        dmon = getattr(self.parser, 'dmon')
+        self.dhns_patch = getattr(self.parser, 'dhns_patch') 
+        self.r_cutoff = np.round(0.5 * lj_cut * (dmon + self.dhns_patch), 3)
+        self._n_bonds = len(self._atom_groups['Mon'].bonds.indices)
+        self._collectors = {
+            'transSizeTMon': np.zeros(self.n_frames),
+            'fsdTMon': np.zeros(self.n_frames),
+            'gyrTMon': np.zeros(self.n_frames),
+            'asphericityTMon': np.zeros(self.n_frames),
+            'shapeTMon': np.zeros(self.n_frames),
+            'principalTMon': np.zeros([self.n_frames, 3, 3]),
+            'bondLengthVecMon': np.zeros((self.n_bonds, 1), dtype=np.floating),
+            'bondCosineCorrVecMon': np.zeros(self.n_bonds, dtype=np.floating),
+            'distMatTMonHnsPatch': [],
+            'nBoundTHnsPatch': np.zeros(self.n_frames, dtype=np.integer),
+            'nEngagedTHnsPatch': np.zeros(self.n_frames, dtype=np.integer),
+            'nFreeTHnsPatch': np.zeros(self.n_frames, dtype=np.integer),
+            'nFreeTHnsCore': np.zeros(self.n_frames, dtype=np.integer),
+            'nBridgeTHnsCore': np.zeros(self.n_frames, dtype=np.integer),
+            'nDangleTHnsCore': np.zeros(self.n_frames, dtype=np.integer),
+            'nCisTHnsCore': np.zeros(self.n_frames, dtype=np.integer),
+            'nTransTHnsCore': np.zeros(self.n_frames, dtype=np.integer)
+        }
+        nmon = getattr(self.parser, 'nmon')
+        if self.parser.topology == 'linear':
+            self.loop_length_hist_t = np.zeros(nmon, dtype=int)
+        elif self.parser.topology == 'ring':
+            self.loop_length_hist_t = np.zeros((nmon//2)+1, dtype=int)
+        else:
+            raise ValueError(
+                "The genomic distance is not defined for"
+                f" '{self.parser.topology}' topology"
+            )
+
+    def _probe_frame(self, idx) -> None:
+        """
+        Probes a single trajectory frame and updates histogram collectors.
+
+        Parameters
+        ----------
+        idx : int
+            The index of the trajectory frame to probe.
+        """
+        self._collect_biaxial_confinement_size(idx, axis=2)
+        self._collect_gyration_data(idx, unwrap=False)
+
+        bond_dummy, cosine_dummy = correlations.bond_info(
+            self._atom_groups['Mon'],
+            self.parser.topology,
+            )
+        self.collectors['bondLengthVecMon'] += bond_dummy
+        self.collectors['bondCosineCorrVecMon'] += cosine_dummy
+        
+        
+    
+    def save_artifacts(self) -> None:
+        """
+        Saves all collected analysis data to the specified output directory.
+        """
+        self.collectors['bondLengthVecMon'] = \
+            self.collectors['bondLengthVecMon'] / self.n_frames
+        self.collectors['bondLengthVecMon'] = \
+            self.collectors['bondLengthVecMon'].reshape(self.n_bonds,)
+        bonds_per_lag = np.arange(self.n_bonds, 0, -1)
+        self.collectors['bondCosineCorrVecMon'] = \
+           self.collectors['bondCosineCorrVecMon'] / (self.n_frames *
+                                                      bonds_per_lag)
+        for prop, artifact in self.collectors.items():
+            filename = f"{self.save_to}{self.sim_name}-{prop}.npy"
+            np.save(filename, artifact)
+        print("All artifacts saved.")
 
 class HnsCubAllProber(
     SphericalHistogramMixin,
