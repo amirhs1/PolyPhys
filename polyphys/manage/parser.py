@@ -77,7 +77,7 @@ from ..analyze.measurer import (
     volume_fraction_cube,
     volume_fraction_cylinder
 )
-from .typer import LineageT, TopologyT, GroupT, GeometryT
+from .types import LineageT, TopologyT, GroupT, GeometryT
 
 
 class ParserBase(ABC):

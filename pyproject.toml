@@ -1,0 +1,63 @@
+[build-system]
+    requires = ["setuptools", "wheel"]
+    build-backend = "setuptools.build_meta"
+
+[project]
+    name = "polyphys"
+    description = "Computer Simulation Data Management and Analysis."
+    authors = [{ name="Amir Sadeghi", email="amirh.sadeghi@outlook.com" }]
+    readme = "README.md"
+    license = "MIT"
+    version = "0.3.0"
+    classifiers = [
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Physics",
+        "Topic :: Scientific/Engineering :: Chemistry",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12"
+    ]
+    requires-python = ">=3.9"
+    dependencies = [
+        "numpy",
+        "pandas",
+        "scipy",
+        "matplotlib",
+        "seaborn",
+        "MDAnalysis",
+        "statsmodels",
+        "pyarrow",
+        "packaging",
+        "click"
+    ]
+
+[project.optional-dependencies]
+    docs = [
+        "sphinx",
+        "sphinx_sitemap"
+    ]
+    dev = [
+        "pytest",
+        "flake8",
+        "mypy",
+        "pandas-stubs",
+    ]
+    notebooks = [
+        "ipykernel",
+        "ipython",
+        "jupyter-client",
+        "jupyter-core",
+        "matplotlib-inline"
+    ]
+
+[project.urls]
+    Source = "https://github.com/amirhs1/PolyPhys"
+
+[tool.setuptools.packages.find]
+    include = ["polyphys*"]
+    exclude = ["notebooks*", "projects*", "under_review*"]
+
+[project.scripts]
+    polyphys = "polyphys.cli:main"

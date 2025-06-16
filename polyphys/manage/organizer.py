@@ -133,7 +133,7 @@ import pathlib
 from glob import glob
 import numpy as np
 import pandas as pd
-from ..manage.typer import (
+from .types import (
     GroupT, PropertyT, ParserType, StageT, ClusterParserType,
     ClusterParserInstance, PrimitiveLineageT, PhaseT
     )

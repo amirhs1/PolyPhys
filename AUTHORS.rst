@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Amir Sadeghi <amirh.sadeghi@icloud.com>
+* Amir Sadeghi <amirh.sadeghi@outlook.com>
 
 Contributors
 ------------

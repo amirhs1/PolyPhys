@@ -1,0 +1,12 @@
+numpy
+pandas
+scipy
+matplotlib
+seaborn
+MDAnalysis
+statsmodels
+pyarrow
+packaging
+click
+sphinx
+sphinx_sitemap

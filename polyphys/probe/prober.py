@@ -17,7 +17,7 @@ from polyphys.manage.parser import (
     HnsCyl,
     TwoMonDepCub
 )
-from polyphys.manage.typer import (
+from polyphys.manage.types import (
     ParserInstance,
     AxisT,
     BinT,
