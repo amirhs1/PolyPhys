@@ -5,7 +5,7 @@ from typing import Callable, List, Tuple, Optional, Union, Dict, Any
 
 import numpy as np
 
-from ..manage.typer import (
+from ..manage.types import (
     ParserInstance, GroupT, PropertyT, EntityT
 
 )
