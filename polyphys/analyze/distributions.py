@@ -21,7 +21,7 @@ from typing import Dict, Tuple, Optional, Callable, Literal, List
 import numpy as np
 import pandas as pd
 from scipy import integrate
-from ..manage.typer import ParserType, FreqDataT, EdgeDataT, EntityT
+from ..manage.types import ParserType, FreqDataT, EdgeDataT, EntityT
 from ..manage.organizer import make_database, sort_filenames
 from ..manage.utilizer import invalid_keyword, round_up_nearest
 from ..analyze.measurer import spherical_segment, sphere_sphere_intersection

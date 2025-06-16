@@ -25,7 +25,7 @@ References
 from typing import Optional, Dict
 import numpy as np
 from .measurer import apply_pbc_orthogonal
-from ..manage.typer import AxisT
+from ..manage.types import AxisT
 
 
 def self_dist_array(

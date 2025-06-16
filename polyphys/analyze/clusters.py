@@ -41,7 +41,7 @@ from typing import Dict, List, Tuple, Callable
 from itertools import combinations
 import numpy as np
 import pandas as pd
-from ..manage.typer import TopologyT, ClusterParserInstance
+from ..manage.types import TopologyT, ClusterParserInstance
 from ..manage.utilizer import invalid_keyword
 from .contacts import generate_contact_matrix
 
