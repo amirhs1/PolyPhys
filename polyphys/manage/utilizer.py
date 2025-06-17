@@ -3,8 +3,8 @@
 Miscellaneous utility codes --- :mod:`polyphys.manage.utilizer`
 ===============================================================
 
-The :mod:`~polyphys.manage.utilizer` module provides shared utility functions 
-used across various parts of the PolyPhys package. These functions handle 
+The :mod:`~polyphys.manage.utilizer` module provides shared utility functions
+used across various parts of the PolyPhys package. These functions handle
 string processing, file handling, numeric rounding, and error checking.
 
 
@@ -26,11 +26,12 @@ Dependencies
 - Python standard library: `re`, `gzip`, `contextlib`, `typing`
 - Third-party: `numpy`
 
-See also: :mod:`~polyphys.manage.types` for the definition of :data:`InputType`.
+See also: :mod:`~polyphys.manage.types` for the definition of
+:data:`InputType`.
 """
 import re
 import gzip
-from typing import Generator, Optional, List, Union, Tuple, Any, IO
+from typing import Generator, Optional, List, Union, Tuple
 from contextlib import contextmanager
 import numpy as np
 from .types import InputType
@@ -93,7 +94,8 @@ def to_float_if_possible(string: str) -> Union[float, str]:
 
 def split_alphanumeric(alphanumeric: str) -> List[Union[int, str, float]]:
     """
-    Split an *alphanumeric* string into a list of strings, integers, and floats.
+    Split an *alphanumeric* string into a list of strings, integers, and
+    floats.
 
     This function identifies contiguous sections of digits, letters, and
     decimal numbers, returning them as separate elements in a list, making the
@@ -139,7 +141,7 @@ def sort_filenames(
     formats : List[Union[str, Tuple[str, ...]]]
         A list specifying the file formats. Each item in `formats` can be a
         string representing a file extension (e.g., 'data'), or a tuple of
-        alternative extensions considered equivalent (e.g., 
+        alternative extensions considered equivalent (e.g.,
         ('trj', 'lammpstrj')).
 
     Returns
@@ -164,7 +166,7 @@ def sort_filenames(
     return list(zip(*grouped_filenames))
 
 
-def openany(filepath: str, mode: str = 'r') -> InputType:
+def openany(filepath: str, mode: str = 'rt') -> InputType:
     """
     Open a regular or gzipped file.
 
@@ -187,7 +189,7 @@ def openany(filepath: str, mode: str = 'r') -> InputType:
 @contextmanager
 def openany_context(
     filepath: str,
-    mode: str = 'r'
+    mode: str = 'rt'
 ) -> Generator[InputType, None, None]:
     """
     Open a regular or gzipped file, providing a file-like object.
@@ -265,7 +267,7 @@ def round_up_nearest(
 
 def invalid_keyword(
     keyword: str,
-    valid_keywords: List[Union[str,None]],
+    valid_keywords: List[Union[str, None]],
     message: Optional[str] = None
 ) -> None:
     """
