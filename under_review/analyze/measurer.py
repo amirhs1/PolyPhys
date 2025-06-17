@@ -4,9 +4,8 @@
 ==========================================================
 
 
-The :mod:`polyphys.analyze.measurer` module provides a suite of functions /
-helper functions for computing geometric, structural, statistical, and
-thermodynamic properties of a particle or a group of particles.
+The :mod:`polyphys.analyze.measurer` module provides a suite of functions for
+performing measurements and analyses on molecular simulation data.
 
 Functions
 =========
@@ -34,8 +33,8 @@ Density and Volume Calculations:
 
 Advanced Geometric Calculations:
 --------------------------------
-.. autofunction:: sphere_sphere_intersection
 .. autofunction:: spherical_segment
+.. autofunction:: sphere_sphere_intersection
 
 Binning for histogram processing
 --------------------------------
@@ -65,29 +64,27 @@ For sphere-sphere intersection:
 import warnings
 from typing import Dict, Tuple, Optional, Literal, Union, Any, List
 import numpy as np
-
-from ..manage.types import AxisT, EntityT, PropertyT, BinT
 from ..manage.utilizer import invalid_keyword
 
 
 def apply_pbc_orthogonal(
     pbc_lengths: np.ndarray,
     pbc_lengths_inverse: np.ndarray,
-    pbc: Dict[AxisT, float]
+    pbc: Dict[int, float]
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Updates the periodic boundary condition (PBC) lengths and their inverses
-    based on specified axes in `pbc`.
+    based on specified dimensions and lengths in `pbc`.
 
     Parameters
     ----------
     pbc_lengths : numpy.ndarray
-        Array of box lengths along each axis (typically shape (3,)).
+        An array of lengths in each direction.
     pbc_lengths_inverse : numpy.ndarray
-        Array of inverse box lengths along each axis (shape (3,)).
+        An array of the inverses of lengths in each direction.
     pbc : dict
-        Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths
-        as values.
+        A dictionary where keys are dimension indices and values are the
+        corresponding lengths for applying PBC.
 
     Return
     ------
@@ -99,55 +96,40 @@ def apply_pbc_orthogonal(
     Raises
     ------
     ZeroDivisionError
-        If any specified length is zero, which would result in division by
-        zero.
-    ValueError
-        If any specified length is negative, which is physically invalid for
-        box dimensions.
-
-    Examples
-    --------
-    >>> pbc_lengths = np.zeros(3)
-    >>> pbc_lengths_inverse = np.zeros(3)
-    >>> pbc = {0: 10.0, 2: 20.0}
-    >>> apply_pbc_orthogonal(pbc_lengths, pbc_lengths_inverse, pbc)
-    (array([10.,  0., 20.]), array([0.1 , 0.  , 0.05]))
+        If a length value in `pbc` is zero, causing a division by zero in the
+        inverse calculation.
     """
-    for ax, length in pbc.items():
-        if length == 0.0:
+    for dim, length in pbc.items():
+        if length == 0:
             raise ZeroDivisionError(
-                f"Length for axis {ax} cannot be zero."
-            )
-        if length < 0.0:
-            raise ValueError(
-                f"Length for axis {ax} must be positive; got {length}."
-            )
-        pbc_lengths[ax] = length
-        pbc_lengths_inverse[ax] = 1 / length
+                f"Length for dimension {dim} cannot be zero.")
+        pbc_lengths[dim] = length
+        pbc_lengths_inverse[dim] = 1 / length
     return pbc_lengths, pbc_lengths_inverse
 
 
 def pair_distance(
     positions: np.ndarray,
-    pbc: Optional[Dict[AxisT, float]] = None
+    pbc: Optional[Dict[int, float]] = None
 ) -> np.ndarray:
     """
-    Compute the pairwise distance vector between two particles in Cartesian
-    coordinates, optionally applying the minimum image convention (PBC).
+    Computes the pair distance vector between two particles in Cartesian
+    coordinates.
 
     Parameters
     ----------
     positions : numpy.ndarray
         Array of shape (2, n_dim) containing atom positions, and sorted
         by atom number form 1 to N.
-    pbc : Optional[Dict[AxisT, float]], default None
-        Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths as
-        values. If provided, periodic boundary conditions (PBC) are applied.
+    pbc : Optional[Dict[int, float]], default None
+        A dictionary with dimension indices as keys (0 for x, 1 for y, and 2
+        for z) and lengths of the simulation box in those dimensions as values.
+        If provided, applies the minimum image convention.
 
     Returns
     -------
-    np.ndarray
-        A 1D array with pair distances along each axis.
+    dr_ij: np.ndarray
+        1D array with pair distances along each axis.
 
     Raises
     ------
@@ -156,20 +138,10 @@ def pair_distance(
 
     Notes
     -----
-    This function returns the component-wise distance vector, not the scalar
-    Euclidean norm. If `pbc` is provided, the center-of-geometry is shifted to
-    the nearest periodic image before computing the vector.
-
-    Examples
-    --------
-    >>> pos = np.array([[1.0, 2.0, 3.0], [4.0, 2.0, 3.0]])
-    >>> pair_distance(pos)
-    array([3., 0., 0.])
-
-    >>> pbc = {0: 10.0}
-    >>> pos = np.array([[1.0, 2.0, 3.0], [9.5, 2.0, 3.0]])
-    >>> pair_distance(pos, pbc)
-    array([-1.5,  0. ,  0. ])
+    The distance along each axis is the difference between the coordinates of
+    the second and the first particle. This function does not compute the
+    Euclidean (absolute) distance but instead returns the distance vector
+    components.
     """
     n_atoms, n_dims = positions.shape
     if n_atoms != 2:
@@ -214,21 +186,7 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
     Notes
     -----
     The distance is calculated in a reference frame centered at the center of
-    geometry of atoms.
-
-    Examples
-    --------
-    >>> positions = np.array([[0.0, 0.0, 0.0],
-    ...                       [1.0, 0.0, 0.0],
-    ...                       [2.0, 0.0, 0.0]])
-    >>> end_to_end(positions)
-    2.0
-
-    >>> positions = np.array([[1.0, 1.0, 1.0],
-    ...                       [2.0, 2.0, 2.0],
-    ...                       [3.0, 3.0, 3.0]])
-    >>> round(end_to_end(positions), 6)
-    3.464102  # Euclidean distance between 1st and 2nd relative to COG
+    geometry of atoms
     """
     # calculation in the center of geometry of the atom group.
     if positions.shape[0] < 2:
@@ -239,7 +197,7 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
 
 def transverse_size(
     positions: np.ndarray,
-    axis: AxisT
+    axis: Literal[0, 1, 2]
 ) -> float:
     """
     Computes the mean transverse size of a group of atoms in the plane
@@ -269,12 +227,6 @@ def transverse_size(
     -----
     The distance is calculated in a reference frame centered at the center of
     geometry of atoms in the plane perpendicular to a given axis.
-
-    Examples
-    --------
-    >>> pos = np.array([[1, 0, 0], [1, 2, 2]])
-    >>> transverse_size(pos, axis=0)
-    2.0
     """
     trans_axes = {0: [1, 2], 1: [0, 2], 2: [0, 1]}
     if axis >= positions.shape[1]:
@@ -310,19 +262,13 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
     -----
     The distance is calculated in a reference frame centered at the center of
     geometry of atoms.
-
-    Examples
-    --------
-    >>> pos = np.array([[0, 0, 0], [4, 2, 6], [2, 3, 0]])
-    >>> max_distance(pos)
-    array([4., 3., 6.])
     """
     # calculation in the center of geometry of the atom group.
     centered_positions = positions - np.mean(positions, axis=0)
     return np.ptp(centered_positions, axis=0)
 
 
-def fsd(positions: np.ndarray, axis: AxisT) -> float:
+def fsd(positions: np.ndarray, axis: Literal[0, 1, 2]) -> float:
     """
     Computes the mean Feret's statistical diameter (FSD) along a specified
     axis.
@@ -336,8 +282,8 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
         Array of shape (n_atoms, n_dim) containing atom positions, and sorted
         by atom number form 1 to N.
 
-    axis: AxisT
-        Axis index (0=x, 1=y, 2=z) along which to compute FSD.
+    axis: {0, 1, 2}
+        Axis (0 for x, 1 for y, and 2 for z) along which to calculate FSD.
 
     Returns
     -------
@@ -355,12 +301,6 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
     Chromatography", Wang Y Teraoka
     I Hansen FY Peters GH Ole H. Macromolecules 2010, 43, 3, 1651-1659
     https://doi.org/10.1021/ma902377g
-
-    Examples
-    --------
-    >>> pos = np.array([[1, 2, 3], [4, 8, 6]])
-    >>> fsd(pos, axis=1)
-    6.0
     """
     if axis >= positions.shape[1]:
         raise IndexError("Axis {axis} is out of bounds for positions array"
@@ -370,49 +310,41 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
     return np.ptp(positions[:, axis])
 
 
-def simple_stats(entity: EntityT, data: np.ndarray) -> Dict[PropertyT, float]:
+def simple_stats(prop: str, array: np.ndarray) -> Dict[str, float]:
     """
-    Compute basic statistics (mean, variance, SEM) for for a physical `entity`.
+    Measures the mean, standard deviation, variance, and standard error
+    of the mean (sem) for a property array.
 
     Parameters
     ----------
-    entity : EntityT
-        Name of the physical entity.
-
-    data: np.ndarray
-        Array of entity values.
+    prop : str
+        Name of the physical property.
+    array: np.ndarray
+        Array of property values.
 
     Returns
     -------
-    Dict[PropertyT, float]
-        Dictionary with keys '<entity>_mean', '<entity>_var', and
-        '<entity>_sem'.
+    Dict[str, float]
+        Dictionary with keys for mean, variance, and SEM of `prop`.
 
     Raises
     ------
     ValueError
-        If `data` is empty.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> simple_stats("energy", np.array([1.0, 2.0, 3.0]))
-    {'energy_mean': 2.0, 'energy_var': 1.0, 'energy_sem': 0.5773502691896257}
+        If `array` is empty.
     """
-    if len(data) == 0:
+    if len(array) == 0:
         raise ValueError("Input array must not be empty.")
-
     # Unbiased std, var, and sem.
     return {
-        entity + '_mean': np.mean(data),
-        entity + '_var': np.var(data, ddof=1),
-        entity + '_sem': np.std(data, ddof=1) / np.sqrt(len(data))
+        prop + '_mean': np.mean(array),
+        prop + '_var': np.var(array, ddof=1),
+        prop + '_sem': np.std(array, ddof=1) / np.sqrt(len(array))
     }
 
 
 def sem(data: np.ndarray) -> float:
     """
-    Calculates the standard error of the mean (SEM).
+    Calculates the standard error of the mean (SEM) for a sample.
 
     Parameters
     ----------
@@ -432,12 +364,6 @@ def sem(data: np.ndarray) -> float:
     Notes
     -----
     SEM is calculated using sample standard deviation (ddof=1) and sample size.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> sem(np.array([1.0, 2.0, 3.0]))
-    0.5773502691896257
     """
     if len(data) == 0:
         raise ValueError("Input data array must not be empty.")
@@ -477,13 +403,6 @@ def number_density_cube(
     The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
     where `v_{avail}` is the available volume to the center of geometry of a
     particle based on the presence of periodic boundary conditions.
-
-    Examples
-    --------
-    >>> number_density_cube(1000, 1.0, 10.0)
-    1.3717421124828531
-    >>> number_density_cube(1000, 1.0, 10.0, pbc=True)
-    1.0
     """
     v_avail = (l_cube - int(pbc) * d_atom) ** 3
     return n_atom / v_avail
@@ -522,11 +441,6 @@ def volume_fraction_cube(
     geometry of each particle. For point-like particles, the notion of volume
     fraction is meaningless. For finite-size particles, the available volume
     depends on whether periodic boundary conditions (PBCs) are applied.
-
-    Examples
-    --------
-    >>> volume_fraction_cube(1000, 1.0, 10.0)
-    0.7189611722461486
     """
     rho = number_density_cube(n_atom, d_atom, l_cube, pbc)
     return rho * np.pi * d_atom ** 3 / 6
@@ -568,11 +482,6 @@ def number_density_cylinder(
     The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
     where `v_{avail}` is the available volume to the center of geometry of a
     particle based on the presence of periodic boundary conditions.
-
-    Examples
-    --------
-    >>> number_density_cylinder(1000, 1.0, 10.0, 5.0)
-    13.592168292790723
     """
     v_avail = np.pi * (l_cyl - int(pbc) * d_atom) * (d_cyl - d_atom) ** 2 / 4
     return n_atom / v_avail
@@ -615,11 +524,6 @@ def volume_fraction_cylinder(
     geometry of each particle. For point-like particles, the notion of volume
     fraction is meaningless. For finite-size particles, the available volume
     depends on whether periodic boundary conditions (PBCs) are applied.
-
-    Examples
-    --------
-    >>> volume_fraction_cylinder(1000, 1.0, 10.0, 5.0)
-    7.123792218314786
     """
     rho = number_density_cylinder(n_atom, d_atom, l_cyl, d_cyl, pbc)
     return rho * np.pi * d_atom ** 3 / 6
@@ -804,7 +708,7 @@ def fixedsize_bins(
     bin_size: float,
     lmin: float,
     lmax: float,
-    bin_type: BinT = 'ordinary',
+    bin_type: Literal['ordinary', 'nonnegative', 'periodic'] = 'ordinary',
     save_bin_edges: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -819,7 +723,7 @@ def fixedsize_bins(
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    bin_type : BinT, default 'ordinary'
+    bin_type : {'ordinary', 'nonnegative', 'periodic'}, default 'ordinary'
         Type of bin:
             - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
               Cartesian coordinates and spherical polar coordinate.

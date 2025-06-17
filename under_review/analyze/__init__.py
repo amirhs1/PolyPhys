@@ -22,23 +22,23 @@ Submodules
 """
 
 from polyphys.analyze import (
-    #analyzer,
-    #clusters,
-    #contacts,
-    #correlations,
-    #distributions,
-    #distances,
-    #helper,
+    analyzer,
+    clusters,
+    contacts,
+    correlations,
+    distributions,
+    distances,
+    helper,
     measurer,
 )
 
 __all__ = [
-    #'analyzer',
-    #'clusters',
-    #'contacts',
-    #'correlations',
-    #'distributions',
-    #'distances',
-    #'helper',
+    'analyzer',
+    'clusters',
+    'contacts',
+    'correlations',
+    'distributions',
+    'distances',
+    'helper',
     'measurer',
 ]
