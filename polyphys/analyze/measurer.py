@@ -85,9 +85,9 @@ def apply_pbc_orthogonal(
         Array of box lengths along each axis (typically shape (3,)).
     pbc_lengths_inverse : numpy.ndarray
         Array of inverse box lengths along each axis (shape (3,)).
-    pbc : dict
+    pbc : Dict[:py:data:`AxisT`, float]
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths
-        as values.
+        as values. See :mod:`polyphys.manage.types`.
 
     Return
     ------
@@ -140,9 +140,10 @@ def pair_distance(
     positions : numpy.ndarray
         Array of shape (2, n_dim) containing atom positions, and sorted
         by atom number form 1 to N.
-    pbc : Optional[Dict[AxisT, float]], default None
+    pbc : Optional[Dict[:py:data:`AxisT`, float]], default None
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths as
-        values. If provided, periodic boundary conditions (PBC) are applied.
+        values. If provided, periodic boundary conditions (PBC) are applied. 
+        See :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -250,9 +251,9 @@ def transverse_size(
     positions : np.ndarray
         Array of shape (n_atoms, n_dim) containing atomic positions, and sorted
         by atom number form 1 to N.
-    axis: {0, 1, 2}
+    axis: :py:data:`AxisT`
         The axis (0 for x, 1 for y, and 2 for z) in the plane perpendicular to
-        which the transverse size is calculated.
+        which the transverse size is calculated. See :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -336,8 +337,8 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
         Array of shape (n_atoms, n_dim) containing atom positions, and sorted
         by atom number form 1 to N.
 
-    axis: AxisT
-        Axis index (0=x, 1=y, 2=z) along which to compute FSD.
+    axis: :py:data:`AxisT`
+        Axis index (0=x, 1=y, 2=z) along which to compute FSD. See :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -765,7 +766,7 @@ def create_bin_edge_and_hist(
         Lower bound of the system in the direction of interest.
     lmax : float
         Upper bound of the system in the direction of interest.
-    output : str
+    output : Optional[str], default None
         Filename (including filepath) to which bin edges array is saved. A
         `.npy` extension will be appended to the filename if it does not
         already have one.
@@ -773,10 +774,8 @@ def create_bin_edge_and_hist(
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-        bin_edges : np.ndarray
-            The edges to pass into a histogram.
-        hist : np.ndarray
-            An empty histogram array initialized with zeros.
+        - bin_edges : Array of bin edges
+        - hist : Empty histogram array (zero-initialized).
 
     Raises
     ------
@@ -786,15 +785,23 @@ def create_bin_edge_and_hist(
     Notes
     -----
     The `.npy` extension is handled internally by `np.save`.
+
+    Examples
+    --------
+    >>> edges, hist = \
+        create_bin_edge_and_hist(bin_size=1.0, lmin=0.0, lmax=5.0)
+    >>> edges
+    array([0., 1., 2., 3., 4., 5.])
+    >>> hist
+    array([0, 0, 0, 0, 0], dtype=int16)
     """
     if lmin >= lmax:
         raise ValueError("'lmin' must be less than 'lmax'.")
+    
     bin_edges = np.arange(lmin, lmax + bin_size, bin_size)
     hist = np.zeros(len(bin_edges) - 1, dtype=np.int16)
 
     if output is not None:
-        # Save bin edges to file if save_to path is provided
-        # f"{save_to}{sim_name}-{edge_name}.npy"
         np.save(output, bin_edges)
 
     return bin_edges, hist
@@ -808,28 +815,28 @@ def fixedsize_bins(
     save_bin_edges: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Generate bin edges and an empty histogram, adjusting `lmin` and `lmax` to
-    ensure consistent `bin_size`.
+    Generate bin edges and an empty collectors with consisent bin width.
 
     Parameters
     ----------
     bin_size : float
-        Size of each bin.
+        Width of each bin.
     lmin : float
-        Lower bound of the system in the direction of interest.
+        Start of the range
     lmax : float
-        Upper bound of the system in the direction of interest.
-    bin_type : BinT, default 'ordinary'
-        Type of bin:
+        End of the range
+    bin_type : :py:data:`BinT`, default 'ordinary'
+        Type of binning:
             - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
               Cartesian coordinates and spherical polar coordinate.
-            - 'nonnegative': Extends `lmin` are `lmax` are symmetrically  if
+            - 'nonnegative': Extends `lmin` and `lmax` symmetrically  if
               adjusted `lmin` is nonnegative; otherwise, `lmin` is set to 0 and
               `lmax` is extended. Examples are radial directions in the polar,
               spherical, and cylindrical coordinate systems.
             - 'periodic': Periodic binning (e.g., azimuthal coordinate).
               Examples are azimuthal directions in cylindrical and spherical
             coordinate systems.
+            See :mod:`polyphys.manage.types`.
     save_bin_edges : Optional[str], default None
         Filename (including filepath) to which bin edges array is saved. A
         `.npy` extension will be appended to the filename if it does not
@@ -863,6 +870,14 @@ def fixedsize_bins(
     References
     ----------
     https://docs.mdanalysis.org/1.1.1/documentation_pages/lib/util.html#MDAnalysis.analysis.density.fixedwidth_bins
+
+    Examples
+    --------
+    >>> result = fixedsize_bins(1.0, 0.0, 5.0)
+    >>> result['n_bins']
+    5
+    >>> result['bin_edges']
+    array([0., 1., 2., 3., 4., 5.])
     """
     if lmin >= lmax:
         raise ValueError("'lmin' must be less than 'lmax'.")
@@ -896,8 +911,8 @@ def fixedsize_bins(
     else:
         invalid_keyword(bin_type, ['ordinary', 'nonnegative', 'periodic'])
 
-    hist_collectors = np.zeros(n_bins, dtype=np.int16)
-    hist_collectors_std = np.zeros(n_bins, dtype=np.int16)
+    collectors = np.zeros(n_bins, dtype=np.int16)
+    collectors_std = np.zeros(n_bins, dtype=np.int16)
 
     if save_bin_edges is not None:
         np.save(save_bin_edges, bin_edges)
@@ -905,8 +920,8 @@ def fixedsize_bins(
     return {
         'n_bins': n_bins,
         'bin_edges': bin_edges,
-        'collector': hist_collectors,
-        'collector_std': hist_collectors_std,
+        'collector': collectors,
+        'collector_std': collectors_std,
         'range': (lmin_adj, lmax_adj)
     }
 
@@ -940,6 +955,13 @@ def radial_histogram(
     ------
     ValueError
         If the positions array is not two-dimensional.
+    
+    Examples
+    --------
+    >>> pos = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 2]])
+    >>> edges = np.array([0, 1, 2, 3])
+    >>> radial_histogram(pos, edges, (0, 3))
+    array([2, 0, 1])
     """
     if positions.ndim != 2:
         raise ValueError(
@@ -954,7 +976,7 @@ def radial_cyl_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
     bin_range: Tuple[float, float],
-    dim: Literal[0, 1, 2]
+    dim: AxisT
 ) -> np.ndarray:
     """
     Compute the histogram of radial distances from the longitudinal axis along
@@ -970,8 +992,8 @@ def radial_cyl_histogram(
         edge.
     bin_range : Tuple[float, float]
         The lower and upper ranges of the bins.
-    dim : {0, 1, 2}
-        The longitudinal axis (0=x, 1=y, 2=z).
+    dim : :py:data:`AxisT`
+        Axis direction (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`. 
 
     Returns
     -------
@@ -984,6 +1006,14 @@ def radial_cyl_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> positions = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
+    >>> edges = np.array([0, 1, 2, 3])
+    >>> radial_cyl_histogram(positions, edges, (0, 3), dim=2)
+    array([1, 1, 0])
     """
     if dim not in {0, 1, 2}:
         raise ValueError("'dim' must be one of {0, 1, 2}.")
@@ -1001,7 +1031,7 @@ def axial_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
     bin_range: Tuple[float, float],
-    dim: Literal[0, 1, 2]
+    dim: AxisT
 ) -> np.ndarray:
     """
     Compute the histogram of distances from the origin an axis in direction
@@ -1017,9 +1047,8 @@ def axial_histogram(
         edge.
     bin_range : Tuple[float, float]
         The lower and upper ranges of the bins.
-        The lower and upper ranges of the bins.
-    dim : {0, 1, 2}
-        Axis direction (0=x, 1=y, 2=z).
+    dim : :py:data:`AxisT`
+        The longitudinal axis (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -1032,6 +1061,13 @@ def axial_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
+    
+    Examples
+    --------
+    >>> pos = np.array([[1, 2, 3], [2, 3, 4], [1, 2, 2]])
+    >>> edges = np.array([0, 1, 2, 3, 4, 5])
+    >>> axial_histogram(pos, edges, (0, 5), dim=0)
+    array([0, 2, 1, 0, 0])
     """
     if dim not in {0, 1, 2}:
         raise ValueError("'dim' must be one of {0, 1, 2}.")
@@ -1047,7 +1083,7 @@ def azimuth_cyl_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
     bin_range: Tuple[float, float],
-    dim: Literal[0, 1, 2]
+    dim: AxisT
 ) -> np.ndarray:
     """
     Compute the histogram of azimuth angles in the cylindrical coordinate
@@ -1063,8 +1099,8 @@ def azimuth_cyl_histogram(
         edge.
     bin_range : Tuple[float, float]
         The lower and upper ranges of the bins.
-    dim : {0, 1, 2}
-        The longitudinal axis (0=x, 1=y, 2=z).
+    dim : :py:data:`AxisT`
+        The longitudinal axis (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`. 
 
     Returns
     -------
@@ -1077,6 +1113,13 @@ def azimuth_cyl_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
+    
+    Examples
+    --------
+    >>> pos = np.array([[1, 0, 0], [0, 1, 0], [-1, 0, 0]])
+    >>> edges = np.linspace(-np.pi, np.pi, 5)
+    >>> azimuth_cyl_histogram(pos, edges, (-np.pi, np.pi), dim=2)
+    array([1, 0, 1, 1])
     """
     if dim not in {0, 1, 2}:
         raise ValueError("'dim' must be one of {0, 1, 2}.")
@@ -1096,7 +1139,7 @@ def planar_cartesian_histogram(
     positions: np.ndarray,
     edges: List[np.ndarray],
     bin_ranges: List[Tuple[int, int]],
-    dim: Literal[0, 1, 2]
+    dim: AxisT
 ) -> np.ndarray:
     """
     Compute the bi-dimensional histogram in the plan perpendicular to the axis
@@ -1113,17 +1156,18 @@ def planar_cartesian_histogram(
     bin_range : List[Tuple[float, float]]
         The list of the lower and upper ranges of the bins in the transverse
         directions within the plane.
-    dim : {0, 1, 2}
-        Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
+    dim : :py:data:`AxisT`
+         Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
         planar axes to the `np.histogram2d`: When `dim=0` (x), `dim=1` (y) and
         `dim=2` (z) values are passed respectively. When `dim=1` (y), `dim=2`
         (z) and `dim=0` (x) values are passed respectively. When `dim=2` (z),
-        `dim=0` (x) and `dim=1` (y) values are passed respectively.
+        `dim=0` (x) and `dim=1` (y) values are passed respectively. See 
+        :mod:`polyphys.manage.types`.
 
     Returns
     -------
     hist: np.ndarray
-        Histogram data
+        2D histogram data
 
     Raises
     ------
@@ -1133,6 +1177,15 @@ def planar_cartesian_histogram(
         If the positions array is not two-dimensional.
     ValueError
         If the length of `edges` or `bin_ranges` is not two.
+    
+    Examples
+    --------
+    >>> pos = np.array([[1, 1, 0], [2, 2, 0], [3, 3, 0]])
+    >>> edges = [np.array([0, 2, 4]), np.array([0, 2, 4])]
+    >>> ranges = [(0, 4), (0, 4)]
+    >>> planar_cartesian_histogram(pos, edges, ranges, dim=2)
+    array([[1., 0.],
+           [0., 2.]])
     """
     if dim not in {0, 1, 2}:
         raise ValueError("'dim' must be one of {0, 1, 2}.")
