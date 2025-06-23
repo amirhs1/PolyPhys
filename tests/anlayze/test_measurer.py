@@ -8,9 +8,21 @@ from polyphys.analyze.measurer import (
     transverse_size,
     max_distance,
     fsd,
+    simple_stats,
+    sem,
+    number_density_cube,
+    volume_fraction_cube,
+    number_density_cylinder,
+    volume_fraction_cylinder,
+    spherical_segment,
+    sphere_sphere_intersection,
     create_bin_edge_and_hist,
     fixedsize_bins,
+    radial_cyl_histogram,
+    axial_histogram,
     radial_histogram,
+    azimuth_cyl_histogram,
+    planar_cartesian_histogram
 )
 
 
@@ -26,16 +38,6 @@ def test_apply_pbc_orthogonal(pbc, expected_lengths, expected_inv):
     updated, updated_inv = apply_pbc_orthogonal(lengths, inv, pbc)
     assert_array_equal(updated, expected_lengths)
     assert_array_equal(updated_inv, expected_inv)
-
-
-def test_apply_pbc_orthogonal():
-    lengths = np.zeros(3)
-    inv = np.zeros(3)
-    updated, updated_inv = apply_pbc_orthogonal(
-        lengths, inv, {0: 10.0, 2: 20.0}
-    )
-    assert_array_equal(updated, np.array([10.0, 0.0, 20.0]))
-    assert_array_equal(updated_inv, np.array([0.1, 0.0, 0.05]))
 
 
 def test_apply_pbc_zero_length_raises():
@@ -89,6 +91,103 @@ def test_fsd_invalid_axis():
         fsd(pos, axis=5)
 
 
+def test_simple_stats_valid():
+    data = np.array([1.0, 2.0, 3.0])
+    result = simple_stats("energy", data)
+    assert result["energy_mean"] == 2.0
+    assert result["energy_var"] == 1.0
+    assert result["energy_sem"] == pytest.approx(0.57735, rel=1e-5)
+
+
+def test_simple_stats_empty():
+    with pytest.raises(ValueError, match="must not be empty"):
+        simple_stats("test", np.array([]))
+
+
+def test_sem_valid():
+    result = sem(np.array([1.0, 2.0, 3.0]))
+    assert result == pytest.approx(0.57735, rel=1e-5)
+
+
+def test_sem_empty():
+    with pytest.raises(ValueError, match="must not be empty"):
+        sem(np.array([]))
+
+
+def test_number_density_cube():
+    assert number_density_cube(1000, 1.0, 10.0) == \
+        pytest.approx(1.37174, rel=1e-5)
+    assert number_density_cube(1000, 1.0, 10.0, pbc=True) == \
+        pytest.approx(1.0, rel=1e-5)
+
+
+def test_volume_fraction_cube():
+    assert volume_fraction_cube(1000, 1.0, 10.0) == \
+        pytest.approx(0.7182428741954303, rel=1e-5)  # or lower rel
+    assert volume_fraction_cube(1000, 1.0, 10.0, pbc=True) == \
+        pytest.approx(0.5235987755982988, rel=1e-5)
+
+
+def test_volume_fraction_cube_phi_greater_than_one():
+    with pytest.raises(ValueError, match="Volume fraction exceeds 1.0"):
+        volume_fraction_cube(n_atom=1000, d_atom=1.0, l_cube=5.0)
+        # Large particles in a small box → phi > 1
+
+
+def test_number_density_cylinder():
+    assert number_density_cylinder(100, 1.0, 10.0, 5.0) == \
+        pytest.approx(0.88419, rel=1e-5)
+    assert number_density_cylinder(100, 1.0, 10.0, 5.0, pbc=True) == \
+        pytest.approx(0.79577, rel=1e-5)
+
+
+def test_volume_fraction_cylinder():
+    assert volume_fraction_cylinder(100, 1.0, 10.0, 5.0) == \
+        pytest.approx(0.462962963, rel=1e-5)  # use 9 digits or so
+    assert volume_fraction_cylinder(100, 1.0, 10.0, 5.0, pbc=True) == \
+        pytest.approx(0.4166666666666667, rel=1e-5)
+
+
+def test_volume_fraction_cylinder_phi_greater_than_one():
+    with pytest.raises(ValueError, match="Volume fraction exceeds 1.0"):
+        volume_fraction_cylinder(n_atom=500, d_atom=1.0, l_cyl=5.0, d_cyl=3.0)
+        # Too many large particles → phi > 1
+
+
+def test_spherical_segment_basic():
+    assert spherical_segment(3, 1, 2) == \
+        pytest.approx(20.94395102393195, rel=1e-5)
+
+
+def test_spherical_segment_full_sphere():
+    assert spherical_segment(3, -3, 3) == \
+        pytest.approx(113.09733552923255, rel=1e-5)
+
+
+def test_spherical_segment_negative_radius():
+    with pytest.raises(ValueError, match="must be positive"):
+        spherical_segment(-3, 1, 2)
+
+
+def test_sphere_sphere_intersection_partial_overlap():
+    assert sphere_sphere_intersection(3, 4, 2) == \
+        pytest.approx(94.90227807719167, rel=1e-5)
+
+
+def test_sphere_sphere_intersection_no_overlap():
+    assert sphere_sphere_intersection(3, 4, 10) == 0.0
+
+
+def test_sphere_sphere_intersection_fully_contained():
+    assert sphere_sphere_intersection(3, 4, 1) == \
+        pytest.approx(113.0973, rel=1e-5)
+
+
+def test_sphere_sphere_intersection_zero_radius():
+    assert sphere_sphere_intersection(3, 0, 1) == 0.0
+    assert sphere_sphere_intersection(0, 4, 1) == 0.0
+
+
 def test_create_bin_edge_and_hist():
     edges, hist = create_bin_edge_and_hist(1.0, 0.0, 5.0)
     assert_array_equal(edges, np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0]))
@@ -122,10 +221,73 @@ def test_fixedsize_bins(bin_type, expected_n_bins):
     assert len(result["bin_edges"]) == expected_n_bins + 1
 
 
-def test_azimuth_cyl_histogram():
-    from polyphys.analyze.measurer import azimuth_cyl_histogram
+def test_radial_cyl_histogram_valid():
+    positions = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3], [0, 3, 4]])
+    edges = np.array([0, 1, 2, 3, 4])
+    bin_range = (0, 4)
 
+    # Test dim=1 -> use x and z
+    hist = radial_cyl_histogram(positions, edges, bin_range, dim=1)
+    assert hist.tolist() == [1, 1, 0, 2]
+
+
+def test_radial_cyl_histogram_invalid_dim():
+    pos = np.random.rand(3, 3)
+    with pytest.raises(ValueError, match="must be one of"):
+        radial_cyl_histogram(pos, np.array([0, 1]), (0, 1), dim=5)
+
+
+def test_radial_cyl_histogram_invalid_ndim():
+    pos = np.array([1.0, 2.0, 3.0])
+    with pytest.raises(ValueError, match="must be a 2D array"):
+        radial_cyl_histogram(pos, np.array([0, 1]), (0, 1), dim=1)
+
+
+def test_axial_histogram_valid():
+    positions = np.array([
+        [1, 2, 3],
+        [2, 2, 3],
+        [3, 2, 3],
+        [4, 2, 3]
+    ])
+    edges = np.array([0, 1, 2, 3, 4, 5])
+    hist = axial_histogram(positions, edges, (0, 5), dim=0)
+    assert hist.tolist() == [0, 1, 1, 1, 1]
+
+
+def test_axial_histogram_invalid_dim():
+    pos = np.random.rand(3, 3)
+    with pytest.raises(ValueError, match="must be one of"):
+        axial_histogram(pos, np.array([0, 1]), (0, 1), dim=4)
+
+
+def test_axial_histogram_invalid_ndim():
+    pos = np.array([1.0, 2.0, 3.0])
+    with pytest.raises(ValueError, match="must be a 2D array"):
+        axial_histogram(pos, np.array([0, 1]), (0, 1), dim=0)
+
+
+def test_azimuth_cyl_histogram():
     pos = np.array([[1, 0, 0], [-1, 0, 0], [0, 1, 0]])  # x-y plane
     edges = np.linspace(-np.pi, np.pi, 5)
     result = azimuth_cyl_histogram(pos, edges, (-np.pi, np.pi), dim=2)
     assert result.sum() == 3
+
+
+def test_planar_cartesian_histogram_normal_case():
+    positions = np.array([
+        [1, 1, 0],  # falls into bin (0,0)
+        [2, 2, 0],  # falls into bin (1,1)
+        [3, 3, 0]   # falls into bin (1,1)
+    ])
+    edges = [np.array([0, 2, 4]), np.array([0, 2, 4])]
+    bin_ranges = [(0, 4), (0, 4)]
+
+    # Project onto plane perpendicular to z-axis (dim=2), i.e. use x and y
+    hist = planar_cartesian_histogram(positions, edges, bin_ranges, dim=2)
+
+    expected = np.array([
+        [1.0, 0.0],
+        [0.0, 2.0]
+    ])
+    np.testing.assert_array_equal(hist, expected)

@@ -150,15 +150,30 @@ def sort_filenames(
         A list of tuples where each tuple contains filenames grouped and
         sorted by the specified formats.
 
+    Notes
+    -----
+    If any of the specified formats match no files, the returned list may be
+    empty. This is because Python's built-in `zip()` truncates to the shortest
+    input sequence. It is the caller's responsibility to ensure that each
+    format group matches at least one file.
+    
+    Consider validating inputs beforehand or adding error handling if such
+    cases should be treated as exceptional.
+
     Examples
     --------
     >>> sort_filenames(['file1.data', 'file2.trj', 'file1.trj', 'file2.data'],
-                       ['data', ('lammpstrj', 'trj')])
+    ...                ['data', ('lammpstrj', 'trj')])
     [('file1.data', 'file1.trj'), ('file2.data', 'file2.trj')]
+
+    >>> sort_filenames(['file1.data', 'file2.data'], ['data', ('trj',)])
+    []
     """
     grouped_filenames = []
     for exts in formats:
         grouped_filenames.append([f for f in filenames if f.endswith(exts)])
+
+    print(grouped_filenames)
     for idx, filenames_group in enumerate(grouped_filenames):
         grouped_filenames[idx] = sorted(
             filenames_group, key=split_alphanumeric

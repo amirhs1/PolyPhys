@@ -63,7 +63,7 @@ For sphere-sphere intersection:
   Web Resource. https://mathworld.wolfram.com/Sphere-SphereIntersection.html
 """
 import warnings
-from typing import Dict, Tuple, Optional, Literal, Union, Any, List
+from typing import Dict, Tuple, Optional, Union, Any, List
 import numpy as np
 
 from ..manage.types import AxisT, EntityT, PropertyT, BinT
@@ -142,8 +142,8 @@ def pair_distance(
         by atom number form 1 to N.
     pbc : Optional[Dict[:py:data:`AxisT`, float]], default None
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths as
-        values. If provided, periodic boundary conditions (PBC) are applied. 
-        See :mod:`polyphys.manage.types`.
+        values. If provided, periodic boundary conditions (PBC) are applied;
+        see :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -253,7 +253,8 @@ def transverse_size(
         by atom number form 1 to N.
     axis: :py:data:`AxisT`
         The axis (0 for x, 1 for y, and 2 for z) in the plane perpendicular to
-        which the transverse size is calculated. See :mod:`polyphys.manage.types`.
+        which the transverse size is calculated. See
+        :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -338,7 +339,8 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
         by atom number form 1 to N.
 
     axis: :py:data:`AxisT`
-        Axis index (0=x, 1=y, 2=z) along which to compute FSD. See :mod:`polyphys.manage.types`.
+        Axis index (0=x, 1=y, 2=z) along which to compute FSD; see
+        :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -486,7 +488,7 @@ def number_density_cube(
     >>> number_density_cube(1000, 1.0, 10.0, pbc=True)
     1.0
     """
-    v_avail = (l_cube - int(pbc) * d_atom) ** 3
+    v_avail = (l_cube - int(not pbc) * d_atom) ** 3
     return n_atom / v_avail
 
 
@@ -517,20 +519,33 @@ def volume_fraction_cube(
     float
         Volume fraction of the species in the cubic box.
 
+    Raises
+    ------
+    ValueError
+        If the computed volume fraction exceeds 1.0, which is physically
+        invalid for spherical particles.
+
     Notes
     -----
-    The volume fraction is computed in the volume available to the center of
-    geometry of each particle. For point-like particles, the notion of volume
-    fraction is meaningless. For finite-size particles, the available volume
-    depends on whether periodic boundary conditions (PBCs) are applied.
+    The available volume accounts for the excluded-volume boundary effect if
+    `pbc=False`, meaning particles cannot cross the box boundary. If
+    `pbc=True`, particles are assumed to wrap around, and the full box volume
+    is used.
 
     Examples
     --------
     >>> volume_fraction_cube(1000, 1.0, 10.0)
     0.7189611722461486
+
+    >>> volume_fraction_cube(1000, 1.0, 10.0, pbc=True)
+    0.5235987755982988
     """
     rho = number_density_cube(n_atom, d_atom, l_cube, pbc)
-    return rho * np.pi * d_atom ** 3 / 6
+    phi = rho * np.pi * d_atom ** 3 / 6
+    if phi > 1.0:
+        raise ValueError(
+            "Volume fraction exceeds 1.0, which is physically invalid.")
+    return phi
 
 
 def number_density_cylinder(
@@ -572,10 +587,13 @@ def number_density_cylinder(
 
     Examples
     --------
-    >>> number_density_cylinder(1000, 1.0, 10.0, 5.0)
-    13.592168292790723
+    >>> number_density_cylinder(100, 1.0, 10.0, 5.0)
+    0.8841941282883075
+    >>> number_density_cylinder(100, 1.0, 10.0, 5.0, pbc=True)
+    0.7957747154594768
     """
-    v_avail = np.pi * (l_cyl - int(pbc) * d_atom) * (d_cyl - d_atom) ** 2 / 4
+    v_avail = np.pi * (l_cyl - int(not pbc) * d_atom) * \
+        (d_cyl - d_atom) ** 2 / 4
     return n_atom / v_avail
 
 
@@ -587,43 +605,71 @@ def volume_fraction_cylinder(
     pbc: bool = False
 ) -> float:
     """
-    Compute the volume fraction of a species in a cylindrical confinement.
+    Compute the volume fraction of spherical particles in a cylindrical
+    confinement.
 
     Parameters
     ----------
     n_atom : float
         Number of particles.
     d_atom : float
-        Diameter of the particle of the species.
+        Diameter of a single particle.
     l_cyl : float
-        Length of the cylindrical confinement.
+        Length of the cylindrical confinement (along the longitudinal axis).
     d_cyl : float
-        Diameter of the cylindrical confinement.
-    pbc : bool
-        Periodic boundary conditions along the longitudinal axis. If `True`,
-        :math:`v_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
-        otherwise, :math:`v_{avail} = \\pi * (l_cyl - d_{atom}) * (d_{cyl}
-        - d_{atom})^2 / 4`. Defaults to `False`.
+        Diameter of the cylindrical confinement (transverse direction).
+    pbc : bool, default False
+        Whether periodic boundary conditions are applied along the cylinder
+        axis. If `True`, the available volume is:
+
+        .. math::
+
+            V = \\frac{\\pi}{4} l_{cyl} (d_{cyl} - d_{atom})^2
+
+        If `False`, the available volume is:
+
+        .. math::
+
+            V = \\frac{\\pi}{4} (l_{cyl} - d_{atom}) (d_{cyl} - d_{atom})^2
 
     Returns
     -------
     float
-        Volume fraction of the species in the cylindrical confinement.
+        Volume fraction of the particles, defined as:
+
+        .. math::
+
+            \\phi = \\rho \\cdot \\frac{\\pi d^3}{6}
+
+        where :math:`\\rho` is the number density of particles in the
+        available cylindrical volume.
+
+    Raises
+    ------
+    ValueError
+        If the computed volume fraction exceeds 1.0, which is physically
+        invalid.
 
     Notes
     -----
-    The volume fraction is computed in the volume available to the center of
-    geometry of each particle. For point-like particles, the notion of volume
-    fraction is meaningless. For finite-size particles, the available volume
-    depends on whether periodic boundary conditions (PBCs) are applied.
+    The available volume excludes regions where the particle centers cannot
+    access due to finite size. When `pbc=False`, particles are excluded from
+    the cylinder ends; when `pbc=True`, they are not.
 
     Examples
     --------
-    >>> volume_fraction_cylinder(1000, 1.0, 10.0, 5.0)
-    7.123792218314786
+    >>> volume_fraction_cylinder(100, 1.0, 10.0, 5.0)
+    0.46296296296296297
+
+    >>> volume_fraction_cylinder(100, 1.0, 10.0, 5.0, pbc=True)
+    0.4166666666666667
     """
     rho = number_density_cylinder(n_atom, d_atom, l_cyl, d_cyl, pbc)
-    return rho * np.pi * d_atom ** 3 / 6
+    phi = rho * np.pi * d_atom ** 3 / 6
+    if phi > 1.0:
+        raise ValueError(
+            "Volume fraction exceeds 1.0, which is physically invalid.")
+    return phi
 
 
 def spherical_segment(r: float, a: float, b: float) -> float:
@@ -670,7 +716,7 @@ def spherical_segment(r: float, a: float, b: float) -> float:
     Examples
     --------
     >>> spherical_segment(3, 1, 2)
-    37.69911184307752
+    20.94395102393195
     >>> spherical_segment(3, -3, 3)
     113.09733552923255
     """
@@ -797,7 +843,7 @@ def create_bin_edge_and_hist(
     """
     if lmin >= lmax:
         raise ValueError("'lmin' must be less than 'lmax'.")
-    
+
     bin_edges = np.arange(lmin, lmax + bin_size, bin_size)
     hist = np.zeros(len(bin_edges) - 1, dtype=np.int16)
 
@@ -901,7 +947,7 @@ def fixedsize_bins(
     elif bin_type == 'periodic':
         n_bins = int(np.ceil(_length / _delta))
         lmin_adj, lmax_adj = lmin, lmax
-        bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta)
+        bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta, dtype=float)
         if (len(bin_edges) - 1) != n_bins:
             # Number of bins (n_bins='{n_bins}') is different from the actual
             # number of bins (n_edges-1={len(bin_edges)-1}) for the 'periodic'
@@ -955,7 +1001,7 @@ def radial_histogram(
     ------
     ValueError
         If the positions array is not two-dimensional.
-    
+
     Examples
     --------
     >>> pos = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 2]])
@@ -993,7 +1039,7 @@ def radial_cyl_histogram(
     bin_range : Tuple[float, float]
         The lower and upper ranges of the bins.
     dim : :py:data:`AxisT`
-        Axis direction (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`. 
+        Axis direction (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -1010,10 +1056,10 @@ def radial_cyl_histogram(
     Examples
     --------
     >>> import numpy as np
-    >>> positions = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
-    >>> edges = np.array([0, 1, 2, 3])
-    >>> radial_cyl_histogram(positions, edges, (0, 3), dim=2)
-    array([1, 1, 0])
+    >>> positions = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3], [0, 3, 4]])
+    >>> edges = np.array([0, 1, 2, 3, 4])
+    >>> radial_cyl_histogram(positions, edges, (0, 4), dim=1)
+    array([1, 1, 0, 2])
     """
     if dim not in {0, 1, 2}:
         raise ValueError("'dim' must be one of {0, 1, 2}.")
@@ -1048,7 +1094,8 @@ def axial_histogram(
     bin_range : Tuple[float, float]
         The lower and upper ranges of the bins.
     dim : :py:data:`AxisT`
-        The longitudinal axis (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`.
+        The longitudinal axis (0=x, 1=y, 2=z); see
+        :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -1061,7 +1108,7 @@ def axial_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
-    
+
     Examples
     --------
     >>> pos = np.array([[1, 2, 3], [2, 3, 4], [1, 2, 2]])
@@ -1100,7 +1147,8 @@ def azimuth_cyl_histogram(
     bin_range : Tuple[float, float]
         The lower and upper ranges of the bins.
     dim : :py:data:`AxisT`
-        The longitudinal axis (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`. 
+        The longitudinal axis (0=x, 1=y, 2=z); see
+        :mod:`polyphys.manage.types`.
 
     Returns
     -------
@@ -1113,7 +1161,7 @@ def azimuth_cyl_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
-    
+
     Examples
     --------
     >>> pos = np.array([[1, 0, 0], [0, 1, 0], [-1, 0, 0]])
@@ -1157,11 +1205,11 @@ def planar_cartesian_histogram(
         The list of the lower and upper ranges of the bins in the transverse
         directions within the plane.
     dim : :py:data:`AxisT`
-         Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
+        Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
         planar axes to the `np.histogram2d`: When `dim=0` (x), `dim=1` (y) and
         `dim=2` (z) values are passed respectively. When `dim=1` (y), `dim=2`
         (z) and `dim=0` (x) values are passed respectively. When `dim=2` (z),
-        `dim=0` (x) and `dim=1` (y) values are passed respectively. See 
+        `dim=0` (x) and `dim=1` (y) values are passed respectively. See
         :mod:`polyphys.manage.types`.
 
     Returns
@@ -1177,7 +1225,7 @@ def planar_cartesian_histogram(
         If the positions array is not two-dimensional.
     ValueError
         If the length of `edges` or `bin_ranges` is not two.
-    
+
     Examples
     --------
     >>> pos = np.array([[1, 1, 0], [2, 2, 0], [3, 3, 0]])
