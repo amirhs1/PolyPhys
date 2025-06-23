@@ -43,7 +43,12 @@ def sample_input_files():
 
 
 @pytest.fixture
-def sample_input_files_single_type():
+def sample_formats_single_format():
+    return ['data']
+
+
+@pytest.fixture
+def sample_input_files_single_format():
     return ['file1.data', 'file2.data', 'file3.data']
 
 
@@ -60,11 +65,18 @@ def test_sort_filenames_empty_input(sample_formats):  # Only needs formats
 
 
 def test_sort_filenames_single_file_type(
-        sample_input_files_single_type, sample_formats):
+        sample_input_files_single_format, sample_formats_single_format):
     result = utilizer.sort_filenames(
-        sample_input_files_single_type, sample_formats)
+        sample_input_files_single_format, sample_formats_single_format)
     assert result == \
-        [('file1.data',), ('file2.data',)]  # Tuple of one element
+        [('file1.data',), ('file2.data',), ('file3.data',)]
+
+
+def test_sort_filenames_single_file_type_mutiple_formats(
+        sample_input_files_single_format, sample_formats):
+    result = utilizer.sort_filenames(
+        sample_input_files_single_format, sample_formats)
+    assert result == []  # No 'trj' files → empty zip
 
 
 @pytest.fixture
