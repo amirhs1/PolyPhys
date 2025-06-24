@@ -1,0 +1,39 @@
+name: Run Tests with Pytest and Coverage
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install project with dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev]
+
+      - name: Lint with flake8
+        run: flake8 polyphys
+
+      - name: Type-check with mypy
+        run: mypy polyphys
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests polyphys \
+                 --cov=polyphys \
+                 --cov-report=term-missing \
+                 --doctest-modules \
+                 --doctest-glob="README.md"

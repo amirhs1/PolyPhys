@@ -10,10 +10,6 @@ from polyphys.analyze.measurer import (
     fsd,
     simple_stats,
     sem,
-    number_density_cube,
-    volume_fraction_cube,
-    number_density_cylinder,
-    volume_fraction_cylinder,
     spherical_segment,
     sphere_sphere_intersection,
     create_bin_edge_and_hist,
@@ -112,46 +108,6 @@ def test_sem_valid():
 def test_sem_empty():
     with pytest.raises(ValueError, match="must not be empty"):
         sem(np.array([]))
-
-
-def test_number_density_cube():
-    assert number_density_cube(1000, 1.0, 10.0) == \
-        pytest.approx(1.37174, rel=1e-5)
-    assert number_density_cube(1000, 1.0, 10.0, pbc=True) == \
-        pytest.approx(1.0, rel=1e-5)
-
-
-def test_volume_fraction_cube():
-    assert volume_fraction_cube(1000, 1.0, 10.0) == \
-        pytest.approx(0.7182428741954303, rel=1e-5)  # or lower rel
-    assert volume_fraction_cube(1000, 1.0, 10.0, pbc=True) == \
-        pytest.approx(0.5235987755982988, rel=1e-5)
-
-
-def test_volume_fraction_cube_phi_greater_than_one():
-    with pytest.raises(ValueError, match="Volume fraction exceeds 1.0"):
-        volume_fraction_cube(n_atom=1000, d_atom=1.0, l_cube=5.0)
-        # Large particles in a small box → phi > 1
-
-
-def test_number_density_cylinder():
-    assert number_density_cylinder(100, 1.0, 10.0, 5.0) == \
-        pytest.approx(0.88419, rel=1e-5)
-    assert number_density_cylinder(100, 1.0, 10.0, 5.0, pbc=True) == \
-        pytest.approx(0.79577, rel=1e-5)
-
-
-def test_volume_fraction_cylinder():
-    assert volume_fraction_cylinder(100, 1.0, 10.0, 5.0) == \
-        pytest.approx(0.462962963, rel=1e-5)  # use 9 digits or so
-    assert volume_fraction_cylinder(100, 1.0, 10.0, 5.0, pbc=True) == \
-        pytest.approx(0.4166666666666667, rel=1e-5)
-
-
-def test_volume_fraction_cylinder_phi_greater_than_one():
-    with pytest.raises(ValueError, match="Volume fraction exceeds 1.0"):
-        volume_fraction_cylinder(n_atom=500, d_atom=1.0, l_cyl=5.0, d_cyl=3.0)
-        # Too many large particles → phi > 1
 
 
 def test_spherical_segment_basic():

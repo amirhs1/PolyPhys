@@ -5,7 +5,7 @@ import re
 import pytest
 
 from polyphys.manage.parser import ParserBase, TwoMonDepCub
-from polyphys.manage.utilizer import invalid_keyword
+from polyphys.manage.utils import invalid_keyword
 from polyphys.analyze.measurer import (
     number_density_cube,
     volume_fraction_cube
