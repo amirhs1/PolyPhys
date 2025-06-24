@@ -21,7 +21,7 @@ calculate attributes based on parsed lineage and project requirements.
 Classes
 =======
 .. autoclass:: ParserBase
-:members:
+   :members:
 .. autoclass:: TwoMonDep
 .. autoclass:: SumRuleCyl
 .. autoclass:: SumRuleCubHeteroRing
@@ -70,8 +70,8 @@ import re
 from typing import Dict, List, ClassVar, Optional
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from .utilizer import invalid_keyword
-from ..analyze.measurer import (
+from .utils import (
+    invalid_keyword,
     number_density_cube,
     number_density_cylinder,
     volume_fraction_cube,
@@ -91,10 +91,11 @@ class ParserBase(ABC):
     artifact : str
         Artifact that is parsed for extracting information. Can be a filename
         or filepath.
-    lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
+    lineage : :py:data:`LineageT`
         The lineage of the name, specifying the hierarchical level within the
-        project.
-    group : str
+        project. Must be one of: ``'segment'``, ``'whole'``,
+        ``'ensemble_long'``, ``'ensemble'``, or ``'space'``.
+    group : :py:data:`GroupT`
         The particle group type in the project. Used for specific group-based
         parsing.
 
@@ -184,10 +185,12 @@ class ParserBase(ABC):
         lineage: LineageT,
         group: GroupT
     ) -> None:
-        self._filepath, self._filename = (
-            ("N/A", artifact) if '/' not in artifact and '\\' not in artifact
-            else os.path.split(artifact)
-        )
+        if (os.path.sep in artifact) or (os.path.altsep and
+                                         os.path.altsep in artifact):
+            self._filepath, self._filename = os.path.split(artifact)
+        else:
+            self._filepath, self._filename = "N/A", artifact
+
         invalid_keyword(lineage, self.lineages)
         invalid_keyword(group, self.groups)
         self._lineage = lineage
@@ -437,20 +440,21 @@ class TwoMonDepCub(ParserBase):
     Each lineage level has a unique naming pattern used to parse key physical
     and system attributes:
 
-    - `segment`: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#.j#
+    - ``segment``: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#.j#
       One of multiple chunks of a complete artifact.
-    - `whole`: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#
+    - ``whole``: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#
       A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#
+    - ``ensemble_long``: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#
       Detailed name for an 'ensemble' artifact.
-    - `ensemble`: nm#am#ac#nc#sd#
+    - ``ensemble``: nm#am#ac#nc#sd#
       Short name for an 'ensemble' artifact.
-    - `space`: nm#am#ac#
+    - ``space``: nm#am#ac#
       A 'space' artifact.
 
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
+    For the above four lineages, the short-form keys (e.g., ``am``, ``nm``,
+    ``ac``)  are physical attributes where their values (shown by "#" sign) are
+    float or integer number. See `genealogy_attributes` below for long names
+    of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
     class dynamically defines new attributes based on the list of physical
@@ -461,10 +465,12 @@ class TwoMonDepCub(ParserBase):
     ----------
     artifact : str
         Name to be parsed, either a filename or filepath.
-    lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
-    group : {'bug', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+    lineage : LineageT
+        Lineage level of the artifact. Must be one of:
+        ``'segment'``, ``'whole'``, ``'ensemble_long'``, ``'ensemble'``,
+        ``'space'``.
+    group : GroupT
+        Particle group type, either ``'bug'`` or ``'all'``.
 
     Attributes
     ----------
@@ -522,9 +528,7 @@ class TwoMonDepCub(ParserBase):
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
-    >>> artifact = (
+    >>> artifact = TwoMonDepCub(
     ..."nm2am5.0ac1.0"
     ...'space',
     ...'bug'
