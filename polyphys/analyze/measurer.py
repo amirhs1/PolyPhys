@@ -62,18 +62,19 @@ For sphere-sphere intersection:
 - Weisstein, Eric W. "Sphere-Sphere Intersection." From MathWorld--A Wolfram
   Web Resource. https://mathworld.wolfram.com/Sphere-SphereIntersection.html
 """
+
 import warnings
 from typing import Dict, Tuple, Optional, Union, Any, List
 import numpy as np
 
 from ..manage.types import AxisT, EntityT, PropertyT, BinT
-from ..manage.utilizer import invalid_keyword
+from ..manage.utils import invalid_keyword
 
 
 def apply_pbc_orthogonal(
     pbc_lengths: np.ndarray,
     pbc_lengths_inverse: np.ndarray,
-    pbc: Dict[AxisT, float]
+    pbc: Dict[AxisT, float],
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Updates the periodic boundary condition (PBC) lengths and their inverses
@@ -115,9 +116,7 @@ def apply_pbc_orthogonal(
     """
     for ax, length in pbc.items():
         if length == 0.0:
-            raise ZeroDivisionError(
-                f"Length for axis {ax} cannot be zero."
-            )
+            raise ZeroDivisionError(f"Length for axis {ax} cannot be zero.")
         if length < 0.0:
             raise ValueError(
                 f"Length for axis {ax} must be positive; got {length}."
@@ -128,8 +127,7 @@ def apply_pbc_orthogonal(
 
 
 def pair_distance(
-    positions: np.ndarray,
-    pbc: Optional[Dict[AxisT, float]] = None
+    positions: np.ndarray, pbc: Optional[Dict[AxisT, float]] = None
 ) -> np.ndarray:
     """
     Compute the pairwise distance vector between two particles in Cartesian
@@ -238,10 +236,7 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
     return np.linalg.norm(centered_positions[-1] - centered_positions[0])
 
 
-def transverse_size(
-    positions: np.ndarray,
-    axis: AxisT
-) -> float:
+def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
     """
     Computes the mean transverse size of a group of atoms in the plane
     perpendicular to `axis`.
@@ -280,10 +275,13 @@ def transverse_size(
     """
     trans_axes = {0: [1, 2], 1: [0, 2], 2: [0, 1]}
     if axis >= positions.shape[1]:
-        raise IndexError("Axis {axis} is out of bounds for positions array"
-                         f"with shape {positions.shape}.")
-    trans_pos = (positions[:, trans_axes[axis]]
-                 - np.mean(positions[:, trans_axes[axis]], axis=0))
+        raise IndexError(
+            "Axis {axis} is out of bounds for positions array"
+            f"with shape {positions.shape}."
+        )
+    trans_pos = positions[:, trans_axes[axis]] - np.mean(
+        positions[:, trans_axes[axis]], axis=0
+    )
     # Times by 2, so we have the diameter not radius:
     return 2 * np.mean(np.linalg.norm(trans_pos, axis=1))
 
@@ -366,8 +364,10 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
     6.0
     """
     if axis >= positions.shape[1]:
-        raise IndexError("Axis {axis} is out of bounds for positions array"
-                         f"with shape {positions.shape}.")
+        raise IndexError(
+            "Axis {axis} is out of bounds for positions array"
+            f"with shape {positions.shape}."
+        )
     # calculation in the center of geometry of the atom group:
     positions = positions - np.mean(positions, axis=0)
     return np.ptp(positions[:, axis])
@@ -407,9 +407,9 @@ def simple_stats(entity: EntityT, data: np.ndarray) -> Dict[PropertyT, float]:
 
     # Unbiased std, var, and sem.
     return {
-        entity + '_mean': np.mean(data),
-        entity + '_var': np.var(data, ddof=1),
-        entity + '_sem': np.std(data, ddof=1) / np.sqrt(len(data))
+        entity + "_mean": np.mean(data),
+        entity + "_var": np.var(data, ddof=1),
+        entity + "_sem": np.std(data, ddof=1) / np.sqrt(len(data)),
     }
 
 
@@ -445,14 +445,11 @@ def sem(data: np.ndarray) -> float:
     if len(data) == 0:
         raise ValueError("Input data array must not be empty.")
 
-    return np.std(data, ddof=1) / len(data)**0.5
+    return np.std(data, ddof=1) / len(data) ** 0.5
 
 
 def number_density_cube(
-    n_atom: float,
-    d_atom: float,
-    l_cube: float,
-    pbc: bool = False
+    n_atom: float, d_atom: float, l_cube: float, pbc: bool = False
 ) -> float:
     """
     Compute the bulk number density of a species in a cubic box.
@@ -493,10 +490,7 @@ def number_density_cube(
 
 
 def volume_fraction_cube(
-    n_atom: float,
-    d_atom: float,
-    l_cube: float,
-    pbc: bool = False
+    n_atom: float, d_atom: float, l_cube: float, pbc: bool = False
 ) -> float:
     """
     Compute the volume fraction of a species in a cubic box.
@@ -541,19 +535,16 @@ def volume_fraction_cube(
     0.5235987755982988
     """
     rho = number_density_cube(n_atom, d_atom, l_cube, pbc)
-    phi = rho * np.pi * d_atom ** 3 / 6
+    phi = rho * np.pi * d_atom**3 / 6
     if phi > 1.0:
         raise ValueError(
-            "Volume fraction exceeds 1.0, which is physically invalid.")
+            "Volume fraction exceeds 1.0, which is physically invalid."
+        )
     return phi
 
 
 def number_density_cylinder(
-    n_atom: float,
-    d_atom: float,
-    l_cyl: float,
-    d_cyl: float,
-    pbc: bool = False
+    n_atom: float, d_atom: float, l_cyl: float, d_cyl: float, pbc: bool = False
 ) -> float:
     """
     Compute the bulk number density of a species in a cylindrical confinement.
@@ -592,17 +583,14 @@ def number_density_cylinder(
     >>> number_density_cylinder(100, 1.0, 10.0, 5.0, pbc=True)
     0.7957747154594768
     """
-    v_avail = np.pi * (l_cyl - int(not pbc) * d_atom) * \
-        (d_cyl - d_atom) ** 2 / 4
+    v_avail = (
+        np.pi * (l_cyl - int(not pbc) * d_atom) * (d_cyl - d_atom) ** 2 / 4
+    )
     return n_atom / v_avail
 
 
 def volume_fraction_cylinder(
-    n_atom: float,
-    d_atom: float,
-    l_cyl: float,
-    d_cyl: float,
-    pbc: bool = False
+    n_atom: float, d_atom: float, l_cyl: float, d_cyl: float, pbc: bool = False
 ) -> float:
     """
     Compute the volume fraction of spherical particles in a cylindrical
@@ -665,10 +653,11 @@ def volume_fraction_cylinder(
     0.4166666666666667
     """
     rho = number_density_cylinder(n_atom, d_atom, l_cyl, d_cyl, pbc)
-    phi = rho * np.pi * d_atom ** 3 / 6
+    phi = rho * np.pi * d_atom**3 / 6
     if phi > 1.0:
         raise ValueError(
-            "Volume fraction exceeds 1.0, which is physically invalid.")
+            "Volume fraction exceeds 1.0, which is physically invalid."
+        )
     return phi
 
 
@@ -786,20 +775,22 @@ def sphere_sphere_intersection(r1: float, r2: float, d: float) -> float:
         return 4 * np.pi * r_min**3 / 3
 
     # Calculate the intersection volume for overlapping spheres
-    vol = (np.pi / (12 * d)) * (r_max + r_min - d)**2 * (
-        d**2 + 2 * d * (r_max + r_min)
-        - 3 * (r_min**2 + r_max**2)
-        + 6 * r_min * r_max
+    vol = (
+        (np.pi / (12 * d))
+        * (r_max + r_min - d) ** 2
+        * (
+            d**2
+            + 2 * d * (r_max + r_min)
+            - 3 * (r_min**2 + r_max**2)
+            + 6 * r_min * r_max
+        )
     )
 
     return vol
 
 
 def create_bin_edge_and_hist(
-    bin_size: float,
-    lmin: float,
-    lmax: float,
-    output: Optional[str] = None
+    bin_size: float, lmin: float, lmax: float, output: Optional[str] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Create bin edges and an empty histogram for data processing.
@@ -857,7 +848,7 @@ def fixedsize_bins(
     bin_size: float,
     lmin: float,
     lmax: float,
-    bin_type: BinT = 'ordinary',
+    bin_type: BinT = "ordinary",
     save_bin_edges: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -931,20 +922,20 @@ def fixedsize_bins(
     _length = lmax - lmin
     _delta = bin_size
 
-    if bin_type == 'ordinary':
+    if bin_type == "ordinary":
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)  # excess length
         # add half of the excess to each end:
         lmin_adj = lmin - dl
         lmax_adj = lmax + dl
         bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
-    elif bin_type == 'nonnegative':
+    elif bin_type == "nonnegative":
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)
         lmin_adj = max(0.0, lmin - dl)
         lmax_adj = lmax + 2 * dl if lmin_adj == 0 else lmax + dl
         bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
-    elif bin_type == 'periodic':
+    elif bin_type == "periodic":
         n_bins = int(np.ceil(_length / _delta))
         lmin_adj, lmax_adj = lmin, lmax
         bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta, dtype=float)
@@ -955,7 +946,7 @@ def fixedsize_bins(
             # delta={_delta}, not 'n_bins', are used to created 'bin_edges'.
             warnings.warn("'n_bins' is set to 'len(bin_edges)-1'", UserWarning)
     else:
-        invalid_keyword(bin_type, ['ordinary', 'nonnegative', 'periodic'])
+        invalid_keyword(bin_type, ["ordinary", "nonnegative", "periodic"])
 
     collectors = np.zeros(n_bins, dtype=np.int16)
     collectors_std = np.zeros(n_bins, dtype=np.int16)
@@ -964,11 +955,11 @@ def fixedsize_bins(
         np.save(save_bin_edges, bin_edges)
 
     return {
-        'n_bins': n_bins,
-        'bin_edges': bin_edges,
-        'collector': collectors,
-        'collector_std': collectors_std,
-        'range': (lmin_adj, lmax_adj)
+        "n_bins": n_bins,
+        "bin_edges": bin_edges,
+        "collector": collectors,
+        "collector_std": collectors_std,
+        "range": (lmin_adj, lmax_adj),
     }
 
 
@@ -1011,7 +1002,8 @@ def radial_histogram(
     """
     if positions.ndim != 2:
         raise ValueError(
-            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+            "'positions' must be a 2D array with shape (n_atoms, n_dim)."
+        )
 
     rad_distances = np.linalg.norm(positions, axis=1)
     hist, _ = np.histogram(rad_distances, bins=edges, range=bin_range)
@@ -1022,7 +1014,7 @@ def radial_cyl_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
     bin_range: Tuple[float, float],
-    dim: AxisT
+    dim: AxisT,
 ) -> np.ndarray:
     """
     Compute the histogram of radial distances from the longitudinal axis along
@@ -1065,7 +1057,8 @@ def radial_cyl_histogram(
         raise ValueError("'dim' must be one of {0, 1, 2}.")
     if positions.ndim != 2:
         raise ValueError(
-            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+            "'positions' must be a 2D array with shape (n_atoms, n_dim)."
+        )
 
     trans_axes = np.roll(np.arange(3), -dim)[1:]  # selecting transverse axes
     trans_distances = np.linalg.norm(positions[:, trans_axes], axis=1)
@@ -1077,7 +1070,7 @@ def axial_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
     bin_range: Tuple[float, float],
-    dim: AxisT
+    dim: AxisT,
 ) -> np.ndarray:
     """
     Compute the histogram of distances from the origin an axis in direction
@@ -1120,7 +1113,8 @@ def axial_histogram(
         raise ValueError("'dim' must be one of {0, 1, 2}.")
     if positions.ndim != 2:
         raise ValueError(
-            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+            "'positions' must be a 2D array with shape (n_atoms, n_dim)."
+        )
 
     hist, _ = np.histogram(positions[:, dim], bins=edges, range=bin_range)
     return hist
@@ -1130,7 +1124,7 @@ def azimuth_cyl_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
     bin_range: Tuple[float, float],
-    dim: AxisT
+    dim: AxisT,
 ) -> np.ndarray:
     """
     Compute the histogram of azimuth angles in the cylindrical coordinate
@@ -1173,12 +1167,13 @@ def azimuth_cyl_histogram(
         raise ValueError("'dim' must be one of {0, 1, 2}.")
     if positions.ndim != 2:
         raise ValueError(
-            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+            "'positions' must be a 2D array with shape (n_atoms, n_dim)."
+        )
 
     transverse_axes = np.roll(np.arange(3), -dim)[1:]
     azimuthal_angles = np.arctan2(
         positions[:, transverse_axes[1]], positions[:, transverse_axes[0]]
-        )
+    )
     hist, _ = np.histogram(azimuthal_angles, bins=edges, range=bin_range)
     return hist
 
@@ -1187,7 +1182,7 @@ def planar_cartesian_histogram(
     positions: np.ndarray,
     edges: List[np.ndarray],
     bin_ranges: List[Tuple[int, int]],
-    dim: AxisT
+    dim: AxisT,
 ) -> np.ndarray:
     """
     Compute the bi-dimensional histogram in the plan perpendicular to the axis
@@ -1239,7 +1234,8 @@ def planar_cartesian_histogram(
         raise ValueError("'dim' must be one of {0, 1, 2}.")
     if positions.ndim != 2:
         raise ValueError(
-            "'positions' must be a 2D array with shape (n_atoms, n_dim).")
+            "'positions' must be a 2D array with shape (n_atoms, n_dim)."
+        )
     if len(edges) != 2:
         raise ValueError("'edges' must contain two arrays, one for each axis.")
     if len(bin_ranges) != 2:
@@ -1252,5 +1248,6 @@ def planar_cartesian_histogram(
         positions[:, t_dims[0]],
         positions[:, t_dims[1]],
         bins=edges,
-        range=bin_ranges)
+        range=bin_ranges,
+    )
     return hist

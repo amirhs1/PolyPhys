@@ -14,7 +14,7 @@ from polyphys.manage.parser import (
     TransFociCyl, HnsCub, HnsCyl)
 from polyphys.analyze import analyzer
 from polyphys.analyze import measurer
-from polyphys.manage.utilizer import round_up_nearest
+from polyphys.manage.utils import round_up_nearest
 
 PROJECTS_DETAILS = {
     'SumRuleCyl': {
