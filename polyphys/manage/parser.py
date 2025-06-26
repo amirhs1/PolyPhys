@@ -66,6 +66,7 @@ To handle attributes that may or may not exist at runtime, the `getattr`
 function is commonly used, ensuring robustness to varied filename patterns.
 """
 import os
+import warnings
 import re
 from typing import Dict, List, ClassVar, Optional
 from abc import ABC, abstractmethod
@@ -90,7 +91,7 @@ class ParserBase(ABC):
     ----------
     artifact : str
         Artifact that is parsed for extracting information. Can be a filename
-        or filepath.
+        (with or wihout extention) or filepath.
     lineage : :py:data:`LineageT`
         The lineage of the name, specifying the hierarchical level within the
         project. Must be one of: ``'segment'``, ``'whole'``,
@@ -185,16 +186,11 @@ class ParserBase(ABC):
         lineage: LineageT,
         group: GroupT
     ) -> None:
-        if (os.path.sep in artifact) or (os.path.altsep and
-                                         os.path.altsep in artifact):
-            self._filepath, self._filename = os.path.split(artifact)
-        else:
-            self._filepath, self._filename = "N/A", artifact
-
         invalid_keyword(lineage, self.lineages)
         invalid_keyword(group, self.groups)
         self._lineage = lineage
         self._group = group
+        self._parse_artifact(artifact)
         self._project_name = self.__class__.__name__
         self._lineage_genealogy: List[LineageT] = self._genealogy[lineage]
         self._lineage_attributes = \
@@ -202,7 +198,6 @@ class ParserBase(ABC):
         self._physical_attributes = self.project_attributes[lineage]
         self._attributes = \
             self._lineage_attributes + self._physical_attributes
-        self._find_name()
 
     def __str__(self) -> str:
         """
@@ -214,7 +209,8 @@ class ParserBase(ABC):
             f"    Geometry: '{self._geometry}',\n"
             f"    Group: '{self._group}',\n"
             f"    Lineage: '{self._lineage}',\n"
-            f"    Topology: '{self._topology}'"
+            f"    Topology: '{self._topology}',\n"
+            f"    Project: '{self._project_name}'"
         )
         return observation
 
@@ -223,7 +219,7 @@ class ParserBase(ABC):
             f"Artifact('{self.filename}' in geometry"
             f" '{self._geometry}' from group '{self._group}' with"
             f" lineage '{self._lineage}' and"
-            f" topology '{self._topology}')"
+            f" topology '{self._topology}' in project '{self._project_name}')"
         )
 
     @property
@@ -364,10 +360,95 @@ class ParserBase(ABC):
         """
         return self._physical_attributes
 
-    def _find_name(self) -> None:
+    def _parse_artifact(self, artifact: str) -> None:
         """
-        Parse and set the unique `lineage_name` from the filename
-        based on the `lineage` and `group`.
+        Parse the artifact string and set the filepath, filename, and lineage
+        name.
+
+        Parameters
+        ----------
+        artifact : str
+            The artifact string, which may be a full path, a filename, or a
+            bare name.
+
+        Warnings
+        --------
+        UserWarning
+            If the artifact looks like a filename (has a known extension) but
+            does not exist.
+
+        Notes
+        -----
+        - If `artifact` includes a path (contains '/' or '\\'), treat as a
+        filepath:
+            - _filepath = full directory path
+            - _filename = basename
+            - _name is parsed from filename via _find_name()
+        - If `artifact` is just a filename (no path), check if it exists in
+        the working dir:
+            - if exists:
+                - _filepath = full directory path
+            - else:
+                - _filepath = 'N/A'
+            - _filename = artifact
+            - _name is parsed from filename via _find_name()
+        - If `artifact` is a bare name (e.g., 'nm2am5.0ac1.0'):
+            - _filepath = 'N/A'
+            - _filename = 'N/A'
+            - _name = artifact
+        """
+        KNOWN_EXTENSIONS = {".txt", ".gz", ".xz", ".csv", ".json", ".npy",
+                            ".log", ".brotli", ".tar", ".lmp", ".lammpstrj",
+                            ".data"}
+
+        _, ext = os.path.splitext(artifact)
+        has_path = os.path.sep in artifact or (os.path.altsep and
+                                               os.path.altsep in artifact)
+        has_known_ext = ext.lower() in KNOWN_EXTENSIONS
+
+        if has_path:
+            full_path = os.path.abspath(artifact)
+            self._filepath, self._filename = os.path.split(full_path)
+            self._name = self._find_name(self._filename)
+        elif os.path.isfile(artifact):
+            full_path = os.path.abspath(artifact)
+            self._filepath = os.path.dirname(full_path)
+            self._filename = os.path.basename(full_path)
+            self._name = self._find_name(self._filename)
+        elif has_known_ext:
+            warnings.warn(
+                f"The artifact '{artifact}' appears to be a filename "
+                f"(has extension '{ext}') but does not exist in the current"
+                "directory.",
+                UserWarning
+            )
+            self._filepath = "N/A"
+            self._filename = artifact
+            self._name = self._find_name(self._filename)
+        else:
+            warnings.warn(
+                f"The artifact '{artifact}' does not contain a known "
+                "extension or path and was treated as a name string. It may "
+                "include group or observable info (e.g., '.bug-MonGyrT').",
+                UserWarning
+            )
+            self._filepath = "N/A"
+            self._filename = artifact
+            self._name = self._find_name(artifact)
+
+    def _find_name(self, fullname) -> str:
+        """
+        Parse and return the unique lineage name from the artifact or filename.
+
+        Parameters
+        ----------
+        fullname: str
+            A string that is either the filename or bare name.
+
+        Return
+        ------
+        str
+            The parsed lineage name.
 
         Notes
         -----
@@ -377,10 +458,9 @@ class ParserBase(ABC):
           from the first substring in the filename.
         """
         if self._lineage in ['segment', 'whole']:
-            self._name = \
-                self.filename.split("." + self._group)[0].split("-")[0]
+            return fullname.split("." + self._group)[0].split("-")[0]
         else:
-            self._name = self._filename.split("-")[0]
+            return fullname.split("-")[0]
 
     @abstractmethod
     def _initiate_attributes(self) -> None:
@@ -562,12 +642,12 @@ class TwoMonDepCub(ParserBase):
             ),
         # Pattern: nm#am#ac#nc#sd :
         'ensemble': OrderedDict(
-            {'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
+            {'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc',
              'd_sur': 'sd'}
              ),
         # pattern: nm#am#ac# :
         'space': OrderedDict(
-            {'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc'}
+            {'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc'}
             )
     }
 
