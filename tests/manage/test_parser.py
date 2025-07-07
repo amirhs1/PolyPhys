@@ -1,91 +1,28 @@
 import pytest
-import math
 import os
-from polyphys.manage.parser import TwoMonDepCub
+import warnings
+from polyphys.manage.parser import ParserBase, TwoMonDepCub
+from polyphys.manage.utils import (
+    number_density_cube,
+    number_density_cylinder,
+    volume_fraction_cube,
+    volume_fraction_cylinder
+    )
 
 
-from collections import OrderedDict
-from typing import List, Dict
-from polyphys.manage.parser import ParserBase
-
-
-class DummyParser(ParserBase):
+def test_parserbase_cannot_be_instantiated():
     """
-    A mock parser class for unit testing ParserBase.
-    Implements all required abstract methods and provides mock data.
+    Ensure ParserBase cannot be instantiated directly due to abstract methods.
     """
-    _geometry = 'cube'
-    _topology = 'none'
-    _groups = ['bug', 'all']
-    _genealogy_attributes = {
-        'segment': OrderedDict({
-            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'l', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens',
-            'segment_id': 'j'
-        }),
-        'whole': OrderedDict({
-            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'l', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens'
-        }),
-        'ensemble_long': OrderedDict({
-            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'l', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'tdump': 'tdump'
-        }),
-        'ensemble': OrderedDict({
-            'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'd_sur': 'sd'
-        }),
-        'space': OrderedDict({
-            'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc'
-        }),
-    }
-    _project_attributes = {
-        'segment': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
-        'whole': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
-        'ensemble_long': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
-        'ensemble': [],
-        'space': []
-    }
+    with pytest.raises(TypeError):
+        ParserBase("artifact", "ensemble", "bug")
 
-    def _initiate_attributes(self) -> None:
-        """
-        Stub method for initiating project attributes.
-        """
-        pass
-
-    def _parse_name(self) -> None:
-        """
-        Simulates parsing a name by hardcoding test attributes.
-        These mimic attributes extracted from a filename.
-        """
-        self.dmon = 5.0
-        self.nmon = 2
-        self.dcrowd = 1.0
-        self.ncrowd = 100
-        self.lcube = 20.0
-        self.d_sur = 0.5
-        self.dt = 0.01
-        self.bdump = "bd1"
-        self.adump = "ad1"
-        self.tdump = "td1"
-        self.ensemble_id = 10
-        self.segment_id = 1
-
-    def _dependant_attributes(self) -> None:
-        """
-        Stub method for computing dependent system attributes.
-        """
-        pass
 
 class TestTwoMonDepCub:
     """
     Tests for the TwoMonDepCub parser class. Covers filename parsing, filepath
     handling, attribute computation, error cases, and representation methods.
     """
-
     test_cases = [
         (
             "segment",
@@ -110,7 +47,8 @@ class TestTwoMonDepCub:
                 "lcube": 20.0, "d_sur": 2.0, "dt": 0.01, "bdump": 50,
                 "adump": 100, "tdump": 500, "ensemble_id": 3,
                 "name": "am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01"
-                "bdump50adump100tdump500ens3", "project_name": "TwoMonDepCub"
+                "bdump50adump100tdump500ens3",
+                "project_name": "TwoMonDepCub"
             }
         ),
         (
@@ -122,7 +60,8 @@ class TestTwoMonDepCub:
                 "lcube": 20.0, "d_sur": 2.0, "dt": 0.01, "bdump": 50,
                 "adump": 100, "tdump": 500,
                 "name": "am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01"
-                "bdump50adump100tdump500", "project_name": "TwoMonDepCub"
+                "bdump50adump100tdump500",
+                "project_name": "TwoMonDepCub"
             }
         ),
         (
@@ -146,12 +85,34 @@ class TestTwoMonDepCub:
         ),
     ]
 
+    @pytest.fixture
+    def valid_ensemble_long_args(self):
+        return {
+            "artifact": "am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100"
+            "tdump500",
+            "lineage": "ensemble_long",
+            "group": "bug"
+        }
+
+    def test_empty_artifact(self, valid_ensemble_long_args):
+        """
+        Ensure that an empty artifact name raises a ValueError.
+        """
+        with pytest.raises(ValueError,
+                           match="'artifact' cannot be an empty string."):
+            TwoMonDepCub(
+                "",
+                valid_ensemble_long_args['lineage'],
+                valid_ensemble_long_args['group'])
+
     @pytest.mark.parametrize("lineage, group, artifact, expected,", test_cases)
     def test_filename_parsing(self, lineage, group, artifact, expected):
         """
         Test filename parsing and attribute extraction for each lineage.
         """
-        parser = TwoMonDepCub(artifact, lineage, group)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            parser = TwoMonDepCub(artifact, lineage, group)
 
         assert parser.lineage == lineage
         assert parser.group == group
@@ -176,64 +137,90 @@ class TestTwoMonDepCub:
         """
         Test filepath handling using a real temporary file for each artifact.
         """
-        new_artifact = artifact + '.txt'
-        full_path = make_temp_file(new_artifact)
-        parser = TwoMonDepCub(full_path, lineage, group)
+        ext = '.txt'
+        full_path = make_temp_file(artifact + ext)
+        with warnings.catch_warnings():
+            parser = TwoMonDepCub(full_path, lineage, group, ispath=True)
+        assert parser.filename == artifact + ext
+        assert parser.filepath == os.path.dirname(full_path)
+        assert parser.ext == ext
 
-        assert parser.filename == new_artifact
-        assert parser.filepath in full_path
-        assert os.path.samefile(parser.filepath, os.path.dirname(full_path))
-        assert parser.name == expected["name"]
-        assert parser.project_name == expected["project_name"]
-
-        for key, val in expected.items():
-            if key != "name":
-                assert getattr(parser, key) == val, f"{key} mismatch"
-
-    @pytest.mark.skip(reason="no way of currently testing this")
-    def test_computed_attributes(self):
+    def test_computed_attributes(self, valid_ensemble_long_args):
         """
         Test computed density and volume fraction attributes.
         """
-        artifact = "nm8am1.0ac1.0nc2hl2.5sd1.0dt0.01bdump10adump20tdump100ens1.j03"
-        parser = TwoMonDepCub(artifact, 'segment', 'bug')
+        parser = TwoMonDepCub(**valid_ensemble_long_args)
 
-        assert parser.lcube == 5.0
-        assert pytest.approx(parser.rho_bulk_m, 0.0001) == 8 / 125
-        assert pytest.approx(parser.phi_bulk_m, 0.0001) == (8 * (math.pi / 6)) / 125
-        assert pytest.approx(parser.rho_bulk_c, 0.0001) == 2 / 125
-        assert pytest.approx(parser.phi_bulk_c, 0.0001) == (2 * (math.pi / 6)) / 125
+        assert parser.lcube == 20.0
+        assert pytest.approx(parser.rho_bulk_m, 0.0001) == \
+            number_density_cube(parser.nmon, parser.dmon, parser.lcube)
+        assert pytest.approx(parser.phi_bulk_m, 0.0001) == \
+            volume_fraction_cube(parser.nmon, parser.dmon, parser.lcube)
+        assert pytest.approx(parser.rho_bulk_c, 0.0001) == \
+            number_density_cube(parser.ncrowd, parser.dcrowd, parser.lcube)
+        assert pytest.approx(parser.phi_bulk_c, 0.0001) == \
+            volume_fraction_cube(parser.ncrowd, parser.dcrowd, parser.lcube)
 
-    @pytest.mark.skip(reason="no way of currently testing this")
-    def test_invalid_group(self):
+    def test_invalid_group(self, valid_ensemble_long_args):
         """
         Ensure that an invalid group raises a ValueError.
         """
-        with pytest.raises(ValueError, match="group"):
-            TwoMonDepCub("nm2am5.0ac1.0", 'space', 'invalid')
+        with pytest.raises(ValueError, match="is an invalid option."):
+            TwoMonDepCub(valid_ensemble_long_args['artifact'],
+                         valid_ensemble_long_args['lineage'],
+                         "invalid")
 
-    @pytest.mark.skip(reason="no way of currently testing this")
-    def test_invalid_lineage(self):
+    def test_invalid_lineage(self, valid_ensemble_long_args):
         """
         Ensure that an invalid lineage raises a ValueError.
         """
-        with pytest.raises(ValueError, match="lineage"):
-            TwoMonDepCub("nm2am5.0ac1.0", 'wrong', 'bug')
+        with pytest.raises(ValueError, match="is an invalid option."):
+            TwoMonDepCub(valid_ensemble_long_args['artifact'],
+                         "invalid",
+                         valid_ensemble_long_args['group'])
 
-    @pytest.mark.skip(reason="no way of currently testing this")
-    def test_invalid_key_warns(self, caplog):
+    def test_invalid_keyword(self, valid_ensemble_long_args):
         """
         Ensure unknown keyword patterns in artifact name trigger a warning.
         """
-        _ = TwoMonDepCub("nm2am5.0XXac1.0", 'space', 'bug')
-        assert any("not found" in msg for msg in caplog.text)
+        with pytest.raises(AttributeError, match="has no attribute"):
+            TwoMonDepCub(
+                "am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100xx500",
+                valid_ensemble_long_args['lineage'],
+                valid_ensemble_long_args['group'])
 
-    @pytest.mark.skip(reason="no way of currently testing this")
-    def test_str_and_repr_output(self):
+    def test_invalid_heading_keyword(self, valid_ensemble_long_args):
+        """
+        Ensure unknown keyword patterns in artifact name trigger a warning.
+        """
+        with pytest.raises(AttributeError, match="has no attribute"):
+            TwoMonDepCub(
+                "5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100dt500",
+                valid_ensemble_long_args['lineage'],
+                valid_ensemble_long_args['group'])
+
+    def test_str_and_repr_output(self, valid_ensemble_long_args):
         """
         Check that __str__ and __repr__ methods contain useful info.
         """
-        parser = TwoMonDepCub("nm2am5.0ac1.0", 'space', 'bug')
-        assert "Artifact" in str(parser)
-        assert "geometry" in repr(parser).lower()
-        assert "TwoMonDepCub" in parser.project_name
+        parser = TwoMonDepCub(**valid_ensemble_long_args)
+
+        s = str(parser)
+        r = repr(parser)
+
+        # Check that key fields are present in __str__
+        assert "Artifact:" in s
+        assert f"Name: '{parser.filename}'" in s
+        assert f"Geometry: '{parser.geometry}'" in s
+        assert f"Group: '{parser.group}'" in s
+        assert f"Lineage: '{parser.lineage}'" in s
+        assert f"Topology: '{parser.topology}'" in s
+        assert f"Project: '{parser.project_name}'" in s
+
+        # Check __repr__ content
+        assert parser.filename in r
+        assert parser.geometry in r
+        assert parser.group in r
+        assert parser.lineage in r
+        assert parser.topology in r
+        assert parser.project_name in r
