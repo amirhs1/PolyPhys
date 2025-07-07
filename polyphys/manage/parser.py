@@ -66,7 +66,6 @@ To handle attributes that may or may not exist at runtime, the `getattr`
 function is commonly used, ensuring robustness to varied filename patterns.
 """
 import os
-import warnings
 import re
 from typing import Dict, List, ClassVar, Optional
 from abc import ABC, abstractmethod
@@ -99,16 +98,21 @@ class ParserBase(ABC):
     group : :py:data:`GroupT`
         The particle group type in the project. Used for specific group-based
         parsing.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
     filepath : str
-        The filepath if `artifact` is a filepath, otherwise "N/A".
+        The filepath if `artifact` is a filepath, otherwise ``"N/A"``.
     filename : str
         The filename extracted from `artifact` if it is a filepath, otherwise
         `artifact` itself.
     group : {'bug', 'nucleoid', 'all'}
         Particle group type in the project.
+    ext : str
+        The file extension if `artifact` was a filepath; otherwise "N/A".
     name : str
         The unique name derived from `filename` based on `lineage` and `group`
         conventions.
@@ -184,14 +188,31 @@ class ParserBase(ABC):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
+        if artifact == '':
+            raise ValueError("'artifact' cannot be an empty string.")
         invalid_keyword(lineage, self.lineages)
         invalid_keyword(group, self.groups)
+        self._filepath: str = ''
+        self._filename: str = ''
+        self._name: str = ''
+        self._ext: str = ''
+        self._ispath = ispath
         self._lineage = lineage
         self._group = group
-        self._parse_artifact(artifact)
         self._project_name = self.__class__.__name__
+        if self._ispath is True:
+            self._filename = os.path.basename(artifact)
+            self._filepath = os.path.dirname(os.path.abspath(artifact))
+            self._name, self._ext = os.path.splitext(self.filename)
+        else:
+            self._filename = artifact
+            self._name = artifact
+            self._ext = "N/A"
+            self._filepath = "N/A"
+        self._find_name()
         self._lineage_genealogy: List[LineageT] = self._genealogy[lineage]
         self._lineage_attributes = \
             list(self.genealogy_attributes[lineage].keys())
@@ -206,20 +227,20 @@ class ParserBase(ABC):
         observation = (
             f"Artifact:\n"
             f"    Name: '{self.filename}',\n"
-            f"    Geometry: '{self._geometry}',\n"
-            f"    Group: '{self._group}',\n"
-            f"    Lineage: '{self._lineage}',\n"
-            f"    Topology: '{self._topology}',\n"
-            f"    Project: '{self._project_name}'"
+            f"    Geometry: '{self.geometry}',\n"
+            f"    Group: '{self.group}',\n"
+            f"    Lineage: '{self.lineage}',\n"
+            f"    Topology: '{self.topology}',\n"
+            f"    Project: '{self.project_name}'"
         )
         return observation
 
     def __repr__(self) -> str:
         return (
             f"Artifact('{self.filename}' in geometry"
-            f" '{self._geometry}' from group '{self._group}' with"
-            f" lineage '{self._lineage}' and"
-            f" topology '{self._topology}' in project '{self._project_name}')"
+            f" '{self.geometry}' from group '{self.group}' with"
+            f" lineage '{self.lineage}' and"
+            f" topology '{self.topology}' in project '{self.project_name}')"
         )
 
     @property
@@ -310,6 +331,20 @@ class ParserBase(ABC):
         return self._group
 
     @property
+    def ispath(self) -> bool:
+        """
+        Return the current ispath.
+        """
+        return self._ispath
+
+    @property
+    def ext(self) -> str:
+        """
+        Return the current file extension.
+        """
+        return self._ext
+
+    @property
     def lineage(self) -> LineageT:
         """
         Return the current lineage.
@@ -360,107 +395,20 @@ class ParserBase(ABC):
         """
         return self._physical_attributes
 
-    def _parse_artifact(self, artifact: str) -> None:
+    def _find_name(self) -> None:
         """
-        Parse the artifact string and set the filepath, filename, and lineage
-        name.
-
-        Parameters
-        ----------
-        artifact : str
-            The artifact string, which may be a full path, a filename, or a
-            bare name.
-
-        Warnings
-        --------
-        UserWarning
-            If the artifact looks like a filename (has a known extension) but
-            does not exist.
-
-        Notes
-        -----
-        - If `artifact` includes a path (contains '/' or '\\'), treat as a
-        filepath:
-            - _filepath = full directory path
-            - _filename = basename
-            - _name is parsed from filename via _find_name()
-        - If `artifact` is just a filename (no path), check if it exists in
-        the working dir:
-            - if exists:
-                - _filepath = full directory path
-            - else:
-                - _filepath = 'N/A'
-            - _filename = artifact
-            - _name is parsed from filename via _find_name()
-        - If `artifact` is a bare name (e.g., 'nm2am5.0ac1.0'):
-            - _filepath = 'N/A'
-            - _filename = 'N/A'
-            - _name = artifact
+        parses the unique lineage_name (the first substring of filename
+        and/or the segment keyword middle substring) of a filename.
         """
-        KNOWN_EXTENSIONS = {".txt", ".gz", ".xz", ".csv", ".json", ".npy",
-                            ".log", ".brotli", ".tar", ".lmp", ".lammpstrj",
-                            ".data"}
-
-        _, ext = os.path.splitext(artifact)
-        has_path = os.path.sep in artifact or (os.path.altsep and
-                                               os.path.altsep in artifact)
-        has_known_ext = ext.lower() in KNOWN_EXTENSIONS
-
-        if has_path:
-            full_path = os.path.abspath(artifact)
-            self._filepath, self._filename = os.path.split(full_path)
-            self._name = self._find_name(self._filename)
-        elif os.path.isfile(artifact):
-            full_path = os.path.abspath(artifact)
-            self._filepath = os.path.dirname(full_path)
-            self._filename = os.path.basename(full_path)
-            self._name = self._find_name(self._filename)
-        elif has_known_ext:
-            warnings.warn(
-                f"The artifact '{artifact}' appears to be a filename "
-                f"(has extension '{ext}') but does not exist in the current"
-                "directory.",
-                UserWarning
-            )
-            self._filepath = "N/A"
-            self._filename = artifact
-            self._name = self._find_name(self._filename)
-        else:
-            warnings.warn(
-                f"The artifact '{artifact}' does not contain a known "
-                "extension or path and was treated as a name string. It may "
-                "include group or observable info (e.g., '.bug-MonGyrT').",
-                UserWarning
-            )
-            self._filepath = "N/A"
-            self._filename = artifact
-            self._name = self._find_name(artifact)
-
-    def _find_name(self, fullname) -> str:
-        """
-        Parse and return the unique lineage name from the artifact or filename.
-
-        Parameters
-        ----------
-        fullname: str
-            A string that is either the filename or bare name.
-
-        Return
-        ------
-        str
-            The parsed lineage name.
-
-        Notes
-        -----
-        - For 'segment' and 'whole' lineages, names typically end with the
-          group keyword or a hyphen.
-        - For 'ensemble_long', 'ensemble', and 'space', names are derived
-          from the first substring in the filename.
-        """
-        if self._lineage in ['segment', 'whole']:
-            return fullname.split("." + self._group)[0].split("-")[0]
-        else:
-            return fullname.split("-")[0]
+        if self._lineage in ["segment", "whole"]:
+            # a 'segment' lineage only used in 'probe' phase
+            # a 'whole' lineage used in 'probe' or 'analyze' phases
+            # so its lineage_name is either ended by 'group' keyword or "-".
+            # these two combined below:
+            self._name = \
+                self._name.split("." + self._group)[0].split("-")[0]
+        else:  # 'ensemble' or 'space' lineages
+            self._name = self._name.split("-")[0]
 
     @abstractmethod
     def _initiate_attributes(self) -> None:
@@ -528,7 +476,7 @@ class TwoMonDepCub(ParserBase):
       Detailed name for an 'ensemble' artifact.
     - ``ensemble``: nm#am#ac#nc#sd#
       Short name for an 'ensemble' artifact.
-    - ``space``: nm#am#ac#
+    - ``space``: nm#am#ac#nc#
       A 'space' artifact.
 
     For the above four lineages, the short-form keys (e.g., ``am``, ``nm``,
@@ -640,12 +588,12 @@ class TwoMonDepCub(ParserBase):
             'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump', 'tdump': 'tdump'}
             ),
-        # Pattern: nm#am#ac#nc#sd :
+        # Pattern: nm#am#ac#nc#sd# :
         'ensemble': OrderedDict(
             {'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc',
              'd_sur': 'sd'}
              ),
-        # pattern: nm#am#ac# :
+        # pattern: nm#am#ac#nc# :
         'space': OrderedDict(
             {'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc'}
             )
@@ -664,9 +612,10 @@ class TwoMonDepCub(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
