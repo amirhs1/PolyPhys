@@ -14,7 +14,6 @@
         "Topic :: Scientific/Engineering :: Physics",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12"
@@ -36,7 +35,8 @@
 [project.optional-dependencies]
     docs = [
         "sphinx",
-        "sphinx_sitemap"
+        "sphinx_sitemap",
+        "pydata-sphinx-theme"
     ]
     dev = [
         "pytest",
@@ -44,6 +44,7 @@
         "flake8",
         "mypy",
         "pandas-stubs",
+        "build"
     ]
     notebooks = [
         "ipykernel",
@@ -62,3 +63,6 @@
 
 [project.scripts]
     polyphys = "polyphys.cli:main"
+
+[tool.pytest.ini_options]
+    addopts = "--doctest-modules --doctest-glob=README.md"

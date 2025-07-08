@@ -163,7 +163,7 @@ def sort_filenames(
     Examples
     --------
     >>> sort_filenames(['file1.data', 'file2.trj', 'file1.trj', 'file2.data'],
-    ...                ['data', ('lammpstrj', 'trj')])
+    ... ['data', ('lammpstrj', 'trj')])
     [('file1.data', 'file1.trj'), ('file2.data', 'file2.trj')]
 
     >>> sort_filenames(['file1.data', 'file2.data'], ['data', ('trj',)])
@@ -173,7 +173,6 @@ def sort_filenames(
     for exts in formats:
         grouped_filenames.append([f for f in filenames if f.endswith(exts)])
 
-    print(grouped_filenames)
     for idx, filenames_group in enumerate(grouped_filenames):
         grouped_filenames[idx] = sorted(
             filenames_group, key=split_alphanumeric
@@ -342,7 +341,7 @@ def number_density_cube(
     Examples
     --------
     >>> number_density_cube(1000, 1.0, 10.0)
-    1.3717421124828531
+    1.3717421124828533
     >>> number_density_cube(1000, 1.0, 10.0, pbc=True)
     1.0
     """
@@ -390,7 +389,7 @@ def volume_fraction_cube(
     Examples
     --------
     >>> volume_fraction_cube(1000, 1.0, 10.0)
-    0.7189611722461486
+    0.718242490532646
 
     >>> volume_fraction_cube(1000, 1.0, 10.0, pbc=True)
     0.5235987755982988
