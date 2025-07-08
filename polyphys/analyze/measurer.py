@@ -156,37 +156,35 @@ def pair_distance(
     Notes
     -----
     This function returns the component-wise distance vector, not the scalar
-    Euclidean norm. If `pbc` is provided, the center-of-geometry is shifted to
-    the nearest periodic image before computing the vector.
+    Euclidean norm.
 
     Examples
     --------
-    >>> pos = np.array([[1.0, 2.0, 3.0], [4.0, 2.0, 3.0]])
-    >>> pair_distance(pos)
+    >>> positions = np.array([[1.0, 2.0, 3.0], [4.0, 2.0, 3.0]])
+    >>> pair_distance(positions)
     array([3., 0., 0.])
 
-    >>> pbc = {0: 10.0}
-    >>> pos = np.array([[1.0, 2.0, 3.0], [9.5, 2.0, 3.0]])
-    >>> pair_distance(pos, pbc)
-    array([-1.5,  0. ,  0. ])
+    >>> pbc = {0: 8.0}
+    >>> positions = np.array([[1.0, 2.0, 3.0], [9.5, 2.0, 3.0]])
+    >>> pair_distance(positions, pbc)
+    array([0.5, 0. , 0. ])
     """
     n_atoms, n_dims = positions.shape
     if n_atoms != 2:
         raise ValueError("'pair_distance' only works for two atoms.")
     # Calculation in the center of geometry (cog) of the atom group.
-    com_no_pbc = np.mean(positions, axis=0)
-    shifts = -com_no_pbc
+    delta = positions[1] - positions[0]
+
     if pbc is not None:
+        n_dims = positions.shape[1]
+        # Prepare length and inverse-length arrays
         pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
             np.zeros(n_dims), np.zeros(n_dims), pbc
         )
-        # Move the cog to the unit box
-        com_pbc = pbc_lengths * np.around(pbc_lengths_inverse * com_no_pbc)
-        # Find the shifts in the cog
-        shifts = com_pbc - com_no_pbc
-    # Apply the shifts
-    positions += shifts
-    return positions[1] - positions[0]
+        # Apply Minimum Image Convention
+        delta -= pbc_lengths * np.round(delta * pbc_lengths_inverse)
+
+    return delta
 
 
 def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
@@ -221,13 +219,13 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
     ...                       [1.0, 0.0, 0.0],
     ...                       [2.0, 0.0, 0.0]])
     >>> end_to_end(positions)
-    2.0
+    np.float64(2.0)
 
     >>> positions = np.array([[1.0, 1.0, 1.0],
     ...                       [2.0, 2.0, 2.0],
     ...                       [3.0, 3.0, 3.0]])
-    >>> round(end_to_end(positions), 6)
-    3.464102  # Euclidean distance between 1st and 2nd relative to COG
+    >>> end_to_end(positions)
+    np.float64(3.4641016151377544)
     """
     # calculation in the center of geometry of the atom group.
     if positions.shape[0] < 2:
@@ -269,9 +267,12 @@ def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
 
     Examples
     --------
-    >>> pos = np.array([[1, 0, 0], [1, 2, 2]])
-    >>> transverse_size(pos, axis=0)
-    2.0
+    >>> positions = np.array([[1, 0, 0], [1, 2, 2]])
+    >>> transverse_size(positions, axis=0)
+    np.float64(2.8284271247461903)
+
+    >>> transverse_size(positions, axis=1)
+    np.float64(2.0)
     """
     trans_axes = {0: [1, 2], 1: [0, 2], 2: [0, 1]}
     if axis >= positions.shape[1]:
@@ -313,8 +314,8 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
 
     Examples
     --------
-    >>> pos = np.array([[0, 0, 0], [4, 2, 6], [2, 3, 0]])
-    >>> max_distance(pos)
+    >>> positions = np.array([[0, 0, 0], [4, 2, 6], [2, 3, 0]])
+    >>> max_distance(positions)
     array([4., 3., 6.])
     """
     # calculation in the center of geometry of the atom group.
@@ -359,9 +360,9 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
 
     Examples
     --------
-    >>> pos = np.array([[1, 2, 3], [4, 8, 6]])
-    >>> fsd(pos, axis=1)
-    6.0
+    >>> positions = np.array([[1, 2, 3], [4, 8, 6]])
+    >>> fsd(positions, axis=1)
+    np.float64(6.0)
     """
     if axis >= positions.shape[1]:
         raise IndexError(
@@ -399,17 +400,17 @@ def simple_stats(entity: EntityT, data: np.ndarray) -> Dict[PropertyT, float]:
     Examples
     --------
     >>> import numpy as np
-    >>> simple_stats("energy", np.array([1.0, 2.0, 3.0]))
-    {'energy_mean': 2.0, 'energy_var': 1.0, 'energy_sem': 0.5773502691896257}
+    >>> simple_stats('energy', np.array([1.0, 2.0, 3.0]))  # noqa: E501
+    {'energy_mean': np.float64(2.0), 'energy_var': np.float64(1.0), 'energy_sem': np.float64(0.5773502691896258)}
     """
     if len(data) == 0:
-        raise ValueError("Input array must not be empty.")
+        raise ValueError('Input array must not be empty.')
 
     # Unbiased std, var, and sem.
     return {
-        entity + "_mean": np.mean(data),
-        entity + "_var": np.var(data, ddof=1),
-        entity + "_sem": np.std(data, ddof=1) / np.sqrt(len(data)),
+        entity + '_mean': np.mean(data),
+        entity + '_var': np.var(data, ddof=1),
+        entity + '_sem': np.std(data, ddof=1) / np.sqrt(len(data)),
     }
 
 
@@ -440,225 +441,12 @@ def sem(data: np.ndarray) -> float:
     --------
     >>> import numpy as np
     >>> sem(np.array([1.0, 2.0, 3.0]))
-    0.5773502691896257
+    np.float64(0.5773502691896258)
     """
     if len(data) == 0:
-        raise ValueError("Input data array must not be empty.")
+        raise ValueError('Input data array must not be empty.')
 
     return np.std(data, ddof=1) / len(data) ** 0.5
-
-
-def number_density_cube(
-    n_atom: float, d_atom: float, l_cube: float, pbc: bool = False
-) -> float:
-    """
-    Compute the bulk number density of a species in a cubic box.
-
-    Parameters
-    ----------
-    n_atom : float
-        Number of particles.
-    d_atom : float
-        Diameter of the particle of the species.
-    l_cube : float
-        Length of one side of the cubic box.
-    pbc : bool
-        Periodic boundary conditions along all box sides. If `True`,
-        :math:`v_{avail} = l_{cube}^3`; otherwise,
-        :math:`v_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
-
-    Returns
-    -------
-    float
-        Bulk number density of the species in the cubic box.
-
-    Notes
-    -----
-    The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
-    where `v_{avail}` is the available volume to the center of geometry of a
-    particle based on the presence of periodic boundary conditions.
-
-    Examples
-    --------
-    >>> number_density_cube(1000, 1.0, 10.0)
-    1.3717421124828531
-    >>> number_density_cube(1000, 1.0, 10.0, pbc=True)
-    1.0
-    """
-    v_avail = (l_cube - int(not pbc) * d_atom) ** 3
-    return n_atom / v_avail
-
-
-def volume_fraction_cube(
-    n_atom: float, d_atom: float, l_cube: float, pbc: bool = False
-) -> float:
-    """
-    Compute the volume fraction of a species in a cubic box.
-
-    Parameters
-    ----------
-    n_atom : float
-        Number of particles.
-    d_atom : float
-        Diameter of the particle of the species.
-    l_cube : float
-        Length of one side of the cubic box.
-    pbc : bool
-        Periodic boundary conditions along all box sides. If `True`,
-        :math:`v_{avail} = l_{cube}^3`; otherwise,
-        :math:`v_{avail} = (l_{cube} - d_{atom})^3`. Defaults to `False`.
-
-    Returns
-    -------
-    float
-        Volume fraction of the species in the cubic box.
-
-    Raises
-    ------
-    ValueError
-        If the computed volume fraction exceeds 1.0, which is physically
-        invalid for spherical particles.
-
-    Notes
-    -----
-    The available volume accounts for the excluded-volume boundary effect if
-    `pbc=False`, meaning particles cannot cross the box boundary. If
-    `pbc=True`, particles are assumed to wrap around, and the full box volume
-    is used.
-
-    Examples
-    --------
-    >>> volume_fraction_cube(1000, 1.0, 10.0)
-    0.7189611722461486
-
-    >>> volume_fraction_cube(1000, 1.0, 10.0, pbc=True)
-    0.5235987755982988
-    """
-    rho = number_density_cube(n_atom, d_atom, l_cube, pbc)
-    phi = rho * np.pi * d_atom**3 / 6
-    if phi > 1.0:
-        raise ValueError(
-            "Volume fraction exceeds 1.0, which is physically invalid."
-        )
-    return phi
-
-
-def number_density_cylinder(
-    n_atom: float, d_atom: float, l_cyl: float, d_cyl: float, pbc: bool = False
-) -> float:
-    """
-    Compute the bulk number density of a species in a cylindrical confinement.
-
-    Parameters
-    ----------
-    n_atom : float
-        Number of particles.
-    d_atom : float
-        Diameter of the particle of the species.
-    l_cyl : float
-        Length of the cylindrical confinement.
-    d_cyl : float
-        Diameter of the cylindrical confinement.
-    pbc : bool
-        Periodic boundary conditions along the longitudinal axis. If `True`,
-        :math:`v_{avail} = \\pi * l_{cyl} * (d_{cyl} - d_{atom})^2 / 4`;
-        otherwise, :math:`v_{avail} = \\pi * (l_{cyl} - d_{atom}) * (d_{cyl}
-        - d_{atom})^2 / 4`. Defaults to `False`.
-
-    Returns
-    -------
-    float
-        Bulk number density of the species in the cylindrical confinement.
-
-    Notes
-    -----
-    The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
-    where `v_{avail}` is the available volume to the center of geometry of a
-    particle based on the presence of periodic boundary conditions.
-
-    Examples
-    --------
-    >>> number_density_cylinder(100, 1.0, 10.0, 5.0)
-    0.8841941282883075
-    >>> number_density_cylinder(100, 1.0, 10.0, 5.0, pbc=True)
-    0.7957747154594768
-    """
-    v_avail = (
-        np.pi * (l_cyl - int(not pbc) * d_atom) * (d_cyl - d_atom) ** 2 / 4
-    )
-    return n_atom / v_avail
-
-
-def volume_fraction_cylinder(
-    n_atom: float, d_atom: float, l_cyl: float, d_cyl: float, pbc: bool = False
-) -> float:
-    """
-    Compute the volume fraction of spherical particles in a cylindrical
-    confinement.
-
-    Parameters
-    ----------
-    n_atom : float
-        Number of particles.
-    d_atom : float
-        Diameter of a single particle.
-    l_cyl : float
-        Length of the cylindrical confinement (along the longitudinal axis).
-    d_cyl : float
-        Diameter of the cylindrical confinement (transverse direction).
-    pbc : bool, default False
-        Whether periodic boundary conditions are applied along the cylinder
-        axis. If `True`, the available volume is:
-
-        .. math::
-
-            V = \\frac{\\pi}{4} l_{cyl} (d_{cyl} - d_{atom})^2
-
-        If `False`, the available volume is:
-
-        .. math::
-
-            V = \\frac{\\pi}{4} (l_{cyl} - d_{atom}) (d_{cyl} - d_{atom})^2
-
-    Returns
-    -------
-    float
-        Volume fraction of the particles, defined as:
-
-        .. math::
-
-            \\phi = \\rho \\cdot \\frac{\\pi d^3}{6}
-
-        where :math:`\\rho` is the number density of particles in the
-        available cylindrical volume.
-
-    Raises
-    ------
-    ValueError
-        If the computed volume fraction exceeds 1.0, which is physically
-        invalid.
-
-    Notes
-    -----
-    The available volume excludes regions where the particle centers cannot
-    access due to finite size. When `pbc=False`, particles are excluded from
-    the cylinder ends; when `pbc=True`, they are not.
-
-    Examples
-    --------
-    >>> volume_fraction_cylinder(100, 1.0, 10.0, 5.0)
-    0.46296296296296297
-
-    >>> volume_fraction_cylinder(100, 1.0, 10.0, 5.0, pbc=True)
-    0.4166666666666667
-    """
-    rho = number_density_cylinder(n_atom, d_atom, l_cyl, d_cyl, pbc)
-    phi = rho * np.pi * d_atom**3 / 6
-    if phi > 1.0:
-        raise ValueError(
-            "Volume fraction exceeds 1.0, which is physically invalid."
-        )
-    return phi
 
 
 def spherical_segment(r: float, a: float, b: float) -> float:
@@ -756,7 +544,7 @@ def sphere_sphere_intersection(r1: float, r2: float, d: float) -> float:
     Examples
     --------
     >>> sphere_sphere_intersection(3, 4, 2)
-    75.39822368615503
+    94.90227807719167
     >>> sphere_sphere_intersection(3, 4, 10)
     0.0
     """
@@ -848,7 +636,7 @@ def fixedsize_bins(
     bin_size: float,
     lmin: float,
     lmax: float,
-    bin_type: BinT = "ordinary",
+    bin_type: BinT = 'ordinary',
     save_bin_edges: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -922,20 +710,20 @@ def fixedsize_bins(
     _length = lmax - lmin
     _delta = bin_size
 
-    if bin_type == "ordinary":
+    if bin_type == 'ordinary':
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)  # excess length
         # add half of the excess to each end:
         lmin_adj = lmin - dl
         lmax_adj = lmax + dl
         bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
-    elif bin_type == "nonnegative":
+    elif bin_type == 'nonnegative':
         n_bins = int(np.ceil(_length / _delta))
         dl = 0.5 * (n_bins * _delta - _length)
         lmin_adj = max(0.0, lmin - dl)
         lmax_adj = lmax + 2 * dl if lmin_adj == 0 else lmax + dl
         bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
-    elif bin_type == "periodic":
+    elif bin_type == 'periodic':
         n_bins = int(np.ceil(_length / _delta))
         lmin_adj, lmax_adj = lmin, lmax
         bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta, dtype=float)
@@ -946,7 +734,7 @@ def fixedsize_bins(
             # delta={_delta}, not 'n_bins', are used to created 'bin_edges'.
             warnings.warn("'n_bins' is set to 'len(bin_edges)-1'", UserWarning)
     else:
-        invalid_keyword(bin_type, ["ordinary", "nonnegative", "periodic"])
+        invalid_keyword(bin_type, ['ordinary', 'nonnegative', 'periodic'])
 
     collectors = np.zeros(n_bins, dtype=np.int16)
     collectors_std = np.zeros(n_bins, dtype=np.int16)
@@ -955,11 +743,11 @@ def fixedsize_bins(
         np.save(save_bin_edges, bin_edges)
 
     return {
-        "n_bins": n_bins,
-        "bin_edges": bin_edges,
-        "collector": collectors,
-        "collector_std": collectors_std,
-        "range": (lmin_adj, lmax_adj),
+        'n_bins': n_bins,
+        'bin_edges': bin_edges,
+        'collector': collectors,
+        'collector_std': collectors_std,
+        'range': (lmin_adj, lmax_adj),
     }
 
 
@@ -995,10 +783,10 @@ def radial_histogram(
 
     Examples
     --------
-    >>> pos = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 2]])
+    >>> positions= np.array([[1, 0, 0], [0, 1, 0], [0, 0, 2]])
     >>> edges = np.array([0, 1, 2, 3])
-    >>> radial_histogram(pos, edges, (0, 3))
-    array([2, 0, 1])
+    >>> radial_histogram(positions, edges, (0, 3))
+    array([0, 2, 1])
     """
     if positions.ndim != 2:
         raise ValueError(
@@ -1104,9 +892,9 @@ def axial_histogram(
 
     Examples
     --------
-    >>> pos = np.array([[1, 2, 3], [2, 3, 4], [1, 2, 2]])
+    >>> positions= np.array([[1, 2, 3], [2, 3, 4], [1, 2, 2]])
     >>> edges = np.array([0, 1, 2, 3, 4, 5])
-    >>> axial_histogram(pos, edges, (0, 5), dim=0)
+    >>> axial_histogram(positions, edges, (0, 5), dim=0)
     array([0, 2, 1, 0, 0])
     """
     if dim not in {0, 1, 2}:
@@ -1158,10 +946,10 @@ def azimuth_cyl_histogram(
 
     Examples
     --------
-    >>> pos = np.array([[1, 0, 0], [0, 1, 0], [-1, 0, 0]])
+    >>> positions= np.array([[1, 0, 0], [0, 1, 0], [-1, 0, 0]])
     >>> edges = np.linspace(-np.pi, np.pi, 5)
-    >>> azimuth_cyl_histogram(pos, edges, (-np.pi, np.pi), dim=2)
-    array([1, 0, 1, 1])
+    >>> azimuth_cyl_histogram(positions, edges, (-np.pi, np.pi), dim=2)
+    array([0, 0, 1, 2])
     """
     if dim not in {0, 1, 2}:
         raise ValueError("'dim' must be one of {0, 1, 2}.")
@@ -1223,10 +1011,10 @@ def planar_cartesian_histogram(
 
     Examples
     --------
-    >>> pos = np.array([[1, 1, 0], [2, 2, 0], [3, 3, 0]])
+    >>> positions= np.array([[1, 1, 0], [2, 2, 0], [3, 3, 0]])
     >>> edges = [np.array([0, 2, 4]), np.array([0, 2, 4])]
     >>> ranges = [(0, 4), (0, 4)]
-    >>> planar_cartesian_histogram(pos, edges, ranges, dim=2)
+    >>> planar_cartesian_histogram(positions, edges, ranges, dim=2)
     array([[1., 0.],
            [0., 2.]])
     """

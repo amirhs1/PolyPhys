@@ -312,7 +312,7 @@ class TestTwoMonDepCub(ParserBaseTestTemplate):
                 valid_args['group'])
 
 
-class TestTwoMonDepCub(ParserBaseTestTemplate):
+class TestSumRuleCub(ParserBaseTestTemplate):
     """
     Tests for the TwoMonDepCub parser class. Covers filename parsing, filepath
     handling, attribute computation, error cases, and representation methods.
@@ -464,3 +464,35 @@ class TestTwoMonDepCub(ParserBaseTestTemplate):
                 "5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100dt500",
                 valid_args['lineage'],
                 valid_args['group'])
+
+
+class TestSumRuleCub(ParserBaseTestTemplate):
+
+
+
+class TestSumRuleCub(ParserBaseTestTemplate):
+
+
+
+class TestSumRuleCubHeteroRing(ParserBaseTestTemplate):
+
+
+
+class TestSumRuleCubHeteroLinear(ParserBaseTestTemplate):
+
+
+
+class TestTransFociCyl(ParserBaseTestTemplate):
+
+
+
+class TestTransFociCub(ParserBaseTestTemplate):
+
+
+
+class TestHnsCub(ParserBaseTestTemplate):
+
+
+
+class TestHnsCyl(ParserBaseTestTemplate):
+
