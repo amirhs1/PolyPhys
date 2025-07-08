@@ -51,11 +51,11 @@ projects.
 
 Examples
 ========
->>> artifact = SumRuleCyl("N200D10.0ac2.0nc0", 'ensemble', 'all')
+>>> artifact = SumRuleCyl('N200D10.0ac2.0nc0', 'ensemble', 'all')
 >>> print(artifact.dcrowd)
 2.0
 
->>> artifact = HnsCyl("N200D20.0nh16ac1.0epshc1.0nc0", 'space', 'nucleoid')
+>>> artifact = HnsCyl('N200D20.0nh16ac1.0epshc1.0nc0', 'space', 'nucleoid')
 >>> print(artifact.eps_hc)
 1.0
 
@@ -105,14 +105,14 @@ class ParserBase(ABC):
     Attributes
     ----------
     filepath : str
-        The filepath if `artifact` is a filepath, otherwise ``"N/A"``.
+        The filepath if `artifact` is a filepath, otherwise ``'N/A'``.
     filename : str
         The filename extracted from `artifact` if it is a filepath, otherwise
         `artifact` itself.
     group : {'bug', 'nucleoid', 'all'}
         Particle group type in the project.
     ext : str
-        The file extension if `artifact` was a filepath; otherwise "N/A".
+        The file extension if `artifact` was a filepath; otherwise 'N/A'.
     name : str
         The unique name derived from `filename` based on `lineage` and `group`
         conventions.
@@ -210,8 +210,8 @@ class ParserBase(ABC):
         else:
             self._filename = artifact
             self._name = artifact
-            self._ext = "N/A"
-            self._filepath = "N/A"
+            self._ext = 'N/A'
+            self._filepath = 'N/A'
         self._find_name()
         self._lineage_genealogy: List[LineageT] = self._genealogy[lineage]
         self._lineage_attributes = \
@@ -400,15 +400,15 @@ class ParserBase(ABC):
         parses the unique lineage_name (the first substring of filename
         and/or the segment keyword middle substring) of a filename.
         """
-        if self._lineage in ["segment", "whole"]:
+        if self._lineage in ['segment', 'whole']:
             # a 'segment' lineage only used in 'probe' phase
             # a 'whole' lineage used in 'probe' or 'analyze' phases
-            # so its lineage_name is either ended by 'group' keyword or "-".
+            # so its lineage_name is either ended by 'group' keyword or '-'.
             # these two combined below:
             self._name = \
-                self._name.split("." + self._group)[0].split("-")[0]
+                self._name.split('.' + self._group)[0].split('-')[0]
         else:  # 'ensemble' or 'space' lineages
-            self._name = self._name.split("-")[0]
+            self._name = self._name.split('-')[0]
 
     @abstractmethod
     def _initiate_attributes(self) -> None:
@@ -431,9 +431,9 @@ class ParserBase(ABC):
         Each lineage on the left has all the lineages on its right.
         """
         for lineage_name in self._lineages:
-            lineage_value = "N/A"
+            lineage_value = 'N/A'
             if lineage_name in self.genealogy[self._lineage]:
-                lineage_value = ""
+                lineage_value = ''
                 lineage_attr = self.genealogy_attributes[lineage_name]
                 for attr_long, attr_short in lineage_attr.items():
                     lineage_value += \
@@ -480,7 +480,7 @@ class TwoMonDepCub(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short-form keys (e.g., ``am``, ``nm``,
-    ``ac``)  are physical attributes where their values (shown by "#" sign) are
+    ``ac``)  are physical attributes where their values (shown by '#' sign) are
     float or integer number. See `genealogy_attributes` below for long names
     of attributes.
 
@@ -544,23 +544,19 @@ class TwoMonDepCub(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Examples
     --------
-    >>> artifact = TwoMonDepCub(
-    ..."nm2am5.0ac1.0"
-    ...'space',
-    ...'bug'
-    ... )
+    >>> artifact = TwoMonDepCub('nm2am5.0ac1.0nc1000', 'space', 'bug')
     >>> print(artifact.nmon)
     2
     """
@@ -708,7 +704,7 @@ class SumRuleCyl(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
+    attributes where their values (shown by '#' sign) are float or integer
     number. See `genealogy_attributes` below for long names of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
@@ -771,15 +767,15 @@ class SumRuleCyl(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Notes
     -----
@@ -792,11 +788,7 @@ class SumRuleCyl(ParserBase):
     --------
     Creating a instance to parse a filename with specified lineage and group.
 
-    >>> artifact = SumRuleCyl(
-    ..."N200D10.0ac2.0nc0"
-    ...'ensemble',
-    ...'all'
-    ... )
+    >>> artifact = SumRuleCyl('N200D10.0ac2.0nc0', 'ensemble', 'all')
     >>> print(artifact.dcrowd)
     2.0
     """
@@ -945,7 +937,7 @@ class SumRuleCubHeteroRing(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
+    attributes where their values (shown by '#' sign) are float or integer
     number. See `genealogy_attributes` below for long names of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
@@ -1020,15 +1012,15 @@ class SumRuleCubHeteroRing(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Notes
     -----
@@ -1040,11 +1032,7 @@ class SumRuleCubHeteroRing(ParserBase):
     --------
     Creating a instance to parse a filename with specified lineage and group.
 
-    >>> artifact = SumRuleCubHeteroRing(
-    ..."ns400nl5am5.0ac1.0"
-    ...'space',
-    ...'bug'
-    ... )
+    >>> artifact = SumRuleCubHeteroRing('ns400nl5al5.0ac1.0', 'space', 'bug')
     >>> print(artifact.dcrowd)
     1.0
     """
@@ -1215,7 +1203,7 @@ class SumRuleCubHeteroLinear(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
+    attributes where their values (shown by '#' sign) are float or integer
     number. See `genealogy_attributes` below for long names of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
@@ -1290,15 +1278,15 @@ class SumRuleCubHeteroLinear(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Notes
     -----
@@ -1310,11 +1298,7 @@ class SumRuleCubHeteroLinear(ParserBase):
     --------
     Creating a instance to parse a filename with specified lineage and group.
 
-    >>> artifact = SumRuleCubHeteroLinear(
-    ..."ns800nl5am6.0ac3.0"
-    ...'space',
-    ...'all'
-    ... )
+    >>> artifact = SumRuleCubHeteroLinear('ns800nl5al6.0ac3.0', 'space', 'all')
     >>> print(artifact.dmon_large)
     6.0
     """
@@ -1485,7 +1469,7 @@ class TransFociCyl(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
+    attributes where their values (shown by '#' sign) are float or integer
     number. See `genealogy_attributes` below for long names of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
@@ -1571,15 +1555,15 @@ class TransFociCyl(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Notes
     -----
@@ -1598,9 +1582,9 @@ class TransFociCyl(ParserBase):
     Creating a instance to parse a filename with specified lineage and group.
 
     >>> artifact = TransFociCyl(
-    ..."ns500nl5al3.0D20.0ac2.0nc0"
-    ...'ensemble',
-    ...'bug'
+    ... 'ns500nl5al3.0D20.0ac2.0nc0',
+    ... 'ensemble',
+    ... 'bug'
     ... )
     >>> print(artifact.dcyl)
     20.0
@@ -1786,7 +1770,7 @@ class TransFociCub(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
+    attributes where their values (shown by '#' sign) are float or integer
     number. See `genealogy_attributes` below for long names of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
@@ -1861,15 +1845,15 @@ class TransFociCub(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Notes
     -----
@@ -1882,11 +1866,11 @@ class TransFociCub(ParserBase):
     Creating a instance to parse a filename with specified lineage and group.
 
     >>> artifact = TransFociCub(
-    ..."al5.0nl5ml125.0ns400ac1.0nc0l100.0dt0.005bdump2000adump5000.ring"
-    ...'ensemble_long',
-    ...'all'
+    ... 'al5.0nl5ml125.0ns400ac1.0nc0l100.0dt0.005bdump2000adump5000.ring',
+    ... 'ensemble_long',
+    ... 'all'
     ... )
-    >>> print(artifact.nc)
+    >>> print(artifact.ncrowd)
     0
     """
     _geometry = 'cubic'
@@ -2056,7 +2040,7 @@ class HnsCub(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
+    attributes where their values (shown by '#' sign) are float or integer
     number. See `genealogy_attributes` below for long names of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
@@ -2129,24 +2113,24 @@ class HnsCub(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Examples
     --------
     Creating a instance to parse a filename with specified lineage and group.
 
     >>> artifact = HnsCub(
-    ..."N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring"
-    ...'whole',
-    ...'nucleoid'
+    ... 'N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring',
+    ... 'whole',
+    ... 'nucleoid'
     ... )
     >>> print(artifact.nhns)
     8
@@ -2215,7 +2199,7 @@ class HnsCub(ParserBase):
         -----
         The negative initial values are unphysical.
         """
-        self.dmon_small: float = 1
+        self.dmon: float = 1
         self.dhns: float = 1
         self.dhns_patch: float = 0.178
         self.dt: float = 0.005
@@ -2312,7 +2296,7 @@ class HnsCyl(ParserBase):
       A 'space' artifact.
 
     For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by "#" sign) are float or integer
+    attributes where their values (shown by '#' sign) are float or integer
     number. See `genealogy_attributes` below for long names of attributes.
 
     Other than attributes inherited from the parent class `ParserBase`, this
@@ -2390,15 +2374,15 @@ class HnsCyl(ParserBase):
         Bulk volume fraction of crowders
     space : str
         A space's name.
-    ensemble : str, "N/A"
-        An ensemble's name if applicable, otherwise "N/A"
-    ensemble_long : str, "N/A"
+    ensemble : str, 'N/A'
+        An ensemble's name if applicable, otherwise 'N/A'
+    ensemble_long : str, 'N/A'
         The name of ensemble derived from 'whole' name if applicable,
-        otherwise "N/A"
-    whole : str, "N/A"
-        A whole's name if applicable, otherwise "N/A"
-    segment : str, "N/A"
-        A segment's name if applicable, otherwise "N/A"
+        otherwise 'N/A'
+    whole : str, 'N/A'
+        A whole's name if applicable, otherwise 'N/A'
+    segment : str, 'N/A'
+        A segment's name if applicable, otherwise 'N/A'
 
     Notes
     -----
@@ -2412,9 +2396,9 @@ class HnsCyl(ParserBase):
     Creating a instance to parse a filename with specified lineage and group.
 
     >>> artifact = HnsCyl(
-    ..."N200D20.0nh16ac1.0epshc1.0nc0"
-    ...'space',
-    ...'nucleoid'
+    ... 'N200D20.0nh16ac1.0epshc1.0nc0',
+    ... 'space',
+    ... 'nucleoid'
     ... )
     >>> print(artifact.eps_hc)
     1.0
@@ -2483,7 +2467,7 @@ class HnsCyl(ParserBase):
         -----
         The negative initial values are unphysical.
         """
-        self.dmon_small: float = 1
+        self.dmon: float = 1
         self.dhns: float = 1
         self.dhns_patch: float = 0.178
         self.dt: float = 0.005
