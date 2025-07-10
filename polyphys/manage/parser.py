@@ -212,6 +212,8 @@ class ParserBase(ABC):
             self._name = artifact
             self._ext = 'N/A'
             self._filepath = 'N/A'
+        # Update the self._name by dropping 'group' and/or any other extra
+        # beyond the template defined above.
         self._find_name()
         self._lineage_genealogy: List[LineageT] = self._genealogy[lineage]
         self._lineage_attributes = \
@@ -468,11 +470,11 @@ class TwoMonDepCub(ParserBase):
     Each lineage level has a unique naming pattern used to parse key physical
     and system attributes:
 
-    - ``segment``: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#.j#
+    - ``segment``: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#.j#
       One of multiple chunks of a complete artifact.
-    - ``whole``: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#
+    - ``whole``: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#
       A complete artifact. It may be a collection of segments.
-    - ``ensemble_long``: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#
+    - ``ensemble_long``: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#
       Detailed name for an 'ensemble' artifact.
     - ``ensemble``: nm#am#ac#nc#sd#
       Short name for an 'ensemble' artifact.
@@ -499,6 +501,9 @@ class TwoMonDepCub(ParserBase):
         ``'space'``.
     group : GroupT
         Particle group type, either ``'bug'`` or ``'all'``.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -565,20 +570,20 @@ class TwoMonDepCub(ParserBase):
     _groups = ['bug', 'all']
 
     _genealogy_attributes = {
-        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#.j#
+        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#.j#
         'segment': OrderedDict({
             'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
             'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens',
             'segment_id': 'j'}
             ),
-        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump#ens#
+        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#
         'whole': OrderedDict({
             'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
             'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
             'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens'}
             ),
-        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump$tdump# :
+        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump# :
         'ensemble_long': OrderedDict({
             'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
             'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
@@ -665,22 +670,26 @@ class TwoMonDepCub(ParserBase):
         self.rho_bulk_m = number_density_cube(
             getattr(self, 'nmon'),
             getattr(self, 'dmon'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m = volume_fraction_cube(
             getattr(self, 'nmon'),
             getattr(self, 'dmon'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_c = number_density_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
 
 
@@ -720,6 +729,9 @@ class SumRuleCyl(ParserBase):
         Type of the lineage of the name.
     group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -833,9 +845,10 @@ class SumRuleCyl(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
@@ -895,25 +908,29 @@ class SumRuleCyl(ParserBase):
             getattr(self, 'nmon'),
             getattr(self, 'dmon'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_m = volume_fraction_cylinder(
             getattr(self, 'nmon'),
             getattr(self, 'dmon'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.rho_bulk_c = number_density_cylinder(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cylinder(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
 
 
@@ -925,11 +942,11 @@ class SumRuleCubHeteroRing(ParserBase):
     Each lineage level has a unique naming pattern used to parse key physical
     and system attributes:
 
-    - `segment`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-      One of multiple chunks of a complete artifact.
+    - `segment`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#[.ring
+]      One of multiple chunks of a complete artifact.
     - `whole`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
       A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
+    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
       Detailed name for an 'ensemble' artifact.
     - `ensemble`: ns#nl#al#ac#nc#
       Short name for an 'ensemble' artifact.
@@ -953,6 +970,9 @@ class SumRuleCubHeteroRing(ParserBase):
         Type of the lineage of the name.
     group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -1053,7 +1073,7 @@ class SumRuleCubHeteroRing(ParserBase):
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
              'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
              'ensemble_id': 'ens'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
+        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
         'ensemble_long': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
@@ -1087,9 +1107,10 @@ class SumRuleCubHeteroRing(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
@@ -1150,22 +1171,26 @@ class SumRuleCubHeteroRing(ParserBase):
         self.rho_bulk_m_small = number_density_cube(
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m_small = volume_fraction_cube(
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_m_large = number_density_cube(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m_large = volume_fraction_cube(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
@@ -1174,12 +1199,14 @@ class SumRuleCubHeteroRing(ParserBase):
         self.rho_bulk_c = number_density_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
 
 
@@ -1195,7 +1222,7 @@ class SumRuleCubHeteroLinear(ParserBase):
       One of multiple chunks of a complete artifact.
     - `whole`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.linear
       A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.linear
+    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
       Detailed name for an 'ensemble' artifact.
     - `ensemble`: ns#nl#al#ac#nc#
       Short name for an 'ensemble' artifact.
@@ -1219,6 +1246,9 @@ class SumRuleCubHeteroLinear(ParserBase):
         Type of the lineage of the name.
     group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -1307,19 +1337,19 @@ class SumRuleCubHeteroLinear(ParserBase):
     _groups = ['bug', 'all']
 
     _genealogy_attributes = {
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
+        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.linear
         'segment': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
              'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
              'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
+        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.linear
         'whole': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
              'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
              'ensemble_id': 'ens'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
+        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
         'ensemble_long': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
@@ -1353,9 +1383,10 @@ class SumRuleCubHeteroLinear(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
@@ -1416,22 +1447,26 @@ class SumRuleCubHeteroLinear(ParserBase):
         self.rho_bulk_m_small = number_density_cube(
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m_small = volume_fraction_cube(
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_m_large = number_density_cube(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m_large = volume_fraction_cube(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
@@ -1440,12 +1475,14 @@ class SumRuleCubHeteroLinear(ParserBase):
         self.rho_bulk_c = number_density_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
 
 
@@ -1461,7 +1498,7 @@ class TransFociCyl(ParserBase):
       One of multiple chunks of a complete artifact.
     - `whole`: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.ring
       A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#.ring
+    - `ensemble_long`: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#
       Detailed name for an 'ensemble' artifact.
     - `ensemble`: ns#nl#al#D#ac#nc#
       Short name for an 'ensemble' artifact.
@@ -1485,6 +1522,9 @@ class TransFociCyl(ParserBase):
         Type of the lineage of the name.
     group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -1594,7 +1634,8 @@ class TransFociCyl(ParserBase):
     _groups = ['bug', 'all']
 
     _genealogy_attributes = {
-        # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#.ring
+        # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#
+        # .ring
         'segment': OrderedDict(
             {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
              'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
@@ -1608,7 +1649,7 @@ class TransFociCyl(ParserBase):
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcyl': 'lz',
              'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
              'ensemble_id': 'ens'}),
-        # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#.ring
+        # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#
         'ensemble_long': OrderedDict(
             {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
              'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
@@ -1621,7 +1662,7 @@ class TransFociCyl(ParserBase):
         # Pattern: ns#nl#al#D#ac#
         'space': OrderedDict(
             {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcrowd': 'ac'})
+             'dcyl': 'D', 'dcrowd': 'ac'})
     }
 
     _project_attributes = {
@@ -1643,9 +1684,10 @@ class TransFociCyl(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
@@ -1712,25 +1754,29 @@ class TransFociCyl(ParserBase):
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_m_small = volume_fraction_cylinder(
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.rho_bulk_m_large = number_density_cylinder(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_m_large = volume_fraction_cylinder(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
@@ -1740,13 +1786,15 @@ class TransFociCyl(ParserBase):
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cylinder(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
 
 
@@ -1762,7 +1810,7 @@ class TransFociCub(ParserBase):
       One of multiple chunks of a complete artifact.
     - `whole`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
       A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
+    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
       Detailed name for an 'ensemble' artifact.
     - `ensemble`: ns#nl#al#ac#nc#
       Short name for an 'ensemble' artifact.
@@ -1786,6 +1834,9 @@ class TransFociCub(ParserBase):
         Type of the lineage of the name.
     group : {'bug', 'all'}
         Particle group type, with `bug` representing a single polymer.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -1890,7 +1941,7 @@ class TransFociCub(ParserBase):
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
              'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
              'ensemble_id': 'ens'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#.ring
+        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
         'ensemble_long': OrderedDict(
             {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
              'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
@@ -1924,9 +1975,10 @@ class TransFociCub(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
@@ -1987,22 +2039,26 @@ class TransFociCub(ParserBase):
         self.rho_bulk_m_small = number_density_cube(
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m_small = volume_fraction_cube(
             getattr(self, 'nmon_small'),
             getattr(self, 'dmon_small'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_m_large = number_density_cube(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m_large = volume_fraction_cube(
             getattr(self, 'nmon_large'),
             getattr(self, 'dmon_large'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
         self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
@@ -2011,12 +2067,14 @@ class TransFociCub(ParserBase):
         self.rho_bulk_c = number_density_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
 
 
@@ -2032,7 +2090,7 @@ class HnsCub(ParserBase):
       One of multiple chunks of a complete artifact.
     - `whole`: N#kbmm#nh#ac#l#epshc#nc#ens#.ring
       A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: N#kbmm#nh#ac#l#epshc#nc#.ring
+    - `ensemble_long`: N#kbmm#nh#ac#l#epshc#nc#
       Detailed name for an 'ensemble' artifact.
     - `ensemble`: N#kbmm#nh#ac#epshc#nc#
       Short name for an 'ensemble' artifact.
@@ -2056,6 +2114,9 @@ class HnsCub(ParserBase):
         Type of the lineage of the name.
     group : {'nucleoid', 'all'}
         Particle group type, with `bug` representing a single polymer.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -2150,7 +2211,7 @@ class HnsCub(ParserBase):
             {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
              'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc',
              'ensemble_id': 'ens'}),
-        # Pattern: N#kbmm#nh#ac#l#epshc#nc#.ring
+        # Pattern: N#kbmm#nh#ac#l#epshc#nc#
         'ensemble_long': OrderedDict(
             {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
              'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc'}),
@@ -2158,14 +2219,14 @@ class HnsCub(ParserBase):
         'ensemble': OrderedDict(
             {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
              'eps_hc': 'epshc', 'ncrowd': 'nc'}),
-        # Pattern: N#kbmm#nh#ac#epshc#ring
+        # Pattern: N#kbmm#nh#ac#epshc#
         'space': OrderedDict(
             {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
              'eps_hc': 'epshc'})
     }
 
     _project_attributes = {
-        'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m'
+        'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
                     'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
         'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
@@ -2182,9 +2243,10 @@ class HnsCub(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
@@ -2247,32 +2309,38 @@ class HnsCub(ParserBase):
         self.rho_bulk_m = number_density_cube(
             getattr(self, 'nmon'),
             getattr(self, 'dmon'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_m = volume_fraction_cube(
             getattr(self, 'nmon'),
             getattr(self, 'dmon'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_hns = number_density_cube(
             getattr(self, 'nhns'),
             getattr(self, 'dhns'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_hns = volume_fraction_cube(
             getattr(self, 'nhns'),
             getattr(self, 'dhns'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.rho_bulk_c = number_density_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cube(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
-            getattr(self, 'lcube')
+            getattr(self, 'lcube'),
+            pbc=True
         )
 
 
@@ -2288,7 +2356,7 @@ class HnsCyl(ParserBase):
       One of multiple chunks of a complete artifact.
     - `whole`: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.ring
       A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: N#kbmm#r#nh#ac#lz#epshc#nc#.ring
+    - `ensemble_long`: N#kbmm#r#nh#ac#lz#epshc#nc#
       Detailed name for an 'ensemble' artifact.
     - `ensemble`: N#D#nh#ac#epshc#nc#
       Short name for an 'ensemble' artifact.
@@ -2312,6 +2380,9 @@ class HnsCyl(ParserBase):
         Type of the lineage of the name.
     group : {'nucleoid', 'all'}
         Particle group type, with `bug` representing a single polymer.
+    ispath : bool, optional
+        If True, interpret `artifact` as a full filepath; if False, interpret
+        it as a bare filename or name. Default is `False`.
 
     Attributes
     ----------
@@ -2418,7 +2489,7 @@ class HnsCyl(ParserBase):
             {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
              'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc',
              'ensemble_id': 'ens'}),
-        # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#.ring
+        # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#
         'ensemble_long': OrderedDict(
             {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
              'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc'}),
@@ -2433,7 +2504,7 @@ class HnsCyl(ParserBase):
     }
 
     _project_attributes = {
-        'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m'
+        'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
                     'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
         'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
@@ -2450,9 +2521,10 @@ class HnsCyl(ParserBase):
         self,
         artifact: str,
         lineage: LineageT,
-        group: GroupT
+        group: GroupT,
+        ispath: bool = False
     ) -> None:
-        super().__init__(artifact, lineage, group)
+        super().__init__(artifact, lineage, group, ispath=ispath)
         self._initiate_attributes()
         self._parse_name()
         self._set_parents()
@@ -2520,35 +2592,41 @@ class HnsCyl(ParserBase):
             getattr(self, 'nmon'),
             getattr(self, 'dmon'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_m = volume_fraction_cylinder(
-            getattr(self, 'nhns'),
-            getattr(self, 'dhns'),
+            getattr(self, 'nmon'),
+            getattr(self, 'dmon'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.rho_bulk_hns = number_density_cylinder(
             getattr(self, 'nhns'),
             getattr(self, 'dhns'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_hns = volume_fraction_cylinder(
             getattr(self, 'nhns'),
             getattr(self, 'dhns'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.rho_bulk_c = number_density_cylinder(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
         self.phi_bulk_c = volume_fraction_cylinder(
             getattr(self, 'ncrowd'),
             getattr(self, 'dcrowd'),
             getattr(self, 'lcyl'),
-            getattr(self, 'dcyl')
+            getattr(self, 'dcyl'),
+            pbc=True
         )
