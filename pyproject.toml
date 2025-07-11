@@ -8,7 +8,6 @@
     authors = [{ name="Amir Sadeghi", email="amirh.sadeghi@outlook.com" }]
     readme = "README.md"
     license = "MIT"
-    version = "0.3.0"
     classifiers = [
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Physics",
@@ -18,7 +17,8 @@
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12"
     ]
-    requires-python = ">=3.9"
+    dynamic = ["version"]
+    requires-python = ">=3.10"
     dependencies = [
         "numpy",
         "pandas",
@@ -32,11 +32,16 @@
         "click"
     ]
 
+[tool.setuptools.dynamic]
+version = {attr = "polyphys.__version__.__version__"}
+
 [project.optional-dependencies]
     docs = [
         "sphinx",
         "sphinx_sitemap",
-        "pydata-sphinx-theme"
+        "pydata-sphinx-theme",
+        "sphinx-autodoc-typehints",
+        "myst-parser"
     ]
     dev = [
         "pytest",
