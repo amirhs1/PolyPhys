@@ -18,10 +18,18 @@ data handling.
 This module also defines type aliases for input sources and simulation
 metadata.
 """
-from typing import Union, Tuple, Dict, List, TextIO, IO, Any, Literal
+from typing import (
+    Union, Tuple, Dict, List, TextIO, IO, Any, Literal, TYPE_CHECKING,
+    TypeAlias
+    )
 from gzip import GzipFile
 import numpy as np
 import pandas as pd
+
+if TYPE_CHECKING:
+    from .parser import ParserBase
+
+ParserType: TypeAlias = "ParserBase"
 
 
 # --- Basic Type Aliases ---
@@ -34,6 +42,7 @@ GeometryT = Literal['cubic', 'cylindrical']
 GroupT = str
 HasEdgeT = bool
 LineageT = Literal['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
+WholeRelationT = Literal['histogram', 'tseries', 'bin_edge']
 PhaseT = str
 # PhaseT = Literal['simAll', 'simCont', 'log', 'trj', 'probe', 'analysis',
 #                 'viz', 'galaxy']
