@@ -1,12 +1,7 @@
 # Configuration file for the Sphinx documentation builder.
-import os
-import sys
 from datetime import datetime
 from polyphys.__version__ import __version__
 import tomli
-
-# -- Path setup --------------------------------------------------------------
-sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 with open("../../pyproject.toml", "rb") as f:
