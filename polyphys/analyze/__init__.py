@@ -26,5 +26,5 @@ from polyphys.analyze import (
 )
 
 __all__ = [
-    'measurer'
+    'measurer', 'contacts', 'clusters'
 ]
