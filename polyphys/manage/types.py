@@ -20,7 +20,7 @@ metadata.
 """
 from typing import (
     Union, Tuple, Dict, List, TextIO, IO, Any, Literal, TYPE_CHECKING,
-    TypeAlias
+    Type
     )
 from gzip import GzipFile
 import numpy as np
@@ -29,7 +29,7 @@ import pandas as pd
 if TYPE_CHECKING:
     from .parser import ParserBase
 
-ParserType: TypeAlias = "ParserBase"
+ParserType = Type["ParserBase"]
 
 
 # --- Basic Type Aliases ---
