@@ -32,9 +32,6 @@
         "click"
     ]
 
-[tool.setuptools.dynamic]
-version = {attr = "polyphys.__version__.__version__"}
-
 [project.optional-dependencies]
     docs = [
         "sphinx",
@@ -62,12 +59,22 @@ version = {attr = "polyphys.__version__.__version__"}
 [project.urls]
     Source = "https://github.com/amirhs1/PolyPhys"
 
+[project.scripts]
+    polyphys = "polyphys.cli:main"
+
+[tool.setuptools]
+    include-package-data = true
+
+[tool.setuptools.dynamic]
+    version = {attr = "polyphys.__version__.__version__"}
+
+[tool.setuptools.package-data]
+    "polyphys.test_data" = ["**/*"]
+
 [tool.setuptools.packages.find]
     include = ["polyphys*"]
     exclude = ["notebooks*", "projects*", "under_review*"]
 
-[project.scripts]
-    polyphys = "polyphys.cli:main"
-
 [tool.pytest.ini_options]
     addopts = "--doctest-modules --doctest-glob=README.md"
+    testpaths = ["polyphys/tests"]

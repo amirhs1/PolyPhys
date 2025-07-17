@@ -1,10 +1,12 @@
 # Configuration file for the Sphinx documentation builder.
+from pathlib import Path
 from datetime import datetime
 from polyphys.__version__ import __version__
 import tomli
 
 # -- Project information -----------------------------------------------------
-with open("../../pyproject.toml", "rb") as f:
+pyproject_path = Path(__file__).resolve().parents[2] / "pyproject.toml"
+with open(pyproject_path, "rb") as f:
     meta = tomli.load(f)["project"]
 project = meta["name"]
 author = meta["authors"][0].get("name", "Unknown Author")
