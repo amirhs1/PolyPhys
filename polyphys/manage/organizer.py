@@ -398,7 +398,7 @@ def whole_from_segments(
     # Combine segments into wholes based on segment names and relation type
     grouped_segments: Dict[str, List[np.ndarray]] = {}
     for seg_path in segments:
-        seg_info: ParserType = \
+        seg_info = \
             parser(seg_path[0], 'segment', group, ispath=True)
         whole_name = getattr(seg_info, 'whole')
         segment = np.load(seg_path[0])
@@ -467,7 +467,7 @@ def whole_from_file(
     """
     wholes: Dict[str, np.ndarray] = {}
     for whole_path in whole_paths:
-        whole_info: ParserType = parser(whole_path[0], 'whole', group)
+        whole_info = parser(whole_path[0], 'whole', group)
         whole_name = getattr(whole_info, 'whole')
         wholes[whole_name] = np.load(whole_path[0])
 
@@ -533,7 +533,7 @@ def whole_from_dist_mat_t(
     wholes_rdfs: Dict[str, pd.DataFrame] = {}
     wholes_tseries: Dict[str, pd.DataFrame] = {}
     for whole_path in whole_paths:
-        whole_info: ParserType = \
+        whole_info = \
             parser(whole_path[0], 'whole', group)
         whole_freqs, whole_rdfs, whole_tseries = whole_dist_mat_foci(
             whole_path[0], whole_info
@@ -827,7 +827,7 @@ def ensemble(
     bin_centers: Dict[str, np.ndarray] = {}
     if whole_edges is not None:
         for whole_name, whole_data in wholes.items():
-            whole_info: ParserType = parser(whole_name, 'whole', group)
+            whole_info = parser(whole_name, 'whole', group)
             ens_name = getattr(whole_info, 'ensemble_long')
             if ens_name not in ens_wholes:
                 ens_wholes[ens_name] = {}
@@ -1441,7 +1441,7 @@ def space_tseries(
 
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        prop_info: ParserType = parser(ens_avg_csv[0], 'ensemble_long', group)
+        prop_info = parser(ens_avg_csv[0], 'ensemble_long', group)
 
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={'index': 't_index'}, inplace=True)
@@ -1553,7 +1553,7 @@ def space_hists(
 
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        prop_info: ParserType = parser(ens_avg_csv[0], 'ensemble_long', group)
+        prop_info = parser(ens_avg_csv[0], 'ensemble_long', group)
 
         # Handle bin_center if provided
         if bin_center is not None:
