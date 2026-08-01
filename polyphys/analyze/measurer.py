@@ -8,57 +8,43 @@ The :mod:`polyphys.analyze.measurer` module provides a suite of functions /
 helper functions for computing geometric, structural, statistical, and
 thermodynamic properties of a particle or a group of particles.
 
-Functions
-=========
+Contents
+========
 
-Core Geometric and Structural Measurements:
---------------------------------------------
-.. autofunction:: apply_pbc_orthogonal
-.. autofunction:: pair_distance
-.. autofunction:: end_to_end
-.. autofunction:: transverse_size
-.. autofunction:: max_distance
-.. autofunction:: fsd
+Core geometric and structural measurements:
+:func:`apply_pbc_orthogonal`, :func:`pair_distance`, :func:`end_to_end`,
+:func:`transverse_size`, :func:`max_distance`, and :func:`fsd`.
 
-Statistical Analysis:
----------------------
-.. autofunction:: simple_stats
-.. autofunction:: sem
+Summary statistics:
+:func:`simple_stats` and :func:`sem`.
 
-Density and Volume Calculations:
---------------------------------
-.. autofunction:: number_density_cube
-.. autofunction:: volume_fraction_cube
-.. autofunction:: number_density_cylinder
-.. autofunction:: volume_fraction_cylinder
+Advanced geometric calculations:
+:func:`sphere_sphere_intersection` and :func:`spherical_segment`.
 
-Advanced Geometric Calculations:
---------------------------------
-.. autofunction:: sphere_sphere_intersection
-.. autofunction:: spherical_segment
+Binning and histogram processing:
+:func:`create_bin_edge_and_hist`, :func:`fixedsize_bins`,
+:func:`radial_histogram`, :func:`radial_cyl_histogram`,
+:func:`axial_histogram`, :func:`azimuth_cyl_histogram`, and
+:func:`planar_cartesian_histogram`.
 
-Binning for histogram processing
---------------------------------
-.. autofunction:: create_bin_edge_and_hist
-.. autofunction:: fixedsize_bins
-.. autofunction:: radial_histogram
-.. autofunction:: radial_cyl_histogram
-.. autofunction:: axial_histogram
-.. autofunction:: azimuth_histogram
-.. autofunction:: planar_cartesian_histogram
+Number-density and volume-fraction conversions live in
+:mod:`polyphys.manage.utils`.
 
 References
 ==========
 For Feret's statistical diameter:
+
 - Wang Y, Teraoka I, Hansen FY, Peters GH, Ole H. "A Theoretical Study of
   the Separation Principle in Size Exclusion Chromatography." Macromolecules
   2010, 43, 3, 1651-1659. https://doi.org/10.1021/ma902377g
 
 For spherical segment calculations:
+
 - Weisstein, Eric W. "Spherical Segment." From MathWorld--A Wolfram Web
   Resource. https://mathworld.wolfram.com/SphericalSegment.html
 
 For sphere-sphere intersection:
+
 - Weisstein, Eric W. "Sphere-Sphere Intersection." From MathWorld--A Wolfram
   Web Resource. https://mathworld.wolfram.com/Sphere-SphereIntersection.html
 """
@@ -480,18 +466,17 @@ def spherical_segment(r: float, a: float, b: float) -> float:
     Notes
     -----
     - `a` and `b` can be positive or negative values, as long as they fall
-    within the range `[-r, r]`.
+      within the range `[-r, r]`.
     - The function will adjust `a` and `b` to `-r` or `r` if they exceed these
-    bounds.
+      bounds.
     - If `a = r` or `b = r`, the spherical segment becomes a spherical cap.
     - If both `a` and `b` lie outside the range `[-r, r]` and share the same
-    sign, the volume is zero.
+      sign, the volume is zero.
 
     References
     ----------
-    .. [1] Weisstein, Eric W. "Spherical Segment." From MathWorld--A Wolfram
-    Web Resource.
-       https://mathworld.wolfram.com/SphericalSegment.html
+    Weisstein, Eric W. "Spherical Segment." From MathWorld--A Wolfram Web
+    Resource. https://mathworld.wolfram.com/SphericalSegment.html
 
     Examples
     --------
@@ -540,9 +525,8 @@ def sphere_sphere_intersection(r1: float, r2: float, d: float) -> float:
 
     References
     ----------
-    .. [1] Weisstein, Eric W. "Sphere-Sphere Intersection."
-       From MathWorld--A Wolfram Web Resource.
-       https://mathworld.wolfram.com/Sphere-SphereIntersection.html
+    Weisstein, Eric W. "Sphere-Sphere Intersection." From MathWorld--A Wolfram
+    Web Resource. https://mathworld.wolfram.com/Sphere-SphereIntersection.html
 
     Examples
     --------
@@ -655,16 +639,18 @@ def fixedsize_bins(
         End of the range
     bin_type : :py:data:`BinT`, default 'ordinary'
         Type of binning:
-            - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
-              Cartesian coordinates and spherical polar coordinate.
-            - 'nonnegative': Extends `lmin` and `lmax` symmetrically  if
-              adjusted `lmin` is nonnegative; otherwise, `lmin` is set to 0 and
-              `lmax` is extended. Examples are radial directions in the polar,
-              spherical, and cylindrical coordinate systems.
-            - 'periodic': Periodic binning (e.g., azimuthal coordinate).
-              Examples are azimuthal directions in cylindrical and spherical
-            coordinate systems.
-            See :mod:`polyphys.manage.types`.
+
+        - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
+          Cartesian coordinates and spherical polar coordinate.
+        - 'nonnegative': Extends `lmin` and `lmax` symmetrically  if
+          adjusted `lmin` is nonnegative; otherwise, `lmin` is set to 0 and
+          `lmax` is extended. Examples are radial directions in the polar,
+          spherical, and cylindrical coordinate systems.
+        - 'periodic': Periodic binning (e.g., azimuthal coordinate).
+          Examples are azimuthal directions in cylindrical and spherical
+          coordinate systems.
+
+        See :mod:`polyphys.manage.types`.
     save_bin_edges : Optional[str], default None
         Filename (including filepath) to which bin edges array is saved. A
         `.npy` extension will be appended to the filename if it does not
@@ -674,15 +660,16 @@ def fixedsize_bins(
     -------
     Dict[str, Any]
         Dictionary with keys:
+
         - 'n_bins' : int
-            Number of bins.
+          Number of bins.
         - 'bin_edges' : np.ndarray
-            A monotonically increasing array of bin edges, including the
-            rightmost edge.
+          A monotonically increasing array of bin edges, including the
+          rightmost edge.
         - 'collector' : np.ndarray
-            Array initialized for histogram values.
+          Array initialized for histogram values.
         - 'collector_std' : np.ndarray
-            Array initialized for standard deviation values.
+          Array initialized for standard deviation values.
         - 'range' : Tuple[float, float]
             Updated range of bins (`lmin`, `lmax`).
 
