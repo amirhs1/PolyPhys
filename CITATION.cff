@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+title: "PolyPhys: research data management and analysis for polymer molecular-dynamics simulations"
+abstract: >-
+  PolyPhys manages and analyses data from large-scale coarse-grained
+  molecular-dynamics simulations of polymers under macromolecular crowding,
+  with a focus on bacterial chromosome organization. It decodes
+  physics-encoding simulation filenames into typed attributes, organizes
+  artifacts along a five-level lineage (segment, whole, ensemble_long,
+  ensemble, space), and reduces replicate ensembles into averaged
+  measurements.
+type: software
+authors:
+  - given-names: Amir
+    family-names: Sadeghi
+    email: amirh.sadeghi@outlook.com
+version: 0.4.0
+license: MIT
+repository-code: "https://github.com/amirhs1/poly-phys"
+url: "https://github.com/amirhs1/poly-phys"
+doi: 10.5281/zenodo.15858407
+keywords:
+  - polymer physics
+  - molecular dynamics
+  - soft matter
+  - macromolecular crowding
+  - bacterial chromosome
+  - research data management
+  - LAMMPS

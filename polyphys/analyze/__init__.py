@@ -3,22 +3,15 @@ Analyze Module --- :mod:`polyphys.analyze`
 ==========================================
 
 
-The `polyphys.analyze` module provides a suite of tools for analyzing molecular
-simulation data. It includes utilities for statistical analysis, distance
-calculations, clustering, and more.
+The `polyphys.analyze` module provides tools for analyzing molecular simulation
+data: geometric and structural measurements of a particle group, simple
+statistics, and the binning and histogram machinery used to build spatial
+distributions.
 
 Submodules
 ==========
-- `analyzer`: Core analysis routines.
-- `clusters`: Functions for detecting and analyzing clusters.
-- `contacts`: Utilities for calculating contact matrices and related
-  statistics.
-- `correlations`: Tools for computing correlations in time and space.
-- `distributions`: Functions for generating and analyzing distributions.
-- `distances`: Distance and angle calculations, with support for periodic
-  boundary conditions.
-- `helper`: Miscellaneous helper functions.
-- `measurer`: Tools for geometric and structural measurements.
+- `measurer`: Geometric and structural measurements, summary statistics, and
+  fixed-size binning with radial, axial, azimuthal, and planar histograms.
 """
 
 from polyphys.analyze import measurer
