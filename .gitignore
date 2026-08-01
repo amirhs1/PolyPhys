@@ -69,3 +69,6 @@ ENV/
 *.png
 *.pdf
 *.eps
+
+# Sphinx autosummary generated API stubs
+docs/source/generated/

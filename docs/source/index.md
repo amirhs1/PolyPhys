@@ -1,8 +1,15 @@
 # Welcome to PolyPhys's Documentation!
 
-**PolyPhys** is a Python library ofr managing polymer physics and molecular dynamics projects, focusing on computational modeling of bacterial chromosome organization.
+**PolyPhys** is a Python library for managing and analysing data from large-scale
+coarse-grained molecular dynamics simulations of polymers under macromolecular
+crowding, focusing on computational modeling of bacterial chromosome organization.
 
-Check out the [usage](usage.md) section for further information, including how to [install](#target-installation) the project.
+It decodes physics-encoding simulation filenames into typed attributes, organizes
+artifacts along a five-level lineage — `segment`, `whole`, `ensemble_long`,
+`ensemble`, `space` — and reduces replicate ensembles into averaged measurements.
+
+Check out the [usage](usage.md) section for further information, including how to
+[install](#installation_target) the project.
 
 ```{note}
 This project is under active development.
@@ -23,15 +30,3 @@ api
 - [Index](genindex)
 - [Module Index](modindex)
 - [Search](search)
-
-## Modules
-
-```{toctree}
----
-maxdepth: 1
-caption: API Modules
----
-
-modules/polyphys.analyze
-modules/polyphys.manage
-```
