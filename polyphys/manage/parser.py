@@ -18,29 +18,26 @@ attributes such as particle dimensions, densities, and simulation box
 dimensions. These classes employ various methods to dynamically interpret and
 calculate attributes based on parsed lineage and project requirements.
 
-Classes
-=======
-.. autoclass:: ParserBase
-   :members:
-.. autoclass:: TwoMonDep
-.. autoclass:: SumRuleCyl
-.. autoclass:: SumRuleCubHeteroRing
-.. autoclass:: SumRuleCubHeteroLinear
-.. autoclass:: TransFociCyl
-.. autoclass:: TransFociCub
-.. autoclass:: HnsCub
-.. autoclass:: HnsCyl
+Contents
+========
+
+:class:`ParserBase` is the abstract base class. Each concrete subclass declares
+its own geometry, topology, particle groups, and per-lineage attribute schema:
+
+- Cylindrical confinement: :class:`SumRuleCyl`, :class:`TransFociCyl`, and
+  :class:`HnsCyl`.
+- Cubic confinement: :class:`TwoMonDepCub`, :class:`TransFociCub`,
+  :class:`HnsCub`, :class:`SumRuleCubHeteroRing`, and
+  :class:`SumRuleCubHeteroLinear`.
 
 Dependencies
 ============
-- `os`: For handling file paths.
-- `re`: For regular expressions in filename parsing.
-- `typing`: For type hinting.
-- `abc`: For defining abstract base classes.
-- `collections`: For ordered dictionary functionality.
-- `.utilizer`: Utility functions, e.g., `invalid_keyword`.
-- `..analyze.measurer`: Measurement functions such as `number_density_cube` and
-  `volume_fraction_cube`.
+- Python standard library: `os`, `re`, `typing`, `abc`, `collections`
+- :mod:`polyphys.manage.utils`: utility functions such as
+  :func:`~polyphys.manage.utils.invalid_keyword` and the number-density and
+  volume-fraction conversions.
+- :mod:`polyphys.manage.types`: domain type aliases such as
+  :py:data:`~polyphys.manage.types.LineageT`.
 
 Usage
 =====
@@ -972,8 +969,8 @@ class SumRuleCubHeteroRing(ParserBase):
     Each lineage level has a unique naming pattern used to parse key physical
     and system attributes:
 
-    - `segment`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#[.ring
-]      One of multiple chunks of a complete artifact.
+    - `segment`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
+      One of multiple chunks of a complete artifact.
     - `whole`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
       A complete artifact. It may be a collection of segments.
     - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
@@ -1240,7 +1237,7 @@ class SumRuleCubHeteroRing(ParserBase):
 class SumRuleCubHeteroLinear(ParserBase):
     """
     Extract structured information about an artifact from its name in the
-    *SumRuleCubHeteroRing* project, utilizing specific filename patterns.
+    *SumRuleCubHeteroLinear* project, utilizing specific filename patterns.
 
     Each lineage level has a unique naming pattern used to parse key physical
     and system attributes:

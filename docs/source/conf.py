@@ -1,13 +1,13 @@
 # Configuration file for the Sphinx documentation builder.
+import tomllib
 from pathlib import Path
 from datetime import datetime
 from polyphys.__version__ import __version__
-import tomli
 
 # -- Project information -----------------------------------------------------
 pyproject_path = Path(__file__).resolve().parents[2] / "pyproject.toml"
 with open(pyproject_path, "rb") as f:
-    meta = tomli.load(f)["project"]
+    meta = tomllib.load(f)["project"]
 project = meta["name"]
 author = meta["authors"][0].get("name", "Unknown Author")
 copyright = f"2022-{datetime.now().year}, {author}"
@@ -37,6 +37,10 @@ napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = True
 napoleon_use_param = True
 napoleon_use_rtype = True
+# Render "Attributes" sections as :ivar: fields rather than standalone
+# ``.. attribute::`` directives, which would collide with the same attributes
+# picked up by autodoc and raise duplicate-object warnings.
+napoleon_use_ivar = True
 
 # Autodoc settings
 autodoc_default_options = {
@@ -49,8 +53,9 @@ autosummary_generate = True
 typehints_fully_qualified = True
 autodoc_typehints = 'description'  # Cleaner type hint formatting
 
-# Mock imports for optional dependencies
-autodoc_mock_imports = ["MDAnalysis", "pyarrow", "statsmodels"]
+# No mocked imports: the package's only runtime dependencies are NumPy and
+# pandas, both of which are importable wherever the docs are built.
+autodoc_mock_imports: list[str] = []
 
 # Intersphinx mappings
 intersphinx_mapping = {

@@ -3,23 +3,29 @@
 Miscellaneous utility codes --- :mod:`polyphys.manage.utils`
 ===============================================================
 
-The :mod:`~polyphys.manage.utilizer` module provides shared utility functions
+The :mod:`~polyphys.manage.utils` module provides shared utility functions
 used across various parts of the PolyPhys package. These functions handle
-string processing, file handling, numeric rounding, and error checking.
+string processing, file handling, numeric rounding, error checking, and
+conversions between particle counts, number densities, and volume fractions.
 
+Contents
+========
 
-Functions
-=========
+String parsing and filename sorting:
+:func:`read_camel_case`, :func:`to_float_if_possible`,
+:func:`split_alphanumeric`, :func:`normalize_exts`, :func:`sort_filenames`,
+and :func:`sort_filenames_str`.
 
-.. autofunction:: read_camel_case
-.. autofunction:: to_float_if_possible
-.. autofunction:: split_alphanumeric
-.. autofunction:: sort_filenames
-.. autofunction:: openany
-.. autofunction:: openany_context
-.. autofunction:: round_down_first_non_zero
-.. autofunction:: round_up_nearest
-.. autofunction:: invalid_keyword
+File handling:
+:func:`openany` and :func:`openany_context`.
+
+Numeric rounding and validation:
+:func:`round_down_first_non_zero`, :func:`round_up_nearest`, and
+:func:`invalid_keyword`.
+
+Number-density and volume-fraction conversions:
+:func:`number_density_cube`, :func:`volume_fraction_cube`,
+:func:`number_density_cylinder`, and :func:`volume_fraction_cylinder`.
 
 Dependencies
 ============
