@@ -68,28 +68,28 @@ Dependencies
   segments.
 - `pandas`: For handling tabular data and DataFrames used in data aggregation.
 
-Functions
-=========
-.. autofunction:: create_fullname
-.. autofunction:: save_artifact
-.. autofunction:: make_database
-.. autofunction:: whole_from_segments
-.. autofunction:: whole_from_file
-.. autofunction:: whole_from_dist_mat_t
-.. autofunction:: ens_from_bin_edge
-.. autofunction:: ens_from_vec
-.. autofunction:: ens_from_mat_t
-.. autofunction:: ens_from_df
-.. autofunction:: ensemble
-.. autofunction:: ens_avg_from_bin_edge
-.. autofunction:: ens_avg_from_ndarray
-.. autofunction:: ens_avg_from_df
-.. autofunction:: ensemble_avg
-.. autofunction:: children_stamps
-.. autofunction:: parents_stamps
-.. autofunction:: find_unique_properties
-.. autofunction:: space_tseries
-.. autofunction:: space_hists
+Contents
+========
+
+Naming and persistence:
+:func:`create_fullname`, :func:`save_artifact`, and :func:`make_database`.
+
+Building wholes from their parts:
+:func:`whole_from_segments`, :func:`whole_from_file`, and
+:func:`whole_from_dist_mat_t`.
+
+Grouping wholes into ensembles:
+:func:`ens_from_bin_edge`, :func:`ens_from_vec`, :func:`ens_from_mat_t`,
+:func:`ens_from_df`, and :func:`ensemble`.
+
+Averaging over an ensemble:
+:func:`ens_avg_from_bin_edge`, :func:`ens_avg_from_ndarray`,
+:func:`ens_avg_from_df`, and :func:`ensemble_avg`.
+
+Space-level collection and bookkeeping:
+:func:`children_stamps`, :func:`parents_stamps`,
+:func:`find_unique_properties`, :func:`space_tseries`, and
+:func:`space_hists`.
 
 Usage
 =====
@@ -203,7 +203,7 @@ def save_artifact(
         - `np.ndarray`: Saved as a .npy file.
         - `pd.DataFrame`: Saved as a .csv file.
         - `dict` of `np.ndarray`: Each entry saved as a separate .npy file
-        with suffix.
+          with suffix.
 
     save_to : str
         Path to the directory where the file will be saved.
@@ -781,9 +781,10 @@ def ens_from_df(
     -------
     tuple[str, pd.DataFrame]
         A tuple with:
-            - The ensemble name (str).
-            - A DataFrame with the averaged values across all 'whole'
-            DataFrames.
+
+        - The ensemble name (str).
+        - A DataFrame with the averaged values across all 'whole'
+          DataFrames.
 
     Notes
     -----
@@ -1076,7 +1077,7 @@ def ens_avg_from_df(
     - The function averages only the 'whole' columns, excluding any specified
       in `exclude`.
     - The standard error of the mean (SEM) is computed with a
-    degrees-of-freedom adjustment (ddof=1) for an unbiased estimate.
+      degrees-of-freedom adjustment (ddof=1) for an unbiased estimate.
 
     Examples
     --------
@@ -1234,7 +1235,7 @@ def children_stamps(
     - It is assumed that all the stamp files have belong to the same *group* in
       a given *space*.
     - If `lineage` is 'whole', columns 'segment' and 'segment_id' are removed,
-    if present, as they are redundant for whole-lineage data.
+      if present, as they are redundant for whole-lineage data.
 
     Examples
     --------
@@ -1425,6 +1426,7 @@ def find_unique_properties(
     -------
     tuple[list[str], list[str]]
         A tuple containing:
+
         - **uniq_props** (*list[str]*): A sorted list of unique physical
           properties.
         - **uniq_prop_measures** (*list[str]*): A sorted list of unique
