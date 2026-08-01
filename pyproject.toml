@@ -21,15 +21,7 @@
     requires-python = ">=3.11"
     dependencies = [
         "numpy",
-        "pandas",
-        "scipy",
-        "matplotlib",
-        "seaborn",
-        "MDAnalysis",
-        "statsmodels",
-        "pyarrow",
-        "packaging",
-        "click"
+        "pandas"
     ]
 
 [project.optional-dependencies]
@@ -57,19 +49,14 @@
     ]
 
 [project.urls]
-    Source = "https://github.com/amirhs1/PolyPhys"
-
-[project.scripts]
-    polyphys = "polyphys.cli:main"
+    Source = "https://github.com/amirhs1/poly-phys"
+    Issues = "https://github.com/amirhs1/poly-phys/issues"
 
 [tool.setuptools]
     include-package-data = true
 
 [tool.setuptools.dynamic]
     version = {attr = "polyphys.__version__.__version__"}
-
-[tool.setuptools.package-data]
-    "polyphys.test_data" = ["**/*"]
 
 [tool.setuptools.packages.find]
     include = ["polyphys*"]
