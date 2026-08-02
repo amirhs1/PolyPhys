@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Declared explicitly: without this key Dependabot recreates its default
+    # `dependencies` label, which this repository renamed to `type:deps`.
+    labels:
+      - "type:deps"
+      - "area:ci"
     groups:
       github-actions:
         patterns:

@@ -1,3 +1,8 @@
+<!--
+Title: type(scope): imperative summary -- see docs/NAMING-CONVENTION.md
+Put `Closes #N` in the Summary below, never in the title.
+-->
+
 ## Summary
 
 -
@@ -6,9 +11,9 @@
 
 - [ ] `flake8 polyphys`
 - [ ] `mypy polyphys/analyze polyphys/manage`
-- [ ] `pytest polyphys --ignore=polyphys/tests/manage/test_parser.py --ignore=polyphys/manage/parser.py --ignore=polyphys/manage/organizer.py --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob="README.md"`
+- [ ] `pytest polyphys README.md --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob="README.md"`
 - [ ] `python -m build` if packaging metadata, package data, or package layout changed
-- [ ] Docs build if `docs/source/` changed
+- [ ] `python -m sphinx -W -b html docs/source docs/_build` if `docs/source/` changed
 
 ## Scientific Correctness
 
