@@ -1,7 +1,7 @@
 # PolyPhys
 
 [![CI](https://github.com/amirhs1/poly-phys/actions/workflows/ci.yaml/badge.svg)](https://github.com/amirhs1/poly-phys/actions/workflows/ci.yaml)
-[![codecov](https://codecov.io/gh/amirhs1/PolyPhys/branch/main/graph/badge.svg?token=FDTYB8DUPP)](https://codecov.io/gh/amirhs1/PolyPhys/branch/main)
+[![codecov](https://codecov.io/gh/amirhs1/poly-phys/branch/main/graph/badge.svg)](https://app.codecov.io/gh/amirhs1/poly-phys)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/amirhs1/poly-phys)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15858407.svg)](https://doi.org/10.5281/zenodo.15858407)
