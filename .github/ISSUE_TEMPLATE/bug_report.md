@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Report reproducible behavior that looks incorrect
-title: ""
-labels: bug
+title: "[area] "
+labels: type:bug
 assignees: ""
 ---
 
