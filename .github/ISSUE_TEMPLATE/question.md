@@ -1,8 +1,8 @@
 ---
 name: Question
 about: Ask about usage, installation, or project direction
-title: ""
-labels: question
+title: "[area] "
+labels: type:question
 assignees: ""
 ---
 
