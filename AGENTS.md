@@ -112,15 +112,25 @@ The only long-lived branch is `main`; there is no `develop` branch.
 
 - Never commit or push directly to `main`.
 - Use one focused non-`main` branch per meaningful task where practical.
-- Branch prefix determines the single routine PR label:
-  - `feature/*` → `enhancement`
-  - `fix/*` or `hotfix/*` → `bug`
-  - `refactor/*` or `chore/*` → `chore`
-  - `deps/*` → `dependencies`
-  - `docs/*` → `documentation`
-  - `help/*` → `help wanted`
-  - `question/*` → `question`
-  - `release/*` → `release`
+- Use `docs/NAMING-CONVENTION.md` for names. Commit subjects and PR titles use
+  `type(scope): imperative summary`; issue titles use `[area] Verb object`;
+  milestones use `vX.Y.Z — Release Name`.
+- Branch prefix determines the single routine PR type label:
+  - `feat/*` → `type:feature`
+  - `fix/*` or `hotfix/*` → `type:bug`
+  - `docs/*` → `type:docs`
+  - `test/*` → `type:test`
+  - `ci/*` → `type:ci`
+  - `refactor/*` or `chore/*` → `type:refactor`
+  - `deps/*` → `type:deps`
+  - `release/*` → `type:release`
+- Additionally apply one or more `area:*` labels naming the affected subsystem
+  (`area:manage`, `area:analyze`, `area:packaging`, `area:documentation`,
+  `area:ci`, `area:agents`). The `blocked`, `technical-debt`, and
+  `breaking-change` labels are orthogonal and combine with any type.
+- Labels carry type and area only. Status and priority live in the GitHub
+  Project fields, and the release lives in the milestone; do not encode either
+  as a label.
 - When the current task explicitly authorizes a focused implementation, that authorization covers creating the branch, editing code/tests/docs, making coherent commits, pushing the focused branch, opening or updating a draft PR, and applying the matching routine label. Do not ask again for each routine step.
 - Before the first push, inspect `git status --short` and the complete branch-versus-base diff; check for unrelated files, generated artifacts, secrets, private data, and accidental deletions; and run relevant checks.
 - After maintainer review begins, do not amend published commits, rebase, or force-push unless requested or explicitly approved.
