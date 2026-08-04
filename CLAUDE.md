@@ -4,8 +4,10 @@
 
 ## Shared contract
 
-`AGENTS.md` is the canonical operating contract for every coding agent. Do not
-restate shared rules here; add only Claude Code-specific behavior.
+`AI-POLICY.md` governs AI use in this repository and takes precedence over both
+this file and `AGENTS.md`. `AGENTS.md` is the canonical operating contract for
+every coding agent. Do not restate the policy or shared rules here; add only
+Claude Code-specific behavior.
 
 ## Local and scoped instructions
 

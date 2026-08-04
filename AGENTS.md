@@ -19,11 +19,12 @@ The live worktree and current GitHub metadata take precedence over stale prose. 
 
 ## Instruction scope and sources of truth
 
+- `AI-POLICY.md` governs AI use in this repository and takes precedence over this file. This file says how to do the work; the policy says what is permitted and who is accountable for it. Follow both, and do not restate the policy here.
 - These instructions apply repository-wide unless a more specific instruction file applies to the files being changed.
 - Put shared directory-specific guidance in a nested `AGENTS.md`. Add a sibling `CLAUDE.md` containing `@AGENTS.md`.
 - Keep nested guidance additive. When it replaces a root rule, name the replaced rule explicitly.
 - Use parallel agents only for independent tasks. Do not let multiple agents edit the same files concurrently; use separate branches or worktrees.
-- Canonical sources are `README.md`, `pyproject.toml`, `.github/workflows/`, `docs/source/`, `polyphys/__version__.py`, and `SECURITY.md`.
+- Canonical sources are `README.md`, `pyproject.toml`, `.github/workflows/`, `docs/source/`, `polyphys/__version__.py`, `CHANGELOG.md`, `CITATION.cff`, `docs/NAMING-CONVENTION.md`, `SECURITY.md`, and `AI-POLICY.md`.
 
 ## Project invariants
 
@@ -104,7 +105,8 @@ python -m build
 - For correlated molecular-dynamics frames, use block averaging or another autocorrelation-aware uncertainty estimate instead of naive per-frame standard errors.
 - Prefer vectorized NumPy, pandas, and MDAnalysis operations when they improve performance without obscuring correctness.
 - Document time and space complexity for every new or materially changed core routine whose cost scales with frames, particles, or dataset size.
-- Cite a verifiable paper, textbook, standard, or official library document for physical models, statistical methods, algorithms, and nontrivial formulas.
+- Cite a paper, textbook, standard, or official library document for physical models, statistical methods, algorithms, and nontrivial formulas. Confirm that the source exists and supports the claim before citing it; never cite from recall. An unverified citation is a defect.
+- Derive every numerical fixture and expected test value from an analytic result, a cited reference, or a reproducible computation, and say which in the PR. Never adopt a value because a model produced it, and never repair a failing test by replacing its expectation with the observed output.
 
 ## Git and draft PR policy
 
@@ -157,6 +159,7 @@ Obtain explicit approval before pushing changes involving:
 - After packaging, package-data, entry-point, or version-loading changes, run `python -m build` in the applicable environment.
 - For GitHub Actions, use least-privilege permissions, avoid privileged triggers that execute untrusted code, keep commands locally reproducible, and inspect failed job logs before proposing a fix.
 - Never expose, log, commit, or paste credentials, tokens, private keys, or sensitive datasets.
+- Never send repository secrets, unpublished simulation data, private datasets, or draft manuscripts to a third-party service, including any AI service. Work against the repository, not against research data.
 - Follow `SECURITY.md`: report suspected vulnerabilities privately and do not open a public issue or PR containing exploit details.
 - Security audits are read-only by default. Separate verified, likely-but-untested, and unassessed findings.
 - Before creating a tracked issue, inspect open and closed issues when network access is available; otherwise state that duplication was not checked.
