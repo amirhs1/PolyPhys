@@ -158,6 +158,15 @@ If you use PolyPhys in published work, please cite the archived release. The DOI
 above resolves to the latest version; see [`CITATION.cff`](CITATION.cff) for
 machine-readable metadata, or use GitHub's *Cite this repository* button.
 
+## AI assistance
+
+PolyPhys is developed with the help of AI coding assistants. Every change is
+reviewed and merged by the maintainer, who is accountable for the result; no AI
+system is an author of this software or of any release. Numerical fixtures,
+formulas, and citations are derived or verified rather than accepted from a
+model — see [`AI-POLICY.md`](AI-POLICY.md) for the full policy, including what
+is expected of AI-assisted contributions.
+
 ## Contributing
 
 Bug reports and questions are welcome via
