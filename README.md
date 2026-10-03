@@ -1,8 +1,8 @@
 # PolyPhys
 
-[![CI](https://github.com/amirhs1/poly-phys/actions/workflows/ci.yaml/badge.svg)](https://github.com/amirhs1/poly-phys/actions/workflows/ci.yaml)
+[![CI](https://github.com/amirhs1/PolyPhys/actions/workflows/ci.yaml/badge.svg)](https://github.com/amirhs1/PolyPhys/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/amirhs1/poly-phys/branch/main/graph/badge.svg)](https://app.codecov.io/gh/amirhs1/poly-phys)
-[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/amirhs1/poly-phys)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://github.com/amirhs1/PolyPhys)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15858407.svg)](https://doi.org/10.5281/zenodo.15858407)
 
@@ -49,14 +49,14 @@ level.
 PolyPhys is distributed from source and archived on Zenodo; it is not on PyPI.
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/poly-phys.git"
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git"
 ```
 
 For a development checkout:
 
 ```bash
-git clone https://github.com/amirhs1/poly-phys.git
-cd poly-phys
+git clone https://github.com/amirhs1/PolyPhys.git
+cd PolyPhys
 python -m pip install -e ".[dev]"
 ```
 
@@ -197,7 +197,7 @@ Instructions for AI agents: [`AGENTS.md`](AGENTS.md).
 ## Contributing
 
 Bug reports and questions are welcome via
-[issues](https://github.com/amirhs1/poly-phys/issues). Please see
+[issues](https://github.com/amirhs1/PolyPhys/issues). Please see
 [`SECURITY.md`](SECURITY.md) for reporting suspected vulnerabilities privately.
 
 ## License

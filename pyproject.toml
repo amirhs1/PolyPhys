@@ -49,8 +49,8 @@
     ]
 
 [project.urls]
-    Source = "https://github.com/amirhs1/poly-phys"
-    Issues = "https://github.com/amirhs1/poly-phys/issues"
+    Source = "https://github.com/amirhs1/PolyPhys"
+    Issues = "https://github.com/amirhs1/PolyPhys/issues"
 
 [tool.setuptools]
     include-package-data = true
