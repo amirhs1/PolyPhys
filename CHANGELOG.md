@@ -43,13 +43,11 @@ Targeting `0.4.0`.
 - A README that states the problem the package solves, documents installation
   and the artifact-lineage model, and carries a quickstart whose examples are
   executed by the test suite.
-- `AI-POLICY.md`, stating how AI coding assistants are used in this repository,
-  that the maintainer is accountable for every merged change, that no AI system
-  is an author, and what AI-assisted contributions must satisfy — in particular
-  the scientific-integrity rules on derived expected values, executed doctest
-  output, and verified citations. `AGENTS.md` and `CLAUDE.md` now defer to it
-  and carry matching rules for citation verification, numerical fixtures, and
-  third-party data handling.
+- `AI-POLICY.md`, stating how AI tools may be used here: whoever submits a
+  change is responsible for it, test values and citations are verified
+  independently, and AI-assisted commits carry an `Assisted-by:` trailer. The
+  README records each part's AI tier and checks; `AGENTS.md` and `CLAUDE.md`
+  carry the matching agent rules.
 
 ## [0.3.0] - 2025-07-10
 
