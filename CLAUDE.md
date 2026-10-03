@@ -31,9 +31,11 @@ environment rules in `AGENTS.md`; do not require the workstation-only
 
 ## Git attribution
 
-Use Claude Code's current `attribution` configuration. Do not rely on the
-deprecated `includeCoAuthoredBy` setting, hard-code a model name, or add a
-duplicate attribution block.
+Claude Code's own commit and pull-request attribution is turned off in the
+committed `.claude/settings.json`. Follow the commit rule in `AGENTS.md`
+("Git and draft PR policy"): end each AI-assisted commit with an
+`Assisted-by:` trailer, and never add a `Co-authored-by:` line for an AI tool.
+Do not rely on the deprecated `includeCoAuthoredBy` setting.
 
 ## Draft pull requests
 
