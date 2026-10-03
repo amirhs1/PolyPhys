@@ -158,6 +158,38 @@ If you use PolyPhys in published work, please cite the archived release. The DOI
 above resolves to the latest version; see [`CITATION.cff`](CITATION.cff) for
 machine-readable metadata, or use GitHub's *Cite this repository* button.
 
+## AI assistance
+
+PolyPhys is developed with the help of AI coding assistants. Every change is
+reviewed and merged by the maintainer, who is accountable for the result; no AI
+system is an author of this software or of any release. Numerical fixtures,
+formulas, and citations are derived or verified rather than accepted from a
+model — see [`AI-POLICY.md`](AI-POLICY.md) for the full policy, including what
+is expected of AI-assisted contributions.
+
+Each part has a tier, set by whether I can evaluate AI output there. The table
+records the checks or human review applied to each part:
+
+- **Instrumented** — I could write it myself. AI is used for review,
+  refactoring, and alternative implementations, not first drafts of core logic.
+- **Supervised** — AI drafts; I read every line and set the acceptance criteria
+  and test values.
+- **Delegated** — AI generates; I can't fully evaluate it. It is covered by
+  tests, kept isolated and low-risk, and not presented as my work.
+
+| Part                                                      | Tier         | Checks or human review                                                                                     |
+| --------------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| `polyphys/analyze/`                                       | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.13; maintainer review                              |
+| `polyphys/manage/`                                        | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.13; parser tests for filename-parsing changes; maintainer review |
+| `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review            |
+| `docs/`, `notebooks/`                                     | Instrumented | CI: Sphinx build with warnings as errors for `docs/source/`; notebooks have no automated check; maintainer review |
+
+Nothing that handles security, credentials, private data, or published results,
+or that can block a merge, is Delegated. Where a tier is unclear, I treat the
+part as Supervised. Tiers last reviewed: 2026-10-03.
+
+Instructions for AI agents: [`AGENTS.md`](AGENTS.md).
+
 ## Contributing
 
 Bug reports and questions are welcome via
