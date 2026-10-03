@@ -4,7 +4,7 @@ This file contains stable, repository-wide instructions for coding agents. Keep 
 
 ## Repository purpose
 
-PolyPhys is a solo-maintained, MIT-licensed Python package for polymer-physics and molecular-dynamics simulation-data management and analysis, focused on bacterial chromosome organization (`amirhs1/poly-phys`).
+PolyPhys is a solo-maintained, MIT-licensed Python package for polymer-physics and molecular-dynamics simulation-data management and analysis, focused on bacterial chromosome organization (`amirhs1/PolyPhys`).
 
 ## Establish the current state first
 
