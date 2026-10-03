@@ -64,5 +64,5 @@ first public publication on GitHub and major structural changes) were recorded i
 the previous `HISTORY.rst` as development milestones. Neither was tagged or
 released, so `0.3.0` is the only release preceding this changelog.
 
-[Unreleased]: https://github.com/amirhs1/poly-phys/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/amirhs1/poly-phys/releases/tag/v0.3.0
+[Unreleased]: https://github.com/amirhs1/PolyPhys/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/amirhs1/PolyPhys/releases/tag/v0.3.0
