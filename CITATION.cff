@@ -16,8 +16,8 @@ authors:
     email: amirh.sadeghi@outlook.com
 version: 0.4.0
 license: MIT
-repository-code: "https://github.com/amirhs1/poly-phys"
-url: "https://github.com/amirhs1/poly-phys"
+repository-code: "https://github.com/amirhs1/PolyPhys"
+url: "https://github.com/amirhs1/PolyPhys"
 doi: 10.5281/zenodo.15858407
 keywords:
   - polymer physics

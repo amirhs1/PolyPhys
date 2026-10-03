@@ -1,7 +1,7 @@
 # PolyPhys Naming Conventions
 
 This file defines the naming rules for issues, labels, branches, commits, pull
-requests, milestones, and releases in the `poly-phys` repository.
+requests, milestones, and releases in the `PolyPhys` repository.
 
 The goal is to make the GitHub Project easy to scan and to keep the history
 consistent. These conventions are shared with `amirhs1/CareerDossierTeX`, so a
