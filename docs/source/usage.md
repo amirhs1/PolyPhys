@@ -10,13 +10,13 @@ PolyPhys is distributed from source and archived on Zenodo. It is not published
 to PyPI, so install it directly from the repository:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/poly-phys.git"
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git"
 ```
 
 To install a specific archived release, append the tag:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/poly-phys.git@v0.3.0"
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.3.0"
 ```
 
 PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy and
@@ -28,8 +28,8 @@ If you are working from a source checkout and want the documentation and
 development tools:
 
 ```bash
-git clone https://github.com/amirhs1/poly-phys.git
-cd poly-phys
+git clone https://github.com/amirhs1/PolyPhys.git
+cd PolyPhys
 python -m pip install -e ".[docs,dev]"
 ```
 
@@ -55,5 +55,5 @@ attributes and derives the artifact's position in the project hierarchy:
 ```
 
 See the [API reference](api.rst) for the full set of modules, and the
-[README](https://github.com/amirhs1/poly-phys#readme) for a longer introduction
+[README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.
