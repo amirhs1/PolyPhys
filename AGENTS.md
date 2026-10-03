@@ -36,6 +36,21 @@ The live worktree and current GitHub metadata take precedence over stale prose. 
 - Use semantic versioning. Change the version only for an explicitly requested release.
 - Distribution is GitHub source plus a Zenodo DOI. Do not add PyPI publishing, trusted publishing, or automated version bumps unless requested.
 
+## Where you may write
+
+This table repeats the tier table in the README's "AI assistance" section, with your role in each tier. Change both in the same commit.
+
+| Path                                                      | Tier         | Your role                                                                        |
+| --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------- |
+| `polyphys/analyze/`                                       | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `docs/`, `notebooks/`                                     | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+
+- A path not listed is Supervised: draft against acceptance criteria Amir set, and expect every line to be read. Work that touches security, credentials, private data, or published results is never Delegated, whatever the table says.
+- Apply only wording Amir supplies in `AI-POLICY.md`, `LICENSE`, and `SECURITY.md`.
+- Never edit `.github/workflows/` or generated paths such as `docs/source/generated/`; draft a change for Amir instead.
+
 ## Default work sequence
 
 1. **Understand:** inspect the issue, code, tests, docs, configuration, and CI.
