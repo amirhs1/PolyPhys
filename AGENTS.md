@@ -19,11 +19,12 @@ The live worktree and current GitHub metadata take precedence over stale prose. 
 
 ## Instruction scope and sources of truth
 
+- `AI-POLICY.md` governs AI use in this repository and takes precedence over this file. This file says how to do the work; the policy says what is permitted and who is accountable for it. Follow both, and do not restate the policy here.
 - These instructions apply repository-wide unless a more specific instruction file applies to the files being changed.
 - Put shared directory-specific guidance in a nested `AGENTS.md`. Add a sibling `CLAUDE.md` containing `@AGENTS.md`.
 - Keep nested guidance additive. When it replaces a root rule, name the replaced rule explicitly.
 - Use parallel agents only for independent tasks. Do not let multiple agents edit the same files concurrently; use separate branches or worktrees.
-- Canonical sources are `README.md`, `pyproject.toml`, `.github/workflows/`, `docs/source/`, `polyphys/__version__.py`, and `SECURITY.md`.
+- Canonical sources are `README.md`, `pyproject.toml`, `.github/workflows/`, `docs/source/`, `polyphys/__version__.py`, `CHANGELOG.md`, `CITATION.cff`, `docs/NAMING-CONVENTION.md`, `SECURITY.md`, and `AI-POLICY.md`.
 
 ## Project invariants
 
@@ -34,6 +35,21 @@ The live worktree and current GitHub metadata take precedence over stale prose. 
 - Do not rename, flatten, or simplify those conventions unless Amir explicitly requests it. Filename-parsing changes require matching parser tests.
 - Use semantic versioning. Change the version only for an explicitly requested release.
 - Distribution is GitHub source plus a Zenodo DOI. Do not add PyPI publishing, trusted publishing, or automated version bumps unless requested.
+
+## Where you may write
+
+This table repeats the tier table in the README's "AI assistance" section, with your role in each tier. Change both in the same commit.
+
+| Path                                                      | Tier         | Your role                                                                        |
+| --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------- |
+| `polyphys/analyze/`                                       | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `docs/`, `notebooks/`                                     | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+
+- A path not listed is Supervised: draft against acceptance criteria Amir set, and expect every line to be read. Work that touches security, credentials, private data, or published results is never Delegated, whatever the table says.
+- Apply only wording Amir supplies in `AI-POLICY.md`, `LICENSE`, and `SECURITY.md`.
+- Never edit `.github/workflows/` or generated paths such as `docs/source/generated/`; draft a change for Amir instead.
 
 ## Default work sequence
 
@@ -104,7 +120,8 @@ python -m build
 - For correlated molecular-dynamics frames, use block averaging or another autocorrelation-aware uncertainty estimate instead of naive per-frame standard errors.
 - Prefer vectorized NumPy, pandas, and MDAnalysis operations when they improve performance without obscuring correctness.
 - Document time and space complexity for every new or materially changed core routine whose cost scales with frames, particles, or dataset size.
-- Cite a verifiable paper, textbook, standard, or official library document for physical models, statistical methods, algorithms, and nontrivial formulas.
+- Cite a paper, textbook, standard, or official library document for physical models, statistical methods, algorithms, and nontrivial formulas. Confirm that the source exists and supports the claim before citing it; never cite from recall. An unverified citation is a defect.
+- Derive every numerical fixture and expected test value from an analytic result, a cited reference, or a reproducible computation, and say which in the PR. Never adopt a value because a model produced it, and never repair a failing test by replacing its expectation with the observed output.
 
 ## Git and draft PR policy
 
@@ -134,7 +151,14 @@ The only long-lived branch is `main`; there is no `develop` branch.
 - When the current task explicitly authorizes a focused implementation, that authorization covers creating the branch, editing code/tests/docs, making coherent commits, pushing the focused branch, opening or updating a draft PR, and applying the matching routine label. Do not ask again for each routine step.
 - Before the first push, inspect `git status --short` and the complete branch-versus-base diff; check for unrelated files, generated artifacts, secrets, private data, and accidental deletions; and run relevant checks.
 - After maintainer review begins, do not amend published commits, rebase, or force-push unless requested or explicitly approved.
-- Do not add agent/tool prefixes to commit or PR titles. Use the tool's configured native attribution; do not hard-code model names or add duplicate attribution trailers.
+- Do not add agent/tool prefixes to commit or PR titles.
+- End every commit message with one trailer block: one trailer per line, no
+  blank line between them, nothing after them. An AI-assisted commit carries
+  `Assisted-by: <tool>, <model id> (<role>)`; add `Checks-run:` and
+  `Ground-truth-source:` when they apply. Never add a `Co-authored-by:` line for
+  an AI tool; Claude Code's own line is turned off in `.claude/settings.json`.
+  Pull requests merge with a merge commit, so each commit lands unchanged: keep
+  every commit coherent.
 - If the branch prefix and intended label disagree, stop and ask.
 - The maintainer alone may mark a PR ready, approve, merge, enable auto-merge, publish a release, or alter repository protections.
 
@@ -157,6 +181,7 @@ Obtain explicit approval before pushing changes involving:
 - After packaging, package-data, entry-point, or version-loading changes, run `python -m build` in the applicable environment.
 - For GitHub Actions, use least-privilege permissions, avoid privileged triggers that execute untrusted code, keep commands locally reproducible, and inspect failed job logs before proposing a fix.
 - Never expose, log, commit, or paste credentials, tokens, private keys, or sensitive datasets.
+- Never send repository secrets, unpublished simulation data, private datasets, or draft manuscripts to a third-party service, including any AI service. Work against the repository, not against research data.
 - Follow `SECURITY.md`: report suspected vulnerabilities privately and do not open a public issue or PR containing exploit details.
 - Security audits are read-only by default. Separate verified, likely-but-untested, and unassessed findings.
 - Before creating a tracked issue, inspect open and closed issues when network access is available; otherwise state that duplication was not checked.
