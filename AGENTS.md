@@ -151,7 +151,14 @@ The only long-lived branch is `main`; there is no `develop` branch.
 - When the current task explicitly authorizes a focused implementation, that authorization covers creating the branch, editing code/tests/docs, making coherent commits, pushing the focused branch, opening or updating a draft PR, and applying the matching routine label. Do not ask again for each routine step.
 - Before the first push, inspect `git status --short` and the complete branch-versus-base diff; check for unrelated files, generated artifacts, secrets, private data, and accidental deletions; and run relevant checks.
 - After maintainer review begins, do not amend published commits, rebase, or force-push unless requested or explicitly approved.
-- Do not add agent/tool prefixes to commit or PR titles. Use the tool's configured native attribution; do not hard-code model names or add duplicate attribution trailers.
+- Do not add agent/tool prefixes to commit or PR titles.
+- End every commit message with one trailer block: one trailer per line, no
+  blank line between them, nothing after them. An AI-assisted commit carries
+  `Assisted-by: <tool>, <model id> (<role>)`; add `Checks-run:` and
+  `Ground-truth-source:` when they apply. Never add a `Co-authored-by:` line for
+  an AI tool; Claude Code's own line is turned off in `.claude/settings.json`.
+  Pull requests merge with a merge commit, so each commit lands unchanged: keep
+  every commit coherent.
 - If the branch prefix and intended label disagree, stop and ask.
 - The maintainer alone may mark a PR ready, approve, merge, enable auto-merge, publish a release, or alter repository protections.
 
