@@ -62,6 +62,13 @@ ENV/
 .vscode/
 .idea/
 
+# Agent files: local only
+CLAUDE.local.md
+AGENTS.local.md
+.claude/settings.local.json
+.claude/worktrees/
+.claude/.cc-writes/
+
 # macOS
 .DS_Store
 
