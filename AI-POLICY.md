@@ -1,130 +1,107 @@
-# AI Policy
+# AI Policy - PolyPhys Project
 
-PolyPhys is developed with the help of AI coding assistants. This document
-states how they are used, who is accountable for the result, and what they are
-not permitted to do.
+Last reviewed: 2026-10-03
 
-## 1. Scope
+AI tools are welcome here. They don't change who is responsible: whoever
+submits a change must understand it, have checked it, and be able to explain
+it. This applies to maintainers too. How AI was used in this project, and how
+each part was checked, is described in the [README](README.md).
 
-This policy governs the `amirhs1/poly-phys` repository and the releases cut from
-it. It is a governance document written for people — users, reviewers, and
-researchers deciding whether to trust or cite this software.
+No AI tool is an author or co-author of PolyPhys: none is listed in
+[`CITATION.cff`](CITATION.cff) or [`AUTHORS.rst`](AUTHORS.rst), or named in a
+`Co-authored-by:` trailer.
 
-It is not the operating contract for the assistants themselves. That contract
-lives in [`AGENTS.md`](AGENTS.md), with tool-specific additions in
-[`CLAUDE.md`](CLAUDE.md). Those files describe *how* an agent works in this
-repository; this file describes *what is permitted and who answers for it*. Read
-this one first; the contract is subordinate to it.
+## Scope
 
-This policy does not govern the writing of manuscripts or the conduct of the
-research that PolyPhys supports. Those follow the policies of the relevant
+This policy governs the `amirhs1/PolyPhys` repository and the releases cut from
+it. This policy does not govern the writing of manuscripts or the conduct of
+the research that PolyPhys supports. Those follow the policies of the relevant
 journal and institution.
 
-## 2. Human accountability
+## Verification and scientific integrity
 
-The maintainer is accountable for every line merged into `main`, regardless of
-which tool drafted it. AI assistance changes how the work is produced; it does
-not transfer responsibility for the result.
+PolyPhys produces numbers that end up in published work, so the main risk of
+generated code here is a plausible-looking value, formula, or reference that no
+one verified. These rules close that gap.
 
-Concretely:
-
-- Every change is reviewed by the maintainer before it is merged. Assistants
-  open draft pull requests; they do not mark them ready, approve them, or merge
-  them.
-- Only the maintainer publishes a release, moves a tag, or changes repository
-  protections.
-- **AI systems are not authors.** No assistant appears in
-  [`CITATION.cff`](CITATION.cff) or [`AUTHORS.rst`](AUTHORS.rst), and none is
-  credited as a contributor to a release. A tool cannot take responsibility for
-  the work, which is what authorship means.
-
-## 3. How AI is used here
-
-Assistants are used to draft and revise code, tests, docstrings, and
-documentation; to refactor existing code; to review diffs; to triage and draft
-issues; and to write commit messages and pull-request descriptions.
-
-They are not used to produce research results. Specifically, no assistant is
-used to generate simulation data, to decide a scientific question, to invent a
-numerical value that a test then enshrines, or to supply a citation that is
-carried into the repository unchecked.
-
-The assistants currently in use are Claude Code and OpenAI Codex. This list will
-change; the rules in this document do not depend on which tool is in use.
-
-## 4. Scientific integrity
-
-PolyPhys produces numbers that end up in published work, so the ordinary risks
-of generated code are compounded by a specific one: a plausible-looking value,
-formula, or reference that no one ever verified. The following rules exist to
-close that gap.
-
-- **Expected values are derived, not asserted.** Every numerical fixture and
-  expected result in the test suite must come from an analytic derivation, a
-  published reference, or a reproducible computation. A value is never accepted
-  because a model produced it, and a failing test is never "fixed" by replacing
-  the expectation with the observed output.
+- **Expected values are derived, not asserted.** Test values and numerical
+  fixtures come from outside the AI's own output: an analytic derivation, the
+  literature, measured data, or an independent implementation. If none exists,
+  test a property (symmetry, conservation, invariance) and say so.
+- **Tests are not weakened to pass.** Do not delete or loosen a test, or
+  replace an expectation with the observed output, to make it pass.
 - **Doctest output comes from running the code.** Examples in docstrings and in
   the README are executed by the test suite. Their output is copied from a real
   run, never predicted.
 - **Citations are verified.** Physical models, statistical methods, algorithms,
   and nontrivial formulas carry a citation to a paper, textbook, standard, or
-  official library document that has been confirmed to exist *and* to support
+  official library document that has been confirmed to exist _and_ to support
   the claim being made. Language models fabricate plausible references; an
-  unverified citation is treated as a defect, not a formatting detail.
+  unverified citation is treated as a defect, not a formatting detail. An
+  AI-suggested reference is a lead, not evidence, until it is checked against
+  its source.
 - **Units, shapes, and assumptions are preserved.** Physical units, array-shape
   contracts, numerical meaning, and established scientific assumptions are not
   changed by a refactor. A changed expected value must be explained, with its
   scientific basis, in the pull request that changes it.
-- **Verification is observed, not assumed.** No check, test, build, or benchmark
-  is reported as passing unless its successful result was actually seen.
+- **Verification is observed, not assumed.** No check, test, build, or
+  benchmark is reported as passing unless its successful result was seen, and
+  every reported number traces back to the code or source that produced it.
+- **Domain choices are made by a person.** Observables, estimators, and fitting
+  ranges are chosen by a person, not an AI tool.
 
-## 5. Provenance and attribution
+## Disclosure
 
-Commits and pull requests follow [`docs/NAMING-CONVENTION.md`](docs/NAMING-CONVENTION.md).
-AI-assisted commits carry the assistant's own configured attribution trailer, so
-the history records where a change came from without duplicating that
-information in the subject line. Agent and tool names do not appear as prefixes
-in commit subjects or pull-request titles.
+- Say in the pull request which AI tools you used and for what. A maintainer's
+  pull request repeats its commits' `Assisted-by:` lines. If you don't know
+  which model was used, write `not recorded`; don't guess.
+- Maintainers record substantial AI help in commits with an `Assisted-by:`
+  trailer, and every commit an AI agent writes carries one. Add `Checks-run:`
+  only for a check actually run, with its observed result. Add
+  `Ground-truth-source:` only when a commit adds or changes a reference value,
+  naming its independent source. Outside contributors may use these trailers
+  too, but their pull-request statement is enough.
 
-## 6. Security and data handling
+  ```text
+  Assisted-by: <tool>, <model identifier or not recorded> (<role or extent>)
+  Checks-run: <check actually run> — <observed result>
+  Ground-truth-source: <independent source of a reference value>
+  ```
 
-- Credentials, tokens, private keys, and configuration secrets are never
-  provided to an AI tool, in any form.
-- Unpublished simulation data, private datasets, and draft manuscripts are not
-  pasted into prompts or otherwise sent to a third-party service. Assistants
-  work against the repository, not against research data.
-- Assistants operate within the permissions, sandboxing, hooks, and branch
-  protections configured for them. Those controls are not to be weakened or
-  circumvented, and a denied action is not to be retried by another route.
-- Suspected vulnerabilities follow [`SECURITY.md`](SECURITY.md) and are reported
-  privately. Exploit details do not go into a public issue or pull request,
-  whether written by a person or a tool.
+  Omit trailers that do not apply. A property test without a reference value
+  does not need `Ground-truth-source:`.
 
-## 7. Licensing
+## Communication
 
-PolyPhys is MIT-licensed, and everything merged into it must be distributable
-under that license. Generated output is treated like any other contribution: it
-must not reproduce substantial portions of code whose license is unknown or
-incompatible. Verbatim reproduction of a recognizable third-party implementation
-is a reason to stop and check the source, not a shortcut.
+Write issues, pull request descriptions, and replies in your own words. AI may
+fix grammar or translate. An agent may draft a pull request description at a
+maintainer's request; the maintainer reviews it before the pull request is
+marked ready. The reason a change exists — in a commit, pull request, or
+changelog — comes from a person, not from the AI.
 
-## 8. Contributors
+## Licensing and data
 
-Contributions are welcome, and using an AI assistant to prepare one is fine.
-Two conditions apply:
+- You must have the right to submit what you submit. AI output that reproduces
+  someone else's code is their code: attribute it under its licence or replace
+  it.
+- Do not give AI tools credentials, private or restricted data, unpublished
+  simulation data, draft manuscripts, or other material you are not allowed to
+  share.
+- Report suspected vulnerabilities privately, as [`SECURITY.md`](SECURITY.md)
+  describes, never in a public issue or pull request.
 
-1. **Disclose material assistance.** If an assistant drafted a substantial part
-   of the change, say so in the pull-request description. A one-line note is
-   enough.
-2. **You remain responsible for what you submit.** You should be able to explain
-   what the change does and why it is correct. A pull request consisting of
-   unreviewed model output is not a contribution, and will be closed.
+## Agents
 
-Everything in section 4 applies to contributed changes as well.
+AI agents act only with a person's approval: no autonomous issues, pull
+requests, or comments. Instructions for agents working in this repository are
+in `AGENTS.md`, with tool-specific additions in files like
+[`CLAUDE.md`](CLAUDE.md). Agents work within the permissions, sandboxes, hooks,
+and branch protections configured for them, and never work around a denied
+action. Only a maintainer marks a pull request ready, merges it, publishes a
+release, or changes repository settings.
 
-## 9. Revision
+## Enforcement
 
-This policy will be revised as the tools, the project, and the surrounding norms
-change. Substantive changes go through a pull request like any other change, and
-are recorded in [`CHANGELOG.md`](CHANGELOG.md).
+Maintainers may close a contribution that does not follow this policy without a
+full review. Changes to this policy go through a pull request and are recorded
+in [`CHANGELOG.md`](CHANGELOG.md).
