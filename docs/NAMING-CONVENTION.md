@@ -3,7 +3,7 @@
 This file defines the naming rules for issues, labels, branches, commits, pull
 requests, milestones, and releases in the `PolyPhys` repository.
 
-The goal is to make the GitHub Project easy to scan and to keep the history
+The goal is to make issues, pull requests, and history easy to scan and
 consistent.
 
 ## 1. Core rule
@@ -209,8 +209,9 @@ blocked   technical-debt   breaking-change   help-wanted
 
 Rules:
 
-- Do not use labels for status. Use the Project `Status` field.
-- Do not use labels for priority. Use the Project `Priority` field.
+- Do not use labels for status. Open or closed issues and draft or ready pull
+  requests already show it.
+- Do not use labels for priority. The repository does not track priority.
 - Do not use labels for release numbers. Use GitHub milestones.
 - Do not duplicate information already shown by GitHub fields.
 
