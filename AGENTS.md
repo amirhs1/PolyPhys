@@ -145,9 +145,10 @@ The only long-lived branch is `main`; there is no `develop` branch.
   (`area:manage`, `area:analyze`, `area:packaging`, `area:documentation`,
   `area:ci`, `area:agents`). The `blocked`, `technical-debt`, and
   `breaking-change` labels are orthogonal and combine with any type.
-- Labels carry type and area only. Status and priority live in the GitHub
-  Project fields, and the release lives in the milestone; do not encode either
-  as a label.
+- Labels carry type and area only. Status comes from open/closed issues and
+  draft/ready PRs, the release lives in the milestone, and priority is not
+  tracked; do not encode any of them as a label. There is no GitHub Project
+  board.
 - When the current task explicitly authorizes a focused implementation, that authorization covers creating the branch, editing code/tests/docs, making coherent commits, pushing the focused branch, opening or updating a draft PR, and applying the matching routine label. Do not ask again for each routine step.
 - Before the first push, inspect `git status --short` and the complete branch-versus-base diff; check for unrelated files, generated artifacts, secrets, private data, and accidental deletions; and run relevant checks.
 - After maintainer review begins, do not amend published commits, rebase, or force-push unless requested or explicitly approved.
