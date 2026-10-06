@@ -1,0 +1,42 @@
+# <type>(<scope>): <imperative subject>
+#
+# Describe the changes using concise imperative bullet points.
+#
+# Why: <reason supplied by a person; omit for a trivial change>
+#
+# TYPES AND SCOPES
+#   Types: feat, fix, docs, test, ci, refactor, chore, release
+#   Scopes: parser, organizer, utils, types, measurer, analyze, manage,
+#     packaging, sphinx, docs, ci, github, release, agents
+# Pick one dominant scope or omit it.
+# For a breaking change, add ! after the type or scope and explain it in the body.
+#
+# AI PROVENANCE
+# Add each applicable trailer as an uncommented line. All trailers sit in one
+# final paragraph, one per line, with no blank line between them and nothing
+# after them; Why: stays in the body above that paragraph. Repeat Assisted-by
+# for multiple materially involved tools or models. Do not infer or
+# reconstruct trailers from memory; record only known provenance.
+#
+# Assisted-by: <tool>, <model identifier or not recorded> (<role>)
+# Checks-run: <check actually run> — <observed result>
+# Ground-truth-source: <independent source of an added or changed reference value>
+#
+# Roles: pick the first that fits.
+#   full implementation: the tool wrote essentially all of the committed content.
+#   partial implementation: the tool wrote part of it; a person wrote the rest.
+#   refactor: the tool chose how to restructure existing content without
+#     changing what it does or says.
+#   plan: the tool proposed the approach or steps; a person wrote the content.
+#   review: the tool reviewed or tested a person's work and wrote none of it.
+#   transcription: a person wrote or fully specified the change; the tool
+#     entered, moved, formatted, or committed it without adding content.
+#
+# Omit Checks-run when no check ran.
+# Omit Ground-truth-source when no reference value changed.
+# A property test does not require a Ground-truth-source trailer.
+#
+# Each commit lands on the main branch unchanged; keep it coherent.
+#
+# Git uses this template only for editor-based commits when commit.template is set.
+# git commit -m bypasses it. Review the final message.
