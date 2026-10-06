@@ -333,16 +333,17 @@ Ground-truth-source: <independent source of a reference value>
 
 ## Reporting
 
-End each task with a report:
+Report back with the `report-back` skill. In chat, give the full report when
+the session changed a file, opened or updated a pull request or issue, or needs
+a decision from the maintainer: verdict, end product, what changed, checks run,
+decisions you made that were the maintainer's, what you need, and close-out.
+Otherwise give the short report: the answer, what it is based on, and what
+remains open. Posting a comment gets the short report. In a full report, also
+name the scientific or compatibility assumptions the change makes, or say
+`None`.
 
-- what changed and why
-- files changed
-- tests and exact outcomes
-- checks not run and why
-- draft pull request, branch, and label updates
-- scientific or compatibility assumptions
-- remaining risks and what the maintainer should review before marking the
-  pull request ready
+The pull request description is the full report, in the sections of
+`.github/pull_request_template.md`, with AI assistance last.
 
 ## When stuck
 
