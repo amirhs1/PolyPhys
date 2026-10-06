@@ -1,45 +1,17 @@
-# CLAUDE.md — PolyPhys
-
 @AGENTS.md
-
-## Shared contract
-
-`AI-POLICY.md` governs AI use in this repository and takes precedence over both
-this file and `AGENTS.md`. `AGENTS.md` is the canonical operating contract for
-every coding agent. Do not restate the policy or shared rules here; add only
-Claude Code-specific behavior.
 
 ## Local and scoped instructions
 
-- Read `CLAUDE.local.md` when present. Keep it gitignored and never commit it.
+- Claude Code does not read `AGENTS.local.md` on its own. On a machine that
+  has one, a gitignored `CLAUDE.local.md` containing `@AGENTS.local.md` loads
+  it at launch.
 - Put genuinely path-specific Claude guidance in `.claude/rules/` so it loads
   only for matching files.
 - Put recurring Claude-only procedures in `.claude/skills/` so they load on
   demand rather than expanding this file.
 
-## Permissions and enforcement
-
-Treat instruction files as behavioral guidance, not technical enforcement.
-Obey Claude Code permissions, sandbox settings, hooks, and GitHub branch
-protection. Never bypass a denied command or weaken a permission rule.
-
-## Environment
-
-In Claude Code web or another disposable remote environment, follow the remote
-environment rules in `AGENTS.md`; do not require the workstation-only
-`polylab_air` Conda environment.
-
 ## Git attribution
 
 Claude Code's own commit and pull-request attribution is turned off in the
-committed `.claude/settings.json`. Follow the commit rule in `AGENTS.md`
-("Git and draft PR policy"): end each AI-assisted commit with an
-`Assisted-by:` trailer, and never add a `Co-authored-by:` line for an AI tool.
-Do not rely on the deprecated `includeCoAuthoredBy` setting.
-
-## Draft pull requests
-
-For an authorized focused implementation, Claude may commit, push the
-non-`main` branch, and open or update a draft PR under the policy in
-`AGENTS.md`. Leave the PR in draft state for Amir's review. Report any requested
-PR metadata that the available GitHub integration could not set.
+committed `.claude/settings.json`. Do not rely on the deprecated
+`includeCoAuthoredBy` setting.
