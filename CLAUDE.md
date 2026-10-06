@@ -7,8 +7,8 @@
   it at launch.
 - Put genuinely path-specific Claude guidance in `.claude/rules/` so it loads
   only for matching files.
-- Put recurring Claude-only procedures in `.claude/skills/` so they load on
-  demand rather than expanding this file.
+- `.claude/skills` is a symlink to `.agents/skills/`, the canonical home of
+  this repository's skills, so Claude Code loads them on demand.
 
 ## Git attribution
 
