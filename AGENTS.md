@@ -31,7 +31,8 @@ output, not the expected output. Do not describe a change as working because it
 reads correctly. Run existing non-destructive checks without asking; start with
 the narrowest relevant one, such as the changed test module, and broaden when
 warranted. CI runs the full Python matrix (3.11–3.13); say how far your local
-checks reach.
+checks reach. Once per clone, run `git config core.hooksPath .githooks` to turn
+on the `commit-msg` hook.
 
 - On a persistent machine, do not create or change any environment, including
   with the install command, without explicit approval.
@@ -55,6 +56,8 @@ PolyPhys/
   notebooks/           notebooks; no automated check
   README.md            user guide; its examples run as doctests
   AI-POLICY.md         AI policy, for contributors
+  .githooks/           the commit-msg hook, which checks the AI provenance trailers
+  .gitmessage          the commit template
   AGENTS.md, CLAUDE.md, .claude/   agent files
 ```
 
@@ -281,6 +284,7 @@ same files concurrently; use separate branches or worktrees.
 ## Commit format
 
 Every AI-assisted commit follows this format and ends with `Assisted-by:`.
+`.gitmessage` is the template for commits written in an editor.
 
 ```text
 type(scope): imperative summary
@@ -322,6 +326,8 @@ Ground-truth-source: <independent source of a reference value>
   property test without a reference value.
 - Never add a `Co-authored-by:` line for an AI tool; write `Assisted-by:`
   instead.
+- If the `commit-msg` hook rejects a commit, fix the message. Never use
+  `--no-verify`.
 
 ## Reporting
 

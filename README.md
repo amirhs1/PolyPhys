@@ -200,6 +200,27 @@ Bug reports and questions are welcome via
 [issues](https://github.com/amirhs1/PolyPhys/issues). Please see
 [`SECURITY.md`](SECURITY.md) for reporting suspected vulnerabilities privately.
 
+### Setup
+
+- [ ] `.claude/settings.json` is committed with the attribution block.
+- [ ] `git config core.hooksPath .githooks` has been run in this clone.
+- [ ] `.gitmessage` is committed, copied from `gitmessage-template.txt` in
+      [ai-assisted-dev](https://github.com/amirhs1/ai-assisted-dev).
+- [ ] `git config commit.template .gitmessage` has been run, for commits
+      written in an editor.
+- [ ] A test commit made by each tool in use ends with `Assisted-by:` and no
+      AI `Co-authored-by:` (`git log -1 --format=%B`).
+- [ ] `.gitignore` has the agent-files block:
+
+  ```gitignore
+  # Agent files: local only
+  CLAUDE.local.md
+  AGENTS.local.md
+  .claude/settings.local.json
+  .claude/worktrees/
+  .claude/.cc-writes/
+  ```
+
 ## License
 
 MIT — see [`LICENSE`](LICENSE).
