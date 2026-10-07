@@ -70,7 +70,8 @@ Allowed branch types:
 
 ```text
 feat/      fix/      docs/      test/
-ci/        refactor/ chore/     release/
+ci/        refactor/ chore/     deps/
+release/
 ```
 
 Examples:

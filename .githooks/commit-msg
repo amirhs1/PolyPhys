@@ -1,0 +1,119 @@
+#!/bin/sh
+
+# commit-msg hook: checks the AI provenance trailers in a commit message.
+# Turn it on once per clone: git config core.hooksPath .githooks
+#
+# It rejects a message when:
+# - its final paragraph holds trailers, and a line there is neither one of
+#   the allowed trailers (Assisted-by, Checks-run, Ground-truth-source,
+#   Co-authored-by, Signed-off-by, Refs, Closes, Fixes) nor a continuation
+#   line, which starts with whitespace; a final paragraph that starts with
+#   Why: and holds no other trailer, as in a commit without trailers, is body;
+# - an Assisted-by:, Checks-run:, or Ground-truth-source: line sits outside
+#   the final paragraph, where git does not read it as a trailer;
+# - an Assisted-by: value is not "<tool>, <model id or not recorded> (<role>)",
+#   with one of the roles below and no free detail;
+# - a Co-authored-by: line names Claude, Anthropic, Codex, OpenAI, or Copilot.
+# Messages starting with Merge or Revert, which git writes, pass. fixup!,
+# squash!, and amend! messages are checked: an autosquash can carry them
+# into history, and an amend! message replaces its target's message.
+#
+# Bypasses: the hook does not run for
+# - git commit --no-verify (-n);
+# - commits made in the GitHub web interface, and merge commits GitHub
+#   creates;
+# - a clone that skipped git config core.hooksPath .githooks.
+
+set -eu
+
+if [ "$#" -lt 1 ] || [ ! -f "$1" ]; then
+  echo "Usage: .githooks/commit-msg <commit message file>" >&2
+  exit 2
+fi
+
+awk -v keys='Assisted-by Checks-run Ground-truth-source Co-authored-by Signed-off-by Refs Closes Fixes' \
+  -v roles='plan|partial implementation|full implementation|review|refactor|transcription' '
+function problem(msg) { print "commit-msg: " msg; bad = 1 }
+function ai_coauthor(line,    s) {
+  s = tolower(line)
+  return s ~ /^co-authored-by:/ && s ~ /claude|anthropic|codex|openai|copilot/
+}
+
+# Git strips comment lines; everything after the scissors line is the diff.
+/^# -+ >8 -+$/ { exit }
+/^#/ { next }
+{
+  sub(/\r$/, "")
+  if (n == 0 && $0 ~ /^[ \t]*$/) next
+  msg[++n] = $0
+}
+
+END {
+  while (n > 0 && msg[n] ~ /^[ \t]*$/) n--
+  if (n == 0 || msg[1] ~ /^(Merge|Revert)( |$)/) exit 0
+
+  split(keys, list, " ")
+  for (i in list) allowed[list[i]] = 1
+  trailer = "^[A-Za-z0-9][A-Za-z0-9-]*:([ \t]|$)"
+  format = "^[^,()<>]+, [^,()<>]+ \\((" roles ")\\)$"
+
+  # The final paragraph is a trailer block if it is not the subject
+  # paragraph and holds at least one trailer.
+  start = n
+  while (start > 1 && msg[start - 1] !~ /^[ \t]*$/) start--
+  block = 0
+  if (start > 1) for (i = start; i <= n; i++) if (msg[i] ~ trailer) block = 1
+  # A final paragraph that is a Why: line and no other trailer is body.
+  if (block && msg[start] ~ /^Why:/) {
+    block = 0
+    for (i = start + 1; i <= n; i++) if (msg[i] ~ trailer) block = 1
+  }
+  end = block ? start - 1 : n
+
+  for (i = 1; i <= end; i++)
+    if (match(msg[i], /^(Assisted-by|Checks-run|Ground-truth-source):/))
+      problem(substr(msg[i], 1, RLENGTH) " sits outside the final paragraph, so git does not read it as a trailer; keep all trailers in one block after the last blank line")
+
+  t = 0
+  for (i = start; block && i <= n; i++) {
+    line = msg[i]
+    if (line ~ /^[ \t]/ && t) {
+      sub(/^[ \t]+/, "", line)
+      value[t] = value[t] " " line
+      continue
+    }
+    if (line !~ trailer) {
+      problem("\"" line "\" breaks the trailer block; a wrapped trailer continues on a line that starts with whitespace")
+      t = 0
+      continue
+    }
+    key = substr(line, 1, index(line, ":") - 1)
+    v = substr(line, index(line, ":") + 1)
+    sub(/^[ \t]+/, "", v)
+    t = ++count
+    tkey[t] = key
+    value[t] = v
+    if (key in allowed || ai_coauthor(line)) continue
+    if (key == "Why") { problem("Why: belongs in the body, above the trailer block"); continue }
+    near = ""
+    for (k in allowed) if (tolower(k) == tolower(key)) near = k
+    if (near != "") problem("write the trailer key as " near ", not " key)
+    else problem("unknown trailer key " key "; allowed: Assisted-by, Checks-run, Ground-truth-source, Co-authored-by, Signed-off-by, Refs, Closes, Fixes")
+  }
+
+  for (t = 1; t <= count; t++) {
+    sub(/[ \t]+$/, "", value[t])
+    if (tkey[t] == "Assisted-by" && value[t] !~ format)
+      problem("Assisted-by: \"" value[t] "\" is not \"<tool>, <model id or not recorded> (<role>)\" with one role: plan, partial implementation, full implementation, review, refactor, or transcription")
+  }
+
+  for (i = 1; i <= n; i++)
+    if (ai_coauthor(msg[i]))
+      problem("\"" msg[i] "\" credits an AI tool as co-author; write Assisted-by: <tool>, <model id or not recorded> (<role>) instead")
+
+  exit bad
+}
+' "$1" >&2 || {
+  echo "commit-msg: fix the message and commit again." >&2
+  exit 1
+}
