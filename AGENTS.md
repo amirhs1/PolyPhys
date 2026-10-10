@@ -255,7 +255,7 @@ same files concurrently; use separate branches or worktrees.
   person running you is responsible for what you submit. Before creating an
   issue, search open and closed issues for a duplicate when network access is
   available; otherwise say that duplication was not checked.
-- Names (details: `docs/NAMING-CONVENTION.md`):
+- Names (details: `CONTRIBUTING.md`, "Names"):
   - Branches: `type/short-description`, lowercase and hyphenated; type is one
     of `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `chore`, `deps`, or
     `release`.
@@ -364,9 +364,9 @@ resolve.
 | Context is long and quality is degrading          | Say so and propose restarting from a written handoff.                                           |
 
 Further reading: `AI-POLICY.md` (rules for contributors), the README's "AI
-assistance" section (tiers and checks), `docs/NAMING-CONVENTION.md` (names),
+assistance" section (tiers and checks), `CONTRIBUTING.md`, "Names" (names),
 and `SECURITY.md` (vulnerability reports). For the facts they hold, these
 canonical sources win over this file: `README.md`, `pyproject.toml`,
 `.github/workflows/`, `docs/source/`, `polyphys/__version__.py`,
-`CHANGELOG.md`, `CITATION.cff`, `docs/NAMING-CONVENTION.md`, `SECURITY.md`,
+`CHANGELOG.md`, `CITATION.cff`, `CONTRIBUTING.md`, `SECURITY.md`,
 and `AI-POLICY.md`.
