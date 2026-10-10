@@ -23,9 +23,9 @@ description: Open a draft GitHub pull request whose body is the full report. Use
      anything left unticked.
    - Notes for review: mark every wording or design you proposed.
    - Last, your own trailer block, as AGENTS.md, "Provenance", gives it. Do
-     not list the commits' trailers. Keep each trailer line in the body
-     within 72 characters: GitHub wraps the body there when it builds the
-     merge commit, and a wrapped line breaks the trailer block.
+     not list the commits' trailers. Keep each trailer line within 72
+     characters, since GitHub wraps the body into the merge commit; give a
+     long check result in "Checks run" and a short one in the trailer.
 4. Title and labels: follow "Names" in CONTRIBUTING.md. The type comes from
    the branch name; the areas, from the parts the diff changes. `Closes #n`
    goes in the body, never in the title, and the title has no agent or tool
