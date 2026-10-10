@@ -23,7 +23,9 @@ description: Open a draft GitHub pull request whose body is the full report. Use
      anything left unticked.
    - Notes for review: mark every wording or design you proposed.
    - Last, your own trailer block, as AGENTS.md, "Provenance", gives it. Do
-     not list the commits' trailers.
+     not list the commits' trailers. Keep each trailer line in the body
+     within 72 characters: GitHub wraps the body there when it builds the
+     merge commit, and a wrapped line breaks the trailer block.
 4. Title and labels: follow "Names" in CONTRIBUTING.md. The type comes from
    the branch name; the areas, from the parts the diff changes. `Closes #n`
    goes in the body, never in the title, and the title has no agent or tool
@@ -32,5 +34,8 @@ description: Open a draft GitHub pull request whose body is the full report. Use
 5. Push the branch, open a draft, then read it back with `gh pr view`:
    `gh pr create --draft --base main --title "<title>" --label <labels> --body-file <file>`.
    Never mark it ready or merge it.
-6. If the branch already has an open pull request, push, then replace its
+6. Before pushing to a branch that has a pull request, run
+   `gh pr view <n> --json state`; if it has merged, stop and tell the person
+   running you.
+7. If the branch already has an open pull request, push, then replace its
    body and read it back: `gh pr edit <n> --body-file <file>`.
