@@ -2,9 +2,11 @@
 name: Bug report
 about: Report reproducible behavior that looks incorrect
 title: "[area] "
-labels: type:bug
+labels: type:fix
 assignees: ""
 ---
+
+<!-- Title: as CONTRIBUTING.md, "Names", sets it. -->
 
 ## Description
 

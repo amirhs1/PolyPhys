@@ -1,3 +1,10 @@
+<!--
+This is the pull request's full report. Keep every section, in this order,
+then the trailer block; a section that does not apply says `None`.
+-->
+
+<!-- Title: as CONTRIBUTING.md, "Names", sets it. -->
+
 ## Summary
 
 What changed and why. The reason comes from a person or an outside report, not
@@ -21,9 +28,9 @@ Each check actually run, as `command → result`, and any human review or
 independent reference used to judge correctness. Then a `Not verified:` line
 for anything not checked, and why.
 
-- [ ] `flake8 polyphys`
-- [ ] `mypy polyphys/analyze polyphys/manage`
-- [ ] `pytest polyphys README.md --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob="README.md"`
+- [ ] `python -m flake8 polyphys`
+- [ ] `python -m mypy polyphys/analyze polyphys/manage`
+- [ ] `python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'`
 - [ ] `python -m build` if packaging metadata, package data, or package layout changed
 - [ ] `python -m sphinx -W -b html docs/source docs/_build` if `docs/source/` changed
 
@@ -35,26 +42,19 @@ for anything not checked, and why.
 
 ## Decisions and risks
 
-Choices made, the alternatives rejected, and what could break.
+Choices made, the alternatives rejected, and what could break. Is the change a
+one-way door, hard to undo, or a two-way door, and what is its blast radius?
 
 ## Notes for review
 
 What needs line-by-line review, and any uncertainty, limitation, or follow-up.
 
-## AI assistance
-
-Write `None`, or name each AI tool used, its model if known, its role, and what
-it did. If the model was not recorded, write `not recorded`; do not guess. For
-example:
-
-```text
-<tool> (<model>): drafted the parser and tests; I revised the error handling
-and reviewed the result.
-```
-
-Then repeat the branch's `Assisted-by:` lines so the commit and pull request
-records agree. Copy them from the actual commits, not from an example:
-`git log --no-merges --format=%B main..HEAD | grep '^Assisted-by:'`. Do not
-include prompts, secrets, or personal data.
+<!--
+AI assistance: end the body with one trailer block, after a blank line. Write
+one `Assisted-by: <tool>, <model id or not recorded> (<role>)` line for each
+AI tool used, then `Checks-run: <check actually run> — <observed result>` for
+each check it ran. Do not guess a model; write `not recorded`. With no AI
+tool, leave the block out. Do not include prompts, secrets, or personal data.
 Responsibility for the contribution remains with the contributor; see
 `AI-POLICY.md`.
+-->
