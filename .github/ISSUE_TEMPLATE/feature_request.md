@@ -2,9 +2,11 @@
 name: Feature request
 about: Propose an improvement or new capability
 title: "[area] "
-labels: type:feature
+labels: type:feat
 assignees: ""
 ---
+
+<!-- Title: as CONTRIBUTING.md, "Names", sets it. -->
 
 ## Motivation
 
