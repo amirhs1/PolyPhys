@@ -5,9 +5,8 @@
 # Why: <reason supplied by a person; omit for a trivial change>
 #
 # TYPES AND SCOPES
-#   Types: feat, fix, docs, test, ci, refactor, chore, release
-#   Scopes: parser, organizer, utils, types, measurer, analyze, manage,
-#     packaging, sphinx, docs, ci, github, release, agents
+# Types and scopes are in CONTRIBUTING.md, "Names"; a scope is an area there.
+#   Types: feat, fix, docs, test, refactor, ci, chore, release, question
 # Pick one dominant scope or omit it.
 # For a breaking change, add ! after the type or scope and explain it in the body.
 #
