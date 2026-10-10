@@ -1,13 +1,17 @@
 ---
 name: open-pull-request
-description: Push the branch and open a draft pull request whose body is the full report. Use when a change is ready for review.
+description: Open a draft GitHub pull request whose body is the full report. Use when a change is committed and ready for review, or to update an open pull request's body; not for reviewing someone else's pull request.
 ---
 
 # Open a pull request
 
 1. Check the branch, the working tree, and `HEAD`. Run the full gate in
    AGENTS.md, "Commands".
-2. Write the body from `.github/pull_request_template.md`: every section, in
+2. Before the push, review the diff: `git status --short`, then the whole
+   branch diff, `git diff main...HEAD`, for unrelated files, secrets,
+   private data, and accidental deletions. A change on the list in AGENTS.md,
+   "Ask first", needs that approval before you push it.
+3. Write the body from `.github/pull_request_template.md`: every section, in
    order; a section that does not apply says `None`.
    - Summary: the reason only from the linked issue, the maintainer, or an
      outside report.
@@ -18,13 +22,15 @@ description: Push the branch and open a draft pull request whose body is the ful
    - Scientific correctness: tick only what you checked, and say why for
      anything left unticked.
    - Notes for review: mark every wording or design you proposed.
-   - AI assistance, last: tool, model, role, then the branch's `Assisted-by:`
-     lines from
-     `git log --no-merges --format=%B main..HEAD | grep '^Assisted-by:'`.
-3. Title: follow "Names" in AGENTS.md, "Git". Labels: the type label the
-   branch prefix sets and one or more `area:*` labels, as "Git" says; if the
-   prefix and the intended label disagree, stop and ask.
-4. Push the branch and open a draft:
-   `gh pr create --draft --base main --title "<title>" --label <type label> --label <area label> --body-file <file>`.
+   - Last, your own trailer block, as AGENTS.md, "Provenance", gives it. Do
+     not list the commits' trailers.
+4. Title and labels: follow "Names" in CONTRIBUTING.md. The type comes from
+   the branch name; the areas, from the parts the diff changes. `Closes #n`
+   goes in the body, never in the title, and the title has no agent or tool
+   prefix. If the branch prefix and the intended type label disagree, stop
+   and ask.
+5. Push the branch, open a draft, then read it back with `gh pr view`:
+   `gh pr create --draft --base main --title "<title>" --label <labels> --body-file <file>`.
    Never mark it ready or merge it.
-5. Read the body back (`gh pr view`), then give the full chat report.
+6. If the branch already has an open pull request, push, then replace its
+   body and read it back: `gh pr edit <n> --body-file <file>`.
