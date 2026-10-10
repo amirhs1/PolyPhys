@@ -4,11 +4,17 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    # Commit, branch, and labels as CONTRIBUTING.md, "Names", sets them.
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps)"
+    pull-request-branch-name:
+      prefix: "chore"
     # Declared explicitly: without this key Dependabot recreates its default
-    # `dependencies` label, which this repository renamed to `type:deps`.
+    # `dependencies` label.
     labels:
-      - "type:deps"
-      - "area:ci"
+      - "type:chore"
+      - "area:deps"
     groups:
       github-actions:
         patterns:
