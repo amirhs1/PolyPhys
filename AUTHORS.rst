@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Amir Sadeghi <54184877+amirhs1@users.noreply.github.com>
+* Amir Sadeghi
 
 Contributors
 ------------

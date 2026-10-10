@@ -5,7 +5,7 @@
 [project]
     name = "polyphys"
     description = "Computer Simulation Data Management and Analysis."
-    authors = [{ name="Amir Sadeghi", email="54184877+amirhs1@users.noreply.github.com" }]
+    authors = [{ name="Amir Sadeghi" }]
     readme = "README.md"
     license = "MIT"
     classifiers = [
