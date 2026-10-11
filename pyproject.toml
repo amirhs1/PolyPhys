@@ -40,13 +40,6 @@
         "pandas-stubs",
         "build"
     ]
-    notebooks = [
-        "ipykernel",
-        "ipython",
-        "jupyter-client",
-        "jupyter-core",
-        "matplotlib-inline"
-    ]
 
 [project.urls]
     Source = "https://github.com/amirhs1/PolyPhys"
@@ -60,7 +53,7 @@
 
 [tool.setuptools.packages.find]
     include = ["polyphys*"]
-    exclude = ["notebooks*", "projects*", "under_review*"]
+    exclude = ["projects*", "under_review*"]
 
 [tool.pytest.ini_options]
     addopts = "--doctest-modules --doctest-glob=README.md"
