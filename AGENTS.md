@@ -53,7 +53,6 @@ PolyPhys/
   polyphys/analyze/    measurer: per-frame structural observables and histograms
   polyphys/tests/      tests for analyze/, manage/, and packaging
   docs/source/         Sphinx sources
-  notebooks/           notebooks; no automated check
   README.md            user guide; its examples run as doctests
   AI-POLICY.md         AI policy, for contributors
   .githooks/           the commit-msg hook, which checks the AI provenance trailers
@@ -146,7 +145,7 @@ your role in each tier. Change both in the same commit.
 | `polyphys/analyze/`                                       | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
-| `docs/`, `notebooks/`                                     | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `docs/`                                                   | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 
 - A path not listed is Supervised: draft against acceptance criteria the
   maintainer set, and expect every line to be read. Work that touches

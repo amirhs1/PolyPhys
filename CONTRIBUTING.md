@@ -57,7 +57,7 @@ areas: analyze manage packaging docs ci agents deps
 | `analyze`   | `polyphys/analyze/`, `polyphys/tests/analyze/`                                                                                    |
 | `manage`    | `polyphys/manage/`, `polyphys/tests/manage/`                                                                                      |
 | `packaging` | `pyproject.toml`, `polyphys/__version__.py`, `polyphys/tests/test_packaging.py`, `CITATION.cff`, `AUTHORS.rst`                    |
-| `docs`      | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/`, `notebooks/`, `.github/ISSUE_TEMPLATE/`                   |
+| `docs`      | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/`, `.github/ISSUE_TEMPLATE/`                                 |
 | `ci`        | `.github/workflows/`, `.github/dependabot.yml`                                                                                    |
 | `agents`    | `AGENTS.md`, `CLAUDE.md`, `AI-POLICY.md`, `.agents/`, `.claude/`, `.githooks/`, `.gitmessage`, `.github/pull_request_template.md` |
 | `deps`      | Dependency versions: the dependency lists in `pyproject.toml` and the action versions in `.github/workflows/`                     |
