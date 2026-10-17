@@ -177,6 +177,32 @@ def test_fixedsize_bins(bin_type, expected_n_bins):
     assert len(result["bin_edges"]) == expected_n_bins + 1
 
 
+def test_histogram_collectors_do_not_overflow_int16():
+    """Regression for #43: collectors accumulate past the int16 limit.
+
+    Two frames of 30,000 samples each land in the first bin, so the exact
+    total of 60,000 exceeds 32,767 and would wrap under an int16 collector.
+    """
+    n_per_frame = 30000
+    frame = np.full(n_per_frame, 0.5)  # every sample falls in bin [0, 1)
+    info = fixedsize_bins(1.0, 0.0, 2.0)
+    _, hist = create_bin_edge_and_hist(1.0, 0.0, 2.0)
+    assert info["collector"].dtype == np.int64
+    assert info["collector_std"].dtype == np.float64
+    assert hist.dtype == np.int64
+    for _ in range(2):
+        counts, _ = np.histogram(frame, bins=info["bin_edges"])
+        info["collector"] += counts
+        info["collector_std"] += counts**2
+        hist += np.histogram(frame, bins=np.array([0.0, 1.0, 2.0]))[0]
+    expected = np.array([2 * n_per_frame, 0])
+    assert_array_equal(info["collector"], expected)
+    assert_array_equal(hist, expected)
+    assert_array_equal(
+        info["collector_std"], np.array([2.0 * n_per_frame**2, 0.0])
+    )
+
+
 def test_radial_cyl_histogram_valid():
     positions = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3], [0, 3, 4]])
     edges = np.array([0, 1, 2, 3, 4])

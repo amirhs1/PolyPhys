@@ -586,8 +586,11 @@ def create_bin_edge_and_hist(
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-        - bin_edges : Array of bin edges
-        - hist : Empty histogram array (zero-initialized).
+        - bin_edges : Array of bin edges, shape ``(n_bins + 1,)``.
+        - hist : Zero-initialized histogram of dtype ``np.int64`` and shape
+          ``(n_bins,)``. The 64-bit integer type keeps per-frame counts
+          accumulated in place (``hist += np.histogram(...)[0]``) from
+          overflowing.
 
     Raises
     ------
@@ -605,13 +608,13 @@ def create_bin_edge_and_hist(
     >>> edges
     array([0., 1., 2., 3., 4., 5.])
     >>> hist
-    array([0, 0, 0, 0, 0], dtype=int16)
+    array([0, 0, 0, 0, 0])
     """
     if lmin >= lmax:
         raise ValueError("'lmin' must be less than 'lmax'.")
 
     bin_edges = np.arange(lmin, lmax + bin_size, bin_size)
-    hist = np.zeros(len(bin_edges) - 1, dtype=np.int16)
+    hist = np.zeros(len(bin_edges) - 1, dtype=np.int64)
 
     if output is not None:
         np.save(output, bin_edges)
@@ -667,9 +670,14 @@ def fixedsize_bins(
           A monotonically increasing array of bin edges, including the
           rightmost edge.
         - 'collector' : np.ndarray
-          Array initialized for histogram values.
+          Zero-initialized array of dtype ``np.int64`` and shape
+          ``(n_bins,)`` for histogram counts. The 64-bit integer type keeps
+          per-frame counts accumulated in place
+          (``collector += np.histogram(...)[0]``) from overflowing.
         - 'collector_std' : np.ndarray
-          Array initialized for standard deviation values.
+          Zero-initialized array of dtype ``np.float64`` and shape
+          ``(n_bins,)`` for standard deviation values or the squared counts
+          they are computed from.
         - 'range' : Tuple[float, float]
             Updated range of bins (`lmin`, `lmax`).
 
@@ -736,8 +744,8 @@ def fixedsize_bins(
         raise ValueError("Invalid bin settings: n_bins must be > 0 and "
                          "bin_edges must not be empty.")
 
-    collectors = np.zeros(n_bins, dtype=np.int16)
-    collectors_std = np.zeros(n_bins, dtype=np.int16)
+    collectors = np.zeros(n_bins, dtype=np.int64)
+    collectors_std = np.zeros(n_bins, dtype=np.float64)
 
     if save_bin_edges is not None:
         np.save(save_bin_edges, bin_edges)
