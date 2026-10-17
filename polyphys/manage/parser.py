@@ -1114,15 +1114,15 @@ class SumRuleCubHeteroRing(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1387,15 +1387,15 @@ class SumRuleCubHeteroLinear(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1685,15 +1685,15 @@ class TransFociCyl(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1973,15 +1973,15 @@ class TransFociCub(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -2240,15 +2240,15 @@ class HnsCub(ParserBase):
     _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                    'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+                    'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
         'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'ndump',
+                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'bdump',
                   'adump', 'eps_hm'],
         'ensemble_long': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                           'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                          'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
-        'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm'],
-        'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
+                          'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
+        'ensemble': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm'],
+        'space': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm']
     }
 
     def __init__(
@@ -2301,7 +2301,7 @@ class HnsCub(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self.name)
-        attrs_float = ['kbmm', 'lcube', 'dcrowd', 'epshc']
+        attrs_float = ['bend_mm', 'lcube', 'dcrowd', 'eps_hc']
         for attr, keyword in self.genealogy_attributes[self.lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
@@ -2515,15 +2515,15 @@ class HnsCyl(ParserBase):
     _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                    'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+                    'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
         'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'ndump',
+                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'bdump',
                   'adump', 'eps_hm'],
         'ensemble_long': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                           'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                          'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
-        'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm'],
-        'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
+                          'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
+        'ensemble': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm'],
+        'space': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm']
     }
 
     def __init__(

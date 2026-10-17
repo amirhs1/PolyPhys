@@ -31,6 +31,17 @@ Targeting `0.4.0`.
   is distributed from source and archived on Zenodo, not published to PyPI.
 - `docs/source/conf.py` now uses the standard-library `tomllib` instead of the
   undeclared third-party `tomli` dependency.
+- `HnsCub` now parses `bend_mm` (`kbmm`) and `eps_hc` (`epshc`) as floats
+  instead of truncating them to integers. Two filenames that differed only in a
+  non-integer value, such as `epshc1.5` and `epshc1.0`, produced identical
+  `whole`, `ensemble_long`, `ensemble`, and `space` names, so distinct state
+  points could be averaged together. Integer-valued inputs now give names such
+  as `kbmm2.0` and `epshc1.0`, matching `HnsCyl`
+  ([#41](https://github.com/amirhs1/PolyPhys/issues/41)).
+- Corrected the `attributes` tables of six parser classes. The four hetero
+  classes listed `phi_bulk_m_large` and `rho_bulk_m` twice and omitted
+  `rho_bulk_m_large`; `HnsCub` and `HnsCyl` listed `ndump`, which is never set,
+  instead of `bdump` ([#42](https://github.com/amirhs1/PolyPhys/issues/42)).
 
 ### Added
 
