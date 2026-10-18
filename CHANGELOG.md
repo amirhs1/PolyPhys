@@ -31,6 +31,10 @@ Targeting `0.4.0`.
   is distributed from source and archived on Zenodo, not published to PyPI.
 - `docs/source/conf.py` now uses the standard-library `tomllib` instead of the
   undeclared third-party `tomli` dependency.
+- `fixedsize_bins` now allocates `collector` as `int64` and `collector_std` as
+  `float64`, and `create_bin_edge_and_hist` allocates its histogram as `int64`.
+  They were `int16`, so per-frame counts added in place wrapped silently past
+  32,767 counts per bin ([#43](https://github.com/amirhs1/PolyPhys/issues/43)).
 
 ### Added
 
