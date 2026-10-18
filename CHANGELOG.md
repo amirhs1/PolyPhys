@@ -31,6 +31,21 @@ Targeting `0.4.0`.
   is distributed from source and archived on Zenodo, not published to PyPI.
 - `docs/source/conf.py` now uses the standard-library `tomllib` instead of the
   undeclared third-party `tomli` dependency.
+- `space_tseries` and `space_hists` in `polyphys.manage.organizer` find their
+  `*-<prop>-ensAvg.csv` input files again. They passed that suffix to
+  `sort_filenames` as a file extension, so no file matched and both raised
+  `ValueError: No objects to concatenate`. They also pass `ispath=True` to the
+  parser, which otherwise split the full path at its first hyphen. They read
+  the crowder volume fraction from a new keyword parameter, `crowder_attr`,
+  defaulting to the parsers' `phi_bulk_c`, instead of the research-code name
+  `phi_c_bulk`, and add that column themselves, so it no longer has to be
+  listed in `physical_attrs`
+  ([#44](https://github.com/amirhs1/PolyPhys/issues/44)).
+- `ens_from_bin_edge` and `ens_avg_from_bin_edge` raise `ValueError` when the
+  wholes of an ensemble have different bin edges, instead of merging them with
+  `np.unique` into a longer array that misaligned the paired histogram.
+  `ens_avg_from_df` no longer modifies the caller's DataFrame; it returns a
+  new one ([#45](https://github.com/amirhs1/PolyPhys/issues/45)).
 
 ### Added
 

@@ -632,36 +632,61 @@ def ens_from_bin_edge(
     ens_data: tuple[str, dict[str, np.ndarray]],
 ) -> tuple[str, np.ndarray]:
     """
-    Combine multiple bin edge arrays into a single unique array for an
-    'ensemble' by removing duplicates. This is typically used when bin edges
-    are identical across 'whole' datasets in an ensemble.
+    Reduce the bin edges of the 'whole' datasets in an 'ensemble' to the
+    single array they share.
+
+    Every 'whole' in an ensemble must be binned identically, so that the
+    histograms paired with these edges stay aligned bin by bin. The edges are
+    checked for equality with :func:`_assert_equal_bin_edges`, the check
+    :func:`whole_from_segments` applies to segments, rather than merged.
 
     Parameters
     ----------
     ens_data : tuple[str, dict[str, np.ndarray]]
         A tuple where the first element is the ensemble name (str) and the
-        second element is a dictionary of bin edge arrays from different
-        'whole' datasets within that ensemble. Within the dictionary, keys are
-        whole names while values are whole bin edges.
+        second element is a non-empty dictionary of bin edge arrays from
+        different 'whole' datasets within that ensemble. Within the
+        dictionary, keys are whole names while values are 1D arrays of whole
+        bin edges, each of shape ``(n_bins + 1,)``.
 
     Returns
     -------
     tuple[str, np.ndarray]
         A tuple where the first element is the ensemble name, and the second
-        is a 1D numpy array of unique bin edges.
+        is a copy of the shared 1D array of bin edges, of shape
+        ``(n_bins + 1,)``.
+
+    Raises
+    ------
+    ValueError
+        If the bin edges of any 'whole' differ from those of the first one,
+        in length or in value.
+
+    Notes
+    -----
+    Time and space complexity are O(n_wholes * n_edges) and O(n_edges).
 
     Examples
     --------
-    >>> ensemble_bin_edges = ens_from_bin_edge( # doctest: +SKIP
-            ('ensemble1', {'whole1': np.array([0.1, 0.2, 0.2, 0.3],
-             'whole2': np.array([0.1, 0.2, 0.2, 0.3]})
-        )
-    >>> print(ensemble_bin_edges) # doctest: +SKIP
-    ('ensemble1', array([0.1, 0.2, 0.3]))
+    >>> ens_from_bin_edge(
+    ...     ('ens1', {'w1': np.array([0., 1., 2.]),
+    ...               'w2': np.array([0., 1., 2.])})
+    ... )
+    ('ens1', array([0., 1., 2.]))
+
+    Differing edges raise instead of being merged:
+
+    >>> ens_from_bin_edge(
+    ...     ('ens1', {'w1': np.array([0., 1., 2.]),
+    ...               'w2': np.array([0., 1., 3.])})
+    ... )
+    Traceback (most recent call last):
+        ...
+    ValueError: Bin edges are not identical across all arrays.
     """
     ensemble_name, whole_edges = ens_data
-    unique_bin_edges = np.unique(list(whole_edges.values()))
-    return ensemble_name, unique_bin_edges
+    shared_bin_edges = _assert_equal_bin_edges(list(whole_edges.values()))
+    return ensemble_name, shared_bin_edges
 
 
 def ens_from_vec(
@@ -947,40 +972,63 @@ def ensemble(
     return ensembles
 
 
-def ens_avg_from_bin_edge(ens_data: np.ndarray) -> np.ndarray:
+def ens_avg_from_bin_edge(
+    ens_data: np.ndarray | Sequence[np.ndarray],
+) -> np.ndarray:
     """
-    Generate a unique set of bin edges for an 'ensemble' dataset based on
-    the bin edges in `ens_data`. This function assumes that the bin edges
-    across the ensemble are identical and selects one representative set.
+    Return the bin edges of an 'ensemble' for its ensemble-averaged
+    artifact.
+
+    Bin edges are not averaged: every 'whole' in the ensemble must share
+    them. A single 1D array, the form :func:`ens_from_bin_edge` produces and
+    :func:`ensemble_avg` passes here, is returned as a copy. A sequence of
+    arrays, one per 'whole', is checked for equality with
+    :func:`_assert_equal_bin_edges`, and a copy of the shared array is
+    returned.
 
     Parameters
     ----------
-    ens_data : list[np.ndarray]
-        A 1D array of bin edges across multiple wholes in the ensemble. The
-        function assumes these bin edges are identical across all wholes.
+    ens_data : np.ndarray or Sequence[np.ndarray]
+        Either the ensemble's 1D array of bin edges, of shape
+        ``(n_bins + 1,)``, or a non-empty sequence of such arrays, one per
+        'whole'. A 2D array of shape ``(n_wholes, n_bins + 1)`` counts as a
+        sequence of its rows.
 
     Returns
     -------
     np.ndarray
-        A unique, representative set of bin edges for the ensemble.
+        A copy of the shared 1D array of bin edges, of shape
+        ``(n_bins + 1,)``.
+
+    Raises
+    ------
+    ValueError
+        If `ens_data` is a sequence and any array in it differs from the
+        first one, in length or in value.
 
     Notes
     -----
-    This function does not perform any averaging or statistical calculations.
-    Instead, it identifies unique bin edges across all wholes, assuming they
-    are identical and discards duplicates.
+    This function performs no averaging or statistical calculation. Time and
+    space complexity are O(n_wholes * n_edges) and O(n_edges).
 
     Examples
     --------
-    >>> ens_data = [ # doctest: +SKIP
-    ...     np.array([0.0, 0.1, 0.2]),
-    ...     np.array([0.0, 0.1, 0.2]),
-    ... ]
-    >>> unique_bin_edges = ens_avg_from_bin_edge(ens_data) # doctest: +SKIP
-    >>> print(unique_bin_edges) # doctest: +SKIP
-    [0.  0.1 0.2 0.3]
+    >>> ens_avg_from_bin_edge(np.array([0.0, 0.1, 0.2]))
+    array([0. , 0.1, 0.2])
+    >>> ens_avg_from_bin_edge(
+    ...     [np.array([0.0, 0.1, 0.2]), np.array([0.0, 0.1, 0.2])]
+    ... )
+    array([0. , 0.1, 0.2])
+    >>> ens_avg_from_bin_edge(
+    ...     [np.array([0.0, 0.1, 0.2]), np.array([0.0, 0.1, 0.3])]
+    ... )
+    Traceback (most recent call last):
+        ...
+    ValueError: Bin edges are not identical across all arrays.
     """
-    return np.unique(ens_data)
+    if isinstance(ens_data, np.ndarray) and ens_data.ndim == 1:
+        return ens_data.copy()
+    return _assert_equal_bin_edges([np.asarray(edges) for edges in ens_data])
 
 
 def ens_avg_from_ndarray(
@@ -1068,40 +1116,43 @@ def ens_avg_from_df(
     Returns
     -------
     pd.DataFrame
-        The input `ens_data` DataFrame with 'whole' columns replaced by
-        calculated statistics: mean, variance, and SEM of each row across the
-        'whole' data columns.
+        A new DataFrame with the excluded columns of `ens_data`, followed by
+        the columns ``<ens_prop>-mean``, ``<ens_prop>-var``, and
+        ``<ens_prop>-sem``: the mean, variance, and SEM of each row across
+        the 'whole' data columns. It has the same index as `ens_data`.
 
     Notes
     -----
+    - `ens_data` is not modified; the statistics are written to a new
+      DataFrame.
     - The function averages only the 'whole' columns, excluding any specified
       in `exclude`.
     - The standard error of the mean (SEM) is computed with a
       degrees-of-freedom adjustment (ddof=1) for an unbiased estimate.
+    - Time and space complexity are O(n_rows * n_wholes) and O(n_rows).
 
     Examples
     --------
-    >>> import pandas as pd # doctest: +SKIP
-    >>> ens_data = pd.DataFrame({ # doctest: +SKIP
-            'bin_center': [1, 2, 3],
-            'whole1': [4, 5, 6],
-            'whole2': [5, 6, 7]
-        })
-    >>> exclude = ['bin_center'] # doctest: +SKIP
-    >>> ens_avg_from_df('density', ens_data, exclude) # doctest: +SKIP
+    >>> ens_data = pd.DataFrame({
+    ...     'bin_center': [1, 2, 3],
+    ...     'whole1': [4.0, 5.0, 6.0],
+    ...     'whole2': [5.0, 6.0, 7.0],
+    ... })
+    >>> ens_avg_from_df('density', ens_data, ['bin_center'])
        bin_center  density-mean  density-var  density-sem
-    0           1           4.5        0.5       0.5
-    1           2           5.5        0.5       0.5
-    2           3           6.5        0.5       0.5
+    0           1           4.5          0.5          0.5
+    1           2           5.5          0.5          0.5
+    2           3           6.5          0.5          0.5
+    >>> list(ens_data.columns)
+    ['bin_center', 'whole1', 'whole2']
     """
     wholes = [col for col in ens_data.columns if col not in exclude]
 
-    ens_data[ens_prop + "-mean"] = ens_data[wholes].mean(axis=1)
-    ens_data[ens_prop + "-var"] = ens_data[wholes].var(axis=1, ddof=1)
-    ens_data[ens_prop + "-sem"] = ens_data[wholes].sem(axis=1, ddof=1)
-
-    ens_data.drop(columns=wholes, inplace=True)
-    return ens_data
+    ens_avg = ens_data.drop(columns=wholes)
+    ens_avg[ens_prop + "-mean"] = ens_data[wholes].mean(axis=1)
+    ens_avg[ens_prop + "-var"] = ens_data[wholes].var(axis=1, ddof=1)
+    ens_avg[ens_prop + "-sem"] = ens_data[wholes].sem(axis=1, ddof=1)
+    return ens_avg
 
 
 def ensemble_avg(
@@ -1488,6 +1539,7 @@ def space_tseries(
     divisor: float = 0.025,
     round_to: int = 3,
     is_save: bool | None = False,
+    crowder_attr: str = "phi_bulk_c",
 ) -> pd.DataFrame:
     """
     Aggregate ensemble-averaged time-series data for a specified physical
@@ -1497,7 +1549,9 @@ def space_tseries(
     Parameters
     ----------
     input_database : str
-        Path to the directory containing time-series data files.
+        Path to the directory containing the ensemble-averaged time-series
+        files, named ``<ensemble_long>-<group>-<prop>-ensAvg.csv``, ending
+        with a path separator.
     prop : str
         Name of the physical property of interest.
     parser : ParserClassT
@@ -1514,42 +1568,59 @@ def space_tseries(
         Dumping attribute/keyword used to extract dumping frequency from an
         instance of the `parser`.
     divisor : float, default 0.025
-        Rounding step for `phi_c_bulk` attribute.
+        Rounding step for the crowder volume fraction named by
+        `crowder_attr`.
     round_to : int, default 3
-        Number of decimal places for rounding `phi_c_bulk` values.
+        Number of decimal places for rounding the crowder volume fraction.
     is_save : bool, default False
-        If True, saves the concatenated DataFrame to a CSV file.
+        If True, saves the concatenated DataFrame to a CSV file named
+        ``<space>-<group>-<prop>-space.csv`` in the ``analysis`` phase's
+        ``space`` directory, which :func:`make_database` creates next to
+        `input_database`.
+    crowder_attr : str, default 'phi_bulk_c'
+        Name of the `parser` attribute that holds the bulk volume fraction
+        of crowders. Its value is added as a column of that name, whether or
+        not it is listed in `physical_attrs`, and rounded into the
+        ``phi_c_bulk_round`` column.
 
     Returns
     -------
     pd.DataFrame
         Concatenated DataFrame of all time-series with added physical
-        attributes.
+        attributes. Besides the columns of each file, it has ``t_index``
+        (the frame index times the dump frequency named by `dump_key`),
+        ``time`` (``t_index`` times the parser's ``dt``), one column per
+        entry in `physical_attrs`, a `crowder_attr` column, and
+        ``phi_c_bulk_round``.
 
     Examples
     --------
     >>> df = space_tseries( # doctest: +SKIP
-                           "path/to/database", 'density', parser=SomeParser,
-                           hierarchy="N*", physical_attrs=['dmon', 'dcyl'],
-                           group='all', geometry='cubic', topology='linear')
+    ...     "path/to/analysis/N200-all-ensAvg/", 'gyrTMon', SumRuleCyl,
+    ...     'N*', ['dcyl', 'dcrowd'], 'all', 'adump',
+    ... )
     >>> df.head() # doctest: +SKIP
 
     Notes
     -----
-    - This function assumes the presence of `phi_c_bulk` attribute in the
-      parser output.
+    - Files are selected by globbing ``input_database + hierarchy +
+      '-<prop>-ensAvg.csv'`` and sorted alphanumerically by name.
     - Requires a parser class with methods to retrieve attribute information
       for each file.
+    - Time and space complexity are O(n_rows), where n_rows is the total
+      number of rows across the files.
     """
     prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs = sort_filenames(
-        glob(input_database + hierarchy + prop_ext), [prop_ext]
+        glob(input_database + hierarchy + prop_ext), ["csv"]
     )
     prop_csvs = []
 
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        prop_info = parser(ens_avg_csv[0], "ensemble_long", group)
+        prop_info = parser(
+            ens_avg_csv[0], "ensemble_long", group, ispath=True
+        )
 
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={"index": "t_index"}, inplace=True)
@@ -1562,8 +1633,9 @@ def space_tseries(
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(prop_info, attr_name)
 
-        # Apply rounding to `phi_c_bulk`
-        ens_avg["phi_c_bulk_round"] = ens_avg["phi_c_bulk"].apply(
+        # Add and round the bulk volume fraction of crowders
+        ens_avg[crowder_attr] = getattr(prop_info, crowder_attr)
+        ens_avg["phi_c_bulk_round"] = ens_avg[crowder_attr].apply(
             lambda x: round_up_nearest(x, divisor, round_to)
         )
 
@@ -1599,6 +1671,7 @@ def space_hists(
     divisor: float = 0.025,
     round_to: int = 3,
     is_save: bool | None = False,
+    crowder_attr: str = "phi_bulk_c",
 ) -> pd.DataFrame:
     """
     Aggregate ensemble-averaged histogram data for a specified physical
@@ -1608,7 +1681,9 @@ def space_hists(
     Parameters
     ----------
     input_database : str
-        Path to the directory containing histogram data files.
+        Path to the directory containing the ensemble-averaged histogram
+        files, named ``<ensemble_long>-<group>-<prop>-ensAvg.csv``, ending
+        with a path separator.
     prop: str
         Name of the physical property of interest.
     parser : ParserClassT
@@ -1627,30 +1702,43 @@ def space_hists(
     normalize : bool, default False
         If True, normalizes the histogram data.
     divisor : float, default 0.025
-        Rounding step for `phi_c_bulk` attribute.
+        Rounding step for the crowder volume fraction named by
+        `crowder_attr`.
     round_to : int, default 3
-        Number of decimal places for rounding `phi_c_bulk` values.
+        Number of decimal places for rounding the crowder volume fraction.
     is_save : bool, default False
-        If True, saves the concatenated DataFrame to a CSV file.
+        If True, saves the concatenated DataFrame to a CSV file named
+        ``<space>-<group>-<prop>-space.csv`` in the ``analysis`` phase's
+        ``space`` directory, which :func:`make_database` creates next to
+        `input_database`.
+    crowder_attr : str, default 'phi_bulk_c'
+        Name of the `parser` attribute that holds the bulk volume fraction
+        of crowders. Its value is added as a column of that name, whether or
+        not it is listed in `physical_attrs`, and rounded into the
+        ``phi_c_bulk_round`` column.
 
     Returns
     -------
     pd.DataFrame
         Concatenated DataFrame of all histograms with added physical
-        attributes.
+        attributes: one column per entry in `physical_attrs`, a
+        `crowder_attr` column, and ``phi_c_bulk_round``.
 
     Examples
     --------
     >>> df = space_hists( # doctest: +SKIP
-                         "path/to/database", 'density', parser=SomeParser,
-                         hierarchy="N*", physical_attrs=['temperature'],
-                         group='all', geometry='cylindrical',
-                         topology='linear')
+    ...     "path/to/analysis/N200-all-ensAvg/", 'rhoMon', SumRuleCyl,
+    ...     'N*', ['dcyl', 'dcrowd'], 'all', normalize=True,
+    ... )
     >>> df.head() # doctest: +SKIP
 
     Notes
     -----
+    - Files are selected by globbing ``input_database + hierarchy +
+      '-<prop>-ensAvg.csv'`` and sorted alphanumerically by name.
     - If `normalize` is True, histogram values will be scaled to sum to 1.
+    - Time and space complexity are O(n_rows), where n_rows is the total
+      number of rows across the files.
     - The `bin_center` should be provided if it is not available in the input
       data. When all the ensemble-averaged DataFrames have the same bin
       center, like 'clustersHistTFoci' or 'bondsHistTFoci' properties, the
@@ -1658,12 +1746,14 @@ def space_hists(
     """
     prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs_ungrouped = glob(input_database + hierarchy + prop_ext)
-    ens_avg_csvs = sort_filenames(ens_avg_csvs_ungrouped, formats=[prop_ext])
+    ens_avg_csvs = sort_filenames(ens_avg_csvs_ungrouped, formats=["csv"])
     prop_csvs = []
 
     for ens_avg_csv in ens_avg_csvs:
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
-        prop_info = parser(ens_avg_csv[0], "ensemble_long", group)
+        prop_info = parser(
+            ens_avg_csv[0], "ensemble_long", group, ispath=True
+        )
 
         # Handle bin_center if provided
         if bin_center is not None:
@@ -1688,8 +1778,9 @@ def space_hists(
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(prop_info, attr_name)
 
-        # Apply rounding to `phi_c_bulk`
-        ens_avg["phi_c_bulk_round"] = ens_avg["phi_c_bulk"].apply(
+        # Add and round the bulk volume fraction of crowders
+        ens_avg[crowder_attr] = getattr(prop_info, crowder_attr)
+        ens_avg["phi_c_bulk_round"] = ens_avg[crowder_attr].apply(
             lambda x: round_up_nearest(x, divisor, round_to)
         )
 
