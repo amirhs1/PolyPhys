@@ -530,8 +530,8 @@ class TestSumRuleCubHeteroRing(ParserBaseTestTemplate):
                                       'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 5.0, 'nmon_large': 5, 'mmon_large': 125.0,
@@ -554,8 +554,8 @@ class TestSumRuleCubHeteroRing(ParserBaseTestTemplate):
                                       'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 5.0, 'nmon_large': 5, 'mmon_large': 125.0,
@@ -576,8 +576,8 @@ class TestSumRuleCubHeteroRing(ParserBaseTestTemplate):
                 'lineage_genealogy': ['ensemble_long', 'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 5.0, 'nmon_large': 5, 'mmon_large': 125.0,
@@ -710,8 +710,8 @@ class TestSumRuleCubHeteroLinear(ParserBaseTestTemplate):
                                       'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 6.0, 'nmon_large': 5, 'mmon_large': 216.0,
@@ -734,8 +734,8 @@ class TestSumRuleCubHeteroLinear(ParserBaseTestTemplate):
                                       'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 6.0, 'nmon_large': 5, 'mmon_large': 216.0,
@@ -756,8 +756,8 @@ class TestSumRuleCubHeteroLinear(ParserBaseTestTemplate):
                 'lineage_genealogy': ['ensemble_long', 'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 6.0, 'nmon_large': 5, 'mmon_large': 216.0,
@@ -890,8 +890,8 @@ class TestTransFociCyl(ParserBaseTestTemplate):
                                       'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'epsilon_small': 5.0, 'epsilon_large': 5.0, 'dcyl': 20.0,
@@ -915,8 +915,8 @@ class TestTransFociCyl(ParserBaseTestTemplate):
                                       'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'epsilon_small': 5.0, 'epsilon_large': 5.0, 'dcyl': 20.0,
@@ -939,8 +939,8 @@ class TestTransFociCyl(ParserBaseTestTemplate):
                 'lineage_genealogy': ['ensemble_long', 'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'epsilon_small': 5.0, 'epsilon_large': 5.0, 'dcyl': 20.0,
@@ -1087,8 +1087,8 @@ class TestTransFociCub(ParserBaseTestTemplate):
                                       'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 5.0, 'nmon_large': 5, 'mmon_large': 125.0,
@@ -1111,8 +1111,8 @@ class TestTransFociCub(ParserBaseTestTemplate):
                                       'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 5.0, 'nmon_large': 5, 'mmon_large': 125.0,
@@ -1133,8 +1133,8 @@ class TestTransFociCub(ParserBaseTestTemplate):
                 'lineage_genealogy': ['ensemble_long', 'ensemble', 'space'],
                 'physical_attributes': [
                     'dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'
                     ],
                 'attributes': {
                     'dmon_large': 5.0, 'nmon_large': 5, 'mmon_large': 125.0,
@@ -1422,6 +1422,35 @@ class TestHnsCub(ParserBaseTestTemplate):
         assert parser.eps_hc == 1.0
         assert parser.ncrowd == 11937
 
+    def test_non_integer_bend_mm_and_eps_hc_are_floats(self):
+        """Fractional kbmm and epshc stay floats in every lineage name."""
+        parser = self.parser_class(
+            'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring',
+            'whole',
+            'nucleoid')
+        assert isinstance(parser.bend_mm, float)
+        assert isinstance(parser.eps_hc, float)
+        assert parser.bend_mm == 2.5
+        assert parser.eps_hc == 1.5
+        assert parser.whole == 'N200kbmm2.5nh8ac1.0l50.0epshc1.5nc0ens1'
+        assert parser.ensemble_long == 'N200kbmm2.5nh8ac1.0l50.0epshc1.5nc0'
+        assert parser.ensemble == 'N200kbmm2.5nh8ac1.0epshc1.5nc0'
+        assert parser.space == 'N200kbmm2.5nh8ac1.0epshc1.5'
+
+    def test_fractional_eps_hc_keeps_lineage_names_distinct(self):
+        """Filenames that differ only in epshc keep distinct lineage names."""
+        parser = self.parser_class(
+            'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring',
+            'whole',
+            'nucleoid')
+        other = self.parser_class(
+            'N200kbmm2.5nh8ac1.0l25.0epshc1.0nc0ens1.ring',
+            'whole',
+            'nucleoid')
+        for lineage in ('whole', 'ensemble_long', 'ensemble', 'space'):
+            assert getattr(parser, lineage) != getattr(other, lineage), \
+                f"{lineage} names collide"
+
 
 class TestHnsCyl(ParserBaseTestTemplate):
     parser_class = HnsCyl
@@ -1603,3 +1632,40 @@ class TestHnsCyl(ParserBaseTestTemplate):
             valid_args['group'])
         assert parser.eps_hc == 1.0
         assert parser.ncrowd == 1152
+
+
+ATTRIBUTE_TABLE_CASES = [
+    pytest.param(test_class.parser_class, lineage, group, artifact,
+                 id=f"{test_class.parser_class.__name__}-{lineage}")
+    for test_class in (
+        TestTwoMonDepCub, TestSumRuleCyl, TestSumRuleCubHeteroRing,
+        TestSumRuleCubHeteroLinear, TestTransFociCyl, TestTransFociCub,
+        TestHnsCub, TestHnsCyl)
+    for lineage, group, artifact, _ in test_class.test_cases
+]
+
+
+def test_attribute_table_cases_cover_all_classes_and_lineages():
+    """The table cases cover all eight parsers and all five lineages."""
+    seen = {(case.values[0].__name__, case.values[1])
+            for case in ATTRIBUTE_TABLE_CASES}
+    classes = {name for name, _ in seen}
+    assert len(classes) == 8
+    for name in classes:
+        assert {lineage for cls, lineage in seen if cls == name} == {
+            'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
+
+
+@pytest.mark.parametrize('parser_class, lineage, group, artifact',
+                         ATTRIBUTE_TABLE_CASES)
+def test_attributes_are_unique_and_set(parser_class, lineage, group,
+                                       artifact):
+    """Each parser lists every attribute once, and each listed one is set."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', UserWarning)
+        parser = parser_class(artifact, lineage, group)
+    attributes = parser.attributes
+    duplicates = sorted({a for a in attributes if attributes.count(a) > 1})
+    assert duplicates == [], f"duplicated attributes: {duplicates}"
+    missing = [a for a in attributes if not hasattr(parser, a)]
+    assert missing == [], f"listed but not set: {missing}"

@@ -253,7 +253,12 @@ same files concurrently; use separate branches or worktrees.
   authorization covers creating the branch, editing code, tests, and docs,
   making coherent commits, pushing the branch, opening or updating a draft pull
   request, and applying the matching labels. Do not ask again for each routine
-  step.
+  step, except for the review before each commit below.
+- Before each commit, leave the change uncommitted, open the changed files in
+  VS Code with `code <path>...` from the repository root, and wait for the
+  maintainer to review them there. The maintainer may edit the files; re-read
+  them and `git diff` before committing, and commit only what the maintainer
+  approved. If `code` is unavailable, list the changed paths instead.
 - Actions only the maintainer may take: marking a pull request ready,
   approving, merging, enabling auto-merge, publishing or deleting a release,
   deleting a tag, and changing branch protection, repository settings, or
