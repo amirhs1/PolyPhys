@@ -1114,15 +1114,15 @@ class SumRuleCubHeteroRing(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1387,15 +1387,15 @@ class SumRuleCubHeteroLinear(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1685,15 +1685,15 @@ class TransFociCyl(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1973,15 +1973,15 @@ class TransFociCub(ParserBase):
 
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                    'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                    'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                  'rho_bulk_m_small', 'phi_bulk_m_large', 'phi_bulk_m_large',
-                  'rho_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'phi_bulk_m_large', 'rho_bulk_m',
-                          'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
+                          'phi_bulk_c', 'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -2159,9 +2159,9 @@ class HnsCub(ParserBase):
         (half-length of the simulation box).
     dt : float, default 0.005
         Simulation timestep. Its associated keyword is 'dt'.
-    bdump : int, default 5000
+    ndump : int, default 5000
         Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        trajectory file. Its associated keyword is 'ndump'.
     adump : int, default 10000
         Frequency by which 'all' configurations are dumped in a 'segment'
         trajectory file. Its associated keyword is 'adump'.
@@ -2277,7 +2277,7 @@ class HnsCub(ParserBase):
         self.dhns: float = 1
         self.dhns_patch: float = 0.178
         self.dt: float = 0.005
-        self.bdump: int = 5000
+        self.ndump: int = 5000
         self.adump: int = 10000
         self.eps_hm: float = 29
         if self.lineage in ['segment', 'whole', 'ensemble_long']:
@@ -2305,9 +2305,10 @@ class HnsCub(ParserBase):
         for attr, keyword in self.genealogy_attributes[self.lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
+                is_float = attr in attrs_float or keyword in attrs_float
                 setattr(self,
                         attr,
-                        float(val) if attr in attrs_float else int(float(val)))
+                        float(val) if is_float else int(float(val)))
                 if keyword == 'l':
                     # Cube full side from its half-side
                     setattr(self, attr, 2 * getattr(self, attr))
@@ -2427,9 +2428,9 @@ class HnsCyl(ParserBase):
         with open ends) or 'D' keyword (size of that confinement).
     dt : float, default 0.005
         Simulation timestep. Its associated keyword is 'dt'.
-    bdump : int, default 5000
+    ndump : int, default 5000
         Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        trajectory file. Its associated keyword is 'ndump'.
     adump : int, default 10000
         Frequency by which 'all' configurations are dumped in a 'segment'
         trajectory file. Its associated keyword is 'adump'.
@@ -2552,7 +2553,7 @@ class HnsCyl(ParserBase):
         self.dhns: float = 1
         self.dhns_patch: float = 0.178
         self.dt: float = 0.005
-        self.bdump: int = 5000
+        self.ndump: int = 5000
         self.adump: int = 10000
         self.eps_hm: float = 29
         if self.lineage in ['segment', 'whole', 'ensemble_long']:
