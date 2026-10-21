@@ -309,6 +309,7 @@ gives a commit message's subject and body.
 | `open-pull-request` | A change is ready for review, or an open pull request's body changes |
 | `open-issue`        | Asked to file or revise an issue                                     |
 | `post-comment`      | Asked to reply to or comment on an issue or pull request             |
+| `write-test`        | Adding or materially changing a test in `polyphys/tests/`            |
 | `draft-release`     | Never on your own; a person invokes it                               |
 
 Load a task's skill before you start it. Changing a skill means checking every
