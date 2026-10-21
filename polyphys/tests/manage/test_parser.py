@@ -1267,7 +1267,7 @@ class TestHnsCub(ParserBaseTestTemplate):
                 'physical_attributes': [
                     'dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                    'bdump', 'adump', 'eps_hm'
+                    'ndump', 'adump', 'eps_hm'
                     ],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'nhns': 12, 'dcrowd': 2.0,
@@ -1288,7 +1288,7 @@ class TestHnsCub(ParserBaseTestTemplate):
                 'physical_attributes': [
                     'dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                    'bdump', 'adump', 'eps_hm'
+                    'ndump', 'adump', 'eps_hm'
                     ],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'nhns': 12, 'dcrowd': 2.0,
@@ -1308,7 +1308,7 @@ class TestHnsCub(ParserBaseTestTemplate):
                 'physical_attributes': [
                     'dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                    'bdump', 'adump', 'eps_hm'
+                    'ndump', 'adump', 'eps_hm'
                     ],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'nhns': 12, 'dcrowd': 2.0,
@@ -1324,7 +1324,7 @@ class TestHnsCub(ParserBaseTestTemplate):
             'N200kbmm2nh12ac2.0epshc1nc11937',
             {
                 'lineage_genealogy': ['ensemble', 'space'],
-                'physical_attributes': ['dmon', 'dhns', 'dt', 'bdump', 'adump',
+                'physical_attributes': ['dmon', 'dhns', 'dt', 'ndump', 'adump',
                                         'eps_hm'],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'nhns': 12, 'dcrowd': 2.0,
@@ -1340,7 +1340,7 @@ class TestHnsCub(ParserBaseTestTemplate):
             'N200kbmm2nh12ac2.0epshc1',
             {
                 'lineage_genealogy': ['space'],
-                'physical_attributes': ['dmon', 'dhns', 'dt', 'bdump', 'adump',
+                'physical_attributes': ['dmon', 'dhns', 'dt', 'ndump', 'adump',
                                         'eps_hm'],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'nhns': 12, 'dcrowd': 2.0,
@@ -1423,11 +1423,7 @@ class TestHnsCub(ParserBaseTestTemplate):
         assert parser.ncrowd == 11937
 
     def test_non_integer_bend_mm_and_eps_hc_are_floats(self):
-        """
-        Regression test for issue #41: non-integer ``kbmm`` and ``epshc``
-        values parse as floats and survive into every parent lineage name,
-        so filenames that differ only in ``epshc`` give distinct names.
-        """
+        """Non-integer kbmm and epshc parse as floats and stay in names."""
         parser = self.parser_class(
             'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring',
             'whole',
@@ -1466,7 +1462,7 @@ class TestHnsCyl(ParserBaseTestTemplate):
                 'physical_attributes': [
                     'dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                    'bdump', 'adump', 'eps_hm'
+                    'ndump', 'adump', 'eps_hm'
                     ],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'dcyl': 8, 'nhns': 4,
@@ -1487,7 +1483,7 @@ class TestHnsCyl(ParserBaseTestTemplate):
                 'physical_attributes': [
                     'dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                    'bdump', 'adump', 'eps_hm'
+                    'ndump', 'adump', 'eps_hm'
                     ],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'dcyl': 8, 'nhns': 4,
@@ -1507,7 +1503,7 @@ class TestHnsCyl(ParserBaseTestTemplate):
                 'physical_attributes': [
                     'dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                    'bdump', 'adump', 'eps_hm'
+                    'ndump', 'adump', 'eps_hm'
                     ],
                 'attributes': {
                     'nmon': 200, 'bend_mm': 2.0, 'dcyl': 8, 'nhns': 4,
@@ -1523,7 +1519,7 @@ class TestHnsCyl(ParserBaseTestTemplate):
             'N200D8nh4ac1epshc1.0nc1152',
             {
                 'lineage_genealogy': ['ensemble', 'space'],
-                'physical_attributes': ['dmon', 'dhns', 'dt', 'bdump', 'adump',
+                'physical_attributes': ['dmon', 'dhns', 'dt', 'ndump', 'adump',
                                         'eps_hm'],
                 'attributes': {
                     'nmon': 200, 'dcyl': 8, 'nhns': 4, 'dcrowd': 1.0,
@@ -1539,7 +1535,7 @@ class TestHnsCyl(ParserBaseTestTemplate):
             'N200D8nh4ac1epshc1.0',
             {
                 'lineage_genealogy': ['space'],
-                'physical_attributes': ['dmon', 'dhns', 'dt', 'bdump', 'adump',
+                'physical_attributes': ['dmon', 'dhns', 'dt', 'ndump', 'adump',
                                         'eps_hm'],
                 'attributes': {
                     'nmon': 200, 'dcyl': 8, 'nhns': 4, 'dcrowd': 1.0,
@@ -1644,10 +1640,7 @@ ATTRIBUTE_TABLE_CASES = [
 
 
 def test_attribute_table_cases_cover_all_classes_and_lineages():
-    """
-    Guard for issue #42: the attribute-table cases span all eight parser
-    classes and all five lineages, so the table test cannot silently shrink.
-    """
+    """Attribute-table cases span all eight parsers and five lineages."""
     seen = {(case.values[0].__name__, case.values[1])
             for case in ATTRIBUTE_TABLE_CASES}
     classes = {name for name, _ in seen}
@@ -1661,10 +1654,7 @@ def test_attribute_table_cases_cover_all_classes_and_lineages():
                          ATTRIBUTE_TABLE_CASES)
 def test_attributes_are_unique_and_set(parser_class, lineage, group,
                                        artifact):
-    """
-    Regression test for issue #42: ``attributes`` names each attribute once,
-    and every listed name exists on the instance.
-    """
+    """Each listed attribute appears once and is set on the parser."""
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)
         parser = parser_class(artifact, lineage, group)

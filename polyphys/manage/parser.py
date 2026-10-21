@@ -554,7 +554,7 @@ class TwoMonDepCub(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -784,7 +784,7 @@ class SumRuleCyl(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1026,7 +1026,7 @@ class SumRuleCubHeteroRing(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1299,7 +1299,7 @@ class SumRuleCubHeteroLinear(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1583,7 +1583,7 @@ class TransFociCyl(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1881,7 +1881,7 @@ class TransFociCub(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -2159,9 +2159,9 @@ class HnsCub(ParserBase):
         (half-length of the simulation box).
     dt : float, default 0.005
         Simulation timestep. Its associated keyword is 'dt'.
-    bdump : int, default 5000
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+    ndump : int, default 5000
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        trajectory file. Its associated keyword is 'ndump'.
     adump : int, default 10000
         Frequency by which 'all' configurations are dumped in a 'segment'
         trajectory file. Its associated keyword is 'adump'.
@@ -2240,15 +2240,15 @@ class HnsCub(ParserBase):
     _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                    'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
+                    'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
         'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'bdump',
+                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'ndump',
                   'adump', 'eps_hm'],
         'ensemble_long': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                           'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                          'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
-        'ensemble': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm'],
-        'space': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm']
+                          'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
     }
 
     def __init__(
@@ -2277,7 +2277,7 @@ class HnsCub(ParserBase):
         self.dhns: float = 1
         self.dhns_patch: float = 0.178
         self.dt: float = 0.005
-        self.bdump: int = 5000
+        self.ndump: int = 5000
         self.adump: int = 10000
         self.eps_hm: float = 29
         if self.lineage in ['segment', 'whole', 'ensemble_long']:
@@ -2301,13 +2301,14 @@ class HnsCub(ParserBase):
         """
         name_strs = re.compile(r"([a-zA-Z\-]+)")
         words = name_strs.split(self.name)
-        attrs_float = ['bend_mm', 'lcube', 'dcrowd', 'eps_hc']
+        attrs_float = ['kbmm', 'lcube', 'dcrowd', 'epshc']
         for attr, keyword in self.genealogy_attributes[self.lineage].items():
             try:
                 val = words[words.index(keyword) + 1]
+                is_float = attr in attrs_float or keyword in attrs_float
                 setattr(self,
                         attr,
-                        float(val) if attr in attrs_float else int(float(val)))
+                        float(val) if is_float else int(float(val)))
                 if keyword == 'l':
                     # Cube full side from its half-side
                     setattr(self, attr, 2 * getattr(self, attr))
@@ -2427,9 +2428,9 @@ class HnsCyl(ParserBase):
         with open ends) or 'D' keyword (size of that confinement).
     dt : float, default 0.005
         Simulation timestep. Its associated keyword is 'dt'.
-    bdump : int, default 5000
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+    ndump : int, default 5000
+        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        trajectory file. Its associated keyword is 'ndump'.
     adump : int, default 10000
         Frequency by which 'all' configurations are dumped in a 'segment'
         trajectory file. Its associated keyword is 'adump'.
@@ -2515,15 +2516,15 @@ class HnsCyl(ParserBase):
     _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                    'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
+                    'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
         'whole': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'bdump',
+                  'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt', 'ndump',
                   'adump', 'eps_hm'],
         'ensemble_long': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                           'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
-                          'rho_bulk_hns', 'dt', 'bdump', 'adump', 'eps_hm'],
-        'ensemble': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm'],
-        'space': ['dmon', 'dhns', 'dt', 'bdump', 'adump', 'eps_hm']
+                          'rho_bulk_hns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm'],
+        'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
     }
 
     def __init__(
@@ -2552,7 +2553,7 @@ class HnsCyl(ParserBase):
         self.dhns: float = 1
         self.dhns_patch: float = 0.178
         self.dt: float = 0.005
-        self.bdump: int = 5000
+        self.ndump: int = 5000
         self.adump: int = 10000
         self.eps_hm: float = 29
         if self.lineage in ['segment', 'whole', 'ensemble_long']:

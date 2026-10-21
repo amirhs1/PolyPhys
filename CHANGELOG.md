@@ -38,10 +38,11 @@ Targeting `0.4.0`.
   points could be averaged together. Integer-valued inputs now give names such
   as `kbmm2.0` and `epshc1.0`, matching `HnsCyl`
   ([#41](https://github.com/amirhs1/PolyPhys/issues/41)).
-- Corrected the `attributes` tables of six parser classes. The four hetero
-  classes listed `phi_bulk_m_large` and `rho_bulk_m` twice and omitted
-  `rho_bulk_m_large`; `HnsCub` and `HnsCyl` listed `ndump`, which is never set,
-  instead of `bdump` ([#42](https://github.com/amirhs1/PolyPhys/issues/42)).
+- Corrected the `attributes` tables of the four hetero parser classes, which
+  listed `phi_bulk_m_large` and `rho_bulk_m` twice and omitted
+  `rho_bulk_m_large`. `HnsCub` and `HnsCyl` now set the `ndump` attribute
+  their tables list, in place of `bdump`
+  ([#42](https://github.com/amirhs1/PolyPhys/issues/42)).
 
 ### Added
 
