@@ -1423,7 +1423,7 @@ class TestHnsCub(ParserBaseTestTemplate):
         assert parser.ncrowd == 11937
 
     def test_non_integer_bend_mm_and_eps_hc_are_floats(self):
-        """Fractional kbmm and epshc no longer merge distinct lineage names."""
+        """Fractional kbmm and epshc stay floats in every lineage name."""
         parser = self.parser_class(
             'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring',
             'whole',
@@ -1437,6 +1437,12 @@ class TestHnsCub(ParserBaseTestTemplate):
         assert parser.ensemble == 'N200kbmm2.5nh8ac1.0epshc1.5nc0'
         assert parser.space == 'N200kbmm2.5nh8ac1.0epshc1.5'
 
+    def test_fractional_eps_hc_keeps_lineage_names_distinct(self):
+        """Filenames that differ only in epshc keep distinct lineage names."""
+        parser = self.parser_class(
+            'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring',
+            'whole',
+            'nucleoid')
         other = self.parser_class(
             'N200kbmm2.5nh8ac1.0l25.0epshc1.0nc0ens1.ring',
             'whole',

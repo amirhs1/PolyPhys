@@ -554,7 +554,7 @@ class TwoMonDepCub(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -784,7 +784,7 @@ class SumRuleCyl(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1026,7 +1026,7 @@ class SumRuleCubHeteroRing(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1299,7 +1299,7 @@ class SumRuleCubHeteroLinear(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1583,7 +1583,7 @@ class TransFociCyl(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -1881,7 +1881,7 @@ class TransFociCub(ParserBase):
     dt : float
         Simulation timestep. Its associated keyword is 'dt'.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'bdump'.
     adump : int
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -2160,7 +2160,7 @@ class HnsCub(ParserBase):
     dt : float, default 0.005
         Simulation timestep. Its associated keyword is 'dt'.
     ndump : int, default 5000
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'ndump'.
     adump : int, default 10000
         Frequency by which 'all' configurations are dumped in a 'segment'
@@ -2429,7 +2429,7 @@ class HnsCyl(ParserBase):
     dt : float, default 0.005
         Simulation timestep. Its associated keyword is 'dt'.
     ndump : int, default 5000
-        Frequency by which 'bug' configurations are dumped in a 'nucleoid'
+        Frequency by which 'bug' configurations are dumped in a 'bug'
         trajectory file. Its associated keyword is 'ndump'.
     adump : int, default 10000
         Frequency by which 'all' configurations are dumped in a 'segment'
