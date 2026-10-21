@@ -1423,7 +1423,7 @@ class TestHnsCub(ParserBaseTestTemplate):
         assert parser.ncrowd == 11937
 
     def test_non_integer_bend_mm_and_eps_hc_are_floats(self):
-        """Non-integer kbmm and epshc parse as floats and stay in names."""
+        """Fractional kbmm and epshc no longer merge distinct lineage names."""
         parser = self.parser_class(
             'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring',
             'whole',
@@ -1640,7 +1640,7 @@ ATTRIBUTE_TABLE_CASES = [
 
 
 def test_attribute_table_cases_cover_all_classes_and_lineages():
-    """Attribute-table cases span all eight parsers and five lineages."""
+    """The table cases cover all eight parsers and all five lineages."""
     seen = {(case.values[0].__name__, case.values[1])
             for case in ATTRIBUTE_TABLE_CASES}
     classes = {name for name, _ in seen}
@@ -1654,7 +1654,7 @@ def test_attribute_table_cases_cover_all_classes_and_lineages():
                          ATTRIBUTE_TABLE_CASES)
 def test_attributes_are_unique_and_set(parser_class, lineage, group,
                                        artifact):
-    """Each listed attribute appears once and is set on the parser."""
+    """Each parser lists every attribute once, and each listed one is set."""
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)
         parser = parser_class(artifact, lineage, group)
