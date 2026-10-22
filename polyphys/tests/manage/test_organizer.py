@@ -1,16 +1,16 @@
-"""Tests for the space builders and ensemble reducers in
-:mod:`polyphys.manage.organizer`.
+"""Tests for the whole-level builders, ensemble reducers, and space
+builders in :mod:`polyphys.manage.organizer`.
+
+The whole-level tests write their input under a directory whose name
+contains a hyphen, as every lineage directory name does. Expected whole
+names come from the ``SumRuleCyl`` parser applied to the bare filename, so
+each test checks that the builder's result does not depend on the directory
+the file sits in.
 
 The space tests build a small ``analysis`` phase on disk with ``tmp_path``.
 Expected attribute values come from the ``SumRuleCyl`` parser applied to the
 same filenames, and the expected ``t_index`` and ``time`` values come from the
 ``adump`` and ``dt`` fields encoded in those filenames.
-"""Tests for the whole-level builders in :mod:`polyphys.manage.organizer`.
-
-Each test writes its input under a directory whose name contains a hyphen,
-as every lineage directory name does. Expected whole names come from the
-``SumRuleCyl`` parser applied to the bare filename, so each test checks that
-the builder's result does not depend on the directory the file sits in.
 """
 from pathlib import Path
 
@@ -25,6 +25,9 @@ from polyphys.manage.organizer import (
     ensemble_avg,
     space_hists,
     space_tseries,
+    whole_from_dist_mat_t,
+    whole_from_file,
+    whole_from_segments,
 )
 from polyphys.manage.parser import SumRuleCyl
 
@@ -103,7 +106,7 @@ def _assert_crowder_columns(space: pd.DataFrame, attr: str) -> None:
 
 
 def test_space_tseries_concatenates_ensembles(tmp_path: Path) -> None:
-    """space_tseries finds every '-<prop>-ensAvg.csv' file (issue #44)."""
+    """space_tseries reads every '-<prop>-ensAvg.csv' file and no other."""
     ens_avg_dir = _write_tseries_space(tmp_path, "gyrTMon")
     space = space_tseries(
         str(ens_avg_dir) + "/", "gyrTMon", SumRuleCyl, "N*", ["dcyl"],
@@ -173,7 +176,7 @@ def test_space_tseries_saves_space_csv(tmp_path: Path) -> None:
 
 
 def test_space_hists_concatenates_ensembles(tmp_path: Path) -> None:
-    """space_hists finds every '-<prop>-ensAvg.csv' file (issue #44)."""
+    """space_hists reads every '-<prop>-ensAvg.csv' file and no other."""
     ens_avg_dir = _write_hist_space(tmp_path, "rhoMon")
     bin_center = np.array([0.5, 1.5, 2.5])
     space = space_hists(
@@ -228,7 +231,7 @@ def test_ens_from_bin_edge_returns_shared_edges() -> None:
     ids=["different-values", "different-lengths"],
 )
 def test_ens_from_bin_edge_raises_on_mismatch(other: np.ndarray) -> None:
-    """Differing whole edges raise ValueError, not merge (issue #45)."""
+    """Differing whole edges raise ValueError instead of being merged."""
     with pytest.raises(ValueError, match="Bin edges are not identical"):
         ens_from_bin_edge(
             ("ens1", {"w1": np.array([0.0, 1.0, 2.0]), "w2": other})
@@ -261,7 +264,7 @@ def test_ensemble_avg_bin_edge_keeps_edges() -> None:
 
 
 def test_ens_avg_from_df_leaves_input_unchanged() -> None:
-    """ens_avg_from_df returns a new frame and keeps the wholes (issue #45)."""
+    """ens_avg_from_df returns a new frame and leaves its input unchanged."""
     ens_data = pd.DataFrame({
         "bin_center": [1.0, 2.0],
         "w1": [4.0, 5.0],
@@ -287,14 +290,9 @@ def test_ens_avg_from_df_statistics() -> None:
     np.testing.assert_allclose(out["density-sem"], np.abs(a - b) / 2)
     np.testing.assert_array_equal(out["bin_center"], [1.0, 2.0])
 
-from polyphys.manage.organizer import (
-    whole_from_dist_mat_t,
-    whole_from_file,
-    whole_from_segments,
-)
-from polyphys.manage.parser import SumRuleCyl
 
-GROUP = "bug"
+# Whole-level builders. These use their own particle group.
+WHOLE_GROUP = "bug"
 WHOLE = (
     "N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000adump"
     "10000ens2"
@@ -310,7 +308,7 @@ def _hyphenated_dir(tmp_path: Path) -> Path:
 
 def _expected_whole(filename: str, lineage: str) -> str:
     """Return the whole name the parser gives for a bare filename."""
-    return getattr(SumRuleCyl(filename, lineage, GROUP), "whole")
+    return getattr(SumRuleCyl(filename, lineage, WHOLE_GROUP), "whole")
 
 
 def test_whole_from_segments_ignores_hyphenated_directory(tmp_path):
@@ -318,12 +316,12 @@ def test_whole_from_segments_ignores_hyphenated_directory(tmp_path):
     directory = _hyphenated_dir(tmp_path)
     paths = []
     for seg_id in (1, 2):
-        path = directory / f"{WHOLE}.j0{seg_id}.{GROUP}.gyrTMon.npy"
+        path = directory / f"{WHOLE}.j0{seg_id}.{WHOLE_GROUP}.gyrTMon.npy"
         np.save(path, np.full(2, float(seg_id)))
         paths.append(str(path))
 
     wholes = whole_from_segments(
-        "gyrTMon", paths, SumRuleCyl, GROUP, "tseries"
+        "gyrTMon", paths, SumRuleCyl, WHOLE_GROUP, "tseries"
     )
 
     expected = _expected_whole(Path(paths[0]).stem, "segment")
@@ -333,10 +331,10 @@ def test_whole_from_segments_ignores_hyphenated_directory(tmp_path):
 
 def test_whole_from_file_ignores_hyphenated_directory(tmp_path):
     """A whole under a hyphenated directory loads under its parsed name."""
-    path = _hyphenated_dir(tmp_path) / f"{WHOLE}.{GROUP}.gyrTMon.npy"
+    path = _hyphenated_dir(tmp_path) / f"{WHOLE}.{WHOLE_GROUP}.gyrTMon.npy"
     np.save(path, np.arange(3.0))
 
-    wholes = whole_from_file([str(path)], SumRuleCyl, GROUP)
+    wholes = whole_from_file([str(path)], SumRuleCyl, WHOLE_GROUP)
 
     expected = _expected_whole(path.stem, "whole")
     assert list(wholes) == [expected]
@@ -345,7 +343,8 @@ def test_whole_from_file_ignores_hyphenated_directory(tmp_path):
 
 def test_whole_from_dist_mat_t_ignores_hyphenated_directory(tmp_path):
     """A distance matrix under a hyphenated directory keys its parsed name."""
-    path = _hyphenated_dir(tmp_path) / f"{WHOLE}.{GROUP}.distMatTFoci.npy"
+    filename = f"{WHOLE}.{WHOLE_GROUP}.distMatTFoci.npy"
+    path = _hyphenated_dir(tmp_path) / filename
     np.save(path, np.zeros((2, 2)))
     frame = pd.DataFrame({"x": [0.0]})
 
@@ -353,7 +352,7 @@ def test_whole_from_dist_mat_t_ignores_hyphenated_directory(tmp_path):
         return frame, frame, frame
 
     freqs, rdfs, tseries = whole_from_dist_mat_t(
-        [(str(path),)], SumRuleCyl, GROUP, func
+        [(str(path),)], SumRuleCyl, WHOLE_GROUP, func
     )
 
     expected = _expected_whole(path.stem, "whole")
