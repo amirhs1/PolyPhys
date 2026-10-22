@@ -253,7 +253,12 @@ same files concurrently; use separate branches or worktrees.
   authorization covers creating the branch, editing code, tests, and docs,
   making coherent commits, pushing the branch, opening or updating a draft pull
   request, and applying the matching labels. Do not ask again for each routine
-  step.
+  step, except for the review before each commit below.
+- Before each commit, leave the change uncommitted, open the changed files in
+  VS Code with `code <path>...` from the repository root, and wait for the
+  maintainer to review them there. The maintainer may edit the files; re-read
+  them and `git diff` before committing, and commit only what the maintainer
+  approved. If `code` is unavailable, list the changed paths instead.
 - Actions only the maintainer may take: marking a pull request ready,
   approving, merging, enabling auto-merge, publishing or deleting a release,
   deleting a tag, and changing branch protection, repository settings, or
@@ -309,6 +314,7 @@ gives a commit message's subject and body.
 | `open-pull-request` | A change is ready for review, or an open pull request's body changes |
 | `open-issue`        | Asked to file or revise an issue                                     |
 | `post-comment`      | Asked to reply to or comment on an issue or pull request             |
+| `write-test`        | Adding or materially changing a test in `polyphys/tests/`            |
 | `draft-release`     | Never on your own; a person invokes it                               |
 
 Load a task's skill before you start it. Changing a skill means checking every
