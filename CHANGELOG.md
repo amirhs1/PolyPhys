@@ -47,6 +47,11 @@ Targeting `0.4.0`.
   `rho_bulk_m_large`. `HnsCub` and `HnsCyl` now set the `ndump` attribute
   their tables list, in place of `bdump`
   ([#42](https://github.com/amirhs1/PolyPhys/issues/42)).
+- `whole_from_segments`, `whole_from_file`, and `whole_from_dist_mat_t` in
+  `polyphys.manage.organizer` pass `ispath=True` to the parser. Without it the
+  parser took the full path as the name and split it at its first hyphen, so
+  any file under a hyphenated directory, as every lineage directory is, raised
+  `AttributeError` ([#66](https://github.com/amirhs1/PolyPhys/issues/66)).
 
 ### Added
 

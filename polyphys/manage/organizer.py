@@ -470,7 +470,7 @@ def whole_from_segments(
     # Combine segments into wholes based on segment names and relation type
     grouped_segments: dict[str, list[np.ndarray]] = {}
     for seg_path in _normalize_paths(segments):
-        seg_info = parser(seg_path, "segment", group)
+        seg_info = parser(seg_path, "segment", group, ispath=True)
         whole_name = getattr(seg_info, "whole")
         grouped_segments.setdefault(whole_name, []).append(np.load(seg_path))
 
@@ -542,7 +542,7 @@ def whole_from_file(
     """
     wholes: dict[str, np.ndarray] = {}
     for whole_path in _normalize_paths(whole_paths):
-        whole_info = parser(whole_path, "whole", group)
+        whole_info = parser(whole_path, "whole", group, ispath=True)
         wholes[getattr(whole_info, "whole")] = np.load(whole_path)
 
     return wholes
@@ -618,7 +618,7 @@ def whole_from_dist_mat_t(
     wholes_rdfs: dict[str, pd.DataFrame] = {}
     wholes_tseries: dict[str, pd.DataFrame] = {}
     for whole_path in whole_paths:
-        whole_info = parser(whole_path[0], "whole", group)
+        whole_info = parser(whole_path[0], "whole", group, ispath=True)
         whole_freqs, whole_rdfs, whole_tseries = \
             func(whole_path[0], whole_info)
         whole_name = getattr(whole_info, "whole")
