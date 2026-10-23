@@ -67,6 +67,14 @@ Targeting `0.4.0`.
   parser took the full path as the name and split it at its first hyphen, so
   any file under a hyphenated directory, as every lineage directory is, raised
   `AttributeError` ([#66](https://github.com/amirhs1/PolyPhys/issues/66)).
+- `ensemble` in `polyphys.manage.organizer` again adds a `bin_center` column,
+  the midpoints of the shared bin edges, to each histogram ensemble when
+  `whole_edges` is given. It computed the centres and then discarded them, so
+  `whole_edges` had no effect and ensemble-averaged histograms had no x-axis.
+  The centres come from the first whole of each ensemble, whose wholes share
+  their edges by design. Passing `whole_edges` with a `whole_type` other than
+  `"vector"` now raises `ValueError`
+  ([#70](https://github.com/amirhs1/PolyPhys/issues/70)).
 
 ### Added
 
