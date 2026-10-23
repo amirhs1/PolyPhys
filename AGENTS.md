@@ -254,11 +254,11 @@ same files concurrently; use separate branches or worktrees.
   making coherent commits, pushing the branch, opening or updating a draft pull
   request, and applying the matching labels. Do not ask again for each routine
   step, except for the review before each commit below.
-- Before each commit, leave the change uncommitted, open the changed files in
-  VS Code with `code <path>...` from the repository root, and wait for the
-  maintainer to review them there. The maintainer may edit the files; re-read
-  them and `git diff` before committing, and commit only what the maintainer
-  approved. If `code` is unavailable, list the changed paths instead.
+- Before each commit, make the changes in the working tree, leave them
+  unstaged and uncommitted, list the changed paths and the checkout they are
+  in, and wait for the maintainer to review them. The maintainer may edit the
+  files; re-read them and `git diff` before staging, and stage and commit only
+  what the maintainer approved.
 - Actions only the maintainer may take: marking a pull request ready,
   approving, merging, enabling auto-merge, publishing or deleting a release,
   deleting a tag, and changing branch protection, repository settings, or
