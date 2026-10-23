@@ -258,7 +258,9 @@ same files concurrently; use separate branches or worktrees.
   unstaged and uncommitted, list the changed paths and the checkout they are
   in, and wait for the maintainer to review them. The maintainer may edit the
   files; re-read them and `git diff` before staging, and stage and commit only
-  what the maintainer approved.
+  what the maintainer approved. That approval also covers pushing the branch
+  and opening or updating the draft pull request: do the commit, the push, and
+  the pull request together, without asking again.
 - Actions only the maintainer may take: marking a pull request ready,
   approving, merging, enabling auto-merge, publishing or deleting a release,
   deleting a tag, and changing branch protection, repository settings, or
