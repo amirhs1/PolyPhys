@@ -22,6 +22,7 @@ from polyphys.manage.organizer import (
     ens_avg_from_bin_edge,
     ens_avg_from_df,
     ens_from_bin_edge,
+    ensemble,
     ensemble_avg,
     space_hists,
     space_tseries,
@@ -289,6 +290,86 @@ def test_ens_avg_from_df_statistics() -> None:
     np.testing.assert_allclose(out["density-var"], (a - b) ** 2 / 2)
     np.testing.assert_allclose(out["density-sem"], np.abs(a - b) / 2)
     np.testing.assert_array_equal(out["bin_center"], [1.0, 2.0])
+
+
+@pytest.fixture
+def hist_wholes() -> dict[str, np.ndarray]:
+    """Return two replicate histogram wholes of one state point."""
+    base = (
+        "N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000adump"
+        "10000ens"
+    )
+    return {
+        f"{base}1": np.array([1.0, 2.0, 3.0]),
+        f"{base}2": np.array([3.0, 4.0, 5.0]),
+    }
+
+
+@pytest.fixture
+def hist_edges(hist_wholes: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    """Return the same non-uniform bin edges for every whole in hist_wholes.
+
+    The edges are non-uniform so a wrong centre formula cannot pass by
+    accident.
+    """
+    return {name: np.array([0.0, 1.0, 3.0, 6.0]) for name in hist_wholes}
+
+
+def test_ensemble_vector_bin_center_is_edge_midpoints(
+    hist_wholes: dict[str, np.ndarray],
+    hist_edges: dict[str, np.ndarray],
+) -> None:
+    """With whole_edges, a vector ensemble's bin_center is the midpoints."""
+    ens = ensemble(
+        "rhoMon", hist_wholes, SumRuleCyl, "bug", "vector",
+        whole_edges=hist_edges,
+    )
+    (ens_df,) = ens.values()
+    # Analytic midpoints of the edges [0, 1, 3, 6]
+    np.testing.assert_allclose(ens_df["bin_center"], [0.5, 2.0, 4.5])
+    for name, values in hist_wholes.items():
+        np.testing.assert_array_equal(ens_df[name], values)
+
+
+def test_ensemble_without_whole_edges_has_no_bin_center(
+    hist_wholes: dict[str, np.ndarray],
+) -> None:
+    """Without whole_edges, a vector ensemble has one column per whole only."""
+    ens = ensemble("rhoMon", hist_wholes, SumRuleCyl, "bug", "vector")
+    (ens_df,) = ens.values()
+    assert list(ens_df.columns) == list(hist_wholes)
+
+
+def test_ensemble_avg_keeps_bin_center_from_ensemble(
+    hist_wholes: dict[str, np.ndarray],
+    hist_edges: dict[str, np.ndarray],
+) -> None:
+    """ensemble_avg passes an ensemble's bin_center through unchanged."""
+    ens = ensemble(
+        "rhoMon", hist_wholes, SumRuleCyl, "bug", "vector",
+        whole_edges=hist_edges,
+    )
+    (ens_df,) = ens.values()
+    avg = ensemble_avg("rhoMon", ens, "bug", "dataframe")
+    (avg_df,) = avg.values()
+    np.testing.assert_array_equal(avg_df["bin_center"], ens_df["bin_center"])
+    assert list(avg_df.columns) == [
+        "bin_center", "rhoMon-mean", "rhoMon-var", "rhoMon-sem"
+    ]
+
+
+@pytest.mark.parametrize("whole_type", ["matrix", "dataframe", "bin_edge"])
+def test_ensemble_rejects_whole_edges_for_non_vector(
+    whole_type: str,
+    hist_wholes: dict[str, np.ndarray],
+    hist_edges: dict[str, np.ndarray],
+) -> None:
+    """whole_edges with any whole_type other than 'vector' raises."""
+    with pytest.raises(ValueError, match="'whole_edges' is only valid"):
+        ensemble(
+            "rhoMon", hist_wholes, SumRuleCyl, "bug", whole_type,
+            whole_edges=hist_edges,
+        )
 
 
 # Whole-level builders. These use their own particle group.

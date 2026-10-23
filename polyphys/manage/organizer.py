@@ -889,9 +889,13 @@ def ensemble(
           are identical and selects one to represent the ensemble.
 
     whole_edges : dict[str, np.ndarray], optional
-        Dictionary with 'whole' names as keys and bin edge arrays as values,
-        useful when `whole_type` is 'vector' and bin edges are shared across
-        wholes in the ensemble.
+        Dictionary with 'whole' names as keys and 1D bin edge arrays, each of
+        shape ``(n_bins + 1,)``, as values. Only valid when `whole_type` is
+        'vector'. The wholes of an ensemble share their bin edges by design,
+        so the edges of the first whole of each ensemble are used and the
+        others are not compared. Each merged ensemble gets a 'bin_center'
+        column of length ``n_bins`` holding the midpoints of those edges.
+        Must contain every key of `wholes`.
     save_to : str, optional
         Directory path where output files are saved, if specified.
 
@@ -904,7 +908,9 @@ def ensemble(
     Raises
     ------
     ValueError
-        If any parameter has an invalid value.
+        If any parameter has an invalid value; if `whole_edges` is given and
+        `whole_type` is not 'vector'; or if the number of bins differs from
+        the number of rows of the merged ensemble.
 
     Notes
     -----
@@ -914,22 +920,43 @@ def ensemble(
     'bin_center'). For 'vector' and 'matrix' types, columns represent
     individual wholes in the ensemble DataFrame.
 
+    The bin centre of bin ``i`` is the midpoint of its two edges,
+    ``0.5 * (edges[i] + edges[i + 1])``. A centre is invariant under
+    averaging over wholes, which is why :func:`ensemble_avg` excludes
+    'bin_center' from its statistics by default.
+
+    With `whole_edges`, computing the centres costs O(n_ensembles * n_edges)
+    time and extra space, on top of the merge itself.
+
     Examples
     --------
-    >>> wholes = { # doctest: +SKIP
-            'whole1': np.array([1, 2, 3]),
-            'whole2': np.array([2, 3, 4])
-        }
-    >>> ensembles = ensemble( # doctest: +SKIP
-            'density',
-            wholes,
-            HnsCyl,
-            'bug',
-            whole_type='vector',
-            save_to="/output/path"
-        )
+    Two replicates of one state point, with shared edges, merge into one
+    ensemble that carries the edge midpoints as 'bin_center':
+
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> base = ('N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000'
+    ...         'adump10000ens')
+    >>> wholes = {base + '1': np.array([1., 2., 3.]),
+    ...           base + '2': np.array([3., 4., 5.])}
+    >>> edges = {name: np.array([0., 1., 2., 4.]) for name in wholes}
+    >>> ens = ensemble('rhoMon', wholes, SumRuleCyl, 'bug', 'vector',
+    ...                whole_edges=edges)
+    >>> ens_df = next(iter(ens.values()))
+    >>> ens_df['bin_center'].tolist()
+    [0.5, 1.5, 3.0]
+
+    Without `whole_edges`, the ensemble has one column per whole only:
+
+    >>> ens = ensemble('rhoMon', wholes, SumRuleCyl, 'bug', 'vector')
+    >>> 'bin_center' in next(iter(ens.values())).columns
+    False
     """
     invalid_keyword(whole_type, ["vector", "matrix", "dataframe", "bin_edge"])
+    if whole_edges is not None and whole_type != "vector":
+        raise ValueError(
+            "'whole_edges' is only valid with whole_type 'vector', not "
+            f"'{whole_type}'."
+        )
 
     merging_func: dict[str, Callable] = {
         "vector": ens_from_vec,
@@ -937,31 +964,24 @@ def ensemble(
         "dataframe": ens_from_df,
         "bin_edge": ens_from_bin_edge,
     }
-    # Collecting wholes for each ensemble
+    # Collecting wholes for each ensemble; the wholes of an ensemble share
+    # their bin edges by design, so the centres come from its first whole
     ens_wholes: dict[str, dict[str, np.ndarray | pd.DataFrame]] = {}
     bin_centers: dict[str, np.ndarray] = {}
-    if whole_edges is not None:
-        for whole_name, whole_data in wholes.items():
-            whole_info = parser(whole_name, "whole", group)
-            ens_name = getattr(whole_info, "ensemble_long")
-            if ens_name not in ens_wholes:
-                ens_wholes[ens_name] = {}
-            ens_wholes[ens_name][whole_name] = whole_data
-            bin_centers[ens_name] = 0.5 * (
-                whole_edges[whole_name][:-1] + whole_edges[whole_name][1:]
-            )
-    else:
-        for whole_name, whole_data in wholes.items():
-            whole_info = parser(whole_name, "whole", group)
-            ens_name = getattr(whole_info, "ensemble_long")
-            if ens_name not in ens_wholes:
-                ens_wholes[ens_name] = {}
-            ens_wholes[ens_name][whole_name] = whole_data
+    for whole_name, whole_data in wholes.items():
+        whole_info = parser(whole_name, "whole", group)
+        ens_name = getattr(whole_info, "ensemble_long")
+        ens_wholes.setdefault(ens_name, {})[whole_name] = whole_data
+        if whole_edges is not None and ens_name not in bin_centers:
+            edges = np.asarray(whole_edges[whole_name])
+            bin_centers[ens_name] = 0.5 * (edges[:-1] + edges[1:])
 
     # Merging wholes into a single ensemble data object
     ensembles: dict[str, np.ndarray | pd.DataFrame] = dict(
         map(merging_func[whole_type], ens_wholes.items())
     )
+    for ens_name, centers in bin_centers.items():
+        ensembles[ens_name]["bin_center"] = centers  # type: ignore[index]
 
     # Save ensemble data object if save_to is specified
     if save_to:
