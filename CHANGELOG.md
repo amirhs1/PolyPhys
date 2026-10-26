@@ -9,6 +9,25 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Added
+
+- Shared test fixtures in `polyphys/tests/conftest.py`: `make_lineage_tree`
+  writes a synthetic lineage tree of tiny `.npy` or `.csv` files named for any
+  parser class, and `make_lammps_data` and `make_lammps_dump` write tiny LAMMPS
+  data files (`atomic`, `bond`, and `angle` atom styles) and dump files. Their
+  tests are in `polyphys/tests/test_conftest.py`.
+- A `private_data` pytest marker for tests that read the maintainer's local
+  data: such a test is skipped when `POLYPHYS_DATA_DIR` is unset and errors
+  when it names something that is not a directory.
+- A Testing page in the documentation, describing the three test-data tiers,
+  the kinds of test, the shared fixtures, and the pytest settings.
+
+### Changed
+
+- pytest now runs with `--strict-markers`, `--strict-config`,
+  `xfail_strict = true`, `-ra`, and `--import-mode=importlib`, and loads the
+  `pytester` plugin. A misspelt marker is an error rather than a warning.
+
 ## [0.4.0] - 2026-10-26
 
 ### Fixed

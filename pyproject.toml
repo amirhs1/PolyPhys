@@ -56,5 +56,9 @@
     exclude = ["projects*", "under_review*"]
 
 [tool.pytest.ini_options]
-    addopts = "--doctest-modules --doctest-glob=README.md"
+    addopts = """\
+        --doctest-modules --doctest-glob=README.md \
+        -ra --strict-markers --strict-config --import-mode=importlib \
+        -p pytester"""
     testpaths = ["polyphys/tests"]
+    xfail_strict = true
