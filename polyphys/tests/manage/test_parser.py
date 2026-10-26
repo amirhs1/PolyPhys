@@ -1432,8 +1432,8 @@ class TestHnsCub(ParserBaseTestTemplate):
         assert isinstance(parser.eps_hc, float)
         assert parser.bend_mm == 2.5
         assert parser.eps_hc == 1.5
-        assert parser.whole == 'N200kbmm2.5nh8ac1.0l50.0epshc1.5nc0ens1'
-        assert parser.ensemble_long == 'N200kbmm2.5nh8ac1.0l50.0epshc1.5nc0'
+        assert parser.whole == 'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1'
+        assert parser.ensemble_long == 'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0'
         assert parser.ensemble == 'N200kbmm2.5nh8ac1.0epshc1.5nc0'
         assert parser.space == 'N200kbmm2.5nh8ac1.0epshc1.5'
 
@@ -1669,3 +1669,105 @@ def test_attributes_are_unique_and_set(parser_class, lineage, group,
     assert duplicates == [], f"duplicated attributes: {duplicates}"
     missing = [a for a in attributes if not hasattr(parser, a)]
     assert missing == [], f"listed but not set: {missing}"
+
+
+@pytest.mark.filterwarnings('ignore::UserWarning')
+@pytest.mark.parametrize(
+    'parser_class, group, child_lineage, child_name, parent_lineage',
+    [
+        pytest.param(TwoMonDepCub, 'bug', 'segment',
+                     'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
+                     'tdump500ens3.j01.bug', 'whole',
+                     id='TwoMonDepCub-segment-whole'),
+        pytest.param(TwoMonDepCub, 'bug', 'whole',
+                     'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
+                     'tdump500ens3.bug', 'ensemble_long',
+                     id='TwoMonDepCub-whole-ensemble_long'),
+        pytest.param(SumRuleCyl, 'all', 'segment',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1.j01', 'whole',
+                     id='SumRuleCyl-segment-whole'),
+        pytest.param(SumRuleCyl, 'all', 'whole',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1', 'ensemble_long',
+                     id='SumRuleCyl-whole-ensemble_long'),
+        pytest.param(SumRuleCubHeteroRing, 'all', 'whole',
+                     'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000'
+                     'ens4.ring.all', 'ensemble_long',
+                     id='SumRuleCubHeteroRing-whole-ensemble_long'),
+        pytest.param(SumRuleCubHeteroLinear, 'all', 'whole',
+                     'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
+                     'ens1.linear.all', 'ensemble_long',
+                     id='SumRuleCubHeteroLinear-whole-ensemble_long'),
+        pytest.param(TransFociCyl, 'bug', 'segment',
+                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
+                     'bdump2000adump5000ens8.j05.ring.bug', 'whole',
+                     id='TransFociCyl-segment-whole'),
+        pytest.param(TransFociCub, 'bug', 'whole',
+                     'al5.0nl5ml1.0ns400ac1.0nc100l15.0dt0.005bdump2000'
+                     'adump5000ens1', 'ensemble_long',
+                     id='TransFociCub-whole-ensemble_long'),
+        pytest.param(HnsCub, 'nucleoid', 'segment',
+                     'N200kbmm2nh12ac2l25epshc1nc11937ens2.j5.ring.nucleoid',
+                     'whole', id='HnsCub-segment-whole'),
+        pytest.param(HnsCyl, 'all', 'segment',
+                     'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.j01.ring.all',
+                     'whole', id='HnsCyl-segment-whole'),
+        pytest.param(HnsCyl, 'all', 'whole',
+                     'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.ring.all',
+                     'ensemble_long', id='HnsCyl-whole-ensemble_long'),
+    ],
+)
+def test_parser_rebuilt_parent_name_keeps_attributes(
+        parser_class, group, child_lineage, child_name, parent_lineage):
+    """A rebuilt parent name parses to its child's attribute values."""
+    child = parser_class(child_name, child_lineage, group)
+    parent = parser_class(getattr(child, parent_lineage), parent_lineage,
+                          group)
+    keys = parser_class._genealogy_attributes[parent_lineage]
+    child_values = {attr: getattr(child, attr) for attr in keys}
+    parent_values = {attr: getattr(parent, attr) for attr in keys}
+    # Both sides parse the same digits, so they agree to float64 round-off.
+    assert parent_values == pytest.approx(child_values, rel=1e-12, abs=1e-12)
+
+
+@pytest.mark.filterwarnings('ignore::UserWarning')
+@pytest.mark.parametrize(
+    'parser_class, group, lineage, artifact, parent_lineage, expected',
+    [
+        pytest.param(SumRuleCyl, 'all', 'segment',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1.j01', 'segment',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1.j01', id='SumRuleCyl-segment'),
+        pytest.param(SumRuleCyl, 'all', 'segment',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1.j01', 'whole',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1', id='SumRuleCyl-whole'),
+        pytest.param(SumRuleCyl, 'all', 'segment',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1.j01', 'ensemble_long',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000', id='SumRuleCyl-ensemble_long'),
+        pytest.param(TransFociCyl, 'bug', 'segment',
+                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
+                     'bdump2000adump5000ens8.j05.ring.bug', 'segment',
+                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
+                     'bdump2000adump5000ens8.j05', id='TransFociCyl-segment'),
+        pytest.param(TransFociCyl, 'bug', 'whole',
+                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
+                     'bdump2000adump5000ens8.ring.bug', 'whole',
+                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
+                     'bdump2000adump5000ens8', id='TransFociCyl-whole'),
+        pytest.param(HnsCub, 'nucleoid', 'segment',
+                     'N200kbmm2nh12ac2l25epshc1nc11937ens2.j5.ring.nucleoid',
+                     'ensemble_long', 'N200kbmm2nh12ac2l25epshc1nc11937',
+                     id='HnsCub-ensemble_long'),
+    ],
+)
+def test_parser_rebuilt_parent_name_is_name_prefix(
+        parser_class, group, lineage, artifact, parent_lineage, expected):
+    """A long-form parent name is the artifact name cut after its last key."""
+    parser = parser_class(artifact, lineage, group)
+    assert getattr(parser, parent_lineage) == expected

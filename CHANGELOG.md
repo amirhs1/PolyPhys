@@ -54,8 +54,8 @@ version increase may introduce incompatible changes.
   instead of truncating them to integers. Two filenames that differed only in a
   non-integer value, such as `epshc1.5` and `epshc1.0`, produced identical
   `whole`, `ensemble_long`, `ensemble`, and `space` names, so distinct state
-  points could be averaged together. Integer-valued inputs now give names such
-  as `kbmm2.0` and `epshc1.0`, matching `HnsCyl`
+  points could be averaged together. Integer-valued inputs now give `ensemble`
+  and `space` names such as `kbmm2.0` and `epshc1.0`, matching `HnsCyl`
   ([#41](https://github.com/amirhs1/PolyPhys/issues/41)).
 - Corrected the `attributes` tables of the four hetero parser classes, which
   listed `phi_bulk_m_large` and `rho_bulk_m` twice and omitted
@@ -75,6 +75,18 @@ version increase may introduce incompatible changes.
   their edges by design. Passing `whole_edges` with a `whole_type` other than
   `"vector"` now raises `ValueError`
   ([#70](https://github.com/amirhs1/PolyPhys/issues/70)).
+- The parsers rebuild the `segment`, `whole`, and `ensemble_long` names by
+  cutting the artifact's own name after the parent's last keyword, instead of
+  writing converted attributes back under the filename keywords. Every parser
+  converts some keywords (`r` to `dcyl = 2r - 1`, `lz` to `lcyl = 2 lz`, and
+  `l` or `hl` to `lcube = 2 l`), so each re-parse converted them again: a
+  `SumRuleCyl` segment with `r10.5lz25.0` reached `ensemble_long` with
+  `dcyl = 77.0` and `lcyl = 200.0`, which makes the volume fraction of
+  crowders of size 1 64 times too small, and `ensemble`, `space_tseries`, and `space_hists` carried the drift
+  into their output. The rebuilt names now keep the filename's tokens and
+  number formatting, such as `r10.5` and `.j01`. The `ensemble` and `space`
+  names are built from the attributes as before
+  ([#85](https://github.com/amirhs1/PolyPhys/issues/85)).
 
 ### Added
 
