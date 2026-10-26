@@ -9,7 +9,7 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
-Targeting `0.4.0`.
+## [0.4.0] - 2026-10-26
 
 ### Fixed
 
@@ -106,5 +106,6 @@ first public publication on GitHub and major structural changes) were recorded i
 the previous `HISTORY.rst` as development milestones. Neither was tagged or
 released, so `0.3.0` is the only release preceding this changelog.
 
-[Unreleased]: https://github.com/amirhs1/PolyPhys/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/amirhs1/PolyPhys/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/amirhs1/PolyPhys/releases/tag/v0.4.0
 [0.3.0]: https://github.com/amirhs1/PolyPhys/releases/tag/v0.3.0
