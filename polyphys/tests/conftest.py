@@ -283,8 +283,8 @@ def write_lineage_tree(
 
     The parser's ``_genealogy_attributes`` table gives the keyword order.
     Take expected lineage names in a test from the parser applied to a
-    written filename, not from the strings written here: the parser
-    normalizes how values are formatted.
+    written filename, not from the strings built here, so the test checks
+    the code under test against the parser's own lineage rules.
 
     Examples
     --------

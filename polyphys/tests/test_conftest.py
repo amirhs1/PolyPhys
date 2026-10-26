@@ -288,3 +288,71 @@ def test_strict_markers_rejects_misspelt_private_data(pytester):
     result = pytester.runpytest_subprocess("--strict-markers")
 
     result.assert_outcomes(errors=1)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        pytest.param({"n_wholes": 0}, "'n_wholes' must be from 1 to 9",
+                     id="size-below-range"),
+        pytest.param({"n_rows": 11}, "'n_rows' must be from 1 to 10",
+                     id="rows-above-range"),
+        pytest.param({"lineage": "ensemble"},
+                     "'lineage' must be 'segment' or 'whole'",
+                     id="unknown-lineage"),
+        pytest.param({"ext": ".txt"}, "'ext' must be '.npy' or '.csv'",
+                     id="unknown-ext"),
+        pytest.param({"attrs": {"ens": 1}}, "'attrs' cannot set",
+                     id="reserved-keyword"),
+        pytest.param({"vary": "xyz"},
+                     "not keywords of SumRuleCyl whole names",
+                     id="unknown-keyword"),
+    ],
+)
+def test_make_lineage_tree_rejects_invalid_arguments(
+    make_lineage_tree, kwargs, match
+):
+    """A lineage tree with an invalid argument raises before writing."""
+    with pytest.raises(ValueError, match=match):
+        make_lineage_tree(parsers.SumRuleCyl, **kwargs)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        pytest.param({"atom_style": "full"}, "'atom_style' must be one of",
+                     id="unknown-style"),
+        pytest.param({"positions": np.zeros((4, 2))},
+                     r"'positions' must have shape \(n_atoms, 3\)",
+                     id="positions-not-3d"),
+    ],
+)
+def test_make_lammps_data_rejects_invalid_arguments(
+    make_lammps_data, kwargs, match
+):
+    """A data file with an unknown style or bad positions raises."""
+    with pytest.raises(ValueError, match=match):
+        make_lammps_data(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        pytest.param({"positions": np.zeros((4, 3))},
+                     r"'positions' must have shape \(n_frames, n_atoms, 3\)",
+                     id="positions-one-frame-2d"),
+        pytest.param({"timesteps": [0]}, "'timesteps' has 1 entries for 3",
+                     id="timesteps-too-few"),
+        pytest.param({"boundary": "pp pp"}, "'boundary' must be three flags",
+                     id="boundary-two-flags"),
+        pytest.param({"boundary": "px pp pp"},
+                     "'boundary' must be three flags",
+                     id="boundary-unknown-letter"),
+    ],
+)
+def test_make_lammps_dump_rejects_invalid_arguments(
+    make_lammps_dump, kwargs, match
+):
+    """A dump with bad positions, timesteps, or boundary flags raises."""
+    with pytest.raises(ValueError, match=match):
+        make_lammps_dump(**kwargs)
