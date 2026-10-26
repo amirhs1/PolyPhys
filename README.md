@@ -84,9 +84,13 @@ hierarchy:
 
 ```
 
-Geometry is derived, not just read. The cylindrical wall is built from
-particles of size 1.0, so the usable confinement diameter is `D = 2r - 1.0`,
-and the bulk crowder volume fraction follows from the confining volume:
+Geometry is derived, not just read. The cylindrical wall is a layer of beads
+of size `a_w = 1` whose centres lie on the cylinder of radius `r` set in
+LAMMPS, so the cylinder size is `D = 2r - a_w`, stored as `dcyl`; `lz` is the
+half-length, so the cylinder length is `Z = 2 lz`, stored as `lcyl`. For a
+species `α` of size `a_α`, particle centres are confined to
+`D_eff,α = D - a_α`, and its bulk number density and volume fraction both use
+the effective volume `V_eff,α = π Z D_eff,α² / 4`:
 
 ```python
 >>> float(artifact.dcyl)              # from 'r10.5': 2 * 10.5 - 1.0
@@ -103,7 +107,7 @@ replicates and its sweep without touching the filesystem:
 >>> artifact.lineage_genealogy
 ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
 >>> artifact.whole
-'N200epsilon5.0r20.0lz50.0sig2.0nc1000dt0.005bdump2000adump5000ens1'
+'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1'
 >>> artifact.ensemble
 'N200D20.0ac2.0nc1000'
 >>> artifact.space
