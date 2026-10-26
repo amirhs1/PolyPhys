@@ -464,16 +464,57 @@ class ParserBase(ABC):
             - space -> ensemble -> ensemble_long -> whole -> segment
 
         Each lineage on the left has all the lineages on its right.
+
+        The long-form names (``segment``, ``whole``, and ``ensemble_long``)
+        are cut from `name` after the value of the parent's last keyword, so
+        they keep the original tokens. `_parse_name` converts some values,
+        such as ``r`` to `dcyl` and ``l`` to `lcube`; writing those
+        attributes back under the original keywords would convert them again
+        at every re-parse. The short-form names (``ensemble`` and ``space``)
+        use their own keywords, such as ``D``, and are built from the
+        attributes.
+
+        Every parent attribute is read once, so an unparsed keyword raises
+        `AttributeError`. The cost is :math:`O(L)` in the length :math:`L`
+        of `name`.
         """
         for lineage_name in self.lineages:
             lineage_value = 'N/A'
             if lineage_name in self.genealogy[self.lineage]:
-                lineage_value = ''
                 lineage_attr = self.genealogy_attributes[lineage_name]
-                for attr_long, attr_short in lineage_attr.items():
-                    lineage_value += \
-                            f"{attr_short}{getattr(self, attr_long)}"
+                lineage_value = ''.join(
+                    f"{attr_short}{getattr(self, attr_long)}"
+                    for attr_long, attr_short in lineage_attr.items()
+                )
+                if lineage_name in ['segment', 'whole', 'ensemble_long']:
+                    last_keyword = next(reversed(lineage_attr.values()))
+                    lineage_value = self._name_through(last_keyword)
             setattr(self, lineage_name, lineage_value)
+
+    def _name_through(self, keyword: str) -> str:
+        """
+        Return `name` up to and including the value of `keyword`, without a
+        trailing dot.
+
+        Parameters
+        ----------
+        keyword : str
+            A short-form keyword, such as ``ens``, that appears in `name`.
+
+        Returns
+        -------
+        str
+            The prefix of `name` that ends with the value of `keyword`.
+
+        Raises
+        ------
+        ValueError
+            If `keyword` is not a keyword of `name`.
+        """
+        for match in re.finditer(r"([a-zA-Z]+)([^a-zA-Z]*)", self.name):
+            if match.group(1) == keyword:
+                return self.name[:match.end()].rstrip('.')
+        raise ValueError(f"'{keyword}' keyword not found in '{self.name}'.")
 
     @abstractmethod
     def _parse_name(self) -> None:
@@ -818,10 +859,16 @@ class SumRuleCyl(ParserBase):
 
     Notes
     -----
-    The cylindrical wall is implemented in LAMMPS by using wall-forming
-    particles of size 1.0. Thus, the actual size of the cylinder size
-    (diameter), :math:`D`, is :math:`D=2r-1.0`,  :math:`r` is the radius of
-    the cylindrical region defined in LAMMPS.
+    The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
+    centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
+    ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
+    The keyword ``lz`` is the half-length of the cylinder, so its length is
+    :math:`Z = 2 l_z`, stored as `lcyl`. The centres of particles of
+    species :math:`\\alpha` with size :math:`a_\\alpha` are confined to a
+    cylinder of size :math:`D_{\\mathrm{eff},\\alpha} = D - a_\\alpha`, and
+    the bulk number density and volume fraction of that species both use
+    the effective volume :math:`V_{\\mathrm{eff},\\alpha} = \\pi Z
+    D_{\\mathrm{eff},\\alpha}^2 / 4`.
 
     Examples
     --------
@@ -1630,10 +1677,16 @@ class TransFociCyl(ParserBase):
       :math:`m_{i} = d_{i}^3`, where :math:`d_{i}` represents the species'
       diameter.
 
-    - The cylindrical wall is implemented in LAMMPS by using wall-forming
-      particles of size 1.0. Thus, the actual size of the cylinder size
-      (diameter), :math:`D`, is :math:`D=2r-1.0`,  :math:`r` is the radius of
-      the cylindrical region defined in LAMMPS.
+    - The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
+      centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
+      ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
+      The keyword ``lz`` is the half-length of the cylinder, so its length is
+      :math:`Z = 2 l_z`, stored as `lcyl`. The centres of particles of
+      species :math:`\\alpha` with size :math:`a_\\alpha` are confined to a
+      cylinder of size :math:`D_{\\mathrm{eff},\\alpha} = D - a_\\alpha`, and
+      the bulk number density and volume fraction of that species both use
+      the effective volume :math:`V_{\\mathrm{eff},\\alpha} = \\pi Z
+      D_{\\mathrm{eff},\\alpha}^2 / 4`.
 
     Examples
     --------
@@ -2467,10 +2520,16 @@ class HnsCyl(ParserBase):
 
     Notes
     -----
-    The cylindrical wall is implemented in LAMMPS by using wall-forming
-    particles of size 1.0. Thus, the actual size of the cylinder size
-    (diameter), :math:`D`, is :math:`D=2r-1.0`,  :math:`r` is the radius of
-    the cylindrical region defined in LAMMPS.
+    The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
+    centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
+    ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
+    The keyword ``lz`` is the half-length of the cylinder, so its length is
+    :math:`Z = 2 l_z`, stored as `lcyl`. The centres of particles of
+    species :math:`\\alpha` with size :math:`a_\\alpha` are confined to a
+    cylinder of size :math:`D_{\\mathrm{eff},\\alpha} = D - a_\\alpha`, and
+    the bulk number density and volume fraction of that species both use
+    the effective volume :math:`V_{\\mathrm{eff},\\alpha} = \\pi Z
+    D_{\\mathrm{eff},\\alpha}^2 / 4`.
 
     Examples
     --------
