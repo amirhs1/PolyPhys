@@ -230,7 +230,11 @@ person running you:
    the affected modules, scientific assumptions, tests, docs, and
    compatibility implications, and what could break.
 4. Implement only against acceptance criteria the maintainer has approved. You
-   may propose criteria or ask; do not decide them.
+   may propose criteria or ask; do not decide them. When porting or materially
+   revising a module, the criteria include a test-case list (behaviour, input,
+   and the source of each expected value); revise the module to completion
+   against that list, then write its test file in one pass, in the same pull
+   request, as the `write-test` skill describes.
 5. Change only what was asked, in the smallest coherent change. Propose
    unrelated improvements separately.
 6. Verify with the narrowest relevant check, then broaden. Before the first
@@ -316,7 +320,7 @@ gives a commit message's subject and body.
 | `open-pull-request` | A change is ready for review, or an open pull request's body changes |
 | `open-issue`        | Asked to file or revise an issue                                     |
 | `post-comment`      | Asked to reply to or comment on an issue or pull request             |
-| `write-test`        | Adding or materially changing a test in `polyphys/tests/`            |
+| `write-test`        | A module's test file; adding or changing a test in `polyphys/tests/` |
 | `draft-release`     | Never on your own; a person invokes it                               |
 
 Load a task's skill before you start it. Changing a skill means checking every
