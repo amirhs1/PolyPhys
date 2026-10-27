@@ -1,4 +1,5 @@
 # Configuration file for the Sphinx documentation builder.
+import os
 import tomllib
 from pathlib import Path
 from datetime import datetime
@@ -70,8 +71,10 @@ myst_enable_extensions = [
     "colon_fence"
 ]
 
-# Sitemap configuration
-html_baseurl = "https://amirhs1.github.io/PolyPhys/"
+# Canonical URL: Read the Docs passes it to the build as
+# READTHEDOCS_CANONICAL_URL. Local and CI builds leave it empty, so no
+# canonical link is emitted.
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 
 # Paths and templates
 templates_path = ['_templates']
