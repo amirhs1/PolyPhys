@@ -159,9 +159,7 @@ and never picks one silently.
   when its block size satisfies $B^3 > 2 n (\mathrm{SE}(B) / \mathrm{SE}(1))^4$,
   and the selected level is the smallest block of the qualifying run that
   reaches the top. The rule balances the systematic underestimate at small
-  blocks against the growing statistical error at large ones. The same paper
-  accepts the result only when the selected block is below $n / 50$, that is,
-  when more than 50 blocks remain; the module warns otherwise. Wolff (2004),
+  blocks against the growing statistical error at large ones. Wolff (2004),
   Eq. (47), derives the same balance with a constant four times smaller in
   $B^3$, because his correlation time is the integrated autocorrelation time
   $\tau_\mathrm{int} = s / 2$ where Lee et al. use $s$; neither constant is
@@ -188,7 +186,17 @@ estimated from the run itself, and only more independent replicates make it
 smaller.
 
 A run can also be too short without failing outright: the table flattens
-because it runs out of blocks, not because it has reached the plateau.
+because it runs out of blocks, not because it has reached the plateau. Lee et
+al. (2011) guard against this with an acceptance criterion: their optimal
+block size, $B_\mathrm{opt} = (2 n s^2)^{1/3}$ by their Eq. (14), must leave
+more than 50 blocks. Since $n / B_\mathrm{opt} > 50$ amounts to $n / s > 500$,
+the criterion asks whether the run holds more than about 500 independent
+samples, a property of the run rather than of the rule. So under either
+`method`, {func}`~polyphys.analyze.stats.select_plateau` takes the block size
+that `method="lee"` selects as $B_\mathrm{opt}$ and raises a `RuntimeWarning`
+when it leaves 50 blocks or fewer, or when that rule finds no level, while
+still returning the selected level. `method="sem_err"` alone cannot tell: it
+can stop where more than 50 blocks remain on a run that fails the criterion.
 
 ```{figure} _static/stats_too_short.png
 :alt: Blocked standard error and statistical inefficiency against block size
@@ -200,9 +208,9 @@ A run that is too short: AR(1) with $\phi = 0.99$ and $2^{14}$ frames, about
 82 independent samples for an exact inefficiency of 199. The table levels off
 near 0.55, about 30% below the exact standard error of 0.78, because the
 largest blocks still contain correlated frames. Both rules pick a level on
-this false plateau; `method='lee'` warns, since its block size leaves fewer
-than 50 blocks. The remedy is a longer run or more replicates, not a different
-rule.
+this false plateau, and both warn: the block size of `method='lee'` leaves 16
+blocks, although the level `method='sem_err'` selects still has 64. The remedy
+is a longer run or more replicates, not a different rule.
 ```
 
 ## Before you call it

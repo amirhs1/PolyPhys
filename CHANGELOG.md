@@ -16,8 +16,11 @@ version increase may introduce incompatible changes.
   returns the full blocking table (`BlockingResult`) for any
   `(n_frames, ...)` array, blocked along axis 0; `select_plateau` picks a
   level by the rule of Lee et al. (2011) (`method="lee"`) or by the first
-  level within one error bar of the next two (`method="sem_err"`);
-  `sem_blocked` and `statistical_inefficiency` wrap both steps. Across
+  level within one error bar of the next two (`method="sem_err"`), and under
+  either rule warns when the run fails the acceptance criterion of Lee et
+  al., that is, when the block size the Lee rule selects leaves 50 blocks or
+  fewer (#89); `sem_blocked` and `statistical_inefficiency` wrap both steps.
+  Across
   independent replicates the naive `measurer.sem` remains the right
   estimator, and its docstring now says so. A Statistics page in the
   documentation explains the method and the two kinds of average, with two
