@@ -509,6 +509,49 @@ def test_select_plateau_lee_warns_when_fewer_than_fifty_blocks_remain(
 
 
 @pytest.mark.parametrize(
+    "sem_values,expected_level",
+    [
+        # n = 1024, sem_err 0.05 everywhere: levels 1 to 3 are flat at 10,
+        # so sem_err picks k = 1, with 512 blocks. The Lee run from the top
+        # stops at k = 5, B = 32, as in the test above, and 50 * 32 >= 1024.
+        pytest.param(
+            [1, 10, 10, 10, 10, 1, 1, 1], 1, id="lee-block-too-large"
+        ),
+        # n = 1024: sem_err picks k = 0, but the top level fails the Lee
+        # inequality, B**3 = 2**21 not above 2048 * 10**4, so the Lee rule
+        # finds no level at all.
+        pytest.param(
+            [1, 1, 1, 1, 1, 1, 1, 10], 0, id="lee-level-missing"
+        ),
+    ],
+)
+def test_select_plateau_sem_err_warns_when_the_lee_block_is_too_large(
+    make_table, sem_values, expected_level
+):
+    """Under sem_err, Lee's reliability warning follows the Lee block size,
+    not the selected one, and the selected level is still returned."""
+    table = make_table(sem_values, 1024, [0.05] * len(sem_values))
+
+    with pytest.warns(RuntimeWarning, match="not below n_frames / 50"):
+        level = select_plateau(table, method="sem_err")
+
+    assert level == expected_level
+
+
+def test_select_plateau_sem_err_warns_on_a_too_short_ar1_run(make_ar1):
+    """AR(1) with phi = 0.99 over 2**14 frames, about 82 independent
+    samples, makes the sem_err rule warn that its plateau is unreliable."""
+    # s = 199 by R2, so n / s = 82. Lee's criterion n / B_opt > 50, with
+    # B_opt = (2 n s**2)**(1/3), needs n / s > 500.
+    table = block_average(make_ar1(0.99, 2 ** 14, 22))
+
+    with pytest.warns(RuntimeWarning, match="not below n_frames / 50"):
+        level = select_plateau(table, method="sem_err")
+
+    assert level >= 0
+
+
+@pytest.mark.parametrize(
     "sem_values,sem_err_values,expected_level",
     [
         # Level 3 is the first whose SEM equals the next two within 0.05.

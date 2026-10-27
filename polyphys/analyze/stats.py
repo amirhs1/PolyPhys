@@ -89,6 +89,11 @@ choice.
     the next two levels. A convenience heuristic without a published source;
     it tends to pick the start of the plateau and so to err on the low side.
 
+Under either rule, :func:`select_plateau` warns when the series fails the
+acceptance criterion of Lee et al. (2011): the block size the ``'lee'`` rule
+selects must leave more than 50 blocks, which amounts to :math:`n / s > 500`,
+more than about 500 independent samples.
+
 Convenience wrappers:
 :func:`sem_blocked` and :func:`statistical_inefficiency` run both steps and
 return the selected row's value.
@@ -154,9 +159,10 @@ __all__ = [
 PlateauMethod = Literal['lee', 'sem_err']
 """The plateau-selection rules :func:`select_plateau` accepts."""
 
-#: Lee et al. (2011) accept a blocking analysis only when the selected block
+#: Lee et al. (2011) accept a blocking analysis only when their optimal block
 #: size is below ``n_frames / LEE_MIN_BLOCK_RATIO``, that is, when more than
-#: this many blocks remain at the selected level.
+#: this many blocks remain at that level. :func:`select_plateau` applies the
+#: check to the level the ``'lee'`` rule selects, whichever rule is asked for.
 LEE_MIN_BLOCK_RATIO = 50
 
 
@@ -435,8 +441,8 @@ def _select_lee(result: BlockingResult) -> npt.NDArray[np.int64]:
     Level ``k`` qualifies when ``B_k**3 > 2 n (SE_k / SE_0)**4``. Scanning
     from the largest block downward, the selected level is the last
     qualifying one before the first failure; ``-1`` marks an observable whose
-    largest level does not qualify. Warns when the selected block size is not
-    below ``n / 50``, the acceptance criterion of the same paper.
+    largest level does not qualify. :func:`select_plateau` checks the result
+    against the acceptance criterion of the same paper.
     """
     level_shape = (-1,) + (1,) * (result.sem.ndim - 1)
     b = result.block_size.reshape(level_shape).astype(np.float64)
@@ -445,24 +451,9 @@ def _select_lee(result: BlockingResult) -> npt.NDArray[np.int64]:
     # Length of the run of qualifying levels that starts at the top level.
     run_from_top = np.cumprod(qualifies[::-1], axis=0)
     run_length = run_from_top.sum(axis=0)
-    level = np.where(
+    return np.where(
         run_length > 0, result.n_levels - run_length, -1
     ).astype(np.int64)
-
-    chosen_size = result.block_size[np.maximum(level, 0)]
-    unreliable = (level >= 0) & (
-        LEE_MIN_BLOCK_RATIO * chosen_size >= result.n_frames
-    )
-    n_unreliable = int(np.count_nonzero(unreliable))
-    if n_unreliable:
-        warnings.warn(
-            f'For {n_unreliable} observable(s) the selected block size is '
-            f'not below n_frames / {LEE_MIN_BLOCK_RATIO}; Lee et al. (2011) '
-            'consider the error estimate unreliable. Collect more frames.',
-            RuntimeWarning,
-            stacklevel=3,
-        )
-    return level
 
 
 def _select_sem_err(result: BlockingResult) -> npt.NDArray[np.int64]:
@@ -531,10 +522,12 @@ def select_plateau(
     -----
     RuntimeWarning
         When no level qualifies for some observable, which means the series
-        is too short for its correlation time or is not stationary; and, for
-        ``'lee'``, when the selected block size is not below
-        ``n_frames / 50``, so that fewer than 50 blocks remain and Lee et al.
-        (2011) consider the estimate unreliable.
+        is too short for its correlation time or is not stationary. Also,
+        under either `method`, when an observable has a selected level but
+        the block size the ``'lee'`` rule selects is not below
+        ``n_frames / 50``, so that 50 or fewer blocks remain, or that rule
+        finds no level: Lee et al. (2011) then consider the estimate
+        unreliable. The selected level is still returned.
 
     Notes
     -----
@@ -553,6 +546,14 @@ def select_plateau(
     :math:`B^3`; neither constant is exact, as Wolff's derivation is an
     order-of-magnitude balance. This function implements Lee's form, as
     ``pyblock`` does.
+
+    Lee et al. accept the analysis only when :math:`n / B_\\mathrm{opt} >
+    50`, which with Eq. (14) reads :math:`n / s > 500`: the series must hold
+    more than about 500 independent samples. That is a property of the
+    series, not of the rule, so this function tests it at the ``'lee'``
+    level under either `method`. The ``'sem_err'`` rule can stop at a level
+    with more than 50 blocks on a series that fails the test, where the
+    table levels off before the blocks outgrow the correlation time.
 
     References
     ----------
@@ -584,15 +585,50 @@ def select_plateau(
     >>> bool(table.block_size[level] >= 8)
     True
 
+    Holding each of 64 values for 256 frames gives :math:`s \\approx 256`,
+    so the series holds only 64 independent samples. The ``'sem_err'`` rule
+    stops at the period, where 64 blocks remain, but the Lee block size
+    leaves fewer than 50, so both rules warn:
+
+    >>> import warnings
+    >>> rng = np.random.default_rng(7)
+    >>> x = np.repeat(rng.standard_normal(64), 256)
+    >>> table = block_average(x)
+    >>> with warnings.catch_warnings(record=True) as caught:
+    ...     warnings.simplefilter('always')
+    ...     level = select_plateau(table, method='sem_err')
+    >>> int(table.block_size[level]), int(table.n_blocks[level])
+    (256, 64)
+    >>> [type(w.message).__name__ for w in caught]
+    ['RuntimeWarning']
+
     .. versionadded:: 0.5.0
     """
-    if method == 'lee':
-        level = _select_lee(result)
-    elif method == 'sem_err':
-        level = _select_sem_err(result)
-    else:
+    if method not in ('lee', 'sem_err'):
         raise ValueError(
             f"Unknown plateau method {method!r}; choose 'lee' or 'sem_err'."
+        )
+    lee_level = _select_lee(result)
+    level = lee_level if method == 'lee' else _select_sem_err(result)
+
+    # Lee's acceptance criterion judges the series, so it uses the Lee block
+    # size whichever rule selected the level. An observable without a
+    # selected level gets the no-plateau warning below instead.
+    lee_size = result.block_size[np.maximum(lee_level, 0)]
+    too_short = (level >= 0) & (
+        (lee_level < 0)
+        | (LEE_MIN_BLOCK_RATIO * lee_size >= result.n_frames)
+    )
+    n_short = int(np.count_nonzero(too_short))
+    if n_short:
+        warnings.warn(
+            f'For {n_short} observable(s) the block size of Lee et al. '
+            f'(2011), Eq. (14), is not below n_frames / '
+            f'{LEE_MIN_BLOCK_RATIO}, or no block size satisfies it: the '
+            'series is too short for its correlation time, and Lee et al. '
+            'consider the error estimate unreliable. Collect more frames.',
+            RuntimeWarning,
+            stacklevel=2,
         )
     n_missing = int(np.count_nonzero(level < 0))
     if n_missing:
