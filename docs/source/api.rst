@@ -19,3 +19,4 @@ Analyze
    :toctree: generated
 
    polyphys.analyze.measurer
+   polyphys.analyze.stats

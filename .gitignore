@@ -73,7 +73,6 @@ AGENTS.local.md
 .DS_Store
 
 # Exclude image and document formats
-*.png
 *.pdf
 *.eps
 

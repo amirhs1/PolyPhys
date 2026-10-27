@@ -22,6 +22,7 @@ caption: Contents:
 ---
 
 usage
+statistics
 testing
 api
 ```
