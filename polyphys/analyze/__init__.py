@@ -12,10 +12,13 @@ Submodules
 ==========
 - `measurer`: Geometric and structural measurements, summary statistics, and
   fixed-size binning with radial, axial, azimuthal, and planar histograms.
+- `stats`: Autocorrelation-aware uncertainty of a time average over
+  correlated frames, by Flyvbjerg-Petersen block averaging.
 """
 
-from polyphys.analyze import measurer
+from polyphys.analyze import measurer, stats
 
 __all__ = [
-    'measurer'
+    'measurer',
+    'stats',
 ]

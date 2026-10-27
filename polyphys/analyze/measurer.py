@@ -425,6 +425,9 @@ def sem(data: np.ndarray) -> float:
     Notes
     -----
     SEM is calculated using sample standard deviation (ddof=1) and sample size.
+    The estimate assumes independent samples, such as the means of independent
+    replicates. For a time series of correlated frames it understates the
+    error; use :func:`polyphys.analyze.stats.sem_blocked` instead.
 
     Examples
     --------
