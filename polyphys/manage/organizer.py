@@ -166,7 +166,7 @@ from .types import (
     WholeRelationT,
     PrimitiveLineageT,
 )
-from .utils import invalid_keyword, sort_filenames, round_up_nearest
+from .utils import invalid_keyword, sort_filenames, round_to_multiple
 
 logger = logging.getLogger(__name__)
 
@@ -1890,7 +1890,7 @@ def space_tseries(
         # Add and round the bulk volume fraction of crowders
         ens_avg[crowder_attr] = getattr(prop_info, crowder_attr)
         ens_avg["phi_c_bulk_round"] = ens_avg[crowder_attr].apply(
-            lambda x: round_up_nearest(x, divisor, round_to)
+            lambda x: round_to_multiple(x, divisor, round_to)
         )
 
         prop_csvs.append(ens_avg)
@@ -2059,7 +2059,7 @@ def space_hists(
         # Add and round the bulk volume fraction of crowders
         ens_avg[crowder_attr] = getattr(prop_info, crowder_attr)
         ens_avg["phi_c_bulk_round"] = ens_avg[crowder_attr].apply(
-            lambda x: round_up_nearest(x, divisor, round_to)
+            lambda x: round_to_multiple(x, divisor, round_to)
         )
 
         prop_csvs.append(ens_avg)

@@ -5,7 +5,6 @@ import os
 import warnings
 from pathlib import PosixPath
 import pytest
-import numpy as np
 
 from polyphys.manage.utils import (
     read_camel_case,
@@ -17,7 +16,7 @@ from polyphys.manage.utils import (
     openany,
     openany_context,
     round_down_first_non_zero,
-    round_up_nearest,
+    round_to_multiple,
     invalid_keyword,
     number_density_cube,
     volume_fraction_cube,
@@ -282,10 +281,44 @@ def test_round_down_first_non_zero():
     assert round_down_first_non_zero(0) == 0
 
 
-def test_round_up_nearest():
-    assert round_up_nearest(52, 10, 0) == 50
-    assert round_up_nearest(49.5, 0.1, 1) == 49.5
-    assert np.isclose(round_up_nearest(7, 3, 1), 6.0, atol=0.1)
+@pytest.mark.parametrize(
+    "dividend,divider,round_to,expected",
+    [
+        pytest.param(52, 10, 0, 50.0, id="integers-down"),
+        pytest.param(49.5, 0.1, 1, 49.5, id="already-a-multiple"),
+        pytest.param(7, 3, 1, 6.0, id="integers-down-to-6"),
+        pytest.param(0.0874, 0.025, 3, 0.075, id="phi-below-midpoint"),
+        pytest.param(0.0876, 0.025, 3, 0.1, id="phi-above-midpoint"),
+        pytest.param(0.1001, 0.025, 3, 0.1, id="phi-just-above-multiple"),
+        pytest.param(0.11, 0.025, 3, 0.1, id="label-below-value"),
+    ],
+)
+def test_round_to_multiple_rounds_to_nearest_multiple(
+    dividend, divider, round_to, expected
+):
+    """The result is the multiple of divider nearest to dividend, which can
+    lie below dividend."""
+    result = round_to_multiple(dividend, divider, round_to)
+    # float64 round-off left after rounding to round_to decimals:
+    assert result == pytest.approx(expected, rel=0, abs=1e-12)
+
+
+@pytest.mark.parametrize(
+    "dividend,divider,round_to,expected",
+    [
+        pytest.param(2.5, 1.0, 0, 2.0, id="tie-down-to-even"),
+        pytest.param(3.5, 1.0, 0, 4.0, id="tie-up-to-even"),
+        pytest.param(0.0625, 0.025, 3, 0.05, id="phi-tie-to-even"),
+    ],
+)
+def test_round_to_multiple_breaks_ties_to_even(
+    dividend, divider, round_to, expected
+):
+    """A dividend exactly halfway between two multiples goes to the even
+    multiple, as Python's round does."""
+    result = round_to_multiple(dividend, divider, round_to)
+    # float64 round-off left after rounding to round_to decimals:
+    assert result == pytest.approx(expected, rel=0, abs=1e-12)
 
 
 def test_invalid_keyword_valid():

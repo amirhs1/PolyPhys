@@ -66,6 +66,14 @@ version increase may introduce incompatible changes.
 - `polyphys/tests/manage/test_organizer.py` covers every public function of
   the organizer, including integration tests that run a synthetic lineage tree
   from segments to a space; the module's line coverage rose from 65% to 98%.
+- **Breaking:** `polyphys.manage.utils.round_up_nearest` is renamed
+  `round_to_multiple`, which is what it does: it rounds to the nearest
+  multiple of `divider`, with exact ties going to the even multiple, and then
+  to `round_to` decimal places. Its docstring described a round-up to
+  `round_to` significant digits. The values, and so the `phi_c_bulk_round`
+  labels that `space_tseries` and `space_hists` add, are unchanged; the
+  organizer calls the new name
+  ([#48](https://github.com/amirhs1/PolyPhys/issues/48)).
 
 ### Removed
 

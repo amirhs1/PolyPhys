@@ -20,7 +20,7 @@ File handling:
 :func:`openany` and :func:`openany_context`.
 
 Numeric rounding and validation:
-:func:`round_down_first_non_zero`, :func:`round_up_nearest`, and
+:func:`round_down_first_non_zero`, :func:`round_to_multiple`, and
 :func:`invalid_keyword`.
 
 Number-density and volume-fraction conversions:
@@ -468,24 +468,61 @@ def round_down_first_non_zero(num: float) -> float:
     return round(np.floor(num / non_zero) * non_zero, int(abs(exponent)))
 
 
-def round_up_nearest(dividend: float, divider: float, round_to: int) -> float:
+def round_to_multiple(dividend: float, divider: float, round_to: int) -> float:
     """
-    Round up `dividend` by `divider` up to `round_to` significant digits.
+    Round `dividend` to the nearest multiple of `divider`, then to
+    `round_to` decimal places.
+
+    The result can lie below `dividend`. The ``phi_c_bulk_round`` labels that
+    :func:`polyphys.manage.organizer.space_tseries` and
+    :func:`polyphys.manage.organizer.space_hists` add are made with it.
 
     Parameters
     ----------
     dividend: float
-        The number to round up.
+        The number to round.
     divider: float
-        The number used as the divider.
+        The step of the grid of multiples, ``k * divider`` for integer ``k``.
     round_to: int
-        The number of the significant digits.
+        The number of decimal places of the result; it removes the float
+        round-off of ``k * divider``.
 
     Returns
     -------
     float:
-        The smallest number greater than or equal to `dividend` that is
-        divisible by `divider`, rounded to `round_to` significant digits.
+        The multiple of `divider` closest to `dividend`, rounded to
+        `round_to` decimal places. When `dividend` lies exactly halfway
+        between two multiples, the even multiple is chosen, as Python's
+        built-in :func:`round` does.
+
+    Notes
+    -----
+    Ties are decided on the float64 quotient ``dividend / divider``, which is
+    deterministic: IEEE 754 division is correctly rounded on every platform.
+    A value that is halfway in decimal, such as 0.0375 with a `divider` of
+    0.025, has a quotient (1.4999999999999998) that is not an exact tie, so it
+    rounds to the side the quotient falls on rather than to the even multiple.
+
+    References
+    ----------
+    Python documentation, built-in function :func:`round`:
+    https://docs.python.org/3/library/functions.html#round
+
+    Examples
+    --------
+    Crowder volume fractions on a grid of 0.025, rounded to 3 decimals:
+
+    >>> round_to_multiple(0.0874, 0.025, 3)
+    0.075
+    >>> round_to_multiple(0.0876, 0.025, 3)
+    0.1
+    >>> round_to_multiple(0.11, 0.025, 3)
+    0.1
+
+    An exact tie goes to the even multiple:
+
+    >>> round_to_multiple(2.5, 1.0, 0), round_to_multiple(3.5, 1.0, 0)
+    (2.0, 4.0)
     """
     return round(round(dividend / divider) * divider, round_to)
 
