@@ -14,6 +14,11 @@ python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --d
 The README's examples run as doctests, and so do the `Examples` sections of the
 docstrings in `polyphys/`.
 
+CI runs the same command with `--cov-fail-under=95`, so a pull request fails
+when total coverage drops below 95 percent. coverage.py rounds the total to a
+whole percent before it compares, so 94.6 percent passes. Add
+`--cov-fail-under=95` to the command above to run the same check locally.
+
 ## Test data: three tiers
 
 Every test uses data from one of three tiers.
