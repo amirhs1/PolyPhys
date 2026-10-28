@@ -49,12 +49,122 @@ For sphere-sphere intersection:
   Web Resource. https://mathworld.wolfram.com/Sphere-SphereIntersection.html
 """
 
-import warnings
 from typing import Dict, Tuple, Optional, Union, Any, List
 import numpy as np
 
 from ..manage.types import AxisT, EntityT, PropertyT, BinT
 from ..manage.utils import invalid_keyword
+
+# Relative tolerance for deciding whether a range holds a whole number of
+# bins, used by :func:`create_bin_edge_and_hist` and :func:`fixedsize_bins`.
+# The ratio ``(lmax - lmin) / bin_size`` is computed in float64, so a range
+# that is exactly a whole number of bins can come out a few ulps above or
+# below that integer (``2.1 / 0.3`` is ``7.000000000000001``). A plain
+# ``ceil`` then adds a bin, and a plain comparison can leave the edges a few
+# 1e-15 inside the range. The tolerance has to sit between two scales:
+#
+# - the accumulated round-off in the ratio, a few times the float64 epsilon
+#   (2.2e-16), so below about 1e-15 relative;
+# - the smallest deviation a user can intend, which is set by the precision of
+#   the inputs: box sizes and bead diameters are read from filenames with at
+#   most seven significant digits, so about 1e-7 relative.
+#
+# Any value between those classifies every realistic input correctly. 1e-9
+# keeps six orders of magnitude from the round-off side and two from the
+# intent side; the margins are unequal on purpose, because the two errors are
+# not equally bad. Calling a true multiple a non-multiple adds a bin and, for
+# 'ordinary' bins, shifts the whole grid by half a bin; calling an intended
+# non-multiple a multiple moves the edges by less than
+# ``1e-9 * (lmax - lmin)``.
+_BIN_COUNT_RTOL = 1e-9
+
+
+def _count_bins(length: float, bin_size: float) -> Tuple[int, float]:
+    """
+    Return the number of bins of width `bin_size` that cover `length`, and
+    the excess length they add.
+
+    When ``length / bin_size`` is a whole number up to the relative tolerance
+    :data:`_BIN_COUNT_RTOL`, the count is that whole number and the excess is
+    exactly ``0.0``; otherwise the count is the ceiling of the ratio and the
+    excess ``n_bins * bin_size - length`` is strictly positive, by a margin
+    far above float64 round-off.
+
+    Parameters
+    ----------
+    length : float
+        Length of the range to cover, positive.
+    bin_size : float
+        Width of each bin, positive.
+
+    Returns
+    -------
+    Tuple[int, float]
+        ``(n_bins, excess)``.
+
+    Examples
+    --------
+    >>> _count_bins(2.1, 0.3)
+    (7, 0.0)
+    >>> n_bins, excess = _count_bins(2.0, 0.7)
+    >>> n_bins, round(excess, 12)
+    (3, 0.1)
+    """
+    ratio = length / bin_size
+    n_bins = int(np.rint(ratio))
+    if n_bins > 0 and np.isclose(
+        ratio, n_bins, rtol=_BIN_COUNT_RTOL, atol=0.0
+    ):
+        return n_bins, 0.0
+    n_bins = int(np.ceil(ratio))
+    return n_bins, n_bins * bin_size - length
+
+
+def _histogram_or_raise(values: np.ndarray, edges: np.ndarray) -> np.ndarray:
+    """
+    Histogram `values` over `edges`, raising if any value falls outside them.
+
+    `np.histogram` silently drops values below the first edge or above the
+    last one. For the spatial profiles this module serves, every position
+    belongs to the system, so a dropped position is a defect in the caller's
+    edges or an unwrapped coordinate, not data to ignore.
+
+    Parameters
+    ----------
+    values : np.ndarray
+        One-dimensional array of values to bin.
+    edges : np.ndarray
+        Monotonically increasing bin edges, including the rightmost edge.
+
+    Returns
+    -------
+    np.ndarray
+        Counts per bin, shape ``(len(edges) - 1,)``; their sum is
+        ``values.size``.
+
+    Raises
+    ------
+    ValueError
+        If any value lies outside ``[edges[0], edges[-1]]``.
+
+    Examples
+    --------
+    >>> edges = np.array([0., 1., 2., 3.])
+    >>> _histogram_or_raise(np.array([0.5, 2.0, 3.0]), edges)
+    array([1, 0, 2])
+    >>> _histogram_or_raise(np.array([0.5, 9.0]), edges)
+    Traceback (most recent call last):
+        ...
+    ValueError: 1 of 2 positions fall outside the edges [0.0, 3.0].
+    """
+    hist, _ = np.histogram(values, bins=edges)
+    n_missed = values.size - int(hist.sum())
+    if n_missed:
+        raise ValueError(
+            f"{n_missed} of {values.size} positions fall outside the edges "
+            f"[{edges[0]}, {edges[-1]}]."
+        )
+    return hist
 
 
 def apply_pbc_orthogonal(
@@ -573,6 +683,12 @@ def create_bin_edge_and_hist(
     """
     Create bin edges and an empty histogram for data processing.
 
+    The edges start at `lmin` and step by `bin_size` up to the first edge at
+    or beyond `lmax`, so there are ``n_bins = ceil((lmax - lmin) / bin_size)``
+    bins of width `bin_size`. When the range is a whole number of bins up to
+    the relative tolerance :data:`_BIN_COUNT_RTOL` (1e-9), the last edge is
+    exactly `lmax`; otherwise it exceeds `lmax` by less than one bin.
+
     Parameters
     ----------
     bin_size : float
@@ -589,7 +705,8 @@ def create_bin_edge_and_hist(
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-        - bin_edges : Array of bin edges, shape ``(n_bins + 1,)``.
+        - bin_edges : Array of bin edges, shape ``(n_bins + 1,)``, equal to
+          ``lmin + bin_size * k`` for ``k = 0, ..., n_bins``.
         - hist : Zero-initialized histogram of dtype ``np.int64`` and shape
           ``(n_bins,)``. The 64-bit integer type keeps per-frame counts
           accumulated in place (``hist += np.histogram(...)[0]``) from
@@ -604,6 +721,14 @@ def create_bin_edge_and_hist(
     -----
     The `.npy` extension is handled internally by `np.save`.
 
+    The edges come from `np.linspace`, so their number is exactly
+    ``n_bins + 1``; a float-step `np.arange` can return one edge too many
+    when `bin_size` is not exactly representable (for example 0.3). The bin
+    count treats a ratio within 1e-9 of a whole number as that whole number;
+    see :data:`_BIN_COUNT_RTOL` for why.
+
+    Time and space are O(`n_bins`).
+
     Examples
     --------
     >>> edges, hist = \
@@ -612,12 +737,26 @@ def create_bin_edge_and_hist(
     array([0., 1., 2., 3., 4., 5.])
     >>> hist
     array([0, 0, 0, 0, 0])
+
+    A step that is not exactly representable still gives one edge per bin
+    plus one, ending exactly at `lmax`:
+
+    >>> edges, hist = create_bin_edge_and_hist(0.3, -6.0, 6.0)
+    >>> print(len(edges), len(hist), edges[0], edges[-1])
+    41 40 -6.0 6.0
+
+    A range that is not a multiple of `bin_size` is covered by one more bin:
+
+    >>> create_bin_edge_and_hist(0.7, 0.0, 2.0)[0]
+    array([0. , 0.7, 1.4, 2.1])
     """
     if lmin >= lmax:
         raise ValueError("'lmin' must be less than 'lmax'.")
 
-    bin_edges = np.arange(lmin, lmax + bin_size, bin_size)
-    hist = np.zeros(len(bin_edges) - 1, dtype=np.int64)
+    n_bins, excess = _count_bins(lmax - lmin, bin_size)
+    upper = lmax if excess == 0.0 else lmin + n_bins * bin_size
+    bin_edges = np.linspace(lmin, upper, n_bins + 1)
+    hist = np.zeros(n_bins, dtype=np.int64)
 
     if output is not None:
         np.save(output, bin_edges)
@@ -635,6 +774,9 @@ def fixedsize_bins(
     """
     Generate bin edges and an empty collectors with consistent bin width.
 
+    Every bin type returns ``n_bins + 1`` equally spaced edges of width
+    `bin_size` that cover [`lmin`, `lmax`].
+
     Parameters
     ----------
     bin_size : float
@@ -644,17 +786,24 @@ def fixedsize_bins(
     lmax : float
         End of the range
     bin_type : :py:data:`BinT`, default 'ordinary'
-        Type of binning:
+        Type of binning. With ``n_bins = ceil((lmax - lmin) / bin_size)``
+        bins, the excess length ``n_bins * bin_size - (lmax - lmin)`` is
+        zero when the range is a whole number of bins and is otherwise
+        shared out as follows:
 
-        - 'ordinary': Extends `lmin` and `lmax` symmetrically. Examples are
-          Cartesian coordinates and spherical polar coordinate.
-        - 'nonnegative': Extends `lmin` and `lmax` symmetrically  if
-          adjusted `lmin` is nonnegative; otherwise, `lmin` is set to 0 and
-          `lmax` is extended. Examples are radial directions in the polar,
-          spherical, and cylindrical coordinate systems.
-        - 'periodic': Periodic binning (e.g., azimuthal coordinate).
-          Examples are azimuthal directions in cylindrical and spherical
-          coordinate systems.
+        - 'ordinary': Extends `lmin` and `lmax` symmetrically, by half the
+          excess each. Examples are Cartesian coordinates and spherical polar
+          coordinate.
+        - 'nonnegative': Extends `lmin` and `lmax` symmetrically if the
+          extended `lmin` stays nonnegative; otherwise `lmin` is set to 0 and
+          `lmax` to ``n_bins * bin_size``. Examples are radial directions in
+          the polar, spherical, and cylindrical coordinate systems.
+        - 'periodic': Periodic binning over one period, ``lmax - lmin``,
+          which must be a whole number of bins; the edges run from `lmin` to
+          `lmax` exactly. Examples are azimuthal directions in cylindrical
+          and spherical coordinate systems.
+
+        See the Notes for how "a whole number of bins" is decided.
 
         See :mod:`polyphys.manage.types`.
     save_bin_edges : Optional[str], default None
@@ -688,14 +837,53 @@ def fixedsize_bins(
     ------
     ValueError
         If `lmin` is not less than `lmax`.
+    ValueError
+        If `bin_type` is 'nonnegative' and `lmin` is negative: clipping the
+        lower end to zero would leave the range below zero uncovered.
+    ValueError
+        If `bin_type` is 'periodic' and ``lmax - lmin`` is not a multiple of
+        `bin_size`. A last bin running past the period would cover values
+        that never occur, so a density normalized by its width would be
+        biased low.
 
     Notes
     -----
     The `.npy` extension is handled internally by `np.save`.
 
+    The edges come from `np.linspace`, so their number is exactly
+    ``n_bins + 1``, and the first and last edges enclose `lmin` and `lmax`
+    exactly: a position at either end of the range falls inside the bins,
+    and `np.histogram` counts a value equal to the last edge in the last bin.
+
+    **Deciding whether the range is a whole number of bins.** The ratio
+    ``(lmax - lmin) / bin_size`` is computed in float64, so a range that is
+    exactly a whole number of bins can come out a few ulps above or below
+    that integer: ``2.1 / 0.3`` is ``7.000000000000001``, and
+    ``530 * 0.03`` is a few 1e-15 below ``15.9``. Taking the ceiling of such
+    a ratio adds a bin and, for 'ordinary' bins, shifts every edge by half
+    a bin; comparing it directly can leave the end edges a few 1e-15 inside
+    the range, where a position at exactly `lmin` or `lmax` is lost. The ratio
+    is therefore compared with the nearest integer at the relative tolerance
+    :data:`_BIN_COUNT_RTOL` = 1e-9. That tolerance sits between the two
+    scales that matter: the accumulated round-off in the ratio, a few times
+    the float64 epsilon (about 1e-15), and the smallest deviation a user can
+    intend, which the seven significant digits of the box sizes and bead
+    diameters in the simulation filenames put at about 1e-7. It is closer to
+    the intent side on purpose, because the two misclassifications are not
+    equally bad: calling a true multiple a non-multiple adds a bin and shifts
+    the grid, while calling an intended non-multiple a multiple moves the
+    edges by less than ``1e-9 * (lmax - lmin)``.
+
+    The symmetric extension of the 'ordinary' bins follows MDAnalysis's
+    ``fixedwidth_bins``; the nearest-integer bin count departs from it, for
+    the reasons above.
+
+    Time and space are O(`n_bins`).
+
     References
     ----------
-    https://docs.mdanalysis.org/1.1.1/documentation_pages/lib/util.html#MDAnalysis.analysis.density.fixedwidth_bins
+    MDAnalysis ``lib.util.fixedwidth_bins``:
+    https://github.com/MDAnalysis/mdanalysis/blob/ae9ff4b738606ba1e7c18a8a9b99a8a87eb69f74/package/MDAnalysis/lib/util.py#L1350
 
     Examples
     --------
@@ -704,49 +892,62 @@ def fixedsize_bins(
     5
     >>> result['bin_edges']
     array([0., 1., 2., 3., 4., 5.])
+
+    A range that is a whole number of bins up to round-off is tiled exactly:
+
+    >>> result = fixedsize_bins(0.3, 0.0, 2.1)
+    >>> edges = result['bin_edges']
+    >>> print(result['n_bins'], edges[0], edges[-1])
+    7 0.0 2.1
+
+    A radial range whose lower end would fall below zero is clipped there,
+    and the bins keep their width:
+
+    >>> result = fixedsize_bins(1.0, 0.1, 2.5, bin_type='nonnegative')
+    >>> result['bin_edges']
+    array([0., 1., 2., 3.])
+
+    Azimuthal bins of 5 degrees span exactly one period:
+
+    >>> result = fixedsize_bins(np.pi / 36, -np.pi, np.pi, bin_type='periodic')
+    >>> print(result['n_bins'], result['bin_edges'][-1] == np.pi)
+    72 True
     """
     if lmin >= lmax:
         raise ValueError("'lmin' must be less than 'lmax'.")
 
     _length = lmax - lmin
     _delta = bin_size
-
-    # Initialize the adjusted limits and bin edges:
-    lmin_adj = lmin
-    lmax_adj = lmax
-    n_bins = 0  # Statistically invalid
-    bin_edges = np.array([])  # Statistically invalid
+    n_bins, excess = _count_bins(_length, _delta)
+    dl = 0.5 * excess  # the excess length to share between the two ends
 
     if bin_type == 'ordinary':
-        n_bins = int(np.ceil(_length / _delta))
-        dl = 0.5 * (n_bins * _delta - _length)  # excess length
         # add half of the excess to each end:
         lmin_adj = lmin - dl
         lmax_adj = lmax + dl
-        bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
     elif bin_type == 'nonnegative':
-        n_bins = int(np.ceil(_length / _delta))
-        dl = 0.5 * (n_bins * _delta - _length)
-        lmin_adj = max(0.0, lmin - dl)
-        lmax_adj = lmax + 2 * dl if lmin_adj == 0 else lmax + dl
-        bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
+        if lmin < 0.0:
+            raise ValueError(
+                "'lmin' must be nonnegative for the 'nonnegative' bin type."
+            )
+        if lmin - dl < 0.0:
+            # clip the lower end at zero and span n_bins full widths from it
+            lmin_adj = 0.0
+            lmax_adj = n_bins * _delta
+        else:
+            lmin_adj = lmin - dl
+            lmax_adj = lmax + dl
     elif bin_type == 'periodic':
-        n_bins = int(np.ceil(_length / _delta))
+        if excess != 0.0:
+            raise ValueError(
+                f"For the 'periodic' bin type, the period 'lmax - lmin' "
+                f"({_length}) must be a multiple of 'bin_size' ({_delta})."
+            )
         lmin_adj, lmax_adj = lmin, lmax
-        bin_edges = np.arange(lmin_adj, lmax_adj + _delta, _delta, dtype=float)
-        if (len(bin_edges) - 1) != n_bins:
-            # Number of bins (n_bins='{n_bins}') is different from the actual
-            # number of bins (n_edges-1={len(bin_edges)-1}) for the 'periodic'
-            # bin type because period, i.e., 'lmax-lmin={_length}', and
-            # delta={_delta}, not 'n_bins', are used to created 'bin_edges'.
-            warnings.warn("'n_bins' is set to 'len(bin_edges)-1'", UserWarning)
     else:
         invalid_keyword(bin_type, ['ordinary', 'nonnegative', 'periodic'])
 
-    if n_bins == 0 or len(bin_edges) == 0:
-        raise ValueError("Invalid bin settings: n_bins must be > 0 and "
-                         "bin_edges must not be empty.")
-
+    bin_edges = np.linspace(lmin_adj, lmax_adj, n_bins + 1, endpoint=True)
     collectors = np.zeros(n_bins, dtype=np.int64)
     collectors_std = np.zeros(n_bins, dtype=np.float64)
 
@@ -765,7 +966,6 @@ def fixedsize_bins(
 def radial_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
-    bin_range: Tuple[float, float],
 ) -> np.ndarray:
     """
     Compute the histogram of radial distances from the origin in the spherical
@@ -778,9 +978,9 @@ def radial_histogram(
         by atom number form 1 to N.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
-        edge.
-    bin_range : Tuple[float, float]
-        The lower and upper ranges of the bins.
+        edge. The last bin includes its right edge. Every position must lie
+        within the outermost edges: a coordinate along a periodic axis must
+        already be wrapped into the box, since this function does not wrap.
 
     Returns
     -------
@@ -791,12 +991,16 @@ def radial_histogram(
     ------
     ValueError
         If the positions array is not two-dimensional.
+    ValueError
+        If any position falls outside the outermost edges. `np.histogram`
+        would drop it silently; here a dropped position means wrong edges or
+        an unwrapped coordinate, so it is an error.
 
     Examples
     --------
     >>> positions= np.array([[1, 0, 0], [0, 1, 0], [0, 0, 2]])
     >>> edges = np.array([0, 1, 2, 3])
-    >>> radial_histogram(positions, edges, (0, 3))
+    >>> radial_histogram(positions, edges)
     array([0, 2, 1])
     """
     if positions.ndim != 2:
@@ -805,14 +1009,12 @@ def radial_histogram(
         )
 
     rad_distances = np.linalg.norm(positions, axis=1)
-    hist, _ = np.histogram(rad_distances, bins=edges, range=bin_range)
-    return hist
+    return _histogram_or_raise(rad_distances, edges)
 
 
 def radial_cyl_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
-    bin_range: Tuple[float, float],
     dim: AxisT,
 ) -> np.ndarray:
     """
@@ -826,9 +1028,9 @@ def radial_cyl_histogram(
         by atom number form 1 to N.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
-        edge.
-    bin_range : Tuple[float, float]
-        The lower and upper ranges of the bins.
+        edge. The last bin includes its right edge. Every position must lie
+        within the outermost edges: a coordinate along a periodic axis must
+        already be wrapped into the box, since this function does not wrap.
     dim : :py:data:`AxisT`
         Axis direction (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`.
 
@@ -843,13 +1045,17 @@ def radial_cyl_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
+    ValueError
+        If any position falls outside the outermost edges. `np.histogram`
+        would drop it silently; here a dropped position means wrong edges or
+        an unwrapped coordinate, so it is an error.
 
     Examples
     --------
     >>> import numpy as np
     >>> positions = np.array([[1, 0, 0], [0, 2, 0], [0, 0, 3], [0, 3, 4]])
     >>> edges = np.array([0, 1, 2, 3, 4])
-    >>> radial_cyl_histogram(positions, edges, (0, 4), dim=1)
+    >>> radial_cyl_histogram(positions, edges, dim=1)
     array([1, 1, 0, 2])
     """
     if dim not in {0, 1, 2}:
@@ -861,14 +1067,12 @@ def radial_cyl_histogram(
 
     trans_axes = np.roll(np.arange(3), -dim)[1:]  # selecting transverse axes
     trans_distances = np.linalg.norm(positions[:, trans_axes], axis=1)
-    hist, _ = np.histogram(trans_distances, bins=edges, range=bin_range)
-    return hist
+    return _histogram_or_raise(trans_distances, edges)
 
 
 def axial_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
-    bin_range: Tuple[float, float],
     dim: AxisT,
 ) -> np.ndarray:
     """
@@ -882,9 +1086,9 @@ def axial_histogram(
         by atom number form 1 to N.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
-        edge.
-    bin_range : Tuple[float, float]
-        The lower and upper ranges of the bins.
+        edge. The last bin includes its right edge. Every position must lie
+        within the outermost edges: a coordinate along a periodic axis must
+        already be wrapped into the box, since this function does not wrap.
     dim : :py:data:`AxisT`
         The longitudinal axis (0=x, 1=y, 2=z); see
         :mod:`polyphys.manage.types`.
@@ -900,12 +1104,16 @@ def axial_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
+    ValueError
+        If any position falls outside the outermost edges. `np.histogram`
+        would drop it silently; here a dropped position means wrong edges or
+        an unwrapped coordinate, so it is an error.
 
     Examples
     --------
     >>> positions= np.array([[1, 2, 3], [2, 3, 4], [1, 2, 2]])
     >>> edges = np.array([0, 1, 2, 3, 4, 5])
-    >>> axial_histogram(positions, edges, (0, 5), dim=0)
+    >>> axial_histogram(positions, edges, dim=0)
     array([0, 2, 1, 0, 0])
     """
     if dim not in {0, 1, 2}:
@@ -915,14 +1123,12 @@ def axial_histogram(
             "'positions' must be a 2D array with shape (n_atoms, n_dim)."
         )
 
-    hist, _ = np.histogram(positions[:, dim], bins=edges, range=bin_range)
-    return hist
+    return _histogram_or_raise(positions[:, dim], edges)
 
 
 def azimuth_cyl_histogram(
     positions: np.ndarray,
     edges: np.ndarray,
-    bin_range: Tuple[float, float],
     dim: AxisT,
 ) -> np.ndarray:
     """
@@ -936,9 +1142,9 @@ def azimuth_cyl_histogram(
         by atom number form 1 to N.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
-        edge.
-    bin_range : Tuple[float, float]
-        The lower and upper ranges of the bins.
+        edge. The last bin includes its right edge. Every position must lie
+        within the outermost edges: a coordinate along a periodic axis must
+        already be wrapped into the box, since this function does not wrap.
     dim : :py:data:`AxisT`
         The longitudinal axis (0=x, 1=y, 2=z); see
         :mod:`polyphys.manage.types`.
@@ -954,12 +1160,16 @@ def azimuth_cyl_histogram(
         If `dim` is not one of {0, 1, 2}.
     ValueError
         If the positions array is not two-dimensional.
+    ValueError
+        If any position falls outside the outermost edges. `np.histogram`
+        would drop it silently; here a dropped position means wrong edges or
+        an unwrapped coordinate, so it is an error.
 
     Examples
     --------
     >>> positions= np.array([[1, 0, 0], [0, 1, 0], [-1, 0, 0]])
     >>> edges = np.linspace(-np.pi, np.pi, 5)
-    >>> azimuth_cyl_histogram(positions, edges, (-np.pi, np.pi), dim=2)
+    >>> azimuth_cyl_histogram(positions, edges, dim=2)
     array([0, 0, 1, 2])
     """
     if dim not in {0, 1, 2}:
@@ -973,14 +1183,12 @@ def azimuth_cyl_histogram(
     azimuthal_angles = np.arctan2(
         positions[:, transverse_axes[1]], positions[:, transverse_axes[0]]
     )
-    hist, _ = np.histogram(azimuthal_angles, bins=edges, range=bin_range)
-    return hist
+    return _histogram_or_raise(azimuthal_angles, edges)
 
 
 def planar_cartesian_histogram(
     positions: np.ndarray,
     edges: List[np.ndarray],
-    bin_ranges: List[Tuple[int, int]],
     dim: AxisT,
 ) -> np.ndarray:
     """
@@ -993,11 +1201,11 @@ def planar_cartesian_histogram(
         Array of shape (n_atoms, n_dim) containing atom positions, and sorted
         by atom number form 1 to N.
     edges : List[np.ndarray]
-        A monotonically increasing array of bin edges, including the rightmost
-        edge.
-    bin_range : List[Tuple[float, float]]
-        The list of the lower and upper ranges of the bins in the transverse
-        directions within the plane.
+        Two monotonically increasing arrays of bin edges, one per planar axis,
+        each including its rightmost edge. The last bin along each axis
+        includes its right edge. Every position must lie within the outermost
+        edges along both axes: a coordinate along a periodic axis must already
+        be wrapped into the box, since this function does not wrap.
     dim : :py:data:`AxisT`
         Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
         planar axes to the `np.histogram2d`: When `dim=0` (x), `dim=1` (y) and
@@ -1018,14 +1226,17 @@ def planar_cartesian_histogram(
     ValueError
         If the positions array is not two-dimensional.
     ValueError
-        If the length of `edges` or `bin_ranges` is not two.
+        If any position falls outside the outermost edges. `np.histogram`
+        would drop it silently; here a dropped position means wrong edges or
+        an unwrapped coordinate, so it is an error.
+    ValueError
+        If the length of `edges` is not two.
 
     Examples
     --------
     >>> positions= np.array([[1, 1, 0], [2, 2, 0], [3, 3, 0]])
     >>> edges = [np.array([0, 2, 4]), np.array([0, 2, 4])]
-    >>> ranges = [(0, 4), (0, 4)]
-    >>> planar_cartesian_histogram(positions, edges, ranges, dim=2)
+    >>> planar_cartesian_histogram(positions, edges, dim=2)
     array([[1., 0.],
            [0., 2.]])
     """
@@ -1037,16 +1248,18 @@ def planar_cartesian_histogram(
         )
     if len(edges) != 2:
         raise ValueError("'edges' must contain two arrays, one for each axis.")
-    if len(bin_ranges) != 2:
-        raise ValueError(
-            "'bin_edges' must contain two tuples, one for each axis."
-        )
 
     t_dims = np.roll(np.arange(3), -dim)[1:]  # selecting transverse axes
     hist, _, _ = np.histogram2d(
         positions[:, t_dims[0]],
         positions[:, t_dims[1]],
         bins=edges,
-        range=bin_ranges,
     )
+    n_missed = len(positions) - int(hist.sum())
+    if n_missed:
+        raise ValueError(
+            f"{n_missed} of {len(positions)} positions fall outside the "
+            f"edges [{edges[0][0]}, {edges[0][-1]}] x "
+            f"[{edges[1][0]}, {edges[1][-1]}]."
+        )
     return hist
