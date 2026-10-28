@@ -3,48 +3,39 @@
 :mod:`polyphys.manage.parser`
 ==========================================================
 
-This :mod:`~polyphys.manage.parser` module defines a suite of base and
-specialized parser classes for extracting structured, lineage-based information
-from filenames and file paths in molecular simulation projects. Each parser
-subclass represents a unique project type and geometry (e.g., cubic,
-cylindrical), allowing lineage-specific parsing of artifact attributes from
-filenames.
+This :mod:`~polyphys.manage.parser` module turns the name of a simulation
+artifact into typed attributes. A name such as
+``N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1`` is a
+run of keyword-value pairs; each project has its own keywords, and each level
+of the lineage ``segment``, ``whole``, ``ensemble_long``, ``ensemble``, and
+``space`` uses its own subset of them, in its own order.
 
-The lineage attribute hierarchy includes the following levels: 'segment',
-'whole', 'ensemble_long', 'ensemble', and 'space'. Each level represents a
-different scope within the project, ranging from individual simulation segments
-to complete simulation spaces. Different classes support parsing of project
-attributes such as particle dimensions, densities, and simulation box
-dimensions. These classes employ various methods to dynamically interpret and
-calculate attributes based on parsed lineage and project requirements.
+A parser class is a declaration. It states the project's geometry, polymer
+topology, and particle groups; one :class:`KeywordSpec` per filename keyword;
+the keyword pattern of each lineage; fixed values; and the particle species
+whose bulk number density and volume fraction the parser computes.
+:class:`ParserBase` does the parsing, builds the parent lineage names, and
+computes the bulk values.
 
 Contents
 ========
 
-:class:`ParserBase` is the abstract base class. Each concrete subclass declares
-its own geometry, topology, particle groups, and per-lineage attribute schema:
-
+- :class:`KeywordSpec` and :class:`Species`, the two building blocks of a
+  declaration.
+- :class:`ParserBase`, the base class every parser derives from.
 - Cylindrical confinement: :class:`SumRuleCyl`, :class:`TransFociCyl`, and
   :class:`HnsCyl`.
-- Cubic confinement: :class:`TwoMonDepCub`, :class:`TransFociCub`,
-  :class:`HnsCub`, :class:`SumRuleCubHeteroRing`, and
-  :class:`SumRuleCubHeteroLinear`.
+- Cubic box: :class:`TwoMonDepCub`, :class:`TransFociCub`, :class:`HnsCub`,
+  :class:`SumRuleCubHeteroRing`, and :class:`SumRuleCubHeteroLinear`.
 
 Dependencies
 ============
-- Python standard library: `os`, `re`, `typing`, `abc`, `collections`
-- :mod:`polyphys.manage.utils`: utility functions such as
-  :func:`~polyphys.manage.utils.invalid_keyword` and the number-density and
-  volume-fraction conversions.
+- Python standard library: `os`, `re`, `collections`, `dataclasses`,
+  `pathlib`, `typing`.
+- :mod:`polyphys.manage.utils`: :func:`~polyphys.manage.utils.invalid_keyword`
+  and the number-density and volume-fraction functions.
 - :mod:`polyphys.manage.types`: domain type aliases such as
   :py:data:`~polyphys.manage.types.LineageT`.
-
-Usage
-=====
-Classes in this module are instantiated with artifact filenames, lineages, and
-group types, which they parse into a rich set of attributes. These classes
-facilitate programmatic access to file-based information for complex
-projects.
 
 Examples
 ========
@@ -58,16 +49,17 @@ Examples
 
 Notes
 =====
-These classes use dynamic attribute setting based on parsed filename data.
-To handle attributes that may or may not exist at runtime, the `getattr`
-function is commonly used, ensuring robustness to varied filename patterns.
+The parsed and computed attributes are set on the instance at construction
+with :func:`setattr`, so their names come from the declaration rather than
+from the class body; :attr:`ParserBase.attributes` lists the ones a given
+lineage sets.
 """
 import os
 import re
+from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar, Optional, Self
-from abc import ABC, abstractmethod
-from collections import OrderedDict
 from .utils import (
     invalid_keyword,
     number_density_cube,
@@ -77,108 +69,342 @@ from .utils import (
 )
 from .types import LineageT, TopologyT, GroupT, GeometryT, Pathish
 
+# A keyword is a run of letters (or hyphens); its value is the text up to the
+# next keyword.
+_TOKEN_RE = re.compile(r"([a-zA-Z\-]+)")
 
-class ParserBase(ABC):
+# The lineages whose names carry the box size, and so the bulk values.
+_BULK_LINEAGES: tuple[LineageT, ...] = ('segment', 'whole', 'ensemble_long')
+
+# The attributes that size the simulation box in each geometry.
+_BOX_ATTRIBUTES: dict[GeometryT, tuple[str, ...]] = {
+    'cubic': ('lcube',),
+    'cylindrical': ('lcyl', 'dcyl'),
+}
+
+
+@dataclass(frozen=True)
+class KeywordSpec:
+    """
+    How a parser reads the value of one filename keyword.
+
+    The value :math:`x` that follows the keyword in a name is stored in the
+    attribute `attr` as :math:`y = s x + c`, with scale :math:`s` and offset
+    :math:`c`; the default :math:`s = 1`, :math:`c = 0` stores the value as
+    written.
+
+    Parameters
+    ----------
+    attr : str
+        Name of the parser attribute that stores the value.
+    kind : {int, float}
+        Type of the stored value.
+    scale : float, default 1.0
+        Scale :math:`s` of the conversion. Only a `float` keyword may set it.
+    offset : float, default 0.0
+        Offset :math:`c` of the conversion. Only a `float` keyword may set
+        it.
+
+    Raises
+    ------
+    TypeError
+        If `kind` is neither `int` nor `float`, or if an `int` keyword sets
+        `scale` or `offset`.
+
+    Examples
+    --------
+    The keyword ``N`` is a number of monomers:
+
+    >>> KeywordSpec('nmon', int).parse('200')
+    200
+
+    The keyword ``r`` is the radius of the cylinder on which the centres of
+    the wall beads of size 1 lie, so the cylinder size is :math:`D = 2r - 1`:
+
+    >>> spec = KeywordSpec('dcyl', float, scale=2.0, offset=-1.0)
+    >>> spec.parse('10.5')
+    20.0
+    """
+    attr: str
+    kind: type[int] | type[float]
+    scale: float = 1.0
+    offset: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.kind not in (int, float):
+            raise TypeError(
+                f"KeywordSpec {self.attr!r}: 'kind' must be int or float, "
+                f"not {self.kind!r}.")
+        if self.kind is int and not self.is_identity:
+            raise TypeError(
+                f"KeywordSpec {self.attr!r}: only a float keyword can have a "
+                "'scale' or an 'offset'.")
+
+    @property
+    def is_identity(self) -> bool:
+        """
+        Whether the conversion stores the value as written.
+        """
+        return self.scale == 1.0 and self.offset == 0.0
+
+    def parse(self, token: str) -> int | float:
+        """
+        Convert the text that follows a keyword into the stored value.
+
+        Parameters
+        ----------
+        token : str
+            The text between the keyword and the next keyword, such as
+            ``'10.5'`` or ``'1.'``.
+
+        Returns
+        -------
+        int or float
+            The value as an `int` for an `int` keyword, else
+            ``scale * float(token) + offset``.
+
+        Raises
+        ------
+        ValueError
+            If `token` is not a number, or if the keyword is an `int` keyword
+            and `token` is not a whole number, such as ``'1.5'``.
+
+        Examples
+        --------
+        >>> KeywordSpec('ncrowd', int).parse('1000.')
+        1000
+        >>> KeywordSpec('lcube', float, scale=2.0).parse('25.0')
+        50.0
+        """
+        try:
+            value = float(token)
+        except ValueError:
+            raise ValueError(f"{token!r} is not a number") from None
+        if self.kind is int:
+            if not value.is_integer():
+                raise ValueError(f"{token!r} is not an integer")
+            return int(value)
+        if self.is_identity:
+            return value
+        return self.scale * value + self.offset
+
+
+@dataclass(frozen=True)
+class Species:
+    """
+    A particle species whose bulk number density and volume fraction a parser
+    computes.
+
+    At the ``segment``, ``whole``, and ``ensemble_long`` lineages, a parser
+    sets ``rho_bulk_<suffix>``, the number of particles of the species per
+    unit volume of the box, and ``phi_bulk_<suffix>``, the fraction of the
+    box volume they fill.
+
+    Parameters
+    ----------
+    suffix : str
+        Suffix of the two attribute names, such as ``'m'`` for monomers or
+        ``'c'`` for crowders.
+    number : str
+        Name of the attribute that holds the number of particles.
+    size : str
+        Name of the attribute that holds the particle diameter.
+
+    Examples
+    --------
+    >>> crowders = Species('c', 'ncrowd', 'dcrowd')
+    >>> crowders.suffix
+    'c'
+    """
+    suffix: str
+    number: str
+    size: str
+
+
+class ParserBase:
     """
     Base parser class for extracting information from filenames or file paths
-    in a structured project. Designed to enforce lineage, geometry, and group
-    conventions across subclasses for specific project types.
+    in a structured project.
+
+    A subclass declares a project's filename grammar and physics through the
+    class attributes listed under "Declaration"; this class parses the name,
+    builds the names of the parent lineages, and computes the bulk number
+    densities and volume fractions.
 
     Parameters
     ----------
     artifact : Pathish
-        The artifact to be parsed. Must be a relative or absolute file path
-        (string or Path). The path may include or omit directories, but must
-        represent a valid file. Pure name tokens without extensions should
-        instead be passed via :meth:`from_name`.
+        The artifact to be parsed: a name, or, with ``ispath=True``, a
+        relative or absolute file path (string or Path).
     lineage : :py:data:`LineageT`
         The lineage of the artifact, specifying the hierarchical level within
         the project. Must be one of: ``'segment'``, ``'whole'``,
         ``'ensemble_long'``, ``'ensemble'``, or ``'space'``.
     group : :py:data:`GroupT`
-        The particle group type in the project. Used for specific group-based
-        parsing.
+        The particle group the artifact describes; one of the subclass's
+        `groups`.
+    ispath : bool, default False
+        Whether `artifact` is a file path. A path is expanded (``~`` and
+        environment variables) and resolved, and its stem is parsed.
 
     Alternative Constructors
     ------------------------
     .. method:: from_name(name, lineage, group)
        Construct a parser directly from a *name token* (not a path).
-       This bypasses filesystem resolution. Intended for cases where only
-       a lineage token is available, e.g., when working with metadata or
-       generated identifiers. In this mode, ``filepath`` and ``ext`` are
-       set to empty strings, and the given token is treated as both the
-       ``filename`` and ``name`` prior to :meth:`_find_name` normalization.
+       This bypasses filesystem resolution. In this mode, ``filepath`` and
+       ``ext`` are set to ``'N/A'``, and the given token is treated as both
+       the ``filename`` and ``name`` prior to :meth:`_find_name`
+       normalization.
 
     Attributes
     ----------
     filepath : str
-        Absolute directory path if `artifact` is a file path, or ``""`` if
-        constructed via :meth:`from_name`.
+        Absolute directory path if `artifact` is a file path, or ``'N/A'``.
     filename : str
-        The filename extracted from `artifact`, or the provided token if
-        constructed via :meth:`from_name`.
+        The filename extracted from `artifact`, or `artifact` itself.
     ext : str
-        The file extension (including the leading dot), or ``""`` if none
-        was available (e.g., from :meth:`from_name`).
+        The file extension (including the leading dot), or ``'N/A'`` if
+        `artifact` is not a path.
     name : str
-        The unique name derived from `filename` based on `lineage` and
-        `group` conventions.
+        The lineage name: `filename` without its extension, cut before
+        ``.<group>`` (``segment`` and ``whole``) and before the first
+        hyphen.
     group : :py:data:`GroupT`
         Particle group type in the project.
     lineage : :py:data:`LineageT`
-        The lineage of the artifact, specifying the hierarchical level within
-        the project. Must be one of: ``'segment'``, ``'whole'``,
-        ``'ensemble_long'``, ``'ensemble'``, or ``'space'``.
+        The lineage of the artifact.
     project_name : str
-        The name of the parser subclass (automatically assigned).
+        The name of the parser subclass.
     lineage_genealogy : list of :py:data:`LineageT`
-        List of parent lineages for the artifact’s `lineage`.
+        The artifact's `lineage` and its parent lineages.
     lineage_attributes : list of str
-        Parsed or dynamically defined attributes specific to the artifact’s
-        `lineage`.
+        The attributes parsed from `name`, in pattern order.
     physical_attributes : list of str
-        Computed or system attributes specific to the artifact’s `lineage`.
+        The fixed and computed attributes listed for the artifact's
+        `lineage`.
     attributes : list of str
-        Union of lineage-specific and physical attributes for the artifact.
+        `lineage_attributes` followed by `physical_attributes`.
+    segment, whole, ensemble_long, ensemble, space : str
+        The artifact's name at each lineage of `lineage_genealogy`, and
+        ``'N/A'`` at the others.
 
     Class Attributes
     ----------------
     lineages : list of :py:data:`LineageT`
         List of valid lineage types.
-    genealogy : dict of (:py:data:`LineageT` → list of :py:data:`LineageT`)
-        Dictionary defining the hierarchical relationships between lineages.
-        Each lineage points to its parent lineages in the hierarchy.
-
-    Abstract Class Properties
-    -------------------------
+    genealogy : dict of (:py:data:`LineageT` -> list of :py:data:`LineageT`)
+        Each lineage mapped to itself and its parent lineages.
     geometry : :py:data:`GeometryT`
         Specifies the geometry of the system.
     topology : :py:data:`TopologyT`
         Specifies how particles are connected (or not) in the system.
     groups : list of :py:data:`GroupT`
         Allowed particle groups in the system.
-    genealogy_attributes : dict of (
-        :py:data:`LineageT` -> OrderedDict[str, str])
-        Mapping from lineage type to an OrderedDict of attribute names and
-        their short forms.
+    genealogy_attributes : dict of (\
+:py:data:`LineageT` -> OrderedDict[str, str])
+        Each lineage mapped to an OrderedDict of attribute names and their
+        filename keywords, in pattern order; built from `_keywords` and
+        `_patterns`.
     project_attributes : dict of (:py:data:`LineageT` -> list of str)
-        Mapping from lineage type to project-level attributes that remain
-        constant but are not extractable from filenames.
+        Each lineage mapped to the attributes that are fixed or computed
+        rather than parsed.
 
-    Methods
-    -------
-    _find_name() -> None
-        Parse and sets the unique name based on `lineage` and `group`.
-    _set_parents() -> None
-        Set pattern names for each `lineage` based on `_genealogy`.
-    _initiate_attributes() -> None
-        Define and initializes subclass-specific attributes. (Abstract method)
-    _parse_name() -> None
-        Parse lineage-specific attributes based on the filename.
-        (Abstract method)
-    _bulk_attributes() -> None
-        Compute physical attributes for the current lineage based on primary
-        attributes. (Abstract method)
+    Declaration
+    -----------
+    A subclass sets these class attributes:
+
+    _geometry : :py:data:`GeometryT`
+        ``'cubic'`` or ``'cylindrical'``. A cubic project with species
+        declares the attribute ``lcube``; a cylindrical one ``lcyl`` and
+        ``dcyl``.
+    _topology : :py:data:`TopologyT`
+        The polymer topology.
+    _groups : list of :py:data:`GroupT`
+        The particle groups.
+    _keywords : dict of (str -> :class:`KeywordSpec`)
+        Each filename keyword mapped to how its value is read.
+    _patterns : dict of (:py:data:`LineageT` -> tuple of str)
+        Each lineage mapped to its keywords in name order.
+    _project_attributes : dict of (:py:data:`LineageT` -> list of str)
+        As `project_attributes` above.
+    _defaults : dict of (str -> float), optional
+        Attributes set at every lineage before parsing, such as a fixed
+        monomer size.
+    _species : tuple of :class:`Species`, optional
+        The species whose bulk values are computed.
+    _totals : dict of (str -> tuple of str), optional
+        A suffix mapped to species suffixes; ``rho_bulk_<suffix>`` and
+        ``phi_bulk_<suffix>`` are the sums of theirs.
+    _masses : dict of (str -> str), optional
+        A mass attribute mapped to a size attribute; the mass is the size
+        cubed, :math:`m = d^3`, for a uniform mass density.
+
+    A declaration is checked when the subclass is created; a class whose
+    `_patterns` is ``None`` is abstract and cannot be instantiated.
+
+    Raises
+    ------
+    TypeError
+        On instantiation of a class with no `_patterns`, such as
+        `ParserBase` itself; on creation of a subclass whose declaration is
+        incomplete or inconsistent.
+    ValueError
+        If `artifact` is empty; if `lineage` or `group` is not valid; if
+        `name` lacks a keyword of the lineage's pattern; or if a keyword's
+        value is not a number, or not a whole number for an `int` keyword.
+
+    Notes
+    -----
+    Parsing splits `name` once into keyword-value pairs and keeps the first
+    value of each keyword, so a name may carry keywords the pattern does not
+    use. For a name of length :math:`L` and a pattern of :math:`k` keywords,
+    parsing costs :math:`O(L + k)` time and :math:`O(L)` memory.
+
+    The bulk values are computed only at the ``segment``, ``whole``, and
+    ``ensemble_long`` lineages, whose names carry the box size.
+
+    Examples
+    --------
+    A parser for a hypothetical study of a linear chain among crowders in a
+    periodic cube:
+
+    >>> class ChainCub(ParserBase):
+    ...     _geometry = 'cubic'
+    ...     _topology = 'linear'
+    ...     _groups = ['bug', 'all']
+    ...     _keywords = {
+    ...         'N': KeywordSpec('nmon', int),
+    ...         'ac': KeywordSpec('dcrowd', float),
+    ...         'nc': KeywordSpec('ncrowd', int),
+    ...         'l': KeywordSpec('lcube', float, scale=2.0),
+    ...         'ens': KeywordSpec('ensemble_id', int),
+    ...         'j': KeywordSpec('segment_id', int),
+    ...     }
+    ...     _patterns = {
+    ...         'segment': ('N', 'ac', 'nc', 'l', 'ens', 'j'),
+    ...         'whole': ('N', 'ac', 'nc', 'l', 'ens'),
+    ...         'ensemble_long': ('N', 'ac', 'nc', 'l'),
+    ...         'ensemble': ('N', 'ac', 'nc'),
+    ...         'space': ('N', 'ac'),
+    ...     }
+    ...     _defaults = {'dmon': 1.0}
+    ...     _species = (Species('m', 'nmon', 'dmon'),
+    ...                 Species('c', 'ncrowd', 'dcrowd'))
+    ...     _project_attributes = {
+    ...         'segment': ['dmon', 'phi_bulk_m', 'rho_bulk_m',
+    ...                     'phi_bulk_c', 'rho_bulk_c'],
+    ...         'whole': ['dmon', 'phi_bulk_m', 'rho_bulk_m',
+    ...                   'phi_bulk_c', 'rho_bulk_c'],
+    ...         'ensemble_long': ['dmon', 'phi_bulk_m', 'rho_bulk_m',
+    ...                           'phi_bulk_c', 'rho_bulk_c'],
+    ...         'ensemble': ['dmon'],
+    ...         'space': ['dmon'],
+    ...     }
+    >>> artifact = ChainCub('N100ac2.0nc50l10.0ens1.bug', 'whole', 'bug')
+    >>> artifact.lcube
+    20.0
+    >>> artifact.ensemble_long, artifact.ensemble, artifact.space
+    ('N100ac2.0nc50l10.0', 'N100ac2.0nc50', 'N100ac2.0')
     """
     _lineages: ClassVar[list[LineageT]] = \
         ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
@@ -189,12 +415,103 @@ class ParserBase(ABC):
         'ensemble': ['ensemble', 'space'],
         'space': ['space'],
     }
-    _geometry: ClassVar[Optional[GeometryT]] = None
-    _topology: ClassVar[Optional[TopologyT]] = None
-    _groups: ClassVar[Optional[list[GroupT]]] = None
-    _genealogy_attributes: \
-        ClassVar[Optional[dict[LineageT, OrderedDict[str, str]]]] = None
-    _project_attributes: ClassVar[Optional[dict[LineageT, list[str]]]] = None
+    # Every concrete subclass sets these; __init_subclass__ checks them.
+    _geometry: ClassVar[GeometryT]
+    _topology: ClassVar[TopologyT]
+    _groups: ClassVar[list[GroupT]]
+    _keywords: ClassVar[Optional[dict[str, KeywordSpec]]] = None
+    _patterns: ClassVar[Optional[dict[LineageT, tuple[str, ...]]]] = None
+    _defaults: ClassVar[dict[str, float]] = {}
+    _species: ClassVar[tuple[Species, ...]] = ()
+    _totals: ClassVar[dict[str, tuple[str, ...]]] = {}
+    _masses: ClassVar[dict[str, str]] = {}
+    _genealogy_attributes: ClassVar[dict[LineageT, OrderedDict[str, str]]]
+    _project_attributes: ClassVar[dict[LineageT, list[str]]]
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        if cls._patterns is None:
+            return
+        keywords, patterns = cls._check_declaration()
+        cls._genealogy_attributes = {
+            lineage: OrderedDict(
+                (keywords[keyword].attr, keyword)
+                for keyword in patterns[lineage])
+            for lineage in cls._lineages
+        }
+
+    @classmethod
+    def _check_declaration(
+        cls
+    ) -> tuple[dict[str, KeywordSpec], dict[LineageT, tuple[str, ...]]]:
+        """
+        Check a subclass's declaration and return its keyword and pattern
+        tables.
+
+        Returns
+        -------
+        tuple of (dict, dict)
+            `_keywords` and `_patterns`.
+
+        Raises
+        ------
+        TypeError
+            If a required class attribute is unset; if a lineage has no
+            pattern or no project attributes; if a pattern keyword has no
+            :class:`KeywordSpec`; if an attribute appears twice in one
+            pattern; if the bulk recipe reads an attribute a ``segment``,
+            ``whole``, or ``ensemble_long`` name does not set; or if a total
+            names an undeclared species.
+        """
+        name = cls.__name__
+        keywords = cls._keywords
+        patterns = cls._patterns
+        geometry: Optional[GeometryT] = getattr(cls, '_geometry', None)
+        if (geometry is None or getattr(cls, '_topology', None) is None
+                or getattr(cls, '_groups', None) is None
+                or keywords is None or patterns is None
+                or getattr(cls, '_project_attributes', None) is None):
+            raise TypeError(
+                f"{name} must declare '_geometry', '_topology', '_groups', "
+                "'_keywords', '_patterns', and '_project_attributes'.")
+        for table in ('_patterns', '_project_attributes'):
+            if set(getattr(cls, table)) != set(cls._lineages):
+                raise TypeError(
+                    f"{name}.{table} must have one entry per lineage: "
+                    f"{cls._lineages}.")
+        for lineage, pattern in patterns.items():
+            for keyword in pattern:
+                if keyword not in keywords:
+                    raise TypeError(
+                        f"{name}: keyword {keyword!r} in the {lineage!r} "
+                        "pattern has no KeywordSpec.")
+            attrs = [keywords[keyword].attr for keyword in pattern]
+            for attr in attrs:
+                if attrs.count(attr) > 1:
+                    raise TypeError(
+                        f"{name}: attribute {attr!r} appears more than once "
+                        f"in the {lineage!r} pattern.")
+        suffixes = {species.suffix for species in cls._species}
+        for total, parts in cls._totals.items():
+            for part in parts:
+                if part not in suffixes:
+                    raise TypeError(
+                        f"{name}: total {total!r} sums {part!r}, which is "
+                        "not a declared species.")
+        needed: list[str] = list(cls._masses.values())
+        if cls._species:
+            needed.extend(_BOX_ATTRIBUTES[geometry])
+        for species in cls._species:
+            needed.extend((species.number, species.size))
+        for lineage in _BULK_LINEAGES:
+            available = set(cls._defaults).union(
+                keywords[keyword].attr for keyword in patterns[lineage])
+            for attr in needed:
+                if attr not in available:
+                    raise TypeError(
+                        f"{name}: the bulk values need {attr!r}, which the "
+                        f"{lineage!r} pattern does not set.")
+        return keywords, patterns
 
     def __init__(
         self,
@@ -203,6 +520,10 @@ class ParserBase(ABC):
         group: GroupT,
         ispath: bool = False
     ) -> None:
+        if self._patterns is None:
+            raise TypeError(
+                f"{type(self).__name__} declares no lineage patterns; "
+                "instantiate a concrete parser such as SumRuleCyl.")
         artifact_str = os.fspath(artifact)
         if artifact_str == '':
             raise ValueError("'artifact' cannot be an empty string.")
@@ -240,6 +561,12 @@ class ParserBase(ABC):
         self._attributes = \
             self._lineage_attributes + self._physical_attributes
 
+        self._set_defaults()
+        self._parse_name()
+        self._set_parents()
+        if self.lineage in _BULK_LINEAGES:
+            self._dependent_attributes()
+
     def __str__(self) -> str:
         """
         Provide a formatted summary of the parser instance.
@@ -273,8 +600,13 @@ class ParserBase(ABC):
         """
         Construct a parser from a *name token* (not a path).
 
-        Sets `filepath` and `ext` to empty strings and keeps the token as both
+        Sets `filepath` and `ext` to ``'N/A'`` and keeps the token as both
         `filename` and `name` before `_find_name()` normalization.
+
+        Examples
+        --------
+        >>> SumRuleCyl.from_name('N200D10.0ac2.0', 'space', 'bug').filepath
+        'N/A'
         """
         return cls(name, lineage, group, ispath=False)
 
@@ -297,8 +629,6 @@ class ParserBase(ABC):
         """
         System geometry in a molecular dynamics system.
         """
-        if self._geometry is None:
-            raise AttributeError("'_geometry' has not been initialized.")
         return self._geometry
 
     @property
@@ -306,8 +636,6 @@ class ParserBase(ABC):
         """
         List of valid group names for the subclass.
         """
-        if self._groups is None:
-            raise AttributeError("'_groups' has not been initialized.")
         return self._groups
 
     @property
@@ -315,8 +643,6 @@ class ParserBase(ABC):
         """
         Define the polymer topology for the parser subclass.
         """
-        if self._topology is None:
-            raise AttributeError("'_topology' has not been initialized.")
         return self._topology
 
     @property
@@ -324,23 +650,17 @@ class ParserBase(ABC):
         """
         Dictionary of lineage-specific attributes. Each key is a lineage type,
         and each value is an OrderedDict mapping attribute names to their
-        short-form representations.
+        filename keywords, in pattern order.
         """
-        if self._genealogy_attributes is None:
-            raise AttributeError(
-                "'_genealogy_attributes' has not been initialized.")
         return self._genealogy_attributes
 
     @property
     def project_attributes(self) -> dict[LineageT, list[str]]:
         """
-        Dictionary of project attributes. Each key is a lineage type,
-        and each value is an dict mapping attribute names to their
-        short-form representations.
+        Dictionary of project attributes. Each key is a lineage type, and
+        each value is the list of attributes that are fixed or computed
+        rather than parsed at that lineage.
         """
-        if self._project_attributes is None:
-            raise AttributeError(
-                "'_project_attributes' has not been initialized.")
         return self._project_attributes
 
     @property
@@ -445,12 +765,44 @@ class ParserBase(ABC):
         else:  # 'ensemble' or 'space' lineages
             self._name = self.name.split('-')[0]
 
-    @abstractmethod
-    def _initiate_attributes(self) -> None:
+    def _set_defaults(self) -> None:
         """
-        Define and initiate the project attributes. Lineage attributes are
-        set dynamically via `_parse_name` method.
+        Set the attributes declared in `_defaults`.
         """
+        for attr, value in self._defaults.items():
+            setattr(self, attr, value)
+
+    def _parse_name(self) -> None:
+        """
+        Set the attributes of the lineage's pattern from the values in
+        `name`.
+
+        Raises
+        ------
+        ValueError
+            If `name` lacks a keyword of the pattern, or a keyword's value is
+            not a number, or not a whole number for an `int` keyword.
+        """
+        keywords = self._keywords
+        patterns = self._patterns
+        assert keywords is not None and patterns is not None  # __init__
+        words = _TOKEN_RE.split(self.name)
+        values: dict[str, str] = {}
+        for keyword, token in zip(words[1::2], words[2::2]):
+            values.setdefault(keyword, token)
+        for keyword in patterns[self.lineage]:
+            spec = keywords[keyword]
+            if keyword not in values:
+                raise ValueError(
+                    f"keyword {keyword!r} for attribute {spec.attr!r} not "
+                    f"found in {self.name!r} (lineage {self.lineage!r}).")
+            try:
+                value = spec.parse(values[keyword])
+            except ValueError as err:
+                raise ValueError(
+                    f"value of keyword {keyword!r} in {self.name!r} "
+                    f"(lineage {self.lineage!r}): {err}.") from err
+            setattr(self, spec.attr, value)
 
     def _set_parents(self) -> None:
         """
@@ -516,119 +868,122 @@ class ParserBase(ABC):
                 return self.name[:match.end()].rstrip('.')
         raise ValueError(f"'{keyword}' keyword not found in '{self.name}'.")
 
-    @abstractmethod
-    def _parse_name(self) -> None:
+    def _bulk_values(self, number: float, size: float) -> tuple[float, float]:
         """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
+        Return the bulk number density and volume fraction of `number`
+        particles of diameter `size` in the periodic box.
 
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
+        Parameters
+        ----------
+        number : float
+            Number of particles.
+        size : float
+            Particle diameter.
+
+        Returns
+        -------
+        tuple of (float, float)
+            The number density and the volume fraction, from
+            :func:`~polyphys.manage.utils.number_density_cube` and
+            :func:`~polyphys.manage.utils.volume_fraction_cube` with the side
+            `lcube`, or their cylinder counterparts with `lcyl` and `dcyl`,
+            all with ``pbc=True``.
         """
+        if self.geometry == 'cubic':
+            lcube = getattr(self, 'lcube')
+            return (number_density_cube(number, size, lcube, pbc=True),
+                    volume_fraction_cube(number, size, lcube, pbc=True))
+        lcyl = getattr(self, 'lcyl')
+        dcyl = getattr(self, 'dcyl')
+        return (number_density_cylinder(number, size, lcyl, dcyl, pbc=True),
+                volume_fraction_cylinder(number, size, lcyl, dcyl, pbc=True))
 
-    @abstractmethod
     def _dependent_attributes(self) -> None:
         """
-        Calculate system attributes based on parsed values.
+        Compute the bulk values of each species, their declared totals, and
+        the declared masses.
         """
+        for species in self._species:
+            rho, phi = self._bulk_values(getattr(self, species.number),
+                                         getattr(self, species.size))
+            setattr(self, f"rho_bulk_{species.suffix}", rho)
+            setattr(self, f"phi_bulk_{species.suffix}", phi)
+        for total, parts in self._totals.items():
+            for quantity in ('rho_bulk', 'phi_bulk'):
+                setattr(self, f"{quantity}_{total}",
+                        sum(getattr(self, f"{quantity}_{part}")
+                            for part in parts))
+        for mass, size in self._masses.items():
+            setattr(self, mass, getattr(self, size) ** 3)
 
 
 class TwoMonDepCub(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *TwoMonDep* project, utilizing specific filename patterns.
+    Parse an artifact name of the *TwoMonDep* project: two monomers held at
+    a fixed surface-to-surface distance among crowders in a periodic cube.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
     - ``segment``: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#.j#
-      One of multiple chunks of a complete artifact.
     - ``whole``: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#
-      A complete artifact. It may be a collection of segments.
     - ``ensemble_long``: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#
-      Detailed name for an 'ensemble' artifact.
     - ``ensemble``: nm#am#ac#nc#sd#
-      Short name for an 'ensemble' artifact.
     - ``space``: nm#am#ac#nc#
-      A 'space' artifact.
-
-    For the above four lineages, the short-form keys (e.g., ``am``, ``nm``,
-    ``ac``)  are physical attributes where their values (shown by '#' sign) are
-    float or integer number. See `genealogy_attributes` below for long names
-    of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
-    lineage : LineageT
-        Lineage level of the artifact. Must be one of:
-        ``'segment'``, ``'whole'``, ``'ensemble_long'``, ``'ensemble'``,
-        ``'space'``.
-    group : GroupT
-        Particle group type, either ``'bug'`` or ``'all'``.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
+    lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
+        Lineage of the artifact.
+    group : {'bug', 'all'}
+        Particle group: ``'bug'`` for the two monomers, ``'all'`` for every
+        particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
     dmon : float
-        Size (diameter) of a monomer. Its associated keyword is 'am'.
+        Monomer diameter; keyword ``am``.
     nmon : int
-        Number of monomers. Its associated keyword is 'N'.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+        Number of monomers; keyword ``nm``.
+    dcrowd : float
+        Crowder diameter; keyword ``ac``.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
+        Number of crowders; keyword ``nc``.
     lcube : float
-        Length of the simulation box, inferred from 'hl' keyword
-        (half-length of the simulation box).
+        Side of the cube, :math:`L = 2 l_h`, from the half-side :math:`l_h`
+        (keyword ``hl``).
     d_sur : float
-        Surface-to-surface distance between two monomers fixed in space.
-        Its associated keyword is 'sd'.
+        Surface-to-surface distance between the two monomers; keyword
+        ``sd``.
     dt : float
-        Simulation timestep. Its associated keyword is 'dt'.
+        Simulation time step; keyword ``dt``.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        Dump period of the ``bug`` trajectory, in time steps; keyword
+        ``bdump``.
     adump : int
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Dump period of the ``all`` trajectory, in time steps; keyword
+        ``adump``.
     tdump : int
-        Frequency by which 'thermo' variables are written in a 'lammps'
-        log file. Its associated keyword is 'tdump'.
+        Output period of the LAMMPS thermo values, in time steps; keyword
+        ``tdump``.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of monomers.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
+
+    Notes
+    -----
+    The bulk values exist only at ``segment``, ``whole``, and
+    ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
 
     Examples
     --------
@@ -639,38 +994,31 @@ class TwoMonDepCub(ParserBase):
     _geometry = 'cubic'
     _topology = 'atomic'
     _groups = ['bug', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#.j#
-        'segment': OrderedDict({
-            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens',
-            'segment_id': 'j'}
-            ),
-        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump#ens#
-        'whole': OrderedDict({
-            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'tdump': 'tdump', 'ensemble_id': 'ens'}
-            ),
-        # Pattern: am#nm#ac#nc#hl#sd#dt#bdump#adump#tdump# :
-        'ensemble_long': OrderedDict({
-            'dmon': 'am', 'nmon': 'nm', 'dcrowd': 'ac', 'ncrowd': 'nc',
-            'lcube': 'hl', 'd_sur': 'sd', 'dt': 'dt', 'bdump': 'bdump',
-            'adump': 'adump', 'tdump': 'tdump'}
-            ),
-        # Pattern: nm#am#ac#nc#sd# :
-        'ensemble': OrderedDict(
-            {'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc',
-             'd_sur': 'sd'}
-             ),
-        # pattern: nm#am#ac#nc# :
-        'space': OrderedDict(
-            {'nmon': 'nm', 'dmon': 'am', 'dcrowd': 'ac', 'ncrowd': 'nc'}
-            )
+    _keywords = {
+        'am': KeywordSpec('dmon', float),
+        'nm': KeywordSpec('nmon', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'hl': KeywordSpec('lcube', float, scale=2.0),
+        'sd': KeywordSpec('d_sur', float),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'tdump': KeywordSpec('tdump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
-
+    _patterns = {
+        'segment': ('am', 'nm', 'ac', 'nc', 'hl', 'sd', 'dt', 'bdump',
+                    'adump', 'tdump', 'ens', 'j'),
+        'whole': ('am', 'nm', 'ac', 'nc', 'hl', 'sd', 'dt', 'bdump', 'adump',
+                  'tdump', 'ens'),
+        'ensemble_long': ('am', 'nm', 'ac', 'nc', 'hl', 'sd', 'dt', 'bdump',
+                          'adump', 'tdump'),
+        'ensemble': ('nm', 'am', 'ac', 'nc', 'sd'),
+        'space': ('nm', 'am', 'ac', 'nc'),
+    }
+    _species = (Species('m', 'nmon', 'dmon'), Species('c', 'ncrowd', 'dcrowd'))
     _project_attributes = {
         'segment': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
@@ -678,187 +1026,78 @@ class TwoMonDepCub(ParserBase):
                           'rho_bulk_c'],
         'ensemble': [],
         'space': []
-        }
-
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['dmon', 'lcube', 'dcrowd', 'dt', 'd_sur']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                setattr(self,
-                        attr,
-                        float(val) if attr in attrs_float else int(float(val)))
-                if keyword == 'hl':
-                    # Cube full side from its half-side
-                    setattr(self, attr, 2 * getattr(self, attr))
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m = number_density_cube(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m = volume_fraction_cube(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_c = number_density_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
+    }
 
 
 class SumRuleCyl(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *SumRuleCyl* project, utilizing specific filename patterns.
+    Parse an artifact name of the *SumRuleCyl* project: a linear chain among
+    crowders in a cylinder that is periodic along its axis.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
-    - `segment`: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
-      One of multiple chunks of a complete artifact.
-    - `whole`: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#
-      A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: N#epsilon#r#lz#sig#nc#dt#bdump#adump#
-      Detailed name for an 'ensemble' artifact.
-    - `ensemble`: N#D#ac#nc#
-      Short name for an 'ensemble' artifact.
-    - `space`: N#D#ac#
-      A 'space' artifact.
-
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by '#' sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
+    - ``segment``: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
+    - ``whole``: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#
+    - ``ensemble_long``: N#epsilon#r#lz#sig#nc#dt#bdump#adump#
+    - ``ensemble``: N#D#ac#nc#
+    - ``space``: N#D#ac#
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
+        Lineage of the artifact.
     group : {'bug', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+        Particle group: ``'bug'`` for the chain, ``'all'`` for every
+        particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
-    dmon : float
-        Size (diameter) of a monomer. Its associated keyword is 'am'.
+    dmon : int
+        Monomer diameter, fixed at 1; not in the name.
     nmon : int
-        Number of monomers. Its associated keyword is 'N'.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+        Number of monomers; keyword ``N``.
+    dcrowd : float
+        Crowder diameter; keyword ``sig`` in the long names, ``ac`` in the
+        short ones.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
+        Number of crowders; keyword ``nc``.
     lcyl : float
-        Length of the cylindrical confinement along z axis (the periodic,
-        direction), inferred from 'lz' keyword (half of the length of the
-        cylindrical confinement along z axis).
+        Length of the cylinder, :math:`Z = 2 l_z`, from the half-length
+        :math:`l_z` (keyword ``lz``).
     dcyl : float
-        Size (or diameter) of the cylindrical confinement, inferred
-        from either 'r' keyword (the radius of a cylindrical confinement
-        with open ends) or 'D' keyword (size of that confinement).
-    epsilon: float
-        Wall-particle LJ interaction strength. Its associated keyword is
-        'epsilon' keyword.
+        Size of the cylinder, :math:`D = 2r - 1`, from the radius :math:`r`
+        (keyword ``r``) in the long names; :math:`D` itself (keyword ``D``)
+        in the short ones.
+    epsilon : float
+        Strength of the wall-particle LJ interaction; keyword ``epsilon``.
     dt : float
-        Simulation timestep. Its associated keyword is 'dt'.
+        Simulation time step; keyword ``dt``.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        Dump period of the ``bug`` trajectory, in time steps; keyword
+        ``bdump``.
     adump : int
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Dump period of the ``all`` trajectory, in time steps; keyword
+        ``adump``.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of monomers.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
 
     Notes
     -----
+    The bulk values exist only at ``segment``, ``whole``, and
+    ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
+
     The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
     centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
     ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
@@ -872,8 +1111,6 @@ class SumRuleCyl(ParserBase):
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
     >>> artifact = SumRuleCyl('N200D10.0ac2.0nc0', 'ensemble', 'all')
     >>> print(artifact.dcrowd)
     2.0
@@ -881,29 +1118,33 @@ class SumRuleCyl(ParserBase):
     _geometry = 'cylindrical'
     _topology = 'linear'
     _groups = ['bug', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#.j#
-        'segment':  OrderedDict(
-            {'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
-             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
-             'adump': 'adump', 'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: N#epsilon#r#lz#sig#nc#dt#bdump#adump#ens#
-        'whole':  OrderedDict(
-            {'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
-             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
-             'adump': 'adump', 'ensemble_id': 'ens'}),
-        # Pattern: N#epsilon#r#lz#sig#nc#dt#bdump#adump#
-        'ensemble_long':  OrderedDict(
-            {'nmon': 'N', 'epsilon': 'epsilon', 'dcyl': 'r', 'lcyl': 'lz',
-             'dcrowd': 'sig', 'ncrowd': 'nc', 'dt': 'dt', 'bdump': 'bdump',
-             'adump': 'adump'}),
-        # Pattern: N#D#ac#nc#
-        'ensemble':  OrderedDict(
-            {'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac', 'ncrowd': 'nc'}),
-        # Pattern: N#D#ac#
-        'space':  OrderedDict({'nmon': 'N', 'dcyl': 'D', 'dcrowd': 'ac'})
+    _keywords = {
+        'N': KeywordSpec('nmon', int),
+        'epsilon': KeywordSpec('epsilon', float),
+        'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+        'D': KeywordSpec('dcyl', float),
+        'lz': KeywordSpec('lcyl', float, scale=2.0),
+        'sig': KeywordSpec('dcrowd', float),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
+    _patterns = {
+        'segment': ('N', 'epsilon', 'r', 'lz', 'sig', 'nc', 'dt', 'bdump',
+                    'adump', 'ens', 'j'),
+        'whole': ('N', 'epsilon', 'r', 'lz', 'sig', 'nc', 'dt', 'bdump',
+                  'adump', 'ens'),
+        'ensemble_long': ('N', 'epsilon', 'r', 'lz', 'sig', 'nc', 'dt',
+                          'bdump', 'adump'),
+        'ensemble': ('N', 'D', 'ac', 'nc'),
+        'space': ('N', 'D', 'ac'),
+    }
+    _defaults = {'dmon': 1}
+    _species = (Species('m', 'nmon', 'dmon'), Species('c', 'ncrowd', 'dcrowd'))
     _project_attributes = {
         'segment': ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                     'rho_bulk_c'],
@@ -915,214 +1156,91 @@ class SumRuleCyl(ParserBase):
         'space': ['dmon']
     }
 
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        self.dmon: float = 1
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['dmon', 'dcyl', 'lcyl', 'epsilon', 'dcrowd', 'dt']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                setattr(self,
-                        attr,
-                        float(val) if attr in attrs_float else int(float(val)))
-                if keyword == 'lz':
-                    # Cylinder full length from its half-length
-                    setattr(self, attr, 2 * getattr(self, attr))
-                if keyword == 'r':
-                    # Cylinder size is twice its radius, correcting for
-                    # wall-forming particles with size 1
-                    setattr(self, attr, 2 * getattr(self, attr) - 1.0)
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m = number_density_cylinder(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_m = volume_fraction_cylinder(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.rho_bulk_c = number_density_cylinder(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cylinder(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-
 
 class SumRuleCubHeteroRing(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *SumRuleCubHeteroRing* project, utilizing specific filename patterns.
+    Parse an artifact name of the *SumRuleCubHeteroRing* project: a ring of
+    small and large monomers among crowders in a periodic cube.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
-    - `segment`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-      One of multiple chunks of a complete artifact.
-    - `whole`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
-      A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
-      Detailed name for an 'ensemble' artifact.
-    - `ensemble`: ns#nl#al#ac#nc#
-      Short name for an 'ensemble' artifact.
-    - `space`: ns#nl#al#ac#
-      A 'space' artifact.
-
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by '#' sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
+    - ``segment``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
+    - ``whole``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
+    - ``ensemble_long``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
+    - ``ensemble``: ns#nl#al#ac#nc#
+    - ``space``: ns#nl#al#ac#
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
+        Lineage of the artifact.
     group : {'bug', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+        Particle group: ``'bug'`` for the ring, ``'all'`` for every particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
-    dmon_small: float
-        Size (diameter) of a monomer
-    nmon_small: int
-        number of small monomers. Its associated keyword is 'ns'.
-    mmon_small: float
-        Mass of a small monomer
-    dmon_large: float
-        Size (diameter) of a large monomer. Its associated keyword is 'al'.
-    nmon_large: int
-        number of large monomers. Its associated keyword is 'nl'.
-    mmon_large: float, default np.nan
-        Mass of a large monomer. Its associated keyword is 'ml'.
-    nmon: int
-        Total number of monomers.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+    dmon_small : int
+        Diameter of a small monomer, fixed at 1; not in the name.
+    nmon_small : int
+        Number of small monomers; keyword ``ns``.
+    mmon_small : int
+        Mass of a small monomer, fixed at 1; not in the name.
+    dmon_large : float
+        Diameter of a large monomer; keyword ``al``.
+    nmon_large : int
+        Number of large monomers; keyword ``nl``.
+    mmon_large : float
+        Mass of a large monomer; keyword ``ml``.
+    dcrowd : float
+        Crowder diameter; keyword ``ac``.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
-    mcrowd: float, default np.nan
-        Mass of a crowder.
+        Number of crowders; keyword ``nc``.
+    mcrowd : float
+        Crowder mass, :math:`m_c = d_c^3`, at ``segment``, ``whole``, and
+        ``ensemble_long``; ``-1``, a placeholder, at ``ensemble`` and
+        ``space``.
     lcube : float
-        Length of the simulation box, inferred from 'l' keyword
-        (half-length of the simulation box).
+        Side of the cube, :math:`L = 2 l`, from the half-side :math:`l`
+        (keyword ``l``).
     dt : float
-        Simulation timestep. Its associated keyword is 'dt'.
+        Simulation time step; keyword ``dt``.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        Dump period of the ``bug`` trajectory, in time steps; keyword
+        ``bdump``.
     adump : int
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Dump period of the ``all`` trajectory, in time steps; keyword
+        ``adump``.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m_small : float
-        Bulk number density fraction of small monomers.
-    phi_bulk_m_small : float
-        Bulk volume fraction of small monomers
-    rho_bulk_m_large : float
-        Bulk number density fraction of large monomers.
-    phi_bulk_m_large : float
-        Bulk volume fraction of large monomers
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m_small, phi_bulk_m_small : float
+        Bulk number density and volume fraction of small monomers.
+    rho_bulk_m_large, phi_bulk_m_large : float
+        Bulk number density and volume fraction of large monomers.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of all monomers: the sums of
+        the small and large values.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
 
     Notes
     -----
-    The mass density is uniform across all species. For any species whose mass
-    is not explicitly parsed, the mass is defined as :math:`m_{i} = d_{i}^3`,
-    where :math:`d_{i}` represents the species' diameter.
+    The bulk values exist only at ``segment``, ``whole``, and
+    ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
+
+    The mass density is uniform across all species, so a species whose mass
+    is not in the name has the mass :math:`m_i = d_i^3`, where :math:`d_i` is
+    its diameter.
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
     >>> artifact = SumRuleCubHeteroRing('ns400nl5al5.0ac1.0', 'space', 'bug')
     >>> print(artifact.dcrowd)
     1.0
@@ -1130,35 +1248,36 @@ class SumRuleCubHeteroRing(ParserBase):
     _geometry = 'cubic'
     _topology = 'ring'
     _groups = ['bug', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-        'segment': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
-        'whole': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
-             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
-        'ensemble_long': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
-        # Pattern: ns#nl#al#ac#nc#
-        'ensemble': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcrowd': 'ac', 'ncrowd': 'nc'}),
-        # Pattern: ns#nl#al#ac#
-        'space': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcrowd': 'ac'})
+    _keywords = {
+        'al': KeywordSpec('dmon_large', float),
+        'nl': KeywordSpec('nmon_large', int),
+        'ml': KeywordSpec('mmon_large', float),
+        'ns': KeywordSpec('nmon_small', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'l': KeywordSpec('lcube', float, scale=2.0),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
-
+    _patterns = {
+        'segment': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt', 'bdump',
+                    'adump', 'ens', 'j'),
+        'whole': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt', 'bdump',
+                  'adump', 'ens'),
+        'ensemble_long': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt',
+                          'bdump', 'adump'),
+        'ensemble': ('ns', 'nl', 'al', 'ac', 'nc'),
+        'space': ('ns', 'nl', 'al', 'ac'),
+    }
+    _defaults = {'dmon_small': 1, 'mmon_small': 1, 'mcrowd': -1}
+    _species = (Species('m_small', 'nmon_small', 'dmon_small'),
+                Species('m_large', 'nmon_large', 'dmon_large'),
+                Species('c', 'ncrowd', 'dcrowd'))
+    _totals = {'m': ('m_small', 'm_large')}
+    _masses = {'mcrowd': 'dcrowd'}
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
@@ -1174,228 +1293,92 @@ class SumRuleCubHeteroRing(ParserBase):
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        self.dmon_small: float = 1
-        self.mmon_small: float = self.dmon_small**3
-        self.mcrowd: float = -1
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m_small: float = -1
-            self.rho_bulk_m_small: float = -1
-            self.phi_bulk_m_large: float = -1
-            self.rho_bulk_m_large: float = -1
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['dmon_large', 'lcube', 'mmon_large', 'dcrowd', 'dt']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                setattr(self,
-                        attr,
-                        float(val) if attr in attrs_float else int(float(val)))
-                if keyword == 'l':
-                    # Cube full side from its half-side
-                    setattr(self, attr, 2 * getattr(self, attr))
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m_small = number_density_cube(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m_small = volume_fraction_cube(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_m_large = number_density_cube(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m_large = volume_fraction_cube(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
-        self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
-
-        self.mcrowd = getattr(self, 'dcrowd') ** 3
-        self.rho_bulk_c = number_density_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-
 
 class SumRuleCubHeteroLinear(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *SumRuleCubHeteroLinear* project, utilizing specific filename patterns.
+    Parse an artifact name of the *SumRuleCubHeteroLinear* project: a linear
+    chain of small and large monomers among crowders in a periodic cube.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
-    - `segment`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.linear
-      One of multiple chunks of a complete artifact.
-    - `whole`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.linear
-      A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
-      Detailed name for an 'ensemble' artifact.
-    - `ensemble`: ns#nl#al#ac#nc#
-      Short name for an 'ensemble' artifact.
-    - `space`: ns#nl#al#ac#
-      A 'space' artifact.
-
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by '#' sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
+    - ``segment``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.linear
+    - ``whole``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.linear
+    - ``ensemble_long``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
+    - ``ensemble``: ns#nl#al#ac#nc#
+    - ``space``: ns#nl#al#ac#
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
+        Lineage of the artifact.
     group : {'bug', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+        Particle group: ``'bug'`` for the chain, ``'all'`` for every
+        particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
-    dmon_small: float
-        Size (diameter) of a monomer
-    nmon_small: int
-        number of small monomers. Its associated keyword is 'ns'.
-    mmon_small: float
-        Mass of a small monomer
-    dmon_large: float
-        Size (diameter) of a large monomer. Its associated keyword is 'al'.
-    nmon_large: int
-        number of large monomers. Its associated keyword is 'nl'.
-    mmon_large: float, default np.nan
-        Mass of a large monomer. Its associated keyword is 'ml'.
-    nmon: int
-        Total number of monomers.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+    dmon_small : int
+        Diameter of a small monomer, fixed at 1; not in the name.
+    nmon_small : int
+        Number of small monomers; keyword ``ns``.
+    mmon_small : int
+        Mass of a small monomer, fixed at 1; not in the name.
+    dmon_large : float
+        Diameter of a large monomer; keyword ``al``.
+    nmon_large : int
+        Number of large monomers; keyword ``nl``.
+    mmon_large : float
+        Mass of a large monomer; keyword ``ml``.
+    dcrowd : float
+        Crowder diameter; keyword ``ac``.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
-    mcrowd: float, default np.nan
-        Mass of a crowder.
+        Number of crowders; keyword ``nc``.
+    mcrowd : float
+        Crowder mass, :math:`m_c = d_c^3`, at ``segment``, ``whole``, and
+        ``ensemble_long``; ``-1``, a placeholder, at ``ensemble`` and
+        ``space``.
     lcube : float
-        Length of the simulation box, inferred from 'l' keyword
-        (half-length of the simulation box).
+        Side of the cube, :math:`L = 2 l`, from the half-side :math:`l`
+        (keyword ``l``).
     dt : float
-        Simulation timestep. Its associated keyword is 'dt'.
+        Simulation time step; keyword ``dt``.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        Dump period of the ``bug`` trajectory, in time steps; keyword
+        ``bdump``.
     adump : int
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Dump period of the ``all`` trajectory, in time steps; keyword
+        ``adump``.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m_small : float
-        Bulk number density fraction of small monomers.
-    phi_bulk_m_small : float
-        Bulk volume fraction of small monomers
-    rho_bulk_m_large : float
-        Bulk number density fraction of large monomers.
-    phi_bulk_m_large : float
-        Bulk volume fraction of large monomers
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m_small, phi_bulk_m_small : float
+        Bulk number density and volume fraction of small monomers.
+    rho_bulk_m_large, phi_bulk_m_large : float
+        Bulk number density and volume fraction of large monomers.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of all monomers: the sums of
+        the small and large values.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
 
     Notes
     -----
-    The mass density is uniform across all species. For any species whose mass
-    is not explicitly parsed, the mass is defined as :math:`m_{i} = d_{i}^3`,
-    where :math:`d_{i}` represents the species' diameter.
+    The bulk values exist only at ``segment``, ``whole``, and
+    ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
+
+    The mass density is uniform across all species, so a species whose mass
+    is not in the name has the mass :math:`m_i = d_i^3`, where :math:`d_i` is
+    its diameter.
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
     >>> artifact = SumRuleCubHeteroLinear('ns800nl5al6.0ac3.0', 'space', 'all')
     >>> print(artifact.dmon_large)
     6.0
@@ -1403,35 +1386,36 @@ class SumRuleCubHeteroLinear(ParserBase):
     _geometry = 'cubic'
     _topology = 'linear'
     _groups = ['bug', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.linear
-        'segment': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.linear
-        'whole': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
-             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
-        'ensemble_long': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
-        # Pattern: ns#nl#al#ac#nc#
-        'ensemble': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcrowd': 'ac', 'ncrowd': 'nc'}),
-        # Pattern: ns#nl#al#ac#
-        'space': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcrowd': 'ac'})
+    _keywords = {
+        'al': KeywordSpec('dmon_large', float),
+        'nl': KeywordSpec('nmon_large', int),
+        'ml': KeywordSpec('mmon_large', float),
+        'ns': KeywordSpec('nmon_small', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'l': KeywordSpec('lcube', float, scale=2.0),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
-
+    _patterns = {
+        'segment': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt', 'bdump',
+                    'adump', 'ens', 'j'),
+        'whole': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt', 'bdump',
+                  'adump', 'ens'),
+        'ensemble_long': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt',
+                          'bdump', 'adump'),
+        'ensemble': ('ns', 'nl', 'al', 'ac', 'nc'),
+        'space': ('ns', 'nl', 'al', 'ac'),
+    }
+    _defaults = {'dmon_small': 1, 'mmon_small': 1, 'mcrowd': -1}
+    _species = (Species('m_small', 'nmon_small', 'dmon_small'),
+                Species('m_large', 'nmon_large', 'dmon_large'),
+                Species('c', 'ncrowd', 'dcrowd'))
+    _totals = {'m': ('m_small', 'm_large')}
+    _masses = {'mcrowd': 'dcrowd'}
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
@@ -1447,235 +1431,97 @@ class SumRuleCubHeteroLinear(ParserBase):
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        self.dmon_small: float = 1
-        self.mmon_small: float = self.dmon_small**3
-        self.mcrowd: float = -1
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m_small: float = -1
-            self.rho_bulk_m_small: float = -1
-            self.phi_bulk_m_large: float = -1
-            self.rho_bulk_m_large: float = -1
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['dmon_large', 'lcube', 'mmon_large', 'dcrowd', 'dt']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                setattr(self,
-                        attr,
-                        float(val) if attr in attrs_float else int(float(val)))
-                if keyword == 'l':
-                    # Cube full side from its half-side
-                    setattr(self, attr, 2 * getattr(self, attr))
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m_small = number_density_cube(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m_small = volume_fraction_cube(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_m_large = number_density_cube(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m_large = volume_fraction_cube(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
-        self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
-
-        self.mcrowd = getattr(self, 'dcrowd') ** 3
-        self.rho_bulk_c = number_density_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-
 
 class TransFociCyl(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *TransFociCyl* project, utilizing specific filename patterns.
+    Parse an artifact name of the *TransFociCyl* project: a ring of small and
+    large monomers among crowders in a cylinder that is periodic along its
+    axis.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
-    - `segment`: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#.ring
-      One of multiple chunks of a complete artifact.
-    - `whole`: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.ring
-      A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#
-      Detailed name for an 'ensemble' artifact.
-    - `ensemble`: ns#nl#al#D#ac#nc#
-      Short name for an 'ensemble' artifact.
-    - `space`: ns#nl#al#ac#
-      A 'space' artifact.
-
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by '#' sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
+    - ``segment``: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#.ring
+    - ``whole``: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.ring
+    - ``ensemble_long``: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#
+    - ``ensemble``: ns#nl#al#D#ac#nc#
+    - ``space``: ns#nl#al#D#ac#
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
+        Lineage of the artifact.
     group : {'bug', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+        Particle group: ``'bug'`` for the ring, ``'all'`` for every particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
-    dmon_small: float
-        Size (diameter) of a monomer
-    nmon_small: int
-        number of small monomers. Its associated keyword is 'ns'.
-    mmon_small: float
-        Mass of a small monomer
-    dmon_large: float
-        Size (diameter) of a large monomer. Its associated keyword is 'al'.
-    nmon_large: int
-        number of large monomers. Its associated keyword is 'nl'.
-    mmon_large: float, default np.nan
-        Mass of a large monomer. Its associated keyword is 'ml'.
-    nmon: int
-        Total number of monomers.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+    dmon_small : int
+        Diameter of a small monomer, fixed at 1; not in the name.
+    nmon_small : int
+        Number of small monomers; keyword ``ns``.
+    mmon_small : int
+        Mass of a small monomer, fixed at 1; not in the name.
+    dmon_large : float
+        Diameter of a large monomer; keyword ``al``.
+    nmon_large : int
+        Number of large monomers; keyword ``nl``.
+    mmon_large : float
+        Mass of a large monomer; keyword ``ml``.
+    dcrowd : float
+        Crowder diameter; keyword ``ac``.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
-    mcrowd: float, default np.nan
-        Mass of a crowder.
+        Number of crowders; keyword ``nc``.
+    mcrowd : float
+        Crowder mass, :math:`m_c = d_c^3`, at ``segment``, ``whole``, and
+        ``ensemble_long``; ``-1``, a placeholder, at ``ensemble`` and
+        ``space``.
     lcyl : float
-        Length of the cylindrical confinement along z axis (the periodic,
-        direction), inferred from 'lz' keyword (half of the length of the
-        cylindrical confinement along z axis).
+        Length of the cylinder, :math:`Z = 2 l_z`, from the half-length
+        :math:`l_z` (keyword ``lz``).
     dcyl : float
-        Size (or diameter) of the cylindrical confinement, inferred
-        from either 'r' keyword (the radius of a cylindrical confinement
-        with open ends) or 'D' keyword (size of that confinement).
-    epsilon_s: float
-        Wall-small-monomer LJ interaction strength. Its associated keyword is
-        'epss' keyword.
-    epsilon_l: float
-        Wall-large-monomer LJ interaction strength. Its associated keyword is
-        'espl' keyword.
+        Size of the cylinder, :math:`D = 2r - 1`, from the radius :math:`r`
+        (keyword ``r``) in the long names; :math:`D` itself (keyword ``D``)
+        in the short ones.
+    epsilon_small : float
+        Strength of the wall-small-monomer LJ interaction; keyword ``epss``.
+    epsilon_large : float
+        Strength of the wall-large-monomer LJ interaction; keyword ``epsl``.
     dt : float
-        Simulation timestep. Its associated keyword is 'dt'.
+        Simulation time step; keyword ``dt``.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        Dump period of the ``bug`` trajectory, in time steps; keyword
+        ``bdump``.
     adump : int
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Dump period of the ``all`` trajectory, in time steps; keyword
+        ``adump``.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m_small : float
-        Bulk number density fraction of small monomers.
-    phi_bulk_m_small : float
-        Bulk volume fraction of small monomers
-    rho_bulk_m_large : float
-        Bulk number density fraction of large monomers.
-    phi_bulk_m_large : float
-        Bulk volume fraction of large monomers
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m_small, phi_bulk_m_small : float
+        Bulk number density and volume fraction of small monomers.
+    rho_bulk_m_large, phi_bulk_m_large : float
+        Bulk number density and volume fraction of large monomers.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of all monomers: the sums of
+        the small and large values.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
 
     Notes
     -----
-    - The mass density is uniform across all species. For any species whose
-      mass is not explicitly parsed, the mass is defined as
-      :math:`m_{i} = d_{i}^3`, where :math:`d_{i}` represents the species'
-      diameter.
+    - The bulk values exist only at ``segment``, ``whole``, and
+      ``ensemble_long``. The lineage names are documented in
+      :class:`ParserBase`.
+
+    - The mass density is uniform across all species, so a species whose
+      mass is not in the name has the mass :math:`m_i = d_i^3`, where
+      :math:`d_i` is its diameter.
 
     - The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
       centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
@@ -1690,8 +1536,6 @@ class TransFociCyl(ParserBase):
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
     >>> artifact = TransFociCyl(
     ... 'ns500nl5al3.0D20.0ac2.0nc0',
     ... 'ensemble',
@@ -1703,39 +1547,40 @@ class TransFociCyl(ParserBase):
     _geometry = 'cylindrical'
     _topology = 'ring'
     _groups = ['bug', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#
-        # .ring
-        'segment': OrderedDict(
-            {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
-             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcyl': 'lz',
-             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.ring
-        'whole': OrderedDict(
-            {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
-             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcyl': 'lz',
-             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens'}),
-        # Pattern: epss#epsl#r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#
-        'ensemble_long': OrderedDict(
-            {'epsilon_small': 'epss', 'epsilon_large': 'epsl', 'dcyl': 'r',
-             'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcyl': 'lz',
-             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
-        # Pattern: ns#nl#al#D#ac#nc#
-        'ensemble': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcyl': 'D', 'dcrowd': 'ac', 'ncrowd': 'nc'}),
-        # Pattern: ns#nl#al#D#ac#
-        'space': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcyl': 'D', 'dcrowd': 'ac'})
+    _keywords = {
+        'epss': KeywordSpec('epsilon_small', float),
+        'epsl': KeywordSpec('epsilon_large', float),
+        'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+        'D': KeywordSpec('dcyl', float),
+        'al': KeywordSpec('dmon_large', float),
+        'nl': KeywordSpec('nmon_large', int),
+        'ml': KeywordSpec('mmon_large', float),
+        'ns': KeywordSpec('nmon_small', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'lz': KeywordSpec('lcyl', float, scale=2.0),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
-
+    _patterns = {
+        'segment': ('epss', 'epsl', 'r', 'al', 'nl', 'ml', 'ns', 'ac', 'nc',
+                    'lz', 'dt', 'bdump', 'adump', 'ens', 'j'),
+        'whole': ('epss', 'epsl', 'r', 'al', 'nl', 'ml', 'ns', 'ac', 'nc',
+                  'lz', 'dt', 'bdump', 'adump', 'ens'),
+        'ensemble_long': ('epss', 'epsl', 'r', 'al', 'nl', 'ml', 'ns', 'ac',
+                          'nc', 'lz', 'dt', 'bdump', 'adump'),
+        'ensemble': ('ns', 'nl', 'al', 'D', 'ac', 'nc'),
+        'space': ('ns', 'nl', 'al', 'D', 'ac'),
+    }
+    _defaults = {'dmon_small': 1, 'mmon_small': 1, 'mcrowd': -1}
+    _species = (Species('m_small', 'nmon_small', 'dmon_small'),
+                Species('m_large', 'nmon_large', 'dmon_large'),
+                Species('c', 'ncrowd', 'dcrowd'))
+    _totals = {'m': ('m_small', 'm_large')}
+    _masses = {'mcrowd': 'dcrowd'}
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
@@ -1751,239 +1596,91 @@ class TransFociCyl(ParserBase):
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        self.dmon_small: float = 1
-        self.mmon_small: float = self.dmon_small**3
-        self.mcrowd: float = -1
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m_small: float = -1
-            self.rho_bulk_m_small: float = -1
-            self.phi_bulk_m_large: float = -1
-            self.rho_bulk_m_large: float = -1
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['dmon_large', 'dcyl', 'lcyl', 'epsilon_small',
-                       'epsilon_large', 'mmon_large', 'dcrowd', 'dt']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                setattr(self,
-                        attr,
-                        float(val) if attr in attrs_float else int(float(val)))
-                if keyword == 'lz':
-                    # Cylinder full length from its half-length
-                    setattr(self, attr, 2 * getattr(self, attr))
-                if keyword == 'r':
-                    # Cylinder size is twice its radius, correcting for
-                    # wall-forming particles with size 1
-                    setattr(self, attr, 2 * getattr(self, attr) - 1.0)
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m_small = number_density_cylinder(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_m_small = volume_fraction_cylinder(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.rho_bulk_m_large = number_density_cylinder(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_m_large = volume_fraction_cylinder(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
-        self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
-
-        self.mcrowd = getattr(self, 'dcrowd') ** 3
-        self.rho_bulk_c = number_density_cylinder(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cylinder(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-
 
 class TransFociCub(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *TransFociCub* project, utilizing specific filename patterns.
+    Parse an artifact name of the *TransFociCub* project: a ring of small and
+    large monomers among crowders in a periodic cube.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
-    - `segment`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-      One of multiple chunks of a complete artifact.
-    - `whole`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-      A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
-      Detailed name for an 'ensemble' artifact.
-    - `ensemble`: ns#nl#al#ac#nc#
-      Short name for an 'ensemble' artifact.
-    - `space`: ns#nl#al#ac#
-      A 'space' artifact.
-
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by '#' sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
+    - ``segment``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
+    - ``whole``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.ring
+    - ``ensemble_long``: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
+    - ``ensemble``: ns#nl#al#ac#nc#
+    - ``space``: ns#nl#al#ac#
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
+        Lineage of the artifact.
     group : {'bug', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+        Particle group: ``'bug'`` for the ring, ``'all'`` for every particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
-    dmon_small: float
-        Size (diameter) of a monomer
-    nmon_small: int
-        number of small monomers. Its associated keyword is 'ns'.
-    mmon_small: float
-        Mass of a small monomer
-    dmon_large: float
-        Size (diameter) of a large monomer. Its associated keyword is 'al'.
-    nmon_large: int
-        number of large monomers. Its associated keyword is 'nl'.
-    mmon_large: float, default np.nan
-        Mass of a large monomer. Its associated keyword is 'ml'.
-    nmon: int
-        Total number of monomers.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+    dmon_small : int
+        Diameter of a small monomer, fixed at 1; not in the name.
+    nmon_small : int
+        Number of small monomers; keyword ``ns``.
+    mmon_small : int
+        Mass of a small monomer, fixed at 1; not in the name.
+    dmon_large : float
+        Diameter of a large monomer; keyword ``al``.
+    nmon_large : int
+        Number of large monomers; keyword ``nl``.
+    mmon_large : float
+        Mass of a large monomer; keyword ``ml``.
+    dcrowd : float
+        Crowder diameter; keyword ``ac``.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
-    mcrowd: float, default np.nan
-        Mass of a crowder.
+        Number of crowders; keyword ``nc``.
+    mcrowd : float
+        Crowder mass, :math:`m_c = d_c^3`, at ``segment``, ``whole``, and
+        ``ensemble_long``; ``-1``, a placeholder, at ``ensemble`` and
+        ``space``.
     lcube : float
-        Length of the simulation box, inferred from 'l' keyword
-        (half-length of the simulation box).
+        Side of the cube, :math:`L = 2 l`, from the half-side :math:`l`
+        (keyword ``l``).
     dt : float
-        Simulation timestep. Its associated keyword is 'dt'.
+        Simulation time step; keyword ``dt``.
     bdump : int
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'bdump'.
+        Dump period of the ``bug`` trajectory, in time steps; keyword
+        ``bdump``.
     adump : int
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Dump period of the ``all`` trajectory, in time steps; keyword
+        ``adump``.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m_small : float
-        Bulk number density fraction of small monomers.
-    phi_bulk_m_small : float
-        Bulk volume fraction of small monomers
-    rho_bulk_m_large : float
-        Bulk number density fraction of large monomers.
-    phi_bulk_m_large : float
-        Bulk volume fraction of large monomers
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m_small, phi_bulk_m_small : float
+        Bulk number density and volume fraction of small monomers.
+    rho_bulk_m_large, phi_bulk_m_large : float
+        Bulk number density and volume fraction of large monomers.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of all monomers: the sums of
+        the small and large values.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
 
     Notes
     -----
-    The mass density is uniform across all species. For any species whose mass
-    is not explicitly parsed, the mass is defined as :math:`m_{i} = d_{i}^3`,
-    where :math:`d_{i}` represents the species' diameter.
+    The bulk values exist only at ``segment``, ``whole``, and
+    ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
+
+    The mass density is uniform across all species, so a species whose mass
+    is not in the name has the mass :math:`m_i = d_i^3`, where :math:`d_i` is
+    its diameter.
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
     >>> artifact = TransFociCub(
     ... 'al5.0nl5ml125.0ns400ac1.0nc0l100.0dt0.005bdump2000adump5000.ring',
     ... 'ensemble_long',
@@ -1995,35 +1692,36 @@ class TransFociCub(ParserBase):
     _geometry = 'cubic'
     _topology = 'ring'
     _groups = ['bug', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-        'segment': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#ens#.j#.ring
-        'whole': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc', 'lcube': 'l',
-             'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump',
-             'ensemble_id': 'ens'}),
-        # Pattern: al#nl#ml#ns#ac#nc#l#dt#bdump#adump#
-        'ensemble_long': OrderedDict(
-            {'dmon_large': 'al', 'nmon_large': 'nl', 'mmon_large': 'ml',
-             'nmon_small': 'ns', 'dcrowd': 'ac', 'ncrowd': 'nc',
-             'lcube': 'l', 'dt': 'dt', 'bdump': 'bdump', 'adump': 'adump'}),
-        # Pattern: ns#nl#al#ac#nc#
-        'ensemble': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcrowd': 'ac', 'ncrowd': 'nc'}),
-        # Pattern: ns#nl#al#ac#
-        'space': OrderedDict(
-            {'nmon_small': 'ns', 'nmon_large': 'nl', 'dmon_large': 'al',
-             'dcrowd': 'ac'})
+    _keywords = {
+        'al': KeywordSpec('dmon_large', float),
+        'nl': KeywordSpec('nmon_large', int),
+        'ml': KeywordSpec('mmon_large', float),
+        'ns': KeywordSpec('nmon_small', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'l': KeywordSpec('lcube', float, scale=2.0),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
-
+    _patterns = {
+        'segment': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt', 'bdump',
+                    'adump', 'ens', 'j'),
+        'whole': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt', 'bdump',
+                  'adump', 'ens'),
+        'ensemble_long': ('al', 'nl', 'ml', 'ns', 'ac', 'nc', 'l', 'dt',
+                          'bdump', 'adump'),
+        'ensemble': ('ns', 'nl', 'al', 'ac', 'nc'),
+        'space': ('ns', 'nl', 'al', 'ac'),
+    }
+    _defaults = {'dmon_small': 1, 'mmon_small': 1, 'mcrowd': -1}
+    _species = (Species('m_small', 'nmon_small', 'dmon_small'),
+                Species('m_large', 'nmon_large', 'dmon_large'),
+                Species('c', 'ncrowd', 'dcrowd'))
+    _totals = {'m': ('m_small', 'm_large')}
+    _masses = {'mcrowd': 'dcrowd'}
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
@@ -2039,220 +1737,87 @@ class TransFociCub(ParserBase):
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
 
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        self.dmon_small: float = 1
-        self.mmon_small: float = self.dmon_small**3
-        self.mcrowd: float = -1
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m_small: float = -1
-            self.rho_bulk_m_small: float = -1
-            self.phi_bulk_m_large: float = -1
-            self.rho_bulk_m_large: float = -1
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['dmon_large', 'lcube', 'mmon_large', 'dcrowd', 'dt']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                setattr(self,
-                        attr,
-                        float(val) if attr in attrs_float else int(float(val)))
-                if keyword == 'l':
-                    # Cube full side from its half-side
-                    setattr(self, attr, 2 * getattr(self, attr))
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m_small = number_density_cube(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m_small = volume_fraction_cube(
-            getattr(self, 'nmon_small'),
-            getattr(self, 'dmon_small'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_m_large = number_density_cube(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m_large = volume_fraction_cube(
-            getattr(self, 'nmon_large'),
-            getattr(self, 'dmon_large'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_m = self.rho_bulk_m_small + self.rho_bulk_m_large
-        self.phi_bulk_m = self.phi_bulk_m_small + self.phi_bulk_m_large
-
-        self.mcrowd = getattr(self, 'dcrowd') ** 3
-        self.rho_bulk_c = number_density_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-
 
 class HnsCub(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *HnsCub* project, utilizing specific filename patterns.
+    Parse an artifact name of the *HnsCub* project: a ring polymer with H-NS
+    proteins among crowders in a periodic cube.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
-    - `segment`: N#kbmm#nh#ac#l#epshc#nc#ens#.#j#.ring
-      One of multiple chunks of a complete artifact.
-    - `whole`: N#kbmm#nh#ac#l#epshc#nc#ens#.ring
-      A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: N#kbmm#nh#ac#l#epshc#nc#
-      Detailed name for an 'ensemble' artifact.
-    - `ensemble`: N#kbmm#nh#ac#epshc#nc#
-      Short name for an 'ensemble' artifact.
-    - `space`: N#kbmm#nh#ac#epshc#ring
-      A 'space' artifact.
-
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by '#' sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
+    - ``segment``: N#kbmm#nh#ac#l#epshc#nc#ens#.j#.ring
+    - ``whole``: N#kbmm#nh#ac#l#epshc#nc#ens#.ring
+    - ``ensemble_long``: N#kbmm#nh#ac#l#epshc#nc#
+    - ``ensemble``: N#kbmm#nh#ac#epshc#nc#
+    - ``space``: N#kbmm#nh#ac#epshc#
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
+        Lineage of the artifact.
     group : {'nucleoid', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+        Particle group: ``'nucleoid'`` or ``'all'`` for every particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
-    dmon: float
-        Size (diameter) of a monomer
-    nmon: int
-        number of small monomers. Its associated keyword is 'ns'.
-    dhns: float, default 1.0
-        Size (diameter) of a H-NS protein.
-    dhns_patch: float, default 0.178
-        Size (diameter) of a H-NS protein patch at its pole.
-    nhns: int
-        Number of H-NS protein. Its associated keyword is 'nh'.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+    dmon : int
+        Monomer diameter, fixed at 1; not in the name.
+    nmon : int
+        Number of monomers; keyword ``N``.
+    dhns : int
+        Diameter of an H-NS protein, fixed at 1; not in the name.
+    dhns_patch : float
+        Diameter of the patch at each pole of an H-NS protein, fixed at
+        0.178; not in the name.
+    nhns : int
+        Number of H-NS proteins; keyword ``nh``.
+    dcrowd : float
+        Crowder diameter; keyword ``ac``.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
-    bend_mm: float
-        Bending rigidity of DNA monomers. Its associated keyword is 'kbmm'.
-    eps_hm: float, default 29.0
-        The strength of attractive LJ interaction between hns poles and
-        monomers.
-    eps_hc: float
-        The strength of attractive LJ interaction between H-NS cores and
-        crowders. Its associated keyword is 'epshc'.
+        Number of crowders; keyword ``nc``.
+    bend_mm : float
+        Bending rigidity of the DNA monomers; keyword ``kbmm``.
+    eps_hm : int
+        Strength of the attractive LJ interaction between the H-NS poles and
+        the monomers, fixed at 29; not in the name.
+    eps_hc : float
+        Strength of the attractive LJ interaction between the H-NS cores and
+        the crowders; keyword ``epshc``.
     lcube : float
-        Length of the simulation box, inferred from 'l' keyword
-        (half-length of the simulation box).
-    dt : float, default 0.005
-        Simulation timestep. Its associated keyword is 'dt'.
-    ndump : int, default 5000
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'ndump'.
-    adump : int, default 10000
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Side of the cube, :math:`L = 2 l`, from the half-side :math:`l`
+        (keyword ``l``).
+    dt : float
+        Simulation time step, fixed at 0.005; not in the name.
+    ndump : int
+        Dump period of the ``nucleoid`` trajectory, fixed at 5000 time steps;
+        not in the name.
+    adump : int
+        Dump period of the ``all`` trajectory, fixed at 10000 time steps; not
+        in the name.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_hns : float
-        Bulk number density fraction of H-NS proteins.
-    phi_bulk_hns : float
-        Bulk volume fraction of H-NS proteins.
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of monomers.
+    rho_bulk_hns, phi_bulk_hns : float
+        Bulk number density and volume fraction of H-NS proteins.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
+
+    Notes
+    -----
+    The bulk values exist only at ``segment``, ``whole``, and
+    ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
     >>> artifact = HnsCub(
     ... 'N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring',
     ... 'whole',
@@ -2264,32 +1829,28 @@ class HnsCub(ParserBase):
     _geometry = 'cubic'
     _topology = 'ring'
     _groups = ['nucleoid', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: N#kbmm#nh#ac#l#epshc#nc#ens#.#j#.ring
-        'segment': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
-             'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc',
-             'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: N#kbmm#nh#ac#l#epshc#nc#ens#.ring
-        'whole': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
-             'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc',
-             'ensemble_id': 'ens'}),
-        # Pattern: N#kbmm#nh#ac#l#epshc#nc#
-        'ensemble_long': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
-             'lcube': 'l', 'eps_hc': 'epshc', 'ncrowd': 'nc'}),
-        # Pattern: N#kbmm#nh#ac#epshc#nc#
-        'ensemble': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
-             'eps_hc': 'epshc', 'ncrowd': 'nc'}),
-        # Pattern: N#kbmm#nh#ac#epshc#
-        'space': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'nhns': 'nh', 'dcrowd': 'ac',
-             'eps_hc': 'epshc'})
+    _keywords = {
+        'N': KeywordSpec('nmon', int),
+        'kbmm': KeywordSpec('bend_mm', float),
+        'nh': KeywordSpec('nhns', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'l': KeywordSpec('lcube', float, scale=2.0),
+        'epshc': KeywordSpec('eps_hc', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
-
+    _patterns = {
+        'segment': ('N', 'kbmm', 'nh', 'ac', 'l', 'epshc', 'nc', 'ens', 'j'),
+        'whole': ('N', 'kbmm', 'nh', 'ac', 'l', 'epshc', 'nc', 'ens'),
+        'ensemble_long': ('N', 'kbmm', 'nh', 'ac', 'l', 'epshc', 'nc'),
+        'ensemble': ('N', 'kbmm', 'nh', 'ac', 'epshc', 'nc'),
+        'space': ('N', 'kbmm', 'nh', 'ac', 'epshc'),
+    }
+    _defaults = {'dmon': 1, 'dhns': 1, 'dhns_patch': 0.178, 'dt': 0.005,
+                 'ndump': 5000, 'adump': 10000, 'eps_hm': 29}
+    _species = (Species('m', 'nmon', 'dmon'), Species('hns', 'nhns', 'dhns'),
+                Species('c', 'ncrowd', 'dcrowd'))
     _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
@@ -2304,222 +1865,89 @@ class HnsCub(ParserBase):
         'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
     }
 
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        self.dmon: float = 1
-        self.dhns: float = 1
-        self.dhns_patch: float = 0.178
-        self.dt: float = 0.005
-        self.ndump: int = 5000
-        self.adump: int = 10000
-        self.eps_hm: float = 29
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_hns: float = -1
-            self.rho_bulk_hns: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['kbmm', 'lcube', 'dcrowd', 'epshc']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                is_float = attr in attrs_float or keyword in attrs_float
-                setattr(self,
-                        attr,
-                        float(val) if is_float else int(float(val)))
-                if keyword == 'l':
-                    # Cube full side from its half-side
-                    setattr(self, attr, 2 * getattr(self, attr))
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m = number_density_cube(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_m = volume_fraction_cube(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_hns = number_density_cube(
-            getattr(self, 'nhns'),
-            getattr(self, 'dhns'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_hns = volume_fraction_cube(
-            getattr(self, 'nhns'),
-            getattr(self, 'dhns'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.rho_bulk_c = number_density_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cube(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcube'),
-            pbc=True
-        )
-
 
 class HnsCyl(ParserBase):
     """
-    Extract structured information about an artifact from its name in the
-    *HnsCyl* project, utilizing specific filename patterns.
+    Parse an artifact name of the *HnsCyl* project: a ring polymer with H-NS
+    proteins among crowders in a cylinder that is periodic along its axis.
 
-    Each lineage level has a unique naming pattern used to parse key physical
-    and system attributes:
+    Each lineage has its own name pattern; ``#`` stands for a value:
 
-    - `segment`: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.j#.ring
-      One of multiple chunks of a complete artifact.
-    - `whole`: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.ring
-      A complete artifact. It may be a collection of segments.
-    - `ensemble_long`: N#kbmm#r#nh#ac#lz#epshc#nc#
-      Detailed name for an 'ensemble' artifact.
-    - `ensemble`: N#D#nh#ac#epshc#nc#
-      Short name for an 'ensemble' artifact.
-    - `space`: N#D#nh#ac#epshc#nc#
-      A 'space' artifact.
-
-    For the above four lineages, the short names (keywords) are physical
-    attributes where their values (shown by '#' sign) are float or integer
-    number. See `genealogy_attributes` below for long names of attributes.
-
-    Other than attributes inherited from the parent class `ParserBase`, this
-    class dynamically defines new attributes based on the list of physical
-    attributes of a given `lineage` as define in the `genealogy_attributes`
-    class attribute.
+    - ``segment``: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.j#.ring
+    - ``whole``: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.ring
+    - ``ensemble_long``: N#kbmm#r#nh#ac#lz#epshc#nc#
+    - ``ensemble``: N#D#nh#ac#epshc#nc#
+    - ``space``: N#D#nh#ac#epshc#
 
     Parameters
     ----------
-    artifact : str
-        Name to be parsed, either a filename or filepath.
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
     lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
-        Type of the lineage of the name.
+        Lineage of the artifact.
     group : {'nucleoid', 'all'}
-        Particle group type, with `bug` representing a single polymer.
+        Particle group: ``'nucleoid'`` or ``'all'`` for every particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
 
     Attributes
     ----------
-    dmon: float
-        Size (diameter) of a monomer
-    nmon: int
-        number of small monomers. Its associated keyword is 'ns'.
-    dhns: float, default 1.0
-        Size (diameter) of a H-NS protein.
-    dhns_patch: float, default 0.178
-        Size (diameter) of a H-NS protein patch at its pole.
-    nhns: int
-        Number of H-NS protein. Its associated keyword is 'nh'.
-    dcrowd: float
-        Size (diameter) of a crowder. Its associated keyword is 'ac'.
+    dmon : int
+        Monomer diameter, fixed at 1; not in the name.
+    nmon : int
+        Number of monomers; keyword ``N``.
+    dhns : int
+        Diameter of an H-NS protein, fixed at 1; not in the name.
+    dhns_patch : float
+        Diameter of the patch at each pole of an H-NS protein, fixed at
+        0.178; not in the name.
+    nhns : int
+        Number of H-NS proteins; keyword ``nh``.
+    dcrowd : float
+        Crowder diameter; keyword ``ac``.
     ncrowd : int
-        Number of crowders. Its associated keyword is 'nc'.
-    bend_mm: float
-        Bending rigidity of DNA monomers. Its associated keyword is 'kbmm'.
-    eps_hm: float, default 29.0
-        The strength of attractive LJ interaction between hns poles and
-        monomers.
-    eps_hc: float
-        The strength of attractive LJ interaction between H-NS cores and
-        crowders. Its associated keyword is 'epshc'.
+        Number of crowders; keyword ``nc``.
+    bend_mm : float
+        Bending rigidity of the DNA monomers; keyword ``kbmm``.
+    eps_hm : int
+        Strength of the attractive LJ interaction between the H-NS poles and
+        the monomers, fixed at 29; not in the name.
+    eps_hc : float
+        Strength of the attractive LJ interaction between the H-NS cores and
+        the crowders; keyword ``epshc``.
     lcyl : float
-        Length of the cylindrical confinement along z axis (the periodic,
-        direction), inferred from 'lz' keyword (half of the length of the
-        cylindrical confinement along z axis).
+        Length of the cylinder, :math:`Z = 2 l_z`, from the half-length
+        :math:`l_z` (keyword ``lz``).
     dcyl : float
-        Size (or diameter) of the cylindrical confinement, inferred
-        from either 'r' keyword (the radius of a cylindrical confinement
-        with open ends) or 'D' keyword (size of that confinement).
-    dt : float, default 0.005
-        Simulation timestep. Its associated keyword is 'dt'.
-    ndump : int, default 5000
-        Frequency by which 'bug' configurations are dumped in a 'bug'
-        trajectory file. Its associated keyword is 'ndump'.
-    adump : int, default 10000
-        Frequency by which 'all' configurations are dumped in a 'segment'
-        trajectory file. Its associated keyword is 'adump'.
+        Size of the cylinder, :math:`D = 2r - 1`, from the radius :math:`r`
+        (keyword ``r``) in the long names; :math:`D` itself (keyword ``D``)
+        in the short ones.
+    dt : float
+        Simulation time step, fixed at 0.005; not in the name.
+    ndump : int
+        Dump period of the ``nucleoid`` trajectory, fixed at 5000 time steps;
+        not in the name.
+    adump : int
+        Dump period of the ``all`` trajectory, fixed at 10000 time steps; not
+        in the name.
     ensemble_id : int
-        The ensemble number of a 'whole' artifact in an ensemble. Its
-        associated keyword is 'ens'.
+        Index of the whole in its ensemble; keyword ``ens``.
     segment_id : int
-        The 'segment_id' keyword starts with 'j', ends with a 'padded'
-        number such as '05' or '14', showing the succession of segments
-        in a artifact file. Its associated keyword is 'j'.
-    rho_bulk_m : float
-        Bulk number density fraction of monomers.
-    phi_bulk_m : float
-        Bulk volume fraction of monomers
-    rho_bulk_hns : float
-        Bulk number density fraction of H-NS proteins.
-    phi_bulk_hns : float
-        Bulk volume fraction of H-NS proteins.
-    rho_bulk_c : float
-        Bulk number density fraction of crowders
-    phi_bulk_c : float
-        Bulk volume fraction of crowders
-    space : str
-        A space's name.
-    ensemble : str, 'N/A'
-        An ensemble's name if applicable, otherwise 'N/A'
-    ensemble_long : str, 'N/A'
-        The name of ensemble derived from 'whole' name if applicable,
-        otherwise 'N/A'
-    whole : str, 'N/A'
-        A whole's name if applicable, otherwise 'N/A'
-    segment : str, 'N/A'
-        A segment's name if applicable, otherwise 'N/A'
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of monomers.
+    rho_bulk_hns, phi_bulk_hns : float
+        Bulk number density and volume fraction of H-NS proteins.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of crowders.
 
     Notes
     -----
+    The bulk values exist only at ``segment``, ``whole``, and
+    ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
+
     The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
     centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
     ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
@@ -2533,8 +1961,6 @@ class HnsCyl(ParserBase):
 
     Examples
     --------
-    Creating a instance to parse a filename with specified lineage and group.
-
     >>> artifact = HnsCyl(
     ... 'N200D20.0nh16ac1.0epshc1.0nc0',
     ... 'space',
@@ -2546,32 +1972,31 @@ class HnsCyl(ParserBase):
     _geometry = 'cylindrical'
     _topology = 'ring'
     _groups = ['nucleoid', 'all']
-
-    _genealogy_attributes = {
-        # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.j#.ring
-        'segment': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
-             'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc',
-             'ensemble_id': 'ens', 'segment_id': 'j'}),
-        # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#ens#.ring
-        'whole': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
-             'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc',
-             'ensemble_id': 'ens'}),
-        # Pattern: N#kbmm#r#nh#ac#lz#epshc#nc#
-        'ensemble_long': OrderedDict(
-            {'nmon': 'N', 'bend_mm': 'kbmm', 'dcyl': 'r', 'nhns': 'nh',
-             'dcrowd': 'ac', 'lcyl': 'lz', 'eps_hc': 'epshc', 'ncrowd': 'nc'}),
-        # Pattern: N#D#nh#ac#epshc#nc#
-        'ensemble': OrderedDict(
-            {'nmon': 'N', 'dcyl': 'D', 'nhns': 'nh', 'dcrowd': 'ac',
-             'eps_hc': 'epshc', 'ncrowd': 'nc'}),
-        # Pattern: N#D#nh#ac#epshc#nc#
-        'space': OrderedDict(
-            {'nmon': 'N', 'dcyl': 'D', 'nhns': 'nh', 'dcrowd': 'ac',
-             'eps_hc': 'epshc'})
+    _keywords = {
+        'N': KeywordSpec('nmon', int),
+        'kbmm': KeywordSpec('bend_mm', float),
+        'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+        'D': KeywordSpec('dcyl', float),
+        'nh': KeywordSpec('nhns', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'lz': KeywordSpec('lcyl', float, scale=2.0),
+        'epshc': KeywordSpec('eps_hc', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
     }
-
+    _patterns = {
+        'segment': ('N', 'kbmm', 'r', 'nh', 'ac', 'lz', 'epshc', 'nc', 'ens',
+                    'j'),
+        'whole': ('N', 'kbmm', 'r', 'nh', 'ac', 'lz', 'epshc', 'nc', 'ens'),
+        'ensemble_long': ('N', 'kbmm', 'r', 'nh', 'ac', 'lz', 'epshc', 'nc'),
+        'ensemble': ('N', 'D', 'nh', 'ac', 'epshc', 'nc'),
+        'space': ('N', 'D', 'nh', 'ac', 'epshc'),
+    }
+    _defaults = {'dmon': 1, 'dhns': 1, 'dhns_patch': 0.178, 'dt': 0.005,
+                 'ndump': 5000, 'adump': 10000, 'eps_hm': 29}
+    _species = (Species('m', 'nmon', 'dmon'), Species('hns', 'nhns', 'dhns'),
+                Species('c', 'ncrowd', 'dcrowd'))
     _project_attributes = {
         'segment': ['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m',
                     'phi_bulk_c', 'rho_bulk_c', 'phi_bulk_hns',
@@ -2585,117 +2010,3 @@ class HnsCyl(ParserBase):
         'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm'],
         'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']
     }
-
-    def __init__(
-        self,
-        artifact: str,
-        lineage: LineageT,
-        group: GroupT,
-        ispath: bool = False
-    ) -> None:
-        super().__init__(artifact, lineage, group, ispath=ispath)
-        self._initiate_attributes()
-        self._parse_name()
-        self._set_parents()
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self._dependent_attributes()
-
-    def _initiate_attributes(self) -> None:
-        """
-        Define and initiates the project attributes.
-
-        Notes
-        -----
-        The negative initial values are unphysical.
-        """
-        self.dmon: float = 1
-        self.dhns: float = 1
-        self.dhns_patch: float = 0.178
-        self.dt: float = 0.005
-        self.ndump: int = 5000
-        self.adump: int = 10000
-        self.eps_hm: float = 29
-        if self.lineage in ['segment', 'whole', 'ensemble_long']:
-            self.phi_bulk_m: float = -1
-            self.rho_bulk_m: float = -1
-            self.phi_bulk_hns: float = -1
-            self.rho_bulk_hns: float = -1
-            self.phi_bulk_c: float = -1
-            self.rho_bulk_c: float = -1
-
-    def _parse_name(self) -> None:
-        """
-        Parse lineage attributes from the `name` attribute, assigning them
-        dynamically as class attributes.
-
-        Notes
-        -----
-        Lineage attributes are macroscopic physical attributes of the systems.
-        They are added to the class dynamically as new class attribute upon
-        class instantiation.
-        """
-        name_strs = re.compile(r"([a-zA-Z\-]+)")
-        words = name_strs.split(self.name)
-        attrs_float = ['bend_mm', 'dcyl', 'lcyl', 'dcrowd', 'eps_hc']
-        for attr, keyword in self.genealogy_attributes[self.lineage].items():
-            try:
-                val = words[words.index(keyword) + 1]
-                setattr(self,
-                        attr,
-                        float(val) if attr in attrs_float else int(float(val)))
-                if keyword == 'lz':
-                    # Cylinder full length from its half-length
-                    setattr(self, attr, 2 * getattr(self, attr))
-                if keyword == 'r':
-                    # Cylinder size is twice its radius, correcting for
-                    # wall-forming particles with size 1
-                    setattr(self, attr, 2 * getattr(self, attr) - 1.0)
-            except ValueError:
-                print(f"'{keyword}' attribute not found in '{self.name}'")
-
-    def _dependent_attributes(self) -> None:
-        """
-        Calculate system attributes based on parsed values.
-        """
-        self.rho_bulk_m = number_density_cylinder(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_m = volume_fraction_cylinder(
-            getattr(self, 'nmon'),
-            getattr(self, 'dmon'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.rho_bulk_hns = number_density_cylinder(
-            getattr(self, 'nhns'),
-            getattr(self, 'dhns'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_hns = volume_fraction_cylinder(
-            getattr(self, 'nhns'),
-            getattr(self, 'dhns'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.rho_bulk_c = number_density_cylinder(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
-        self.phi_bulk_c = volume_fraction_cylinder(
-            getattr(self, 'ncrowd'),
-            getattr(self, 'dcrowd'),
-            getattr(self, 'lcyl'),
-            getattr(self, 'dcyl'),
-            pbc=True
-        )
