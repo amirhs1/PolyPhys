@@ -63,3 +63,7 @@
         -p pytester"""
     testpaths = ["polyphys/tests"]
     xfail_strict = true
+
+[tool.mypy]
+    files = ["polyphys/analyze", "polyphys/manage"]
+    strict = true

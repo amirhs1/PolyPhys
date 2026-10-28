@@ -30,8 +30,10 @@ import pandas as pd
 if TYPE_CHECKING:
     from .parser import ParserBase
 
-ParserInstanceT = TypeVar("ParserInstanceT", bound="ParserBase")  # instance
-ParserClassT: TypeAlias = type[ParserInstanceT]  # class constructor
+ParserInstanceT = TypeVar("ParserInstanceT", bound="ParserBase")
+# A concrete alias, not type[ParserInstanceT]: an alias over a TypeVar is
+# generic, and every bare use of it fails mypy --strict with [type-arg].
+ParserClassT: TypeAlias = type["ParserBase"]  # class constructor
 
 
 Pathish = str | PathLike[str]
