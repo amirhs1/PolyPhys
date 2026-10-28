@@ -92,6 +92,12 @@ version increase may introduce incompatible changes.
   the file ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
 - **Breaking:** a non-integral value of an integer keyword, such as `nc1.5`,
   raises `ValueError` instead of being truncated to an integer.
+- **Breaking:** a parser in `polyphys.manage.parser` built from a name, with
+  `ispath=False` or through `from_name`, sets `filepath` and `ext` to `None`
+  instead of the string `'N/A'`, which read as a real directory or extension.
+  Built from a file path, `filepath` is now a `pathlib.Path` instead of a
+  `str`; `ext` stays a `str`, and is `''` for a file with no extension
+  ([#100](https://github.com/amirhs1/PolyPhys/issues/100)).
 - The eight parser classes of `polyphys.manage.parser` are declarations;
   `ParserBase` holds the one copy of the parsing and bulk-value code that
   each class repeated, so the per-class lists of float attributes, which had

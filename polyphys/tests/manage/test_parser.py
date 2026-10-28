@@ -3,6 +3,7 @@ import os
 import re
 from collections import OrderedDict
 from operator import attrgetter
+from pathlib import Path
 from typing import Any, NamedTuple
 
 import pytest
@@ -663,11 +664,18 @@ def test_parser_names_its_project(parse_case, parsed):
 
 
 def test_parser_without_path_reports_no_path(parse_case, parsed):
-    """A parser built from a name keeps it and marks path fields 'N/A'."""
+    """A parser built from a name keeps it and has no filepath or ext."""
     assert (parsed.filename, parsed.filepath, parsed.ext, parsed.ispath,
             parsed.lineage, parsed.group) == (
-        parse_case.artifact, 'N/A', 'N/A', False, parse_case.lineage,
+        parse_case.artifact, None, None, False, parse_case.lineage,
         parse_case.group)
+
+
+def test_from_name_reports_no_path():
+    """A parser built with from_name has no filepath or ext."""
+    parser = SumRuleCyl.from_name('N200D10.0ac2.0', 'space', 'bug')
+
+    assert (parser.filepath, parser.ext, parser.ispath) == (None, None, False)
 
 
 def test_parser_reads_name_from_file_path(parse_case, make_temp_file):
@@ -679,8 +687,18 @@ def test_parser_reads_name_from_file_path(parse_case, make_temp_file):
 
     assert (parser.filename, parser.filepath, parser.ext, parser.ispath,
             parser.name) == (
-        parse_case.artifact + '.txt', os.path.dirname(full_path), '.txt',
-        True, parse_case.name)
+        parse_case.artifact + '.txt', Path(os.path.dirname(full_path)),
+        '.txt', True, parse_case.name)
+
+
+def test_parser_reports_empty_ext_for_file_without_suffix(make_temp_file):
+    """A file path with no suffix gives an empty ext, not None."""
+    full_path = make_temp_file('N200D10ac2')
+
+    parser = SumRuleCyl(full_path, 'space', 'bug', ispath=True)
+
+    assert (parser.ext, parser.filepath, parser.name) == (
+        '', Path(os.path.dirname(full_path)), 'N200D10ac2')
 
 
 @pytest.mark.parametrize('parser_class, lineage, group, artifact, expected', [
