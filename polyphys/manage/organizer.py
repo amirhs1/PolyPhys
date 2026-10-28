@@ -146,7 +146,7 @@ Notes
 
 import warnings
 import logging
-from typing import Any, Callable, Literal, Sequence, Iterator
+from typing import Any, Callable, Literal, Sequence, Iterator, TYPE_CHECKING
 import os
 import pathlib
 from pathlib import Path
@@ -167,6 +167,11 @@ from .types import (
     PrimitiveLineageT,
 )
 from .utils import invalid_keyword, sort_filenames, round_to_multiple
+
+if TYPE_CHECKING:
+    # Unused here, but sphinx_autodoc_typehints runs this block to resolve
+    # the "ParserBase" forward reference inside ParserClassT.
+    from .parser import ParserBase  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

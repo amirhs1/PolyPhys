@@ -157,6 +157,9 @@ def _histogram_or_raise(values: np.ndarray, edges: np.ndarray) -> np.ndarray:
         ...
     ValueError: 1 of 2 positions fall outside the edges [0.0, 3.0].
     """
+    # Declared, not cast: numpy 2.5 stubs type these counts as Any and
+    # numpy 2.3 stubs as an ndarray, where a cast is redundant.
+    hist: np.ndarray
     hist, _ = np.histogram(values, bins=edges)
     n_missed = values.size - int(hist.sum())
     if n_missed:
@@ -328,7 +331,12 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
     if positions.shape[0] < 2:
         raise ValueError("`positions` must contain at least two atoms.")
     centered_positions = positions - np.mean(positions, axis=0)
-    return np.linalg.norm(centered_positions[-1] - centered_positions[0])
+    # cast: numpy 2.5 stubs return Any; at runtime this is a NumPy floating
+    # scalar, so the cast restates the annotation and changes nothing.
+    return cast(
+        Union[np.floating, np.ndarray],
+        np.linalg.norm(centered_positions[-1] - centered_positions[0]),
+    )
 
 
 def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
