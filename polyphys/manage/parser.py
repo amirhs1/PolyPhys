@@ -415,18 +415,18 @@ class ParserBase:
         'ensemble': ['ensemble', 'space'],
         'space': ['space'],
     }
-    _geometry: ClassVar[Optional[GeometryT]] = None
-    _topology: ClassVar[Optional[TopologyT]] = None
-    _groups: ClassVar[Optional[list[GroupT]]] = None
+    # Every concrete subclass sets these; __init_subclass__ checks them.
+    _geometry: ClassVar[GeometryT]
+    _topology: ClassVar[TopologyT]
+    _groups: ClassVar[list[GroupT]]
     _keywords: ClassVar[Optional[dict[str, KeywordSpec]]] = None
     _patterns: ClassVar[Optional[dict[LineageT, tuple[str, ...]]]] = None
     _defaults: ClassVar[dict[str, float]] = {}
     _species: ClassVar[tuple[Species, ...]] = ()
     _totals: ClassVar[dict[str, tuple[str, ...]]] = {}
     _masses: ClassVar[dict[str, str]] = {}
-    _genealogy_attributes: \
-        ClassVar[Optional[dict[LineageT, OrderedDict[str, str]]]] = None
-    _project_attributes: ClassVar[Optional[dict[LineageT, list[str]]]] = None
+    _genealogy_attributes: ClassVar[dict[LineageT, OrderedDict[str, str]]]
+    _project_attributes: ClassVar[dict[LineageT, list[str]]]
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
@@ -466,10 +466,11 @@ class ParserBase:
         name = cls.__name__
         keywords = cls._keywords
         patterns = cls._patterns
-        geometry = cls._geometry
-        if (geometry is None or cls._topology is None or cls._groups is None
+        geometry: Optional[GeometryT] = getattr(cls, '_geometry', None)
+        if (geometry is None or getattr(cls, '_topology', None) is None
+                or getattr(cls, '_groups', None) is None
                 or keywords is None or patterns is None
-                or cls._project_attributes is None):
+                or getattr(cls, '_project_attributes', None) is None):
             raise TypeError(
                 f"{name} must declare '_geometry', '_topology', '_groups', "
                 "'_keywords', '_patterns', and '_project_attributes'.")
@@ -628,8 +629,6 @@ class ParserBase:
         """
         System geometry in a molecular dynamics system.
         """
-        if self._geometry is None:
-            raise AttributeError("'_geometry' has not been initialized.")
         return self._geometry
 
     @property
@@ -637,8 +636,6 @@ class ParserBase:
         """
         List of valid group names for the subclass.
         """
-        if self._groups is None:
-            raise AttributeError("'_groups' has not been initialized.")
         return self._groups
 
     @property
@@ -646,8 +643,6 @@ class ParserBase:
         """
         Define the polymer topology for the parser subclass.
         """
-        if self._topology is None:
-            raise AttributeError("'_topology' has not been initialized.")
         return self._topology
 
     @property
@@ -657,9 +652,6 @@ class ParserBase:
         and each value is an OrderedDict mapping attribute names to their
         filename keywords, in pattern order.
         """
-        if self._genealogy_attributes is None:
-            raise AttributeError(
-                "'_genealogy_attributes' has not been initialized.")
         return self._genealogy_attributes
 
     @property
@@ -669,9 +661,6 @@ class ParserBase:
         each value is the list of attributes that are fixed or computed
         rather than parsed at that lineage.
         """
-        if self._project_attributes is None:
-            raise AttributeError(
-                "'_project_attributes' has not been initialized.")
         return self._project_attributes
 
     @property

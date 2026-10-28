@@ -683,6 +683,31 @@ def test_parser_reads_name_from_file_path(parse_case, make_temp_file):
         True, parse_case.name)
 
 
+@pytest.mark.parametrize('parser_class, lineage, group, artifact, expected', [
+    pytest.param(SumRuleCyl, 'ensemble', 'bug', 'N2000D20.0ac1.0nc117000',
+                 ['nmon', 'dcyl', 'dcrowd', 'ncrowd'],
+                 id='SumRuleCyl-ensemble'),
+    pytest.param(HnsCub, 'space', 'nucleoid', 'N200kbmm2nh12ac2.0epshc1',
+                 ['nmon', 'bend_mm', 'nhns', 'dcrowd', 'eps_hc'],
+                 id='HnsCub-space'),
+])
+def test_parser_lists_lineage_attributes_in_pattern_order(
+        parser_class, lineage, group, artifact, expected):
+    """The parsed attributes are listed in the order the name gives them."""
+    parser = parser_class(artifact, lineage, group)
+
+    assert parser.lineage_attributes == expected
+
+
+def test_name_through_unknown_keyword_raises_value_error():
+    """Cutting a name at a keyword it lacks raises ValueError naming it."""
+    parser = SumRuleCyl('N2000D20.0ac1.0', 'space', 'bug')
+
+    with pytest.raises(ValueError,
+                       match="'zz' keyword not found in 'N2000D20.0ac1.0'"):
+        parser._name_through('zz')
+
+
 def test_parser_lists_each_attribute_once(parsed):
     """No attribute appears twice in `attributes`."""
     assert len(parsed.attributes) == len(set(parsed.attributes))
