@@ -39,7 +39,7 @@ See also: :mod:`~polyphys.manage.types` for the definition of
 import re
 from pathlib import Path
 import gzip
-from typing import Generator, Optional, List, Union, Tuple, Sequence
+from typing import Generator, Optional, List, Union, Tuple, Sequence, cast
 import warnings
 from contextlib import contextmanager
 import numpy as np
@@ -465,7 +465,12 @@ def round_down_first_non_zero(num: float) -> float:
         return num
     exponent = np.floor(np.log10(abs(num)))
     non_zero = 10**exponent
-    return round(np.floor(num / non_zero) * non_zero, int(abs(exponent)))
+    # cast: numpy's stubs return Any. The value is a NumPy floating scalar
+    # (np.float32 for float32 input), not always a float; the cast only
+    # restates the existing annotation and changes nothing at runtime.
+    return cast(
+        float, round(np.floor(num / non_zero) * non_zero, int(abs(exponent)))
+    )
 
 
 def round_to_multiple(dividend: float, divider: float, round_to: int) -> float:

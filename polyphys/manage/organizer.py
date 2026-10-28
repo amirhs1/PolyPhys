@@ -146,7 +146,7 @@ Notes
 
 import warnings
 import logging
-from typing import Callable, Literal, Sequence, Iterator
+from typing import Any, Callable, Literal, Sequence, Iterator
 import os
 import pathlib
 from pathlib import Path
@@ -652,7 +652,7 @@ def whole_from_file(
 
 def whole_from_dist_mat_t(
     whole_paths: list[tuple[str]],
-    parser: ParserClassT,
+    parser: type[ParserInstanceT],
     group: GroupT,
     func: Callable[[str, ParserInstanceT],
                    tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]
@@ -675,7 +675,7 @@ def whole_from_dist_mat_t(
         dataset (typically a NumPy `.npy` distance matrix). Bare path
         strings are not supported: the first element of each item is taken
         as the path.
-    parser : ParserClassT
+    parser : type[ParserInstanceT]
         A parser class used to create parser instances for each file. The
         parser provides attributes such as `whole` (name identifier) and
         simulation metadata.
@@ -1100,7 +1100,9 @@ def ensemble(
             f"'{whole_type}'."
         )
 
-    merging_func: dict[str, Callable] = {
+    merging_func: dict[
+        str, Callable[..., tuple[str, np.ndarray | pd.DataFrame]]
+    ] = {
         "vector": ens_from_vec,
         "matrix": ens_from_mat_t,
         "dataframe": ens_from_df,
@@ -1123,7 +1125,7 @@ def ensemble(
         map(merging_func[whole_type], ens_wholes.items())
     )
     for ens_name, centers in bin_centers.items():
-        ensembles[ens_name]["bin_center"] = centers  # type: ignore[index]
+        ensembles[ens_name]["bin_center"] = centers
 
     # Save ensemble data object if save_to is specified
     if save_to:
@@ -1530,7 +1532,7 @@ def children_stamps(
 def parents_stamps(
     stamps: pd.DataFrame,
     lineage: PrimitiveLineageT,
-    properties: dict[str, Callable] | None = None,
+    properties: dict[str, Callable[..., Any]] | None = None,
     save_to: Pathish | None = None,
 ) -> pd.DataFrame:
     """
@@ -1618,7 +1620,7 @@ def parents_stamps(
             f"'{base_columns}', they are probably removed in"
             " a previous call of 'parents_stamps' function."
         )
-    agg_funcs: dict[str, str | Callable] = {
+    agg_funcs: dict[str, str | Callable[..., Any]] = {
         col: "last" for col in base_columns
     }
     if properties is not None:

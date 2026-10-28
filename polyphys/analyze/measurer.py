@@ -49,7 +49,7 @@ For sphere-sphere intersection:
   Web Resource. https://mathworld.wolfram.com/Sphere-SphereIntersection.html
 """
 
-from typing import Dict, Tuple, Optional, Union, Any, List
+from typing import Dict, Tuple, Optional, Union, Any, List, cast
 import numpy as np
 
 from ..manage.types import AxisT, EntityT, PropertyT, BinT
@@ -280,7 +280,8 @@ def pair_distance(
         # Apply Minimum Image Convention
         delta -= pbc_lengths * np.round(delta * pbc_lengths_inverse)
 
-    return delta
+    # cast: numpy's stubs return Any; at runtime this is an ndarray.
+    return cast(np.ndarray, delta)
 
 
 def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
@@ -380,7 +381,10 @@ def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
         positions[:, trans_axes[axis]], axis=0
     )
     # Times by 2, so we have the diameter not radius:
-    return 2 * np.mean(np.linalg.norm(trans_pos, axis=1))
+    # cast: numpy's stubs return Any. The value is a NumPy floating scalar
+    # (np.float32 for float32 input), not always a float; the cast only
+    # restates the existing annotation and changes nothing at runtime.
+    return cast(float, 2 * np.mean(np.linalg.norm(trans_pos, axis=1)))
 
 
 def max_distance(positions: np.ndarray) -> np.ndarray:
@@ -416,7 +420,8 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
     """
     # calculation in the center of geometry of the atom group.
     centered_positions = positions - np.mean(positions, axis=0)
-    return np.ptp(centered_positions, axis=0)
+    # cast: numpy's stubs return Any; at runtime this is an ndarray.
+    return cast(np.ndarray, np.ptp(centered_positions, axis=0))
 
 
 def fsd(positions: np.ndarray, axis: AxisT) -> float:
@@ -467,7 +472,10 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
         )
     # calculation in the center of geometry of the atom group:
     positions = positions - np.mean(positions, axis=0)
-    return np.ptp(positions[:, axis])
+    # cast: numpy's stubs return Any. The value is a NumPy floating scalar
+    # (np.float32 for float32 input), not always a float; the cast only
+    # restates the existing annotation and changes nothing at runtime.
+    return cast(float, np.ptp(positions[:, axis]))
 
 
 def simple_stats(
@@ -548,7 +556,10 @@ def sem(data: np.ndarray) -> float:
     if len(data) == 0:
         raise ValueError('Input data array must not be empty.')
 
-    return np.std(data, ddof=1) / len(data) ** 0.5
+    # cast: numpy's stubs return Any. The value is a NumPy floating scalar
+    # (np.float32 for float32 input), not always a float; the cast only
+    # restates the existing annotation and changes nothing at runtime.
+    return cast(float, np.std(data, ddof=1) / len(data) ** 0.5)
 
 
 def spherical_segment(r: float, a: float, b: float) -> float:
@@ -1262,4 +1273,5 @@ def planar_cartesian_histogram(
             f"edges [{edges[0][0]}, {edges[0][-1]}] x "
             f"[{edges[1][0]}, {edges[1][-1]}]."
         )
-    return hist
+    # cast: numpy's stubs return Any; at runtime this is an ndarray.
+    return cast(np.ndarray, hist)
