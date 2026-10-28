@@ -37,6 +37,10 @@ version increase may introduce incompatible changes.
   when it names something that is not a directory.
 - A Testing page in the documentation, describing the three test-data tiers,
   the kinds of test, the shared fixtures, and the pytest settings.
+- The documentation is published on Read the Docs at
+  https://polyphys.readthedocs.io/, built from `.readthedocs.yaml` with
+  warnings treated as errors. The README links to it, and `pyproject.toml`
+  lists it as the `Documentation` project URL.
 
 ### Changed
 
@@ -45,6 +49,8 @@ version increase may introduce incompatible changes.
 - pytest now runs with `--strict-markers`, `--strict-config`,
   `xfail_strict = true`, `-ra`, and `--import-mode=importlib`, and loads the
   `pytester` plugin. A misspelt marker is an error rather than a warning.
+- `html_baseurl` in `docs/source/conf.py` now comes from Read the Docs'
+  `READTHEDOCS_CANONICAL_URL` instead of an unpublished GitHub Pages address.
 
 ## [0.4.0] - 2026-10-26
 

@@ -42,6 +42,7 @@
     ]
 
 [project.urls]
+    Documentation = "https://polyphys.readthedocs.io/en/latest/"
     Source = "https://github.com/amirhs1/PolyPhys"
     Issues = "https://github.com/amirhs1/PolyPhys/issues"
 
