@@ -41,6 +41,16 @@ version increase may introduce incompatible changes.
   https://polyphys.readthedocs.io/, built from `.readthedocs.yaml` with
   warnings treated as errors. The README links to it, and `pyproject.toml`
   lists it as the `Documentation` project URL.
+- `KeywordSpec` and `Species` in `polyphys.manage.parser`, with which a
+  parser class is a declaration: one `KeywordSpec` per filename keyword (the
+  attribute, `int` or `float`, and an optional `scale * value + offset`
+  conversion), the keyword pattern of each lineage, fixed values, and the
+  species whose bulk number density and volume fraction to compute.
+  `ParserBase` parses the name and computes the bulk values. A declaration
+  is checked when its class is created, and an incomplete or inconsistent
+  one raises `TypeError`. A new study declares a parser instead of copying
+  one; the Usage page shows how
+  ([#49](https://github.com/amirhs1/PolyPhys/issues/49)).
 
 ### Changed
 
@@ -74,6 +84,34 @@ version increase may introduce incompatible changes.
   labels that `space_tseries` and `space_hists` add, are unchanged; the
   organizer calls the new name
   ([#48](https://github.com/amirhs1/PolyPhys/issues/48)).
+- **Breaking:** a parser in `polyphys.manage.parser` raises `ValueError` when
+  a name lacks a keyword of its lineage's pattern, naming the keyword, its
+  attribute, the lineage, and the name, and when a keyword's value is not a
+  number, naming the keyword and the value. Before, it printed a message and
+  failed later with an `AttributeError` that named neither the keyword nor
+  the file ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
+- **Breaking:** a non-integral value of an integer keyword, such as `nc1.5`,
+  raises `ValueError` instead of being truncated to an integer.
+- The eight parser classes of `polyphys.manage.parser` are declarations;
+  `ParserBase` holds the one copy of the parsing and bulk-value code that
+  each class repeated, so the per-class lists of float attributes, which had
+  drifted out of step with the keyword tables, are gone. Subclasses no longer
+  define `__init__`, `_initiate_attributes`, `_parse_name`, or
+  `_dependent_attributes`. `ParserBase` is no longer an `abc.ABC`;
+  instantiating it, or a subclass that declares no patterns, raises
+  `TypeError`. For every name the previous parsers accepted, the attribute
+  values and their types are unchanged. Parsing splits a name once, in time
+  linear in its length
+  ([#49](https://github.com/amirhs1/PolyPhys/issues/49)).
+- The parser docstrings now match the code: `SumRuleCyl.dmon` and the
+  `HnsCub`/`HnsCyl` time step and dump periods are fixed values, not
+  keywords; `HnsCub` and `HnsCyl` read `nmon` from `N` and describe the
+  `nucleoid` group; the `TransFociCyl` space pattern includes `D` and its
+  wall energies are `epsilon_small` and `epsilon_large`; the hetero classes
+  do not set `nmon`; `from_name` sets `filepath` and `ext` to `'N/A'`.
+- `polyphys/tests/manage/test_parser.py` follows the test-writing rules:
+  shared cases in fixtures, one behaviour per test, and a round-trip test
+  that builds a name from every class's declared pattern.
 
 ### Removed
 

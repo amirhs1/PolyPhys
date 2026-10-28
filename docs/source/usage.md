@@ -54,6 +54,59 @@ attributes and derives the artifact's position in the project hierarchy:
 
 ```
 
+## Declaring a parser for a new study
+
+A parser class is a declaration: it lists the study's filename keywords, the
+order in which each lineage writes them, any fixed values, and the particle
+species whose bulk number density and volume fraction to compute.
+`ParserBase` does the parsing. Each keyword gets a `KeywordSpec` naming the
+attribute that stores its value and the value's type; a `float` keyword may
+also convert the value as `scale * value + offset`, here `lcube = 2 l` from
+the half-side `l`:
+
+```python
+>>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
+>>> class ChainCub(ParserBase):
+...     _geometry = 'cubic'
+...     _topology = 'linear'
+...     _groups = ['bug', 'all']
+...     _keywords = {
+...         'N': KeywordSpec('nmon', int),
+...         'ac': KeywordSpec('dcrowd', float),
+...         'nc': KeywordSpec('ncrowd', int),
+...         'l': KeywordSpec('lcube', float, scale=2.0),
+...         'ens': KeywordSpec('ensemble_id', int),
+...         'j': KeywordSpec('segment_id', int),
+...     }
+...     _patterns = {
+...         'segment': ('N', 'ac', 'nc', 'l', 'ens', 'j'),
+...         'whole': ('N', 'ac', 'nc', 'l', 'ens'),
+...         'ensemble_long': ('N', 'ac', 'nc', 'l'),
+...         'ensemble': ('N', 'ac', 'nc'),
+...         'space': ('N', 'ac'),
+...     }
+...     _defaults = {'dmon': 1.0}
+...     _species = (Species('m', 'nmon', 'dmon'),
+...                 Species('c', 'ncrowd', 'dcrowd'))
+...     _project_attributes = {
+...         'segment': ['dmon', 'rho_bulk_m', 'rho_bulk_c'],
+...         'whole': ['dmon', 'rho_bulk_m', 'rho_bulk_c'],
+...         'ensemble_long': ['dmon', 'rho_bulk_m', 'rho_bulk_c'],
+...         'ensemble': ['dmon'],
+...         'space': ['dmon'],
+...     }
+>>> artifact = ChainCub('N100ac2.0nc50l10.0ens1.bug', 'whole', 'bug')
+>>> artifact.lcube, artifact.ensemble, artifact.space
+(20.0, 'N100ac2.0nc50', 'N100ac2.0')
+
+```
+
+The declaration is checked when the class is created: a pattern keyword
+without a `KeywordSpec`, an attribute that appears twice in one pattern, or a
+species whose size or number no long-form name sets raises `TypeError`. A
+name that lacks a keyword of its lineage's pattern, or whose value is not a
+number, raises `ValueError` naming the keyword, the lineage, and the name.
+
 See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.
