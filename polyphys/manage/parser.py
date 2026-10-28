@@ -252,19 +252,21 @@ class ParserBase:
     .. method:: from_name(name, lineage, group)
        Construct a parser directly from a *name token* (not a path).
        This bypasses filesystem resolution. In this mode, ``filepath`` and
-       ``ext`` are set to ``'N/A'``, and the given token is treated as both
+       ``ext`` are ``None``, and the given token is treated as both
        the ``filename`` and ``name`` prior to :meth:`_find_name`
        normalization.
 
     Attributes
     ----------
-    filepath : str
-        Absolute directory path if `artifact` is a file path, or ``'N/A'``.
+    filepath : pathlib.Path or None
+        The resolved absolute directory that holds `artifact` if it is a
+        file path, or ``None`` if it is a name.
     filename : str
         The filename extracted from `artifact`, or `artifact` itself.
-    ext : str
-        The file extension (including the leading dot), or ``'N/A'`` if
-        `artifact` is not a path.
+    ext : str or None
+        The file extension, including the leading dot, if `artifact` is a
+        file path: :attr:`pathlib.PurePath.suffix`, which is ``''`` for a
+        file with no extension. ``None`` if `artifact` is a name.
     name : str
         The lineage name: `filename` without its extension, cut before
         ``.<group>`` (``segment`` and ``whole``) and before the first
@@ -405,6 +407,8 @@ class ParserBase:
     20.0
     >>> artifact.ensemble_long, artifact.ensemble, artifact.space
     ('N100ac2.0nc50l10.0', 'N100ac2.0nc50', 'N100ac2.0')
+    >>> artifact.filepath is None, artifact.ext is None
+    (True, True)
     """
     _lineages: ClassVar[list[LineageT]] = \
         ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
@@ -537,15 +541,15 @@ class ParserBase:
             p = Path(
                 os.path.expandvars(os.path.expanduser(artifact_str))
             ).resolve()
-            self._filepath: str = str(p.parent)
+            self._filepath: Optional[Path] = p.parent
             self._filename: str = p.name
             self._name: str = p.stem
-            self._ext: str = p.suffix
+            self._ext: Optional[str] = p.suffix
         else:
-            self._filepath = 'N/A'
+            self._filepath = None
             self._filename = artifact_str
             self._name = artifact_str
-            self._ext = 'N/A'
+            self._ext = None
 
         self._project_name = self.__class__.__name__
         self._lineage: LineageT = lineage
@@ -600,13 +604,14 @@ class ParserBase:
         """
         Construct a parser from a *name token* (not a path).
 
-        Sets `filepath` and `ext` to ``'N/A'`` and keeps the token as both
+        Sets `filepath` and `ext` to ``None`` and keeps the token as both
         `filename` and `name` before `_find_name()` normalization.
 
         Examples
         --------
-        >>> SumRuleCyl.from_name('N200D10.0ac2.0', 'space', 'bug').filepath
-        'N/A'
+        >>> parser = SumRuleCyl.from_name('N200D10.0ac2.0', 'space', 'bug')
+        >>> parser.filepath is None, parser.ext is None
+        (True, True)
         """
         return cls(name, lineage, group, ispath=False)
 
@@ -672,9 +677,22 @@ class ParserBase:
         return self._filename
 
     @property
-    def filepath(self) -> str:
+    def filepath(self) -> Optional[Path]:
         """
-        Return the full filepath or 'N/A' if not a valid path.
+        Return the resolved absolute directory that holds the artifact, or
+        ``None`` if the parser was built from a name.
+
+        Examples
+        --------
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as folder:
+        ...     path = Path(folder, 'N200D10.0ac2.0.csv')
+        ...     path.touch()
+        ...     parser = SumRuleCyl(path, 'space', 'bug', ispath=True)
+        ...     parser.filepath == Path(folder).resolve()
+        True
+        >>> SumRuleCyl('N200D10.0ac2.0', 'space', 'bug').filepath is None
+        True
         """
         return self._filepath
 
@@ -693,9 +711,24 @@ class ParserBase:
         return self._group
 
     @property
-    def ext(self) -> str:
+    def ext(self) -> Optional[str]:
         """
-        Return the current file extension.
+        Return the file extension, including the leading dot, or ``None`` if
+        the parser was built from a name.
+
+        The extension is :attr:`pathlib.PurePath.suffix`: only the part after
+        the last dot, and ``''`` for a file with no extension.
+
+        Examples
+        --------
+        >>> import tempfile
+        >>> with tempfile.TemporaryDirectory() as folder:
+        ...     path = Path(folder, 'N200D10ac2')
+        ...     path.touch()
+        ...     SumRuleCyl(path, 'space', 'bug', ispath=True).ext
+        ''
+        >>> SumRuleCyl('N200D10.0ac2.0', 'space', 'bug').ext is None
+        True
         """
         return self._ext
 
