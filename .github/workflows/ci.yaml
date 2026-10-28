@@ -87,11 +87,15 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Run tests with coverage
+        # --cov-fail-under fails the job when total coverage drops below the
+        # floor. coverage.py rounds the total to whole percent before the
+        # comparison, so keep the floor a whole number.
         run: |
           pytest polyphys README.md \
             --cov=polyphys \
             --cov-report=term-missing \
             --cov-report=xml \
+            --cov-fail-under=95 \
             --doctest-modules \
             --doctest-glob="README.md"
 
