@@ -46,7 +46,7 @@ from polyphys.manage.organizer import (
     whole_from_segments,
 )
 from polyphys.manage.parser import SumRuleCyl
-from polyphys.manage.utils import round_up_nearest
+from polyphys.manage.utils import round_to_multiple
 
 
 # Fixtures: lineage trees and the names the parser gives their files
@@ -977,14 +977,14 @@ def test_space_tseries_adds_phi_bulk_c_by_default(make_ens_avg_space,
                                state_attr("phi_bulk_c", 3))
 
 
-def test_space_tseries_rounds_crowder_with_round_up_nearest(
+def test_space_tseries_rounds_crowder_with_round_to_multiple(
     make_ens_avg_space
 ):
-    """phi_c_bulk_round is round_up_nearest of the crowder column."""
+    """phi_c_bulk_round is round_to_multiple of the crowder column."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
     space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
                           "adump", divisor=0.05, round_to=2)
-    expected = space["phi_bulk_c"].apply(round_up_nearest, args=(0.05, 2))
+    expected = space["phi_bulk_c"].apply(round_to_multiple, args=(0.05, 2))
     np.testing.assert_array_equal(space["phi_c_bulk_round"], expected)
 
 

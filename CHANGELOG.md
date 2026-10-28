@@ -66,6 +66,64 @@ version increase may introduce incompatible changes.
 - `polyphys/tests/manage/test_organizer.py` covers every public function of
   the organizer, including integration tests that run a synthetic lineage tree
   from segments to a space; the module's line coverage rose from 65% to 98%.
+- **Breaking:** `polyphys.manage.utils.round_up_nearest` is renamed
+  `round_to_multiple`, which is what it does: it rounds to the nearest
+  multiple of `divider`, with exact ties going to the even multiple, and then
+  to `round_to` decimal places. Its docstring described a round-up to
+  `round_to` significant digits. The values, and so the `phi_c_bulk_round`
+  labels that `space_tseries` and `space_hists` add, are unchanged; the
+  organizer calls the new name
+  ([#48](https://github.com/amirhs1/PolyPhys/issues/48)).
+
+### Removed
+
+- **Breaking:** the `bin_range` argument of `radial_histogram`,
+  `radial_cyl_histogram`, `axial_histogram`, and `azimuth_cyl_histogram`, and
+  the `bin_ranges` argument of `planar_cartesian_histogram`, in
+  `polyphys.analyze.measurer`. They were passed to `np.histogram` and
+  `np.histogram2d` as `range`, which NumPy ignores when the bins are given as
+  edges, so they never clipped anything. Drop the argument from each call;
+  the counts are unchanged ([#46](https://github.com/amirhs1/PolyPhys/issues/46)).
+
+### Fixed
+
+- **Breaking:** the histogram functions of `polyphys.analyze.measurer`
+  (`radial_histogram`, `radial_cyl_histogram`, `axial_histogram`,
+  `azimuth_cyl_histogram`, and `planar_cartesian_histogram`) raise
+  `ValueError`, naming how many positions fell outside the edges, instead of
+  letting `np.histogram` drop them silently. For the whole-system profiles
+  these functions serve, a position outside the edges means wrong edges or an
+  unwrapped coordinate, not data to ignore; LAMMPS's `fix ave/histo` likewise
+  reports its `Missing-counts`. Positions along a periodic axis must be
+  wrapped into the box before binning; the functions do not wrap
+  ([#46](https://github.com/amirhs1/PolyPhys/issues/46)).
+- `create_bin_edge_and_hist` and every branch of `fixedsize_bins` decide the
+  number of bins by comparing `(lmax - lmin) / bin_size` with the nearest
+  integer at a relative tolerance of 1e-9 (`measurer._BIN_COUNT_RTOL`, whose
+  comment derives the value) before taking the ceiling, and build the edges
+  with `np.linspace`. Before, a float-step `np.arange` could return one edge
+  too many (42 instead of 41 for a step of 0.3 over `[-6, 6]`; in
+  `fixedsize_bins` the extra edge made the histogram one count longer than
+  `collector`), and a plain `ceil` of a ratio such as `2.1 / 0.3 =
+  7.000000000000001` added a bin that, for `ordinary` bins, shifted every edge
+  by half a bin; in other cases the end edges fell a few 1e-15 inside the
+  range, so a position at exactly `lmin` or `lmax` was lost (the old
+  `periodic` edges ended 7e-15 short of `pi` for 5-degree bins). The first
+  and last edges now enclose `lmin` and `lmax` exactly. Edges change only for
+  ranges within 1e-9 of a whole number of bins
+  ([#46](https://github.com/amirhs1/PolyPhys/issues/46)).
+- **Breaking:** the `periodic` branch of `fixedsize_bins` raises `ValueError`
+  when the period `lmax - lmin` is not a whole number of bins, instead of
+  warning or adding a last bin that runs past the period
+  ([#46](https://github.com/amirhs1/PolyPhys/issues/46)).
+- The `nonnegative` branch of `fixedsize_bins` keeps bins of width `bin_size`
+  when it clips the lower end to zero. For `0 < lmin <= dl`, where `dl` is
+  half the excess length, it widened every bin instead: for a `bin_size` of 1
+  over `[0.1, 2.5]` the edges ran to 3.1, not 3.0. Ranges that start at zero,
+  or are not clipped, are unchanged. A negative `lmin` now raises
+  `ValueError` for this bin type instead of being clipped to zero, which left
+  the range below zero uncovered
+  ([#46](https://github.com/amirhs1/PolyPhys/issues/46)).
 
 ## [0.4.0] - 2026-10-26
 
