@@ -101,24 +101,39 @@ conditions within spaces and galaxies.
 
 Examples
 ========
-Example of grouping segments into a whole (histogram):
+Two replicates (``ens1`` and ``ens2``) of one state point, each probed in
+two segments (``j01`` and ``j02``), reduce to one ensemble-averaged time
+series. Segment ``s`` of replicate ``e`` holds two frames of the value
+``10 * e + s``:
 
->>> segments = [("segment1.npy",), ("segment2.npy",)] # doctest: +SKIP
->>> whole_data = whole_from_segments( # doctest: +SKIP
-                                     'density', segments, parser=my_parser,
-                                     geometry='cubic', group='bug',
-                                     topology='linear', relation='histogram')
+>>> import tempfile
+>>> from polyphys.manage.parser import SumRuleCyl
+>>> tmp = tempfile.TemporaryDirectory()
+>>> root = Path(tmp.name)
+>>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+>>> paths = []
+>>> for e in (1, 2):
+...     for s in (1, 2):
+...         path = root / f'{state}ens{e}.j0{s}.bug.gyrTMon.npy'
+...         np.save(path, np.full(2, 10.0 * e + s))
+...         paths.append(path)
 
-Creating an ensemble from multiple wholes:
+Join each replicate's segments into a whole, collect the wholes of the
+state point into an ensemble, and average over the replicates:
 
->>> wholes = { # doctest: +SKIP
-...     'whole1': np.array([1, 2, 3]),
-...     'whole2': np.array([2, 3, 4]),
-... }
->>> ensemble_data = ensemble( # doctest: +SKIP
-                             'density', wholes, parser=my_parser,
-                             geometry='cubic', group='bug',
-                             topology='linear', whole_type='vector')
+>>> wholes = whole_from_segments('gyrTMon', paths, SumRuleCyl, 'bug',
+...                              'tseries')
+>>> wholes[state + 'ens1']
+array([11., 11., 12., 12.])
+>>> ensembles = ensemble('gyrTMon', wholes, SumRuleCyl, 'bug', 'vector')
+>>> averages = ensemble_avg('gyrTMon', ensembles, 'bug', 'dataframe')
+>>> averages[state]
+   gyrTMon-mean  gyrTMon-var  gyrTMon-sem
+0          16.0         50.0          5.0
+1          16.0         50.0          5.0
+2          17.0         50.0          5.0
+3          17.0         50.0          5.0
+>>> tmp.cleanup()
 
 Notes
 =====
@@ -178,7 +193,7 @@ def create_fullname(name: str, group: GroupT, prop: PropertyT) -> str:
 
     Examples
     --------
-    >>> create_fullname('sample', 'bug', 'density') # doctest: +SKIP
+    >>> create_fullname('sample', 'bug', 'density')
     'sample-bug-density'
     """
     return "-".join([name, group, prop])
@@ -200,42 +215,49 @@ def save_artifact(
     data : np.ndarray | pd.DataFrame | dict[str, np.ndarray]
         Data to be saved. Accepted types:
 
-        - `np.ndarray`: Saved as a .npy file.
-        - `pd.DataFrame`: Saved as a .csv file.
-        - `dict` of `np.ndarray`: Each entry saved as a separate .npy file
-          with suffix.
+        - `np.ndarray`: Saved as ``<filename>.npy``.
+        - `pd.DataFrame`: Saved as ``<filename>.csv``, without the index.
+        - `dict` of `np.ndarray`: Each key must have the form
+          ``<prop>-<measure>``, with exactly one hyphen, and each entry is
+          saved as ``<filename>-<measure>.npy``.
 
-    save_to : str
-        Path to the directory where the file will be saved.
+    save_to : Pathish
+        Path to an existing directory where the file is saved.
 
     Raises
     ------
     TypeError
         If `data` type does not match any of the supported formats.
+    ValueError
+        If `data` is a dict and one of its keys does not contain exactly one
+        hyphen.
 
     Examples
     --------
-    Save a numpy array to a `.npy` file in the specified directory:
+    >>> import tempfile
+    >>> tmp = tempfile.TemporaryDirectory()
 
-    >>> save_artifact( # doctest: +SKIP
-    ...     'output',
-    ...     np.array([1, 2, 3]),
-    ...     'density',
-    ...     'all',
-    ...     "/data/",
-    ... )
+    Save a numpy array to a ``.npy`` file:
 
-    Save a DataFrame to a `.csv` file:
+    >>> save_artifact('w-bug-rhoMon', np.array([1.0, 2.0]), tmp.name)
+    >>> np.load(Path(tmp.name) / 'w-bug-rhoMon.npy')
+    array([1., 2.])
 
-    >>> import pandas as pd # doctest: +SKIP
-    >>> df = pd.DataFrame({'A': [1, 2, 3]}) # doctest: +SKIP
-    >>> save_artifact( # doctest: +SKIP
-    ...     'output',
-    ...     df,
-    ...     'density',
-    ...     'all',
-    ...     "/data/",
-    ... )
+    Save a DataFrame to a ``.csv`` file:
+
+    >>> save_artifact('w-bug-rhoMon', pd.DataFrame({'A': [1, 2]}), tmp.name)
+    >>> pd.read_csv(Path(tmp.name) / 'w-bug-rhoMon.csv')
+       A
+    0  1
+    1  2
+
+    Save each entry of a dict to its own file, named by its measure:
+
+    >>> save_artifact('w-bug-rhoMon', {'rhoMon-mean': np.array([1.5])},
+    ...               tmp.name)
+    >>> sorted(path.name for path in Path(tmp.name).iterdir())
+    ['w-bug-rhoMon-mean.npy', 'w-bug-rhoMon.csv', 'w-bug-rhoMon.npy']
+    >>> tmp.cleanup()
     """
     file_path = os.path.join(save_to, filename)
 
@@ -277,39 +299,48 @@ def make_database(
     Parameters
     ----------
     old_database : Pathish
-        Path to the reference directory whose structure will be used as a base.
-    phase : {'simAll', 'simCont', 'log', 'trj', 'probe', 'analysis', 'viz',
-            'galaxy'}
+        Path to the reference directory whose structure will be used as a
+        base. It need not exist.
+    phase : {'simsAll', 'simsCont', 'logs', 'trjs', 'probes', 'analysis', \
+'viz', 'galaxy', 'allInOne'}
         The new phase name for the directory, specifying its role in
         the workflow.
-    stage : {'segment', 'wholeSim', 'ens', 'ensAvg', 'space', 'galaxy'}
-        The stage of processing or data type represented in the new directory.
-    group : GroupT
-        Particle group related to the data in the directory.
+    stage : str
+        The stage of processing or data type represented in the new
+        directory, such as 'segment', 'wholeSim', 'ens', 'ensAvg', 'space',
+        or 'galaxy'. It is not checked.
+    group : GroupT or None
+        Particle group related to the data in the directory; left out of the
+        name when None.
 
     Returns
     -------
     str
-        The path to the newly created directory or the existing path if it
-        already exists.
+        The path to the new directory, ending with ``/``. If the directory
+        already exists, the same path is returned and a notice is printed to
+        standard output.
 
     Raises
     ------
     ValueError
-        If any parameter is not in its list of accepted values.
+        If `phase` is not one of the accepted values.
 
     Examples
     --------
-    Examples of directory transformation:
-        - Input: `old_database = root/parent1/.../parentN/old_phase/old_dir`
-        - Result: `new_database = root/parent1/.../parentN/phase/new_dir`
+    The new directory sits next to the old phase directory:
 
-    Construct a new directory path based on an existing database path:
+    - Input: ``root/parent1/.../parentN/old_phase/old_dir``
+    - Result: ``root/parent1/.../parentN/phase/new_dir``
 
-    >>> make_database( # doctest: +SKIP
-                     '/root/data/old_analysis/simulations', 'analysis',
-                     'wholeSim', 'bug')
-    '/root/data/analysis/prefix-bug-wholeSim/'
+    >>> import tempfile
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> old = Path(tmp.name) / 'probes' / 'N20-bug-segment'
+    >>> new = make_database(old, 'analysis', 'ens', 'bug')
+    >>> Path(new).relative_to(tmp.name).as_posix()
+    'analysis/N20-bug-ens'
+    >>> Path(new).is_dir()
+    True
+    >>> tmp.cleanup()
     """
     invalid_keyword(
         phase,
@@ -405,19 +436,25 @@ def whole_from_segments(
 ) -> dict[str, np.ndarray]:
     """
     Generate 'whole' arrays by combining data segments for a specified
-    property of a particle `group` within a defined `geometry`. The combination
-    method is determined by the `relation` parameter.
+    property of a particle `group`. The combination method is determined by
+    the `relation` parameter.
 
     Parameters
     ----------
     prop: :py:data:`PropertyT`
         The physical property to process (e.g., 'density').
     segments : :py:data:`AnyPathIter`
-        An iterable of paths to segment files (e.g., to CSV files) for the
-        `prop_`. Each path should point to a single segment file, which will be
+        An iterable of paths to segment ``.npy`` files for `prop`, either
+        bare paths or 1-tuples of a path, as
+        :func:`~polyphys.manage.utils.sort_filenames` returns them. Each path
+        points to a single segment file. Segments of different wholes may be
+        interleaved, but the segments of each whole must come in strictly
+        increasing ``segment_id`` order (the ``j<NN>`` keyword of their
+        names).
     parser : :py:class:`ParserClassT`
-        A parser instance from `PolyPhys.manage.parser` module that interprets
-        file paths or names and extracts attributes such as the `whole` name.
+        A parser class from :mod:`polyphys.manage.parser` that interprets
+        file paths and extracts attributes such as the `whole` name and the
+        ``segment_id``.
     group : :py:data:`GroupT`
         Type of the particle group.
     relation : :py:data:`WholeRelationT`
@@ -425,53 +462,108 @@ def whole_from_segments(
 
         - 'histogram'
             'segment' is an N-dimensional histogram-like file, so the segments
-            of a 'whole' should be sum along "axis=0" in numpy lingo. In the
-            two-dimensional space, a histogram has a (x_nbins, y_nbins) shape.
+            of a 'whole' are summed element-wise. In the two-dimensional
+            space, a histogram has a (x_nbins, y_nbins) shape.
 
         - 'tseries'
             'segment' is a time-series-like file, so the segments of a 'whole'
-            should be concatenated vertically (along "axis=0" in pandas lingo).
+            are concatenated along axis 0, in ``segment_id`` order.
 
         - 'bin_edge'
-            'segment' is a bin-edge file. All the the segments are similar,
-            so one 'whole' bin-edge file is created by picking one of
-            segments.
+            'segment' is a bin-edge file. All the segments of a whole must
+            hold identical edges, and one copy of them is the whole's
+            bin-edge array.
 
     save_to : str, optional
-        Directory path where the output files are saved, if specified.
+        Directory path where the output files are saved, if specified. Each
+        whole is saved as ``<whole>-<group>-<prop>.npy``.
 
     Returns
     -------
     dict[str, np.ndarray]
         Dictionary with whole names as keys and the combined whole data as
-        numpy arrays.
+        numpy arrays, in the order in which the wholes first appear in
+        `segments`.
 
     Raises
     ------
     ValueError
-        If `relation` have invalid values.
+        If `relation` is not one of the accepted values; if the segments of
+        a whole do not arrive in strictly increasing ``segment_id`` order,
+        which includes a segment passed twice; or, for 'bin_edge', if the
+        segments of a whole hold different edges.
+    TypeError
+        If an item of `segments` is neither a path nor a sequence whose first
+        element is a path.
 
     Notes
     -----
-    Refer to the 'organizer' module documentation for additional context on the
-    terms and keywords such as 'geometry' and 'group'.
+    The order of a whole's segments is part of the data's meaning for
+    'tseries', and a duplicated segment would be counted twice by
+    'histogram'. This function only checks the order; sort the paths with
+    :func:`~polyphys.manage.utils.sort_filenames` first, which orders the
+    ``j<NN>`` keyword naturally.
+
+    Let n_segments be the number of segment files and m the number of
+    values in one segment. Time is O(n_segments * m). Every segment of
+    every whole is loaded and held in memory before any whole is reduced,
+    so peak memory is O(n_segments * m), not the size of one whole; the
+    returned wholes add O(n_wholes * m) for 'histogram' and 'bin_edge' and
+    O(n_segments * m) for 'tseries', where n_wholes is the number of
+    wholes.
 
     Examples
     --------
-    >>> whole_data = whole_from_segment( # doctest: +SKIP
-            'density',
-            [('path/to/segment1.npy',), ('path/to/segment2.npy',)],
-            SumRuleCyl,
-            'bug',
-            relation='histogram',
-            save_to='/output/path'
-        )
+    Two segments of one whole, written as the probe phase names them, join
+    into one time series in ``segment_id`` order:
+
+    >>> import tempfile
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000'
+    ...          'adump5000ens1')
+    >>> paths = []
+    >>> for seg_id in (1, 2):
+    ...     path = Path(tmp.name) / f'{whole}.j0{seg_id}.bug.gyrTMon.npy'
+    ...     np.save(path, np.array([10.0, 11.0]) * seg_id)
+    ...     paths.append(path)
+    >>> wholes = whole_from_segments('gyrTMon', paths, SumRuleCyl, 'bug',
+    ...                              'tseries')
+    >>> wholes[whole]
+    array([10., 11., 20., 22.])
+
+    'histogram' sums the same segments element-wise:
+
+    >>> whole_from_segments('gyrTMon', paths, SumRuleCyl, 'bug',
+    ...                     'histogram')[whole]
+    array([30., 33.])
+
+    Segments out of order raise rather than giving a reversed series:
+
+    >>> whole_from_segments('gyrTMon', paths[::-1], SumRuleCyl, 'bug',
+    ...                     'tseries')  # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+        ...
+    ValueError: The segments of whole '...ens1' are not in ... [2, 1]...
+    >>> tmp.cleanup()
     """
-    # Combine segments into wholes based on segment names and relation type
+    invalid_keyword(relation, ["histogram", "tseries", "bin_edge"])
+    # Combine segments into wholes based on segment names and relation type,
+    # checking that each whole's segment_id values strictly increase
     grouped_segments: dict[str, list[np.ndarray]] = {}
+    segment_ids: dict[str, list[int]] = {}
     for seg_path in _normalize_paths(segments):
         seg_info = parser(seg_path, "segment", group, ispath=True)
         whole_name = getattr(seg_info, "whole")
+        seg_id = getattr(seg_info, "segment_id")
+        whole_ids = segment_ids.setdefault(whole_name, [])
+        if whole_ids and seg_id <= whole_ids[-1]:
+            raise ValueError(
+                f"The segments of whole '{whole_name}' are not in strictly "
+                f"increasing segment_id order: {whole_ids + [seg_id]}. Sort "
+                "them with sort_filenames first."
+            )
+        whole_ids.append(seg_id)
         grouped_segments.setdefault(whole_name, []).append(np.load(seg_path))
 
     # Define reduction strategies for each relation type
@@ -500,18 +592,17 @@ def whole_from_file(
     group: GroupT,
 ) -> dict[str, np.ndarray]:
     """
-    Load data from 'whole' files for a specified physical property of a
-    particle `group` within a given `geometry`. Each file path in `whole_paths`
-    points to a single whole file.
+    Load data from 'whole' ``.npy`` files of a particle `group`. Each file
+    path in `whole_paths` points to a single whole file.
 
     Parameters
     ----------
     whole_paths : AnyPathIter
-        List of tuples where each tuple contains the path to a single file
-        representing a whole dataset for the `prop_`. Each file is loaded
-        and processed independently.
+        Paths to whole files, either bare paths or 1-tuples of a path, as
+        :func:`~polyphys.manage.utils.sort_filenames` returns them. Each file
+        is loaded independently.
     parser : ParserClassT
-        A parser instance from `PolyPhys.manage.parser` module that interprets
+        A parser class from :mod:`polyphys.manage.parser` that interprets
         file paths and extracts attributes such as the `whole` name.
     group : GroupT
         The particle group to which the data pertains.
@@ -520,25 +611,36 @@ def whole_from_file(
     -------
     dict[str, np.ndarray]
         Dictionary where keys are the `whole` names (derived from each file
-        path)and values are numpy arrays containing the loaded data.
+        path) and values are numpy arrays containing the loaded data.
+
+    Raises
+    ------
+    TypeError
+        If an item of `whole_paths` is neither a path nor a sequence whose
+        first element is a path.
 
     Notes
     -----
-    This function assumes that each file in `whole_paths` contains data related
-    to a complete simulation or experiment segment, referred to as a "whole."
-    For further information on terminology, see the `organizer` module
-    documentation.
+    This function assumes that each file in `whole_paths` contains data
+    related to a complete simulation, referred to as a "whole." For further
+    information on terminology, see the `organizer` module documentation.
+
+    Let n_wholes be the number of files and m the number of values in one
+    file. Time and memory are O(n_wholes * m): every whole is loaded and
+    held in memory at once.
 
     Examples
     --------
-    Load and organize whole data for a specific property from a list of file
-    paths:
-
-    >>> whole_data = whole_from_file( # doctest: +SKIP
-            whole_paths=[('path/to/whole1.npy',), ('path/to/whole2.npy',)],
-            TransFociCyl,
-            'bug'
-        )
+    >>> import tempfile
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000'
+    ...          'adump5000ens1')
+    >>> path = Path(tmp.name) / f'{whole}-bug-gyrTMon.npy'
+    >>> np.save(path, np.array([1.0, 2.0, 3.0]))
+    >>> whole_from_file([path], SumRuleCyl, 'bug')[whole]
+    array([1., 2., 3.])
+    >>> tmp.cleanup()
     """
     wholes: dict[str, np.ndarray] = {}
     for whole_path in _normalize_paths(whole_paths):
@@ -568,9 +670,11 @@ def whole_from_dist_mat_t(
     Parameters
     ----------
     whole_paths : list[tuple[str]]
-        List of tuples where each tuple contains the path to a file
-        representing a 'whole' dataset (typically a NumPy `.npy` distance
-        matrix).
+        List of 1-tuples, as :func:`~polyphys.manage.utils.sort_filenames`
+        returns them, each holding the path to a file representing a 'whole'
+        dataset (typically a NumPy `.npy` distance matrix). Bare path
+        strings are not supported: the first element of each item is taken
+        as the path.
     parser : ParserClassT
         A parser class used to create parser instances for each file. The
         parser provides attributes such as `whole` (name identifier) and
@@ -598,21 +702,36 @@ def whole_from_dist_mat_t(
         - Radial distribution function (RDF) DataFrames
         - Time series DataFrames
 
-    Raises
-    ------
-    ValueError
-        If `geometry`, `group`, or `topology` are invalid.
+    Notes
+    -----
+    Arguments are not validated here; errors raised by `parser` or `func`
+    propagate.
+
+    Let n_wholes be the number of files. `func` is called once per whole,
+    and its three outputs for every whole are held in memory at once, so
+    time and memory are n_wholes times those of one call of `func`.
 
     Examples
     --------
-    Load foci distance matrix data with a project-specific processor:
+    A stand-in for a project-specific processor that summarizes each matrix
+    by its mean:
 
-    >>> freqs, rdfs, tseries = whole_from_dist_mat_t( # doctest: +SKIP
-    ...     [('path/to/whole1.npy',), ('path/to/whole2.npy',)],
-    ...     my_parser_class,
-    ...     'bug',
-    ...     whole_dist_mat_foci
-    ... )
+    >>> import tempfile
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> def summarize(whole_path, whole_info):
+    ...     frame = pd.DataFrame({'mean': [np.load(whole_path).mean()]})
+    ...     return frame, frame, frame
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000'
+    ...          'adump5000ens1')
+    >>> path = Path(tmp.name) / f'{whole}-bug-distMatTFoci.npy'
+    >>> np.save(path, np.array([[0.0, 2.0], [2.0, 0.0]]))
+    >>> freqs, rdfs, tseries = whole_from_dist_mat_t(
+    ...     [(str(path),)], SumRuleCyl, 'bug', summarize)
+    >>> freqs[whole]
+       mean
+    0   1.0
+    >>> tmp.cleanup()
     """
     wholes_freqs: dict[str, pd.DataFrame] = {}
     wholes_rdfs: dict[str, pd.DataFrame] = {}
@@ -709,18 +828,25 @@ def ens_from_vec(
     -------
     tuple[str, pd.DataFrame]
         A tuple where the first element is the ensemble name, and the second
-        is a pandas DataFrame. Each column represents a 'whole' dataset, and
-        rows contain corresponding vector values from each dataset.
+        is a pandas DataFrame. Each column represents a 'whole' dataset, in
+        the order of the dictionary, and rows contain corresponding vector
+        values from each dataset.
+
+    Notes
+    -----
+    Let n_wholes be the number of wholes and m the length of one vector.
+    Time and extra memory are O(n_wholes * m): the vectors are copied into
+    the DataFrame.
 
     Examples
     --------
-    >>> ens_name, ensemble_df = ens_from_vec( # doctest: +SKIP
-            ('ensemble1', {'whole1': np.array([0.1, 0.2, 0.3]),
-                           'whole2': np.array([0.4, 0.5, 0.6])})
-        )
-    >>> print(ens_name) # doctest: +SKIP
+    >>> ens_name, ensemble_df = ens_from_vec(
+    ...     ('ensemble1', {'whole1': np.array([0.1, 0.2, 0.3]),
+    ...                    'whole2': np.array([0.4, 0.5, 0.6])})
+    ... )
+    >>> ens_name
     'ensemble1'
-    >>> print(ensemble_df) # doctest: +SKIP
+    >>> ensemble_df
        whole1  whole2
     0     0.1     0.4
     1     0.2     0.5
@@ -750,19 +876,27 @@ def ens_from_mat_t(
     -------
     tuple[str, np.ndarray]
         A tuple where the first element is the ensemble name and the second
-        is a 3D numpy array formed by stacking the 2D arrays along the first
-        axis.
+        is a 3D numpy array of shape ``(n_wholes, n_rows, n_cols)``, formed
+        by stacking the 2D arrays along the first axis in the order of the
+        dictionary.
+
+    Notes
+    -----
+    Let n_wholes be the number of wholes and m the number of elements of one
+    matrix. Time and extra memory are O(n_wholes * m): the matrices are
+    copied into the stacked array.
 
     Examples
     --------
-    >>> ens_data = ( # doctest: +SKIP
-            'ensemble1',
-            {'whole1': np.array([[1, 2], [3, 4]]),
-            'whole2': np.array([[5, 6], [7, 8]])}
-        )
-    >>> combined_array = ens_from_mat_t(ens_data) # doctest: +SKIP
-    >>> print(combined_array) # doctest: +SKIP
-    ('ensemble1', array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]]))
+    >>> ens_name, combined = ens_from_mat_t(
+    ...     ('ensemble1', {'whole1': np.array([[1, 2], [3, 4]]),
+    ...                    'whole2': np.array([[5, 6], [7, 8]])})
+    ... )
+    >>> combined.shape
+    (2, 2, 2)
+    >>> combined[1]
+    array([[5, 6],
+           [7, 8]])
     """
     ensemble_name, whole_matrices = ens_data
     combined_matrix = np.stack(list(whole_matrices.values()), axis=0)
@@ -799,8 +933,8 @@ def ens_from_df(
     ----------
     ens_data : tuple[str, dict[str, pd.DataFrame]]
         A tuple where the first element is the ensemble name and the second
-        is a DataFrame containing the mean of all input DataFrames, grouped
-        by index.
+        is a dictionary with 'whole' names as keys and DataFrames, sharing
+        their columns and index labels, as values.
 
     Returns
     -------
@@ -824,24 +958,23 @@ def ens_from_df(
     'bin_center,' does not change their values, and these are carried forward
     without modification.
 
+    Let n_wholes be the number of wholes, n_rows the rows and n_cols the
+    columns of one DataFrame. Time and extra memory are
+    O(n_wholes * n_rows * n_cols): the DataFrames are concatenated into one
+    before they are grouped by index label and averaged.
+
     Examples
     --------
-    >>> df1 = pd.DataFrame( # doctest: +SKIP
-    ...     {'A': [1, 2, 3], 'B': [4, 5, 6]}
+    >>> df1 = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    >>> df2 = pd.DataFrame({'A': [2, 3, 4], 'B': [5, 6, 7]})
+    >>> ens_name, averaged_df = ens_from_df(
+    ...     ('ensemble1', {'whole1': df1, 'whole2': df2})
     ... )
-    >>> df2 = pd.DataFrame( # doctest: +SKIP
-    ...     {'A': [2, 3, 4], 'B': [5, 6, 7]}
-    ... )
-    >>> ens_data = ( # doctest: +SKIP
-    ...     'ensemble1', {'whole1': df1, 'whole2': df2}
-    ... )
-    >>> averaged_df = ens_from_df(ens_data) # doctest: +SKIP
-    >>> print(averaged_df) # doctest: +SKIP
-    ('ensemble1',
-       A    B
+    >>> averaged_df
+         A    B
     0  1.5  4.5
     1  2.5  5.5
-    2  3.5  6.5)
+    2  3.5  6.5
     """
     ensemble_name, whole_data = ens_data
     ensemble_df = pd.concat(list(whole_data.values())).groupby(level=0).mean()
@@ -925,8 +1058,17 @@ def ensemble(
     averaging over wholes, which is why :func:`ensemble_avg` excludes
     'bin_center' from its statistics by default.
 
-    With `whole_edges`, computing the centres costs O(n_ensembles * n_edges)
-    time and extra space, on top of the merge itself.
+    Let n_wholes be the number of wholes, m the number of values in one
+    whole, n_ensembles the number of ensembles, and n_edges the length of
+    one bin-edge array. Grouping parses each whole name once and merging
+    copies every whole once, so time and extra memory are
+    O(n_wholes * m): the caller's `wholes` and the merged ensembles are both
+    held in memory. With `whole_edges`, computing the centres adds
+    O(n_ensembles * n_edges) time and memory.
+
+    With `save_to`, each ensemble is saved by :func:`save_artifact` under
+    ``<ensemble_long>-<group>-<prop>``, as ``.csv`` for a DataFrame and
+    ``.npy`` for an array.
 
     Examples
     --------
@@ -1083,25 +1225,26 @@ def ens_avg_from_ndarray(
       wholes.
     - This function performs averaging along axis=0 for each element across
       the 'whole' data matrices.
+    - Let n_wholes be the length of axis 0 and m the number of elements of
+      one whole. Time is O(n_wholes * m). NumPy's ``var`` and ``std`` build
+      temporaries of the size of `ens_data`, so peak extra memory is
+      O(n_wholes * m); the three results take O(m).
 
     Examples
     --------
-    >>> ens_data = np.array([ # doctest: +SKIP
-            [[1, 2], [3, 4]],
-            [[2, 3], [4, 5]]
-        ])
-    >>> ens_avg = ens_avg_from_ndarray( # doctest: +SKIP
-    ...     'gyration_tensor', ens_data, exclude=[]
-    ... )
-    >>> print(ens_avg) # doctest: +SKIP
-    {
-        'gyration_tensor-mean': array([[1.5, 2.5],
-                               [3.5, 4.5]]),
-        'gyration_tensor-var': array([[0.5, 0.5],
-                              [0.5, 0.5]]),
-        'gyration_tensor-sem': array([[0.5, 0.5],
-                              [0.5, 0.5]])
-    }
+    >>> ens_data = np.array([
+    ...     [[1.0, 2.0], [3.0, 4.0]],
+    ...     [[2.0, 3.0], [4.0, 5.0]],
+    ... ])
+    >>> ens_avg = ens_avg_from_ndarray('gyrTMon', ens_data)
+    >>> list(ens_avg)
+    ['gyrTMon-mean', 'gyrTMon-var', 'gyrTMon-sem']
+    >>> ens_avg['gyrTMon-mean']
+    array([[1.5, 2.5],
+           [3.5, 4.5]])
+    >>> ens_avg['gyrTMon-sem']
+    array([[0.5, 0.5],
+           [0.5, 0.5]])
     """
     n_wholes_sqrt = ens_data.shape[0] ** 0.5
     ens_avg = {
@@ -1149,7 +1292,10 @@ def ens_avg_from_df(
       in `exclude`.
     - The standard error of the mean (SEM) is computed with a
       degrees-of-freedom adjustment (ddof=1) for an unbiased estimate.
-    - Time and space complexity are O(n_rows * n_wholes) and O(n_rows).
+    - Let n_rows be the number of rows of `ens_data` and n_wholes the number
+      of 'whole' columns. Time is O(n_rows * n_wholes). Each statistic
+      selects the 'whole' columns as a new DataFrame, so peak extra memory
+      is O(n_rows * n_wholes), not O(n_rows); the result takes O(n_rows).
 
     Examples
     --------
@@ -1222,24 +1368,34 @@ def ensemble_avg(
     Raises
     ------
     ValueError
-        If `geometry`, `group`, or `ens_type` contains invalid values.
+        If `ens_type` is not one of the accepted values.
+
+    Notes
+    -----
+    With `save_to`, each result is saved by :func:`save_artifact` under
+    ``<ensemble>-<group>-<prop>-ensAvg``: a DataFrame as ``.csv``, bin edges
+    as ``.npy``, and the dictionary of an 'ndarray' ensemble as one
+    ``...-ensAvg-<measure>.npy`` file per statistic.
+
+    Let n_ensembles be the number of ensembles. Ensembles are averaged one
+    after another, with the time and peak extra memory of
+    :func:`ens_avg_from_df`, :func:`ens_avg_from_ndarray`, or
+    :func:`ens_avg_from_bin_edge` for the largest one; the results for all
+    n_ensembles ensembles are held in memory together.
 
     Examples
     --------
-    >>> ensembles = { # doctest: +SKIP
-            'ensemble1': pd.DataFrame({'whole1': [1, 2, 3],
-                                       'whole2': [2, 3, 4]}),
-            'ensemble2': pd.DataFrame({'whole1': [3, 4, 5],
-                                       'whole2': [4, 5, 6]})
-        }
-    >>> avg_ensembles = ensemble_avg( # doctest: +SKIP
-            'density',
-            ensembles,
-            'bug',
-            ens_type='DataFrame',
-            exclude=['bin_center'],
-            save_to="/output/path"
-        )
+    >>> ensembles = {
+    ...     'ensemble1': pd.DataFrame({'whole1': [1.0, 2.0],
+    ...                                'whole2': [3.0, 4.0]}),
+    ...     'ensemble2': pd.DataFrame({'whole1': [5.0, 6.0],
+    ...                                'whole2': [5.0, 8.0]}),
+    ... }
+    >>> avg = ensemble_avg('rhoMon', ensembles, 'bug', 'dataframe')
+    >>> avg['ensemble2']
+       rhoMon-mean  rhoMon-var  rhoMon-sem
+    0          5.0         0.0         0.0
+    1          7.0         2.0         1.0
     """
     if exclude is None:
         exclude = ["bin_center"]
@@ -1284,37 +1440,61 @@ def children_stamps(
     Parameters
     ----------
     stamps : list[tuple[str]]
-        List of tuples where each tuple contains a single file path to a
-        'stamp' CSV file.
+        List of 1-tuples, as :func:`~polyphys.manage.utils.sort_filenames`
+        returns them, each holding the path to a 'stamp' CSV file. Rows are
+        concatenated in this order.
     lineage : {'segment', 'whole'}
         Lineage type, either 'segment' or 'whole'.
     save_to : str, optional
-        Directory path where the combined DataFrame is saved, if specified.
+        Directory path where the combined DataFrame is saved, if specified,
+        as ``<space>-<group>-<lineage>-stamps.csv``, with ``space`` and
+        ``group`` read from the first row.
 
     Returns
     -------
     pd.DataFrame
-        Combined DataFrame containing data from all the 'stamp' files.
+        Combined DataFrame containing data from all the 'stamp' files, with
+        a fresh ``0..n-1`` index.
 
     Raises
     ------
     ValueError
-        If `group` or `lineage` contains invalid values.
+        If `lineage` is not one of the accepted values.
+
+    Warns
+    -----
+    UserWarning
+        If `lineage` is 'whole' and the 'segment' and 'segment_id' columns
+        are dropped.
 
     Notes
     -----
     - It is assumed that all the stamp files have belong to the same *group* in
       a given *space*.
     - If `lineage` is 'whole', columns 'segment' and 'segment_id' are removed,
-      if present, as they are redundant for whole-lineage data.
+      as they are redundant for whole-lineage data. If either is absent,
+      nothing is dropped and a notice is printed to standard output.
+    - Let n_files be the number of stamp files, n_rows the total number of
+      rows, and n_cols the number of columns. Time is O(n_rows * n_cols).
+      Every file is read before the frames are concatenated, so peak memory
+      is about twice the combined data, O(n_rows * n_cols).
 
     Examples
     --------
-    >>> stamps = [ # doctest: +SKIP
-    ...     ('path/to/stamp1.csv',),
-    ...     ('path/to/stamp2.csv',),
-    ... ]
-    >>> df = children_stamps(stamps, lineage='whole') # doctest: +SKIP
+    >>> import tempfile
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> paths = []
+    >>> for seg_id in (1, 2):
+    ...     path = Path(tmp.name) / f'w1.j0{seg_id}-stamps.csv'
+    ...     pd.DataFrame({'segment': [f'w1.j0{seg_id}'], 'whole': ['w1'],
+    ...                   'segment_id': [seg_id], 'n_frames': [10]}
+    ...                  ).to_csv(path, index=False)
+    ...     paths.append((str(path),))
+    >>> children_stamps(paths, 'segment')
+      segment whole  segment_id  n_frames
+    0  w1.j01    w1           1        10
+    1  w1.j02    w1           2        10
+    >>> tmp.cleanup()
     """
     invalid_keyword(lineage, ["segment", "whole"])
 
@@ -1361,23 +1541,40 @@ def parents_stamps(
     Parameters
     ----------
     stamps : pd.DataFrame
-        DataFrame containing child stamp data.
+        DataFrame containing child stamp data, the lineage of whose rows is
+        `lineage`. It must have a 'whole' and a 'segment_id' column for
+        'segment' stamps, and an 'ensemble_long' and an 'ensemble_id' column
+        for 'whole' stamps, and an 'n_frames' column for both.
     lineage : {'segment', 'whole'}
-        Lineage type, either 'segment' or 'whole'.
+        Lineage type of the child stamps, either 'segment' or 'whole'.
     properties : dict of str -> Callable, optional
-        Dictionary specifying aggregation functions for specific properties.
+        Dictionary specifying aggregation functions for specific columns,
+        replacing the default 'last'.
     save_to : str, optional
-        Directory path where the parent DataFrame is saved, if specified.
+        Directory path where the parent DataFrame is saved, if specified,
+        as ``<space>-<group>-stamps-whole.csv`` for 'segment' stamps and
+        ``<space>-<group>-stamps-ensAvg.csv`` for 'whole' stamps, with
+        ``space`` and ``group`` read from the first row.
 
     Returns
     -------
     pd.DataFrame
-        Aggregated parent DataFrame.
+        Aggregated parent DataFrame, one row per parent:
+
+        - 'segment': one row per 'whole', with 'n_segments' (the number of
+          segments) and 'n_frames' (their sum).
+        - 'whole': one row per 'ensemble_long', with 'n_ensembles' (the
+          number of wholes) and 'n_frames' (the last whole's); 'segment',
+          'segment_id', and 'n_segments' are dropped if present.
+
+        Every other column takes its last value in each group unless
+        `properties` says otherwise; 'lineage_name' and the `lineage` column
+        are dropped.
 
     Raises
     ------
     ValueError
-        If `group`, or `lineage` contain invalid values.
+        If `lineage` is not one of the accepted values.
 
     Notes
     -----
@@ -1387,14 +1584,25 @@ def parents_stamps(
       each with a unique `segment_id`.
     - If `lineage` is 'whole', stamps correspond to whole simulations, each
       identified by an `ensemble_id`.
+    - If 'lineage_name' or the `lineage` column is absent, a notice is
+      printed to standard output.
+    - Let n_rows be the number of child stamps and n_cols the number of
+      columns. The group-by is hash-based, so expected time is
+      O(n_rows * n_cols); memory is one copy of the parent stamps.
 
     Examples
     --------
-    >>> df = pd.DataFrame( # doctest: +SKIP
-    ...     {'segment': [1, 2], 'value': [10, 20]}
-    ... )
-    >>> parent_df = parents_stamps(df, group='bug', # doctest: +SKIP
-                                   lineage='segment')
+    >>> stamps = pd.DataFrame({
+    ...     'lineage_name': ['w1.j01', 'w1.j02', 'w2.j01'],
+    ...     'segment': ['w1.j01', 'w1.j02', 'w2.j01'],
+    ...     'whole': ['w1', 'w1', 'w2'],
+    ...     'segment_id': [1, 2, 1],
+    ...     'n_frames': [10, 20, 30],
+    ... })
+    >>> parents_stamps(stamps, 'segment')
+      whole  n_segments  n_frames
+    0    w1           2        30
+    1    w2           1        30
     """
     invalid_keyword(lineage, ["segment", "whole"])
 
@@ -1505,17 +1713,19 @@ def find_unique_properties(
 
     Examples
     --------
-    Given the following filenames:
+    Three ensemble-averaged files of one ensemble; the property starts at
+    index 2 after splitting the name by ``-``:
 
-    - `path/to/files/gyrT-acf-ensAvg.npy`
-    - `path/to/files/gyrR-acf-ensAvg.npy`
-    - `path/to/files/temp-ens.npy`
-
-    The function can be used as follows:
-
-    >>> find_unique_properties("path/to/files/*", prop_idx=0, # doctest: +SKIP
-                               extensions=['-ensAvg', '-ens'])
-    (['gyrT', 'fsdT'], ['gyrT-acf', 'fsdT-acf'])
+    >>> import tempfile
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> for name in ('N20-bug-gyrTMon-ensAvg.csv',
+    ...              'N20-bug-gyrTMon-acf-ensAvg.csv',
+    ...              'N20-bug-rhoMon-ensAvg.csv'):
+    ...     (Path(tmp.name) / name).touch()
+    >>> find_unique_properties(str(Path(tmp.name) / '*'), prop_idx=2,
+    ...                        extensions=['-ensAvg'])
+    (['gyrTMon', 'rhoMon'], ['gyrTMon-acf'])
+    >>> tmp.cleanup()
 
     Notes
     -----
@@ -1523,6 +1733,14 @@ def find_unique_properties(
       the property or measure name starts after splitting by `sep`.
     - This function assumes a consistent filename format where property-measure
       segments follow each other with defined separators and suffixes.
+    - Every file is split by every entry of `extensions`, so each matched
+      file should contain all of them; a file that lacks one contributes
+      the rest of its basename, file extension included, under that entry.
+    - Basenames are taken by splitting paths on ``/``.
+    - Let n_files be the number of matched files, n_ext the number of
+      `extensions`, and n_uniq the number of unique names. Time is
+      O(n_files * n_ext + n_uniq log n_uniq); memory is O(n_files) for the
+      list of matched paths.
     """
     props_measures = glob(filepath)
     uniq_prop_measures = set()
@@ -1615,11 +1833,24 @@ def space_tseries(
 
     Examples
     --------
-    >>> df = space_tseries( # doctest: +SKIP
-    ...     "path/to/analysis/N200-all-ensAvg/", 'gyrTMon', SumRuleCyl,
-    ...     'N*', ['dcyl', 'dcrowd'], 'all', 'adump',
-    ... )
-    >>> df.head() # doctest: +SKIP
+    One ensemble-averaged time series of two frames, dumped every 5000
+    steps of 0.005 time units:
+
+    >>> import tempfile
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> database = Path(tmp.name) / 'analysis' / 'N20-bug-ensAvg'
+    >>> database.mkdir(parents=True)
+    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> pd.DataFrame({'gyrTMon-mean': [1.0, 2.0]}).to_csv(
+    ...     database / f'{state}-bug-gyrTMon-ensAvg.csv', index=False)
+    >>> space = space_tseries(str(database) + '/', 'gyrTMon', SumRuleCyl,
+    ...                       'N*', ['nmon'], 'bug', 'adump')
+    >>> space[['t_index', 'time', 'gyrTMon-mean', 'nmon']]
+       t_index  time  gyrTMon-mean  nmon
+    0        0   0.0           1.0    20
+    1     5000  25.0           2.0    20
+    >>> tmp.cleanup()
 
     Notes
     -----
@@ -1627,8 +1858,11 @@ def space_tseries(
       '-<prop>-ensAvg.csv'`` and sorted alphanumerically by name.
     - Requires a parser class with methods to retrieve attribute information
       for each file.
-    - Time and space complexity are O(n_rows), where n_rows is the total
-      number of rows across the files.
+    - Let n_files be the number of matched files, n_rows the total number
+      of rows across them, and n_cols the number of columns of the result.
+      Time is O(n_rows * n_cols + n_files log n_files). Every file is read
+      and kept before the frames are concatenated, so peak memory is about
+      twice the result, O(n_rows * n_cols).
     """
     prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs = sort_filenames(
@@ -1744,25 +1978,49 @@ def space_hists(
         attributes: one column per entry in `physical_attrs`, a
         `crowder_attr` column, and ``phi_c_bulk_round``.
 
+    Warns
+    -----
+    UserWarning
+        If `normalize` is True and the ``<prop>-mean`` column of a file sums
+        to zero; its ``<prop>-norm`` column is then set to zero.
+
     Examples
     --------
-    >>> df = space_hists( # doctest: +SKIP
-    ...     "path/to/analysis/N200-all-ensAvg/", 'rhoMon', SumRuleCyl,
-    ...     'N*', ['dcyl', 'dcrowd'], 'all', normalize=True,
-    ... )
-    >>> df.head() # doctest: +SKIP
+    One ensemble-averaged histogram of three bins, normalized to sum to one:
+
+    >>> import tempfile
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> database = Path(tmp.name) / 'analysis' / 'N20-bug-ensAvg'
+    >>> database.mkdir(parents=True)
+    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> pd.DataFrame({'rhoMon-mean': [1.0, 2.0, 1.0]}).to_csv(
+    ...     database / f'{state}-bug-rhoMon-ensAvg.csv', index=False)
+    >>> space = space_hists(str(database) + '/', 'rhoMon', SumRuleCyl, 'N*',
+    ...                     ['nmon'], 'bug',
+    ...                     bin_center=np.array([0.5, 1.5, 2.5]),
+    ...                     normalize=True)
+    >>> space[['bin_center', 'rhoMon-mean', 'rhoMon-norm', 'nmon']]
+       bin_center  rhoMon-mean  rhoMon-norm  nmon
+    0         0.5          1.0         0.25    20
+    1         1.5          2.0         0.50    20
+    2         2.5          1.0         0.25    20
+    >>> tmp.cleanup()
 
     Notes
     -----
     - Files are selected by globbing ``input_database + hierarchy +
       '-<prop>-ensAvg.csv'`` and sorted alphanumerically by name.
     - If `normalize` is True, histogram values will be scaled to sum to 1.
-    - Time and space complexity are O(n_rows), where n_rows is the total
-      number of rows across the files.
+    - Let n_files be the number of matched files, n_rows the total number
+      of rows across them, and n_cols the number of columns of the result.
+      Time is O(n_rows * n_cols + n_files log n_files). Every file is read
+      and kept before the frames are concatenated, so peak memory is about
+      twice the result, O(n_rows * n_cols).
     - The `bin_center` should be provided if it is not available in the input
       data. When all the ensemble-averaged DataFrames have the same bin
       center, like 'clustersHistTFoci' or 'bondsHistTFoci' properties, the
-      `bij_center` may not provided.
+      `bin_center` may not be provided.
     """
     prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs_ungrouped = glob(input_database + hierarchy + prop_ext)

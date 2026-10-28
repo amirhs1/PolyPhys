@@ -51,6 +51,21 @@ version increase may introduce incompatible changes.
   `pytester` plugin. A misspelt marker is an error rather than a warning.
 - `html_baseurl` in `docs/source/conf.py` now comes from Read the Docs'
   `READTHEDOCS_CANONICAL_URL` instead of an unpublished GitHub Pages address.
+- `whole_from_segments` in `polyphys.manage.organizer` raises `ValueError`,
+  naming the whole and its `segment_id` values, when the segments of a whole
+  do not arrive in strictly increasing `segment_id` order, for every
+  `relation`. Before, segments out of order gave a `tseries` whole in the
+  wrong order, and a segment passed twice was counted twice, with no message.
+  Paths sorted by `sort_filenames` are unaffected; segments of different
+  wholes may still be interleaved. An unknown `relation` now raises
+  `ValueError`, as documented, instead of `KeyError`.
+- Every example in `polyphys.manage.organizer` now runs as a doctest; none is
+  skipped. The reducers' docstrings state their time and memory cost,
+  including where a routine holds all of its inputs in memory at once, and
+  several docstrings were corrected to match what the code does.
+- `polyphys/tests/manage/test_organizer.py` covers every public function of
+  the organizer, including integration tests that run a synthetic lineage tree
+  from segments to a space; the module's line coverage rose from 65% to 98%.
 
 ## [0.4.0] - 2026-10-26
 
