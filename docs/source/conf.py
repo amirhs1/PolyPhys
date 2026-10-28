@@ -67,8 +67,9 @@ intersphinx_mapping = {
 
 # MyST configuration
 myst_enable_extensions = [
+    "colon_fence",
     "deflist",
-    "colon_fence"
+    "dollarmath",
 ]
 
 # Canonical URL: Read the Docs passes it to the build as
