@@ -110,9 +110,9 @@ replicates and its sweep without touching the filesystem:
 >>> artifact.whole
 'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1'
 >>> artifact.ensemble
-'N200D20.0ac2.0nc1000'
+'N200D20ac2nc1000'
 >>> artifact.space
-'N200D20.0ac2.0'
+'N200D20ac2'
 
 ```
 

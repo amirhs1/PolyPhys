@@ -50,9 +50,39 @@ attributes and derives the artifact's position in the project hierarchy:
 >>> float(artifact.dcyl)
 20.0
 >>> artifact.space
-'N200D20.0ac2.0'
+'N200D20ac2'
 
 ```
+
+## Lineage names
+
+A parser sets the artifact's name at its own lineage and at each parent
+lineage, as the attributes `segment`, `whole`, `ensemble_long`, `ensemble`,
+and `space`; the organizer uses them as join keys. Two rules fix their text.
+
+- The long names, `segment`, `whole`, and `ensemble_long`, are cut from the
+  parsed name, so they keep its text, and they carry no topology suffix. A
+  segment `…ens1.j03.ring` and a whole `…ens1.ring` of one simulation both
+  give the `whole` name `…ens1`.
+- The short names, `ensemble` and `space`, are built from the parsed values.
+  A float that is a whole number prints as an integer, and any other float
+  prints as Python's `repr`, the shortest text that reads back as the same
+  float. The `space` above is `N200D20ac2` although the name wrote `sig2.0`
+  and `r10.5`, while a crowder size of `1.5` stays `ac1.5`.
+
+```python
+>>> from polyphys.manage.parser import HnsCub
+>>> artifact = HnsCub('N200kbmm2nh12ac2l25epshc1.5nc0ens1.ring', 'whole',
+...                   'nucleoid')
+>>> artifact.whole, artifact.space
+('N200kbmm2nh12ac2l25epshc1.5nc0ens1', 'N200kbmm2nh12ac2epshc1.5')
+
+```
+
+Names written by the research code that preceded PolyPhys can differ from
+these in two ways: a `whole` it parsed from a whole file keeps `.ring` or
+`.linear`, and a short name can print `ac2.0`. Parsing such a short name at
+its lineage and reading the rebuilt name gives the current form.
 
 ## Declaring a parser for a new study
 
@@ -97,7 +127,7 @@ the half-side `l`:
 ...     }
 >>> artifact = ChainCub('N100ac2.0nc50l10.0ens1.bug', 'whole', 'bug')
 >>> artifact.lcube, artifact.ensemble, artifact.space
-(20.0, 'N100ac2.0nc50', 'N100ac2.0')
+(20.0, 'N100ac2nc50', 'N100ac2')
 
 ```
 
