@@ -16,6 +16,7 @@ from polyphys.manage.parser import (
     Species,
     SumRuleCubHeteroLinear,
     SumRuleCubHeteroRing,
+    SumRuleCubHeteroRingBiDisperse,
     SumRuleCyl,
     TransFociCub,
     TransFociCyl,
@@ -510,6 +511,80 @@ class ValidCase(NamedTuple):
             values=dict(nmon=200, dcyl=8, nhns=4, dcrowd=1.0, eps_hc=1.0),
             physical=['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']),
         id='HnsCyl-space'),
+    pytest.param(
+        ParseCase(
+            SumRuleCubHeteroRingBiDisperse, 'segment', 'all',
+            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                     'bdump2000adump5000ens1.j20.ring.all',
+            name='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.j20.ring',
+            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
+                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
+                        ncrowd_one=139229, ncrowd_two=1671, lcube=90.0,
+                        dt=0.005, bdump=2000, adump=5000, ensemble_id=1,
+                        segment_id=20),
+            physical=['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
+                      'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
+                      'rho_bulk_m_small', 'phi_bulk_m_large',
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c_one', 'rho_bulk_c_one', 'phi_bulk_c_two',
+                      'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c']),
+        id='SumRuleCubHeteroRingBiDisperse-segment'),
+    pytest.param(
+        ParseCase(
+            SumRuleCubHeteroRingBiDisperse, 'whole', 'bug',
+            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                     'bdump2000adump5000ens1.ring.bug',
+            name='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.ring',
+            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
+                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
+                        ncrowd_one=139229, ncrowd_two=1671, lcube=90.0,
+                        dt=0.005, bdump=2000, adump=5000, ensemble_id=1),
+            physical=['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
+                      'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
+                      'rho_bulk_m_small', 'phi_bulk_m_large',
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c_one', 'rho_bulk_c_one', 'phi_bulk_c_two',
+                      'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c']),
+        id='SumRuleCubHeteroRingBiDisperse-whole'),
+    pytest.param(
+        ParseCase(
+            SumRuleCubHeteroRingBiDisperse, 'ensemble_long', 'bug',
+            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                     'bdump2000adump5000',
+            name='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000',
+            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
+                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
+                        ncrowd_one=139229, ncrowd_two=1671, lcube=90.0,
+                        dt=0.005, bdump=2000, adump=5000),
+            physical=['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
+                      'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
+                      'rho_bulk_m_small', 'phi_bulk_m_large',
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c_one', 'rho_bulk_c_one', 'phi_bulk_c_two',
+                      'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c']),
+        id='SumRuleCubHeteroRingBiDisperse-ensemble_long'),
+    pytest.param(
+        ParseCase(
+            SumRuleCubHeteroRingBiDisperse, 'ensemble', 'all',
+            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671',
+            name='al4nl5ns400ac1ab5pctc40nc139229nb1671',
+            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
+                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
+                        ncrowd_one=139229, ncrowd_two=1671),
+            physical=['dmon_small', 'mmon_small', 'pct_two']),
+        id='SumRuleCubHeteroRingBiDisperse-ensemble'),
+    pytest.param(
+        ParseCase(
+            SumRuleCubHeteroRingBiDisperse, 'space', 'all',
+            artifact='al4nl5ns400ac1ab5pctc40',
+            name='al4nl5ns400ac1ab5pctc40',
+            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
+                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0),
+            physical=['dmon_small', 'mmon_small', 'pct_two']),
+        id='SumRuleCubHeteroRingBiDisperse-space'),
 ])
 def parse_case(request: pytest.FixtureRequest) -> ParseCase:
     """
@@ -567,6 +642,11 @@ def parsed(parse_case: ParseCase) -> ParserBase:
         ValidCase(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152',
                   'ensemble_long', 'nucleoid'),
         id='HnsCyl'),
+    pytest.param(
+        ValidCase(SumRuleCubHeteroRingBiDisperse,
+                  'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                  'bdump2000adump5000', 'ensemble_long', 'bug'),
+        id='SumRuleCubHeteroRingBiDisperse'),
 ])
 def valid_case(request: pytest.FixtureRequest) -> ValidCase:
     """A valid ``ensemble_long`` name for each parser class."""
@@ -579,7 +659,7 @@ def valid_case(request: pytest.FixtureRequest) -> ValidCase:
                  id=f"{parser_class.__name__}-{lineage}")
     for parser_class in (TwoMonDepCub, SumRuleCyl, SumRuleCubHeteroRing,
                          SumRuleCubHeteroLinear, TransFociCyl, TransFociCub,
-                         HnsCub, HnsCyl)
+                         HnsCub, HnsCyl, SumRuleCubHeteroRingBiDisperse)
     for lineage in ('segment', 'whole', 'ensemble_long', 'ensemble', 'space')
 ])
 def declared_case(
@@ -783,6 +863,9 @@ def test_lineage_genealogy_lists_lineage_and_parents(lineage, artifact,
                      'ring', ['nucleoid', 'all'], id='HnsCub'),
         pytest.param(HnsCyl, 'N200D8nh4ac1epshc1.0', 'all', 'cylindrical',
                      'ring', ['nucleoid', 'all'], id='HnsCyl'),
+        pytest.param(SumRuleCubHeteroRingBiDisperse,
+                     'al4nl5ns400ac1ab5pctc40', 'bug', 'cubic', 'ring',
+                     ['bug', 'all'], id='SumRuleCubHeteroRingBiDisperse'),
     ])
 def test_parser_reports_geometry_topology_and_groups(
         parser_class, artifact, group, geometry, topology, groups):
@@ -822,6 +905,11 @@ def test_parser_reports_geometry_topology_and_groups(
                  ('eps_hc', 'ncrowd'), (1.0, 11937), id='HnsCub'),
     pytest.param(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75epshc1.nc1152', 'nucleoid',
                  ('eps_hc', 'ncrowd'), (1.0, 1152), id='HnsCyl'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5.pctc40.nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000',
+                 'bug', ('dcrowd_two', 'pct_one'), (5.0, 40.0),
+                 id='SumRuleCubHeteroRingBiDisperse'),
 ])
 def test_parser_reads_value_with_trailing_dot(parser_class, artifact, group,
                                               attrs, expected):
@@ -903,6 +991,11 @@ def test_declared_pattern_round_trips(declared_case):
                  'N', 'nmon', id='HnsCub-heading-digit'),
     pytest.param(HnsCyl, '200kbmm2r4.5nh4ac1lz75epshc1.0nc1152', 'nucleoid',
                  'N', 'nmon', id='HnsCyl-heading-digit'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5pctc40nc139229XX1671l45dt0.005'
+                 'bdump2000adump5000',
+                 'bug', 'nb', 'ncrowd_two',
+                 id='SumRuleCubHeteroRingBiDisperse-replaced'),
 ])
 def test_missing_keyword_raises_value_error(parser_class, artifact, group,
                                             keyword, attr):
@@ -939,6 +1032,10 @@ def test_missing_keyword_raises_value_error(parser_class, artifact, group,
                  id='HnsCub'),
     pytest.param(HnsCyl, 'N.kbmm2r4.5nh4ac1lz75epshc1.0nc1152', 'nucleoid',
                  'N', id='HnsCyl'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5pctc.nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000',
+                 'bug', 'pctc', id='SumRuleCubHeteroRingBiDisperse'),
 ])
 def test_non_numeric_value_raises_value_error(parser_class, artifact, group,
                                               keyword):
@@ -1068,6 +1165,26 @@ def test_repr_names_artifact(valid_case):
                  'dhns', id='HnsCub-hns'),
     pytest.param(HnsCub, 'N200kbmm2nh12ac2l25epshc1nc11937', 'c', 'ncrowd',
                  'dcrowd', id='HnsCub-c'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000',
+                 'm_small', 'nmon_small', 'dmon_small',
+                 id='SumRuleCubHeteroRingBiDisperse-m_small'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000',
+                 'm_large', 'nmon_large', 'dmon_large',
+                 id='SumRuleCubHeteroRingBiDisperse-m_large'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000',
+                 'c_one', 'ncrowd_one', 'dcrowd_one',
+                 id='SumRuleCubHeteroRingBiDisperse-c_one'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000',
+                 'c_two', 'ncrowd_two', 'dcrowd_two',
+                 id='SumRuleCubHeteroRingBiDisperse-c_two'),
 ])
 def test_cube_bulk_values_match_utils(parser_class, artifact, suffix, number,
                                       size):
@@ -1141,6 +1258,10 @@ def test_cylinder_bulk_values_match_utils(parser_class, artifact, suffix,
     pytest.param(TransFociCub,
                  'al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
                  id='TransFociCub'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse,
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000',
+                 id='SumRuleCubHeteroRingBiDisperse'),
 ])
 def test_monomer_bulk_values_are_sums_over_sizes(parser_class, artifact):
     """All-monomer bulk values are the sums of the small and large ones."""
@@ -1225,7 +1346,145 @@ def test_hnscub_names_differing_in_epshc_stay_distinct(lineage):
     assert getattr(parser, lineage) != getattr(other, lineage)
 
 
-# Parent lineage names
+# SumRuleCubHeteroRingBiDisperse
+
+
+@pytest.mark.parametrize('artifact, lineage, group, expected', [
+    pytest.param('runs/al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000ens1.j20.ring.all.lammpstrj',
+                 'segment', 'all',
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.j20.ring', id='segment-trajectory'),
+    pytest.param('runs/al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000ens1.ring.bug.data',
+                 'whole', 'bug',
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.ring', id='whole-data'),
+    pytest.param('runs/al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                 'bdump2000adump5000ens1.ring.bug.restart.lammpstrj',
+                 'whole', 'bug',
+                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.ring', id='whole-restart'),
+])
+def test_bidisperse_reduces_file_path_to_lineage_name(artifact, lineage,
+                                                      group, expected):
+    """A project file path reduces to its name before the group keyword."""
+    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, group,
+                                            ispath=True)
+
+    assert parser.name == expected
+
+
+def test_bidisperse_segment_names_its_parents():
+    """A segment gives every parent name; short names print floats as str."""
+    parser = SumRuleCubHeteroRingBiDisperse(
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
+        'ens1.j20.ring.all', 'segment', 'all')
+
+    assert (parser.segment, parser.whole, parser.ensemble_long,
+            parser.ensemble, parser.space) == (
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
+        'ens1.j20',
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
+        'ens1',
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000',
+        'al4.0nl5ns400ac1.0ab5.0pctc40.0nc139229nb1671',
+        'al4.0nl5ns400ac1.0ab5.0pctc40.0')
+
+
+def test_bidisperse_crowder_bulk_values_are_sums_over_species():
+    """All-crowder bulk values are the sums of the two species' values."""
+    parser = SumRuleCubHeteroRingBiDisperse(
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000',
+        'ensemble_long', 'bug')
+    one = attrgetter('rho_bulk_c_one', 'phi_bulk_c_one')(parser)
+    two = attrgetter('rho_bulk_c_two', 'phi_bulk_c_two')(parser)
+
+    actual = attrgetter('rho_bulk_c', 'phi_bulk_c')(parser)
+
+    # One float64 addition each.
+    assert actual == pytest.approx((one[0] + two[0], one[1] + two[1]),
+                                   rel=1e-12)
+
+
+def test_bidisperse_crowder_fractions_match_generator_design():
+    """
+    Generator counts for phi_c 0.25 at pctc 40 give phi_c_one 0.10,
+    phi_c_two 0.15, and a type-one share of 40 percent.
+    """
+    parser = SumRuleCubHeteroRingBiDisperse(
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000',
+        'ensemble_long', 'bug')
+
+    fractions = (parser.phi_bulk_c_one, parser.phi_bulk_c_two)
+    share = 100 * parser.phi_bulk_c_one / parser.phi_bulk_c
+
+    # phi_i = n_i pi d_i^3 / (6 L^3) with L = 90; the generator rounded each
+    # count to an integer, a relative error of at most 0.5/1671 = 3e-4, so
+    # at most 4.5e-5 in phi_c_two and 0.012 in the percentage.
+    assert fractions == pytest.approx((0.10, 0.15), abs=1e-4)
+    assert share == pytest.approx(40.0, abs=0.02)
+
+
+@pytest.mark.parametrize('artifact, lineage', [
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.j20.ring.all', 'segment', id='segment'),
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.ring.all', 'whole', id='whole'),
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000', 'ensemble_long', id='ensemble_long'),
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671', 'ensemble',
+                 id='ensemble'),
+    pytest.param('al4nl5ns400ac1ab5pctc40', 'space', id='space'),
+])
+def test_bidisperse_pct_two_complements_pct_one(artifact, lineage):
+    """Every lineage sets pct_two = 100 - pct_one, here 60 for pctc 40."""
+    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, 'all')
+
+    # 100 - 40.0 is exact in float64.
+    assert parser.pct_two == 60.0
+
+
+@pytest.mark.parametrize('artifact, lineage', [
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.j20.ring.all', 'segment', id='segment'),
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.ring.all', 'whole', id='whole'),
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000', 'ensemble_long', id='ensemble_long'),
+])
+def test_bidisperse_masses_are_size_cubed(artifact, lineage):
+    """At a long lineage each computed mass is its size cubed: 4^3, 1, 5^3."""
+    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, 'all')
+
+    actual = (parser.mmon_large, parser.mcrowd_one, parser.mcrowd_two)
+
+    # Cubes of small whole numbers are exact in float64.
+    assert actual == (64.0, 1.0, 125.0)
+
+
+@pytest.mark.parametrize('artifact, lineage', [
+    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671', 'ensemble',
+                 id='ensemble'),
+    pytest.param('al4nl5ns400ac1ab5pctc40', 'space', id='space'),
+])
+def test_bidisperse_short_lineages_set_no_masses(artifact, lineage):
+    """Ensemble and space set no computed masses, not even a placeholder."""
+    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, 'all')
+
+    actual = (hasattr(parser, 'mmon_large'), hasattr(parser, 'mcrowd_one'),
+              hasattr(parser, 'mcrowd_two'))
+
+    assert actual == (False, False, False)
+
+
+def test_bidisperse_sets_no_eps_others():
+    """The LJ energy unit is documented, not stored as an attribute."""
+    parser = SumRuleCubHeteroRingBiDisperse(
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
+        'ens1.j20.ring.all', 'segment', 'all')
+
+    assert not hasattr(parser, 'eps_others')
 
 
 @pytest.mark.parametrize(
@@ -1272,6 +1531,14 @@ def test_hnscub_names_differing_in_epshc_stay_distinct(lineage):
         pytest.param(HnsCyl, 'all', 'whole',
                      'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.ring.all',
                      'ensemble_long', id='HnsCyl-whole-ensemble_long'),
+        pytest.param(SumRuleCubHeteroRingBiDisperse, 'all', 'segment',
+                     'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                     'bdump2000adump5000ens1.j20.ring.all', 'whole',
+                     id='SumRuleCubHeteroRingBiDisperse-segment-whole'),
+        pytest.param(SumRuleCubHeteroRingBiDisperse, 'bug', 'whole',
+                     'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
+                     'bdump2000adump5000ens1.ring.bug', 'ensemble_long',
+                     id='SumRuleCubHeteroRingBiDisperse-whole-ensemble_long'),
     ],
 )
 def test_parser_rebuilt_parent_name_keeps_attributes(

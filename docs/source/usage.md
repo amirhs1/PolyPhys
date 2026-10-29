@@ -107,6 +107,11 @@ species whose size or number no long-form name sets raises `TypeError`. A
 name that lacks a keyword of its lineage's pattern, or whose value is not a
 number, raises `ValueError` naming the keyword, the lineage, and the name.
 
+A value that is a function of parsed values but fits none of the tables,
+such as the complementary percentage `pct_two = 100 - pct_one` of
+`SumRuleCubHeteroRingBiDisperse`, goes in an override of
+`_derived_attributes`, which runs at every lineage after the bulk values.
+
 See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.

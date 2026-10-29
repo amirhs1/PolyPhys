@@ -51,6 +51,24 @@ version increase may introduce incompatible changes.
   one raises `TypeError`. A new study declares a parser instead of copying
   one; the Usage page shows how
   ([#49](https://github.com/amirhs1/PolyPhys/issues/49)).
+- `SumRuleCubHeteroRingBiDisperse` in `polyphys.manage.parser`, the parser
+  of the project with a ring of small and large monomers among crowders of
+  two sizes in a periodic cube, ported from the research code. `pctc` is the
+  percentage of the total crowder volume fraction that the `ac` crowders
+  carry, and `pct_two = 100 - pct_one`. For scripts that migrate from the
+  research code: the bulk values are named `rho_bulk_<species>` and
+  `phi_bulk_<species>` (`phi_c_bulk_one` → `phi_bulk_c_one`, `rho_c_bulk` →
+  `rho_bulk_c`, `phi_m_bulk` → `phi_bulk_m`, `rho_m_bulk` → `rho_bulk_m`),
+  with per-species monomer values added; the constructor is
+  `(artifact, lineage, group, ispath=False)`, without `geometry` and
+  `topology`; `nmon`, `ncrowd`, and `eps_others` are gone (the docstring
+  states that every LJ pair has strength 1); and `mmon_large`, `mcrowd_one`,
+  and `mcrowd_two` exist only at `segment`, `whole`, and `ensemble_long`
+  ([#50](https://github.com/amirhs1/PolyPhys/issues/50)).
+- `ParserBase._derived_attributes`, an empty method that a parser class
+  overrides to set a value derived from parsed values outside the
+  declaration tables; it runs at every lineage after the bulk values
+  ([#50](https://github.com/amirhs1/PolyPhys/issues/50)).
 
 ### Changed
 
