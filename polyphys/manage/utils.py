@@ -440,9 +440,6 @@ def openany_context(
     file = open_func(filepath, mode=mode)
     try:
         yield file
-    except Exception as exp:
-        print(f"Error opening {filepath}: {exp}")
-        raise
     finally:
         file.close()
 

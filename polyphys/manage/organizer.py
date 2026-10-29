@@ -322,8 +322,8 @@ def make_database(
     -------
     str
         The path to the new directory, ending with ``/``. If the directory
-        already exists, the same path is returned and a notice is printed to
-        standard output.
+        already exists, the same path is returned and an INFO record naming
+        it is logged to the module's logger.
 
     Raises
     ------
@@ -371,9 +371,8 @@ def make_database(
     # Create the new directory if it doesn't already exist
     try:
         new_database.mkdir(parents=True, exist_ok=False)
-    except FileExistsError as error:
-        print(error)
-        print("Files are saved/overwritten in an existing directory.")
+    except FileExistsError:
+        logger.info("Reusing the existing directory %s.", new_database)
 
     return str(new_database) + "/"
 
@@ -1479,8 +1478,10 @@ def children_stamps(
     - It is assumed that all the stamp files have belong to the same *group* in
       a given *space*.
     - If `lineage` is 'whole', columns 'segment' and 'segment_id' are removed,
-      as they are redundant for whole-lineage data. If either is absent,
-      nothing is dropped and a notice is printed to standard output.
+      as they are redundant for whole-lineage data, with a `UserWarning`.
+      Either may be absent, as in stamps the probe phase writes for a whole;
+      if neither is present, nothing is dropped and a DEBUG record is
+      logged.
     - Let n_files be the number of stamp files, n_rows the total number of
       rows, and n_cols the number of columns. Time is O(n_rows * n_cols).
       Every file is read before the frames are concatenated, so peak memory
@@ -1513,16 +1514,18 @@ def children_stamps(
     # Drop specific columns for 'whole' lineage
     cols_to_drop = ["segment", "segment_id"]
     if lineage == "whole":
-        try:
-            space_stamps.drop(columns=cols_to_drop, inplace=True)
+        dropped = [col for col in cols_to_drop if col in space_stamps.columns]
+        if dropped:
+            space_stamps.drop(columns=dropped, inplace=True)
             warnings.warn(
                 "'segment' and 'segment_id' columns are dropped when"
                 " individual 'whole' stamps combined to create a single"
                 " dataframe of 'whole' stamps by 'children_stamps'.",
                 UserWarning,
             )
-        except KeyError:
-            print(f"'{cols_to_drop}' are not among columns.")
+        else:
+            logger.debug("No %s columns to drop from the whole stamps.",
+                         cols_to_drop)
 
     # Save the resulting DataFrame to a CSV if specified
     if save_to is not None:
@@ -1591,8 +1594,10 @@ def parents_stamps(
       each with a unique `segment_id`.
     - If `lineage` is 'whole', stamps correspond to whole simulations, each
       identified by an `ensemble_id`.
-    - If 'lineage_name' or the `lineage` column is absent, a notice is
-      printed to standard output.
+    - The 'lineage_name' column and the `lineage` column are not carried
+      into the parent stamps. Either may be absent, as 'lineage_name' is
+      from the stamps the probe phase writes; an absent one is skipped with
+      a DEBUG record.
     - Let n_rows be the number of child stamps and n_cols the number of
       columns. The group-by is hash-based, so expected time is
       O(n_rows * n_cols); memory is one copy of the parent stamps.
@@ -1615,16 +1620,11 @@ def parents_stamps(
 
     # Base aggregation functions for columns
     base_columns = list(stamps.columns)
-    try:
-        base_columns.remove("lineage_name")
-        base_columns.remove(lineage)
-    except ValueError:
-        print(
-            f"'lineage_name' and '{lineage}'"
-            " columns are not among in stamps column:"
-            f"'{base_columns}', they are probably removed in"
-            " a previous call of 'parents_stamps' function."
-        )
+    for column in ("lineage_name", lineage):
+        if column in base_columns:
+            base_columns.remove(column)
+        else:
+            logger.debug("Column %r is not among the stamps columns.", column)
     agg_funcs: dict[str, str | Callable[..., Any]] = {
         col: "last" for col in base_columns
     }

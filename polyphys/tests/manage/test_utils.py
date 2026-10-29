@@ -275,6 +275,17 @@ def test_openany_context(sample_files):
         assert f.read() == "gzipped content"
 
 
+def test_openany_context_lets_body_error_propagate(sample_files, capsys):
+    """An error raised in the with-block propagates unchanged, unprinted."""
+    txt_path, _ = sample_files
+
+    with pytest.raises(RuntimeError, match="raised in the body"):
+        with openany_context(txt_path):
+            raise RuntimeError("raised in the body")
+
+    assert capsys.readouterr().out == ""
+
+
 def test_round_down_first_non_zero():
     assert round_down_first_non_zero(1234) == 1000
     assert round_down_first_non_zero(0.0456) == 0.04
