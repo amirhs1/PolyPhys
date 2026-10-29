@@ -2,6 +2,8 @@ import warnings
 
 import pytest
 import numpy as np
+from hypothesis import given, strategies as st
+from hypothesis.extra.numpy import arrays
 from numpy.testing import assert_array_equal
 
 from polyphys.analyze.measurer import (
@@ -22,6 +24,7 @@ from polyphys.analyze.measurer import (
     azimuth_cyl_histogram,
     planar_cartesian_histogram
 )
+from polyphys.manage.types import AxisT
 
 
 @pytest.mark.parametrize(
@@ -447,6 +450,38 @@ def test_radial_histogram_counts_positions_on_both_outer_edges():
     edges = np.array([0.0, 1.0, 2.0, 3.0])
     hist = radial_histogram(positions, edges)
     assert_array_equal(hist, np.array([1, 0, 1]))
+
+
+# Bounds keep the bin count at most 1000 and every range far wider than the
+# float64 spacing near |lmin| <= 100 (about 1e-14).
+@given(
+    bin_size=st.floats(min_value=0.01, max_value=10.0),
+    lmin=st.floats(min_value=-100.0, max_value=100.0),
+    n_bins_real=st.floats(min_value=0.01, max_value=1000.0),
+    dim=st.sampled_from([0, 1, 2]),
+    data=st.data(),
+)
+def test_axial_histogram_counts_every_position_in_range_once(
+    bin_size: float,
+    lmin: float,
+    n_bins_real: float,
+    dim: AxisT,
+    data: st.DataObject,
+) -> None:
+    """Every position in [lmin, lmax] is counted exactly once over the edges
+    create_bin_edge_and_hist builds for that range (a conservation
+    property)."""
+    lmax = lmin + n_bins_real * bin_size
+    positions = data.draw(
+        arrays(
+            np.float64,
+            st.tuples(st.integers(min_value=1, max_value=50), st.just(3)),
+            elements=st.floats(min_value=lmin, max_value=lmax),
+        )
+    )
+    edges, _ = create_bin_edge_and_hist(bin_size, lmin, lmax)
+    hist = axial_histogram(positions, edges, dim=dim)
+    assert hist.sum() == positions.shape[0]
 
 
 def test_radial_cyl_histogram_valid():

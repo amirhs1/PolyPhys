@@ -41,7 +41,7 @@ numbers.
 | -------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Unit test                  | a function breaking its own contract                  | tier A data; one behaviour per test                                                                                     |
 | Known-answer test          | code that runs but computes the wrong physics         | the expected value comes from an analytic result or a cited reference                                                   |
-| Property test              | edge cases nobody wrote down                          | checks an invariant, such as conservation of histogram counts, on hand-picked inputs                                    |
+| Property test              | edge cases nobody wrote down                          | checks an invariant, such as conservation of histogram counts, on hand-picked or Hypothesis-generated inputs            |
 | Integration test           | lineage levels that pass alone but disagree at a seam | runs a lineage tree from `segment` up through the organizer                                                             |
 | Regression test            | a fixed bug returning                                 | written before the fix and seen to fail against the unfixed code                                                        |
 | Comparison against old code | a port that changed a number                         | tier C; the old and new implementations run on the same data, and any number that changes is explained in the pull request |
@@ -53,6 +53,27 @@ compared with a stated tolerance, using `numpy.testing.assert_allclose` for
 arrays and `pytest.approx` for scalars. Uncertainties of quantities measured over
 correlated molecular-dynamics frames use block averaging or another
 autocorrelation-aware estimate, not a per-frame standard error.
+
+## Property tests with Hypothesis
+
+A property test can let [Hypothesis](https://hypothesis.readthedocs.io/)
+generate its inputs: the `@given` decorator draws them from strategies, and
+when an input breaks the property, Hypothesis shrinks it to a minimal failing
+example and reports it. For example,
+`test_axial_histogram_counts_every_position_in_range_once` in
+`polyphys/tests/analyze/test_measurer.py` draws a bin size, a range, and
+positions within that range, and checks that each position is counted exactly
+once.
+
+Hypothesis is in the `dev` extra. Its built-in `ci` settings profile is active
+whenever the `CI` environment variable is set, as it is on GitHub Actions: CI
+runs then draw the same inputs every time (`derandomize=True`) and keep no
+example database. Local runs draw new inputs each time and store failing
+examples under `.hypothesis/`, which git ignores, so a failure found once is
+tried first on the next run. To run a test as CI does, set `CI=true` for that
+run. See
+[Built-in profiles](https://hypothesis.readthedocs.io/en/latest/reference/api.html#built-in-profiles)
+in the Hypothesis documentation.
 
 ## Shared fixtures
 

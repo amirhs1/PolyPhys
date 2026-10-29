@@ -35,6 +35,7 @@
     dev = [
         "pytest",
         "pytest-cov",
+        "hypothesis",
         "flake8",
         "mypy",
         "pandas-stubs",
