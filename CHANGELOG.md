@@ -69,6 +69,12 @@ version increase may introduce incompatible changes.
   overrides to set a value derived from parsed values outside the
   declaration tables; it runs at every lineage after the bulk values
   ([#50](https://github.com/amirhs1/PolyPhys/issues/50)).
+- Hypothesis in the `dev` extra, for property tests that generate their
+  inputs. The first one checks that every position in a histogram's range is
+  counted exactly once over the edges `create_bin_edge_and_hist` builds.
+  Hypothesis's built-in `ci` profile, active whenever `CI` is set, makes CI
+  runs draw the same inputs every time. The Testing page describes both
+  ([#83](https://github.com/amirhs1/PolyPhys/issues/83)).
 
 ### Changed
 
