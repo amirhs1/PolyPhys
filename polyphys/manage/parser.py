@@ -84,6 +84,38 @@ _BOX_ATTRIBUTES: dict[GeometryT, tuple[str, ...]] = {
 }
 
 
+def _format_value(value: int | float) -> str:
+    """
+    Return the text of a keyword value in a short lineage name.
+
+    A float that is a whole number prints as an integer; any other float
+    prints as :func:`repr`, Python's shortest form that reads back as the
+    same float, so two different values never print alike. An `int` prints
+    unchanged. The cost is :math:`O(1)` per value.
+
+    Parameters
+    ----------
+    value : int or float
+        A parsed keyword value.
+
+    Returns
+    -------
+    str
+        The value as it appears after its keyword in an ``ensemble`` or
+        ``space`` name.
+
+    Examples
+    --------
+    >>> _format_value(2.0), _format_value(0.0), _format_value(40.0)
+    ('2', '0', '40')
+    >>> _format_value(1.5), _format_value(1.000001), _format_value(200)
+    ('1.5', '1.000001', '200')
+    """
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return repr(value)
+
+
 @dataclass(frozen=True)
 class KeywordSpec:
     """
@@ -289,7 +321,10 @@ class ParserBase:
         `lineage_attributes` followed by `physical_attributes`.
     segment, whole, ensemble_long, ensemble, space : str
         The artifact's name at each lineage of `lineage_genealogy`, and
-        ``'N/A'`` at the others.
+        ``'N/A'`` at the others. ``segment``, ``whole``, and
+        ``ensemble_long`` are cut from `name` and carry no topology suffix;
+        ``ensemble`` and ``space`` print a whole-number float without
+        ``.0``. :meth:`_set_parents` gives both rules.
 
     Class Attributes
     ----------------
@@ -412,7 +447,7 @@ class ParserBase:
     >>> artifact.lcube
     20.0
     >>> artifact.ensemble_long, artifact.ensemble, artifact.space
-    ('N100ac2.0nc50l10.0', 'N100ac2.0nc50', 'N100ac2.0')
+    ('N100ac2.0nc50l10.0', 'N100ac2nc50', 'N100ac2')
     >>> artifact.filepath is None, artifact.ext is None
     (True, True)
     """
@@ -862,9 +897,17 @@ class ParserBase:
         they keep the original tokens. `_parse_name` converts some values,
         such as ``r`` to `dcyl` and ``l`` to `lcube`; writing those
         attributes back under the original keywords would convert them again
-        at every re-parse. The short-form names (``ensemble`` and ``space``)
-        use their own keywords, such as ``D``, and are built from the
-        attributes.
+        at every re-parse. Because the cut ends at a keyword's value, a
+        ``segment`` or ``whole`` name never carries the topology suffix:
+        ``...ens1.ring`` and ``...ens1.j07.ring`` give the ``whole``
+        ``...ens1``, so a simulation has one ``whole`` name whichever file it
+        was parsed from.
+
+        The short-form names (``ensemble`` and ``space``) use their own
+        keywords, such as ``D``, and are built from the attributes. A float
+        value that is a whole number prints as an integer and any other
+        float as :func:`repr` (``ac2``, ``epshc0``, ``epshc1.5``), whatever
+        the name being parsed wrote, such as ``ac2.0`` or ``ac2``.
 
         Every parent attribute is read once, so an unparsed keyword raises
         `AttributeError`. The cost is :math:`O(L)` in the length :math:`L`
@@ -875,7 +918,7 @@ class ParserBase:
             if lineage_name in self.genealogy[self.lineage]:
                 lineage_attr = self.genealogy_attributes[lineage_name]
                 lineage_value = ''.join(
-                    f"{attr_short}{getattr(self, attr_long)}"
+                    f"{attr_short}{_format_value(getattr(self, attr_long))}"
                     for attr_long, attr_short in lineage_attr.items()
                 )
                 if lineage_name in ['segment', 'whole', 'ensemble_long']:

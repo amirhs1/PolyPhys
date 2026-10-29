@@ -136,6 +136,31 @@ version increase may introduce incompatible changes.
 - `polyphys/tests/manage/test_parser.py` follows the test-writing rules:
   shared cases in fixtures, one behaviour per test, and a round-trip test
   that builds a name from every class's declared pattern.
+- **Breaking:** the `ensemble` and `space` names that a parser in
+  `polyphys.manage.parser` rebuilds print a float keyword value that is a
+  whole number as an integer, and any other float as Python's `repr`, the
+  shortest text that reads back as the same float. One rule holds for every
+  float keyword in every class, whatever the parsed name wrote: `ac2.0`
+  becomes `ac2`, `epshc0.0` becomes `epshc0`, `D20.0` becomes `D20`, and
+  `pctc40.0` becomes `pctc40`; `epshc1.5` and `ac1.000001` are unchanged.
+  The long names, `segment`, `whole`, and `ensemble_long`, are cut from the
+  parsed name and keep its text. The new names match the SciOps generator
+  scripts and the maintainer's local `analysis` directories; a short key in
+  existing stamps, such as `N200kbmm2nh12ac2.0epshc0` in `HnsCub`, maps to
+  the new name by parsing it at its lineage and reading the rebuilt name
+  ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
+- The rebuilt `segment` and `whole` names carry no topology suffix, as
+  since v0.3.0, and this is now the documented rule: a segment
+  `…ens1.j07.ring` and a whole `…ens1.ring` of one simulation both give the
+  `whole` `…ens1`. Stamps that SciOps wrote for an artifact parsed from a
+  whole file key the whole as `…ens1.ring`; append `.<topology>` to the new
+  name, or drop it from the old one, to match them. Stamps that SciOps
+  derived from segments already match
+  ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
+- A test marked `private_data` compares the rebuilt `HnsCub` names with the
+  SciOps stamps under `POLYPHYS_DATA_DIR`, in any directory whose name starts
+  with `HnsCub`, under the two mappings above
+  ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
 
 ### Removed
 

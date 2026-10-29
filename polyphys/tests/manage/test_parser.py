@@ -6,6 +6,7 @@ from operator import attrgetter
 from pathlib import Path
 from typing import Any, NamedTuple
 
+import pandas as pd
 import pytest
 
 from polyphys.manage.parser import (
@@ -1327,7 +1328,7 @@ def test_hnscub_keeps_fractional_kbmm_and_epshc():
             parser.ensemble_long, parser.ensemble, parser.space) == (
         2.5, 1.5, 'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1',
         'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0',
-        'N200kbmm2.5nh8ac1.0epshc1.5nc0', 'N200kbmm2.5nh8ac1.0epshc1.5')
+        'N200kbmm2.5nh8ac1epshc1.5nc0', 'N200kbmm2.5nh8ac1epshc1.5')
 
 
 @pytest.mark.parametrize('lineage', [
@@ -1336,14 +1337,168 @@ def test_hnscub_keeps_fractional_kbmm_and_epshc():
     pytest.param('ensemble', id='ensemble'),
     pytest.param('space', id='space'),
 ])
-def test_hnscub_names_differing_in_epshc_stay_distinct(lineage):
+@pytest.mark.parametrize('epshc, other_epshc', [
+    pytest.param('1.5', '1.0', id='half-step'),
+    # Six significant digits, as the '%g' format prints, would merge these.
+    pytest.param('1.000001', '1', id='seventh-digit'),
+])
+def test_hnscub_names_differing_in_epshc_stay_distinct(lineage, epshc,
+                                                       other_epshc):
     """Names that differ only in epshc keep distinct lineage names."""
-    parser = HnsCub('N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring', 'whole',
-                    'nucleoid')
-    other = HnsCub('N200kbmm2.5nh8ac1.0l25.0epshc1.0nc0ens1.ring', 'whole',
-                   'nucleoid')
+    parser = HnsCub(f'N200kbmm2.5nh8ac1.0l25.0epshc{epshc}nc0ens1.ring',
+                    'whole', 'nucleoid')
+    other = HnsCub(f'N200kbmm2.5nh8ac1.0l25.0epshc{other_epshc}nc0ens1.ring',
+                   'whole', 'nucleoid')
 
     assert getattr(parser, lineage) != getattr(other, lineage)
+
+
+# Lineage-name rules
+
+
+@pytest.mark.parametrize(
+    'parser_class, group, lineage, artifact, ensemble, space',
+    [
+        pytest.param(HnsCub, 'nucleoid', 'whole',
+                     'N200kbmm2nh12ac2l25epshc1nc0ens1.ring',
+                     'N200kbmm2nh12ac2epshc1nc0', 'N200kbmm2nh12ac2epshc1',
+                     id='HnsCub-integer-text'),
+        pytest.param(HnsCub, 'nucleoid', 'whole',
+                     'N200kbmm2.0nh12ac2.0l25.0epshc1.0nc0ens1.ring',
+                     'N200kbmm2nh12ac2epshc1nc0', 'N200kbmm2nh12ac2epshc1',
+                     id='HnsCub-float-text'),
+        pytest.param(HnsCub, 'all', 'whole',
+                     'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
+                     'N200kbmm2nh12ac2epshc0nc7162', 'N200kbmm2nh12ac2epshc0',
+                     id='HnsCub-zero'),
+        pytest.param(HnsCub, 'all', 'whole',
+                     'N200kbmm2nh12ac2l25epshc0.0nc7162ens1.ring',
+                     'N200kbmm2nh12ac2epshc0nc7162', 'N200kbmm2nh12ac2epshc0',
+                     id='HnsCub-zero-float-text'),
+        pytest.param(SumRuleCyl, 'all', 'segment',
+                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                     'adump5000ens1.j03',
+                     'N200D20ac2nc1000', 'N200D20ac2',
+                     id='SumRuleCyl-converted-dcyl'),
+    ],
+)
+def test_short_name_prints_whole_number_float_as_integer(
+        parser_class, group, lineage, artifact, ensemble, space):
+    """A whole-number float, zero included, prints as an integer."""
+    parser = parser_class(artifact, lineage, group)
+
+    assert (parser.ensemble, parser.space) == (ensemble, space)
+
+
+@pytest.mark.parametrize(
+    'parser_class, group, lineage, artifact, ensemble, space',
+    [
+        pytest.param(HnsCub, 'nucleoid', 'whole',
+                     'N200kbmm2.5nh8ac1.5l25epshc0.25nc0ens1.ring',
+                     'N200kbmm2.5nh8ac1.5epshc0.25nc0',
+                     'N200kbmm2.5nh8ac1.5epshc0.25', id='HnsCub'),
+        pytest.param(SumRuleCyl, 'all', 'segment',
+                     'N200epsilon5.0r10.75lz25.0sig1.000001nc1000dt0.005'
+                     'bdump2000adump5000ens1.j03',
+                     'N200D20.5ac1.000001nc1000', 'N200D20.5ac1.000001',
+                     id='SumRuleCyl-converted-dcyl'),
+    ],
+)
+def test_short_name_prints_fractional_float_as_repr(
+        parser_class, group, lineage, artifact, ensemble, space):
+    """A fractional float prints in full, as repr, in short names."""
+    parser = parser_class(artifact, lineage, group)
+
+    assert (parser.ensemble, parser.space) == (ensemble, space)
+
+
+@pytest.mark.parametrize('short_lineage', [
+    pytest.param('ensemble', id='ensemble'),
+    pytest.param('space', id='space'),
+])
+def test_short_name_reparses_to_itself(valid_case, short_lineage):
+    """A short name parsed at its own lineage rebuilds the same name."""
+    parser = valid_case.parser_class(valid_case.artifact, valid_case.lineage,
+                                     valid_case.group)
+    name = getattr(parser, short_lineage)
+
+    reparsed = valid_case.parser_class(name, short_lineage, valid_case.group)
+
+    assert getattr(reparsed, short_lineage) == name
+
+
+@pytest.mark.parametrize('parser_class, group, segment, whole, expected', [
+    pytest.param(HnsCub, 'all',
+                 'N200kbmm2nh12ac2l25epshc0nc7162ens1.j07.ring.all',
+                 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring.all',
+                 'N200kbmm2nh12ac2l25epshc0nc7162ens1', id='HnsCub-ring'),
+    pytest.param(SumRuleCubHeteroLinear, 'all',
+                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
+                 'ens1.j02.linear.all',
+                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
+                 'ens1.linear.all',
+                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000ens1',
+                 id='SumRuleCubHeteroLinear-linear'),
+])
+def test_whole_name_drops_topology_suffix_from_segment_and_whole(
+        parser_class, group, segment, whole, expected):
+    """A simulation's segment and whole files give one suffix-free whole."""
+    from_segment = parser_class(segment, 'segment', group)
+    from_whole = parser_class(whole, 'whole', group)
+
+    assert (from_segment.whole, from_whole.whole) == (expected, expected)
+
+
+def _stamp_mismatches(path: Path) -> list[tuple[str, ...]]:
+    """
+    Compare the names in one SciOps ``HnsCub`` stamp file with the rebuilt
+    names, under the mapping that ``CHANGELOG.md`` documents.
+
+    A stamp file is ``<lineage_name>-<group>-stamps.csv``; its columns start
+    with ``lineage_name`` and the lineage names, with a ``segment`` column
+    only for a segment. The expected rebuilt name is the stamp's ``segment``
+    or ``whole`` without ``.ring``, its ``ensemble_long`` unchanged, and its
+    ``ensemble`` or ``space`` parsed at that lineage and rebuilt; a short
+    key must also parse to the artifact's own values. Returns one
+    ``(file, column, stamp, expected, rebuilt)`` tuple per mismatch.
+    """
+    group = path.name.removesuffix('-stamps.csv').rsplit('-', 1)[1]
+    frame = pd.read_csv(path, dtype=str)
+    lineage = 'segment' if 'segment' in frame.columns else 'whole'
+    mismatches = []
+    for row in frame.to_dict('records'):
+        parser = HnsCub(row['lineage_name'], lineage, group)
+        expected = {column: row[column].removesuffix('.ring')
+                    for column in ('segment', 'whole') if column in row}
+        expected['ensemble_long'] = row['ensemble_long']
+        for column in ('ensemble', 'space'):
+            old = HnsCub(row[column], column, group)
+            expected[column] = getattr(old, column)
+            values = attrgetter(*HnsCub._genealogy_attributes[column])
+            if values(old) != values(parser):
+                mismatches.append((path.name, f'{column} values',
+                                   row[column], str(values(parser)),
+                                   str(values(old))))
+        mismatches.extend(
+            (path.name, column, row[column], name, getattr(parser, column))
+            for column, name in expected.items()
+            if getattr(parser, column) != name)
+    return mismatches
+
+
+@pytest.mark.private_data
+def test_hnscub_names_match_existing_stamps_under_mapping(private_data_dir):
+    """Rebuilt HnsCub names equal the SciOps stamp names under the mapping."""
+    stamps = sorted(
+        path for path in private_data_dir.rglob('*-stamps.csv')
+        if any(part.startswith('HnsCub')
+               for part in path.relative_to(private_data_dir).parts[:-1]))
+
+    mismatches = [mismatch for path in stamps
+                  for mismatch in _stamp_mismatches(path)]
+
+    assert stamps, 'no stamp file under a directory named HnsCub*'
+    assert mismatches == []
 
 
 # SumRuleCubHeteroRingBiDisperse
@@ -1376,7 +1531,7 @@ def test_bidisperse_reduces_file_path_to_lineage_name(artifact, lineage,
 
 
 def test_bidisperse_segment_names_its_parents():
-    """A segment gives every parent name; short names print floats as str."""
+    """A segment gives every parent name, short ones without a trailing .0."""
     parser = SumRuleCubHeteroRingBiDisperse(
         'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
         'ens1.j20.ring.all', 'segment', 'all')
@@ -1388,8 +1543,8 @@ def test_bidisperse_segment_names_its_parents():
         'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
         'ens1',
         'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000',
-        'al4.0nl5ns400ac1.0ab5.0pctc40.0nc139229nb1671',
-        'al4.0nl5ns400ac1.0ab5.0pctc40.0')
+        'al4nl5ns400ac1ab5pctc40nc139229nb1671',
+        'al4nl5ns400ac1ab5pctc40')
 
 
 def test_bidisperse_crowder_bulk_values_are_sums_over_species():
@@ -1645,8 +1800,8 @@ def test_declared_parser_parses_its_names(chain_declaration):
 
     assert (parser.nmon, parser.dcrowd, parser.ncrowd, parser.lcube,
             parser.ensemble_long, parser.ensemble, parser.space) == (
-        100, 2.0, 50, 20.0, 'N100ac2.0nc50l10.0', 'N100ac2.0nc50',
-        'N100ac2.0')
+        100, 2.0, 50, 20.0, 'N100ac2.0nc50l10.0', 'N100ac2nc50',
+        'N100ac2')
 
 
 @pytest.mark.parametrize('override, match', [
