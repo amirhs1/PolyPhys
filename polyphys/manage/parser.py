@@ -26,7 +26,8 @@ Contents
 - Cylindrical confinement: :class:`SumRuleCyl`, :class:`TransFociCyl`, and
   :class:`HnsCyl`.
 - Cubic box: :class:`TwoMonDepCub`, :class:`TransFociCub`, :class:`HnsCub`,
-  :class:`SumRuleCubHeteroRing`, and :class:`SumRuleCubHeteroLinear`.
+  :class:`SumRuleCubHeteroRing`, :class:`SumRuleCubHeteroLinear`, and
+  :class:`SumRuleCubHeteroRingBiDisperse`.
 
 Dependencies
 ============
@@ -365,6 +366,11 @@ class ParserBase:
     The bulk values are computed only at the ``segment``, ``whole``, and
     ``ensemble_long`` lineages, whose names carry the box size.
 
+    A value that is a function of parsed values but fits none of the tables
+    above, such as a complementary percentage, is set by overriding
+    :meth:`_derived_attributes`, which runs at every lineage after the bulk
+    values.
+
     Examples
     --------
     A parser for a hypothetical study of a linear chain among crowders in a
@@ -570,6 +576,7 @@ class ParserBase:
         self._set_parents()
         if self.lineage in _BULK_LINEAGES:
             self._dependent_attributes()
+        self._derived_attributes()
 
     def __str__(self) -> str:
         """
@@ -948,6 +955,17 @@ class ParserBase:
                             for part in parts))
         for mass, size in self._masses.items():
             setattr(self, mass, getattr(self, size) ** 3)
+
+    def _derived_attributes(self) -> None:
+        """
+        Set the attributes that a subclass derives from parsed values outside
+        the declaration tables; the base class sets none.
+
+        It runs at every lineage, after parsing, the parent names, and the
+        bulk values, so an override reads only attributes that the lineage's
+        pattern, `_defaults`, or the bulk recipe set. An override costs
+        :math:`O(1)` per attribute it sets.
+        """
 
 
 class TwoMonDepCub(ParserBase):
@@ -1463,6 +1481,187 @@ class SumRuleCubHeteroLinear(ParserBase):
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
+
+
+class SumRuleCubHeteroRingBiDisperse(ParserBase):
+    """
+    Parse an artifact name of the *SumRuleCubHeteroRingBiDisperse* project: a
+    ring of small and large monomers among crowders of two sizes in a
+    periodic cube.
+
+    Each lineage has its own name pattern; ``#`` stands for a value:
+
+    - ``segment``: al#nl#ns#ac#ab#pctc#nc#nb#l#dt#bdump#adump#ens#.j#.ring
+    - ``whole``: al#nl#ns#ac#ab#pctc#nc#nb#l#dt#bdump#adump#ens#.ring
+    - ``ensemble_long``: al#nl#ns#ac#ab#pctc#nc#nb#l#dt#bdump#adump#
+    - ``ensemble``: al#nl#ns#ac#ab#pctc#nc#nb#
+    - ``space``: al#nl#ns#ac#ab#pctc#
+
+    Parameters
+    ----------
+    artifact : Pathish
+        Name to be parsed, or a file path with ``ispath=True``.
+    lineage : {'segment', 'whole', 'ensemble_long', 'ensemble', 'space'}
+        Lineage of the artifact.
+    group : {'bug', 'all'}
+        Particle group: ``'bug'`` for the ring, ``'all'`` for every particle.
+    ispath : bool, default False
+        Whether `artifact` is a file path.
+
+    Attributes
+    ----------
+    dmon_small : int
+        Diameter of a small monomer, fixed at 1; not in the name.
+    nmon_small : int
+        Number of small monomers; keyword ``ns``.
+    mmon_small : int
+        Mass of a small monomer, fixed at 1; not in the name.
+    dmon_large : float
+        Diameter of a large monomer; keyword ``al``.
+    nmon_large : int
+        Number of large monomers; keyword ``nl``.
+    mmon_large : float
+        Mass of a large monomer, :math:`m_l = d_l^3`; only at ``segment``,
+        ``whole``, and ``ensemble_long``.
+    dcrowd_one, dcrowd_two : float
+        Diameters of the type-one and type-two crowders; keywords ``ac`` and
+        ``ab``.
+    ncrowd_one, ncrowd_two : int
+        Numbers of type-one and type-two crowders; keywords ``nc`` and
+        ``nb``.
+    mcrowd_one, mcrowd_two : float
+        Masses of the type-one and type-two crowders, :math:`m = d^3`; only
+        at ``segment``, ``whole``, and ``ensemble_long``.
+    pct_one : float
+        Percentage of the total crowder volume fraction
+        :math:`\\phi_c = \\phi_{c,1} + \\phi_{c,2}` that the type-one crowders
+        carry, :math:`100\\,\\phi_{c,1}/\\phi_c`; keyword ``pctc``.
+    pct_two : float
+        Percentage that the type-two crowders carry, ``100 - pct_one``.
+    lcube : float
+        Side of the cube, :math:`L = 2 l`, from the half-side :math:`l`
+        (keyword ``l``).
+    dt : float
+        Simulation time step; keyword ``dt``.
+    bdump : int
+        Dump period of the ``bug`` trajectory, in time steps; keyword
+        ``bdump``.
+    adump : int
+        Dump period of the ``all`` trajectory, in time steps; keyword
+        ``adump``.
+    ensemble_id : int
+        Index of the whole in its ensemble; keyword ``ens``.
+    segment_id : int
+        Index of the segment in its whole, zero-padded in the name; keyword
+        ``j``.
+    rho_bulk_m_small, phi_bulk_m_small : float
+        Bulk number density and volume fraction of small monomers.
+    rho_bulk_m_large, phi_bulk_m_large : float
+        Bulk number density and volume fraction of large monomers.
+    rho_bulk_m, phi_bulk_m : float
+        Bulk number density and volume fraction of all monomers: the sums of
+        the small and large values.
+    rho_bulk_c_one, phi_bulk_c_one : float
+        Bulk number density and volume fraction of type-one crowders.
+    rho_bulk_c_two, phi_bulk_c_two : float
+        Bulk number density and volume fraction of type-two crowders.
+    rho_bulk_c, phi_bulk_c : float
+        Bulk number density and volume fraction of all crowders: the sums of
+        the type-one and type-two values.
+
+    Notes
+    -----
+    The bulk values and the computed masses exist only at ``segment``,
+    ``whole``, and ``ensemble_long``. The lineage names are documented in
+    :class:`ParserBase`.
+
+    A space is a line of state points at fixed `pct_one` along which the
+    total crowder volume fraction :math:`\\phi_c` varies; both crowder
+    numbers change along it, so the ``space`` name drops ``nc`` and ``nb``.
+
+    The mass density is uniform across all species, so a species whose mass
+    is not in the name has the mass :math:`m_i = d_i^3`, where :math:`d_i` is
+    its diameter.
+
+    Every pair of particle types interacts through a Lennard-Jones potential
+    of strength :math:`\\epsilon = 1`, the energy unit, and there is no wall:
+    the project's LAMMPS input sets :math:`\\epsilon = 1` for all ten pairs of
+    its four particle types.
+
+    Examples
+    --------
+    >>> artifact = SumRuleCubHeteroRingBiDisperse(
+    ...     'al4.0nl5ns400ac1.0ab5.0pctc40.0', 'space', 'bug')
+    >>> print(artifact.dcrowd_two, artifact.pct_one, artifact.pct_two)
+    5.0 40.0 60.0
+    """
+    _geometry = 'cubic'
+    _topology = 'ring'
+    _groups = ['bug', 'all']
+    _keywords = {
+        'al': KeywordSpec('dmon_large', float),
+        'nl': KeywordSpec('nmon_large', int),
+        'ns': KeywordSpec('nmon_small', int),
+        'ac': KeywordSpec('dcrowd_one', float),
+        'ab': KeywordSpec('dcrowd_two', float),
+        'pctc': KeywordSpec('pct_one', float),
+        'nc': KeywordSpec('ncrowd_one', int),
+        'nb': KeywordSpec('ncrowd_two', int),
+        'l': KeywordSpec('lcube', float, scale=2.0),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
+    }
+    _patterns = {
+        'segment': ('al', 'nl', 'ns', 'ac', 'ab', 'pctc', 'nc', 'nb', 'l',
+                    'dt', 'bdump', 'adump', 'ens', 'j'),
+        'whole': ('al', 'nl', 'ns', 'ac', 'ab', 'pctc', 'nc', 'nb', 'l', 'dt',
+                  'bdump', 'adump', 'ens'),
+        'ensemble_long': ('al', 'nl', 'ns', 'ac', 'ab', 'pctc', 'nc', 'nb',
+                          'l', 'dt', 'bdump', 'adump'),
+        'ensemble': ('al', 'nl', 'ns', 'ac', 'ab', 'pctc', 'nc', 'nb'),
+        'space': ('al', 'nl', 'ns', 'ac', 'ab', 'pctc'),
+    }
+    _defaults = {'dmon_small': 1, 'mmon_small': 1}
+    _species = (Species('m_small', 'nmon_small', 'dmon_small'),
+                Species('m_large', 'nmon_large', 'dmon_large'),
+                Species('c_one', 'ncrowd_one', 'dcrowd_one'),
+                Species('c_two', 'ncrowd_two', 'dcrowd_two'))
+    _totals = {'m': ('m_small', 'm_large'), 'c': ('c_one', 'c_two')}
+    _masses = {'mmon_large': 'dmon_large', 'mcrowd_one': 'dcrowd_one',
+               'mcrowd_two': 'dcrowd_two'}
+    _project_attributes = {
+        'segment': ['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
+                    'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
+                    'rho_bulk_m_small', 'phi_bulk_m_large',
+                    'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                    'phi_bulk_c_one', 'rho_bulk_c_one', 'phi_bulk_c_two',
+                    'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c'],
+        'whole': ['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
+                  'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
+                  'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
+                  'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c_one',
+                  'rho_bulk_c_one', 'phi_bulk_c_two', 'rho_bulk_c_two',
+                  'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble_long': ['dmon_small', 'mmon_small', 'mmon_large',
+                          'mcrowd_one', 'mcrowd_two', 'pct_two',
+                          'phi_bulk_m_small', 'rho_bulk_m_small',
+                          'phi_bulk_m_large', 'rho_bulk_m_large',
+                          'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c_one',
+                          'rho_bulk_c_one', 'phi_bulk_c_two',
+                          'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c'],
+        'ensemble': ['dmon_small', 'mmon_small', 'pct_two'],
+        'space': ['dmon_small', 'mmon_small', 'pct_two'],
+    }
+
+    def _derived_attributes(self) -> None:
+        """
+        Set `pct_two`, the percentage of the total crowder volume fraction
+        that the type-two crowders carry: ``100 - pct_one``.
+        """
+        self.pct_two: float = 100 - getattr(self, 'pct_one')
 
 
 class TransFociCyl(ParserBase):
