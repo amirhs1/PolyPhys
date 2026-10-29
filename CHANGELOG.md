@@ -118,6 +118,14 @@ version increase may introduce incompatible changes.
 - `polyphys/tests/manage/test_parser.py` follows the test-writing rules:
   shared cases in fixtures, one behaviour per test, and a round-trip test
   that builds a name from every class's declared pattern.
+- `polyphys.manage` no longer prints. `make_database` logs an INFO record
+  when it reuses an existing directory, and `children_stamps` and
+  `parents_stamps` log DEBUG records for an absent column, to the
+  `polyphys.manage.organizer` logger; with no logging configured, nothing is
+  shown. `openany_context` no longer catches an error raised inside its
+  `with` block to print "Error opening ..." before re-raising it; the error
+  propagates unchanged
+  ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
 
 ### Removed
 
@@ -168,6 +176,16 @@ version increase may introduce incompatible changes.
   `ValueError` for this bin type instead of being clipped to zero, which left
   the range below zero uncovered
   ([#46](https://github.com/amirhs1/PolyPhys/issues/46)).
+- `parents_stamps` in `polyphys.manage.organizer` drops the child lineage
+  column (`segment` or `whole`) from the parent stamps when the stamps have
+  no `lineage_name` column, as the stamps the probe phase writes do not.
+  It removed the two columns together, so a missing `lineage_name` left the
+  child column in, holding the last child's name: whole stamps built from
+  segments carried a stale `segment` column, and ensemble-average stamps a
+  stale `whole` column. Tables produced before this fix keep those columns
+  ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
+- `children_stamps(..., "whole")` drops whichever of `segment` and
+  `segment_id` is present; it dropped neither when only one was there.
 
 ## [0.4.0] - 2026-10-26
 
