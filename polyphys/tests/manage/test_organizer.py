@@ -16,6 +16,7 @@ encoded in the filenames. The stamp tests use the column layout of the
 SciOps probe phase's stamp files: genealogy columns, parser attributes, and
 ``n_frames``.
 """
+import logging
 import os
 from pathlib import Path
 
@@ -183,6 +184,23 @@ def test_make_database_returns_existing_directory(tmp_path):
     old = tmp_path / "probes" / "N20-bug-segment"
     first = make_database(old, "analysis", "ens", "bug")
     assert make_database(old, "analysis", "ens", "bug") == first
+
+
+def test_make_database_logs_reuse_of_existing_directory(
+    tmp_path, caplog, capsys
+):
+    """Reusing a directory logs an INFO record naming it and prints nothing."""
+    old = tmp_path / "probes" / "N20-bug-segment"
+    make_database(old, "analysis", "ens", "bug")
+    caplog.set_level(logging.INFO, logger="polyphys.manage.organizer")
+
+    make_database(old, "analysis", "ens", "bug")
+
+    assert [(record.levelname, record.getMessage()) for record in
+            caplog.records] == [
+        ("INFO", f"Reusing the existing directory "
+                 f"{tmp_path / 'analysis' / 'N20-bug-ens'}.")]
+    assert capsys.readouterr().out == ""
 
 
 def test_make_database_rejects_unknown_phase(tmp_path):
@@ -786,6 +804,19 @@ def test_children_stamps_whole_drops_segment_columns(
     )
 
 
+def test_children_stamps_whole_without_segment_columns_is_unchanged(
+    write_stamps, whole_stamps, capsys
+):
+    """Whole stamps without segment columns pass through, printing nothing."""
+    stamps = whole_stamps.drop(columns=["segment", "segment_id"])
+    paths = write_stamps(stamps)
+
+    combined = children_stamps(paths, "whole")
+
+    pd.testing.assert_frame_equal(combined, stamps)
+    assert capsys.readouterr().out == ""
+
+
 def test_children_stamps_saves_combined_stamps(
     tmp_path, write_stamps, segment_stamps
 ):
@@ -847,6 +878,36 @@ def test_parents_stamps_saves_under_parent_stage(
     stamps = request.getfixturevalue(stamps_fixture)
     parents = parents_stamps(stamps, lineage, save_to=tmp_path)
     pd.testing.assert_frame_equal(pd.read_csv(tmp_path / filename), parents)
+
+
+@pytest.mark.parametrize(
+    "stamps_fixture, lineage",
+    [
+        pytest.param("segment_stamps", "segment", id="segment"),
+        pytest.param("whole_stamps", "whole", id="whole"),
+    ],
+)
+def test_parents_stamps_without_lineage_name_drops_child_column(
+    request, stamps_fixture, lineage
+):
+    """Stamps without 'lineage_name' still lose the child lineage column."""
+    stamps = request.getfixturevalue(stamps_fixture).drop(
+        columns="lineage_name")
+
+    parents = parents_stamps(stamps, lineage)
+
+    assert lineage not in parents.columns
+
+
+def test_parents_stamps_without_lineage_name_prints_nothing(
+    segment_stamps, capsys
+):
+    """An absent 'lineage_name' column is skipped without printing."""
+    stamps = segment_stamps.drop(columns="lineage_name")
+
+    parents_stamps(stamps, "segment")
+
+    assert capsys.readouterr().out == ""
 
 
 def test_parents_stamps_rejects_unknown_lineage(segment_stamps):
