@@ -167,7 +167,9 @@ version increase may introduce incompatible changes.
   ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
 - A test marked `private_data` compares the rebuilt `HnsCub` names with the
   SciOps stamps under `POLYPHYS_DATA_DIR`, in any directory whose name starts
-  with `HnsCub`, under the two mappings above
+  with `HnsCub`, under the two mappings above; the comparison itself is
+  tested on synthetic stamp files, and the data-reading test is excluded
+  from coverage because CI never runs it
   ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
 
 ### Removed

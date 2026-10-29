@@ -1486,8 +1486,61 @@ def _stamp_mismatches(path: Path) -> list[tuple[str, ...]]:
     return mismatches
 
 
+@pytest.fixture
+def write_stamp(tmp_path: Path):
+    """
+    Return a factory that writes a one-row stamp file in the SciOps format,
+    ``<lineage_name>-<group>-stamps.csv``, from a mapping of column to value,
+    and returns its path.
+    """
+    def _write(group: str, columns: dict[str, str]) -> Path:
+        path = tmp_path / f"{columns['lineage_name']}-{group}-stamps.csv"
+        path.write_text(','.join(columns) + '\n'
+                        + ','.join(columns.values()) + '\n')
+        return path
+    return _write
+
+
+@pytest.mark.parametrize('group, columns, flagged', [
+    pytest.param(
+        'nucleoid',
+        {'lineage_name': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
+         'whole': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
+         'ensemble_long': 'N200kbmm2nh12ac2l25epshc0nc7162',
+         'ensemble': 'N200kbmm2nh12ac2.0epshc0nc7162',
+         'space': 'N200kbmm2nh12ac2.0epshc0', 'nmon': '200', 'n_frames': '10'},
+        [], id='whole-matches'),
+    pytest.param(
+        'all',
+        {'lineage_name': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.j07.ring',
+         'segment': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.j07.ring',
+         'whole': 'N200kbmm2nh12ac2l25epshc0nc7162ens1',
+         'ensemble_long': 'N200kbmm2nh12ac2l25epshc0nc7162',
+         'ensemble': 'N200kbmm2nh12ac2.0epshc0nc7162',
+         'space': 'N200kbmm2nh12ac2.0epshc0', 'nmon': '200', 'n_frames': '10'},
+        [], id='segment-matches'),
+    pytest.param(
+        'nucleoid',
+        {'lineage_name': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
+         'whole': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
+         'ensemble_long': 'N200kbmm2nh12ac2l25epshc0nc7162',
+         'ensemble': 'N200kbmm2nh12ac2.0epshc0nc7162',
+         'space': 'N200kbmm2nh12ac2.0epshc1', 'nmon': '200', 'n_frames': '10'},
+        ['space values', 'space'], id='space-value-differs'),
+])
+def test_stamp_mismatches_flags_only_departures_from_mapping(
+        write_stamp, group, columns, flagged):
+    """A stamp differing from the rebuilt names only by the mapping passes."""
+    path = write_stamp(group, columns)
+
+    mismatches = _stamp_mismatches(path)
+
+    assert [mismatch[1] for mismatch in mismatches] == flagged
+
+
 @pytest.mark.private_data
-def test_hnscub_names_match_existing_stamps_under_mapping(private_data_dir):
+def test_hnscub_names_match_existing_stamps_under_mapping(  # pragma: no cover
+        private_data_dir):
     """Rebuilt HnsCub names equal the SciOps stamp names under the mapping."""
     stamps = sorted(
         path for path in private_data_dir.rglob('*-stamps.csv')
