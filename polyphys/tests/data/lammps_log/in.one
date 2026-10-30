@@ -1,0 +1,67 @@
+# SumRuleCyl-like: a FENE chain and crowders in a cylinder; thermo_style one.
+# Runs: 0 minimize; 1 equilibration (nve/limit); 2-4 production, one
+# trajectory file per run (loop, as in the projects);
+# 5 the crowders' wall is removed, so crowders leave through the fixed
+# x and y boundaries and "WARNING: Lost atoms" lines appear in the table.
+
+units           lj
+dimension       3
+boundary        f f p
+atom_style      bond
+
+variable        randseed equal 4928
+region          box block -6 6 -6 6 -12 12 units box
+create_box      2 box bond/types 1 extra/bond/per/atom 2 extra/special/per/atom 6
+region          cyl cylinder z 0.0 0.0 5.0 INF INF units box
+region          cylin cylinder z 0.0 0.0 4.0 INF INF units box
+molecule        chain chain20.mol
+create_atoms    0 single 0.0 0.0 0.0 mol chain 1234 rotate 0 0 0 1 units box
+create_atoms    2 random 150 ${randseed} cylin overlap 1.0 maxtry 100 units box
+mass            * 1.0
+group           bug type 1
+group           crowd type 2
+
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      * * 1.0 1.0 1.122462
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+special_bonds   fene
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+fix             F_wall1 bug wall/region cyl lj126 1.0 1.0 1.122462
+fix             F_wall2 crowd wall/region cyl lj126 1.0 1.0 1.122462
+
+thermo          100
+thermo_style    one
+thermo_modify   flush yes
+
+minimize        1.0e-4 1.0e-6 100 1000
+
+velocity        all create 1.0 ${randseed}
+fix             F_langevin all langevin 1.0 1.0 1.0 ${randseed}
+fix             F_nve all nve/limit 0.01
+timestep        0.005
+run             500
+unfix           F_nve
+
+fix             F_nve all nve
+dump            D_bug bug atom 100 one.bug.lammpstrj
+dump_modify     D_bug scale no
+variable        fname string in.one
+variable        j loop 3 pad
+    label       dump_loop
+    dump        D_all all atom 250 one.j${j}.all.lammpstrj
+    dump_modify D_all scale no
+    run         500
+    undump      D_all
+    next        j
+    jump        ${fname} dump_loop
+undump          D_bug
+write_data      one.all.data pair ij
+
+unfix           F_wall2
+thermo_modify   lost warn
+velocity        crowd scale 5.0
+run             1000

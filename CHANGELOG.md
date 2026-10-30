@@ -11,6 +11,15 @@ version increase may introduce incompatible changes.
 
 ### Added
 
+- `polyphys.manage.lammps_log`: `read_log` and `parse_log` read a LAMMPS log
+  into a `LammpsLog` record of three DataFrames: `thermo`, one row per thermo
+  output step of every run in the `one`, `custom`, `multi`, or `yaml` style,
+  with a `run` column; `run_stats`, one row per run with its loop time,
+  performance, CPU use, MPI timing breakdown, and dangerous builds; and
+  `wall_time`. `WARNING` and `fix halt` lines inside a table are skipped and
+  logged, and a cut-off or malformed log raises `BrokenLogError` (#55). The
+  test logs in `polyphys/tests/data/lammps_log/` are written by LAMMPS from
+  the input scripts beside them. A Usage section describes the module.
 - `polyphys.analyze.stats`: Flyvbjerg-Petersen block averaging for the
   uncertainty of a time average over correlated frames. `block_average`
   returns the full blocking table (`BlockingResult`) for any

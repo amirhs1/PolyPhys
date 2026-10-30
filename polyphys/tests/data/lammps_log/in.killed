@@ -1,0 +1,34 @@
+# A FENE chain and crowders in a periodic cube; thermo_style custom.
+# One long run, meant to be killed after a few seconds (see make_logs.sh)
+# to mimic a walltime kill: no "Loop time of" and no "Total wall time".
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      bond
+
+variable        randseed equal 8843
+region          box block -8 8 -8 8 -12 12 units box
+create_box      2 box bond/types 1 extra/bond/per/atom 2 extra/special/per/atom 6
+molecule        chain chain20.mol
+create_atoms    0 single 0.0 0.0 0.0 mol chain 1234 rotate 0 0 0 1 units box
+create_atoms    2 random 300 ${randseed} box overlap 1.0 maxtry 100 units box
+mass            * 1.0
+
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      * * 1.0 1.0 1.122462
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+special_bonds   fene
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+velocity        all create 1.0 ${randseed}
+fix             F_langevin all langevin 1.0 1.0 1.0 ${randseed}
+fix             F_nve all nve/limit 0.01
+thermo          2000
+thermo_style    custom step temp ke pe ebond press
+thermo_modify   flush yes
+timestep        0.005
+run             100000000

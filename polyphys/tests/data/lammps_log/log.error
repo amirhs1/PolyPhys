@@ -1,0 +1,53 @@
+LAMMPS (22 Jul 2025 - Update 4)
+# Crowders in a box with fixed x and y boundaries and no walls; thermo_style
+# one. Atoms leave the box, and the default "thermo_modify lost error" stops
+# LAMMPS with an ERROR line inside the thermo table: no "Loop time of" and
+# no "Total wall time".
+
+units           lj
+dimension       3
+boundary        f f p
+atom_style      atomic
+
+variable        randseed equal 6121
+region          box block -5 5 -5 5 -5 5 units box
+create_box      1 box
+Created orthogonal box = (-5 -5 -5) to (5 5 5)
+  1 by 1 by 1 MPI processor grid
+create_atoms    1 random 100 ${randseed} box overlap 1.0 maxtry 100 units box
+create_atoms    1 random 100 6121 box overlap 1.0 maxtry 100 units box
+Created 100 atoms
+  using box units in orthogonal box = (-5 -5 -5) to (5 5 5)
+  create_atoms CPU = 0.000 seconds
+mass            1 1.0
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      1 1 1.0 1.0 1.122462
+neighbor        0.3 bin
+
+velocity        all create 5.0 ${randseed}
+velocity        all create 5.0 6121
+fix             F_nve all nve/limit 0.05
+thermo          100
+thermo_style    one
+thermo_modify   flush yes
+timestep        0.005
+run             5000
+Generated 0 of 0 mixed pair_coeff terms from geometric mixing rule
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1.422462
+  ghost atom cutoff = 1.422462
+  binsize = 0.711231, bins = 15 15 15
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 3.072 | 3.072 | 3.072 Mbytes
+   Step          Temp          E_pair         E_mol          TotEng         Press     
+         0   5              0.021069466    0              7.4460695      0.51923418   
+ERROR: Lost atoms: original 100 current 80
+For more information see https://docs.lammps.org/err0008 (src/thermo.cpp:526)
