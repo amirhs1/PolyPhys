@@ -18,7 +18,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from polyphys.manage.lammps_log import BrokenLogError, parse_log, read_log
+from polyphys.manage.lammps_log import (
+    BrokenLogError,
+    _lammps_version,
+    parse_log,
+    read_log,
+)
 
 
 @pytest.fixture
@@ -237,6 +242,11 @@ def test_parse_log_reads_version_from_first_line(make_log, first_line,
     assert log.lammps_version == expected
 
 
+def test_lammps_version_of_empty_log_is_none():
+    """An empty list of lines has no version line."""
+    assert _lammps_version([]) is None
+
+
 def test_parse_log_accepts_old_run_start_line(make_log):
     """The run-start line of old versions also opens a run."""
     text = make_log(["Step Temp", "0 1.0"],
@@ -277,6 +287,27 @@ def test_parse_log_accepts_old_run_start_line(make_log):
             [["Step Temp", "0 1.0", "100"]], {},
             r"Line 5 is inside a thermo table but is not data",
             id="short-row"),
+        pytest.param(
+            [["Step Temp", "0 abc"]], {},
+            r"Line 4 is inside a thermo table but is not data",
+            id="non-numeric-value"),
+        pytest.param(
+            [["WARNING: Lost atoms: original 20 current 19"]], {},
+            r"Run 0 \(line 2\) has no thermo header", id="no-header"),
+        pytest.param(
+            [["------------ Step              0 ----- CPU =            0 "
+              "(sec) -------------",
+              "fix print: Rg 5.2"]], {},
+            r"Line 4 is inside a thermo table but is not data",
+            id="multi-stray-line"),
+        pytest.param(
+            [["---", "keywords: ['Step', ]", "data:", "fix print: Rg 5.2"]],
+            {}, r"Line 6 is inside a thermo table but is not data",
+            id="yaml-stray-line"),
+        pytest.param(
+            [["---", "data:", "..."]], {},
+            r"Run 0 \(line 2\) has no 'keywords:' line",
+            id="yaml-without-keywords"),
     ],
 )
 def test_parse_log_raises_broken_log_error(make_log, tables, options, match):
@@ -402,6 +433,30 @@ def test_parse_log_finds_timing_columns_by_name(make_log, header, row):
     row_stats = log.run_stats.iloc[0]
     assert (row_stats["Pair_avg_time"], row_stats["Pair_total_pct"]) == (
         1.2, 48.0)
+
+
+def test_parse_log_skips_malformed_timing_rows(make_log):
+    """Timing rows without a section or with too few cells are ignored."""
+    summary = [
+        "Loop time of 2.5 on 4 procs for 1000 steps with 2000 atoms", "",
+        "MPI task timing breakdown:",
+        "Section |  min time  |  avg time  |  max time  |%varavg| %total",
+        "-" * 63,
+        "Pair    | 1.0        | 1.2",
+        "        | 1.0        | 1.2        | 1.4        |   5.0 | 48.00",
+        "Neigh   | 1.0        | n/a        | 1.4        |   5.0 | 12.00",
+        "",
+    ]
+    text = make_log(["Step", "0"], summaries=[summary])
+
+    log = parse_log(text)
+
+    row = log.run_stats.iloc[0]
+    timing = [col for col in log.run_stats.columns
+              if col.endswith(("_avg_time", "_total_pct"))]
+    assert timing == ["Neigh_avg_time", "Neigh_total_pct"]
+    assert np.isnan(row["Neigh_avg_time"])
+    assert row["Neigh_total_pct"] == 12.0
 
 
 def test_parse_log_missing_summary_fields_are_nan(make_log):
