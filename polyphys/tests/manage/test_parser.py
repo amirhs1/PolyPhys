@@ -170,8 +170,8 @@ class ValidCase(NamedTuple):
                         segment_id=10),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='SumRuleCubHeteroRing-segment'),
     pytest.param(
         ParseCase(
@@ -185,8 +185,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000, ensemble_id=4),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='SumRuleCubHeteroRing-whole'),
     pytest.param(
         ParseCase(
@@ -198,8 +198,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='SumRuleCubHeteroRing-ensemble_long'),
     pytest.param(
         ParseCase(
@@ -232,8 +232,8 @@ class ValidCase(NamedTuple):
                         segment_id=11),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='SumRuleCubHeteroLinear-segment'),
     pytest.param(
         ParseCase(
@@ -247,8 +247,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000, ensemble_id=1),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='SumRuleCubHeteroLinear-whole'),
     pytest.param(
         ParseCase(
@@ -260,8 +260,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='SumRuleCubHeteroLinear-ensemble_long'),
     pytest.param(
         ParseCase(
@@ -295,8 +295,8 @@ class ValidCase(NamedTuple):
                         segment_id=5),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='TransFociCyl-segment'),
     pytest.param(
         ParseCase(
@@ -311,8 +311,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000, ensemble_id=8),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='TransFociCyl-whole'),
     pytest.param(
         ParseCase(
@@ -327,8 +327,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='TransFociCyl-ensemble_long'),
     pytest.param(
         ParseCase(
@@ -361,8 +361,8 @@ class ValidCase(NamedTuple):
                         segment_id=13),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='TransFociCub-segment'),
     pytest.param(
         ParseCase(
@@ -376,8 +376,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000, ensemble_id=5),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='TransFociCub-whole'),
     pytest.param(
         ParseCase(
@@ -389,8 +389,8 @@ class ValidCase(NamedTuple):
                         dt=0.005, bdump=2000, adump=5000),
             physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                       'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c']),
+                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
+                      'phi_bulk_c', 'rho_bulk_c']),
         id='TransFociCub-ensemble_long'),
     pytest.param(
         ParseCase(

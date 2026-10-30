@@ -237,6 +237,14 @@ version increase may introduce incompatible changes.
   ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
 - `children_stamps(..., "whole")` drops whichever of `segment` and
   `segment_id` is present; it dropped neither when only one was there.
+- The two-size parsers `SumRuleCubHeteroRing`, `SumRuleCubHeteroLinear`,
+  `TransFociCyl`, and `TransFociCub` list `phi_bulk_m`, the bulk volume
+  fraction of all monomers, in `attributes` at the `segment`, `whole`, and
+  `ensemble_long` lineages, just before `rho_bulk_m`, as the other parsers
+  do. They computed it but left it out, so their stamps carried
+  `rho_bulk_m` and not `phi_bulk_m`. Stamps written from now on gain a
+  `phi_bulk_m` column; no value changes
+  ([#103](https://github.com/amirhs1/PolyPhys/issues/103)).
 
 ## [0.4.0] - 2026-10-26
 

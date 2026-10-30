@@ -1375,14 +1375,15 @@ class SumRuleCubHeteroRing(ParserBase):
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                   'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
-                          'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large',
+                          'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                          'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1513,14 +1514,15 @@ class SumRuleCubHeteroLinear(ParserBase):
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                   'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
-                          'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large',
+                          'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                          'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -1859,14 +1861,15 @@ class TransFociCyl(ParserBase):
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                   'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
-                          'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large',
+                          'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                          'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
@@ -2000,14 +2003,15 @@ class TransFociCub(ParserBase):
     _project_attributes = {
         'segment': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                     'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                    'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                    'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'whole': ['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
                   'rho_bulk_m_small', 'phi_bulk_m_large', 'rho_bulk_m_large',
-                  'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
+                  'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c'],
         'ensemble_long': ['dmon_small', 'mmon_small',  'mcrowd',
                           'phi_bulk_m_small', 'rho_bulk_m_small',
-                          'phi_bulk_m_large', 'rho_bulk_m_large', 'rho_bulk_m',
-                          'phi_bulk_c', 'rho_bulk_c'],
+                          'phi_bulk_m_large', 'rho_bulk_m_large',
+                          'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
+                          'rho_bulk_c'],
         'ensemble': ['dmon_small', 'mmon_small', 'mcrowd'],
         'space': ['dmon_small', 'mmon_small', 'mcrowd']
     }
