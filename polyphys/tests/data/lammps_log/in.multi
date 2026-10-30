@@ -1,0 +1,60 @@
+# TransFociCub-like: a FENE chain and crowders in a periodic cube;
+# thermo_style multi. Runs: 0 equilibration with a small nve/limit;
+# reset_timestep 0; 1 equilibration; 2-4 production, one trajectory
+# file per run (loop, as in the projects).
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      bond
+
+variable        randseed equal 7719
+region          box block -8 8 -8 8 -12 12 units box
+create_box      2 box bond/types 1 extra/bond/per/atom 2 extra/special/per/atom 6
+molecule        chain chain20.mol
+create_atoms    0 single 0.0 0.0 0.0 mol chain 1234 rotate 0 0 0 1 units box
+create_atoms    2 random 300 ${randseed} box overlap 1.0 maxtry 100 units box
+mass            * 1.0
+group           bug type 1
+group           crowd type 2
+
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      * * 1.0 1.0 1.122462
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+special_bonds   fene
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+velocity        all create 1.0 ${randseed}
+fix             F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+fix             F_nve all nve/limit 0.001
+fix             F_recenter bug recenter 0.0 0.0 0.0 shift all units box
+thermo          100
+thermo_style    multi
+thermo_modify   flush yes
+timestep        0.01
+run             500
+reset_timestep  0
+
+fix             F_nve all nve/limit 0.01
+run             500
+
+unfix           F_nve
+fix             F_nve all nve
+timestep        0.005
+dump            D_bug bug atom 100 multi.bug.lammpstrj
+dump_modify     D_bug scale no
+variable        fname string in.multi
+variable        j loop 3 pad
+    label       dump_loop
+    dump        D_all all atom 250 multi.j${j}.all.lammpstrj
+    dump_modify D_all scale no
+    restart     1000000 restart.multi
+    run         500
+    undump      D_all
+    next        j
+    jump        ${fname} dump_loop
+undump          D_bug
+write_data      multi.all.data pair ij

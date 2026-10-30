@@ -1,0 +1,436 @@
+LAMMPS (22 Jul 2025 - Update 4)
+# TransFociCub-like: a FENE chain and crowders in a periodic cube;
+# thermo_style multi. Runs: 0 equilibration with a small nve/limit;
+# reset_timestep 0; 1 equilibration; 2-4 production, one trajectory
+# file per run (loop, as in the projects).
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      bond
+
+variable        randseed equal 7719
+region          box block -8 8 -8 8 -12 12 units box
+create_box      2 box bond/types 1 extra/bond/per/atom 2 extra/special/per/atom 6
+Created orthogonal box = (-8 -8 -12) to (8 8 12)
+  1 by 1 by 1 MPI processor grid
+molecule        chain chain20.mol
+Read molecule template chain:
+# linear chain of 20 beads along z, bond length 0.97
+  1 molecules
+  0 fragments
+  0 bodies
+  20 atoms with max type 1
+  19 bonds with max type 1
+  0 angles with max type 0
+  0 dihedrals with max type 0
+  0 impropers with max type 0
+create_atoms    0 single 0.0 0.0 0.0 mol chain 1234 rotate 0 0 0 1 units box
+Created 20 atoms
+  using box units in orthogonal box = (-8 -8 -12) to (8 8 12)
+  create_atoms CPU = 0.000 seconds
+create_atoms    2 random 300 ${randseed} box overlap 1.0 maxtry 100 units box
+create_atoms    2 random 300 7719 box overlap 1.0 maxtry 100 units box
+Created 300 atoms
+  using box units in orthogonal box = (-8 -8 -12) to (8 8 12)
+  create_atoms CPU = 0.001 seconds
+mass            * 1.0
+group           bug type 1
+20 atoms in group bug
+group           crowd type 2
+300 atoms in group crowd
+
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      * * 1.0 1.0 1.122462
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+special_bonds   fene
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0        1        1       
+  special bond factors coul:  0        1        1       
+     2 = max # of 1-2 neighbors
+    13 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+velocity        all create 1.0 ${randseed}
+velocity        all create 1.0 7719
+fix             F_langevin all langevin 1.0 1.0 10.0 ${randseed}
+fix             F_langevin all langevin 1.0 1.0 10.0 7719
+fix             F_nve all nve/limit 0.001
+fix             F_recenter bug recenter 0.0 0.0 0.0 shift all units box
+thermo          100
+thermo_style    multi
+thermo_modify   flush yes
+timestep        0.01
+run             500
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+WARNING: Communication cutoff 1.4224620000000001 is shorter than a bond length based estimate of 1.7550000000000001. This may lead to errors. (src/comm.cpp:743)
+Neighbor list info ...
+  update: every = 1 steps, delay = 0 steps, check = yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 1.422462
+  ghost atom cutoff = 1.422462
+  binsize = 0.711231, bins = 23 23 34
+  1 neighbor lists, perpetual/occasional/extra = 1 0 0
+  (1) pair lj/cut, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d
+      bin: standard
+WARNING: Communication cutoff 1.4224620000000001 is shorter than a bond length based estimate of 1.7550000000000001. This may lead to errors. (src/comm.cpp:743)
+Per MPI rank memory allocation (min/avg/max) = 5.058 | 5.058 | 5.058 Mbytes
+------------ Step              0 ----- CPU =            0 (sec) -------------
+TotEng   =         2.7026 KinEng   =         1.4953 Temp     =         1.0000 
+PotEng   =         1.2073 E_bond   =         1.2018 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0055 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0466
+------------ Step            100 ----- CPU =     0.001228 (sec) -------------
+TotEng   =         1.2044 KinEng   =         0.0040 Temp     =         0.0027 
+PotEng   =         1.2004 E_bond   =         1.2003 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0001 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =        -0.0041
+------------ Step            200 ----- CPU =   0.00242925 (sec) -------------
+TotEng   =         1.2038 KinEng   =         0.0039 Temp     =         0.0026 
+PotEng   =         1.1999 E_bond   =         1.1999 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0000 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =        -0.0023
+------------ Step            300 ----- CPU =  0.003601375 (sec) -------------
+TotEng   =         1.2036 KinEng   =         0.0039 Temp     =         0.0026 
+PotEng   =         1.1997 E_bond   =         1.1997 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0000 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =        -0.0016
+------------ Step            400 ----- CPU =  0.004777875 (sec) -------------
+TotEng   =         1.2036 KinEng   =         0.0040 Temp     =         0.0027 
+PotEng   =         1.1996 E_bond   =         1.1996 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0000 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =        -0.0004
+------------ Step            500 ----- CPU =  0.006018791 (sec) -------------
+TotEng   =         1.2035 KinEng   =         0.0039 Temp     =         0.0026 
+PotEng   =         1.1997 E_bond   =         1.1996 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0000 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =        -0.0002
+Loop time of 0.00602246 on 1 procs for 500 steps with 320 atoms
+
+Performance: 71731508.962 tau/day, 83022.580 timesteps/s, 26.567 Matom-step/s
+99.6% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.00033603 | 0.00033603 | 0.00033603 |   0.0 |  5.58
+Bond    | 4.6084e-05 | 4.6084e-05 | 4.6084e-05 |   0.0 |  0.77
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00015541 | 0.00015541 | 0.00015541 |   0.0 |  2.58
+Output  | 3.2291e-05 | 3.2291e-05 | 3.2291e-05 |   0.0 |  0.54
+Modify  | 0.005262   | 0.005262   | 0.005262   |   0.0 | 87.37
+Other   |            | 0.0001907  |            |       |  3.17
+
+Nlocal:            320 ave         320 max         320 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            163 ave         163 max         163 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:             64 ave          64 max          64 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 64
+Ave neighs/atom = 0.2
+Ave special neighs/atom = 0.11875
+Neighbor list builds = 0
+Dangerous builds = 0
+reset_timestep  0
+
+fix             F_nve all nve/limit 0.01
+run             500
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+WARNING: Communication cutoff 1.4224620000000001 is shorter than a bond length based estimate of 1.7550000000000001. This may lead to errors. (src/comm.cpp:743)
+Per MPI rank memory allocation (min/avg/max) = 5.058 | 5.058 | 5.058 Mbytes
+------------ Step              0 ----- CPU =            0 (sec) -------------
+TotEng   =         1.2035 KinEng   =         0.0039 Temp     =         0.0026 
+PotEng   =         1.1997 E_bond   =         1.1996 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0000 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =        -0.0002
+------------ Step            100 ----- CPU =  0.001050083 (sec) -------------
+TotEng   =         1.4429 KinEng   =         0.2402 Temp     =         0.1606 
+PotEng   =         1.2027 E_bond   =         1.2019 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0008 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0042
+------------ Step            200 ----- CPU =     0.002225 (sec) -------------
+TotEng   =         1.4849 KinEng   =         0.2797 Temp     =         0.1870 
+PotEng   =         1.2052 E_bond   =         1.2042 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0010 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0070
+------------ Step            300 ----- CPU =    0.0034005 (sec) -------------
+TotEng   =         1.4858 KinEng   =         0.2831 Temp     =         0.1893 
+PotEng   =         1.2027 E_bond   =         1.2017 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0010 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0099
+------------ Step            400 ----- CPU =   0.00457725 (sec) -------------
+TotEng   =         1.4945 KinEng   =         0.2909 Temp     =         0.1946 
+PotEng   =         1.2036 E_bond   =         1.2021 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0015 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0097
+------------ Step            500 ----- CPU =  0.005758875 (sec) -------------
+TotEng   =         1.4934 KinEng   =         0.2869 Temp     =         0.1919 
+PotEng   =         1.2065 E_bond   =         1.2026 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0039 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0117
+Loop time of 0.00576254 on 1 procs for 500 steps with 320 atoms
+
+Performance: 74966928.652 tau/day, 86767.279 timesteps/s, 27.766 Matom-step/s
+99.2% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.00040834 | 0.00040834 | 0.00040834 |   0.0 |  7.09
+Bond    | 4.7831e-05 | 4.7831e-05 | 4.7831e-05 |   0.0 |  0.83
+Neigh   | 0.0011341  | 0.0011341  | 0.0011341  |   0.0 | 19.68
+Comm    | 0.00028658 | 0.00028658 | 0.00028658 |   0.0 |  4.97
+Output  | 2.3625e-05 | 2.3625e-05 | 2.3625e-05 |   0.0 |  0.41
+Modify  | 0.0036362  | 0.0036362  | 0.0036362  |   0.0 | 63.10
+Other   |            | 0.0002259  |            |       |  3.92
+
+Nlocal:            320 ave         320 max         320 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            180 ave         180 max         180 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:             72 ave          72 max          72 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 72
+Ave neighs/atom = 0.225
+Ave special neighs/atom = 0.11875
+Neighbor list builds = 33
+Dangerous builds = 0
+
+unfix           F_nve
+fix             F_nve all nve
+timestep        0.005
+dump            D_bug bug atom 100 multi.bug.lammpstrj
+dump_modify     D_bug scale no
+variable        fname string in.multi
+variable        j loop 3 pad
+    label       dump_loop
+    dump        D_all all atom 250 multi.j${j}.all.lammpstrj
+    dump        D_all all atom 250 multi.j1.all.lammpstrj
+    dump_modify D_all scale no
+    restart     1000000 restart.multi
+    run         500
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+WARNING: Fix recenter should come after all other integration fixes (src/fix_recenter.cpp:130)
+WARNING: Communication cutoff 1.4224620000000001 is shorter than a bond length based estimate of 1.7550000000000001. This may lead to errors. (src/comm.cpp:743)
+Per MPI rank memory allocation (min/avg/max) = 5.058 | 5.058 | 5.058 Mbytes
+------------ Step            500 ----- CPU =            0 (sec) -------------
+TotEng   =         1.4934 KinEng   =         0.2869 Temp     =         0.1919 
+PotEng   =         1.2065 E_bond   =         1.2026 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0039 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0117
+------------ Step            600 ----- CPU =  0.001154625 (sec) -------------
+TotEng   =         1.6013 KinEng   =         0.3953 Temp     =         0.2644 
+PotEng   =         1.2060 E_bond   =         1.2049 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0010 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0179
+------------ Step            700 ----- CPU =  0.002193583 (sec) -------------
+TotEng   =         1.7059 KinEng   =         0.4949 Temp     =         0.3310 
+PotEng   =         1.2109 E_bond   =         1.2065 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0045 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0228
+------------ Step            800 ----- CPU =     0.003375 (sec) -------------
+TotEng   =         1.7966 KinEng   =         0.5858 Temp     =         0.3917 
+PotEng   =         1.2108 E_bond   =         1.2056 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0052 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0248
+------------ Step            900 ----- CPU =     0.004485 (sec) -------------
+TotEng   =         1.8621 KinEng   =         0.6548 Temp     =         0.4379 
+PotEng   =         1.2073 E_bond   =         1.2058 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0015 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0252
+------------ Step           1000 ----- CPU =  0.005620291 (sec) -------------
+TotEng   =         1.9565 KinEng   =         0.7412 Temp     =         0.4957 
+PotEng   =         1.2153 E_bond   =         1.2076 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0077 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0298
+Loop time of 0.00573904 on 1 procs for 500 steps with 320 atoms
+
+Performance: 37636950.146 tau/day, 87122.570 timesteps/s, 27.879 Matom-step/s
+97.9% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.00038174 | 0.00038174 | 0.00038174 |   0.0 |  6.65
+Bond    | 4.6881e-05 | 4.6881e-05 | 4.6881e-05 |   0.0 |  0.82
+Neigh   | 0.0011168  | 0.0011168  | 0.0011168  |   0.0 | 19.46
+Comm    | 0.00033699 | 0.00033699 | 0.00033699 |   0.0 |  5.87
+Output  | 0.00031354 | 0.00031354 | 0.00031354 |   0.0 |  5.46
+Modify  | 0.0033092  | 0.0033092  | 0.0033092  |   0.0 | 57.66
+Other   |            | 0.0002339  |            |       |  4.08
+
+Nlocal:            320 ave         320 max         320 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            200 ave         200 max         200 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:             79 ave          79 max          79 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 79
+Ave neighs/atom = 0.246875
+Ave special neighs/atom = 0.11875
+Neighbor list builds = 34
+Dangerous builds = 0
+    undump      D_all
+    next        j
+    jump        ${fname} dump_loop
+    jump        in.multi dump_loop
+    dump        D_all all atom 250 multi.j${j}.all.lammpstrj
+    dump        D_all all atom 250 multi.j2.all.lammpstrj
+    dump_modify D_all scale no
+    restart     1000000 restart.multi
+    run         500
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+WARNING: Fix recenter should come after all other integration fixes (src/fix_recenter.cpp:130)
+WARNING: Communication cutoff 1.4224620000000001 is shorter than a bond length based estimate of 1.7550000000000001. This may lead to errors. (src/comm.cpp:743)
+Per MPI rank memory allocation (min/avg/max) = 6.059 | 6.059 | 6.059 Mbytes
+------------ Step           1000 ----- CPU =            0 (sec) -------------
+TotEng   =         1.9565 KinEng   =         0.7412 Temp     =         0.4957 
+PotEng   =         1.2153 E_bond   =         1.2076 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0077 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0298
+------------ Step           1100 ----- CPU =  0.001076417 (sec) -------------
+TotEng   =         2.0498 KinEng   =         0.8377 Temp     =         0.5602 
+PotEng   =         1.2121 E_bond   =         1.2068 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0053 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0280
+------------ Step           1200 ----- CPU =    0.0021775 (sec) -------------
+TotEng   =         2.1038 KinEng   =         0.8867 Temp     =         0.5930 
+PotEng   =         1.2171 E_bond   =         1.2101 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0069 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0303
+------------ Step           1300 ----- CPU =  0.003448292 (sec) -------------
+TotEng   =         2.1866 KinEng   =         0.9705 Temp     =         0.6491 
+PotEng   =         1.2160 E_bond   =         1.2147 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0013 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0259
+------------ Step           1400 ----- CPU =  0.004579917 (sec) -------------
+TotEng   =         2.2198 KinEng   =         0.9923 Temp     =         0.6636 
+PotEng   =         1.2275 E_bond   =         1.2176 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0099 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0489
+------------ Step           1500 ----- CPU =  0.005748417 (sec) -------------
+TotEng   =         2.3011 KinEng   =         1.0842 Temp     =         0.7251 
+PotEng   =         1.2170 E_bond   =         1.2120 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0050 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0488
+Loop time of 0.00586438 on 1 procs for 500 steps with 320 atoms
+
+Performance: 36832569.541 tau/day, 85260.578 timesteps/s, 27.283 Matom-step/s
+99.1% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.00038817 | 0.00038817 | 0.00038817 |   0.0 |  6.62
+Bond    | 4.4527e-05 | 4.4527e-05 | 4.4527e-05 |   0.0 |  0.76
+Neigh   | 0.0014446  | 0.0014446  | 0.0014446  |   0.0 | 24.63
+Comm    | 0.00031114 | 0.00031114 | 0.00031114 |   0.0 |  5.31
+Output  | 0.00029121 | 0.00029121 | 0.00029121 |   0.0 |  4.97
+Modify  | 0.0031577  | 0.0031577  | 0.0031577  |   0.0 | 53.84
+Other   |            | 0.000227   |            |       |  3.87
+
+Nlocal:            320 ave         320 max         320 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            174 ave         174 max         174 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:             60 ave          60 max          60 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 60
+Ave neighs/atom = 0.1875
+Ave special neighs/atom = 0.11875
+Neighbor list builds = 45
+Dangerous builds = 0
+    undump      D_all
+    next        j
+    jump        ${fname} dump_loop
+    jump        in.multi dump_loop
+    dump        D_all all atom 250 multi.j${j}.all.lammpstrj
+    dump        D_all all atom 250 multi.j3.all.lammpstrj
+    dump_modify D_all scale no
+    restart     1000000 restart.multi
+    run         500
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+WARNING: Fix recenter should come after all other integration fixes (src/fix_recenter.cpp:130)
+WARNING: Communication cutoff 1.4224620000000001 is shorter than a bond length based estimate of 1.7550000000000001. This may lead to errors. (src/comm.cpp:743)
+Per MPI rank memory allocation (min/avg/max) = 6.059 | 6.059 | 6.059 Mbytes
+------------ Step           1500 ----- CPU =            0 (sec) -------------
+TotEng   =         2.3011 KinEng   =         1.0842 Temp     =         0.7251 
+PotEng   =         1.2170 E_bond   =         1.2120 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0050 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0488
+------------ Step           1600 ----- CPU =  0.001155625 (sec) -------------
+TotEng   =         2.3535 KinEng   =         1.1356 Temp     =         0.7594 
+PotEng   =         1.2179 E_bond   =         1.2122 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0057 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0373
+------------ Step           1700 ----- CPU =  0.002304542 (sec) -------------
+TotEng   =         2.3903 KinEng   =         1.1630 Temp     =         0.7778 
+PotEng   =         1.2273 E_bond   =         1.2231 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0042 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0377
+------------ Step           1800 ----- CPU =  0.003672209 (sec) -------------
+TotEng   =         2.4292 KinEng   =         1.1964 Temp     =         0.8001 
+PotEng   =         1.2328 E_bond   =         1.2240 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0088 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0449
+------------ Step           1900 ----- CPU =  0.005095417 (sec) -------------
+TotEng   =         2.4519 KinEng   =         1.2190 Temp     =         0.8152 
+PotEng   =         1.2329 E_bond   =         1.2174 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0155 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0488
+------------ Step           2000 ----- CPU =  0.006265875 (sec) -------------
+TotEng   =         2.4530 KinEng   =         1.2225 Temp     =         0.8175 
+PotEng   =         1.2306 E_bond   =         1.2168 E_angle  =         0.0000 
+E_dihed  =         0.0000 E_impro  =         0.0000 E_vdwl   =         0.0138 
+E_coul   =         0.0000 E_long   =         0.0000 Press    =         0.0442
+Loop time of 0.00638983 on 1 procs for 500 steps with 320 atoms
+
+Performance: 33803695.057 tau/day, 78249.294 timesteps/s, 25.040 Matom-step/s
+98.6% CPU use with 1 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.00040867 | 0.00040867 | 0.00040867 |   0.0 |  6.40
+Bond    | 5.0545e-05 | 5.0545e-05 | 5.0545e-05 |   0.0 |  0.79
+Neigh   | 0.0017484  | 0.0017484  | 0.0017484  |   0.0 | 27.36
+Comm    | 0.00034498 | 0.00034498 | 0.00034498 |   0.0 |  5.40
+Output  | 0.00029908 | 0.00029908 | 0.00029908 |   0.0 |  4.68
+Modify  | 0.0032953  | 0.0032953  | 0.0032953  |   0.0 | 51.57
+Other   |            | 0.0002428  |            |       |  3.80
+
+Nlocal:            320 ave         320 max         320 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:            168 ave         168 max         168 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:             75 ave          75 max          75 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 75
+Ave neighs/atom = 0.234375
+Ave special neighs/atom = 0.11875
+Neighbor list builds = 53
+Dangerous builds = 0
+    undump      D_all
+    next        j
+    jump        ${fname} dump_loop
+    jump        in.multi dump_loop
+undump          D_bug
+write_data      multi.all.data pair ij
+System init for write_data ...
+Generated 0 of 1 mixed pair_coeff terms from geometric mixing rule
+WARNING: Fix recenter should come after all other integration fixes (src/fix_recenter.cpp:130)
+WARNING: Communication cutoff 1.4224620000000001 is shorter than a bond length based estimate of 1.7550000000000001. This may lead to errors. (src/comm.cpp:743)
+Total wall time: 0:00:00

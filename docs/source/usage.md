@@ -145,3 +145,40 @@ such as the complementary percentage `pct_two = 100 - pct_one` of
 See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.
+
+## Reading LAMMPS log files
+
+`read_log` reads a LAMMPS log into a `LammpsLog` record of three DataFrames:
+`thermo` holds one row per thermo output step of every run, `run_stats` one
+row per run from the summary LAMMPS prints after it, and `wall_time` the total
+wall time. A log holds one run per `run` or `minimize` command, so a
+production loop of `run` commands gives one run per iteration; the `run`
+column, counted from 0 in log order, picks runs:
+
+```python
+from polyphys.manage.lammps_log import read_log
+
+log = read_log("log.lammps")
+production = log.thermo[log.thermo["run"] >= 2]
+timing = log.run_stats[["run", "loop_time", "timesteps_per_s"]]
+```
+
+The thermo styles `one`, `custom`, `multi`, and `yaml` are all read.
+`WARNING` and `fix halt` lines inside a table are skipped and logged at level
+INFO, which `logging.basicConfig(level=logging.INFO)` shows. A log cut off
+before a run's `Loop time of` line, as after a walltime kill, or one that
+stopped with an `ERROR` raises `BrokenLogError`, so a loop over many logs can
+skip it:
+
+```python
+from polyphys.manage.lammps_log import BrokenLogError, read_log
+
+for path in paths:
+    try:
+        log = read_log(path)
+    except BrokenLogError as err:
+        print(f"skipped {path}: {err}")
+```
+
+`parse_log` does the same for text already in memory, such as a member of a
+tarball.
