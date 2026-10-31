@@ -67,5 +67,5 @@
     xfail_strict = true
 
 [tool.mypy]
-    files = ["polyphys/analyze", "polyphys/manage"]
+    files = ["polyphys/analyze", "polyphys/manage", "polyphys/simulate"]
     strict = true
