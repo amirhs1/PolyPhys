@@ -49,7 +49,7 @@ label `area:<word>`. Scope and area are one list.
 
 ```text
 types: feat fix docs test refactor chore release question
-areas: analyze manage packaging guide ci agents deps
+areas: analyze manage simulate packaging guide ci agents deps
 ```
 
 | Type       | Means                                                                                              |
@@ -67,6 +67,7 @@ areas: analyze manage packaging guide ci agents deps
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `analyze`   | `polyphys/analyze/`, `polyphys/tests/analyze/`                                                                                    |
 | `manage`    | `polyphys/manage/`, `polyphys/tests/manage/`                                                                                      |
+| `simulate`  | `polyphys/simulate/`, `polyphys/tests/simulate/`                                                                                  |
 | `packaging` | `pyproject.toml`, `polyphys/__version__.py`, `polyphys/tests/test_packaging.py`, `CITATION.cff`, `AUTHORS.rst`                    |
 | `guide`     | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/`, `.github/ISSUE_TEMPLATE/`                                 |
 | `ci`        | `.github/workflows/`, `.github/dependabot.yml`                                                                                    |

@@ -144,6 +144,7 @@ your role in each tier. Change both in the same commit.
 | --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------- |
 | `polyphys/analyze/`                                       | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/simulate/`                                      | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `docs/`                                                   | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 

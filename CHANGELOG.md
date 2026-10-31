@@ -24,6 +24,7 @@ version increase may introduce incompatible changes.
 - Log instead of printing in `polyphys.manage`, and let an error raised inside `openany_context` propagate unchanged ([#107](https://github.com/amirhs1/PolyPhys/pull/107), `496ca9b`)
 - Document that rebuilt `segment` and `whole` names carry no topology suffix, as since v0.3.0 ([#108](https://github.com/amirhs1/PolyPhys/pull/108), `f7f44dc`). SciOps stamps of an artifact parsed from a whole file key the whole as `…ens1.ring`; append `.<topology>` to the new name to match them.
 - Define each commit type in `CONTRIBUTING.md`, "Names", drop type `ci`, and rename area `docs` to `guide` ([#123](https://github.com/amirhs1/PolyPhys/pull/123))
+- Add area `simulate` in `CONTRIBUTING.md`, "Names", for `polyphys/simulate/` and `polyphys/tests/simulate/`, and give `polyphys/simulate/` the Instrumented tier in `AGENTS.md` and the README ([#125](https://github.com/amirhs1/PolyPhys/pull/125))
 
 ### Added
 
