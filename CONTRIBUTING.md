@@ -91,3 +91,11 @@ for a feature request, and `type:question` for a question.
 - `AGENTS.md`, "Git"
 
 Each of these cites this section.
+
+## Releases
+
+A milestone is released from `main` as soon as its last issue closes, and
+before any pull request that closes an issue of a later milestone merges.
+Each release is tagged on `main`; never tag an older commit to leave later
+work out. The `draft-release` skill checks this, and stops when `main`
+already holds later work.
