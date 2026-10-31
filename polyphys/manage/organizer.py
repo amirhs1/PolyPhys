@@ -1780,7 +1780,7 @@ def space_tseries(
     hierarchy: str,
     physical_attrs: list[str],
     group: GroupT,
-    dump_key: str,
+    *,
     divisor: float = 0.025,
     round_to: int = 3,
     is_save: bool | None = False,
@@ -1808,10 +1808,8 @@ def space_tseries(
         List of physical attributes to add as new columns in the output
         DataFrame.
     group : GroupT
-        Particle group type.
-    dump_key : str
-        Dumping attribute/keyword used to extract dumping frequency from an
-        instance of the `parser`.
+        Particle group type. Its trajectory's dump period, in time steps,
+        is the `parser` attribute named by ``dump_keyword``.
     divisor : float, default 0.025
         Rounding step for the crowder volume fraction named by
         `crowder_attr`.
@@ -1833,15 +1831,15 @@ def space_tseries(
     pd.DataFrame
         Concatenated DataFrame of all time-series with added physical
         attributes. Besides the columns of each file, it has ``t_index``
-        (the frame index times the dump frequency named by `dump_key`),
+        (the frame index times the dump period of the `group` trajectory),
         ``time`` (``t_index`` times the parser's ``dt``), one column per
         entry in `physical_attrs`, a `crowder_attr` column, and
         ``phi_c_bulk_round``.
 
     Examples
     --------
-    One ensemble-averaged time series of two frames, dumped every 5000
-    steps of 0.005 time units:
+    One ensemble-averaged time series of two frames of the ``bug``
+    trajectory, dumped every 1000 steps (``bdump``) of 0.005 time units:
 
     >>> import tempfile
     >>> from polyphys.manage.parser import SumRuleCyl
@@ -1852,11 +1850,11 @@ def space_tseries(
     >>> pd.DataFrame({'gyrTMon-mean': [1.0, 2.0]}).to_csv(
     ...     database / f'{state}-bug-gyrTMon-ensAvg.csv', index=False)
     >>> space = space_tseries(str(database) + '/', 'gyrTMon', SumRuleCyl,
-    ...                       'N*', ['nmon'], 'bug', 'adump')
+    ...                       'N*', ['nmon'], 'bug')
     >>> space[['t_index', 'time', 'gyrTMon-mean', 'nmon']]
        t_index  time  gyrTMon-mean  nmon
     0        0   0.0           1.0    20
-    1     5000  25.0           2.0    20
+    1     1000   5.0           2.0    20
     >>> tmp.cleanup()
 
     Notes
@@ -1886,8 +1884,8 @@ def space_tseries(
         ens_avg.reset_index(inplace=True)
         ens_avg.rename(columns={"index": "t_index"}, inplace=True)
 
-        # Calculate `t_index` and `time` columns based on `dumping_freq`
-        ens_avg["t_index"] *= getattr(prop_info, dump_key)
+        # Scale frame indices by the dump period of the group's trajectory
+        ens_avg["t_index"] *= getattr(prop_info, prop_info.dump_keyword)
         ens_avg["time"] = ens_avg["t_index"] * getattr(prop_info, "dt")
 
         # Add physical attributes

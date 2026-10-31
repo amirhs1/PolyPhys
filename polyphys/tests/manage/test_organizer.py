@@ -11,8 +11,9 @@ that rule. Expected lineage names come from the parser applied to the
 written filename, never from the strings the tree builds.
 
 The space tests build a small ``analysis`` phase on disk; their expected
-``t_index`` and ``time`` values come from the ``adump`` and ``dt`` fields
-encoded in the filenames. The stamp tests use the column layout of the
+``t_index`` and ``time`` values come from the ``dt`` field and the dump
+period of the group's trajectory (``adump`` for ``all``, ``bdump`` for
+``bug``) encoded in the filenames. The stamp tests use the column layout of the
 SciOps probe phase's stamp files: genealogy columns, parser attributes, and
 ``n_frames``.
 """
@@ -964,23 +965,24 @@ def space_states():
 def make_ens_avg_space(tmp_path, space_states):
     """Factory: write one ensAvg CSV per state point, plus a decoy file.
 
-    Takes the property and one '-mean' column per state point; '-var' and
-    '-sem' are constant. Returns the ensAvg directory, ending with '/'.
+    Takes the property, one '-mean' column per state point, and the group
+    (default 'all'); '-var' and '-sem' are constant. Returns the ensAvg
+    directory, ending with '/'.
     """
 
-    def _make(prop, means):
-        ens_avg_dir = tmp_path / "analysis" / "N200-all-ensAvg"
+    def _make(prop, means, group="all"):
+        ens_avg_dir = tmp_path / "analysis" / f"N200-{group}-ensAvg"
         ens_avg_dir.mkdir(parents=True)
         for state, mean in zip(space_states, means):
             pd.DataFrame({
                 f"{prop}-mean": mean,
                 f"{prop}-var": np.full(len(mean), 0.1),
                 f"{prop}-sem": np.full(len(mean), 0.05),
-            }).to_csv(ens_avg_dir / f"{state}-all-{prop}-ensAvg.csv",
+            }).to_csv(ens_avg_dir / f"{state}-{group}-{prop}-ensAvg.csv",
                       index=False)
         # A file of another property in the same directory must be ignored.
         pd.DataFrame({"other-mean": [1.0]}).to_csv(
-            ens_avg_dir / f"{space_states[0]}-all-other-ensAvg.csv",
+            ens_avg_dir / f"{space_states[0]}-{group}-other-ensAvg.csv",
             index=False,
         )
         return str(ens_avg_dir) + "/"
@@ -1006,7 +1008,7 @@ def test_space_tseries_concatenates_ensembles(make_ens_avg_space,
         "gyrTMon", [[0.0, 1.0, 2.0], [10.0, 11.0, 12.0]]
     )
     space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", ["dcyl"],
-                          "all", "adump")
+                          "all")
     assert list(space.index) == list(range(6))
     assert "other-mean" not in space.columns
     # Files are sorted by name, so the nc1000 rows come first.
@@ -1017,14 +1019,32 @@ def test_space_tseries_concatenates_ensembles(make_ens_avg_space,
 
 
 def test_space_tseries_scales_t_index_and_time(make_ens_avg_space):
-    """t_index is frame index times adump; time is t_index times dt."""
+    """For all, t_index is frame index times adump; time is t_index * dt."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
-                          "adump")
+    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all")
     frames = np.array([0, 1, 2, 0, 1, 2])
     # adump = 5000 and dt = 0.005 in the filenames
     np.testing.assert_array_equal(space["t_index"], frames * 5000)
     np.testing.assert_allclose(space["time"], frames * 5000 * 0.005)
+
+
+def test_space_tseries_scales_bug_by_bdump(make_ens_avg_space):
+    """For bug, t_index is frame index times bdump, not adump."""
+    database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2,
+                                  group="bug")
+    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "bug")
+    frames = np.array([0, 1, 2, 0, 1, 2])
+    # bdump = 2000 and dt = 0.005 in the filenames
+    np.testing.assert_array_equal(space["t_index"], frames * 2000)
+    np.testing.assert_allclose(space["time"], frames * 2000 * 0.005)
+
+
+def test_space_tseries_rejects_dump_key_argument(make_ens_avg_space):
+    """A dump keyword passed by position fails instead of binding divisor."""
+    database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
+    with pytest.raises(TypeError, match="takes 6 positional arguments"):
+        space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
+                      "adump")
 
 
 def test_space_tseries_adds_phi_bulk_c_by_default(make_ens_avg_space,
@@ -1032,7 +1052,7 @@ def test_space_tseries_adds_phi_bulk_c_by_default(make_ens_avg_space,
     """The crowder fraction comes from phi_bulk_c without being listed."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
     space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", ["dcyl"],
-                          "all", "adump")
+                          "all")
     assert "phi_c_bulk" not in space.columns
     np.testing.assert_allclose(space["phi_bulk_c"],
                                state_attr("phi_bulk_c", 3))
@@ -1044,7 +1064,7 @@ def test_space_tseries_rounds_crowder_with_round_to_multiple(
     """phi_c_bulk_round is round_to_multiple of the crowder column."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
     space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
-                          "adump", divisor=0.05, round_to=2)
+                          divisor=0.05, round_to=2)
     expected = space["phi_bulk_c"].apply(round_to_multiple, args=(0.05, 2))
     np.testing.assert_array_equal(space["phi_c_bulk_round"], expected)
 
@@ -1054,7 +1074,7 @@ def test_space_tseries_reads_named_crowder_attr(make_ens_avg_space,
     """crowder_attr selects the parser attribute that is rounded."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
     space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
-                          "adump", crowder_attr="phi_bulk_m")
+                          crowder_attr="phi_bulk_m")
     assert "phi_bulk_c" not in space.columns
     np.testing.assert_allclose(space["phi_bulk_m"],
                                state_attr("phi_bulk_m", 3))
@@ -1064,7 +1084,7 @@ def test_space_tseries_saves_space_csv(tmp_path, make_ens_avg_space):
     """is_save writes the returned frame to the analysis space directory."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
     space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", ["dcyl"],
-                          "all", "adump", is_save=True)
+                          "all", is_save=True)
     saved = tmp_path / "analysis" / "N200-all-space" / \
         "N200-all-gyrTMon-space.csv"
     pd.testing.assert_frame_equal(pd.read_csv(saved), space)
@@ -1145,16 +1165,17 @@ def test_lineage_saved_ens_avg_feeds_space_tseries(tmp_path, segment_tree):
     ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "vector")
     ensemble_avg("gyrTMon", ens, "bug", "dataframe", save_to=ens_avg_dir)
     space = space_tseries(str(ens_avg_dir) + "/", "gyrTMon", SumRuleCyl,
-                          "N*", [], "bug", "adump")
+                          "N*", [], "bug")
     # 2 ensembles x 6 frames; ensemble 2 is 1000 above ensemble 1
     np.testing.assert_allclose(
         space["gyrTMon-mean"],
         [1160.0, 1161.0, 1162.0, 1170.0, 1171.0, 1172.0,
          2160.0, 2161.0, 2162.0, 2170.0, 2171.0, 2172.0],
     )
-    # adump = 5000 in the tree's filenames
+    # bdump = 1000, the dump period of the bug trajectory, in the tree's
+    # filenames
     np.testing.assert_array_equal(
-        space["t_index"], np.tile(np.arange(6), 2) * 5000
+        space["t_index"], np.tile(np.arange(6), 2) * 1000
     )
 
 
