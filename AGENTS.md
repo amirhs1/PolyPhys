@@ -30,7 +30,7 @@ Run the full gate before calling a change complete, and report the actual
 output, not the expected output. Do not describe a change as working because it
 reads correctly. Run existing non-destructive checks without asking; start with
 the narrowest relevant one, such as the changed test module, and broaden when
-warranted. CI runs the full Python matrix (3.11–3.13) and builds the package on
+warranted. CI runs the full Python matrix (3.11–3.14) and builds the package on
 every pull request; say how far your local checks reach. Once per clone, run
 `git config core.hooksPath .githooks` to turn on the `commit-msg` hook.
 
