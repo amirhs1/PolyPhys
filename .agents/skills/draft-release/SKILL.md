@@ -7,8 +7,8 @@ disable-model-invocation: true
 # Draft a release
 
 A release is tagged on `main`, once its milestone is complete and before work
-of a later milestone merges. Never tag an older commit to leave later work
-out; stop and report instead.
+of a later milestone merges, as CONTRIBUTING.md, "Releases", sets it. Never
+tag an older commit to leave later work out; stop and report instead.
 
 1. Check the branch, the working tree, and `HEAD`: on `main`, clean, and
    level with `origin/main`.
