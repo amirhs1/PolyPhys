@@ -202,6 +202,7 @@ records the checks or human review applied to each part:
 | --------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `polyphys/analyze/`                                       | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; maintainer review                                            |
 | `polyphys/manage/`                                        | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; parser tests for filename-parsing changes; maintainer review |
+| `polyphys/simulate/`                                      | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; tests against LAMMPS-written files; maintainer review        |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review                          |
 | `docs/`                                                   | Instrumented | CI: Sphinx build with warnings as errors for `docs/source/`; maintainer review                                           |
 
