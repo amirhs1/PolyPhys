@@ -153,7 +153,7 @@ to the artifact-lineage model.
 
 ## Reading LAMMPS log files
 
-`read_log` reads a LAMMPS log into a `LammpsLog` record of three DataFrames:
+`read_log` reads a LAMMPS log into a `LogFile` record of three DataFrames:
 `thermo` holds one row per thermo output step of every run, `run_stats` one
 row per run from the summary LAMMPS prints after it, and `wall_time` the total
 wall time. A log holds one run per `run` or `minimize` command, so a
@@ -161,7 +161,7 @@ production loop of `run` commands gives one run per iteration; the `run`
 column, counted from 0 in log order, picks runs:
 
 ```python
-from polyphys.manage.lammps_log import read_log
+from polyphys.simulate.log import read_log
 
 log = read_log("log.lammps")
 production = log.thermo[log.thermo["run"] >= 2]
@@ -176,7 +176,7 @@ stopped with an `ERROR` raises `BrokenLogError`, so a loop over many logs can
 skip it:
 
 ```python
-from polyphys.manage.lammps_log import BrokenLogError, read_log
+from polyphys.simulate.log import BrokenLogError, read_log
 
 for path in paths:
     try:

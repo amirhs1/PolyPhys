@@ -1,4 +1,4 @@
-"""Tests for :mod:`polyphys.manage.lammps_log`.
+"""Tests for :mod:`polyphys.simulate.log`.
 
 Tier A tests parse synthetic logs assembled in the test; each expected value
 is a number the test writes into the log, so the parser must read it back
@@ -10,6 +10,7 @@ expected values were read from the log text with ``grep`` and ``awk``, not
 from the parser.
 """
 
+import gzip
 import logging
 from pathlib import Path
 from typing import Callable, Sequence
@@ -18,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from polyphys.manage.lammps_log import (
+from polyphys.simulate.log import (
     BrokenLogError,
     _lammps_version,
     parse_log,
@@ -182,7 +183,7 @@ def test_parse_log_logs_skipped_message_with_line_number(make_log, caplog):
     text = make_log(["Step Temp", "0 1.0",
                      "WARNING: Lost atoms: original 20 current 19"])
 
-    with caplog.at_level(logging.INFO, logger="polyphys.manage.lammps_log"):
+    with caplog.at_level(logging.INFO, logger="polyphys.simulate.log"):
         parse_log(text)
 
     assert "line 5" in caplog.text
@@ -505,6 +506,17 @@ def test_read_log_accepts_str_and_path(make_log, tmp_path, as_type):
     log = read_log(as_type(path))
 
     assert log.path == path
+
+
+def test_read_log_reads_a_gzipped_log(make_log, tmp_path):
+    """A log whose name ends in .gz is read through gzip."""
+    path = tmp_path / "log.lammps.gz"
+    with gzip.open(path, "wt") as stream:
+        stream.write(make_log(["Step Temp", "0 1.5", "100 0.5"]))
+
+    log = read_log(path)
+
+    assert log.thermo["Temp"].tolist() == [1.5, 0.5]
 
 
 # LAMMPS-written fixtures (tier B) -------------------------------------------

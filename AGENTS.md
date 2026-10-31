@@ -22,7 +22,7 @@ commit it, and never copy its contents into a tracked file.
 | Run all tests        | `python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
 | Run one test         | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                         |
 | Lint / format        | `python -m flake8 polyphys`                                                                                                                  |
-| Type-check           | `python -m mypy polyphys/analyze polyphys/manage`                                                                                            |
+| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/simulate`                                                                          |
 | Docs                 | `python -m sphinx -W -b html docs/source docs/_build`                                                                                        |
 | Full pre-commit gate | Lint, type-check, and all tests; add the build after a packaging change and the docs build when `docs/source/` changed                      |
 
@@ -51,7 +51,8 @@ every pull request; say how far your local checks reach. Once per clone, run
 PolyPhys/
   polyphys/manage/     parser, organizer, utils, types: filenames → lineage → reduced ensembles
   polyphys/analyze/    measurer: per-frame structural observables and histograms
-  polyphys/tests/      tests for analyze/, manage/, and packaging
+  polyphys/simulate/   core, log: LAMMPS logs and the shared box
+  polyphys/tests/      tests for analyze/, manage/, simulate/, and packaging
   docs/source/         Sphinx sources
   README.md            user guide; its examples run as doctests
   AI-POLICY.md         AI policy, for contributors
