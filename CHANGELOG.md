@@ -179,6 +179,7 @@ version increase may introduce incompatible changes.
   `rho_bulk_m` and not `phi_bulk_m`. Stamps written from now on gain a
   `phi_bulk_m` column; no value changes
   ([#103](https://github.com/amirhs1/PolyPhys/issues/103)).
+- Replace the eight `inplace=True` pandas calls in `polyphys.manage.organizer`, which pandas 3.1 deprecates with `Pandas4Warning`; results are unchanged ([#115](https://github.com/amirhs1/PolyPhys/issues/115), [#120](https://github.com/amirhs1/PolyPhys/pull/120), `3fea0e8`)
 
 ## [0.5.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.5.0) - 2026-10-31
 
