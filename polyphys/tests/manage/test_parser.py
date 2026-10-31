@@ -690,6 +690,7 @@ def chain_declaration() -> dict[str, Any]:
         '_geometry': 'cubic',
         '_topology': 'linear',
         '_groups': ['bug', 'all'],
+        '_dump_keywords': {'bug': 'bdump', 'all': 'adump'},
         '_keywords': {
             'N': KeywordSpec('nmon', int),
             'ac': KeywordSpec('dcrowd', float),
@@ -705,7 +706,7 @@ def chain_declaration() -> dict[str, Any]:
             'ensemble': ('N', 'ac', 'nc'),
             'space': ('N', 'ac'),
         },
-        '_defaults': {'dmon': 1.0},
+        '_defaults': {'dmon': 1.0, 'bdump': 1000, 'adump': 5000},
         '_species': (Species('m', 'nmon', 'dmon'),
                      Species('c', 'ncrowd', 'dcrowd')),
         '_project_attributes': {
@@ -875,6 +876,59 @@ def test_parser_reports_geometry_topology_and_groups(
 
     assert (parser.geometry, parser.topology, parser.groups) == (
         geometry, topology, groups)
+
+
+@pytest.mark.parametrize('parser_class, artifact, group, dump_keywords', [
+    pytest.param(TwoMonDepCub, 'nm2am5.0ac1.0nc100', 'bug',
+                 {'bug': 'bdump', 'all': 'adump'}, id='TwoMonDepCub'),
+    pytest.param(SumRuleCyl, 'N2000D20.0ac1.0', 'bug',
+                 {'bug': 'bdump', 'all': 'adump'}, id='SumRuleCyl'),
+    pytest.param(SumRuleCubHeteroRing, 'ns400nl5al5ac3', 'all',
+                 {'bug': 'bdump', 'all': 'adump'},
+                 id='SumRuleCubHeteroRing'),
+    pytest.param(SumRuleCubHeteroLinear, 'ns400nl5al6ac3', 'all',
+                 {'bug': 'bdump', 'all': 'adump'},
+                 id='SumRuleCubHeteroLinear'),
+    pytest.param(TransFociCyl, 'ns400nl5al3D20.0ac1', 'bug',
+                 {'bug': 'bdump', 'all': 'adump'}, id='TransFociCyl'),
+    pytest.param(TransFociCub, 'ns400nl5al5ac1', 'all',
+                 {'bug': 'bdump', 'all': 'adump'}, id='TransFociCub'),
+    pytest.param(HnsCub, 'N200kbmm2nh12ac2.0epshc1', 'nucleoid',
+                 {'nucleoid': 'ndump', 'all': 'adump'}, id='HnsCub'),
+    pytest.param(HnsCyl, 'N200D8nh4ac1epshc1.0', 'all',
+                 {'nucleoid': 'ndump', 'all': 'adump'}, id='HnsCyl'),
+    pytest.param(SumRuleCubHeteroRingBiDisperse, 'al4nl5ns400ac1ab5pctc40',
+                 'bug', {'bug': 'bdump', 'all': 'adump'},
+                 id='SumRuleCubHeteroRingBiDisperse'),
+])
+def test_parser_maps_each_group_to_its_dump_keyword(
+        parser_class, artifact, group, dump_keywords):
+    """Each group's dump keyword names the period of its own trajectory."""
+    parser = parser_class(artifact, 'space', group)
+
+    assert parser.dump_keywords == dump_keywords
+
+
+@pytest.mark.parametrize('parser_class, artifact, group, keyword, period', [
+    pytest.param(SumRuleCyl,
+                 'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                 'adump5000ens1', 'bug', 'bdump', 2000, id='SumRuleCyl-bug'),
+    pytest.param(SumRuleCyl,
+                 'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
+                 'adump5000ens1', 'all', 'adump', 5000, id='SumRuleCyl-all'),
+    # HnsCub names carry no dump periods; they are fixed in _defaults.
+    pytest.param(HnsCub, 'N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring',
+                 'nucleoid', 'ndump', 5000, id='HnsCub-nucleoid'),
+    pytest.param(HnsCub, 'N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring',
+                 'all', 'adump', 10000, id='HnsCub-all'),
+])
+def test_dump_keyword_reads_the_group_dump_period(
+        parser_class, artifact, group, keyword, period):
+    """dump_keyword names the attribute holding the group's dump period."""
+    parser = parser_class(artifact, 'whole', group)
+
+    assert (parser.dump_keyword, getattr(parser, parser.dump_keyword)) == (
+        keyword, period)
 
 
 @pytest.mark.parametrize('parser_class, artifact, group, attrs, expected', [
@@ -1859,6 +1913,21 @@ def test_declared_parser_parses_its_names(chain_declaration):
 
 @pytest.mark.parametrize('override, match', [
     pytest.param({'_geometry': None}, 'must declare', id='no-geometry'),
+    pytest.param({'_dump_keywords': None}, "'_dump_keywords'",
+                 id='no-dump-keywords'),
+    pytest.param({'_dump_keywords': {'bug': 'bdump'}},
+                 "_dump_keywords must have one entry per group",
+                 id='group-no-dump-keyword'),
+    pytest.param(
+        {'_dump_keywords': {'bug': 'bdump', 'all': 'adump',
+                            'nucleoid': 'ndump'}},
+        "_dump_keywords must have one entry per group",
+        id='dump-keyword-of-undeclared-group'),
+    pytest.param(
+        {'_dump_keywords': {'bug': 'tdump', 'all': 'adump'}},
+        "the dump keyword 'tdump' of group 'bug' is not set by the "
+        "'segment' pattern or '_defaults'",
+        id='dump-keyword-not-set'),
     pytest.param(
         {'_patterns': {'segment': ('N', 'ac', 'nc', 'l', 'ens', 'j'),
                        'whole': ('N', 'ac', 'nc', 'l', 'ens'),

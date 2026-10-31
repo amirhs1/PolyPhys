@@ -87,8 +87,9 @@ its lineage and reading the rebuilt name gives the current form.
 ## Declaring a parser for a new study
 
 A parser class is a declaration: it lists the study's filename keywords, the
-order in which each lineage writes them, any fixed values, and the particle
-species whose bulk number density and volume fraction to compute.
+order in which each lineage writes them, any fixed values, the particle
+species whose bulk number density and volume fraction to compute, and the
+attribute that holds each group's dump period (here fixed in `_defaults`).
 `ParserBase` does the parsing. Each keyword gets a `KeywordSpec` naming the
 attribute that stores its value and the value's type; a `float` keyword may
 also convert the value as `scale * value + offset`, here `lcube = 2 l` from
@@ -100,6 +101,7 @@ the half-side `l`:
 ...     _geometry = 'cubic'
 ...     _topology = 'linear'
 ...     _groups = ['bug', 'all']
+...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
 ...     _keywords = {
 ...         'N': KeywordSpec('nmon', int),
 ...         'ac': KeywordSpec('dcrowd', float),
@@ -115,7 +117,7 @@ the half-side `l`:
 ...         'ensemble': ('N', 'ac', 'nc'),
 ...         'space': ('N', 'ac'),
 ...     }
-...     _defaults = {'dmon': 1.0}
+...     _defaults = {'dmon': 1.0, 'bdump': 1000, 'adump': 5000}
 ...     _species = (Species('m', 'nmon', 'dmon'),
 ...                 Species('c', 'ncrowd', 'dcrowd'))
 ...     _project_attributes = {
@@ -128,12 +130,15 @@ the half-side `l`:
 >>> artifact = ChainCub('N100ac2.0nc50l10.0ens1.bug', 'whole', 'bug')
 >>> artifact.lcube, artifact.ensemble, artifact.space
 (20.0, 'N100ac2nc50', 'N100ac2')
+>>> artifact.dump_keyword, artifact.bdump
+('bdump', 1000)
 
 ```
 
 The declaration is checked when the class is created: a pattern keyword
-without a `KeywordSpec`, an attribute that appears twice in one pattern, or a
-species whose size or number no long-form name sets raises `TypeError`. A
+without a `KeywordSpec`, an attribute that appears twice in one pattern, a
+species whose size or number no long-form name sets, or a group without a
+dump keyword raises `TypeError`. A
 name that lacks a keyword of its lineage's pattern, or whose value is not a
 number, raises `ValueError` naming the keyword, the lineage, and the name.
 

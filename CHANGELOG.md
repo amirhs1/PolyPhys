@@ -85,6 +85,12 @@ version increase may introduce incompatible changes.
   runs draw the same inputs every time. The Testing page describes both
   ([#83](https://github.com/amirhs1/PolyPhys/issues/83)).
 
+- `ParserBase.dump_keywords` in `polyphys.manage.parser` maps each particle
+  group to the attribute that holds the dump period, in time steps, of its
+  trajectory, and `dump_keyword` gives the one for a parser's own group:
+  `bdump` for `bug`, `ndump` for `nucleoid`, and `adump` for `all` in every
+  project parser ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
+
 ### Changed
 
 - `.gitignore` no longer excludes `*.png`, so documentation figures can be
@@ -187,6 +193,15 @@ version increase may introduce incompatible changes.
   from coverage because CI never runs it
   ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
 
+- **Breaking:** every concrete parser in `polyphys.manage.parser` declares
+  `_dump_keywords`, one entry per group, each naming an attribute that the
+  `segment`, `whole`, and `ensemble_long` patterns or `_defaults` set; a
+  subclass that lacks it, or whose entries do not match `_groups`, raises
+  `TypeError` when it is created. To migrate a parser declared outside
+  PolyPhys, add `_dump_keywords`, for example
+  `{'bug': 'bdump', 'all': 'adump'}`
+  ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
+
 ### Removed
 
 - **Breaking:** the `bin_range` argument of `radial_histogram`,
@@ -196,6 +211,18 @@ version increase may introduce incompatible changes.
   `np.histogram2d` as `range`, which NumPy ignores when the bins are given as
   edges, so they never clipped anything. Drop the argument from each call;
   the counts are unchanged ([#46](https://github.com/amirhs1/PolyPhys/issues/46)).
+
+- **Breaking:** the `dump_key` argument of `space_tseries` in
+  `polyphys.manage.organizer`. The frame index is now scaled by the dump
+  period of the `group` trajectory, which the parser names through
+  `dump_keyword`, and the arguments after `group` are keyword-only, so a call
+  that still passes a dump keyword by position raises `TypeError`. To
+  migrate, drop the dump keyword and pass `divisor`, `round_to`, `is_save`,
+  and `crowder_attr` by name. A call that paired a group with another
+  group's dump keyword, such as `'bug'` with `'adump'`, now gets the group's
+  own period, so its `t_index` and `time` change; a call that passed the
+  group's own keyword gets the same values
+  ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
 
 ### Fixed
 

@@ -306,6 +306,9 @@ class ParserBase:
         hyphen.
     group : :py:data:`GroupT`
         Particle group type in the project.
+    dump_keyword : str
+        The attribute that holds the dump period, in time steps, of the
+        `group` trajectory: ``dump_keywords[group]``.
     lineage : :py:data:`LineageT`
         The lineage of the artifact.
     project_name : str
@@ -338,6 +341,9 @@ class ParserBase:
         Specifies how particles are connected (or not) in the system.
     groups : list of :py:data:`GroupT`
         Allowed particle groups in the system.
+    dump_keywords : dict of (:py:data:`GroupT` -> str)
+        Each group mapped to the attribute that holds the dump period, in
+        time steps, of its trajectory.
     genealogy_attributes : dict of (\
 :py:data:`LineageT` -> OrderedDict[str, str])
         Each lineage mapped to an OrderedDict of attribute names and their
@@ -359,6 +365,10 @@ class ParserBase:
         The polymer topology.
     _groups : list of :py:data:`GroupT`
         The particle groups.
+    _dump_keywords : dict of (:py:data:`GroupT` -> str)
+        As `dump_keywords` above, one entry per group. Each attribute is set
+        at ``segment``, ``whole``, and ``ensemble_long``, by the pattern or
+        by `_defaults`.
     _keywords : dict of (str -> :class:`KeywordSpec`)
         Each filename keyword mapped to how its value is read.
     _patterns : dict of (:py:data:`LineageT` -> tuple of str)
@@ -409,12 +419,14 @@ class ParserBase:
     Examples
     --------
     A parser for a hypothetical study of a linear chain among crowders in a
-    periodic cube:
+    periodic cube, whose ``bug`` and ``all`` trajectories are dumped every
+    1000 and 5000 time steps:
 
     >>> class ChainCub(ParserBase):
     ...     _geometry = 'cubic'
     ...     _topology = 'linear'
     ...     _groups = ['bug', 'all']
+    ...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     ...     _keywords = {
     ...         'N': KeywordSpec('nmon', int),
     ...         'ac': KeywordSpec('dcrowd', float),
@@ -430,7 +442,7 @@ class ParserBase:
     ...         'ensemble': ('N', 'ac', 'nc'),
     ...         'space': ('N', 'ac'),
     ...     }
-    ...     _defaults = {'dmon': 1.0}
+    ...     _defaults = {'dmon': 1.0, 'bdump': 1000, 'adump': 5000}
     ...     _species = (Species('m', 'nmon', 'dmon'),
     ...                 Species('c', 'ncrowd', 'dcrowd'))
     ...     _project_attributes = {
@@ -450,6 +462,8 @@ class ParserBase:
     ('N100ac2.0nc50l10.0', 'N100ac2nc50', 'N100ac2')
     >>> artifact.filepath is None, artifact.ext is None
     (True, True)
+    >>> artifact.dump_keyword, getattr(artifact, artifact.dump_keyword)
+    ('bdump', 1000)
     """
     _lineages: ClassVar[list[LineageT]] = \
         ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
@@ -464,6 +478,7 @@ class ParserBase:
     _geometry: ClassVar[GeometryT]
     _topology: ClassVar[TopologyT]
     _groups: ClassVar[list[GroupT]]
+    _dump_keywords: ClassVar[dict[GroupT, str]]
     _keywords: ClassVar[Optional[dict[str, KeywordSpec]]] = None
     _patterns: ClassVar[Optional[dict[LineageT, tuple[str, ...]]]] = None
     _defaults: ClassVar[dict[str, float]] = {}
@@ -502,11 +517,12 @@ class ParserBase:
         ------
         TypeError
             If a required class attribute is unset; if a lineage has no
-            pattern or no project attributes; if a pattern keyword has no
-            :class:`KeywordSpec`; if an attribute appears twice in one
-            pattern; if the bulk recipe reads an attribute a ``segment``,
-            ``whole``, or ``ensemble_long`` name does not set; or if a total
-            names an undeclared species.
+            pattern or no project attributes; if a group has no dump
+            keyword, or a dump keyword names no group; if a pattern keyword
+            has no :class:`KeywordSpec`; if an attribute appears twice in
+            one pattern; if the bulk recipe or a dump keyword reads an
+            attribute a ``segment``, ``whole``, or ``ensemble_long`` name
+            does not set; or if a total names an undeclared species.
         """
         name = cls.__name__
         keywords = cls._keywords
@@ -514,16 +530,22 @@ class ParserBase:
         geometry: Optional[GeometryT] = getattr(cls, '_geometry', None)
         if (geometry is None or getattr(cls, '_topology', None) is None
                 or getattr(cls, '_groups', None) is None
+                or getattr(cls, '_dump_keywords', None) is None
                 or keywords is None or patterns is None
                 or getattr(cls, '_project_attributes', None) is None):
             raise TypeError(
                 f"{name} must declare '_geometry', '_topology', '_groups', "
-                "'_keywords', '_patterns', and '_project_attributes'.")
+                "'_dump_keywords', '_keywords', '_patterns', and "
+                "'_project_attributes'.")
         for table in ('_patterns', '_project_attributes'):
             if set(getattr(cls, table)) != set(cls._lineages):
                 raise TypeError(
                     f"{name}.{table} must have one entry per lineage: "
                     f"{cls._lineages}.")
+        if set(cls._dump_keywords) != set(cls._groups):
+            raise TypeError(
+                f"{name}._dump_keywords must have one entry per group: "
+                f"{cls._groups}.")
         for lineage, pattern in patterns.items():
             for keyword in pattern:
                 if keyword not in keywords:
@@ -556,6 +578,12 @@ class ParserBase:
                     raise TypeError(
                         f"{name}: the bulk values need {attr!r}, which the "
                         f"{lineage!r} pattern does not set.")
+            for group, attr in cls._dump_keywords.items():
+                if attr not in available:
+                    raise TypeError(
+                        f"{name}: the dump keyword {attr!r} of group "
+                        f"{group!r} is not set by the {lineage!r} pattern "
+                        "or '_defaults'.")
         return keywords, patterns
 
     def __init__(
@@ -686,6 +714,14 @@ class ParserBase:
         return self._groups
 
     @property
+    def dump_keywords(self) -> dict[GroupT, str]:
+        """
+        Each group mapped to the attribute that holds the dump period, in
+        time steps, of its trajectory.
+        """
+        return self._dump_keywords
+
+    @property
     def topology(self) -> TopologyT:
         """
         Define the polymer topology for the parser subclass.
@@ -751,6 +787,14 @@ class ParserBase:
         Return the current group.
         """
         return self._group
+
+    @property
+    def dump_keyword(self) -> str:
+        """
+        The attribute that holds the dump period, in time steps, of the
+        `group` trajectory.
+        """
+        return self._dump_keywords[self._group]
 
     @property
     def ext(self) -> Optional[str]:
@@ -1088,6 +1132,7 @@ class TwoMonDepCub(ParserBase):
     _geometry = 'cubic'
     _topology = 'atomic'
     _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     _keywords = {
         'am': KeywordSpec('dmon', float),
         'nm': KeywordSpec('nmon', int),
@@ -1212,6 +1257,7 @@ class SumRuleCyl(ParserBase):
     _geometry = 'cylindrical'
     _topology = 'linear'
     _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     _keywords = {
         'N': KeywordSpec('nmon', int),
         'epsilon': KeywordSpec('epsilon', float),
@@ -1342,6 +1388,7 @@ class SumRuleCubHeteroRing(ParserBase):
     _geometry = 'cubic'
     _topology = 'ring'
     _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     _keywords = {
         'al': KeywordSpec('dmon_large', float),
         'nl': KeywordSpec('nmon_large', int),
@@ -1481,6 +1528,7 @@ class SumRuleCubHeteroLinear(ParserBase):
     _geometry = 'cubic'
     _topology = 'linear'
     _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     _keywords = {
         'al': KeywordSpec('dmon_large', float),
         'nl': KeywordSpec('nmon_large', int),
@@ -1643,6 +1691,7 @@ class SumRuleCubHeteroRingBiDisperse(ParserBase):
     _geometry = 'cubic'
     _topology = 'ring'
     _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     _keywords = {
         'al': KeywordSpec('dmon_large', float),
         'nl': KeywordSpec('nmon_large', int),
@@ -1824,6 +1873,7 @@ class TransFociCyl(ParserBase):
     _geometry = 'cylindrical'
     _topology = 'ring'
     _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     _keywords = {
         'epss': KeywordSpec('epsilon_small', float),
         'epsl': KeywordSpec('epsilon_large', float),
@@ -1970,6 +2020,7 @@ class TransFociCub(ParserBase):
     _geometry = 'cubic'
     _topology = 'ring'
     _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
     _keywords = {
         'al': KeywordSpec('dmon_large', float),
         'nl': KeywordSpec('nmon_large', int),
@@ -2108,6 +2159,7 @@ class HnsCub(ParserBase):
     _geometry = 'cubic'
     _topology = 'ring'
     _groups = ['nucleoid', 'all']
+    _dump_keywords = {'nucleoid': 'ndump', 'all': 'adump'}
     _keywords = {
         'N': KeywordSpec('nmon', int),
         'kbmm': KeywordSpec('bend_mm', float),
@@ -2251,6 +2303,7 @@ class HnsCyl(ParserBase):
     _geometry = 'cylindrical'
     _topology = 'ring'
     _groups = ['nucleoid', 'all']
+    _dump_keywords = {'nucleoid': 'ndump', 'all': 'adump'}
     _keywords = {
         'N': KeywordSpec('nmon', int),
         'kbmm': KeywordSpec('bend_mm', float),
