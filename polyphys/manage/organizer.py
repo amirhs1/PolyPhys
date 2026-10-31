@@ -1516,7 +1516,7 @@ def children_stamps(
     if lineage == "whole":
         dropped = [col for col in cols_to_drop if col in space_stamps.columns]
         if dropped:
-            space_stamps.drop(columns=dropped, inplace=True)
+            space_stamps = space_stamps.drop(columns=dropped)
             warnings.warn(
                 "'segment' and 'segment_id' columns are dropped when"
                 " individual 'whole' stamps combined to create a single"
@@ -1645,8 +1645,8 @@ def parents_stamps(
 
     # Rename and drop columns based on lineage
     if lineage == "whole":
-        parent_stamps.rename(
-            columns={"ensemble_id": "n_ensembles"}, inplace=True
+        parent_stamps = parent_stamps.rename(
+            columns={"ensemble_id": "n_ensembles"}
         )
         # If the 'whole' stamps are generated directly in the 'probe' phase,
         # then 'segment' and 'segment_id' columns are "N/A" and are removed
@@ -1657,14 +1657,13 @@ def parents_stamps(
         # in the 'probe' phase do not have such a column, but those generated
         # from 'segment' stamps have.
         # Dropping redundant columns silently:
-        parent_stamps.drop(
+        parent_stamps = parent_stamps.drop(
             columns=["n_segments", "segment_id", "segment"],
-            inplace=True,
             errors="ignore",
         )
     else:
-        parent_stamps.rename(
-            columns={"segment_id": "n_segments"}, inplace=True
+        parent_stamps = parent_stamps.rename(
+            columns={"segment_id": "n_segments"}
         )
 
     if save_to is not None:
@@ -1881,8 +1880,8 @@ def space_tseries(
             ens_avg_csv[0], "ensemble_long", group, ispath=True
         )
 
-        ens_avg.reset_index(inplace=True)
-        ens_avg.rename(columns={"index": "t_index"}, inplace=True)
+        ens_avg = ens_avg.reset_index()
+        ens_avg = ens_avg.rename(columns={"index": "t_index"})
 
         # Scale frame indices by the dump period of the group's trajectory
         ens_avg["t_index"] *= getattr(prop_info, prop_info.dump_keyword)
@@ -1902,7 +1901,7 @@ def space_tseries(
 
     # Concatenate all time-series DataFrames
     prop_db = pd.concat(prop_csvs, axis=0)
-    prop_db.reset_index(drop=True, inplace=True)
+    prop_db = prop_db.reset_index(drop=True)
 
     # Optionally save to file
     if is_save:
@@ -2071,7 +2070,7 @@ def space_hists(
 
     # Concatenate all histograms
     prop_db = pd.concat(prop_csvs, axis=0)
-    prop_db.reset_index(drop=True, inplace=True)
+    prop_db = prop_db.reset_index(drop=True)
 
     # Optionally save to file
     if is_save:
