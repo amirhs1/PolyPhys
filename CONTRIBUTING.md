@@ -48,19 +48,33 @@ list, used unchanged as the commit scope, the issue title's bracket, and the
 label `area:<word>`. Scope and area are one list.
 
 ```text
-types: feat fix docs test refactor ci chore release question
-areas: analyze manage packaging docs ci agents deps
+types: feat fix docs test refactor chore release question
+areas: analyze manage packaging guide ci agents deps
 ```
+
+| Type       | Means                                                                                              |
+| ---------- | -------------------------------------------------------------------------------------------------- |
+| `feat`     | Adds a capability to the package or its tooling.                                                   |
+| `fix`      | Corrects behaviour that was wrong.                                                                 |
+| `docs`     | Changes documentation only, in any area: the README, a `docs/` page, the changelog, a docstring.   |
+| `test`     | Adds or corrects tests without changing package code.                                              |
+| `refactor` | Restructures code without changing what it does.                                                   |
+| `chore`    | Maintenance that fits no other type, such as a dependency bump or a CI runner pin.                 |
+| `release`  | Prepares or merges a release: the version, the changelog, and the citation metadata.               |
+| `question` | Asks for information instead of proposing a change; an issue type only, never a branch or commit.  |
 
 | Area        | Covers                                                                                                                            |
 | ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `analyze`   | `polyphys/analyze/`, `polyphys/tests/analyze/`                                                                                    |
 | `manage`    | `polyphys/manage/`, `polyphys/tests/manage/`                                                                                      |
 | `packaging` | `pyproject.toml`, `polyphys/__version__.py`, `polyphys/tests/test_packaging.py`, `CITATION.cff`, `AUTHORS.rst`                    |
-| `docs`      | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/`, `.github/ISSUE_TEMPLATE/`                                 |
+| `guide`     | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/`, `.github/ISSUE_TEMPLATE/`                                 |
 | `ci`        | `.github/workflows/`, `.github/dependabot.yml`                                                                                    |
 | `agents`    | `AGENTS.md`, `CLAUDE.md`, `AI-POLICY.md`, `.agents/`, `.claude/`, `.githooks/`, `.gitmessage`, `.github/pull_request_template.md` |
 | `deps`      | Dependency versions: the dependency lists in `pyproject.toml` and the action versions in `.github/workflows/`                     |
+
+A change that only moves a dependency version takes the area `deps`, not
+`packaging` or `ci`.
 
 | Name                          | Form                                    |
 | ----------------------------- | --------------------------------------- |

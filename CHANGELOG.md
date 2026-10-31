@@ -144,6 +144,7 @@ version increase may introduce incompatible changes.
   PolyPhys, add `_dump_keywords`, for example
   `{'bug': 'bdump', 'all': 'adump'}`
   ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
+- `CONTRIBUTING.md`, "Names", defines each type, drops type `ci`, and renames area `docs` to `guide` ([#121](https://github.com/amirhs1/PolyPhys/issues/121)).
 
 ### Removed
 
