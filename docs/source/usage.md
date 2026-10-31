@@ -187,3 +187,54 @@ for path in paths:
 
 `parse_log` does the same for text already in memory, such as a member of a
 tarball.
+
+## Reading LAMMPS dumps and writing data files
+
+`iter_dump` reads a text dump of `dump atom` or `dump custom`, plain or
+gzipped, one frame at a time, so a long trajectory is never in memory whole.
+Each `DumpFrame` holds its `timestep`, its `box`, the column names, and the
+per-atom `data`, with rows sorted by atom ID unless `sort_by_id=False` is
+passed. `positions()` returns Cartesian coordinates from whichever columns
+the dump has: `x y z`, or the scaled `xs ys zs` that `dump atom` writes by
+default; with `unwrapped=True`, `xu yu zu`, `xsu ysu zsu`, or the wrapped
+coordinates moved by the image flags `ix iy iz`. Orthogonal and restricted
+triclinic boxes are both handled:
+
+```python
+from polyphys.simulate.dump import iter_dump
+
+for frame in iter_dump("whole.bug.lammpstrj.gz"):
+    unwrapped = frame.positions(unwrapped=True)
+```
+
+A frame cut off by a killed run raises `BrokenDumpError` once the complete
+frames before it have been yielded. `read_dump_frame(path, index)` returns a
+single frame.
+
+`read_data` and `write_data` read and write LAMMPS data files in the
+`atomic`, `bond`, `angle`, `molecular`, and `full` atom styles, as
+`DataFile` records of numpy arrays with a `Box`. `with_frame` gives a dump the topology
+it lacks: the atom types, masses, bonds, and angles come from a template, and
+the positions, box, and image flags from a dump frame, matched by atom ID:
+
+```python
+from polyphys.simulate.data import read_data, with_frame, write_data
+from polyphys.simulate.dump import read_dump_frame
+
+template = read_data("initial.bug.data")
+frame = read_dump_frame("whole.bug.lammpstrj", 0)
+write_data(with_frame(template, frame), "whole.bug.data")
+```
+
+`write_data` also writes start configurations for LAMMPS. Build a
+`DataFile` from arrays, leave `masses` and `velocities` as `None` for the
+input script to set, and close a ring with one more bond. Sections of
+force-field coefficients are skipped when read and never written, so the
+input script sets the force field.
+
+A dump frame and a data file carry the same `Box` from
+`polyphys.simulate.core`, which converts scaled coordinates and applies image
+flags; `DataFile.unwrapped_positions()` uses it too. The log, dump, and
+data-file readers each read a `.gz` file through gzip, and each raises a
+subclass of `LammpsFormatError`, itself a `ValueError`, for a broken file, so
+one `except LammpsFormatError` skips a broken file of any kind.

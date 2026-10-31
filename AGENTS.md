@@ -51,7 +51,7 @@ every pull request; say how far your local checks reach. Once per clone, run
 PolyPhys/
   polyphys/manage/     parser, organizer, utils, types: filenames → lineage → reduced ensembles
   polyphys/analyze/    measurer: per-frame structural observables and histograms
-  polyphys/simulate/   core, log: LAMMPS logs and the shared box
+  polyphys/simulate/   core, log, dump, data: LAMMPS logs, dumps, and data files
   polyphys/tests/      tests for analyze/, manage/, simulate/, and packaging
   docs/source/         Sphinx sources
   README.md            user guide; its examples run as doctests

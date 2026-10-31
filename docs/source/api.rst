@@ -20,6 +20,8 @@ Simulate
 
    polyphys.simulate.core
    polyphys.simulate.log
+   polyphys.simulate.dump
+   polyphys.simulate.data
 
 Analyze
 -------

@@ -3,9 +3,10 @@
 Shared LAMMPS pieces --- :mod:`polyphys.simulate.core`
 =====================================================================
 
-The :mod:`~polyphys.simulate.core` module holds what the LAMMPS modules of
-:mod:`polyphys.simulate` share: the simulation box, :class:`Box`, and
-:class:`LammpsFormatError`, the base class of their errors.
+The :mod:`~polyphys.simulate.core` module holds what the LAMMPS log, dump,
+and data-file modules of :mod:`polyphys.simulate` share: the simulation box,
+:class:`Box`, and :class:`LammpsFormatError`, the base class of their
+errors.
 
 .. versionadded:: 0.6.0
 
@@ -69,9 +70,11 @@ IntArray = npt.NDArray[np.int64]
 class LammpsFormatError(ValueError):
     """A LAMMPS file is cut off or does not follow its format.
 
-    The base class of the errors of :mod:`polyphys.simulate`, such as
-    :class:`~polyphys.simulate.log.BrokenLogError`, so one ``except`` clause
-    catches a broken file of any kind. It is a :class:`ValueError`.
+    The base class of :class:`~polyphys.simulate.log.BrokenLogError`,
+    :class:`~polyphys.simulate.dump.BrokenDumpError`, and
+    :class:`~polyphys.simulate.data.BrokenDataError`, so one ``except``
+    clause catches a broken file of any of the three kinds. It is a
+    :class:`ValueError`.
 
     .. versionadded:: 0.6.0
     """

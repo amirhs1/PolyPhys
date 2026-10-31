@@ -11,6 +11,8 @@ import numpy as np
 import pytest
 
 from polyphys.simulate.core import Box, LammpsFormatError
+from polyphys.simulate.data import BrokenDataError
+from polyphys.simulate.dump import BrokenDumpError
 from polyphys.simulate.log import BrokenLogError
 
 
@@ -96,7 +98,8 @@ def test_box_arrays_are_read_only(make_box):
         box.lo[0] = 0.0
 
 
-@pytest.mark.parametrize("error", [BrokenLogError])
+@pytest.mark.parametrize(
+    "error", [BrokenLogError, BrokenDumpError, BrokenDataError])
 def test_broken_file_errors_share_one_base(error):
     """Each broken-file error is a LammpsFormatError and a ValueError."""
     assert issubclass(error, LammpsFormatError)
