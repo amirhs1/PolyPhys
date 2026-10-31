@@ -1506,7 +1506,7 @@ def test_whole_name_drops_topology_suffix_from_segment_and_whole(
 def _stamp_mismatches(path: Path) -> list[tuple[str, ...]]:
     """
     Compare the names in one SciOps ``HnsCub`` stamp file with the rebuilt
-    names, under the mapping that ``CHANGELOG.md`` documents.
+    names, under the mapping that the Usage page, "Lineage names", documents.
 
     A stamp file is ``<lineage_name>-<group>-stamps.csv``; its columns start
     with ``lineage_name`` and the lineage names, with a ``segment`` column

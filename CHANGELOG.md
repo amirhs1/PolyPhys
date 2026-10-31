@@ -1,7 +1,9 @@
 # Changelog
 
-All notable changes to PolyPhys are documented here. The format is based on
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows
+All notable changes to PolyPhys are documented here. The format is
+[Common Changelog](https://common-changelog.org/), with one departure: an
+`[Unreleased]` section collects changes between releases, and each release
+adds the commit references its entries lack. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 While the major version is `0`, the public API is not yet stable and a minor
@@ -9,177 +11,40 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
-### Added
-
-- `polyphys.manage.lammps_log`: `read_log` and `parse_log` read a LAMMPS log
-  into a `LammpsLog` record of three DataFrames: `thermo`, one row per thermo
-  output step of every run in the `one`, `custom`, `multi`, or `yaml` style,
-  with a `run` column; `run_stats`, one row per run with its loop time,
-  performance, CPU use, MPI timing breakdown, and dangerous builds; and
-  `wall_time`. `WARNING` and `fix halt` lines inside a table are skipped and
-  logged, and a cut-off or malformed log raises `BrokenLogError` (#55). The
-  test logs in `polyphys/tests/data/lammps_log/` are written by LAMMPS from
-  the input scripts beside them. A Usage section describes the module.
-- `KeywordSpec` and `Species` in `polyphys.manage.parser`, with which a
-  parser class is a declaration: one `KeywordSpec` per filename keyword (the
-  attribute, `int` or `float`, and an optional `scale * value + offset`
-  conversion), the keyword pattern of each lineage, fixed values, and the
-  species whose bulk number density and volume fraction to compute.
-  `ParserBase` parses the name and computes the bulk values. A declaration
-  is checked when its class is created, and an incomplete or inconsistent
-  one raises `TypeError`. A new study declares a parser instead of copying
-  one; the Usage page shows how
-  ([#49](https://github.com/amirhs1/PolyPhys/issues/49)).
-- `SumRuleCubHeteroRingBiDisperse` in `polyphys.manage.parser`, the parser
-  of the project with a ring of small and large monomers among crowders of
-  two sizes in a periodic cube, ported from the research code. `pctc` is the
-  percentage of the total crowder volume fraction that the `ac` crowders
-  carry, and `pct_two = 100 - pct_one`. For scripts that migrate from the
-  research code: the bulk values are named `rho_bulk_<species>` and
-  `phi_bulk_<species>` (`phi_c_bulk_one` → `phi_bulk_c_one`, `rho_c_bulk` →
-  `rho_bulk_c`, `phi_m_bulk` → `phi_bulk_m`, `rho_m_bulk` → `rho_bulk_m`),
-  with per-species monomer values added; the constructor is
-  `(artifact, lineage, group, ispath=False)`, without `geometry` and
-  `topology`; `nmon`, `ncrowd`, and `eps_others` are gone (the docstring
-  states that every LJ pair has strength 1); and `mmon_large`, `mcrowd_one`,
-  and `mcrowd_two` exist only at `segment`, `whole`, and `ensemble_long`
-  ([#50](https://github.com/amirhs1/PolyPhys/issues/50)).
-- `ParserBase._derived_attributes`, an empty method that a parser class
-  overrides to set a value derived from parsed values outside the
-  declaration tables; it runs at every lineage after the bulk values
-  ([#50](https://github.com/amirhs1/PolyPhys/issues/50)).
-- Hypothesis in the `dev` extra, for property tests that generate their
-  inputs. The first one checks that every position in a histogram's range is
-  counted exactly once over the edges `create_bin_edge_and_hist` builds.
-  Hypothesis's built-in `ci` profile, active whenever `CI` is set, makes CI
-  runs draw the same inputs every time. The Testing page describes both
-  ([#83](https://github.com/amirhs1/PolyPhys/issues/83)).
-
-- `ParserBase.dump_keywords` in `polyphys.manage.parser` maps each particle
-  group to the attribute that holds the dump period, in time steps, of its
-  trajectory, and `dump_keyword` gives the one for a parser's own group:
-  `bdump` for `bug`, `ndump` for `nucleoid`, and `adump` for `all` in every
-  project parser ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
-- Python 3.14: CI runs the test suite on it, the lint, type-check, docs, and
-  build jobs move to it from 3.13, and `pyproject.toml` lists its classifier
-  ([#118](https://github.com/amirhs1/PolyPhys/issues/118)).
-
 ### Changed
 
-- **Breaking:** a parser in `polyphys.manage.parser` raises `ValueError` when
-  a name lacks a keyword of its lineage's pattern, naming the keyword, its
-  attribute, the lineage, and the name, and when a keyword's value is not a
-  number, naming the keyword and the value. Before, it printed a message and
-  failed later with an `AttributeError` that named neither the keyword nor
-  the file ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
-- **Breaking:** a non-integral value of an integer keyword, such as `nc1.5`,
-  raises `ValueError` instead of being truncated to an integer.
-- **Breaking:** a parser in `polyphys.manage.parser` built from a name, with
-  `ispath=False` or through `from_name`, sets `filepath` and `ext` to `None`
-  instead of the string `'N/A'`, which read as a real directory or extension.
-  Built from a file path, `filepath` is now a `pathlib.Path` instead of a
-  `str`; `ext` stays a `str`, and is `''` for a file with no extension
-  ([#100](https://github.com/amirhs1/PolyPhys/issues/100)).
-- The eight parser classes of `polyphys.manage.parser` are declarations;
-  `ParserBase` holds the one copy of the parsing and bulk-value code that
-  each class repeated, so the per-class lists of float attributes, which had
-  drifted out of step with the keyword tables, are gone. Subclasses no longer
-  define `__init__`, `_initiate_attributes`, `_parse_name`, or
-  `_dependent_attributes`. `ParserBase` is no longer an `abc.ABC`;
-  instantiating it, or a subclass that declares no patterns, raises
-  `TypeError`. For every name the previous parsers accepted, the attribute
-  values and their types are unchanged. Parsing splits a name once, in time
-  linear in its length
-  ([#49](https://github.com/amirhs1/PolyPhys/issues/49)).
-- The parser docstrings now match the code: `SumRuleCyl.dmon` and the
-  `HnsCub`/`HnsCyl` time step and dump periods are fixed values, not
-  keywords; `HnsCub` and `HnsCyl` read `nmon` from `N` and describe the
-  `nucleoid` group; the `TransFociCyl` space pattern includes `D` and its
-  wall energies are `epsilon_small` and `epsilon_large`; the hetero classes
-  do not set `nmon`; `from_name` sets `filepath` and `ext` to `'N/A'`.
-- `polyphys/tests/manage/test_parser.py` follows the test-writing rules:
-  shared cases in fixtures, one behaviour per test, and a round-trip test
-  that builds a name from every class's declared pattern.
-- `polyphys.manage` no longer prints. `make_database` logs an INFO record
-  when it reuses an existing directory, and `children_stamps` and
-  `parents_stamps` log DEBUG records for an absent column, to the
-  `polyphys.manage.organizer` logger; with no logging configured, nothing is
-  shown. `openany_context` no longer catches an error raised inside its
-  `with` block to print "Error opening ..." before re-raising it; the error
-  propagates unchanged
-  ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
-- **Breaking:** the `ensemble` and `space` names that a parser in
-  `polyphys.manage.parser` rebuilds print a float keyword value that is a
-  whole number as an integer, and any other float as Python's `repr`, the
-  shortest text that reads back as the same float. One rule holds for every
-  float keyword in every class, whatever the parsed name wrote: `ac2.0`
-  becomes `ac2`, `epshc0.0` becomes `epshc0`, `D20.0` becomes `D20`, and
-  `pctc40.0` becomes `pctc40`; `epshc1.5` and `ac1.000001` are unchanged.
-  The long names, `segment`, `whole`, and `ensemble_long`, are cut from the
-  parsed name and keep its text. The new names match the SciOps generator
-  scripts and the maintainer's local `analysis` directories; a short key in
-  existing stamps, such as `N200kbmm2nh12ac2.0epshc0` in `HnsCub`, maps to
-  the new name by parsing it at its lineage and reading the rebuilt name
-  ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
-- The rebuilt `segment` and `whole` names carry no topology suffix, as
-  since v0.3.0, and this is now the documented rule: a segment
-  `…ens1.j07.ring` and a whole `…ens1.ring` of one simulation both give the
-  `whole` `…ens1`. Stamps that SciOps wrote for an artifact parsed from a
-  whole file key the whole as `…ens1.ring`; append `.<topology>` to the new
-  name, or drop it from the old one, to match them. Stamps that SciOps
-  derived from segments already match
-  ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
-- A test marked `private_data` compares the rebuilt `HnsCub` names with the
-  SciOps stamps under `POLYPHYS_DATA_DIR`, in any directory whose name starts
-  with `HnsCub`, under the two mappings above; the comparison itself is
-  tested on synthetic stamp files, and the data-reading test is excluded
-  from coverage because CI never runs it
-  ([#102](https://github.com/amirhs1/PolyPhys/issues/102)).
+- **Breaking:** Raise `ValueError` in the `polyphys.manage.parser` parsers when a name lacks a keyword of its lineage's pattern, or a keyword's value is not a number, naming the keyword; before, a parser printed a message and failed later with an `AttributeError` ([#99](https://github.com/amirhs1/PolyPhys/pull/99), `a18845a`)
+- **Breaking:** Raise `ValueError` for a non-integral value of an integer keyword, such as `nc1.5`, instead of truncating it ([#99](https://github.com/amirhs1/PolyPhys/pull/99), `a18845a`)
+- **Breaking:** Set a parser's `filepath` and `ext` to `None` when it is built from a name, instead of `'N/A'`, and make `filepath` a `pathlib.Path` when it is built from a file path ([#101](https://github.com/amirhs1/PolyPhys/pull/101), `5786ca0`)
+- **Breaking:** Print a whole-number float keyword as an integer, and any other float as its `repr`, in the `ensemble` and `space` names a parser rebuilds ([#108](https://github.com/amirhs1/PolyPhys/pull/108), `f7f44dc`). `ac2.0` becomes `ac2` and `pctc40.0` becomes `pctc40`; a short key in existing stamps maps to the new name by parsing it at its lineage and reading the rebuilt name.
+- **Breaking:** Require `_dump_keywords`, one entry per group, in every concrete parser, and raise `TypeError` when a class lacks it or its entries do not match `_groups` ([#113](https://github.com/amirhs1/PolyPhys/pull/113), `4eb9973`). To migrate a parser declared outside PolyPhys, add it, for example `{'bug': 'bdump', 'all': 'adump'}`.
+- Make the eight parser classes declarations over `ParserBase`, which holds the one copy of the parsing and bulk-value code, and make `ParserBase` a plain class instead of an `abc.ABC`; attribute values and types are unchanged for every name the previous parsers accepted ([#99](https://github.com/amirhs1/PolyPhys/pull/99), `a18845a`)
+- Correct the parser docstrings to match the code ([#99](https://github.com/amirhs1/PolyPhys/pull/99), `a18845a`)
+- Restructure `test_parser.py` into fixtures and one behaviour per test, with a round-trip test over every class's declared patterns ([#99](https://github.com/amirhs1/PolyPhys/pull/99), `a18845a`)
+- Log instead of printing in `polyphys.manage`, and let an error raised inside `openany_context` propagate unchanged ([#107](https://github.com/amirhs1/PolyPhys/pull/107), `496ca9b`)
+- Document that rebuilt `segment` and `whole` names carry no topology suffix, as since v0.3.0 ([#108](https://github.com/amirhs1/PolyPhys/pull/108), `f7f44dc`). SciOps stamps of an artifact parsed from a whole file key the whole as `…ens1.ring`; append `.<topology>` to the new name to match them.
+- Define each commit type in `CONTRIBUTING.md`, "Names", drop type `ci`, and rename area `docs` to `guide` ([#123](https://github.com/amirhs1/PolyPhys/pull/123))
 
-- **Breaking:** every concrete parser in `polyphys.manage.parser` declares
-  `_dump_keywords`, one entry per group, each naming an attribute that the
-  `segment`, `whole`, and `ensemble_long` patterns or `_defaults` set; a
-  subclass that lacks it, or whose entries do not match `_groups`, raises
-  `TypeError` when it is created. To migrate a parser declared outside
-  PolyPhys, add `_dump_keywords`, for example
-  `{'bug': 'bdump', 'all': 'adump'}`
-  ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
-- `CONTRIBUTING.md`, "Names", defines each type, drops type `ci`, and renames area `docs` to `guide` ([#121](https://github.com/amirhs1/PolyPhys/issues/121)).
+### Added
+
+- Add `polyphys.manage.lammps_log`, whose `read_log` and `parse_log` read a LAMMPS log into its thermo output, per-run statistics, and wall time, and raise `BrokenLogError` for a cut-off or malformed log ([#111](https://github.com/amirhs1/PolyPhys/pull/111), `944801f`, `71eb401`)
+- Add `KeywordSpec` and `Species` to `polyphys.manage.parser`, with which a parser class declares its filename keywords, lineage patterns, fixed values, and bulk species ([#99](https://github.com/amirhs1/PolyPhys/pull/99), `a18845a`)
+- Add the `SumRuleCubHeteroRingBiDisperse` parser, for a ring of small and large monomers among crowders of two sizes in a periodic cube ([#106](https://github.com/amirhs1/PolyPhys/pull/106), `bd1c257`). For scripts that migrate from the research code: the bulk values are named `rho_bulk_<species>` and `phi_bulk_<species>` (`phi_c_bulk_one` → `phi_bulk_c_one`, `rho_c_bulk` → `rho_bulk_c`, `phi_m_bulk` → `phi_bulk_m`, `rho_m_bulk` → `rho_bulk_m`); the constructor is `(artifact, lineage, group, ispath=False)`; `nmon`, `ncrowd`, and `eps_others` are gone; and `mmon_large`, `mcrowd_one`, and `mcrowd_two` exist only at `segment`, `whole`, and `ensemble_long`.
+- Add `ParserBase._derived_attributes`, which a parser class overrides to set values derived from parsed ones ([#106](https://github.com/amirhs1/PolyPhys/pull/106), `bd1c257`)
+- Add `ParserBase.dump_keywords` and `dump_keyword`, which name the attribute that holds each group's dump period ([#113](https://github.com/amirhs1/PolyPhys/pull/113), `4eb9973`)
+- Add Hypothesis to the `dev` extra, with a property test that a histogram counts every position in its range exactly once ([#109](https://github.com/amirhs1/PolyPhys/pull/109), `4a6a968`)
+- Add a `private_data` test that compares the rebuilt `HnsCub` names with the SciOps stamps under `POLYPHYS_DATA_DIR` ([#108](https://github.com/amirhs1/PolyPhys/pull/108), `f7f44dc`, `0e212ae`)
+- Add Python 3.14 to the CI test matrix and the `pyproject.toml` classifiers, and run the lint, type-check, docs, and build jobs on it instead of 3.13 ([#119](https://github.com/amirhs1/PolyPhys/pull/119), `758c5ff`)
 
 ### Removed
 
-- **Breaking:** the `dump_key` argument of `space_tseries` in
-  `polyphys.manage.organizer`. The frame index is now scaled by the dump
-  period of the `group` trajectory, which the parser names through
-  `dump_keyword`, and the arguments after `group` are keyword-only, so a call
-  that still passes a dump keyword by position raises `TypeError`. To
-  migrate, drop the dump keyword and pass `divisor`, `round_to`, `is_save`,
-  and `crowder_attr` by name. A call that paired a group with another
-  group's dump keyword, such as `'bug'` with `'adump'`, now gets the group's
-  own period, so its `t_index` and `time` change; a call that passed the
-  group's own keyword gets the same values
-  ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
+- **Breaking:** Remove the `dump_key` argument of `space_tseries` in `polyphys.manage.organizer`, which now scales the frame index by the `group`'s own dump period, and make its arguments after `group` keyword-only ([#113](https://github.com/amirhs1/PolyPhys/pull/113), `4eb9973`). To migrate, drop the dump keyword and pass `divisor`, `round_to`, `is_save`, and `crowder_attr` by name. A call that paired a group with another group's dump keyword, such as `'bug'` with `'adump'`, gets new `t_index` and `time` values.
 
 ### Fixed
 
-- `parents_stamps` in `polyphys.manage.organizer` drops the child lineage
-  column (`segment` or `whole`) from the parent stamps when the stamps have
-  no `lineage_name` column, as the stamps the probe phase writes do not.
-  It removed the two columns together, so a missing `lineage_name` left the
-  child column in, holding the last child's name: whole stamps built from
-  segments carried a stale `segment` column, and ensemble-average stamps a
-  stale `whole` column. Tables produced before this fix keep those columns
-  ([#47](https://github.com/amirhs1/PolyPhys/issues/47)).
-- `children_stamps(..., "whole")` drops whichever of `segment` and
-  `segment_id` is present; it dropped neither when only one was there.
-- The two-size parsers `SumRuleCubHeteroRing`, `SumRuleCubHeteroLinear`,
-  `TransFociCyl`, and `TransFociCub` list `phi_bulk_m`, the bulk volume
-  fraction of all monomers, in `attributes` at the `segment`, `whole`, and
-  `ensemble_long` lineages, just before `rho_bulk_m`, as the other parsers
-  do. They computed it but left it out, so their stamps carried
-  `rho_bulk_m` and not `phi_bulk_m`. Stamps written from now on gain a
-  `phi_bulk_m` column; no value changes
-  ([#103](https://github.com/amirhs1/PolyPhys/issues/103)).
+- Drop the child lineage column in `parents_stamps` when the stamps have no `lineage_name` column ([#107](https://github.com/amirhs1/PolyPhys/pull/107), `496ca9b`). Tables produced before this fix keep a stale `segment` or `whole` column.
+- Drop whichever of `segment` and `segment_id` is present in `children_stamps(..., "whole")` ([#107](https://github.com/amirhs1/PolyPhys/pull/107), `496ca9b`)
+- List `phi_bulk_m` in the `attributes` of `SumRuleCubHeteroRing`, `SumRuleCubHeteroLinear`, `TransFociCyl`, and `TransFociCub`, so their stamps gain a `phi_bulk_m` column; no value changes ([#110](https://github.com/amirhs1/PolyPhys/pull/110), `2d0b394`)
 - Replace the eight `inplace=True` pandas calls in `polyphys.manage.organizer`, which pandas 3.1 deprecates with `Pandas4Warning`; results are unchanged ([#115](https://github.com/amirhs1/PolyPhys/issues/115), [#120](https://github.com/amirhs1/PolyPhys/pull/120), `3fea0e8`)
 
 ## [0.5.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.5.0) - 2026-10-31
