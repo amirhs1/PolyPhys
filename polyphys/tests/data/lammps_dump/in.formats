@@ -1,0 +1,17 @@
+# Dump formats written alongside ring.bond.lammpstrj by in.ring (style bond),
+# for the same frames:
+# - format.atom.lammpstrj: dump style atom with image flags; scaled
+#   coordinates in the default %g format (6 significant digits);
+# - format.xu.lammpstrj: unwrapped coordinates, with the optional
+#   ITEM: UNITS and ITEM: TIME header lines;
+# - format.xsu.lammpstrj: scaled unwrapped coordinates;
+# - format.x.lammpstrj.gz: the columns of ring.bond.lammpstrj, gzipped.
+
+dump            D_atom all atom 500 format.atom.lammpstrj
+dump_modify     D_atom image yes
+dump            D_xu all custom 500 format.xu.lammpstrj id type xu yu zu
+dump_modify     D_xu format float %.16g units yes time yes
+dump            D_xsu all custom 500 format.xsu.lammpstrj id type xsu ysu zsu
+dump_modify     D_xsu format float %.16g
+dump            D_gz all custom 500 format.x.lammpstrj.gz id mol type x y z ix iy iz
+dump_modify     D_gz format float %.16g
