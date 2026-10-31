@@ -60,6 +60,9 @@ version increase may introduce incompatible changes.
   trajectory, and `dump_keyword` gives the one for a parser's own group:
   `bdump` for `bug`, `ndump` for `nucleoid`, and `adump` for `all` in every
   project parser ([#18](https://github.com/amirhs1/PolyPhys/issues/18)).
+- Python 3.14: CI runs the test suite on it, the lint, type-check, docs, and
+  build jobs move to it from 3.13, and `pyproject.toml` lists its classifier
+  ([#118](https://github.com/amirhs1/PolyPhys/issues/118)).
 
 ### Changed
 
