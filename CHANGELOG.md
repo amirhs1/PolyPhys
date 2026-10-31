@@ -350,6 +350,14 @@ version increase may introduce incompatible changes.
   independently, and AI-assisted commits carry an `Assisted-by:` trailer. The
   README records each part's AI tier and checks; `AGENTS.md` and `CLAUDE.md`
   carry the matching agent rules.
+- A written naming convention for branches, commits, pull requests, issues,
+  labels, milestones, and tags, built on two axes, `type` and `area`, and set
+  out in `CONTRIBUTING.md`, "Names". The flat label set is replaced by
+  `type:*` and `area:*` labels, renamed in place so existing assignments are
+  kept. The issue templates prefill an `[area]` title and a `type:*` label,
+  and Dependabot declares its labels explicitly, so it no longer recreates
+  its default `dependencies` label
+  ([#13](https://github.com/amirhs1/PolyPhys/pull/13)).
 
 ## [0.3.0] - 2025-07-10
 
