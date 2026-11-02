@@ -29,7 +29,7 @@ independent reference used to judge correctness. Then a `Not verified:` line
 for anything not checked, and why.
 
 - [ ] `python -m flake8 polyphys`
-- [ ] `python -m mypy polyphys/analyze polyphys/manage`
+- [ ] `python -m mypy polyphys/analyze polyphys/manage polyphys/simulate`
 - [ ] `python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'`
 - [ ] `python -m build` if packaging metadata, package data, or package layout changed
 - [ ] `python -m sphinx -W -b html docs/source docs/_build` if `docs/source/` changed

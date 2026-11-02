@@ -1,0 +1,45 @@
+# The FENE ring of in.ring (atom style bond) in a periodic restricted
+# triclinic box with tilt factors xy = 1.0, xz = 0.5, yz = -0.5, started
+# across the x = 0 face.
+# Writes triclinic.data (write_data at step 1000) and, for steps 0, 500,
+# and 1000: triclinic.atom.lammpstrj (dump style atom with image flags,
+# scaled, default %g format), triclinic.x.lammpstrj, triclinic.xu.lammpstrj,
+# and triclinic.xsu.lammpstrj (%.16g).
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      bond
+
+variable        randseed equal 5903
+region          box prism 0 6 0 6 0 6 1.0 0.5 -0.5 units box
+create_box      1 box bond/types 1 extra/bond/per/atom 2 extra/special/per/atom 6
+molecule        ring ring8.mol
+create_atoms    0 single 0.0 3.0 3.0 mol ring 4127 remap yes units box
+mass            1 1.0
+
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      1 1 1.0 1.0 1.122462
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+special_bonds   fene
+neighbor        0.3 bin
+neigh_modify    delay 0 every 1 check yes
+
+velocity        all create 1.0 ${randseed}
+fix             F_langevin all langevin 1.0 1.0 1.0 ${randseed}
+fix             F_nve all nve
+timestep        0.005
+thermo          500
+
+dump            D_atom all atom 500 triclinic.atom.lammpstrj
+dump_modify     D_atom image yes
+dump            D_x all custom 500 triclinic.x.lammpstrj id type x y z ix iy iz
+dump_modify     D_x format float %.16g
+dump            D_xu all custom 500 triclinic.xu.lammpstrj id type xu yu zu
+dump_modify     D_xu format float %.16g
+dump            D_xsu all custom 500 triclinic.xsu.lammpstrj id type xsu ysu zsu
+dump_modify     D_xsu format float %.16g
+run             1000
+write_data      triclinic.data

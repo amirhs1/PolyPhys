@@ -1,0 +1,33 @@
+# Two unbonded beads of types 1 and 2 in a periodic cube (atom style
+# atomic), shaped like the two-monomer depletion systems.
+# Writes atomic.lammpstrj (dump style atom with its defaults: scaled
+# coordinates, %g format; steps 0, 500, 1000) and atomic.data (write_data at
+# step 1000).
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      atomic
+
+variable        randseed equal 3517
+region          box block 0 5 0 5 0 5 units box
+create_box      2 box
+create_atoms    1 single 2.0 2.5 2.5 units box
+create_atoms    2 single 3.1 2.5 2.5 units box
+mass            1 1.0
+mass            2 2.0
+
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      * * 1.0 1.0 1.122462
+neighbor        0.3 bin
+
+velocity        all create 1.0 ${randseed}
+fix             F_langevin all langevin 1.0 1.0 1.0 ${randseed}
+fix             F_nve all nve
+timestep        0.005
+thermo          500
+
+dump            D_atom all atom 500 atomic.lammpstrj
+run             1000
+write_data      atomic.data

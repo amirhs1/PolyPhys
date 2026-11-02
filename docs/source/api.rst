@@ -9,9 +9,19 @@ Manage
 
    polyphys.manage.parser
    polyphys.manage.organizer
-   polyphys.manage.lammps_log
    polyphys.manage.utils
    polyphys.manage.types
+
+Simulate
+--------
+
+.. autosummary::
+   :toctree: generated
+
+   polyphys.simulate.core
+   polyphys.simulate.log
+   polyphys.simulate.dump
+   polyphys.simulate.data
 
 Analyze
 -------

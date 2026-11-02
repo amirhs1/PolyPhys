@@ -2,5 +2,6 @@
 from .__version__ import __version__
 from polyphys import analyze
 from polyphys import manage
+from polyphys import simulate
 
-__all__ = ['__version__', 'analyze', 'manage']
+__all__ = ['__version__', 'analyze', 'manage', 'simulate']

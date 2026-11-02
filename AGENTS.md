@@ -22,7 +22,7 @@ commit it, and never copy its contents into a tracked file.
 | Run all tests        | `python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
 | Run one test         | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                         |
 | Lint / format        | `python -m flake8 polyphys`                                                                                                                  |
-| Type-check           | `python -m mypy polyphys/analyze polyphys/manage`                                                                                            |
+| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/simulate`                                                                          |
 | Docs                 | `python -m sphinx -W -b html docs/source docs/_build`                                                                                        |
 | Full pre-commit gate | Lint, type-check, and all tests; add the build after a packaging change and the docs build when `docs/source/` changed                      |
 
@@ -30,7 +30,7 @@ Run the full gate before calling a change complete, and report the actual
 output, not the expected output. Do not describe a change as working because it
 reads correctly. Run existing non-destructive checks without asking; start with
 the narrowest relevant one, such as the changed test module, and broaden when
-warranted. CI runs the full Python matrix (3.11–3.13) and builds the package on
+warranted. CI runs the full Python matrix (3.11–3.14) and builds the package on
 every pull request; say how far your local checks reach. Once per clone, run
 `git config core.hooksPath .githooks` to turn on the `commit-msg` hook.
 
@@ -51,7 +51,8 @@ every pull request; say how far your local checks reach. Once per clone, run
 PolyPhys/
   polyphys/manage/     parser, organizer, utils, types: filenames → lineage → reduced ensembles
   polyphys/analyze/    measurer: per-frame structural observables and histograms
-  polyphys/tests/      tests for analyze/, manage/, and packaging
+  polyphys/simulate/   core, log, dump, data: LAMMPS logs, dumps, and data files
+  polyphys/tests/      tests for analyze/, manage/, simulate/, and packaging
   docs/source/         Sphinx sources
   README.md            user guide; its examples run as doctests
   AI-POLICY.md         AI policy, for contributors
@@ -144,6 +145,7 @@ your role in each tier. Change both in the same commit.
 | --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------- |
 | `polyphys/analyze/`                                       | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/simulate/`                                      | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `docs/`                                                   | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 

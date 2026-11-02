@@ -6,8 +6,8 @@
 #
 # TYPES AND SCOPES
 # Types and scopes are in CONTRIBUTING.md, "Names"; a scope is an area there.
-#   Types: feat, fix, docs, test, refactor, ci, chore, release, question
-# Pick one dominant scope or omit it.
+#   Types: feat, fix, docs, test, refactor, chore, release, question
+# Pick one dominant scope.
 # For a breaking change, add ! after the type or scope and explain it in the body.
 #
 # AI PROVENANCE

@@ -1,9 +1,9 @@
 """\
 =====================================================================
-LAMMPS log files --- :mod:`polyphys.manage.lammps_log`
+LAMMPS log files --- :mod:`polyphys.simulate.log`
 =====================================================================
 
-The :mod:`~polyphys.manage.lammps_log` module reads a LAMMPS log file into
+The :mod:`~polyphys.simulate.log` module reads a LAMMPS log file into
 pandas DataFrames: the thermodynamic output of every run, the summary LAMMPS
 prints at the end of each run, and the total wall time.
 
@@ -15,12 +15,15 @@ log ends with ``Total wall time: H:MM:SS``. Every marker is matched at the
 start of a line only, because the log also echoes the input script, whose
 comments may contain the same words.
 
+.. versionadded:: 0.6.0
+
 Contents
 ========
 
 :func:`read_log` reads a file and :func:`parse_log` reads text; both return
-a :class:`LammpsLog`. :class:`BrokenLogError` reports a log that is cut off
-or does not follow the format.
+a :class:`LogFile`. :class:`BrokenLogError`, a
+:class:`~polyphys.simulate.core.LammpsFormatError`, reports a log that is cut
+off or does not follow the format.
 
 Thermo styles
 =============
@@ -69,6 +72,7 @@ Dependencies
 - Python standard library: `dataclasses`, `enum`, `logging`, `pathlib`,
   `re`
 - Third-party: `pandas`
+- PolyPhys: :mod:`polyphys.simulate.core`
 """
 
 import logging
@@ -81,7 +85,9 @@ from typing import Iterator, Sequence
 
 import pandas as pd
 
-__all__ = ["BrokenLogError", "LammpsLog", "parse_log", "read_log"]
+from polyphys.simulate.core import LammpsFormatError, _open_text
+
+__all__ = ["BrokenLogError", "LogFile", "parse_log", "read_log"]
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +131,7 @@ _WALL = re.compile(
 )
 
 
-class BrokenLogError(Exception):
+class BrokenLogError(LammpsFormatError):
     """A LAMMPS log is cut off or does not follow the log format.
 
     Examples
@@ -196,7 +202,7 @@ class _RunBlock:
 
 
 @dataclass(frozen=True)
-class LammpsLog:
+class LogFile:
     """The parsed contents of one LAMMPS log.
 
     The DataFrames can still be changed in place; copy one before editing it.
@@ -288,17 +294,18 @@ class LammpsLog:
     wall_time: pd.DataFrame
 
 
-def read_log(path: str | Path) -> LammpsLog:
+def read_log(path: str | Path) -> LogFile:
     """Read a LAMMPS log file.
 
     Parameters
     ----------
     path : str or pathlib.Path
-        The log file, read as UTF-8; an undecodable byte becomes U+FFFD.
+        The log file, read as UTF-8; an undecodable byte becomes U+FFFD. A
+        name ending in ``.gz`` is read through gzip.
 
     Returns
     -------
-    LammpsLog
+    LogFile
         The parsed log, with ``path`` set to `path` as a
         :class:`pathlib.Path`.
 
@@ -335,11 +342,12 @@ def read_log(path: str | Path) -> LammpsLog:
     0           65       20
     """
     path = Path(path)
-    text = path.read_text(encoding="utf-8", errors="replace")
+    with _open_text(path, errors="replace") as stream:
+        text = stream.read()
     return parse_log(text, path)
 
 
-def parse_log(text: str, path: Path | None = None) -> LammpsLog:
+def parse_log(text: str, path: Path | None = None) -> LogFile:
     """Parse the text of a LAMMPS log.
 
     Parameters
@@ -351,7 +359,7 @@ def parse_log(text: str, path: Path | None = None) -> LammpsLog:
 
     Returns
     -------
-    LammpsLog
+    LogFile
         The parsed log.
 
     Raises
@@ -414,7 +422,7 @@ def parse_log(text: str, path: Path | None = None) -> LammpsLog:
             "n_atoms": [last_run["n_atoms"]],
         }
     )
-    return LammpsLog(
+    return LogFile(
         path=path,
         lammps_version=_lammps_version(lines),
         thermo=pd.concat(thermo_tables, ignore_index=True),
@@ -664,7 +672,7 @@ def _parse_run_summary(block: _RunBlock) -> dict[str, float | str]:
     Returns
     -------
     dict of str to float or str
-        The fields of one row of :attr:`LammpsLog.run_stats`, without
+        The fields of one row of :attr:`LogFile.run_stats`, without
         ``run``; a field the summary lacks is absent from the dict. When a
         line occurs more than once, the first occurrence counts.
 

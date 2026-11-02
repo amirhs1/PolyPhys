@@ -50,6 +50,9 @@ from polyphys.manage.organizer import (
 from polyphys.manage.parser import SumRuleCyl
 from polyphys.manage.utils import round_to_multiple
 
+# A Pandas4Warning marks a deprecated pandas call; fail on it.
+pytestmark = pytest.mark.filterwarnings("error::pandas.errors.Pandas4Warning")
+
 
 # Fixtures: lineage trees and the names the parser gives their files
 
@@ -853,6 +856,13 @@ def test_parents_stamps_whole_counts_wholes_per_ensemble(whole_stamps):
     assert parents["n_ensembles"].tolist() == [2, 2]
     assert parents["n_frames"].tolist() == [60, 60]
     assert {"segment", "segment_id", "whole"}.isdisjoint(parents.columns)
+
+
+def test_parents_stamps_whole_drops_n_segments(whole_stamps):
+    """Whole stamps built from segments lose n_segments in their parents."""
+    stamps = whole_stamps.assign(n_segments=[3, 3, 3, 3])
+    parents = parents_stamps(stamps, "whole")
+    assert "n_segments" not in parents.columns
 
 
 def test_parents_stamps_applies_given_aggregation(segment_stamps):
