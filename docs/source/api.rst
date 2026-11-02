@@ -22,6 +22,7 @@ Simulate
    polyphys.simulate.log
    polyphys.simulate.dump
    polyphys.simulate.data
+   polyphys.simulate.build
 
 Analyze
 -------

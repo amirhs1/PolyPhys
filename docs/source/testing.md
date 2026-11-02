@@ -101,9 +101,35 @@ in the Hypothesis documentation.
 `make_temp_file(filename)`
 : Creates an empty file with a given name.
 
+`lammps_executable`
+: The LAMMPS executable, for a test marked `lammps` (see below).
+
 The fixtures are factories, called inside a test with the arguments that test
 needs; see [Factories as fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html#factories-as-fixtures)
 in the pytest documentation. Their tests are in `polyphys/tests/test_conftest.py`.
+
+## Tests that need LAMMPS
+
+A test that runs LAMMPS is marked `lammps` and takes the `lammps_executable`
+fixture:
+
+```python
+import pytest
+
+
+@pytest.mark.lammps
+def test_lammps_runs_from_a_built_start(lammps_executable, tmp_path):
+    subprocess.run([lammps_executable, "-in", "in.kg", ...], cwd=tmp_path)
+```
+
+- The executable is the one `LMP` names, else `lmp_serial` on `PATH`.
+- When neither exists, the test is skipped. CI has no LAMMPS.
+- When `LMP` names something that is not an executable, the test errors.
+
+The input scripts live in `polyphys/tests/data/lammps_build/`; the tests
+build their start files in `tmp_path` and read the log LAMMPS writes there.
+Each such test takes LAMMPS itself as its oracle: the run finishes with no
+error and no unexpected warning.
 
 ## Tests that need local data
 
