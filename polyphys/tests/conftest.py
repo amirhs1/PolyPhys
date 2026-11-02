@@ -19,6 +19,9 @@ make_lammps_data, make_lammps_dump
 private_data_dir
     The directory named by ``POLYPHYS_DATA_DIR``, for tests marked
     ``private_data``.
+lammps_executable
+    The LAMMPS executable named by ``LMP``, or ``lmp_serial`` on ``PATH``,
+    for tests marked ``lammps``.
 
 Markers
 -------
@@ -27,9 +30,14 @@ private_data
     skipped when ``POLYPHYS_DATA_DIR`` is unset, which is always the case in
     CI, and it errors when the variable names something that is not a
     directory.
+lammps
+    The test runs LAMMPS. It is skipped when neither ``LMP`` names an
+    executable nor ``lmp_serial`` is on ``PATH``, which is the case in CI,
+    and it errors when ``LMP`` names something that is not an executable.
 """
 
 import os
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
@@ -40,37 +48,86 @@ import pandas as pd
 import pytest
 
 DATA_DIR_ENV = "POLYPHYS_DATA_DIR"
+LAMMPS_ENV = "LMP"
+LAMMPS_DEFAULT = "lmp_serial"
+
+
+def _lammps_executable() -> Optional[str]:
+    """Return the LAMMPS executable: ``$LMP`` when set, else ``lmp_serial``
+    on ``PATH``, else None."""
+    named = os.environ.get(LAMMPS_ENV, "")
+    if named:
+        return named
+    return shutil.which(LAMMPS_DEFAULT)
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Register the ``private_data`` marker.
+    """Register the ``private_data`` and ``lammps`` markers.
 
-    The marker is registered here rather than in ``pyproject.toml`` so that a
-    nested pytest run (``pytester``) that loads this file also knows it.
+    The markers are registered here rather than in ``pyproject.toml`` so that
+    a nested pytest run (``pytester``) that loads this file also knows them.
     """
     config.addinivalue_line(
         "markers",
         "private_data: reads the maintainer's local data under "
         f"{DATA_DIR_ENV}; skipped when the variable is unset",
     )
+    config.addinivalue_line(
+        "markers",
+        f"lammps: runs the LAMMPS executable named by {LAMMPS_ENV}, or "
+        f"{LAMMPS_DEFAULT} on PATH; skipped when neither exists",
+    )
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
-    """Skip or fail a ``private_data`` test according to ``POLYPHYS_DATA_DIR``.
+    """Skip or fail a ``private_data`` or ``lammps`` test by its environment.
 
-    Unset or empty: the test is skipped. Set to a path that is not a
-    directory: the test errors in setup, so a misconfigured machine is not
-    mistaken for one without data.
+    ``private_data``: ``POLYPHYS_DATA_DIR`` unset or empty skips the test;
+    set to a path that is not a directory, the test errors in setup, so a
+    misconfigured machine is not mistaken for one without data. ``lammps``:
+    no executable skips the test; ``LMP`` naming something that is not an
+    executable errors.
     """
-    if item.get_closest_marker("private_data") is None:
-        return
-    data_dir = os.environ.get(DATA_DIR_ENV, "")
-    if data_dir == "":
-        pytest.skip(f"{DATA_DIR_ENV} is not set")
-    if not Path(data_dir).is_dir():
-        pytest.fail(
-            f"{DATA_DIR_ENV}={data_dir!r} is not a directory", pytrace=False
-        )
+    if item.get_closest_marker("private_data") is not None:
+        data_dir = os.environ.get(DATA_DIR_ENV, "")
+        if data_dir == "":
+            pytest.skip(f"{DATA_DIR_ENV} is not set")
+        if not Path(data_dir).is_dir():
+            pytest.fail(
+                f"{DATA_DIR_ENV}={data_dir!r} is not a directory",
+                pytrace=False,
+            )
+    if item.get_closest_marker("lammps") is not None:
+        executable = _lammps_executable()
+        if executable is None:
+            pytest.skip(f"no LAMMPS: set {LAMMPS_ENV} or put "
+                        f"{LAMMPS_DEFAULT} on PATH")
+        if shutil.which(executable) is None:
+            pytest.fail(
+                f"{LAMMPS_ENV}={executable!r} is not an executable",
+                pytrace=False,
+            )
+
+
+@pytest.fixture
+def lammps_executable() -> str:
+    """Return the LAMMPS executable for a test marked ``lammps``.
+
+    The marker skips the test before this fixture runs when there is none.
+
+    Examples
+    --------
+    .. code-block:: python
+
+        @pytest.mark.lammps
+        def test_run_starts(lammps_executable, tmp_path):
+            subprocess.run([lammps_executable, "-in", "in.kg", ...])
+    """
+    executable = _lammps_executable()
+    if executable is None:
+        pytest.skip(f"no LAMMPS: set {LAMMPS_ENV} or put "
+                    f"{LAMMPS_DEFAULT} on PATH")
+    return executable
 
 
 @pytest.fixture

@@ -1,0 +1,78 @@
+# A Kremer-Grest run from a start configuration written by
+# polyphys.simulate.build, to check that LAMMPS starts from it: FENE bonds
+# (K = 30, R0 = 1.5) with the WCA repulsion inside the bond, WCA pairs
+# (epsilon = sigma = 1, cut at 2^(1/6)), special_bonds fene, skin 0.3, and
+# velocities drawn at T = 1. Writes nothing; the log is the output.
+#
+# Variables, each overridable with -var:
+#   data   the data file (required)
+#   style  its atom style, bond or angle (default bond); an angle file gets
+#          angle_style cosine with K = 3
+#   mode   run0 (read the file and take step 0), nve (fix nve), nvelang
+#          (fix nve and a Langevin thermostat at T = 1), or limitlang
+#          (fix nve/limit 0.01 and the thermostat); default nvelang
+#   dt     the timestep (default 0.005)
+#   steps  the number of steps (default 10000)
+#   seed   the seed of the velocities and the thermostat
+#   dcyl   the diameter D of a cylindrical wall about the z axis, as
+#          fix wall/region lj126 at radius (D + 1)/2, the research
+#          convention for a wall of beads of diameter 1; 0 for no wall
+#          (default)
+#
+# A bond above sqrt(0.9) R0 = 1.423 prints "FENE bond too long"; a bond at
+# or above 2 R0 stops with "Bad FENE bond"; a bond longer than the ghost
+# cutoff 1.42 (pair cutoff plus skin) across a periodic face stops with
+# "Bad FENE bond" or "Bond atoms missing"; a bead on the wall stops with
+# "Particle outside surface of region". LAMMPS also prints "Communication
+# cutoff 1.42 is shorter than a bond length based estimate of 1.755" for
+# every FENE run with the default communication cutoff, from its heuristic
+# 1.5 x 0.97 sigma + skin; the checks ignore that line.
+#
+# Used by polyphys/tests/simulate/test_build.py (marker lammps) and by
+# check_starts.sh. Written for LAMMPS 22 Jul 2025 - Update 4.
+
+variable        style index bond
+variable        mode index nvelang
+variable        dt index 0.005
+variable        steps index 10000
+variable        seed index 4928459
+variable        dcyl index 0
+
+units           lj
+dimension       3
+boundary        p p p
+atom_style      ${style}
+special_bonds   fene
+
+read_data       ${data}
+mass            * 1.0
+
+bond_style      fene
+bond_coeff      1 30.0 1.5 1.0 1.0
+if "${style} == angle" then "angle_style cosine" "angle_coeff * 3.0"
+
+pair_style      lj/cut 1.122462
+pair_modify     shift yes
+pair_coeff      * * 1.0 1.0 1.122462
+neighbor        0.3 bin
+neigh_modify    every 1 delay 0 check yes
+
+variable        rwall equal (v_dcyl+1)/2
+if "${dcyl} > 0" then &
+    "region cylshell cylinder z 0.0 0.0 ${rwall} INF INF units box" &
+    "fix F_wall all wall/region cylshell lj126 1.0 1.0 1.122462"
+
+thermo_style    custom step temp pe ebond epair
+thermo          1000
+timestep        ${dt}
+velocity        all create 1.0 ${seed} dist gaussian
+
+if "${mode} == run0" then "run 0" "quit"
+if "${mode} == nve" then "fix F_nve all nve"
+if "${mode} == nvelang" then &
+    "fix F_nve all nve" &
+    "fix F_langevin all langevin 1.0 1.0 1.0 ${seed}"
+if "${mode} == limitlang" then &
+    "fix F_nve all nve/limit 0.01" &
+    "fix F_langevin all langevin 1.0 1.0 1.0 ${seed}"
+run             ${steps}

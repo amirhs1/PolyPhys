@@ -68,6 +68,11 @@
     testpaths = ["polyphys/tests"]
     xfail_strict = true
 
+[tool.coverage.run]
+    # Scripts for hand-run checks, such as make_starts.py, are not code
+    # under test.
+    omit = ["polyphys/tests/data/*"]
+
 [tool.mypy]
     files = ["polyphys/analyze", "polyphys/manage", "polyphys/simulate"]
     strict = true
