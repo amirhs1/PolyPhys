@@ -489,16 +489,7 @@ def plectoneme_ring(
         f"of {bond_length}, got {n_beads}")
     if estimate <= 0.0:
         raise too_few
-    width = arc_per_chord
-    lo, hi = max(estimate - width, _TINY), estimate + width
-    while closing_gap(lo) >= 0.0:
-        if lo <= _TINY:
-            raise too_few
-        width *= 2.0
-        lo = max(lo - width, _TINY)
-    while closing_gap(hi) <= 0.0:
-        width *= 2.0
-        hi += width
+    lo, hi = _bracket(closing_gap, estimate, arc_per_chord)
     strand = brentq(closing_gap, lo, hi, xtol=1e-14, maxiter=200)
     beads, gap = _march_curve(
         lambda u: _plectoneme_curve(u, strand, theta),
@@ -628,15 +619,8 @@ def resample_curve(
             centroid + scale * (polyline - centroid), n_beads, bond_length)
         return -bond_length if gap is None else gap - bond_length
 
-    estimate = n_beads * bond_length / length
-    width = 2.0 * bond_length / length
-    lo, hi = max(estimate - width, _TINY), estimate + width
-    while closing_gap(lo) >= 0.0:
-        width *= 2.0
-        lo = max(lo - width, _TINY)
-    while closing_gap(hi) <= 0.0:
-        width *= 2.0
-        hi += width
+    lo, hi = _bracket(closing_gap, n_beads * bond_length / length,
+                      2.0 * bond_length / length)
     scale = brentq(closing_gap, lo, hi, xtol=1e-15, maxiter=200)
     beads, gap = _march_polyline(
         centroid + scale * (polyline - centroid), n_beads, bond_length)
@@ -1051,6 +1035,25 @@ def _check_positive(name: str, value: float) -> None:
     """Raise unless `value` is a finite positive number."""
     if not (math.isfinite(value) and value > 0.0):
         raise ValueError(f"'{name}' must be positive, got {value}")
+
+
+def _bracket(
+    gap: Callable[[float], float], estimate: float, width: float
+) -> tuple[float, float]:
+    """Return ``(lo, hi)`` about `estimate` with ``gap(lo) < 0 <= gap(hi)``
+    for a closing gap that grows with its argument: a bound with the wrong
+    sign moves outward by a doubling `width`, `lo` never below ``_TINY``.
+    Raises ``ValueError`` when the gap is still non-negative at ``_TINY``."""
+    lo, hi = max(estimate - width, _TINY), estimate + width
+    while gap(lo) >= 0.0:
+        if lo <= _TINY:
+            raise ValueError("the closing gap has no sign change")
+        width *= 2.0
+        lo = max(lo - width, _TINY)
+    while gap(hi) <= 0.0:
+        width *= 2.0
+        hi += width
+    return lo, hi
 
 
 def _check_closed(gap: float | None, bond: float) -> None:

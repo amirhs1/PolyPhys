@@ -1,5 +1,5 @@
-"""Tests for the shared fixtures and the ``private_data`` marker in
-``polyphys/tests/conftest.py``.
+"""Tests for the shared fixtures and the ``private_data`` and ``lammps``
+markers in ``polyphys/tests/conftest.py``.
 
 Expected file counts and indices come from the arguments each test passes.
 Expected file contents come from the formula documented in
@@ -8,8 +8,10 @@ manual's read_data and dump pages: ``atom-ID atom-type x y z`` for
 ``atomic``, ``atom-ID molecule-ID atom-type x y z`` for ``bond`` and
 ``angle``, and one bond and one angle per consecutive pair and triple of a
 linear chain. The marker tests run a nested pytest session with
-``pytester``.
+``pytester``; the ``lammps`` ones name the Python interpreter as the
+executable, since any executable file stands in for LAMMPS there.
 """
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -64,6 +66,31 @@ def private_data_project(pytester: pytest.Pytester) -> pytest.Pytester:
         @pytest.mark.private_data
         def test_reads_data(private_data_dir):
             assert private_data_dir.is_dir()
+        """
+    )
+    return pytester
+
+
+@pytest.fixture
+def lammps_project(pytester: pytest.Pytester) -> pytest.Pytester:
+    """A nested pytest project whose conftest imports this conftest (so the
+    nested session runs the real module's hooks and fixtures, in process),
+    with one lammps test and one unmarked test that takes the
+    ``lammps_executable`` fixture."""
+    pytester.makeconftest(
+        "from polyphys.tests.conftest import *  # noqa: F401,F403\n")
+    pytester.makepyfile(
+        test_lammps="""
+        from pathlib import Path
+
+        import pytest
+
+        @pytest.mark.lammps
+        def test_runs_lammps(lammps_executable):
+            assert Path(lammps_executable).exists()
+
+        def test_fixture_without_marker(lammps_executable):
+            assert isinstance(lammps_executable, str)
         """
     )
     return pytester
@@ -270,6 +297,41 @@ def test_private_data_errors_when_data_dir_missing(
     result = private_data_project.runpytest_subprocess()
 
     result.assert_outcomes(errors=1)
+
+
+def test_lammps_skips_without_an_executable(lammps_project, monkeypatch):
+    """A lammps test, and the fixture used without the marker, are skipped
+    when LMP is unset and lmp_serial is not on PATH."""
+    monkeypatch.delenv("LMP", raising=False)
+    monkeypatch.setenv("PATH", "")
+
+    result = lammps_project.runpytest()
+
+    result.assert_outcomes(skipped=2)
+
+
+def test_lammps_runs_with_the_executable_lmp_names(
+    lammps_project, monkeypatch
+):
+    """A lammps test runs, and the fixture returns the path, when LMP names
+    an executable."""
+    monkeypatch.setenv("LMP", sys.executable)
+
+    result = lammps_project.runpytest()
+
+    result.assert_outcomes(passed=2)
+
+
+def test_lammps_errors_when_lmp_is_not_an_executable(
+    lammps_project, monkeypatch, tmp_path
+):
+    """A lammps test errors in setup when LMP names a missing file; the
+    fixture alone returns the name, since the marker does the checking."""
+    monkeypatch.setenv("LMP", str(tmp_path / "missing"))
+
+    result = lammps_project.runpytest()
+
+    result.assert_outcomes(errors=1, passed=1)
 
 
 def test_strict_markers_rejects_misspelt_private_data(pytester):

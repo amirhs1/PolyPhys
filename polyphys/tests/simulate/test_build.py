@@ -17,6 +17,8 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.simulate.build import (
     ConformationError,
+    _bracket,
+    _march_curve,
     _plectoneme_curve,
     chain_angles,
     chain_bonds,
@@ -31,12 +33,6 @@ from polyphys.simulate.data import DataFile, read_data, write_data
 
 
 @pytest.fixture
-def build_dir() -> Path:
-    """The folder of the LAMMPS input script ``in.kg``."""
-    return Path(__file__).parent.parent / "data" / "lammps_build"
-
-
-@pytest.fixture
 def bond_lengths() -> Callable[..., np.ndarray]:
     """The lengths of the bonds along a chain, the closing one for a ring."""
     def _lengths(positions: np.ndarray, ring: bool = False) -> np.ndarray:
@@ -45,23 +41,6 @@ def bond_lengths() -> Callable[..., np.ndarray]:
                                   axis=1)
         return np.linalg.norm(np.diff(positions, axis=0), axis=1)
     return _lengths
-
-
-@pytest.fixture
-def closest_non_bonded() -> Callable[..., float]:
-    """The shortest distance between beads that are not bonded, by brute
-    force without periodic images."""
-    def _closest(positions: np.ndarray, ring: bool = False) -> float:
-        n = positions.shape[0]
-        distances = np.linalg.norm(
-            positions[:, None, :] - positions[None, :, :], axis=-1)
-        distances[np.diag_indices(n)] = np.inf
-        first = np.arange(n - 1)
-        distances[first, first + 1] = distances[first + 1, first] = np.inf
-        if ring:
-            distances[0, n - 1] = distances[n - 1, 0] = np.inf
-        return float(distances.min())
-    return _closest
 
 
 @pytest.fixture
@@ -98,25 +77,6 @@ def make_record(make_box: Callable[..., Box]) -> Callable[..., DataFile]:
             n_bond_types=1 if len(pairs) else 0,
         )
     return _record
-
-
-@pytest.fixture
-def start_file(tmp_path: Path, make_box: Callable[..., Box]
-               ) -> Callable[[str], tuple[Path, str]]:
-    """Write a start file of 200 beads (radius 2, pitch 2.5, bond 0.97) of
-    one kind, ``helix``, ``ring``, or ``ring_angle``, in a box periodic
-    along z only, the configurations of ``make_starts.py``."""
-    def _write(kind: str) -> tuple[Path, str]:
-        if kind == "helix":
-            positions = helix(200, radius=2.0, pitch=2.5)
-        else:
-            positions = plectoneme_ring(200, radius=2.0, pitch=2.5)
-        box = make_box(half=5.0,
-                       half_height=0.5 * np.ptp(positions[:, 2]) + 2.0)
-        data = chain_data(positions, box, ring=kind != "helix",
-                          angles=kind == "ring_angle")
-        return write_data(data, tmp_path / f"{kind}.data"), data.atom_style
-    return _write
 
 
 # helix
@@ -456,6 +416,61 @@ def test_plectoneme_curve_follows_neukirch_starostin_appendix_a() -> None:
     assert_allclose(strand_c[:, :2], -strand_a[:, :2], rtol=0.0, atol=1e-12)
     assert_allclose(strand_c[:, 2], strand_a[:, 2], rtol=0.0, atol=1e-12)
     assert_allclose(points, [loop_b, loop_d], rtol=1e-12, atol=1e-12)
+
+
+@pytest.mark.parametrize(
+    ("estimate", "width"),
+    [
+        pytest.param(2.0, 1.0, id="estimate-below-the-root"),
+        pytest.param(30.0, 1.0, id="estimate-above-the-root"),
+        pytest.param(10.5, 1.0, id="estimate-at-the-root"),
+    ],
+)
+def test_bracket_widens_until_the_gap_changes_sign(
+    estimate: float, width: float
+) -> None:
+    """Wherever the estimate starts, the bracket ends with the gap negative
+    at its low end and non-negative at its high end, and above zero; here
+    for the gap x - 10, whose root is 10."""
+    lo, hi = _bracket(lambda x: x - 10.0, estimate, width)
+
+    assert lo < 10.0 <= hi
+    assert lo > 0.0
+
+
+def test_bracket_rejects_a_gap_that_never_turns_negative() -> None:
+    """A gap that stays positive down to the lower bound raises
+    ``ValueError`` instead of searching forever."""
+    with pytest.raises(ValueError, match="no sign change"):
+        _bracket(lambda x: 1.0, 5.0, 1.0)
+
+
+def test_march_curve_takes_a_sample_on_the_sphere_as_the_crossing() -> None:
+    """On a line sampled every quarter bond, the beads fall on samples that
+    lie exactly one bond from the bead before, and the chord back to the
+    first bead is the line's length."""
+    def line(u: np.ndarray) -> np.ndarray:
+        return np.column_stack([u, 0.0 * u, 0.0 * u])
+
+    beads, gap = _march_curve(line, 2.5, 3, 1.0, 0.25)
+
+    assert_allclose(beads[:, 0], [0.0, 1.0, 2.0], rtol=0.0, atol=1e-12)
+    assert gap == pytest.approx(2.0)
+
+
+def test_march_curve_extends_its_window_and_reports_a_curve_that_ends(
+) -> None:
+    """On a line that advances a tenth of a bond per unit of parameter, the
+    next crossing lies beyond the window the march scans first, so it scans
+    on; when the curve ends before the fifth bead it returns the four
+    placed and no closing chord."""
+    def slow(u: np.ndarray) -> np.ndarray:
+        return np.column_stack([0.1 * u, 0.0 * u, 0.0 * u])
+
+    beads, gap = _march_curve(slow, 35.0, 5, 1.0, 0.05)
+
+    assert_allclose(beads[:, 0], [0.0, 1.0, 2.0, 3.0], rtol=0.0, atol=1e-12)
+    assert gap is None
 
 
 def test_plectoneme_ring_starts_at_the_foot_of_the_first_strand() -> None:
@@ -992,21 +1007,30 @@ def test_check_conformation_rejects_bad_arguments(
         pytest.param("limitlang", 0.005, id="nve-limit"),
     ],
 )
-def test_lammps_runs_from_a_built_start(
-    lammps_executable: str, build_dir: Path, tmp_path: Path,
-    start_file: Callable[[str], tuple[Path, str]], kind: str, dcyl: float,
-    mode: str, dt: float,
+def test_lammps_runs_from_a_built_start(  # pragma: no cover - needs LAMMPS
+    lammps_executable: str, tmp_path: Path, make_box: Callable[..., Box],
+    kind: str, dcyl: float, mode: str, dt: float,
 ) -> None:
     """LAMMPS runs 10 000 steps of a Kremer-Grest chain from a built start
-    under plain nve, Langevin dynamics, and nve/limit, with no error and no
-    warning beyond the communication-cutoff heuristic."""
-    data, style = start_file(kind)
+    of 200 beads (radius 2, pitch 2.5, the configurations of
+    ``make_starts.py``) under plain nve, Langevin dynamics, and nve/limit,
+    with no error and no warning beyond the communication-cutoff
+    heuristic."""
+    if kind == "helix":
+        positions = helix(200, radius=2.0, pitch=2.5)
+    else:
+        positions = plectoneme_ring(200, radius=2.0, pitch=2.5)
+    box = make_box(half=5.0, half_height=0.5 * np.ptp(positions[:, 2]) + 2.0)
+    data = chain_data(positions, box, ring=kind != "helix",
+                      angles=kind == "ring_angle")
+    path = write_data(data, tmp_path / f"{kind}.data")
+    script = Path(__file__).parent.parent / "data" / "lammps_build" / "in.kg"
     log = tmp_path / f"{kind}-{mode}.log"
 
     subprocess.run(
-        [lammps_executable, "-in", str(build_dir / "in.kg"), "-log",
-         str(log), "-screen", "none", "-var", "data", str(data), "-var",
-         "style", style, "-var", "mode", mode, "-var", "dt", str(dt),
+        [lammps_executable, "-in", str(script), "-log", str(log), "-screen",
+         "none", "-var", "data", str(path), "-var", "style",
+         data.atom_style, "-var", "mode", mode, "-var", "dt", str(dt),
          "-var", "steps", "10000", "-var", "dcyl", str(dcyl)],
         cwd=tmp_path, capture_output=True, text=True, timeout=600,
         check=False)
