@@ -11,6 +11,42 @@ version increase may introduce incompatible changes.
 
 ### Added
 
+- `polyphys.analyze.clusters`: contact and cluster statistics of a particle
+  group, ported from the research code with new algorithms
+  ([#51](https://github.com/amirhs1/PolyPhys/issues/51)). `pair_distances`
+  builds the distance matrix with the minimum image in the periodic
+  directions of an orthogonal box; `find_direct_contacts` applies the
+  cutoff; `cluster_labels`, `count_clusters`, and `contact_matrix` find the
+  clusters as connected components of the contact graph with
+  `scipy.sparse.csgraph.connected_components` and histogram their sizes
+  with `numpy.bincount`; `count_bonds` histograms the contacts per
+  particle. The research code's `generate_contact_matrix` merged matrix
+  columns in one pass and could stop short of the transitive closure, so
+  `count_foci_clusters`, reading sizes off eigenvalues, then returned
+  sizes that did not add up to the particle count (54 of 2000 random
+  graphs of 3 to 11 nodes; the smallest failing graph is a regression
+  test). The foci cluster-size histograms of the research probes passed
+  through that routine; the H-NS cis, trans, and loop-length statistics did
+  not, since the one-monomer-per-patch rule precedes the merge there. The
+  cluster-size histogram is indexed by size, with index 0 always 0, where
+  the research code's index 0 held the number of zero eigenvalues.
+  `genomic_distance` works for linear chains (the research code's linear
+  branch raised `TypeError`), `foci_pair_info` takes the topology (the
+  research code applied the ring minimum to linear chains) and returns
+  bonds rather than monomers between. `pair_distance_histograms` bins every
+  pair's separations on one shared grid with an explicit `r_max`, and
+  `pair_separation_density` estimates the orientation-averaged probability
+  density of the separation vector, `H_k / (N_f dV_k)` with the exact shell
+  volume, which integrates to one; it replaces the research code's
+  `foci_rdf`, which used the midpoint shell and rescaled each curve to unit
+  sum, so stored `pairDistRdfFoci` values change by one constant per curve
+  and the first-bin shell correction. `binding_statistics` returns a
+  `FrameBinding` and `BindingStats` accumulates frames and the loop-length
+  histogram, replacing `hns_binding`'s mutable default arguments; the
+  counting rules are unchanged and the Clusters page maps the old names.
+  `binder_contacts` replaces `find_binder_clusters_need_attention` with a
+  vectorized form of the same definition. A Clusters page in the
+  documentation defines every term and the density estimate.
 - `polyphys.manage.lammps_log`: `read_log` and `parse_log` read a LAMMPS log
   into a `LammpsLog` record of three DataFrames: `thermo`, one row per thermo
   output step of every run in the `one`, `custom`, `multi`, or `yaml` style,
@@ -93,6 +129,9 @@ version increase may introduce incompatible changes.
 
 ### Changed
 
+- `scipy>=1.14.1` is a runtime dependency, the first SciPy with wheels for
+  every Python in the CI matrix (3.11 to 3.13); `scipy-stubs` joins the
+  `dev` extra so `mypy --strict` sees its types.
 - `.gitignore` no longer excludes `*.png`, so documentation figures can be
   committed; `*.pdf` and `*.eps` stay excluded.
 - pytest now runs with `--strict-markers`, `--strict-config`,

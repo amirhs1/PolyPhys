@@ -21,7 +21,8 @@
     requires-python = ">=3.11"
     dependencies = [
         "numpy",
-        "pandas"
+        "pandas",
+        "scipy>=1.14.1"
     ]
 
 [project.optional-dependencies]
@@ -39,6 +40,7 @@
         "flake8",
         "mypy",
         "pandas-stubs",
+        "scipy-stubs",
         "build"
     ]
 
