@@ -14,11 +14,14 @@ Submodules
   fixed-size binning with radial, axial, azimuthal, and planar histograms.
 - `stats`: Autocorrelation-aware uncertainty of a time average over
   correlated frames, by Flyvbjerg-Petersen block averaging.
+- `clusters`: Contact and cluster statistics of a particle group, pair
+  separation densities, and the binding statistics of two-patch binders.
 """
 
-from polyphys.analyze import measurer, stats
+from polyphys.analyze import clusters, measurer, stats
 
 __all__ = [
+    'clusters',
     'measurer',
     'stats',
 ]

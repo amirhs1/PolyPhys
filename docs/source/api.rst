@@ -31,3 +31,4 @@ Analyze
 
    polyphys.analyze.measurer
    polyphys.analyze.stats
+   polyphys.analyze.clusters
