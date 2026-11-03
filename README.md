@@ -142,7 +142,7 @@ frame:
 | `analyze.measurer` | Per-frame structural observables — end-to-end distance, farthest-site distance, transverse size, maximum extent — plus fixed-size binning and radial, axial, azimuthal, and planar histograms. |
 | `analyze.clusters` | Contact and cluster statistics of a particle group (direct contacts under a cutoff, connected-component clusters, size and bond histograms), genomic distances, the probability density of a pair's separation, and the free, dangling, bridging, cis, and trans statistics of two-patch binders. |
 | `analyze.correlations` | The autocorrelation function of a time series by the FFT with Bartlett's confidence band, exponential and stretched-exponential decay fits with a recorded starting point, and the bond cosine correlation of a linear or ring chain, from which a persistence length follows. |
-| `analyze.pipeline` | Reduces one space's probe artifacts down the lineage for every property of a study's `AnalysisTable`, with post-hooks that derive time averages, autocorrelations, density profiles through an injected kernel, and the pair distances of the foci. |
+| `analyze.pipeline` | Reduces one space's probe artifacts down the lineage for every property of a study's `AnalysisTable`, with post-hooks that derive time averages, autocorrelations, density profiles through an injected kernel, and the pair distances of the foci; and reduces each whole's time series to its equilibrium value with a blocked error. |
 
 Eight parser subclasses ship with the package, covering cylindrical and cubic
 confinement with linear, ring, and bidisperse chain topologies.

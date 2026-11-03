@@ -158,6 +158,46 @@ with a `whole` and a `row` column, so no whole is lost before the ensemble
 average; the average is taken row by row across the wholes and carries
 `<column>-mean`, `<column>-var`, and `<column>-sem` per column.
 
+## The equilibrium value of each whole
+
+`reduce_space` keeps every frame of a time series. The `allInOne` tables
+of a study need one number per whole with its error:
+{func}`~polyphys.analyze.pipeline.equilibrium_wholes` reads each ensemble
+file of the `ens` stage once and reduces each of its columns, one whole's
+time series, to `<output>-mean`, the time average, `<output>-var`, the
+sample variance of the frames, and `<output>-sem`, the blocked standard
+error of the average from {func}`~polyphys.analyze.stats.sem_blocked`,
+then merges them with the whole stamps on `whole`, one row per whole. The
+output name of each property is declared, so `gyrTMon` can become
+`gyrMon`, and a whole that is in the stamps but not in a property's files,
+or the other way round, raises and is named.
+
+```python
+from polyphys.analyze.pipeline import equilibrium_wholes
+
+table = equilibrium_wholes(
+    'analysis/al5.0nl5ml125ns400ac1.0-bug-ens',
+    {'gyrTMon': 'gyrMon', 'shapeTMon': 'shapeMon'},
+    whole_stamps, topology='ring')
+```
+
+The frames of one run are correlated, so the error of a time average is
+larger than the per-frame standard error by about $\sqrt{s}$, with $s$
+the statistical inefficiency, the number of frames that make one
+independent sample. Block averaging (Flyvbjerg and Petersen, 1989) finds
+that error without a model of the correlation; the `'lee'` plateau rule
+(Lee et al., 2011) is the default and `'sem_err'` the alternative, both
+as {func}`~polyphys.analyze.stats.select_plateau` defines them. Blocking
+applies within a whole only: the wholes of an ensemble are independent
+runs, so the ensemble average keeps the plain standard error across them.
+A series that is too short for its correlation time gets a `RuntimeWarning`
+and a NaN or unreliable error; a constant series gets an error of 0.
+
+`topology` is for stamps the probe phase keyed by the whole's file name,
+such as `...ens1.ring`, while the ensemble files name a whole without the
+suffix: it is appended to the ensemble's names before the merge, and the
+table keeps the stamps' names.
+
 ## What changed from the research code
 
 The module replaces the research code's `analyzer`, whose nine
@@ -182,6 +222,13 @@ it except where the change was deliberate:
 - The ensemble of DataFrame wholes keeps every whole; the research code
   averaged them at the ensemble step, so the ensemble average had no
   variance or standard error.
+- The error of a whole's time average is the blocked standard error; the
+  research code's `measurer.sem` was the per-frame one, smaller by about
+  $\sqrt{s}$. Its variance has `ddof = 1`; the research code's `np.var`
+  on a pandas column gave the population variance. The output name is
+  declared, not made by dropping the last `T`; and a whole on one side of
+  the merge only raises, where the research code dropped or emptied the
+  row.
 
 ## References
 
@@ -192,3 +239,10 @@ it except where the change was deliberate:
   properties of autocorrelated time-series", Supplement to the Journal of
   the Royal Statistical Society 8, 27-41 (1946).
   <https://doi.org/10.2307/2983611>
+- H. Flyvbjerg and H. G. Petersen, "Error estimates on averages of
+  correlated data", J. Chem. Phys. 91, 461-466 (1989).
+  <https://doi.org/10.1063/1.457480>
+- R. M. Lee, G. J. Conduit, N. Nemec, P. López Ríos, and N. D. Drummond,
+  "Strategies for improving the efficiency of quantum Monte Carlo
+  calculations", Phys. Rev. E 83, 066706 (2011); erratum 85, 029908 (2012).
+  <https://doi.org/10.1103/PhysRevE.83.066706>
