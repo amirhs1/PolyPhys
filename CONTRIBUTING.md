@@ -22,6 +22,7 @@ Pull requests that don't follow the policy may be closed without review.
 
 - [ ] `.claude/settings.json` is committed with the attribution block.
 - [ ] `git config core.hooksPath .githooks` has been run in this clone.
+- [ ] `git config fetch.prune true` has been run in this clone.
 - [ ] `.gitmessage` is committed.
 - [ ] `git config commit.template .gitmessage` has been run, for commits
       written in an editor.
@@ -107,6 +108,18 @@ for a feature request, and `type:question` for a question.
 - `AGENTS.md`, "Git"
 
 Each of these cites this section.
+
+## Changelog
+
+A pull request adds one line per change under `## [Unreleased]` in
+`CHANGELOG.md`, in the form the file's header names, unless its only area is
+`agents`. A pull request that only edits the changelog, and a release pull
+request, add none.
+
+Write the entry in the commit that makes the change, citing the issue the
+pull request closes. A pull request that closes no issue cites itself in a
+second commit, pushed once it is open. The release adds the commit
+references.
 
 ## Releases
 

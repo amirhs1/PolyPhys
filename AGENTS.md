@@ -32,7 +32,9 @@ reads correctly. Run existing non-destructive checks without asking; start with
 the narrowest relevant one, such as the changed test module, and broaden when
 warranted. CI runs the full Python matrix (3.11–3.14) and builds the package on
 every pull request; say how far your local checks reach. Once per clone, run
-`git config core.hooksPath .githooks` to turn on the `commit-msg` hook.
+`git config core.hooksPath .githooks` to turn on the `commit-msg` hook, and
+`git config fetch.prune true` so a fetch drops the remote-tracking refs of
+deleted branches.
 
 - On a persistent machine, do not create or change any environment, including
   with the install command, without explicit approval.
@@ -50,7 +52,7 @@ every pull request; say how far your local checks reach. Once per clone, run
 ```text
 PolyPhys/
   polyphys/manage/     parser, organizer, utils, types: filenames → lineage → reduced ensembles
-  polyphys/analyze/    measurer: per-frame structural observables and histograms
+  polyphys/analyze/    measurer, stats, clusters, correlations, sumrule: per-frame observables, their statistics, and the sum rule on reduced profiles
   polyphys/simulate/   core, log, dump, data, build: LAMMPS logs, dumps, data files, and start configurations
   polyphys/tests/      tests for analyze/, manage/, simulate/, and packaging
   projects/            one folder per study: its ProjectSpec; not installed
@@ -326,6 +328,7 @@ gives a commit message's subject and body.
 | `post-comment`      | Asked to reply to or comment on an issue or pull request             |
 | `write-test`        | A module's test file; adding or changing a test in `polyphys/tests/` |
 | `draft-release`     | Never on your own; a person invokes it                               |
+| `close-out`         | A pull request merged; cleaning up its branch and files              |
 
 Load a task's skill before you start it. Changing a skill means checking every
 file it cites and this table.
