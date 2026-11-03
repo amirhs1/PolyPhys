@@ -1,6 +1,6 @@
 ---
 name: close-out
-description: Clean up the clone after a pull request merges and its remote branch is deleted, and say whether the session that made it is safe to archive. Use when a person says a pull request merged, or when the session-start listing names a merged branch; not for an open pull request.
+description: Clean up the clone after a pull request merges and its remote branch is deleted, and say whether the session that made it is safe to archive. Use when a person says a pull request merged, or when the session-start listing names a merged branch; not for an open pull request, or for a branch the listing gives as having no commits of its own.
 ---
 
 # Close out a merged pull request
