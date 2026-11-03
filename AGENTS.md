@@ -50,7 +50,7 @@ every pull request; say how far your local checks reach. Once per clone, run
 ```text
 PolyPhys/
   polyphys/manage/     parser, organizer, utils, types: filenames → lineage → reduced ensembles
-  polyphys/analyze/    measurer: per-frame structural observables and histograms
+  polyphys/analyze/    measurer, stats, clusters, correlations, sumrule: per-frame observables, their statistics, and the sum rule on reduced profiles
   polyphys/simulate/   core, log, dump, data, build: LAMMPS logs, dumps, data files, and start configurations
   polyphys/tests/      tests for analyze/, manage/, simulate/, and packaging
   projects/            one folder per study: its ProjectSpec; not installed

@@ -11,7 +11,8 @@ Custom types here represent domain-specific concepts such as `PropertyT`,
 `EntityT`, and `DirectionT`, which clarify the usage of fundamental
 types like `str`, `int`, and `bool`. `PhaseT` and `StageT` are the phase and
 stage vocabularies that :func:`~polyphys.manage.organizer.make_database`
-checks its arguments against.
+checks its arguments against, and `NormalizerT` the ways a density profile
+may be normalized.
 
 Composite types such as tuples and dictionaries (`TimeSeriesT`,
 `NonScalarHistT`, etc.) group related information for structured
@@ -21,8 +22,8 @@ This module also defines type aliases for input sources and simulation
 metadata.
 """
 from typing import (
-    TextIO, IO, Any, Literal, TYPE_CHECKING, TypeVar, TypeAlias, Iterable,
-    Sequence
+    TextIO, IO, Any, Callable, Literal, TYPE_CHECKING, TypeVar, TypeAlias,
+    Iterable, Sequence
     )
 from gzip import GzipFile
 from os import PathLike
@@ -60,6 +61,12 @@ WholeRelationT = Literal['histogram', 'tseries', 'bin_edge']
 # these names.
 PhaseT = Literal['simsAll', 'simsCont', 'logs', 'trjs', 'probes', 'analysis',
                  'viz', 'galaxy', 'allInOne']
+# How a density profile is normalized: the value of its first bin (r = 0, the
+# cylinder axis or the chain's centre of mass), its last bin (the far field
+# along z or in a periodic cube), its maximum, a value given as a number, or a
+# function of the scaled profile returning the value.
+NormalizerT = (Literal['first', 'last', 'max'] | float
+               | Callable[[pd.DataFrame], float])
 PlaneT = Literal['xy', 'yz', 'zx']
 PrimitiveLineageT = Literal['segment', 'whole']
 PropertyT = str

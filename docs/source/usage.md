@@ -188,6 +188,60 @@ code will join it there. The folder is not installed, and CI lints,
 type-checks, and tests it with the package. A study elsewhere uses the same
 layout in its own repository.
 
+## The density sum rule
+
+The density sum rule of Jeon et al. (2016, eqns 5 to 7) says that in a
+crowded polymer solution the volume fractions of the species, each divided by
+its particle diameter, sum to the far-field crowder term:
+`sum_i phi_i(x) / a_i ~ phi_c(inf) / a_c`, or equivalently
+`sum_i a_i**2 rho_i(x) ~ a_c**2 rho_c(inf)` for the number densities. Here
+`x` is `r`, the distance from the cylinder axis in a cylinder and from the
+polymer's centre of mass in a periodic cube, or `z`, the axial distance from
+the centre of mass.
+
+`space_profiles` in `polyphys.analyze.sumrule` builds one term of the sum from a space of
+ensemble-averaged profiles: it scales each `Phi` profile by `1 / a_i` and each
+`Rho` profile by `a_i**2`, with `a_i` read from the parser attribute that the
+study's `species_sizes` names, normalizes the scaled profile by a reference
+value, folds a `z` profile about `z = 0`, and adds the state point's
+attributes:
+
+```python
+monomers = space_profiles(database, 'Phi', 'r', 'Mon', chain.parser,
+                          chain.hierarchy, list(chain.physical_attrs), 'all',
+                          chain.species_sizes, divisor=chain.divisor)
+crowders = space_profiles(database, 'Phi', 'r', 'Crd', chain.parser,
+                          chain.hierarchy, list(chain.physical_attrs), 'all',
+                          chain.species_sizes, divisor=chain.divisor)
+```
+
+The reference value follows the research code unless `normalizer` says
+otherwise: the value at `r = 0` for `r` in a cylinder, where the outermost
+bins are the crowder layers on the wall and no far field exists, and the
+maximum otherwise (`PROFILE_NORMALIZERS`). `normalizer` also takes `'last'`,
+a number, or a function of the scaled frame and the file's parser instance,
+such as `lambda df, info: info.phi_bulk_c / info.dcrowd` for the nominal bulk
+value of a `Phi` profile. `normalize_r` and `normalize_z` are the two steps on
+their own. For `r` in a cylinder, `space_profiles` also adds the bin centre in
+crowder radii, recentred so that the wall sits at an integer number of crowder
+diameters and the layers of different state points overlay.
+
+`sum_rule_profiles` adds the species' scaled profiles state point by state
+point and normalizes the sum by its own reference value, so that the sum is
+one at the reference and its departure from one measures the rule's failure:
+
+```python
+total = sum_rule_profiles({'Mon': monomers, 'Crd': crowders}, 'rPhi',
+                          chain.geometry, 'r')
+```
+
+The default (`SUM_NORMALIZERS`) is the value at `r = 0` for `r` in a cylinder
+and the far-field value otherwise, where the monomer term vanishes and the sum
+is the crowder term, which for several crowders is eqn (7) of Jeon et al.
+Under cylindrical confinement the radial rule holds only where the wall
+layering is weak, which the ratio `kappa = (D - a_c) / a_c` controls (Sadeghi
+Isfahani, 2024, chapter 3).
+
 See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.
