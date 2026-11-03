@@ -149,7 +149,7 @@ profiles, and the planar histograms with their edges:
 >>> [prop.prop for prop in table.properties]
 ['gyrTMon', 'rHistCrd', 'xyHistCrd', 'xEdge']
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 import glob
 import logging
@@ -231,7 +231,7 @@ class DensityKernel(Protocol):
     geometry the whole's parser instance describes. The study's driver
     supplies one, so this module imports no density model.
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     def __call__(
@@ -303,7 +303,7 @@ class Derived:
     >>> out.name, out.whole_type
     ('gyrMon', 'vector')
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     name: str
@@ -372,7 +372,7 @@ class PropertySpec:
     ...
     ValueError: 'xEdge': relation 'bin_edge' and whole_type 'vector' ...
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     name: str
@@ -445,7 +445,7 @@ class HookContext:
     density : DensityKernel, optional
         The injected volume-fraction kernel.
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     prop: PropertySpec
@@ -497,7 +497,7 @@ class AnalysisTable:
     ...
     ValueError: Properties listed more than once: ['gyrTMon'].
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     group: GroupT
@@ -547,7 +547,7 @@ def tseries(
     >>> tseries('gyrT', 'Mon').prop
     'gyrTMon'
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     return PropertySpec(name, species, 'tseries', 'vector',
                         post_hook=post_hook)
@@ -582,7 +582,7 @@ def histogram(
     >>> spec.prop, spec.edge_prop
     ('rHistCrd', 'rEdgeCrd')
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     return PropertySpec(f'{direction}Hist', species, 'histogram', 'vector',
                         edge_prop=f'{direction}Edge{species}',
@@ -612,7 +612,7 @@ def histogram_2d(plane: str, species: EntityT) -> PropertySpec:
     >>> histogram_2d('xy', 'Crd').prop
     'xyHistCrd'
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     return PropertySpec(f'{plane}Hist', species, 'histogram', 'matrix')
 
@@ -637,7 +637,7 @@ def edge(direction: DirectionT) -> PropertySpec:
     >>> edge('x').prop
     'xEdge'
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     return PropertySpec(f'{direction}Edge', '', 'bin_edge', 'bin_edge')
 
@@ -668,7 +668,7 @@ def matrix_tseries(
     >>> matrix_tseries('principalT', 'Mon').whole_type
     'matrix'
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     return PropertySpec(name, species, 'tseries', 'matrix',
                         post_hook=post_hook)
@@ -712,7 +712,7 @@ class TimeAverage:
     >>> out.name, out.wholes['w1']
     ('clustersHistFoci', array([3., 4.]))
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     output: str
@@ -765,7 +765,7 @@ class Autocorrelation:
     >>> np.round(acf_out.wholes['w1'], 6)
     array([ 1.   , -0.875,  0.75 ])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     nlags: int
@@ -831,7 +831,7 @@ class LocalDensities:
     >>> outputs[2].wholes[whole]
     array([1., 1.])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     def __call__(
@@ -937,7 +937,7 @@ def half_contour(n_monomers: int, bond_max: float) -> float:
     >>> half_contour(10, 1.5)
     7.5
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     if n_monomers < 2:
         raise ValueError(f'n_monomers must be at least 2; got {n_monomers}.')
@@ -1020,7 +1020,7 @@ class FociPairDistances:
     >>> series.wholes['w1']['loc4loc8genDist4'].to_list()
     [0.5, 2.5]
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     bin_size: PerWhole
@@ -1144,7 +1144,7 @@ def reduce_stamps(
         whole_stamps, ensemble_stamps = reduce_stamps(
             [(path,) for path in sorted(stamp_paths)], 'whole')
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     whole_dir, ens_dir, ens_avg_dir = save_to
     if lineage == 'segment':
@@ -1249,7 +1249,7 @@ def reduce_space(
     0           2.0          2.0          1.0
     1           4.0          8.0          2.0
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     parser = spec.parser
     group = table.group
