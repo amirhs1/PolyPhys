@@ -33,6 +33,7 @@ for anything not checked, and why.
 - [ ] `python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'`
 - [ ] `python -m build` if packaging metadata, package data, or package layout changed
 - [ ] `python -m sphinx -W -b html docs/source docs/_build` if `docs/source/` changed
+- [ ] `CHANGELOG.md` has an entry under `[Unreleased]`, or this pull request needs none (`CONTRIBUTING.md`, "Changelog")
 
 ## Scientific correctness
 

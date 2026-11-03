@@ -10,7 +10,9 @@ description: Open a draft GitHub pull request whose body is the full report. Use
 2. Before the push, review the diff: `git status --short`, then the whole
    branch diff, `git diff main...HEAD`, for unrelated files, secrets,
    private data, and accidental deletions. A change on the list in AGENTS.md,
-   "Ask first", needs that approval before you push it.
+   "Ask first", needs that approval before you push it. Check that the branch
+   adds the entry CONTRIBUTING.md, "Changelog", asks for. If the pull request
+   closes no issue, push a commit that cites its number once it is open.
 3. Write the body from `.github/pull_request_template.md`: every section, in
    order; a section that does not apply says `None`.
    - Summary: the reason only from the linked issue, the maintainer, or an
