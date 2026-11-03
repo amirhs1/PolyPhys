@@ -24,6 +24,7 @@ caption: Contents:
 usage
 statistics
 clusters
+correlations
 testing
 decisions
 api
