@@ -21,13 +21,24 @@ Submodules
   chain.
 - `sumrule`: The density sum rule on a space's ensemble-averaged density
   profiles: scaled, normalized, folded, and summed over species.
+- `density`: The local number density and volume fraction of a species
+  from a histogram of its bead centres, with the share of a finite bead
+  spread over the bins it reaches.
 """
 
-from polyphys.analyze import clusters, correlations, measurer, stats, sumrule
+from polyphys.analyze import (
+    clusters,
+    correlations,
+    density,
+    measurer,
+    stats,
+    sumrule,
+)
 
 __all__ = [
     'clusters',
     'correlations',
+    'density',
     'measurer',
     'stats',
     'sumrule',
