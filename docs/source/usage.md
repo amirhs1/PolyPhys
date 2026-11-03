@@ -153,7 +153,7 @@ A parser says how a study's names read; a `ProjectSpec` from
 `polyphys.manage.projects` says how its analysis reads them. It holds what the
 parser does not: the polymer's particle group; the step `divisor` to which the
 bulk volume fraction of crowders, `phi_bulk_c`, is rounded in the
-`phi_c_bulk_round` column; the parser attributes that become columns of the
+`phi_bulk_c_round` column; the parser attributes that become columns of the
 `space` tables; each density-profile species label mapped to the attribute
 holding that species' diameter; and the study's time series. The geometry,
 topology, and glob patterns come from the parser:
@@ -187,6 +187,43 @@ one package per study, whose `spec.py` builds the `ProjectSpec` and whose
 code will join it there. The folder is not installed, and CI lints,
 type-checks, and tests it with the package. A study elsewhere uses the same
 layout in its own repository.
+
+### Reading tables the research code wrote
+
+PolyPhys names a bulk quantity `<quantity>_bulk_<species>`; the research code
+it replaces named it `<quantity>_<species>_bulk`, and wrote every parser
+attribute as a column of its `*-stamps.csv` files, from where the names carry
+into its ensemble-average and `space` tables. `BULK_NAME_MAP` in
+`polyphys.manage.organizer` maps each old name to its new one, and
+`rename_bulk_columns` applies the map to a table read from such a file,
+leaving every other column unchanged:
+
+| Research code      | PolyPhys           |
+| ------------------ | ------------------ |
+| `phi_m_bulk`       | `phi_bulk_m`       |
+| `rho_m_bulk`       | `rho_bulk_m`       |
+| `phi_c_bulk`       | `phi_bulk_c`       |
+| `rho_c_bulk`       | `rho_bulk_c`       |
+| `phi_c_bulk_one`   | `phi_bulk_c_one`   |
+| `phi_c_bulk_two`   | `phi_bulk_c_two`   |
+| `rho_c_bulk_one`   | `rho_bulk_c_one`   |
+| `rho_c_bulk_two`   | `rho_bulk_c_two`   |
+| `phi_hns_bulk`     | `phi_bulk_hns`     |
+| `rho_hns_bulk`     | `rho_bulk_hns`     |
+| `phi_c_bulk_round` | `phi_bulk_c_round` |
+
+```python
+>>> import pandas as pd
+>>> from polyphys.manage.organizer import rename_bulk_columns
+>>> old = pd.DataFrame({'nmon': [20], 'phi_c_bulk': [0.1], 'n_frames': [100]})
+>>> list(rename_bulk_columns(old).columns)
+['nmon', 'phi_bulk_c', 'n_frames']
+
+```
+
+The parser classes carry no alias for an old name: a name reaches a file only
+when a parser lists it in `attributes`, and an alias there would give every
+new table both columns.
 
 ## The density sum rule
 

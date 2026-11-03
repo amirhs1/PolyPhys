@@ -39,7 +39,7 @@ Notation
     that the crowders fill (dimensionless).
 :math:`\\Delta`
     The rounding step, `divisor`, of :math:`\\phi_c` in the
-    ``phi_c_bulk_round`` column (dimensionless).
+    ``phi_bulk_c_round`` column (dimensionless).
 
 Examples
 ========
@@ -61,7 +61,7 @@ from .parser import ParserBase
 from .types import DirectionT, EntityT, GeometryT, GroupT, PropertyT, TopologyT
 
 # The parser attribute that holds the bulk volume fraction of crowders, which
-# the organizer adds and rounds into 'phi_c_bulk_round'.
+# the organizer adds and rounds into 'phi_bulk_c_round'.
 _CROWDER_ATTR = 'phi_bulk_c'
 
 # The directions of the density profiles in each geometry.
@@ -91,7 +91,7 @@ class ProjectSpec:
     divisor : float
         The step :math:`\\Delta > 0` to which the bulk volume fraction of
         crowders :math:`\\phi_c` (``phi_bulk_c``, dimensionless) is rounded
-        in the ``phi_c_bulk_round`` column.
+        in the ``phi_bulk_c_round`` column.
     physical_attrs : tuple of str
         The parser attributes added as columns to the ``space`` tables, in
         column order.
