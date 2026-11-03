@@ -93,6 +93,9 @@ Space-level collection and bookkeeping:
 :func:`find_unique_properties`, :func:`space_tseries`, and
 :func:`space_hists`.
 
+Reading tables the research code wrote:
+:data:`BULK_NAME_MAP` and :func:`rename_bulk_columns`.
+
 The density sum rule on the ``ensAvg`` profiles these reducers build is in
 :mod:`polyphys.analyze.sumrule`.
 
@@ -152,12 +155,14 @@ Notes
 import warnings
 import logging
 from typing import (
-    Any, Callable, Literal, Sequence, Iterator, TYPE_CHECKING, get_args,
+    Any, Callable, Literal, Mapping, Sequence, Iterator, TYPE_CHECKING,
+    get_args,
 )
 import os
 import pathlib
 from pathlib import Path
 from glob import glob
+from types import MappingProxyType
 import numpy as np
 import pandas as pd
 from .types import (
@@ -1838,7 +1843,7 @@ def space_tseries(
         Name of the `parser` attribute that holds the bulk volume fraction
         of crowders. Its value is added as a column of that name, whether or
         not it is listed in `physical_attrs`, and rounded into the
-        ``phi_c_bulk_round`` column.
+        ``phi_bulk_c_round`` column.
 
     Returns
     -------
@@ -1848,7 +1853,7 @@ def space_tseries(
         (the frame index times the dump period of the `group` trajectory),
         ``time`` (``t_index`` times the parser's ``dt``), one column per
         entry in `physical_attrs`, a `crowder_attr` column, and
-        ``phi_c_bulk_round``.
+        ``phi_bulk_c_round``.
 
     Examples
     --------
@@ -1908,7 +1913,7 @@ def space_tseries(
 
         # Add and round the bulk volume fraction of crowders
         ens_avg[crowder_attr] = getattr(prop_info, crowder_attr)
-        ens_avg["phi_c_bulk_round"] = ens_avg[crowder_attr].apply(
+        ens_avg["phi_bulk_c_round"] = ens_avg[crowder_attr].apply(
             lambda x: round_to_multiple(x, divisor, round_to)
         )
 
@@ -1988,14 +1993,14 @@ def space_hists(
         Name of the `parser` attribute that holds the bulk volume fraction
         of crowders. Its value is added as a column of that name, whether or
         not it is listed in `physical_attrs`, and rounded into the
-        ``phi_c_bulk_round`` column.
+        ``phi_bulk_c_round`` column.
 
     Returns
     -------
     pd.DataFrame
         Concatenated DataFrame of all histograms with added physical
         attributes: one column per entry in `physical_attrs`, a
-        `crowder_attr` column, and ``phi_c_bulk_round``.
+        `crowder_attr` column, and ``phi_bulk_c_round``.
 
     Warns
     -----
@@ -2077,7 +2082,7 @@ def space_hists(
 
         # Add and round the bulk volume fraction of crowders
         ens_avg[crowder_attr] = getattr(prop_info, crowder_attr)
-        ens_avg["phi_c_bulk_round"] = ens_avg[crowder_attr].apply(
+        ens_avg["phi_bulk_c_round"] = ens_avg[crowder_attr].apply(
             lambda x: round_to_multiple(x, divisor, round_to)
         )
 
@@ -2099,3 +2104,74 @@ def space_hists(
         prop_db.to_csv(filepath, index=False)
 
     return prop_db
+
+
+BULK_NAME_MAP: Mapping[str, str] = MappingProxyType({
+    "phi_m_bulk": "phi_bulk_m",
+    "rho_m_bulk": "rho_bulk_m",
+    "phi_c_bulk": "phi_bulk_c",
+    "rho_c_bulk": "rho_bulk_c",
+    "phi_c_bulk_one": "phi_bulk_c_one",
+    "phi_c_bulk_two": "phi_bulk_c_two",
+    "rho_c_bulk_one": "rho_bulk_c_one",
+    "rho_c_bulk_two": "rho_bulk_c_two",
+    "phi_hns_bulk": "phi_bulk_hns",
+    "rho_hns_bulk": "rho_bulk_hns",
+    "phi_c_bulk_round": "phi_bulk_c_round",
+})
+"""
+Each bulk-quantity name of the research code mapped to its PolyPhys name.
+
+The research code named a bulk quantity ``<quantity>_<species>_bulk``, such
+as ``phi_c_bulk``; PolyPhys names it ``<quantity>_bulk_<species>``, such as
+``phi_bulk_c``. The research code wrote every parser attribute as a column
+of its ``*-stamps.csv`` files, and those columns carry into its
+ensemble-average and ``space`` tables, so a table it wrote carries the old
+names. The map is read-only; :func:`rename_bulk_columns` applies it.
+
+.. versionadded:: 0.7.0
+"""
+
+
+def rename_bulk_columns(table: pd.DataFrame) -> pd.DataFrame:
+    """
+    Return a copy of `table` whose bulk-quantity columns carry the PolyPhys
+    names.
+
+    Each column named by a key of :data:`BULK_NAME_MAP` is renamed to that
+    key's value; every other column, every value, and the column order are
+    unchanged. A table that already carries the PolyPhys names comes back
+    equal to `table`.
+
+    Parameters
+    ----------
+    table : pd.DataFrame
+        A table read from a stamp, ensemble-average, or ``space`` file that
+        the research code wrote.
+
+    Returns
+    -------
+    pd.DataFrame
+        A new table; `table` is not modified.
+
+    Notes
+    -----
+    Runs in :math:`O(n_\\text{col})` time for the renaming and
+    :math:`O(n_\\text{row} n_\\text{col})` space for the copy.
+
+    Examples
+    --------
+    A row of a research-code stamp file:
+
+    >>> import pandas as pd
+    >>> old = pd.DataFrame({'nmon': [20], 'phi_c_bulk': [0.1],
+    ...                     'rho_c_bulk': [0.191], 'n_frames': [100]})
+    >>> new = rename_bulk_columns(old)
+    >>> list(new.columns)
+    ['nmon', 'phi_bulk_c', 'rho_bulk_c', 'n_frames']
+    >>> list(old.columns)
+    ['nmon', 'phi_c_bulk', 'rho_c_bulk', 'n_frames']
+
+    .. versionadded:: 0.7.0
+    """
+    return table.rename(columns=dict(BULK_NAME_MAP))

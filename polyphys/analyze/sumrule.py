@@ -482,7 +482,7 @@ def space_profiles(
     crowder_attr : str, default 'phi_bulk_c'
         The parser attribute holding the bulk volume fraction of crowders,
         added as a column of that name and rounded into
-        ``phi_c_bulk_round``.
+        ``phi_bulk_c_round``.
 
     Returns
     -------
@@ -504,7 +504,7 @@ def space_profiles(
         - ``bin_center-norm``: ``bin_center`` divided by its maximum.
         - ``ensemble_long``, the file's state-point name; one column per
           entry of `physical_attrs`; `crowder_attr`; and
-          ``phi_c_bulk_round``.
+          ``phi_bulk_c_round``.
         - For each crowder of `crowders` with size attribute ``c``:
           ``bin_center-<c>``, which is :math:`2 b / a_c` for the bin centre
           :math:`b`, the bin centre in crowder radii. For ``'r'`` in a
@@ -674,7 +674,7 @@ def space_profiles(
         for attr_name in physical_attrs:
             ens_avg[attr_name] = getattr(prop_info, attr_name)
         ens_avg[crowder_attr] = getattr(prop_info, crowder_attr)
-        ens_avg["phi_c_bulk_round"] = ens_avg[crowder_attr].apply(
+        ens_avg["phi_bulk_c_round"] = ens_avg[crowder_attr].apply(
             lambda x: round_to_multiple(x, divisor, round_to)
         )
 
