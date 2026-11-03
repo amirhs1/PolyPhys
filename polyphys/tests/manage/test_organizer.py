@@ -20,6 +20,7 @@ SciOps probe phase's stamp files: genealogy columns, parser attributes, and
 import logging
 import os
 from pathlib import Path
+from typing import get_args
 
 import numpy as np
 import pandas as pd
@@ -48,6 +49,7 @@ from polyphys.manage.organizer import (
     whole_from_segments,
 )
 from polyphys.manage.parser import SumRuleCyl
+from polyphys.manage.types import PhaseT, StageT
 from polyphys.manage.utils import round_to_multiple
 
 # A Pandas4Warning marks a deprecated pandas call; fail on it.
@@ -212,6 +214,38 @@ def test_make_database_rejects_unknown_phase(tmp_path):
     with pytest.raises(ValueError, match="'nope' is an invalid option"):
         make_database(tmp_path / "probes" / "N20-bug-segment", "nope", "ens",
                       "bug")
+
+
+def test_phase_vocabulary_is_the_settled_set():
+    """PhaseT declares the nine phase names of AGENTS.md in data-flow order."""
+    assert get_args(PhaseT) == (
+        "simsAll", "simsCont", "logs", "trjs", "probes", "analysis", "viz",
+        "galaxy", "allInOne",
+    )
+
+
+@pytest.mark.parametrize("phase", get_args(PhaseT))
+def test_make_database_accepts_every_declared_phase(tmp_path, phase):
+    """Every phase that PhaseT declares is accepted and names the directory."""
+    new = make_database(tmp_path / "probes" / "N20-bug-segment", phase,
+                        "ens", "bug")
+    assert Path(new).parent.name == phase
+
+
+def test_make_database_rejects_singular_phase_name(tmp_path):
+    """The singular 'simAll' of the old PhaseT is no longer accepted."""
+    with pytest.raises(ValueError, match="'simAll' is an invalid option"):
+        make_database(tmp_path / "probes" / "N20-bug-segment", "simAll",
+                      "ens", "bug")
+
+
+def test_make_database_rejects_unknown_stage(tmp_path):
+    """A stage outside StageT raises ValueError and names no directory."""
+    with pytest.raises(ValueError, match="'ensemble' is an invalid option"):
+        make_database(tmp_path / "probes" / "N20-bug-segment", "analysis",
+                      "ensemble", "bug")
+    assert get_args(StageT) == ("segment", "wholeSim", "ens", "ensAvg",
+                                "space", "galaxy")
 
 
 # Building wholes

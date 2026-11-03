@@ -19,13 +19,16 @@ Submodules
 - `correlations`: The autocorrelation function of a time series with
   Bartlett's band, decay-model fits, and the bond cosine correlation of a
   chain.
+- `sumrule`: The density sum rule on a space's ensemble-averaged density
+  profiles: scaled, normalized, folded, and summed over species.
 """
 
-from polyphys.analyze import clusters, correlations, measurer, stats
+from polyphys.analyze import clusters, correlations, measurer, stats, sumrule
 
 __all__ = [
     'clusters',
     'correlations',
     'measurer',
     'stats',
+    'sumrule',
 ]
