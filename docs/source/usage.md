@@ -147,6 +147,47 @@ such as the complementary percentage `pct_two = 100 - pct_one` of
 `SumRuleCubHeteroRingBiDisperse`, goes in an override of
 `_derived_attributes`, which runs at every lineage after the bulk values.
 
+## Adding a study
+
+A parser says how a study's names read; a `ProjectSpec` from
+`polyphys.manage.projects` says how its analysis reads them. It holds what the
+parser does not: the polymer's particle group; the step `divisor` to which the
+bulk volume fraction of crowders, `phi_bulk_c`, is rounded in the
+`phi_c_bulk_round` column; the parser attributes that become columns of the
+`space` tables; each density-profile species label mapped to the attribute
+holding that species' diameter; and the study's time series. The geometry,
+topology, and glob patterns come from the parser:
+
+```python
+>>> from polyphys.manage.projects import ProjectSpec
+>>> chain = ProjectSpec(
+...     parser=ChainCub, group='bug', divisor=0.025,
+...     physical_attrs=('space', 'ensemble_long', 'nmon', 'dcrowd'),
+...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
+...     tseries_properties=('gyrTMon',))
+>>> chain.geometry, chain.directions
+('cubic', ('r',))
+>>> chain.space_pattern, chain.hierarchy
+('N*ac*', 'N*')
+
+```
+
+Each attribute a spec names is checked against the attributes the parser sets
+at `ensemble_long`, so a typo or a missing declaration raises `ValueError` when
+the spec is built. Pass the fields to the organizer, as in
+`space_tseries(database, 'gyrTMon', chain.parser, chain.hierarchy,
+list(chain.physical_attrs), chain.group, divisor=chain.divisor)`.
+
+PolyPhys holds no study: a study is a folder outside the package, and adding
+one changes nothing in `polyphys/`. The maintainer's published studies are in
+the repository's top-level
+[`projects/`](https://github.com/amirhs1/PolyPhys/tree/main/projects) folder,
+one package per study, whose `spec.py` builds the `ProjectSpec` and whose
+`__init__.py` exports it as `SPEC`; the study's probe, analysis, and figure
+code will join it there. The folder is not installed, and CI lints,
+type-checks, and tests it with the package. A study elsewhere uses the same
+layout in its own repository.
+
 See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.

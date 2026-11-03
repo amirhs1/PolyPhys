@@ -15,16 +15,16 @@ use and how to call it, are in `AGENTS.local.md` at the repository root when
 that file exists; read it before running a command. It is gitignored: never
 commit it, and never copy its contents into a tracked file.
 
-| Purpose              | Command                                                                                                                                      |
-| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Install              | `python -m pip install -e '.[dev]'`                                                                                                          |
-| Build                | `python -m build`                                                                                                                            |
-| Run all tests        | `python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
-| Run one test         | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                         |
-| Lint / format        | `python -m flake8 polyphys`                                                                                                                  |
-| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/simulate`                                                                          |
-| Docs                 | `python -m sphinx -W -b html docs/source docs/_build`                                                                                        |
-| Full pre-commit gate | Lint, type-check, and all tests; add the build after a packaging change and the docs build when `docs/source/` changed                      |
+| Purpose              | Command                                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Install              | `python -m pip install -e '.[dev]'`                                                                                                                   |
+| Build                | `python -m build`                                                                                                                                     |
+| Run all tests        | `python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
+| Run one test         | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                                  |
+| Lint / format        | `python -m flake8 polyphys projects`                                                                                                                  |
+| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/simulate projects`                                                                          |
+| Docs                 | `python -m sphinx -W -b html docs/source docs/_build`                                                                                                 |
+| Full pre-commit gate | Lint, type-check, and all tests; add the build after a packaging change and the docs build when `docs/source/` changed                                |
 
 Run the full gate before calling a change complete, and report the actual
 output, not the expected output. Do not describe a change as working because it
@@ -53,6 +53,7 @@ PolyPhys/
   polyphys/analyze/    measurer: per-frame structural observables and histograms
   polyphys/simulate/   core, log, dump, data, build: LAMMPS logs, dumps, data files, and start configurations
   polyphys/tests/      tests for analyze/, manage/, simulate/, and packaging
+  projects/            one folder per study: its ProjectSpec; not installed
   docs/source/         Sphinx sources
   README.md            user guide; its examples run as doctests
   AI-POLICY.md         AI policy, for contributors
@@ -147,6 +148,7 @@ your role in each tier. Change both in the same commit.
 | `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/simulate/`                                      | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `projects/`                                               | Supervised   | Draft a study's spec from the research code's values; every line is read.        |
 | `docs/`                                                   | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 
 - A path not listed is Supervised: draft against acceptance criteria the

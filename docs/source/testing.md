@@ -8,7 +8,7 @@ kinds of test the project writes, the shared fixtures, and the pytest settings.
 From the repository root, in an environment with the `dev` extra installed:
 
 ```bash
-python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob='README.md'
+python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob='README.md'
 ```
 
 The README's examples run as doctests, and so do the `Examples` sections of the

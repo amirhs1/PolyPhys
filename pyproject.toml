@@ -74,5 +74,5 @@
     omit = ["polyphys/tests/data/*"]
 
 [tool.mypy]
-    files = ["polyphys/analyze", "polyphys/manage", "polyphys/simulate"]
+    files = ["polyphys/analyze", "polyphys/manage", "polyphys/simulate", "projects"]
     strict = true

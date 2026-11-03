@@ -25,6 +25,7 @@ usage
 statistics
 clusters
 testing
+decisions
 api
 ```
 
