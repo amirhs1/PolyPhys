@@ -116,7 +116,7 @@ References
 - M. Rubinstein and R. H. Colby, Polymer Physics (Oxford University Press,
   2003), Chapter 2.
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 
 from dataclasses import dataclass, field
@@ -242,7 +242,7 @@ def pair_distances(
     >>> round(float(pair_distances(positions)[0, 1]), 10)
     9.8
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     pos = np.asarray(positions, dtype=np.float64)
     if pos.ndim != 2:
@@ -331,7 +331,7 @@ def find_direct_contacts(
            [1, 1, 0],
            [0, 0, 1]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     if not cutoff > 0:
         raise ValueError(f'cutoff must be positive; got {cutoff}.')
@@ -403,7 +403,7 @@ def cluster_labels(
     >>> bool(labels[0] == labels[2]), bool(labels[0] == labels[3])
     (True, False)
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     contacts = _as_contacts(direct_contacts, 'direct_contacts')
     n_particles = contacts.shape[0]
@@ -470,7 +470,7 @@ def count_clusters(direct_contacts: npt.ArrayLike) -> npt.NDArray[np.int64]:
     >>> count_clusters(contacts)
     array([0, 1, 0, 1, 0])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     _, labels = cluster_labels(direct_contacts)
     n_particles = labels.shape[0]
@@ -523,7 +523,7 @@ def contact_matrix(direct_contacts: npt.ArrayLike) -> npt.NDArray[np.bool_]:
            [1, 1, 1, 0],
            [0, 0, 0, 1]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     _, labels = cluster_labels(direct_contacts)
     return np.asarray(labels[:, None] == labels[None, :], dtype=np.bool_)
@@ -572,7 +572,7 @@ def count_bonds(direct_contacts: npt.ArrayLike) -> npt.NDArray[np.int64]:
     >>> count_bonds(star)
     array([0, 3, 0, 1])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     contacts = _as_contacts(direct_contacts, 'direct_contacts')
     n_particles = contacts.shape[0]
@@ -635,7 +635,7 @@ def genomic_distance(
     >>> genomic_distance([0, 1], [3, 9], 'ring', 10)
     array([3, 2])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     _check_topology(topology)
     if n_backbone < 1:
@@ -700,7 +700,7 @@ def foci_pair_info(
            [0, 8, 2],
            [4, 8, 4]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     positions = np.asarray(genomic_pos, dtype=np.int64)
     if positions.ndim != 1:
@@ -781,7 +781,7 @@ def pair_distance_histograms(
     >>> edges
     array([0., 1., 2., 3.])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     if not bin_size > 0:
         raise ValueError(f'bin_size must be positive; got {bin_size}.')
@@ -888,7 +888,7 @@ def pair_separation_density(
     >>> float(np.sum(density * shells))
     1.0
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     hist = np.asarray(counts, dtype=np.float64)
     bounds = np.asarray(edges, dtype=np.float64)
@@ -955,7 +955,7 @@ def enforce_single_patch_contact(
            [1, 0],
            [0, 0]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     contacts = _as_contacts(direct_contacts, 'direct_contacts')
     n_monomers = contacts.shape[0]
@@ -1013,7 +1013,7 @@ def monomer_binder_contacts(
            [1, 0],
            [0, 1]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     contacts = _as_contacts(direct_contacts, 'direct_contacts')
     n_monomers, n_patches = contacts.shape
@@ -1082,7 +1082,7 @@ def split_binders(
            [0, 1, 0],
            [0, 0, 0]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     contacts = _as_contacts(direct_contacts, 'direct_contacts')
     n_monomers_bound = contacts.sum(axis=0)
@@ -1152,7 +1152,7 @@ def binder_contacts(
     array([[1, 0],
            [0, 1]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     _check_topology(topology)
     contacts = _as_contacts(direct_contacts, 'direct_contacts')
@@ -1216,7 +1216,7 @@ class FrameBinding:
     >>> frame.n_binders_bridging, frame.n_pairs_cis
     (1, 1)
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     n_patch_monomer_contacts: int
@@ -1302,7 +1302,7 @@ def binding_statistics(
     array([[0, 2, 2],
            [0, 5, 1]])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     _check_topology(topology)
     if cis_threshold < 0:
@@ -1403,7 +1403,7 @@ class BindingStats:
     >>> stats.loop_length_histogram
     array([0, 1, 0, 1])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     n_monomers: int

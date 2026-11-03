@@ -149,7 +149,7 @@ References
   (2016), https://doi.org/10.1039/c6sm01924b, for the use of these profiles
   in the density sum rule (:mod:`polyphys.analyze.sumrule`).
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 
 import warnings
@@ -184,21 +184,21 @@ ShareMode = Literal['average', 'centre']
 """How the test bead sits in its bin: averaged over the bin, or at its
 centre as in the research code.
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 
 IntersectionMode = Literal['exact', 'sphere']
 """The kernel of a cylindrical shell: the ball-in-cylinder volume, or the
 sphere-sphere volume the research code used in its place.
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 
 NormalizeMode = Literal['none', 'sum', 'integral']
 """No normalization, division by the sum over bins, or division by the
 integral against the bin volumes.
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 
 # The bin scheme behind each supported (geometry, direction): the power p of
@@ -348,7 +348,7 @@ def bin_volumes(
     >>> np.round(bin_volumes([-1, 0, 1], 'cylindrical', 'z', dcyl=2), 5)
     array([3.14159, 3.14159])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     scheme = _check_scheme(geometry, direction)
     e = _check_edges(edges, scheme)
@@ -520,7 +520,7 @@ def sphere_cylinder_intersection(
     >>> round(4 * 3.141592653589793 / 3 * (1 - 0.8**3), 6)
     2.04413
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     radius = _check_positive('r_sphere', r_sphere)
     if d < 0:
@@ -741,7 +741,7 @@ def share_matrix(
     >>> bool(s[3, 0] > 0 and s[3, 0] == s[3, 2])
     True
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     scheme = _check_scheme(geometry, direction)
     e = _check_edges(edges, scheme)
@@ -822,7 +822,7 @@ def number_density(
     >>> number_density([2, 4], [1.0, 2.0], n_frames=2, n_particles=3)
     array([1., 1.])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     h = np.asarray(counts, dtype=np.float64)
     v = np.asarray(volumes, dtype=np.float64)
@@ -897,7 +897,7 @@ def volume_fraction(rho: npt.ArrayLike, share: csr_array) -> FloatArray:
     >>> np.round(volume_fraction(np.full(4, 3 / np.pi), s), 12)
     array([0.5, 0.5, 0.5, 0.5])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     density = np.asarray(rho, dtype=np.float64)
     if density.ndim not in (1, 2):
@@ -962,7 +962,7 @@ def normalize_profile(
     >>> normalize_profile([1.0, 3.0], 'integral', volumes=[2.0, 2.0])
     array([0.125, 0.375])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     _check_choice('mode', mode, ('none', 'sum', 'integral'))
     p = np.array(profile, dtype=np.float64)
@@ -1007,7 +1007,7 @@ class Profiles:
     volumes : numpy.ndarray
         The bin volumes, shape ``(n_bins,)``.
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     rho: FloatArray
@@ -1101,7 +1101,7 @@ def density_profiles(
     >>> np.round(out.phi, 12)
     array([0.5, 0.5, 0.5, 0.5])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     scheme = _check_scheme(geometry, direction)
     a = _check_positive('bead_diameter', bead_diameter)

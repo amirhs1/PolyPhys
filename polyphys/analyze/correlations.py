@@ -125,7 +125,7 @@ References
 - MDAnalysis User Guide, "Determining the persistence length of a polymer".
   https://userguide.mdanalysis.org/stable/examples/analysis/polymers_and_membranes/polymer.html
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 
 import logging
@@ -197,7 +197,7 @@ class AcfResult:
     alpha : float or None
         The significance level of the band, or ``None``.
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     values: FloatArray
@@ -279,7 +279,7 @@ def acf(
     >>> np.round(result.half_width, 4)
     array([0.    , 0.693 , 1.1025])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     series = np.asarray(x, dtype=np.float64)
     if series.ndim not in (1, 2):
@@ -371,7 +371,7 @@ def bartlett_half_width(
     >>> np.round(bartlett_half_width([1.0, -0.875, 0.75], 8), 4)
     array([0.    , 0.693 , 1.1025])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     acf_values = np.asarray(values, dtype=np.float64)
     if acf_values.ndim not in (1, 2):
@@ -436,7 +436,7 @@ class DecayModel:
     formula : str
         The model as a formula, for labels.
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     function: ModelFunction
@@ -469,7 +469,7 @@ ordered ``tau``, ``beta``, ``amp``, ``offset``. :math:`\\tau` is in the
 unit of ``x`` and positive; :math:`\\beta` is positive, 1 for a pure
 exponential.
 
-.. versionadded:: 0.7.0
+.. versionadded:: 0.6.0
 """
 
 
@@ -532,7 +532,7 @@ class DecayFit:
     converged : bool
         Whether :func:`scipy.optimize.curve_fit` returned a solution.
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
 
     model: str
@@ -631,7 +631,7 @@ def initial_guess(
     >>> np.round(initial_guess(x, y, 'stretched_amp_offset'), 2)
     array([4.  , 1.  , 1.98, 0.52])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     spec = _get_model(model)
     x_arr, y_arr = _as_curve(x, y)
@@ -732,7 +732,7 @@ def fit_decay(
     >>> np.round(fit.params, 6)
     array([5. , 0.8, 2. , 0.3])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     spec = _get_model(model)
     x_arr, y_arr = _as_curve(x, y)
@@ -841,7 +841,7 @@ def bond_vectors(
     >>> bond_vectors(square, 'ring')[-1]
     array([ 0., -1.])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     _check_topology(topology)
     coords = np.asarray(positions, dtype=np.float64)
@@ -936,7 +936,7 @@ def bond_cosine_correlation(
     >>> np.round(bond_cosine_correlation(rod, 'linear'), 12)
     array([1., 1., 1.])
 
-    .. versionadded:: 0.7.0
+    .. versionadded:: 0.6.0
     """
     bonds = bond_vectors(positions, topology)
     lengths = np.linalg.norm(bonds, axis=-1)
