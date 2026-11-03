@@ -9,7 +9,9 @@ structures and classes used within :mod:`polyphys` package.
 
 Custom types here represent domain-specific concepts such as `PropertyT`,
 `EntityT`, and `DirectionT`, which clarify the usage of fundamental
-types like `str`, `int`, and `bool`.
+types like `str`, `int`, and `bool`. `PhaseT` and `StageT` are the phase and
+stage vocabularies that :func:`~polyphys.manage.organizer.make_database`
+checks its arguments against.
 
 Composite types such as tuples and dictionaries (`TimeSeriesT`,
 `NonScalarHistT`, etc.) group related information for structured
@@ -53,8 +55,11 @@ GroupT = str
 HasEdgeT = bool
 LineageT = Literal['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
 WholeRelationT = Literal['histogram', 'tseries', 'bin_edge']
-PhaseT = Literal['simAll', 'simCont', 'log', 'trj', 'probe', 'analysis',
-                 'viz', 'galaxy']
+# The phase directories of a project, in the order the data flows through
+# them: the settled vocabulary of AGENTS.md. `make_database` accepts exactly
+# these names.
+PhaseT = Literal['simsAll', 'simsCont', 'logs', 'trjs', 'probes', 'analysis',
+                 'viz', 'galaxy', 'allInOne']
 PlaneT = Literal['xy', 'yz', 'zx']
 PrimitiveLineageT = Literal['segment', 'whole']
 PropertyT = str

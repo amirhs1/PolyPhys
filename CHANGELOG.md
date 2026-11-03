@@ -28,6 +28,7 @@ version increase may introduce incompatible changes.
 - Type-check `polyphys/simulate` in CI, in `pyproject.toml`, and in the pull request template ([#126](https://github.com/amirhs1/PolyPhys/pull/126))
 - Add area `projects` in `CONTRIBUTING.md`, "Names", for `projects/`, and list `projects/` in the tier table of `AGENTS.md` and the README ([#76](https://github.com/amirhs1/PolyPhys/issues/76))
 - Lint, type-check, and test `projects/` in CI, in `pyproject.toml`, and in the pull request template ([#76](https://github.com/amirhs1/PolyPhys/issues/76))
+- **Breaking:** Declare `PhaseT` in `polyphys.manage.types` as the phase vocabulary of `AGENTS.md`, `simsAll`, `simsCont`, `logs`, `trjs`, `probes`, `analysis`, `viz`, `galaxy`, and `allInOne`, which `make_database` already accepted, instead of the singular names it never accepted; `make_database` checks `phase` against `PhaseT` and, new, `stage` against `StageT`, and takes neither as a plain `str` ([#34](https://github.com/amirhs1/PolyPhys/issues/34))
 
 ### Added
 

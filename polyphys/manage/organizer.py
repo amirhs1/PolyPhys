@@ -45,9 +45,11 @@ simulation output data:
 - **Species**: The particle or molecular entity type, such as 'Mon' for
   monomers, each with specific behaviors or attributes as needed.
 
-- **Phases**: Directories organized by processing phase, such as `logs`,
-  `trjs` (trajectories), `probe` (probing data), `analysis` (post-processing),
-  and `viz` (visualization-ready data).
+- **Phases**: Directories organized by processing phase: `simsAll` and
+  `simsCont` (simulation inputs), `logs`, `trjs` (trajectories), `probes`
+  (probing data), `analysis` (post-processing), `viz` (visualization-ready
+  data), `galaxy`, and `allInOne`; the values of
+  :py:data:`~polyphys.manage.types.PhaseT`.
 
 - **Stages**: Aggregation levels within each phase, e.g., `wholeSim`, `ens`,
   or `ensAvg`.
@@ -90,6 +92,9 @@ Space-level collection and bookkeeping:
 :func:`children_stamps`, :func:`parents_stamps`,
 :func:`find_unique_properties`, :func:`space_tseries`, and
 :func:`space_hists`.
+
+The density sum rule on the ``ensAvg`` profiles these reducers build is in
+:mod:`polyphys.analyze.sumrule`.
 
 Usage
 =====
@@ -146,7 +151,9 @@ Notes
 
 import warnings
 import logging
-from typing import Any, Callable, Literal, Sequence, Iterator, TYPE_CHECKING
+from typing import (
+    Any, Callable, Literal, Sequence, Iterator, TYPE_CHECKING, get_args,
+)
 import os
 import pathlib
 from pathlib import Path
@@ -284,8 +291,8 @@ def save_artifact(
 
 def make_database(
     old_database: Pathish,
-    phase: PhaseT | str,
-    stage: StageT | str,
+    phase: PhaseT,
+    stage: StageT,
     group: GroupT | None,
 ) -> str:
     """
@@ -306,14 +313,15 @@ def make_database(
     old_database : Pathish
         Path to the reference directory whose structure will be used as a
         base. It need not exist.
-    phase : {'simsAll', 'simsCont', 'logs', 'trjs', 'probes', 'analysis', \
-'viz', 'galaxy', 'allInOne'}
-        The new phase name for the directory, specifying its role in
-        the workflow.
-    stage : str
+    phase : :py:data:`~polyphys.manage.types.PhaseT`
+        The new phase name for the directory, specifying its role in the
+        workflow: one of ``'simsAll'``, ``'simsCont'``, ``'logs'``,
+        ``'trjs'``, ``'probes'``, ``'analysis'``, ``'viz'``, ``'galaxy'``,
+        or ``'allInOne'``.
+    stage : :py:data:`~polyphys.manage.types.StageT`
         The stage of processing or data type represented in the new
-        directory, such as 'segment', 'wholeSim', 'ens', 'ensAvg', 'space',
-        or 'galaxy'. It is not checked.
+        directory: one of ``'segment'``, ``'wholeSim'``, ``'ens'``,
+        ``'ensAvg'``, ``'space'``, or ``'galaxy'``.
     group : GroupT or None
         Particle group related to the data in the directory; left out of the
         name when None.
@@ -328,7 +336,8 @@ def make_database(
     Raises
     ------
     ValueError
-        If `phase` is not one of the accepted values.
+        If `phase` is not a value of `PhaseT`, or `stage` not a value of
+        `StageT`.
 
     Examples
     --------
@@ -346,12 +355,18 @@ def make_database(
     >>> Path(new).is_dir()
     True
     >>> tmp.cleanup()
+
+    A name outside the phase vocabulary is refused:
+
+    >>> make_database(old, 'simAll', 'ens', 'bug')
+    Traceback (most recent call last):
+    ...
+    ValueError: 'simAll' is an invalid option. Please select one of: \
+simsAll, simsCont, logs, trjs, probes, analysis, viz, galaxy, allInOne.
     """
-    invalid_keyword(
-        phase,
-        ["simsAll", "simsCont", "logs", "trjs", "probes", "analysis", "viz",
-         "galaxy", "allInOne"],
-    )
+    # The type aliases are the one declaration of both vocabularies.
+    invalid_keyword(phase, get_args(PhaseT))
+    invalid_keyword(stage, get_args(StageT))
 
     old_path = pathlib.Path(old_database)
 
