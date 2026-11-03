@@ -21,14 +21,25 @@ Submodules
   chain.
 - `sumrule`: The density sum rule on a space's ensemble-averaged density
   profiles: scaled, normalized, folded, and summed over species.
+- `pipeline`: The reducer of one space's probe artifacts down the lineage,
+  driven by a study's analysis tables, with the post-hooks that derive time
+  averages, autocorrelations, density profiles, and foci pair distances.
 """
 
-from polyphys.analyze import clusters, correlations, measurer, stats, sumrule
+from polyphys.analyze import (
+    clusters,
+    correlations,
+    measurer,
+    pipeline,
+    stats,
+    sumrule,
+)
 
 __all__ = [
     'clusters',
     'correlations',
     'measurer',
+    'pipeline',
     'stats',
     'sumrule',
 ]

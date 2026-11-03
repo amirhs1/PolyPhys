@@ -53,6 +53,7 @@ from polyphys.analyze.correlations import (
     AcfResult,
     DecayFit,
     acf,
+    bartlett_half_width,
     bond_cosine_correlation,
     bond_vectors,
     fit_decay,
@@ -232,6 +233,45 @@ def test_acf_band_is_bartlett_formula():
     assert result.half_width is not None
     expected = _bartlett_half_width(result.values, n=6, alpha=0.1)
     assert_allclose(result.half_width, expected, atol=FLOAT64_ATOL)
+
+
+def test_bartlett_half_width_rebuilds_the_band_of_acf(make_ar1):
+    """The band rebuilt from a stored autocorrelation, the frame count, and
+    the level equals the one ``acf`` computed with them."""
+    x = make_ar1(0.5, 256, 11)
+    result = acf(x, nlags=10, alpha=0.1)
+
+    rebuilt = bartlett_half_width(result.values, 256, alpha=0.1)
+
+    assert_allclose(rebuilt, result.half_width, atol=FLOAT64_ATOL)
+    assert rebuilt[0] == 0.0
+
+
+def test_bartlett_half_width_treats_columns_independently(make_noise):
+    """Each column's band is the band of that column alone (R2)."""
+    x = make_noise((128, 2), seed=5)
+    values = acf(x, nlags=6, alpha=None).values
+
+    band = bartlett_half_width(values, 128, alpha=0.05)
+
+    for col in range(2):
+        assert_allclose(band[:, col],
+                        _bartlett_half_width(values[:, col], 128, 0.05),
+                        atol=FLOAT64_ATOL)
+
+
+@pytest.mark.parametrize("values, n_frames, alpha, match", [
+    pytest.param(np.ones((2, 2, 2)), 8, 0.05, "one- or two-dimensional",
+                 id="three-dimensional"),
+    pytest.param([1.0, 0.5], 1, 0.05, "at least 2", id="one-frame"),
+    pytest.param([1.0, 0.5], 8, 1.0, r"alpha must be in \(0, 1\)",
+                 id="alpha-one"),
+])
+def test_bartlett_half_width_rejects_bad_input(values, n_frames, alpha,
+                                               match):
+    """Bad shapes, frame counts, and levels raise ``ValueError``."""
+    with pytest.raises(ValueError, match=match):
+        bartlett_half_width(values, n_frames, alpha)
 
 
 def test_acf_treats_columns_as_independent_series(make_noise):

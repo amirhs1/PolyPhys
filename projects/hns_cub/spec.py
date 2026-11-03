@@ -1,11 +1,27 @@
 """
 The *HnsCub* study: a ring polymer with H-NS proteins among crowders in a
-periodic cube. ``SPEC`` is its :class:`~polyphys.manage.projects.ProjectSpec`.
+periodic cube. ``SPEC`` is its :class:`~polyphys.manage.projects.ProjectSpec`
+and ``ANALYSIS`` its :class:`~polyphys.analyze.pipeline.AnalysisTable` per
+particle group.
 
 Values from the research code's registry (SciOps ``sciops/api.py``,
 ``PROJECTS_DETAILS``), with the PolyPhys attribute names ``phi_bulk_c`` for
-``phi_c_bulk`` and ``rho_bulk_hns`` for ``rho_hns_bulk``.
+``phi_c_bulk`` and ``rho_bulk_hns`` for ``rho_hns_bulk``, and from its
+analysis tables (SciOps ``sciops/analyze/analyzer.py``,
+``ANALYSIS_DETAILS_NUCLEOID`` and ``ANALYSIS_DETAILS_ALL``,
+``'HnsCubWhole'``), with each artifact listed once.
 """
+from polyphys.analyze.pipeline import (
+    AnalysisTable,
+    Autocorrelation,
+    LocalDensities,
+    TimeAverage,
+    edge,
+    histogram,
+    histogram_2d,
+    matrix_tseries,
+    tseries,
+)
 from polyphys.manage.parser import HnsCub
 from polyphys.manage.projects import ProjectSpec
 
@@ -22,4 +38,63 @@ SPEC = ProjectSpec(
                         'nFreeTHnsPatch', 'nEngagedTHnsPatch',
                         'nFreeTHnsCore', 'nBridgeTHnsCore',
                         'nDangleTHnsCore', 'nCisTHnsCore', 'nTransTHnsCore'),
+)
+
+# The largest lag of the autocorrelation functions, in frames (SciOps
+# ``analyze_measures``, ``nlags``).
+NLAGS = 7000
+
+ANALYSIS = (
+    AnalysisTable(group='nucleoid', lineage='whole', stamps=True, properties=(
+        matrix_tseries('principalT', 'Mon'),
+        # The per-frame bond and cluster-size histograms of the H-NS cores,
+        # averaged over the frames; a cluster histogram's column 0 is the
+        # count of empty clusters.
+        matrix_tseries('bondsHistT', 'HnsCore',
+                       post_hook=TimeAverage('bondsHist')),
+        matrix_tseries('bondsHistDangleT', 'HnsCore',
+                       post_hook=TimeAverage('bondsHistDangle')),
+        matrix_tseries('bondsHistBridgeT', 'HnsCore',
+                       post_hook=TimeAverage('bondsHistBridge')),
+        matrix_tseries('bondsHistDirDepT', 'HnsCore',
+                       post_hook=TimeAverage('bondsHistDirDep')),
+        matrix_tseries('clustersHistT', 'HnsCore',
+                       post_hook=TimeAverage('clustersHist',
+                                             drop_first_column=True)),
+        matrix_tseries('clustersHistDangleT', 'HnsCore',
+                       post_hook=TimeAverage('clustersHistDangle',
+                                             drop_first_column=True)),
+        matrix_tseries('clustersHistBridgeT', 'HnsCore',
+                       post_hook=TimeAverage('clustersHistBridge',
+                                             drop_first_column=True)),
+        matrix_tseries('clustersHistDirDepT', 'HnsCore',
+                       post_hook=TimeAverage('clustersHistDirDep',
+                                             drop_first_column=True)),
+        # Per-whole vectors reduced as time series.
+        tseries('loopLengthHist', 'Mon'),
+        tseries('bondCosineCorrVec', 'Mon'),
+        tseries('bondLengthVec', 'Mon'),
+        tseries('nBoundT', 'HnsPatch'),
+        tseries('nFreeT', 'HnsPatch'),
+        tseries('nEngagedT', 'HnsPatch'),
+        tseries('nFreeT', 'HnsCore'),
+        tseries('nBridgeT', 'HnsCore'),
+        tseries('nDangleT', 'HnsCore'),
+        tseries('nCisT', 'HnsCore'),
+        tseries('nTransT', 'HnsCore'),
+        tseries('gyrT', 'Mon', post_hook=Autocorrelation(NLAGS)),
+        tseries('shapeT', 'Mon', post_hook=Autocorrelation(NLAGS)),
+        tseries('asphericityT', 'Mon', post_hook=Autocorrelation(NLAGS)),
+    )),
+    AnalysisTable(group='all', lineage='segment', stamps=False, properties=(
+        histogram('r', 'Crd', post_hook=LocalDensities()),
+        histogram('r', 'Mon', post_hook=LocalDensities()),
+        histogram('r', 'Hns', post_hook=LocalDensities()),
+        *(histogram_2d(plane, species)
+          for plane in ('xy', 'xz', 'yz')
+          for species in ('Crd', 'Mon', 'Hns')),
+        edge('x'),
+        edge('y'),
+        edge('z'),
+    )),
 )

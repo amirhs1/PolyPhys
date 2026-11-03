@@ -61,7 +61,8 @@ Contents
 Autocorrelation:
 :func:`acf` estimates :math:`r_k` for :math:`k = 0, \\dots,` ``nlags`` by
 the fast Fourier transform, with Bartlett's confidence band, as an
-:class:`AcfResult`.
+:class:`AcfResult`; :func:`bartlett_half_width` is that band on its own,
+for a stored :math:`r_k` at any level.
 
 Decay fits:
 :data:`DECAY_MODELS` names the decay models; :func:`initial_guess` reads a
@@ -144,6 +145,7 @@ __all__ = [
     'DecayModel',
     'Topology',
     'acf',
+    'bartlett_half_width',
     'bond_cosine_correlation',
     'bond_vectors',
     'fit_decay',
@@ -310,13 +312,84 @@ def acf(
 
     half_width: FloatArray | None = None
     if alpha is not None:
-        variance = np.full_like(values, 1.0 / n_frames)
-        variance[0] = 0.0
-        if nlags >= 2:
-            variance[2:] *= 1.0 + 2.0 * np.cumsum(values[1:-1] ** 2, axis=0)
-        z_score = float(norm.ppf(1.0 - alpha / 2.0))
-        half_width = z_score * np.sqrt(variance)
+        half_width = bartlett_half_width(values, n_frames, alpha)
     return AcfResult(values=values, half_width=half_width, alpha=alpha)
+
+
+def bartlett_half_width(
+    values: npt.ArrayLike,
+    n_frames: int,
+    alpha: float = 0.05,
+) -> FloatArray:
+    """
+    The half-width of Bartlett's confidence band around an autocorrelation.
+
+    Parameters
+    ----------
+    values : array_like
+        The sample autocorrelation :math:`r_k` for lags 0 to ``nlags``,
+        shape ``(nlags + 1,)`` or ``(nlags + 1, n_series)``, as
+        :func:`acf` returns it.
+    n_frames : int
+        The number of frames the autocorrelation was estimated from, at
+        least 2.
+    alpha : float, default 0.05
+        The significance level of the band, in ``(0, 1)``; 0.05 gives a 95 %
+        band.
+
+    Returns
+    -------
+    numpy.ndarray
+        The half-width at each lag, the same shape as `values`, ``float64``;
+        0 at lag 0. The band is ``values - half_width`` to
+        ``values + half_width``.
+
+    Raises
+    ------
+    ValueError
+        If `values` is not one- or two-dimensional, `n_frames` is below 2,
+        or `alpha` is outside ``(0, 1)``.
+
+    Notes
+    -----
+    Bartlett's (1946) large-sample variance under the hypothesis that the
+    autocorrelation vanishes beyond lag :math:`k - 1` is
+    :math:`\\mathrm{var}(r_k) \\approx (1 + 2 \\sum_{j=1}^{k-1} r_j^2) / n`,
+    and the half-width is :math:`z_{1-\\alpha/2} \\sqrt{\\mathrm{var}(r_k)}`.
+    The band depends on the stored :math:`r_k`, `n_frames`, and `alpha`
+    only, so a pipeline need store the autocorrelation alone and draw the
+    band at any level later. Time and space are :math:`O(m\\, k)`, with
+    :math:`k` the lags and :math:`m` the series.
+
+    Examples
+    --------
+    The band of the alternating series of :func:`acf`'s example, rebuilt
+    from its autocorrelation:
+
+    >>> import numpy as np
+    >>> from polyphys.analyze.correlations import bartlett_half_width
+    >>> np.round(bartlett_half_width([1.0, -0.875, 0.75], 8), 4)
+    array([0.    , 0.693 , 1.1025])
+
+    .. versionadded:: 0.7.0
+    """
+    acf_values = np.asarray(values, dtype=np.float64)
+    if acf_values.ndim not in (1, 2):
+        raise ValueError(
+            f'values must be one- or two-dimensional; got {acf_values.ndim}'
+            ' dimension(s).'
+        )
+    if n_frames < 2:
+        raise ValueError(f'n_frames must be at least 2; got {n_frames}.')
+    if not 0 < alpha < 1:
+        raise ValueError(f'alpha must be in (0, 1); got {alpha}.')
+    variance = np.full_like(acf_values, 1.0 / n_frames)
+    variance[0] = 0.0
+    if acf_values.shape[0] > 2:
+        variance[2:] *= 1.0 + 2.0 * np.cumsum(acf_values[1:-1] ** 2, axis=0)
+    z_score = float(norm.ppf(1.0 - alpha / 2.0))
+    half_width: FloatArray = z_score * np.sqrt(variance)
+    return half_width
 
 
 # ---------------------------------------------------------------------------

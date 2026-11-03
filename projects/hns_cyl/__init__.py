@@ -1,7 +1,8 @@
 """
 The *HnsCyl* study: ``SPEC`` is its
-:class:`~polyphys.manage.projects.ProjectSpec`.
+:class:`~polyphys.manage.projects.ProjectSpec` and ``ANALYSIS`` its
+:class:`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
 """
-from .spec import SPEC
+from .spec import ANALYSIS, SPEC
 
-__all__ = ["SPEC"]
+__all__ = ["ANALYSIS", "SPEC"]

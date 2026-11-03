@@ -25,6 +25,7 @@ usage
 statistics
 clusters
 correlations
+pipeline
 testing
 decisions
 api
