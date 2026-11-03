@@ -10,6 +10,7 @@ the rule normalize to one curve, and the normalized sum is one wherever the
 rule holds.
 """
 import logging
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -452,6 +453,43 @@ def test_space_profiles_rejects_bad_arguments(make_profile_space, cyl_sizes,
     args.update(kwargs)
     with pytest.raises(error, match=message):
         space_profiles(**args)
+
+
+@pytest.mark.parametrize(
+    "means",
+    [
+        pytest.param([0.2, 0.3, 0.5], id="sums-to-one"),
+        pytest.param([0.2, 0.3, 0.5 + 1e-7], id="within-tolerance"),
+    ],
+)
+def test_space_profiles_warns_on_a_profile_that_sums_to_one(
+    make_profile_space, cyl_sizes, means
+):
+    """A '-mean' column summing to one within 1e-6 warns, naming the file,
+    and the file is processed regardless."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5], [means])
+    with pytest.warns(UserWarning, match="rPhiCrd-ensAvg.csv' sums to one"):
+        space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*",
+                               [], "all", cyl_sizes)
+    assert len(space) == 3
+
+
+@pytest.mark.parametrize(
+    "means",
+    [
+        pytest.param([0.2, 0.3, 0.1], id="raw"),
+        pytest.param([0.2, 0.3, 0.5 + 1e-5], id="outside-tolerance"),
+    ],
+)
+def test_space_profiles_does_not_warn_on_a_raw_profile(make_profile_space,
+                                                       cyl_sizes, means):
+    """A '-mean' column that does not sum to one within 1e-6 raises no
+    warning."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5], [means])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+                       "all", cyl_sizes)
 
 
 @pytest.fixture

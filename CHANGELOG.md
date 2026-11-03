@@ -11,6 +11,10 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Warn with a `UserWarning`, naming the file, in `polyphys.analyze.sumrule.space_profiles` when a profile's `<prop>-mean` sums to one within `1e-6`, the signature of a profile normalized by its sum, and state in `sumrule`, `usage.md`, and `density.md` that the sum rule takes the raw ensemble-averaged profiles, since a species normalized on its own enters the species sum with an arbitrary weight ([#140](https://github.com/amirhs1/PolyPhys/issues/140))
+
 ## [0.6.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.6.0) - 2026-11-03
 
 ### Changed

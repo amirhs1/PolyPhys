@@ -275,6 +275,10 @@ offered.)
   stay unnormalized: its species sum $\sum_\alpha \phi_\alpha / a_\alpha$
   needs each profile's physical scale, and only its own `'first'` and
   `'max'` normalizations are scale-free.
+  {func}`~polyphys.analyze.sumrule.space_profiles` warns, naming the file,
+  when a profile's `-mean` sums to one, the signature of `normalize='sum'`;
+  it cannot tell `'integral'` or a hand normalization from one profile, so
+  the rule above is the caller's contract.
 
 ## Cost and use
 

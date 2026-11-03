@@ -13,6 +13,18 @@ profiles come from the ``ensAvg`` stage of the artifact lineage that
 :mod:`polyphys.manage.organizer` builds; the per-frame densities behind them
 are the caller's work.
 
+The profiles must be the raw ensemble averages, in their physical units: a
+volume fraction or a number density, not a profile already divided by its
+sum, its integral, or its maximum. The sum rule relates the species to each
+other through their physical scales, so a species normalized on its own
+enters the sum :math:`\\sum_i \\phi_i / a_i` with an arbitrary weight and
+``<prop>-scale`` loses its unit and its comparability with the nominal bulk
+value. Only the ``<prop>-norm`` columns of such a profile survive, because
+dividing by the profile's own ``'first'`` or ``'max'`` value is
+scale-invariant. :func:`space_profiles` warns when a profile sums to one,
+the signature of a profile normalized by its sum, but cannot detect the
+other normalizations from one profile.
+
 Notation
 ========
 
@@ -428,13 +440,23 @@ def space_profiles(
     ``quantity='Rho'`` the number density times the diameter squared.
     :func:`sum_rule_profiles` builds the sum.
 
+    The input profiles must be the raw ensemble averages, in their physical
+    units. A profile normalized beforehand, by its sum, its integral, or its
+    maximum, enters the species sum with an arbitrary weight, and its
+    ``<prop>-scale`` loses its unit; only its ``<prop>-norm`` survives,
+    since dividing by the profile's own reference value is scale-invariant.
+    A profile whose ``<prop>-mean`` sums to one, as one normalized by its
+    sum does, raises a :class:`UserWarning` naming the file; the other
+    normalizations cannot be told from one profile.
+
     Parameters
     ----------
     input_database : str
         Path to the directory of the ensemble-averaged profiles, named
         ``<ensemble_long>-<group>-<direction><quantity><species>-ensAvg.csv``,
         ending with a path separator. Each file has a ``bin_center`` column
-        and a ``<direction><quantity><species>-mean`` column.
+        and a ``<direction><quantity><species>-mean`` column holding the
+        raw ensemble-averaged volume fraction or number density.
     quantity : {'Rho', 'Phi'}
         The number density or the volume fraction.
     direction : {'r', 'z'}
@@ -529,8 +551,10 @@ def space_profiles(
     Warns
     -----
     UserWarning
-        If a file's reference value is zero; its ``<prop>-norm`` is then
-        zero.
+        If a file's ``<prop>-mean`` sums to one within ``1e-6``, which marks
+        a profile normalized by its sum; the file is processed regardless,
+        since a raw profile can sum to one by coincidence. Also if a file's
+        reference value is zero; its ``<prop>-norm`` is then zero.
 
     Examples
     --------
@@ -639,6 +663,16 @@ def space_profiles(
         ens_avg = pd.read_csv(ens_avg_csv[0], header=0)
         prop_info = parser(ens_avg_csv[0], "ensemble_long", group, ispath=True)
 
+        # A profile normalized by its sum adds up to one; the sum rule needs
+        # the raw profile, so warn, but go on: a raw one can sum to one too.
+        if abs(ens_avg[f"{prop}-mean"].sum() - 1.0) <= 1e-6:
+            warnings.warn(
+                f"The '{prop}-mean' column of '{ens_avg_csv[0]}' sums to one"
+                " within 1e-6, as a profile normalized by its sum does; the"
+                " sum rule needs the raw ensemble-averaged profile.",
+                UserWarning,
+            )
+
         # One term of the sum rule: phi / a, or rho * a**2
         size = getattr(prop_info, size_attr)
         if quantity == "Phi":
@@ -739,12 +773,19 @@ def sum_rule_profiles(
     the reference, the sum is one there and its departure from one
     elsewhere measures the rule's failure.
 
+    The species' profiles must descend from the raw ensemble averages, as
+    :func:`space_profiles` requires: the sum weights each species by its
+    physical scale, and a species normalized on its own, by its sum, its
+    integral, or its maximum, enters with an arbitrary weight. Nothing here
+    can detect that, so it is the caller's contract.
+
     Parameters
     ----------
     profiles : mapping of (EntityT -> pd.DataFrame)
         Each species label mapped to its :func:`space_profiles` result for
         the same `prop`; each has the columns of `by`, ``bin_center``, and
-        ``<prop><species>-scale``, in the same row order.
+        ``<prop><species>-scale``, in the same row order, with ``-scale``
+        built from the raw ensemble-averaged profile.
     prop : str
         The direction and quantity, such as ``'rPhi'`` or ``'zRho'``.
     geometry : {'cubic', 'cylindrical'}

@@ -204,7 +204,14 @@ ensemble-averaged profiles: it scales each `Phi` profile by `1 / a_i` and each
 `Rho` profile by `a_i**2`, with `a_i` read from the parser attribute that the
 study's `species_sizes` names, normalizes the scaled profile by a reference
 value, folds a `z` profile about `z = 0`, and adds the state point's
-attributes:
+attributes. The profiles must be the raw ensemble averages, in their
+physical units: the rule relates the species through their scales, so a
+profile normalized beforehand, by its sum, its integral, or its maximum
+(the `normalize` option of `polyphys.analyze.density`, or by hand), enters
+the sum with an arbitrary weight and its `-scale` column loses its unit.
+`space_profiles` warns, naming the file, when a profile's `-mean` sums to
+one, the signature of a profile normalized by its sum; it cannot tell the
+other normalizations from one profile.
 
 ```python
 monomers = space_profiles(database, 'Phi', 'r', 'Mon', chain.parser,
