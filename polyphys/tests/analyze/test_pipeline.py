@@ -639,6 +639,15 @@ def test_local_densities_needs_a_species_with_a_size(cyl_spec):
         LocalDensities()({"w": np.ones(2)}, context)
 
 
+def test_local_densities_needs_the_spec_and_the_edges(cyl_spec):
+    """Without the study's spec or the histogram's edges the hook cannot
+    find the species' size or the bins."""
+    context = HookContext(histogram("r", "Crd"), spec=cyl_spec, group="all",
+                          density=RecordingKernel())
+    with pytest.raises(ValueError, match="needs the study's spec and"):
+        LocalDensities()({"w": np.ones(2)}, context)
+
+
 def test_local_densities_rejects_a_non_histogram_property(cyl_spec):
     """``LocalDensities`` is for ``histogram(...)`` properties only."""
     context = HookContext(tseries("gyrT", "Mon"), spec=cyl_spec,
@@ -979,7 +988,8 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
 
 
 @pytest.mark.private_data
-def test_ens_avg_matches_the_research_code(private_data_dir, tmp_path):
+def test_ens_avg_matches_the_research_code(  # pragma: no cover - needs data
+        private_data_dir, tmp_path):
     """The ensemble averages of one TransFociCub space match the research
     code's, for every property the research code reduced the same way.
 

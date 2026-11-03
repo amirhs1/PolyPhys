@@ -1026,11 +1026,7 @@ class FociPairDistances:
                 f"'{prop.prop}': FociPairDistances needs the study's spec in "
                 "its context, for the topology."
             )
-        if context.spec.topology not in ('linear', 'ring'):
-            raise ValueError(
-                f"'{prop.prop}': topology must be 'linear' or 'ring', not "
-                f"'{context.spec.topology}'."
-            )
+        # foci_pair_info checks the topology itself.
         topology = cast(clusters.Topology, context.spec.topology)
         hists: dict[str, pd.DataFrame] = {}
         densities: dict[str, pd.DataFrame] = {}
