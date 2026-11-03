@@ -685,6 +685,109 @@ class ParserBase:
         """
         return cls(name, lineage, group, ispath=False)
 
+    @classmethod
+    def pattern(cls, lineage: LineageT) -> tuple[str, ...]:
+        """
+        Return the filename keywords of `lineage`, in name order.
+
+        Parameters
+        ----------
+        lineage : :py:data:`LineageT`
+            One of ``'segment'``, ``'whole'``, ``'ensemble_long'``,
+            ``'ensemble'``, or ``'space'``.
+
+        Returns
+        -------
+        tuple of str
+            The keywords, such as ``'N'`` or ``'ac'``, that a name of
+            `lineage` carries, in the order they appear in it.
+
+        Raises
+        ------
+        TypeError
+            If the class declares no patterns, such as `ParserBase` itself.
+        ValueError
+            If `lineage` is not a valid lineage.
+
+        Examples
+        --------
+        >>> SumRuleCyl.pattern('space')
+        ('N', 'D', 'ac')
+        """
+        patterns = cls._declared_patterns()
+        invalid_keyword(lineage, cls._lineages)
+        return patterns[lineage]
+
+    @classmethod
+    def attributes_at(cls, lineage: LineageT) -> frozenset[str]:
+        """
+        Return the names of the attributes that a parser of `lineage` sets.
+
+        The set holds the attributes parsed from the lineage's pattern, the
+        `_defaults`, the five lineage names (``segment`` to ``space``), and
+        the lineage's `_project_attributes`. At ``segment``, ``whole``, and
+        ``ensemble_long`` it also holds the bulk number density
+        ``rho_bulk_<suffix>`` and volume fraction ``phi_bulk_<suffix>`` of
+        each species and each total, and the declared masses. An attribute
+        that an override of :meth:`_derived_attributes` sets counts only if
+        `_project_attributes` lists it.
+
+        The set is built from the declaration, without parsing a name; the
+        cost is :math:`O(k + n)` for a pattern of :math:`k` keywords and
+        :math:`n` declared defaults, species, totals, masses, and project
+        attributes.
+
+        Parameters
+        ----------
+        lineage : :py:data:`LineageT`
+            One of ``'segment'``, ``'whole'``, ``'ensemble_long'``,
+            ``'ensemble'``, or ``'space'``.
+
+        Returns
+        -------
+        frozenset of str
+            The attribute names.
+
+        Raises
+        ------
+        TypeError
+            If the class declares no patterns, such as `ParserBase` itself.
+        ValueError
+            If `lineage` is not a valid lineage.
+
+        Examples
+        --------
+        The bulk values exist at ``ensemble_long``, not at ``space``:
+
+        >>> 'phi_bulk_c' in SumRuleCyl.attributes_at('ensemble_long')
+        True
+        >>> 'phi_bulk_c' in SumRuleCyl.attributes_at('space')
+        False
+        """
+        cls._declared_patterns()
+        invalid_keyword(lineage, cls._lineages)
+        names = set(cls._genealogy_attributes[lineage])
+        names.update(cls._defaults, cls._lineages,
+                     cls._project_attributes[lineage])
+        if lineage in _BULK_LINEAGES:
+            suffixes = [species.suffix for species in cls._species]
+            suffixes.extend(cls._totals)
+            for suffix in suffixes:
+                names.update((f"rho_bulk_{suffix}", f"phi_bulk_{suffix}"))
+            names.update(cls._masses)
+        return frozenset(names)
+
+    @classmethod
+    def _declared_patterns(cls) -> dict[LineageT, tuple[str, ...]]:
+        """
+        Return `_patterns`, or raise `TypeError` if the class declares none.
+        """
+        if cls._patterns is None:
+            raise TypeError(
+                f"{cls.__name__} declares no lineage patterns; use a "
+                "concrete parser such as SumRuleCyl.")
+        return cls._patterns
+
     @property
     def lineages(self) -> list[LineageT]:
         """

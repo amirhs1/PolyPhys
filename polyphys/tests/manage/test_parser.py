@@ -1899,6 +1899,81 @@ def test_parser_without_patterns_cannot_be_instantiated(parser_class):
         parser_class('N200', 'space', 'bug')
 
 
+# Class-level reads of the declaration
+
+
+def test_pattern_returns_declared_keywords():
+    """pattern gives a lineage's keywords in the order its name writes them."""
+    keywords = SumRuleCyl.pattern('space')
+
+    # The SumRuleCyl declaration: 'space': ('N', 'D', 'ac').
+    assert keywords == ('N', 'D', 'ac')
+
+
+@pytest.mark.parametrize('lineage, expected', [
+    pytest.param(
+        'ensemble_long',
+        {'nmon', 'epsilon', 'dcyl', 'lcyl', 'dcrowd', 'ncrowd', 'dt',
+         'bdump', 'adump', 'dmon', 'segment', 'whole', 'ensemble_long',
+         'ensemble', 'space', 'rho_bulk_m', 'phi_bulk_m', 'rho_bulk_c',
+         'phi_bulk_c'},
+        id='ensemble_long-with-bulk-values'),
+    pytest.param(
+        'space',
+        {'nmon', 'dcyl', 'dcrowd', 'dmon', 'segment', 'whole',
+         'ensemble_long', 'ensemble', 'space'},
+        id='space-without-bulk-values'),
+])
+def test_attributes_at_lists_declared_attributes(lineage, expected):
+    """attributes_at gives the parsed, default, lineage, and bulk names."""
+    names = SumRuleCyl.attributes_at(lineage)
+
+    # From the SumRuleCyl declaration: pattern attributes, 'dmon' in
+    # _defaults, the five lineage names, and at ensemble_long the bulk
+    # values of the species 'm' and 'c'.
+    assert names == frozenset(expected)
+
+
+def test_attributes_at_adds_unlisted_bulk_values(chain_declaration):
+    """attributes_at adds bulk values that _project_attributes omits."""
+    chain_cub = type('ChainCub', (ParserBase,), chain_declaration)
+
+    names = chain_cub.attributes_at('ensemble_long')
+
+    # The declaration lists only 'dmon' as a project attribute; its species
+    # 'm' and 'c' still get bulk values at ensemble_long.
+    assert {'rho_bulk_m', 'phi_bulk_m', 'rho_bulk_c', 'phi_bulk_c'} <= names
+
+
+def test_attributes_at_matches_parsed_instance(parse_case, parsed):
+    """attributes_at names exactly the public attributes a parser sets."""
+    public = {name for name in vars(parsed) if not name.startswith('_')}
+
+    names = parse_case.parser_class.attributes_at(parse_case.lineage)
+
+    assert names == public
+
+
+@pytest.mark.parametrize('method', [
+    pytest.param('pattern', id='pattern'),
+    pytest.param('attributes_at', id='attributes_at'),
+])
+def test_class_reads_need_patterns(method):
+    """pattern and attributes_at raise TypeError on a patternless class."""
+    with pytest.raises(TypeError, match='declares no lineage patterns'):
+        getattr(ParserBase, method)('space')
+
+
+@pytest.mark.parametrize('method', [
+    pytest.param('pattern', id='pattern'),
+    pytest.param('attributes_at', id='attributes_at'),
+])
+def test_class_reads_reject_unknown_lineage(method):
+    """pattern and attributes_at raise ValueError on an unknown lineage."""
+    with pytest.raises(ValueError, match='invalid option'):
+        getattr(SumRuleCyl, method)('galaxy')
+
+
 def test_declared_parser_parses_its_names(chain_declaration):
     """A class built from a valid declaration parses names of its grammar."""
     chain_cub = type('ChainCub', (ParserBase,), chain_declaration)

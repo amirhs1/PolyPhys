@@ -36,7 +36,7 @@ jobs:
           python -m pip install flake8
 
       - name: Run flake8
-        run: flake8 polyphys
+        run: flake8 polyphys projects
 
   typecheck:
     name: Type-check
@@ -59,7 +59,7 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Run mypy
-        run: mypy polyphys/analyze polyphys/manage polyphys/simulate
+        run: mypy polyphys/analyze polyphys/manage polyphys/simulate projects
 
   test:
     name: Test Python ${{ matrix.python-version }}
@@ -91,7 +91,7 @@ jobs:
         # floor. coverage.py rounds the total to whole percent before the
         # comparison, so keep the floor a whole number.
         run: |
-          pytest polyphys README.md \
+          pytest polyphys README.md projects \
             --cov=polyphys \
             --cov-report=term-missing \
             --cov-report=xml \
