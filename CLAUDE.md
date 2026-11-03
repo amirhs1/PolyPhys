@@ -19,7 +19,9 @@
   session start when the hook below names a merged branch.
 - The `SessionStart` hook in `.claude/settings.json` runs
   `.claude/hooks/list-merged-branches.sh`, which lists the local branches
-  already merged into `origin/main`. It lists; the skill deletes.
+  already merged into `origin/main`. It lists; the skill deletes. Branches it
+  lists as having no commits of their own, such as a worktree branch before
+  its first commit, are not merged pull requests and are not for close-out.
 - Archiving a session is reversible and is the app's action; never delete a
   session or its conversation. End the skill's report with whether the
   session is safe to archive, and leave the archiving to the maintainer.
