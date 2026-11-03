@@ -80,7 +80,9 @@ into their pair histograms, separation densities, and separation time series.
 
 Drivers:
 :func:`reduce_space` runs every property of a table over one space;
-:func:`reduce_stamps` combines the stamps of a space.
+:func:`reduce_stamps` combines the stamps of a space;
+:func:`equilibrium_wholes` reduces each whole's time series to its
+equilibrium value with a blocked error, beside the whole's stamps.
 
 Conventions
 ===========
@@ -97,6 +99,10 @@ Conventions
 - The ensemble of ``'dataframe'`` wholes is their long form, every whole's
   rows with a ``whole`` and a ``row`` column, so no whole is lost before the
   ensemble average; the average is taken row by row across the wholes.
+- The error of a whole's time average is the blocked standard error of
+  :func:`~polyphys.analyze.stats.sem_blocked`, since the frames of one
+  run are correlated; across the wholes of an ensemble, independent
+  runs, the organizer's plain standard error stays.
 - Progress is logged at INFO level; no warning is raised for a renamed
   artifact, because every output name is declared.
 - Complexities are stated in ``n_files`` (the files of one property),
@@ -110,6 +116,8 @@ Dependencies
 - :mod:`polyphys.analyze.clusters`: the foci pair kernels.
 - :mod:`polyphys.analyze.correlations`:
   :func:`~polyphys.analyze.correlations.acf`.
+- :mod:`polyphys.analyze.stats`:
+  :func:`~polyphys.analyze.stats.sem_blocked`.
 - :mod:`polyphys.manage.organizer`: the lineage reducers.
 - :mod:`polyphys.manage.projects`:
   :class:`~polyphys.manage.projects.ProjectSpec`.
@@ -155,8 +163,9 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from polyphys.analyze import clusters
+from polyphys.analyze import clusters, stats
 from polyphys.analyze.correlations import acf
+from polyphys.analyze.stats import PlateauMethod
 from polyphys.manage import organizer
 from polyphys.manage.parser import ParserBase
 from polyphys.manage.projects import ProjectSpec
@@ -181,6 +190,7 @@ __all__ = [
     'PropertySpec',
     'TimeAverage',
     'edge',
+    'equilibrium_wholes',
     'half_contour',
     'histogram',
     'histogram_2d',
@@ -1299,6 +1309,159 @@ def reduce_space(
     return results
 
 
+def equilibrium_wholes(
+    ens_database: Pathish,
+    properties: Mapping[PropertyT, str],
+    whole_stamps: pd.DataFrame,
+    *,
+    method: PlateauMethod = 'lee',
+    topology: str | None = None,
+) -> pd.DataFrame:
+    """
+    The equilibrium value of each whole's time series, with its error,
+    beside the whole's stamps.
+
+    For each property, every ensemble file of the ``ens`` stage is read
+    once, and each of its columns, one whole's time series, is reduced to
+    its time average, its variance, and the blocked standard error of the
+    average. The results of all the properties are merged with
+    `whole_stamps` on ``whole``, one row per whole: the table the
+    research code's ``equilibrium_wholes`` built for the ``allInOne``
+    phase.
+
+    Parameters
+    ----------
+    ens_database : path-like
+        The ``ens`` directory of one space and group,
+        ``<root>/analysis/<prefix>-<group>-ens``, whose
+        ``<ensemble_long>-<group>-<property>.csv`` files
+        :func:`reduce_space` wrote.
+    properties : mapping of str to str
+        The time-series property of each ensemble file, mapped to its
+        output name: ``{'gyrTMon': 'gyrMon'}`` reads the ``-gyrTMon.csv``
+        files and writes ``gyrMon-mean``, ``gyrMon-var``, and
+        ``gyrMon-sem``.
+    whole_stamps : pandas.DataFrame
+        The stamps of the space's wholes, one row per whole, with a
+        ``whole`` column: the first result of :func:`reduce_stamps`.
+    method : {'lee', 'sem_err'}, default 'lee'
+        The plateau rule of :func:`~polyphys.analyze.stats.sem_blocked`;
+        ``'lee'`` is the published rule.
+    topology : str, optional
+        Appended to each whole's name as ``.<topology>`` before the merge,
+        for stamps that the probe phase keyed by the whole's file name,
+        such as ``...ens1.ring``; the ensemble files name a whole without
+        it.
+
+    Returns
+    -------
+    pandas.DataFrame
+        `whole_stamps` followed by, for each property in the order of
+        `properties`, the columns ``<output>-mean``, ``<output>-var``, and
+        ``<output>-sem``, with the rows in the order of `whole_stamps`.
+
+    Raises
+    ------
+    FileNotFoundError
+        If `ens_database` holds no CSV file, or a property matches none.
+    ValueError
+        If `whole_stamps` has no ``whole`` column or lists a whole twice;
+        if two properties share an output name; if the wholes of a
+        property's files differ from those of the stamps, which names the
+        wholes on each side; or as
+        :func:`~polyphys.analyze.stats.block_average` raises for a series
+        that is too short or holds NaN.
+
+    Warns
+    -----
+    RuntimeWarning
+        As :func:`~polyphys.analyze.stats.select_plateau`: when a whole's
+        series is too short for its correlation time, its ``-sem`` is NaN
+        or unreliable.
+
+    Notes
+    -----
+    ``-mean`` is the time average over the frames, ``-var`` the sample
+    variance of the frames (``ddof = 1``), and ``-sem`` the standard error
+    of the time average by block averaging, which accounts for the
+    correlation between consecutive frames of one run (Flyvbjerg and
+    Petersen, 1989; the plateau rule of Lee et al., 2011; both in
+    :mod:`polyphys.analyze.stats`). A constant series has a ``-sem`` of 0.
+    Blocking applies within a whole only: the wholes of an ensemble are
+    independent runs, so :func:`~polyphys.manage.organizer.ensemble_avg`
+    keeps the plain standard error across them. The research code took
+    ``-sem`` as the per-frame standard error, which the blocked one
+    exceeds by about :math:`\\sqrt{s}` for a statistical inefficiency
+    :math:`s`, and its ``-var`` as the population variance.
+
+    With :math:`n_\\mathrm{frames}` the frames of the longest series and
+    :math:`n_\\mathrm{wholes}` the wholes of the space, time is
+    :math:`O(n_\\mathrm{wholes}\\, n_\\mathrm{frames})` per property, and
+    space is one ensemble file at a time plus a ``float64`` copy of it.
+
+    Examples
+    --------
+    Two wholes of one ensemble whose series alternate between two values,
+    so their time averages are exact and the blocked error vanishes at a
+    block size of two frames:
+
+    >>> import tempfile
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> stem = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> wholes = [f'{stem}ens1', f'{stem}ens2']
+    >>> root = tempfile.mkdtemp()
+    >>> pd.DataFrame({wholes[0]: np.tile([0.0, 2.0], 2048),
+    ...               wholes[1]: np.tile([1.0, 3.0], 2048)}
+    ...              ).to_csv(f'{root}/{stem}-bug-gyrTMon.csv', index=False)
+    >>> stamps = pd.DataFrame({'whole': wholes, 'n_frames': [4096, 4096]})
+    >>> table = equilibrium_wholes(root, {'gyrTMon': 'gyrMon'}, stamps)
+    >>> table.drop(columns='whole').round(3)
+       n_frames  gyrMon-mean  gyrMon-var  gyrMon-sem
+    0      4096          1.0         1.0         0.0
+    1      4096          2.0         1.0         0.0
+
+    .. versionadded:: 0.6.0
+    """
+    if 'whole' not in whole_stamps.columns:
+        raise ValueError("whole_stamps needs a 'whole' column.")
+    expected = whole_stamps['whole'].astype(str).to_list()
+    repeated_wholes = sorted({w for w in expected if expected.count(w) > 1})
+    if repeated_wholes:
+        raise ValueError(
+            f"whole_stamps lists wholes more than once: {repeated_wholes}."
+        )
+    outputs = list(properties.values())
+    repeated = sorted({out for out in outputs if outputs.count(out) > 1})
+    if repeated:
+        raise ValueError(f"Output names given more than once: {repeated}.")
+    pattern = os.path.join(os.fspath(ens_database), '*.csv')
+    observations = sorted(glob.glob(pattern))
+    if not observations:
+        raise FileNotFoundError(f"No file matches '{pattern}'.")
+    suffix = '' if topology is None else f'.{topology}'
+
+    frames: list[pd.DataFrame] = []
+    for prop, output in properties.items():
+        logger.info("Reducing the time series of '%s' to '%s'.", prop,
+                    output)
+        parts: list[pd.DataFrame] = []
+        for (path,) in _select(observations, prop, ext='csv'):
+            ensemble = pd.read_csv(path)
+            values = ensemble.to_numpy(dtype=np.float64)
+            parts.append(pd.DataFrame({
+                f'{output}-mean': values.mean(axis=0),
+                f'{output}-var': values.var(axis=0, ddof=1),
+                f'{output}-sem': _blocked_errors(values, method),
+            }, index=[f'{name}{suffix}' for name in ensemble.columns]))
+        measured = pd.concat(parts)
+        _check_wholes(prop, list(measured.index), expected)
+        frames.append(measured.loc[expected])
+    combined = pd.concat(frames, axis=1)
+    combined.index = whole_stamps.index
+    return pd.concat([whole_stamps, combined], axis=1)
+
+
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
@@ -1491,3 +1654,36 @@ def _frame_ensemble_avg(
             organizer.create_fullname(ens_name, group, f'{prop}-ensAvg'),
             result, save_to)
     return result
+
+
+def _blocked_errors(values: np.ndarray, method: PlateauMethod) -> np.ndarray:
+    """
+    The blocked standard error of each column of `values`, shape
+    ``(n_frames, n_series)``, by :func:`~polyphys.analyze.stats.sem_blocked`;
+    0 for a constant column, which
+    :func:`~polyphys.analyze.stats.block_average` rejects. A column
+    with NaN is passed on, so that it raises there.
+    """
+    errors = np.zeros(values.shape[1])
+    varying = ~(values.var(axis=0) == 0.0)
+    if varying.any():
+        errors[varying] = np.asarray(
+            stats.sem_blocked(values[:, varying], method=method))
+    return errors
+
+
+def _check_wholes(
+    prop: str, found: Sequence[str], expected: Sequence[str]
+) -> None:
+    """
+    Raise ``ValueError`` unless the wholes `found` in a property's ensemble
+    files are exactly the `expected` wholes of the stamps.
+    """
+    missing = sorted(set(expected) - set(found))
+    unknown = sorted(set(found) - set(expected))
+    if missing or unknown:
+        raise ValueError(
+            f"'{prop}': the wholes of its ensemble files and of whole_stamps "
+            f"differ. In the stamps only: {missing}. In the files only: "
+            f"{unknown}. If the names differ by a suffix, pass topology."
+        )

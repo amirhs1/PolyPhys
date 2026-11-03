@@ -8,8 +8,10 @@ subfolder. A tree's values are ``1000 e + 100 w + 10 s + k``
 ``w1 + 50``, ``5000``, and ``50`` by hand. Bin edges, distance matrices, and
 two-dimensional wholes are written over the tree's files by hand. The hooks
 are also tested on their own with a ``HookContext``; the density kernel is a
-stub that records its calls. The golden comparison with the research code's
-output is written blind and runs only with the maintainer's data.
+stub that records its calls. The equilibrium values of the wholes are read
+from ensemble CSV files written by hand. The golden comparison with the
+research code's output is written blind and runs only with the
+maintainer's data.
 """
 import importlib
 import logging
@@ -23,6 +25,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.analyze.clusters import foci_pair_info
 from polyphys.analyze.correlations import acf
+from polyphys.analyze.stats import sem_blocked
 from polyphys.analyze.pipeline import (
     AnalysisTable,
     Autocorrelation,
@@ -33,6 +36,7 @@ from polyphys.analyze.pipeline import (
     PropertySpec,
     TimeAverage,
     edge,
+    equilibrium_wholes,
     half_contour,
     histogram,
     histogram_2d,
@@ -982,6 +986,230 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
         f"{name}-bug-{prop}.npy" for name in names for prop in (
             "gyrTMon", "gyrTMon-acf", "rHistMon", "rEdgeMon", "rRhoMon",
             "rPhiMon", "clustersHistTMon", "clustersHistMon"))
+
+
+# The equilibrium values of the wholes
+
+
+@pytest.fixture
+def ens_dir(tmp_path):
+    """An ``ens`` stage directory, ``<root>/analysis/N-bug-ens``."""
+    folder = tmp_path / "analysis" / "N-bug-ens"
+    folder.mkdir(parents=True)
+    return folder
+
+
+@pytest.fixture
+def write_ensemble(ens_dir):
+    """Factory: write the ensemble CSV of one property, one column per
+    whole named ``<stem>ens<i>``, and return the whole names."""
+    def _write(prop, columns, stem=None):
+        stem = stem or ("N20epsilon5.0r5.5lz25.0sig1.0nc100"
+                        "dt0.005bdump1000adump5000")
+        frame = pd.DataFrame({f"{stem}ens{i}": column
+                              for i, column in enumerate(columns, start=1)})
+        frame.to_csv(ens_dir / f"{stem}-bug-{prop}.csv", index=False)
+        return list(frame.columns)
+    return _write
+
+
+@pytest.fixture
+def alternating():
+    """A series of 256 frames alternating between 0 and 2: its time
+    average is 1, its variance 256/255, and its blocked error 0, since
+    every block of two frames averages to 1."""
+    return np.tile([0.0, 2.0], 128)
+
+
+def test_equilibrium_wholes_reads_each_ensemble_file_once(
+        ens_dir, write_ensemble, alternating, monkeypatch):
+    """Two properties over two ensembles read four files, each once."""
+    wholes = (write_ensemble("gyrTMon", [alternating, alternating + 1])
+              + write_ensemble("gyrTMon", [alternating], stem="N20ac1.0nc0"))
+    write_ensemble("shapeTMon", [alternating, alternating])
+    write_ensemble("shapeTMon", [alternating], stem="N20ac1.0nc0")
+    stamps = pd.DataFrame({"whole": wholes})
+    reads = []
+    read_csv = pd.read_csv
+
+    def counting_read_csv(path, *args, **kwargs):
+        reads.append(Path(path).name)
+        return read_csv(path, *args, **kwargs)
+
+    monkeypatch.setattr(pd, "read_csv", counting_read_csv)
+
+    equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon", "shapeTMon": "shapeMon"},
+                       stamps)
+
+    assert len(reads) == 4
+    assert len(set(reads)) == 4
+
+
+@pytest.mark.parametrize("method", [
+    pytest.param("lee", id="lee"),
+    pytest.param("sem_err", id="sem_err"),
+])
+def test_equilibrium_wholes_mean_and_var_are_exact_and_sem_is_blocked(
+        ens_dir, write_ensemble, method):
+    """The mean and variance of each whole are the hand values of an
+    alternating series and numpy's of a random one, and the error is
+    ``sem_blocked`` of that whole's column under the chosen rule."""
+    n_frames = 16384
+    rng = np.random.default_rng(7)
+    series = [np.tile([0.0, 2.0], n_frames // 2),
+              rng.standard_normal(n_frames),
+              np.repeat(rng.standard_normal(n_frames // 8), 8)]
+    wholes = write_ensemble("gyrTMon", series)
+    stamps = pd.DataFrame({"whole": wholes})
+
+    table = equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps,
+                               method=method)
+
+    # The alternating series: deviations of exactly 1, so var = n/(n - 1);
+    # the sums are exact in float64, one rounding in the division.
+    assert table["gyrMon-mean"][0] == pytest.approx(1.0, rel=1e-12)
+    assert table["gyrMon-var"][0] == pytest.approx(
+        n_frames / (n_frames - 1), rel=1e-12)
+    assert table["gyrMon-sem"][0] == 0.0
+    for row in (1, 2):
+        # The same numpy reductions on the same values: round-off only.
+        assert table["gyrMon-mean"][row] == pytest.approx(
+            series[row].mean(), rel=1e-12)
+        assert table["gyrMon-var"][row] == pytest.approx(
+            series[row].var(ddof=1), rel=1e-12)
+        assert table["gyrMon-sem"][row] == pytest.approx(
+            sem_blocked(series[row], method=method), rel=1e-12)
+
+
+def test_equilibrium_wholes_error_grows_with_the_correlation_time(
+        ens_dir, write_ensemble):
+    """A series that holds each value for 8 frames has a blocked error
+    about ``sqrt(8)`` times the per-frame one; an independent series has
+    about the same."""
+    rng = np.random.default_rng(7)
+    independent = rng.standard_normal(16384)
+    held = np.repeat(rng.standard_normal(2048), 8)
+    wholes = write_ensemble("gyrTMon", [independent, held])
+    stamps = pd.DataFrame({"whole": wholes})
+
+    table = equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps)
+
+    naive = [series.std(ddof=1) / np.sqrt(series.size)
+             for series in (independent, held)]
+    # The bounds are those of the sem_blocked doctest on the same signal:
+    # a statistical band around sqrt(8) = 2.83 and around 1.
+    assert 2.3 < table["gyrMon-sem"][1] / naive[1] < 3.4
+    assert 0.8 < table["gyrMon-sem"][0] / naive[0] < 1.25
+
+
+def test_equilibrium_wholes_gives_a_constant_series_zero_error(
+        ens_dir, write_ensemble, alternating):
+    """A whole whose series never varies has an exact average and no
+    error, instead of the blocking analysis rejecting it."""
+    wholes = write_ensemble("gyrTMon", [np.full(256, 3.0), alternating])
+    stamps = pd.DataFrame({"whole": wholes})
+
+    table = equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps)
+
+    assert table["gyrMon-mean"][0] == 3.0
+    assert table["gyrMon-var"][0] == 0.0
+    assert table["gyrMon-sem"][0] == 0.0
+
+
+def test_equilibrium_wholes_keeps_the_stamps_order_and_columns(
+        ens_dir, write_ensemble, alternating):
+    """The table holds the stamps' columns, then the three statistics of
+    each property in the order given, with the rows in the stamps' order,
+    not the files'."""
+    wholes = write_ensemble("gyrTMon", [alternating, alternating + 1])
+    write_ensemble("shapeTMon", [alternating + 2, alternating + 3])
+    stamps = pd.DataFrame({"whole": wholes[::-1], "n_frames": [256, 256]})
+
+    table = equilibrium_wholes(
+        ens_dir, {"shapeTMon": "shapeMon", "gyrTMon": "gyrMon"}, stamps)
+
+    assert list(table.columns) == [
+        "whole", "n_frames", "shapeMon-mean", "shapeMon-var", "shapeMon-sem",
+        "gyrMon-mean", "gyrMon-var", "gyrMon-sem"]
+    assert table["whole"].to_list() == wholes[::-1]
+    assert_allclose(table["gyrMon-mean"], [2.0, 1.0])
+    assert_allclose(table["shapeMon-mean"], [4.0, 3.0])
+
+
+def test_equilibrium_wholes_appends_the_topology_to_match_the_stamps(
+        ens_dir, write_ensemble, alternating):
+    """Stamps keyed by the whole's file name, ``...ens1.ring``, match the
+    ensemble columns once the topology is appended, and the table keeps
+    the stamps' names."""
+    wholes = write_ensemble("gyrTMon", [alternating, alternating + 1])
+    stamps = pd.DataFrame({"whole": [f"{whole}.ring" for whole in wholes]})
+
+    table = equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps,
+                               topology="ring")
+
+    assert table["whole"].to_list() == [f"{whole}.ring" for whole in wholes]
+    assert_allclose(table["gyrMon-mean"], [1.0, 2.0])
+
+
+@pytest.mark.parametrize("stamps_wholes, match", [
+    pytest.param(slice(0, 1), r"In the files only: \[.*ens2'\]",
+                 id="stamps-lack-a-whole"),
+    pytest.param(slice(0, 3), r"In the stamps only: \[.*ens3'\]",
+                 id="files-lack-a-whole"),
+])
+def test_equilibrium_wholes_rejects_wholes_on_one_side_only(
+        ens_dir, write_ensemble, alternating, stamps_wholes, match):
+    """A whole in the ensemble files but not in the stamps, or in the
+    stamps but not in the files, raises and is named, instead of a row
+    being dropped or left empty."""
+    wholes = write_ensemble("gyrTMon", [alternating, alternating + 1])
+    stem = wholes[0][:-len("ens1")]
+    stamps = pd.DataFrame({"whole": [f"{stem}ens{i}" for i in (1, 2, 3)]
+                           [stamps_wholes]})
+
+    with pytest.raises(ValueError, match=match):
+        equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps)
+
+
+def test_equilibrium_wholes_rejects_repeated_output_names(
+        ens_dir, write_ensemble, alternating):
+    """Two properties mapped to one output name would overwrite each
+    other's columns, so they are rejected."""
+    wholes = write_ensemble("gyrTMon", [alternating])
+    stamps = pd.DataFrame({"whole": wholes})
+    with pytest.raises(ValueError, match=r"more than once: \['gyrMon'\]"):
+        equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon",
+                                     "shapeTMon": "gyrMon"}, stamps)
+
+
+@pytest.mark.parametrize("stamps, match", [
+    pytest.param(pd.DataFrame({"n_frames": [256]}), "needs a 'whole'",
+                 id="no-whole-column"),
+    pytest.param(pd.DataFrame({"whole": ["w1", "w1"]}), "more than once",
+                 id="repeated-whole"),
+])
+def test_equilibrium_wholes_rejects_bad_stamps(ens_dir, write_ensemble,
+                                               alternating, stamps, match):
+    """The stamps need a ``whole`` column that lists each whole once."""
+    write_ensemble("gyrTMon", [alternating])
+    with pytest.raises(ValueError, match=match):
+        equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps)
+
+
+def test_equilibrium_wholes_property_without_files_raises(
+        ens_dir, write_ensemble, alternating):
+    """A property with no ensemble file raises and is named."""
+    wholes = write_ensemble("gyrTMon", [alternating])
+    stamps = pd.DataFrame({"whole": wholes})
+    with pytest.raises(FileNotFoundError, match="'shapeTMon'"):
+        equilibrium_wholes(ens_dir, {"shapeTMon": "shapeMon"}, stamps)
+
+
+def test_equilibrium_wholes_empty_directory_raises(ens_dir):
+    """An ``ens`` directory without CSV files raises."""
+    with pytest.raises(FileNotFoundError, match="No file matches"):
+        equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"},
+                           pd.DataFrame({"whole": ["w1"]}))
 
 
 # Golden comparison with the research code, written blind
