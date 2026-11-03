@@ -26,6 +26,7 @@ statistics
 clusters
 correlations
 density
+pipeline
 testing
 decisions
 api

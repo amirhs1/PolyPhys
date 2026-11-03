@@ -37,3 +37,4 @@ Analyze
    polyphys.analyze.correlations
    polyphys.analyze.sumrule
    polyphys.analyze.density
+   polyphys.analyze.pipeline

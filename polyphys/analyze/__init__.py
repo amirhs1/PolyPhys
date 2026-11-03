@@ -24,6 +24,9 @@ Submodules
 - `density`: The local number density and volume fraction of a species
   from a histogram of its bead centres, with the share of a finite bead
   spread over the bins it reaches.
+- `pipeline`: The reducer of one space's probe artifacts down the lineage,
+  driven by a study's analysis tables, with the post-hooks that derive time
+  averages, autocorrelations, density profiles, and foci pair distances.
 """
 
 from polyphys.analyze import (
@@ -31,6 +34,7 @@ from polyphys.analyze import (
     correlations,
     density,
     measurer,
+    pipeline,
     stats,
     sumrule,
 )
@@ -40,6 +44,7 @@ __all__ = [
     'correlations',
     'density',
     'measurer',
+    'pipeline',
     'stats',
     'sumrule',
 ]

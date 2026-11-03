@@ -10,7 +10,12 @@ from fnmatch import fnmatch
 
 import pytest
 
-from polyphys.manage.parser import TransFociCyl
+from polyphys.analyze.pipeline import (
+    AnalysisTable,
+    FociPairDistances,
+    LocalDensities,
+)
+from polyphys.manage.parser import TransFociCub, TransFociCyl
 from polyphys.manage.projects import ProjectSpec
 
 
@@ -208,3 +213,140 @@ def test_study_tseries_properties(module: str,
                                   expected: tuple[str, ...]) -> None:
     """Each study lists its time series, in order."""
     assert _spec(module).tseries_properties == expected
+
+
+# The analysis tables
+
+
+STUDIES = [
+    pytest.param('trans_foci_cyl', id='TransFociCyl'),
+    pytest.param('trans_foci_cub', id='TransFociCub'),
+    pytest.param('hns_cub', id='HnsCub'),
+    pytest.param('hns_cyl', id='HnsCyl'),
+]
+
+
+def _analysis(module: str) -> tuple[AnalysisTable, ...]:
+    """Return the ``ANALYSIS`` tables of the study module `module`."""
+    tables: tuple[AnalysisTable, ...] = importlib.import_module(
+        module).ANALYSIS
+    return tables
+
+
+def _properties(module: str, group: str) -> set[str]:
+    """Return the property names of the study's table for `group`."""
+    (table,) = [t for t in _analysis(module) if t.group == group]
+    return {prop.prop for prop in table.properties}
+
+
+@pytest.mark.parametrize('module', STUDIES)
+def test_study_has_one_table_per_group(module: str) -> None:
+    """Each study has a table for its polymer group, as wholes with stamps,
+    and one for 'all', as segments without stamps (SciOps ``is_segment``
+    and ``has_stamp``)."""
+    spec = _spec(module)
+    polymer, everything = _analysis(module)
+
+    assert (polymer.group, polymer.lineage, polymer.stamps) == (
+        spec.group, 'whole', True)
+    assert (everything.group, everything.lineage, everything.stamps) == (
+        'all', 'segment', False)
+
+
+@pytest.mark.parametrize('module', STUDIES)
+def test_study_density_species_have_sizes(module: str) -> None:
+    """Every species whose density profiles a table derives has a size
+    attribute in the spec, which the hook reads."""
+    spec = _spec(module)
+
+    for table in _analysis(module):
+        for prop in table.properties:
+            if isinstance(prop.post_hook, LocalDensities):
+                assert prop.species in spec.species_sizes
+
+
+def _planar(species: tuple[str, ...]) -> set[str]:
+    """The planar histograms and edges of the 'all' group."""
+    return ({f'{plane}Hist{sp}' for plane in ('xy', 'xz', 'yz')
+             for sp in species} | {'xEdge', 'yEdge', 'zEdge'})
+
+
+@pytest.mark.parametrize('module, group, expected', [
+    # SciOps analyzer.py, ANALYSIS_DETAILS_NUCLEOID and ANALYSIS_DETAILS_ALL,
+    # the '<Study>Whole' entries, with each artifact listed once.
+    pytest.param('trans_foci_cub', 'bug',
+                 {'bondsHistTFoci', 'clustersHistTFoci', 'distMatTFoci',
+                  'principalTMon', 'gyrTMon', 'shapeTMon',
+                  'asphericityTMon'},
+                 id='TransFociCub-bug'),
+    pytest.param('trans_foci_cub', 'all',
+                 {'rHistCrd', 'rHistMon', 'rHistFoci', 'rHistDna'}
+                 | _planar(('Crd', 'Mon', 'Dna', 'Foci')),
+                 id='TransFociCub-all'),
+    pytest.param('trans_foci_cyl', 'bug',
+                 {'bondsHistTFoci', 'clustersHistTFoci', 'distMatTFoci',
+                  'principalTMon', 'fsdTMon', 'gyrTMon', 'transSizeTMon',
+                  'shapeTMon', 'asphericityTMon'},
+                 id='TransFociCyl-bug'),
+    pytest.param('trans_foci_cyl', 'all',
+                 {f'{d}Hist{sp}' for d in ('r', 'z')
+                  for sp in ('Crd', 'Mon', 'Foci', 'Dna')}
+                 | {f'thetaHist{sp}' for sp in ('Crd', 'Mon', 'Dna', 'Foci')}
+                 | _planar(('Crd', 'Mon', 'Dna', 'Foci')),
+                 id='TransFociCyl-all'),
+    pytest.param('hns_cub', 'nucleoid',
+                 {'principalTMon', 'bondsHistTHnsCore',
+                  'bondsHistDangleTHnsCore', 'bondsHistBridgeTHnsCore',
+                  'bondsHistDirDepTHnsCore', 'clustersHistTHnsCore',
+                  'clustersHistDangleTHnsCore', 'clustersHistBridgeTHnsCore',
+                  'clustersHistDirDepTHnsCore', 'loopLengthHistMon',
+                  'bondCosineCorrVecMon', 'bondLengthVecMon',
+                  'nBoundTHnsPatch', 'nFreeTHnsPatch', 'nEngagedTHnsPatch',
+                  'nFreeTHnsCore', 'nBridgeTHnsCore', 'nDangleTHnsCore',
+                  'nCisTHnsCore', 'nTransTHnsCore', 'gyrTMon', 'shapeTMon',
+                  'asphericityTMon'},
+                 id='HnsCub-nucleoid'),
+    pytest.param('hns_cub', 'all',
+                 {'rHistCrd', 'rHistMon', 'rHistHns'}
+                 | _planar(('Crd', 'Mon', 'Hns')),
+                 id='HnsCub-all'),
+    pytest.param('hns_cyl', 'nucleoid',
+                 {'principalTMon', 'loopLengthHistMon',
+                  'bondCosineCorrVecMon', 'bondLengthVecMon',
+                  'nBoundTHnsPatch', 'nFreeTHnsPatch', 'nEngagedTHnsPatch',
+                  'nFreeTHnsCore', 'nBridgeTHnsCore', 'nDangleTHnsCore',
+                  'nCisTHnsCore', 'nTransTHnsCore', 'fsdTMon', 'gyrTMon',
+                  'transSizeTMon', 'shapeTMon', 'asphericityTMon'},
+                 id='HnsCyl-nucleoid'),
+    pytest.param('hns_cyl', 'all',
+                 {f'{d}Hist{sp}' for d in ('r', 'z', 'theta')
+                  for sp in ('Crd', 'Mon', 'Hns')}
+                 | _planar(('Crd', 'Mon', 'Hns')),
+                 id='HnsCyl-all'),
+])
+def test_study_properties_match_the_research_tables(
+        module: str, group: str, expected: set[str]) -> None:
+    """Each table reduces the artifacts the research code's tables named."""
+    assert _properties(module, group) == expected
+
+
+@pytest.mark.parametrize('module', [
+    pytest.param('trans_foci_cyl', id='TransFociCyl'),
+    pytest.param('trans_foci_cub', id='TransFociCub'),
+])
+def test_foci_pair_distance_bound_is_the_half_contour(module: str) -> None:
+    """The foci pair histograms of the TransFoci studies bin at half the
+    small-monomer diameter up to half the ring contour at the FENE
+    maximum: 405 monomers, bonds up to ``1.5 (a_l + a_s) / 2``."""
+    (table,) = [t for t in _analysis(module) if t.group == 'bug']
+    (prop,) = [p for p in table.properties if p.prop == 'distMatTFoci']
+    hook = prop.post_hook
+    assert isinstance(hook, FociPairDistances)
+    info = TransFociCub(
+        'al3nl5ml27ns400ac1nc8340l50dt0.005bdump2000adump5000ens1',
+        'whole', 'bug')
+
+    assert callable(hook.n_monomers) and hook.n_monomers(info) == 405
+    assert callable(hook.bin_size) and hook.bin_size(info) == 0.5
+    # 202 bonds along the shorter arc, each at most 1.5 * (3 + 1) / 2 = 3.
+    assert callable(hook.r_max) and hook.r_max(info) == 202 * 3.0
