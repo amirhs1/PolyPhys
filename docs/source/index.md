@@ -25,6 +25,7 @@ usage
 statistics
 clusters
 correlations
+density
 testing
 decisions
 api
