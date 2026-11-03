@@ -22,6 +22,7 @@ Pull requests that don't follow the policy may be closed without review.
 
 - [ ] `.claude/settings.json` is committed with the attribution block.
 - [ ] `git config core.hooksPath .githooks` has been run in this clone.
+- [ ] `git config fetch.prune true` has been run in this clone.
 - [ ] `.gitmessage` is committed.
 - [ ] `git config commit.template .gitmessage` has been run, for commits
       written in an editor.
