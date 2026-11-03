@@ -10,6 +10,20 @@
 - `.claude/skills` is a symlink to `.agents/skills/`, the canonical home of
   this repository's skills, so Claude Code loads them on demand.
 
+## Closing out a merged pull request
+
+- The desktop app's pull request monitor wakes a session on CI failures,
+  merge conflicts, and review comments, not on a merge; on a merge it can
+  only archive the session. So nothing runs the `close-out` skill by itself:
+  run it when the maintainer says a pull request merged, or at the next
+  session start when the hook below names a merged branch.
+- The `SessionStart` hook in `.claude/settings.json` runs
+  `.claude/hooks/list-merged-branches.sh`, which lists the local branches
+  already merged into `origin/main`. It lists; the skill deletes.
+- Archiving a session is reversible and is the app's action; never delete a
+  session or its conversation. End the skill's report with whether the
+  session is safe to archive, and leave the archiving to the maintainer.
+
 ## Git attribution
 
 Claude Code's own commit and pull-request attribution is turned off in the
