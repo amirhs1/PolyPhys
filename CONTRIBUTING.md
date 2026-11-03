@@ -109,6 +109,18 @@ for a feature request, and `type:question` for a question.
 
 Each of these cites this section.
 
+## Changelog
+
+A pull request adds one line per change under `## [Unreleased]` in
+`CHANGELOG.md`, in the form the file's header names, unless its only area is
+`agents`. A pull request that only edits the changelog, and a release pull
+request, add none.
+
+Write the entry in the commit that makes the change, citing the issue the
+pull request closes. A pull request that closes no issue cites itself in a
+second commit, pushed once it is open. The release adds the commit
+references.
+
 ## Releases
 
 A milestone is released from `main` as soon as its last issue closes, and
