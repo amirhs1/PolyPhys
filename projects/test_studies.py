@@ -7,7 +7,10 @@ The expected values come from the research code's registry, SciOps
 """
 import importlib
 from fnmatch import fnmatch
+from types import SimpleNamespace
+from typing import cast
 
+import numpy as np
 import pytest
 
 from polyphys.analyze.pipeline import (
@@ -15,7 +18,13 @@ from polyphys.analyze.pipeline import (
     FociPairDistances,
     LocalDensities,
 )
-from polyphys.manage.parser import TransFociCub, TransFociCyl
+from polyphys.manage.parser import (
+    HnsCub,
+    HnsCyl,
+    ParserBase,
+    TransFociCub,
+    TransFociCyl,
+)
 from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
 
@@ -374,20 +383,27 @@ def test_study_probe_is_built_on_its_spec(module: str) -> None:
 @pytest.mark.parametrize('module, selections', [
     # SciOps prober.py: the select_atoms calls of each study's polymer-group
     # probe, 'resid 1' for the chain and 'type 2' for the foci or the H-NS
-    # patches.
-    pytest.param('trans_foci_cyl', [('Mon', 'resid 1'), ('Foci', 'type 2')],
+    # patches, then those of its all-group probe, 'resid 0' for the
+    # crowders, 'type 1' for the small monomers, and 'type 3' for the H-NS
+    # cores.
+    pytest.param('trans_foci_cyl', [('Mon', 'resid 1'), ('Foci', 'type 2'),
+                                    ('Crd', 'resid 0'), ('Dna', 'type 1')],
                  id='TransFociCyl'),
-    pytest.param('trans_foci_cub', [('Mon', 'resid 1'), ('Foci', 'type 2')],
+    pytest.param('trans_foci_cub', [('Mon', 'resid 1'), ('Foci', 'type 2'),
+                                    ('Crd', 'resid 0'), ('Dna', 'type 1')],
                  id='TransFociCub'),
-    pytest.param('hns_cub', [('Mon', 'resid 1'), ('HnsPatch', 'type 2')],
+    pytest.param('hns_cub', [('Mon', 'resid 1'), ('HnsPatch', 'type 2'),
+                             ('Crd', 'resid 0'), ('Hns', 'type 3')],
                  id='HnsCub'),
-    pytest.param('hns_cyl', [('Mon', 'resid 1'), ('HnsPatch', 'type 2')],
+    pytest.param('hns_cyl', [('Mon', 'resid 1'), ('HnsPatch', 'type 2'),
+                             ('Crd', 'resid 0'), ('Hns', 'type 3')],
                  id='HnsCyl'),
 ])
 def test_study_probe_selections(module: str,
                                 selections: list[tuple[str, str]]) -> None:
-    """Each study selects its chain and its second species as the research
-    probe did, with the chain labelled Mon."""
+    """Each study selects its chain, its second species, and the species of
+    its all-group histograms as the research probes did, with the chain
+    labelled Mon."""
     probe = _probe(module)
 
     assert (list(probe.selections.items()), probe.chain) == (
@@ -434,7 +450,115 @@ def test_study_probe_unwraps_in_a_cube_only(module: str,
     assert _probe(module).unwrap is unwrap
 
 
-@pytest.mark.parametrize('module', STUDIES)
-def test_study_probe_leaves_bin_sizes_to_confirm(module: str) -> None:
-    """No study sets histogram bin sizes yet; they are still to confirm."""
-    assert dict(_probe(module).bin_sizes) == {}
+@pytest.mark.parametrize('module, species, keys', [
+    # SciOps prober.py: the species each study's all-group probe binned, as
+    # its analysis table reads them, and the directions of its geometry.
+    pytest.param('trans_foci_cyl', ('Crd', 'Mon', 'Dna', 'Foci'),
+                 ['r', 'z', 'theta', 'x', 'y'], id='TransFociCyl'),
+    pytest.param('trans_foci_cub', ('Crd', 'Mon', 'Dna', 'Foci'),
+                 ['r', 'x', 'y', 'z'], id='TransFociCub'),
+    pytest.param('hns_cub', ('Crd', 'Mon', 'Hns'), ['r', 'x', 'y', 'z'],
+                 id='HnsCub'),
+    pytest.param('hns_cyl', ('Crd', 'Mon', 'Hns'),
+                 ['r', 'z', 'theta', 'x', 'y'], id='HnsCyl'),
+])
+def test_study_probe_histogram_fields(module: str, species: tuple[str, ...],
+                                      keys: list[str]) -> None:
+    """Each study bins the species its analysis table reads, with a bin size
+    along every direction its geometry needs, blocks of 100 frames, and the
+    frame recentred by half the box."""
+    probe = _probe(module)
+
+    assert probe.histogram_species == species
+    assert list(probe.bin_sizes) == keys
+    assert (probe.block_frames, probe.recentre) == (100, 'half')
+
+
+@pytest.mark.parametrize('module, info, r, cartesian, theta', [
+    # SciOps prober.py, the bin_edges of each study's all-group probe: a tenth
+    # of the smallest diameter along r, half of it along the Cartesian axes of
+    # a cube or along z of a cylinder, pi/36 along theta; for the Hns studies
+    # the radial minimum includes the H-NS core, as the maintainer settled on
+    # 2026-11-04. The wholes: small monomers of 1 with crowders of 1.5 or 3
+    # (the minimum is the monomer), and a crowder of 0.5 (the minimum is
+    # the crowder).
+    pytest.param('trans_foci_cyl', TransFociCyl(
+        'epss5epsl5r5al2nl3ml8ns7ac1.5nc0lz10dt0.005bdump1adump1ens1',
+        'whole', 'all'), 0.1, 0.5, np.pi / 36, id='TransFociCyl'),
+    pytest.param('trans_foci_cub', TransFociCub(
+        'al3nl5ml27ns400ac0.5nc8340l50dt0.005bdump2000adump5000ens1',
+        'whole', 'all'), 0.05, 0.25, None, id='TransFociCub'),
+    pytest.param('hns_cub', HnsCub(
+        'N200kbmm2.5nh8ac0.5l25.0epshc1.5nc0ens1.ring', 'whole', 'all'),
+        0.05, 0.25, None, id='HnsCub'),
+    pytest.param('hns_cyl', HnsCyl(
+        'N200kbmm2.0r4.5nh8ac3.0lz50epshc1.0nc0ens1', 'whole', 'all'),
+        0.1, 0.5, np.pi / 36, id='HnsCyl'),
+])
+def test_study_probe_bin_sizes_follow_the_whole(
+        module: str, info: ParserBase, r: float, cartesian: float,
+        theta: float | None) -> None:
+    """Each study's bin sizes resolve for a whole to a tenth of its smallest
+    diameter along r and the transverse axes of a cylinder, half of it along
+    the other Cartesian axes, and pi/36 along theta."""
+    probe = _probe(module)
+
+    sizes = {key: ProbeSpec.resolve(value, info)
+             for key, value in probe.bin_sizes.items()}
+
+    assert sizes['r'] == pytest.approx(r)
+    if probe.geometry == 'cylindrical':
+        assert sizes['x'] == sizes['y'] == pytest.approx(r)
+        assert sizes['z'] == pytest.approx(cartesian)
+        assert sizes['theta'] == pytest.approx(theta)
+    else:
+        assert sizes['x'] == sizes['y'] == sizes['z'] == pytest.approx(
+            cartesian)
+
+
+@pytest.mark.parametrize('module', [
+    pytest.param('hns_cub', id='HnsCub'),
+    pytest.param('hns_cyl', id='HnsCyl'),
+])
+def test_hns_radial_bin_includes_the_core_diameter(module: str) -> None:
+    """An H-NS core smaller than the monomer and the crowder sets the radial
+    bin size of both Hns studies, which the research code did for the cube
+    only; the Cartesian bins ignore the core as the research code did."""
+    # The parsers fix dhns at 1, so a stand-in with the three diameters
+    # tells the formulas apart: dhns = 0.5 is the minimum for r alone.
+    info = cast(ParserBase, SimpleNamespace(name='stand-in', dmon=1.0,
+                                            dhns=0.5, dcrowd=2.0))
+    probe = _probe(module)
+
+    assert ProbeSpec.resolve(probe.bin_sizes['r'], info) == pytest.approx(
+        0.05)
+    assert ProbeSpec.resolve(probe.bin_sizes['x'], info) == pytest.approx(
+        0.1 if probe.geometry == 'cylindrical' else 0.5)
+
+
+@pytest.mark.parametrize('module, pair, cutoff', [
+    # SciOps prober.py: the foci of the TransFoci studies, with
+    # cluster_cutoff = dmon_large + dcrowd; the Hns studies measure no pairs.
+    pytest.param('trans_foci_cyl', 'Foci', 3.5, id='TransFociCyl'),
+    pytest.param('trans_foci_cub', 'Foci', 3.5, id='TransFociCub'),
+    pytest.param('hns_cub', None, None, id='HnsCub'),
+    pytest.param('hns_cyl', None, None, id='HnsCyl'),
+])
+def test_study_probe_pair_fields(module: str, pair: str | None,
+                                 cutoff: float | None) -> None:
+    """The TransFoci studies probe the foci pairs with the research cutoff,
+    the large-monomer plus the crowder diameter, 2 + 1.5 here, and the
+    minimum image; the Hns studies probe no pairs."""
+    probe = _probe(module)
+    info = TransFociCyl(
+        'epss5epsl5r5al2nl3ml8ns7ac1.5nc0lz10dt0.005bdump1adump1ens1',
+        'whole', 'bug')
+
+    assert probe.pair_species == pair
+    assert probe.minimum_image is True
+    if cutoff is None:
+        assert probe.contact_cutoff is None
+    else:
+        assert probe.contact_cutoff is not None
+        assert ProbeSpec.resolve(probe.contact_cutoff, info) == pytest.approx(
+            cutoff)

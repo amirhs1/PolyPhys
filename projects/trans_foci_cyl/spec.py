@@ -25,6 +25,8 @@ from polyphys.analyze.pipeline import (
     matrix_tseries,
     tseries,
 )
+import numpy as np
+
 from polyphys.manage.parser import ParserBase, TransFociCyl
 from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
@@ -44,16 +46,54 @@ SPEC = ProjectSpec(
                         'shapeTMon', 'transSizeTMon'),
 )
 
+
+def _r_bin(info: ParserBase) -> float:
+    """A tenth of the smaller of the small-monomer and crowder diameters:
+    the bin size along r, x, and y (SciOps ``trans_foci_cyl_all``,
+    ``bin_edges``)."""
+    return 0.1 * min(float(getattr(info, 'dmon_small')),
+                     float(getattr(info, 'dcrowd')))
+
+
+def _z_bin(info: ParserBase) -> float:
+    """Half the smaller of the small-monomer and crowder diameters: the bin
+    size along z (SciOps ``trans_foci_cyl_all``, ``bin_edges``)."""
+    return 0.5 * min(float(getattr(info, 'dmon_small')),
+                     float(getattr(info, 'dcrowd')))
+
+
+def _contact_cutoff(info: ParserBase) -> float:
+    """The large-monomer diameter plus the crowder diameter: two foci are in
+    direct contact when a crowder no longer fits between them (SciOps
+    ``trans_foci_cyl_bug``, ``cluster_cutoff``)."""
+    return float(getattr(info, 'dmon_large')) + float(getattr(info, 'dcrowd'))
+
+
 # The probe of the polymer group: the selections, the chain-size observables
 # of its per-frame loop, and the unwrap convention of its asphericity (SciOps
-# ``sciops/probe/prober.py``, lines 968-998).
+# ``sciops/probe/prober.py``, lines 968-998); the foci pair distances of the
+# same loop; and the histograms of the all group (``trans_foci_cyl_all``,
+# lines 1084-1140): its selections, bin sizes, and species. The research
+# all-group probe selected the crowders, the small monomers, and the foci;
+# 'Mon', the whole ring, is added because the analysis table below reads
+# its histograms. The block length and the recentring are the maintainer's
+# decisions of 2026-11-04.
 PROBE = ProbeSpec(
     project=SPEC,
-    selections={'Mon': 'resid 1', 'Foci': 'type 2'},
+    selections={'Mon': 'resid 1', 'Foci': 'type 2', 'Crd': 'resid 0',
+                'Dna': 'type 1'},
     chain='Mon',
     observables=('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'transSizeT',
                  'principalT'),
     unwrap=False,
+    bin_sizes={'r': _r_bin, 'z': _z_bin, 'theta': np.pi / 36, 'x': _r_bin,
+               'y': _r_bin},
+    histogram_species=('Crd', 'Mon', 'Dna', 'Foci'),
+    block_frames=100,
+    recentre='half',
+    pair_species='Foci',
+    contact_cutoff=_contact_cutoff,
+    minimum_image=True,
 )
 
 # The largest lag of the autocorrelation functions, in frames (SciOps
