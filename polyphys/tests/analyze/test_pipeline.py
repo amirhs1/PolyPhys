@@ -807,6 +807,32 @@ def test_density_profile_error_is_saved_in_the_ensavg_csv(
                     atol=0)
 
 
+def test_density_profile_error_takes_the_last_bin_as_reference(
+    probe_dir, cyl_spec, write_density_wholes
+):
+    """A ``'last'`` normalizer divides each whole by its own value in the
+    final bin, not in the first bin or the bin where the mean peaks."""
+    write_density_wholes("r", [4.0, 2.0, 1.0], [2.0, 2.0, 2.0])
+
+    def last_bin(wholes, context):
+        return (Derived(context.prop.prop, wholes, "vector", context.edges,
+                        "last"),)
+
+    table = AnalysisTable("all", "whole", False, (
+        histogram("r", "Crd", post_hook=last_bin),))
+
+    result = reduce_space(probe_dir, cyl_spec, table, hierarchy="*",
+                          save=False)
+
+    (hist,) = result["rHistCrd"].values()
+    # The wholes over their own bin 2 are [4, 2, 1] and [1, 1, 1]; the sem
+    # of two values with ddof = 1 is half their difference. Bin 0, which
+    # 'first' and 'max' would pick, gives [0, 0.25, 0.375] instead. Exact:
+    # ratios and differences of small dyadic floats.
+    assert_allclose(hist["rHistCrd-norm-sem"], [1.5, 0.5, 0.0], rtol=1e-15,
+                    atol=0)
+
+
 # The foci pair distances
 
 
