@@ -16,5 +16,7 @@ except ImportError as error:  # pragma: no cover - depends on the install
 
 from .chain_size import ChainSize
 from .core import make_universe, write_stamps
+from .histograms import SpatialHistograms, histogram_edges
 
-__all__ = ['ChainSize', 'make_universe', 'write_stamps']
+__all__ = ['ChainSize', 'SpatialHistograms', 'histogram_edges',
+           'make_universe', 'write_stamps']
