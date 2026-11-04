@@ -14,10 +14,12 @@ except ImportError as error:  # pragma: no cover - depends on the install
         "polyphys.probe needs MDAnalysis; install it with "
         "python -m pip install 'polyphys[mda]'.") from error
 
+from .binders import BinderStatistics
 from .chain_size import ChainSize
 from .core import make_universe, write_stamps
 from .histograms import SpatialHistograms, histogram_edges
 from .pairs import PairDistances
 
-__all__ = ['ChainSize', 'PairDistances', 'SpatialHistograms',
-           'histogram_edges', 'make_universe', 'write_stamps']
+__all__ = ['BinderStatistics', 'ChainSize', 'PairDistances',
+           'SpatialHistograms', 'histogram_edges', 'make_universe',
+           'write_stamps']

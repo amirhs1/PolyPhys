@@ -24,7 +24,7 @@ from polyphys.analyze.pipeline import (
     tseries,
 )
 from polyphys.manage.parser import HnsCub, ParserBase
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=HnsCub,
@@ -60,10 +60,16 @@ def _l_bin(info: ParserBase) -> float:
 
 # The probe of the polymer group: the selections, the chain-size observables
 # of its per-frame loop, and the unwrap convention of its asphericity (SciOps
-# ``sciops/probe/prober.py``, lines 3507-3555); and the histograms of the all
+# ``sciops/probe/prober.py``, lines 3507-3555); the histograms of the all
 # group (``hns_cub_all``, lines 3781-3830): its selections, bin sizes, and
-# species, the H-NS cores as 'Hns'. The block length and the recentring are
-# the maintainer's decisions of 2026-11-04.
+# species, the H-NS cores as 'Hns', with the block length and the recentring
+# the maintainer's decisions of 2026-11-04;
+# patches (lines 3520-3616, ``cis_threshold = 4`` and the distance matrices
+# saved as ``distMatTMonHnsPatch``). The cutoff is the published binding
+# criterion, r <= r_cut,mp = 0.685 (thesis, Section 5.3 and Table 5.1),
+# which the maintainer chose on 2026-11-04 over the research probe's
+# ``round(2**(1/6) * (dmon + dhns_patch) / 2, 3) = 0.661`` with a strict
+# comparison; the probe guide, "Choosing the cutoff", gives both.
 PROBE = ProbeSpec(
     project=SPEC,
     selections={'Mon': 'resid 1', 'HnsPatch': 'type 2', 'Crd': 'resid 0',
@@ -75,6 +81,9 @@ PROBE = ProbeSpec(
     histogram_species=('Crd', 'Mon', 'Hns'),
     block_frames=100,
     recentre='half',
+    binders=BinderSpec(patches='HnsPatch', binders='HnsCore', cutoff=0.685,
+                       inclusive=True, cis_threshold=4,
+                       store_distances=True),
 )
 
 # The largest lag of the autocorrelation functions, in frames (SciOps

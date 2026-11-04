@@ -13,7 +13,8 @@ fraction of crowders is rounded, which time series exist, and which size
 attribute scales each species' density profile. A :class:`ProbeSpec` declares
 how :mod:`polyphys.probe` reads the study's trajectories: which MDAnalysis
 selection is each species, which chain-size observables are measured, how
-the chain is unwrapped, and the bin sizes of the histograms.
+the chain is unwrapped, the bin sizes of the histograms, and, for a study
+with binders, a :class:`BinderSpec` of how their binding is counted.
 
 The facts the parser already holds, such as the geometry, the topology, and
 the glob patterns of the ``space`` and ``ensemble_long`` names, are read from
@@ -31,6 +32,11 @@ Contents
   probed, built beside its :class:`ProjectSpec`.
 - :data:`CHAIN_SIZE_OBSERVABLES`, the names a :class:`ProbeSpec` may list as
   chain-size observables.
+- :class:`BinderSpec`, a frozen record of how the binding of a study's
+  two-patch binders to its chain is counted, held by the :class:`ProbeSpec`
+  of a study with binders.
+- :data:`BINDER_SERIES`, the eight binding counts and the stems of their
+  time series.
 
 Dependencies
 ============
@@ -112,6 +118,157 @@ CHAIN_SIZE_OBSERVABLES: tuple[PropertyT, ...] = (
 # The chain-size observables that are per-frame matrices, which a project's
 # `tseries_properties` does not list.
 _MATRIX_OBSERVABLES: frozenset[PropertyT] = frozenset({'principalT'})
+
+#: The eight per-frame binding counts that
+#: :class:`polyphys.probe.BinderStatistics` measures, in the research code's
+#: order: each attribute of
+#: :class:`~polyphys.analyze.clusters.FrameBinding` mapped to the stem of its
+#: time series and to which label completes the name, ``'patches'`` for the
+#: three patch counts and ``'binders'`` for the five binder counts. With the
+#: labels ``HnsPatch`` and ``HnsCore``, ``n_binders_bridging`` is the
+#: ``nBridgeTHnsCore`` artifact.
+#:
+#: .. versionadded:: 0.7.0
+BINDER_SERIES: Mapping[str, tuple[PropertyT, str]] = MappingProxyType({
+    'n_patch_monomer_contacts': ('nBoundT', 'patches'),
+    'n_patches_free': ('nFreeT', 'patches'),
+    'n_patches_engaged': ('nEngagedT', 'patches'),
+    'n_binders_free': ('nFreeT', 'binders'),
+    'n_binders_bridging': ('nBridgeT', 'binders'),
+    'n_binders_dangling': ('nDangleT', 'binders'),
+    'n_pairs_cis': ('nCisT', 'binders'),
+    'n_pairs_trans': ('nTransT', 'binders'),
+})
+
+# The number of patches per binder that binding_statistics counts.
+_TWO_PATCHES = 2
+
+
+@dataclass(frozen=True, slots=True)
+class BinderSpec:
+    """
+    How the binding of a study's two-patch binders to its chain is counted:
+    the facts :class:`polyphys.probe.BinderStatistics` needs beyond the
+    selections of the :class:`ProbeSpec` that holds this record.
+
+    .. versionadded:: 0.7.0
+
+    Parameters
+    ----------
+    patches : :py:data:`EntityT`
+        The label in the probe spec's `selections` of the binders' patches,
+        such as ``'HnsPatch'``, which names the three patch series
+        ``nBoundT``, ``nFreeT``, and ``nEngagedT``. The patches of binder
+        :math:`k` are the ones at positions :math:`2k` and :math:`2k + 1`
+        of the selection, in atom-ID order.
+    binders : :py:data:`EntityT`
+        The label of the binders, such as ``'HnsCore'``, which names the
+        five binder series ``nFreeT``, ``nBridgeT``, ``nDangleT``,
+        ``nCisT``, and ``nTransT``. A label only: the binder cores are not
+        selected.
+    cutoff : float
+        The binding threshold :math:`r_\\mathrm{thres}`, in units of the
+        monomer diameter: a patch and a monomer closer than it are in
+        contact. Finite and positive. A study constant that the spec
+        states, never computed from the particle sizes; see the probe
+        guide, "Choosing the cutoff".
+    inclusive : bool, default True
+        Whether a pair at exactly `cutoff` is a contact
+        (:math:`r \\le r_\\mathrm{thres}`, the thesis criterion) or not
+        (:math:`r < r_\\mathrm{thres}`, the research probe's).
+    cis_threshold : int, default 4
+        The largest genomic distance, in bonds, of a cis bridge;
+        non-negative.
+    patches_per_binder : int, default 2
+        The number of patches per binder. Only ``2`` is accepted, which
+        :func:`~polyphys.analyze.clusters.binding_statistics` counts; the
+        field is kept so that binders of another valence can be declared
+        once a kernel counts them.
+    store_distances : bool, default False
+        Whether the probe also keeps and saves the monomer-to-patch
+        distance matrix of every frame, the input of the threshold sweep
+        and of the binder-cluster post-step of the research code.
+
+    Attributes
+    ----------
+    series : mapping of (str -> :py:data:`PropertyT`)
+        Each attribute name of
+        :class:`~polyphys.analyze.clusters.FrameBinding` in
+        :data:`BINDER_SERIES` mapped to the full name of its time series,
+        ``<stem><patches>`` or ``<stem><binders>``, in the research code's
+        order.
+
+    Raises
+    ------
+    ValueError
+        If `patches` or `binders` is not a non-empty string or the two are
+        equal; if `cutoff` is not a finite positive number; if
+        `cis_threshold` is a negative integer or not an integer; or if
+        `patches_per_binder` is not ``2``.
+
+    Notes
+    -----
+    Construction and :attr:`series` are :math:`O(1)`.
+
+    Examples
+    --------
+    >>> spec = BinderSpec(patches='HnsPatch', binders='HnsCore',
+    ...                   cutoff=0.685)
+    >>> spec.series['n_binders_bridging'], spec.series['n_patches_free']
+    ('nBridgeTHnsCore', 'nFreeTHnsPatch')
+    >>> BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685, patches_per_binder=3)
+    Traceback (most recent call last):
+    ...
+    ValueError: 'patches_per_binder' must be 2, not 3: ...
+    """
+    patches: EntityT
+    binders: EntityT
+    cutoff: float
+    inclusive: bool = True
+    cis_threshold: int = 4
+    patches_per_binder: int = _TWO_PATCHES
+    store_distances: bool = False
+
+    def __post_init__(self) -> None:
+        for name, label in (('patches', self.patches),
+                            ('binders', self.binders)):
+            if not (isinstance(label, str) and label):
+                raise ValueError(
+                    f"'{name}' must be a non-empty species label, not "
+                    f"{label!r}.")
+        if self.patches == self.binders:
+            raise ValueError(
+                f"'patches' and 'binders' must be different labels, not "
+                f"both {self.patches!r}.")
+        if not (isinstance(self.cutoff, (int, float))
+                and not isinstance(self.cutoff, bool)
+                and math.isfinite(self.cutoff) and self.cutoff > 0):
+            raise ValueError(
+                f"'cutoff' must be a finite positive number, not "
+                f"{self.cutoff!r}.")
+        if (isinstance(self.cis_threshold, bool)
+                or not isinstance(self.cis_threshold, int)
+                or self.cis_threshold < 0):
+            raise ValueError(
+                f"'cis_threshold' must be a non-negative integer, not "
+                f"{self.cis_threshold!r}.")
+        if (isinstance(self.patches_per_binder, bool)
+                or self.patches_per_binder != _TWO_PATCHES):
+            raise ValueError(
+                f"'patches_per_binder' must be {_TWO_PATCHES}, not "
+                f"{self.patches_per_binder!r}: binding_statistics counts "
+                "two-patch binders only.")
+
+    @property
+    def series(self) -> Mapping[str, PropertyT]:
+        """
+        Each binding count's attribute name mapped to the full name of its
+        time series, in the research code's order.
+        """
+        labels = {'patches': self.patches, 'binders': self.binders}
+        return MappingProxyType({
+            attr: f"{stem}{labels[which]}"
+            for attr, (stem, which) in BINDER_SERIES.items()})
 
 
 def _is_per_whole(value: object) -> bool:
@@ -380,6 +537,12 @@ class ProbeSpec:
         Whether the pair distances use the minimum-image convention along
         the periodic directions of the geometry: the axis of a cylinder, all
         three directions of a cube.
+    binders : BinderSpec, optional
+        How the binding of the study's two-patch binders is counted, for a
+        study with binders such as the H-NS ones; ``None`` for a study
+        without. Its `patches` must be a label in `selections` other than
+        `chain`, and each of its eight time series must be one of the
+        project's ``tseries_properties``.
 
     Attributes
     ----------
@@ -393,7 +556,8 @@ class ProbeSpec:
     Raises
     ------
     TypeError
-        If `project` is not a :class:`ProjectSpec`.
+        If `project` is not a :class:`ProjectSpec`, or if `binders` is
+        neither ``None`` nor a :class:`BinderSpec`.
     ValueError
         If `selections` is empty or has a label or a selection that is not
         a non-empty string; if `chain` is not a label in `selections`; if
@@ -406,8 +570,11 @@ class ProbeSpec:
         given without `bin_sizes` or `block_frames`; if `block_frames` is
         not a positive integer; if `recentre` is neither ``'none'``,
         ``'half'``, nor a triple of finite numbers; if `pair_species` is not
-        a label in `selections` or is given without `contact_cutoff`; or if
-        `contact_cutoff` is neither a finite positive number nor callable.
+        a label in `selections` or is given without `contact_cutoff`; if
+        `contact_cutoff` is neither a finite positive number nor callable;
+        or if the patches of `binders` are not a label in `selections`
+        other than `chain`, or one of its time series is not among the
+        project's ``tseries_properties``.
 
     Examples
     --------
@@ -446,6 +613,23 @@ class ProbeSpec:
     >>> probe.resolve(probe.bin_sizes['r'], whole), probe.recentre
     (0.05, 'half')
 
+    A study with binders adds a :class:`BinderSpec`:
+
+    >>> hns = ProjectSpec(
+    ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
+    ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
+    ...     tseries_properties=(
+    ...         'gyrTMon', 'nBoundTHnsPatch', 'nFreeTHnsPatch',
+    ...         'nEngagedTHnsPatch', 'nFreeTHnsCore', 'nBridgeTHnsCore',
+    ...         'nDangleTHnsCore', 'nCisTHnsCore', 'nTransTHnsCore'))
+    >>> probe = ProbeSpec(
+    ...     project=hns, selections={'Mon': 'resid 1', 'HnsPatch': 'type 2'},
+    ...     chain='Mon', observables=('gyrT',), unwrap=False,
+    ...     binders=BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685))
+    >>> probe.binders.series['n_pairs_cis']
+    'nCisTHnsCore'
+
     Notes
     -----
     Construction costs :math:`O(s + o + b + h)` for :math:`s` selections,
@@ -465,11 +649,17 @@ class ProbeSpec:
     pair_species: EntityT | None = None
     contact_cutoff: PerWhole | None = None
     minimum_image: bool = True
+    binders: BinderSpec | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.project, ProjectSpec):
             raise TypeError(
                 f"'project' must be a ProjectSpec, not {self.project!r}.")
+        if self.binders is not None \
+                and not isinstance(self.binders, BinderSpec):
+            raise TypeError(
+                f"'binders' must be a BinderSpec or None, not "
+                f"{self.binders!r}.")
         name = self.project.name
         # Copy the containers so that a caller's dict or list cannot change
         # the spec afterwards.
@@ -570,6 +760,22 @@ class ProbeSpec:
             raise ValueError(
                 f"{name}: 'contact_cutoff' must be a finite positive number "
                 f"or a callable, not {self.contact_cutoff!r}.")
+
+        if self.binders is not None:
+            if self.binders.patches not in self.selections \
+                    or self.binders.patches == self.chain:
+                raise ValueError(
+                    f"{name}: the patches of 'binders' must be a label in "
+                    f"'selections' other than the chain {self.chain!r}, "
+                    f"not {self.binders.patches!r}.")
+            unlisted = [
+                series for series in self.binders.series.values()
+                if series not in self.project.tseries_properties]
+            if unlisted:
+                raise ValueError(
+                    f"{name}: 'binders' names the series {unlisted}, which "
+                    f"are not among the project's 'tseries_properties' "
+                    f"{list(self.project.tseries_properties)}.")
 
     @staticmethod
     def resolve(value: PerWhole, parser: ParserBase) -> float:
