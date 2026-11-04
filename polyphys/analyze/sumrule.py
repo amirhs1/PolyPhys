@@ -523,6 +523,15 @@ def space_profiles(
         - ``<prop>-normalizer`` and ``<prop>-norm``: from
           :func:`normalize_r` or, for ``'z'``, :func:`normalize_z` with
           folding, so that a ``'z'`` profile has ``ceil(n / 2)`` rows.
+        - ``<prop>-norm-sem``, when the file has it and `normalizer` is
+          None: the error of ``<prop>-norm``, carried through from the
+          file and, for ``'z'``, folded like every other numeric column.
+          :mod:`polyphys.analyze.pipeline` writes it as the standard error
+          over the wholes of each whole's profile divided by its own value
+          in the bin the default normalizer names, since the file's
+          ``-sem`` is the error of the mean, not of the ratio. With an
+          explicit `normalizer` the column no longer describes
+          ``<prop>-norm``, so it is dropped with a warning.
         - ``bin_center-norm``: ``bin_center`` divided by its maximum.
         - ``ensemble_long``, the file's state-point name; one column per
           entry of `physical_attrs`; `crowder_attr`; and
@@ -553,8 +562,10 @@ def space_profiles(
     UserWarning
         If a file's ``<prop>-mean`` sums to one within ``1e-6``, which marks
         a profile normalized by its sum; the file is processed regardless,
-        since a raw profile can sum to one by coincidence. Also if a file's
-        reference value is zero; its ``<prop>-norm`` is then zero.
+        since a raw profile can sum to one by coincidence. If a file has a
+        ``<prop>-norm-sem`` column and `normalizer` is not None; the column
+        is dropped. Also if a file's reference value is zero; its
+        ``<prop>-norm`` is then zero.
 
     Examples
     --------
@@ -604,6 +615,12 @@ def space_profiles(
       only where the wall layering is weak, which the ratio
       :math:`\\kappa = (D - a_c) / a_c` controls (Sadeghi Isfahani, 2024,
       Chapter 3).
+    - ``<prop>-norm`` is the normalized ensemble average, the published
+      estimator (Jeon et al., 2016, p. 9788: a time average within each
+      run, then over runs, then normalized by the far-field value), not the
+      average of per-whole normalized profiles. Its error is the
+      ``<prop>-norm-sem`` of the file, from the spread of the independent
+      wholes, each normalized at the same bin.
 
     References
     ----------
@@ -618,6 +635,9 @@ def space_profiles(
       Chapter 3.
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 0.7.0
+       Carry ``<prop>-norm-sem`` through, and warn on a profile that sums
+       to one.
     """
     invalid_keyword(quantity, ["Rho", "Phi"])
     if species not in species_sizes:
@@ -672,6 +692,18 @@ def space_profiles(
                 " sum rule needs the raw ensemble-averaged profile.",
                 UserWarning,
             )
+
+        # The pipeline's per-whole error belongs to the default normalizer;
+        # with another, it would not describe <prop>-norm.
+        norm_sem = f"{prop}-norm-sem"
+        if norm_sem in ens_avg.columns and normalizer is not None:
+            warnings.warn(
+                f"Dropping '{norm_sem}' of '{ens_avg_csv[0]}': it is the"
+                f" error under the default normalizer {default!r}, not under"
+                f" {normalizer!r}.",
+                UserWarning,
+            )
+            ens_avg = ens_avg.drop(columns=norm_sem)
 
         # One term of the sum rule: phi / a, or rho * a**2
         size = getattr(prop_info, size_attr)
@@ -812,7 +844,15 @@ default None
         One row per bin and state point, in the input order: the `by`
         columns, ``bin_center``, ``<prop>Sum-scale`` (the sum over species),
         ``<prop>Sum-normalizer`` (the reference value of the state point),
-        and ``<prop>Sum-norm``.
+        and ``<prop>Sum-norm``. When every species carries
+        ``<prop><species>-norm-sem``, also ``<prop>Sum-norm-sem``, the
+        species' errors added in quadrature,
+        :math:`\\sqrt{\\sum_i s_i^2}`, under the assumption that the
+        species' errors are independent. It is the error of the sum of the
+        normalized species, :math:`\\sum_i \\phi_i / (a_i N_i)` for each
+        species' own normalizer :math:`N_i`; it equals the error of
+        ``<prop>Sum-norm``, :math:`\\sum_i \\phi_i / a_i` over the sum's
+        normalizer, only when every species shares one normalizer value.
 
     Raises
     ------
@@ -850,10 +890,15 @@ default None
     Notes
     -----
     Time and space are :math:`O(n_\\text{species} \\, n_\\text{rows})` for
-    the sum and the checks, plus :math:`O(n_\\text{rows})` per state point
-    for the normalization. See :func:`space_profiles` for the references.
+    the sum, the checks, and the error, plus :math:`O(n_\\text{rows})` per
+    state point for the normalization. See :func:`space_profiles` for the
+    references. The species' errors are correlated within a whole by
+    excluded volume, which the quadrature sum ignores; the per-bin
+    estimator is an open question.
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 0.7.0
+       Added ``<prop>Sum-norm-sem``.
     """
     if not profiles:
         raise ValueError("'profiles' is empty.")
@@ -881,6 +926,14 @@ default None
     first = profiles[labels[0]]
     total = first[keys].copy()
     total[f"{sum_prop}-scale"] = 0.0
+    # The species' normalized errors add in quadrature when every species
+    # has one; the column is left out otherwise.
+    with_error = all(
+        f"{prop}{label}-norm-sem" in profiles[label].columns
+        for label in labels
+    )
+    if with_error:
+        total[f"{sum_prop}-norm-sem"] = 0.0
     for label in labels:
         frame = profiles[label]
         if len(frame) != len(first) or not (
@@ -893,6 +946,12 @@ default None
                 f"profiles on {keys}."
             )
         total[f"{sum_prop}-scale"] += frame[f"{prop}{label}-scale"].to_numpy()
+        if with_error:
+            total[f"{sum_prop}-norm-sem"] += (
+                frame[f"{prop}{label}-norm-sem"].to_numpy() ** 2
+            )
+    if with_error:
+        total[f"{sum_prop}-norm-sem"] = np.sqrt(total[f"{sum_prop}-norm-sem"])
 
     # Normalize each state point's sum by its own reference value
     if by:

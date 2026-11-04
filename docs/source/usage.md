@@ -249,6 +249,21 @@ Under cylindrical confinement the radial rule holds only where the wall
 layering is weak, which the ratio `kappa = (D - a_c) / a_c` controls (Sadeghi
 Isfahani, 2024, chapter 3).
 
+The error of a normalized profile is not the ensAvg file's `-sem`, which is
+the error of the mean, not of the ratio of a bin to its normalizer. The
+pipeline (`reduce_space` with `LocalDensities`) writes `<prop>-norm-sem`
+beside the ensAvg columns: each whole's profile is divided by its own value
+in the bin the default normalizer names, the first, the last, or the bin
+where the ensemble average peaks, and the standard error over the wholes,
+which are independent runs, is the error of the normalized curve. The curve
+itself stays the normalized ensemble average, the published estimator.
+`space_profiles` carries the column through under the default normalizer,
+folding it along `z`, and drops it with a warning under an explicit one;
+`sum_rule_profiles` adds the species' columns in quadrature as
+`<prop>Sum-norm-sem`, the error of the sum of the normalized species, which
+equals the error of `Sum-norm` only when the species share one normalizer
+value.
+
 See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.

@@ -11,6 +11,10 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Added
+
+- Write `<prop>-norm-sem`, the standard error over the wholes of each whole's density profile divided by its own value in the bin that the sum rule's default normalizer names, beside the ensAvg columns in `polyphys.analyze.pipeline`, through a `normalizer` field of `Derived` that `LocalDensities` sets; carry it through `polyphys.analyze.sumrule.space_profiles`, folded along `z` and dropped with a warning under an explicit normalizer; and add the species' columns in quadrature as `<prop>Sum-norm-sem` in `sum_rule_profiles` ([#143](https://github.com/amirhs1/PolyPhys/issues/143))
+
 ### Changed
 
 - Warn with a `UserWarning`, naming the file, in `polyphys.analyze.sumrule.space_profiles` when a profile's `<prop>-mean` sums to one within `1e-6`, the signature of a profile normalized by its sum, and state in `sumrule`, `usage.md`, and `density.md` that the sum rule takes the raw ensemble-averaged profiles, since a species normalized on its own enters the species sum with an arbitrary weight ([#140](https://github.com/amirhs1/PolyPhys/issues/140))

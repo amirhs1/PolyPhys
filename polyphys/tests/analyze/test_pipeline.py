@@ -660,6 +660,153 @@ def test_local_densities_rejects_a_non_histogram_property(cyl_spec):
         LocalDensities()({"w": np.ones(2)}, context)
 
 
+# The error of the per-whole normalized profile
+
+
+def test_derived_rejects_a_normalizer_on_non_vector():
+    """A per-whole normalizer belongs to a vector profile only."""
+    with pytest.raises(ValueError, match="normalizer is only valid"):
+        Derived("xyHistCrd", {"w": np.zeros((2, 2))}, "matrix",
+                normalizer="first")
+
+
+def test_derived_rejects_an_unknown_normalizer():
+    """A per-whole normalizer is 'first', 'last', or 'max'."""
+    with pytest.raises(ValueError, match="normalizer must be"):
+        Derived("rRhoCrd", {"w": np.zeros(2)}, "vector", normalizer="mean")
+
+
+@pytest.mark.parametrize("direction, expected", [
+    pytest.param("r", "first", id="cylinder-r"),
+    pytest.param("z", "max", id="cylinder-z"),
+])
+def test_local_densities_take_the_sum_rule_default_normalizer(
+    cyl_spec, direction, expected
+):
+    """The two density profiles carry the ``PROFILE_NORMALIZERS`` entry of
+    the spec's geometry and the histogram's direction; the histogram does
+    not."""
+    whole = ("N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000"
+             "ens1")
+    context = HookContext(
+        histogram(direction, "Crd"), spec=cyl_spec, group="all",
+        infos={whole: SumRuleCyl(whole, "whole", "all")},
+        edges={whole: np.arange(3.0)}, density=RecordingKernel())
+    hist, rho, phi = LocalDensities()({whole: np.ones(2)}, context)
+    assert hist.normalizer is None
+    assert (rho.normalizer, phi.normalizer) == (expected, expected)
+
+
+@pytest.fixture
+def write_density_wholes(probe_dir):
+    """Factory: write the histogram and edge files of two wholes of one
+    SumRuleCyl state point, group 'all', in the probe directory, and
+    return the histogram's property name."""
+    stem = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000"
+
+    def _write(direction, counts_1, counts_2, edges=(0.0, 1.0, 2.0, 3.0)):
+        for k, counts in enumerate((counts_1, counts_2), start=1):
+            np.save(probe_dir / f"{stem}ens{k}-all-{direction}HistCrd.npy",
+                    np.asarray(counts, dtype=float))
+            np.save(probe_dir / f"{stem}ens{k}-all-{direction}EdgeCrd.npy",
+                    np.asarray(edges))
+        return f"{direction}HistCrd"
+
+    return _write
+
+
+@pytest.mark.parametrize("direction, counts_1, counts_2, expected", [
+    # 'first': the wholes 2 x [1, 2, 4] and 2 x [2, 2, 2], each over its
+    # own bin 0, are [1, 2, 4] and [1, 1, 1]; the sem of two values with
+    # ddof = 1 is half their difference.
+    pytest.param("r", [1.0, 2.0, 4.0], [2.0, 2.0, 2.0], [0.0, 0.5, 1.5],
+                 id="cylinder-r-first"),
+    # 'max': the ensemble mean 2 x [1.5, 2, 3] peaks in bin 2, so the
+    # wholes are [1/4, 1/2, 1] and [1, 1, 1].
+    pytest.param("z", [1.0, 2.0, 4.0], [2.0, 2.0, 2.0], [0.375, 0.25, 0.0],
+                 id="cylinder-z-max"),
+])
+def test_density_profile_error_is_the_spread_over_wholes_of_the_ratio(
+    probe_dir, cyl_spec, write_density_wholes, direction, counts_1,
+    counts_2, expected
+):
+    """``<prop>-norm-sem`` is the standard error over the wholes of each
+    whole's profile divided by its own value in the bin the ensemble's
+    normalizer names; the ensemble average itself is not normalized."""
+    write_density_wholes(direction, counts_1, counts_2)
+    table = AnalysisTable("all", "whole", False, (
+        histogram(direction, "Crd", post_hook=LocalDensities()),))
+
+    result = reduce_space(probe_dir, cyl_spec, table, hierarchy="*",
+                          density=RecordingKernel(), save=False)
+
+    (rho,) = result[f"{direction}RhoCrd"].values()
+    # Exact: ratios and differences of small dyadic floats
+    assert_allclose(rho[f"{direction}RhoCrd-norm-sem"], expected, rtol=1e-15,
+                    atol=0)
+    assert_allclose(rho[f"{direction}RhoCrd-mean"],
+                    np.add(counts_1, counts_2))
+    assert f"{direction}HistCrd-norm-sem" not in next(
+        iter(result[f"{direction}HistCrd"].values())).columns
+
+
+def test_density_profile_error_is_scale_free(probe_dir, cyl_spec,
+                                             write_density_wholes):
+    """Property: the number density and the volume fraction, which differ
+    by a constant factor, carry the same ``-norm-sem``."""
+    write_density_wholes("r", [1.0, 2.0, 4.0], [2.0, 2.0, 2.0])
+    table = AnalysisTable("all", "whole", False, (
+        histogram("r", "Crd", post_hook=LocalDensities()),))
+
+    result = reduce_space(probe_dir, cyl_spec, table, hierarchy="*",
+                          density=RecordingKernel(), save=False)
+
+    (rho,) = result["rRhoCrd"].values()
+    (phi,) = result["rPhiCrd"].values()
+    # float64 round-off of one division
+    assert_allclose(phi["rPhiCrd-norm-sem"], rho["rRhoCrd-norm-sem"],
+                    rtol=1e-14, atol=0)
+
+
+def test_density_profile_error_is_nan_and_warns_on_a_zero_reference(
+    probe_dir, cyl_spec, write_density_wholes
+):
+    """A whole that is zero in the reference bin gives NaN in every bin of
+    ``-norm-sem``, with a warning naming the ensemble and the bin."""
+    write_density_wholes("r", [0.0, 2.0, 4.0], [2.0, 2.0, 2.0])
+    table = AnalysisTable("all", "whole", False, (
+        histogram("r", "Crd", post_hook=LocalDensities()),))
+
+    with pytest.warns(UserWarning, match="zero in its reference bin 0"):
+        result = reduce_space(probe_dir, cyl_spec, table, hierarchy="*",
+                              density=RecordingKernel(), save=False)
+
+    (rho,) = result["rRhoCrd"].values()
+    assert rho["rRhoCrd-norm-sem"].isna().all()
+
+
+def test_density_profile_error_is_saved_in_the_ensavg_csv(
+    probe_dir, cyl_spec, write_density_wholes
+):
+    """The ``-norm-sem`` column is in the ensAvg file the pipeline writes,
+    after the organizer's three statistics."""
+    write_density_wholes("r", [1.0, 2.0, 4.0], [2.0, 2.0, 2.0])
+    table = AnalysisTable("all", "whole", False, (
+        histogram("r", "Crd", post_hook=LocalDensities()),))
+
+    reduce_space(probe_dir, cyl_spec, table, hierarchy="*",
+                 density=RecordingKernel())
+
+    (path,) = (probe_dir.parent.parent / "analysis" / "N-all-ensAvg").glob(
+        "*-all-rRhoCrd-ensAvg.csv")
+    saved = pd.read_csv(path)
+    assert list(saved.columns) == ["bin_center", "rRhoCrd-mean",
+                                   "rRhoCrd-var", "rRhoCrd-sem",
+                                   "rRhoCrd-norm-sem"]
+    assert_allclose(saved["rRhoCrd-norm-sem"], [0.0, 0.5, 1.5], rtol=1e-15,
+                    atol=0)
+
+
 # The foci pair distances
 
 

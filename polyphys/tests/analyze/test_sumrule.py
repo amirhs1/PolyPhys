@@ -47,25 +47,32 @@ def make_profile_space(tmp_path):
     """Factory: write one '<state>-all-<prop>-ensAvg.csv' per state point.
 
     Takes the property, the bin centres, one '-mean' column per state
-    point, and the ensemble_long names (default: two SumRuleCyl points).
-    Returns the ensAvg directory, ending with '/'.
+    point, the ensemble_long names (default: two SumRuleCyl points), and
+    optionally one '-norm-sem' column per state point. Returns the ensAvg
+    directory, ending with '/'.
     """
     cyl_states = [
         "N200epsilon5.0r10.5lz25.0sig1.5nc1000dt0.005bdump2000adump5000",
         "N200epsilon5.0r10.5lz25.0sig1.5nc2000dt0.005bdump2000adump5000",
     ]
 
-    def _make(prop, bin_center, means, states=cyl_states, group="all"):
+    def _make(prop, bin_center, means, states=cyl_states, group="all",
+              norm_sems=None):
         ens_avg_dir = tmp_path / "analysis" / f"N200-{group}-ensAvg"
         ens_avg_dir.mkdir(parents=True, exist_ok=True)
-        for state, mean in zip(states, means):
-            pd.DataFrame({
+        if norm_sems is None:
+            norm_sems = [None] * len(means)
+        for state, mean, norm_sem in zip(states, means, norm_sems):
+            frame = pd.DataFrame({
                 "bin_center": bin_center,
                 f"{prop}-mean": mean,
                 f"{prop}-var": np.full(len(mean), 0.1),
                 f"{prop}-sem": np.full(len(mean), 0.05),
-            }).to_csv(ens_avg_dir / f"{state}-{group}-{prop}-ensAvg.csv",
-                      index=False)
+            })
+            if norm_sem is not None:
+                frame[f"{prop}-norm-sem"] = norm_sem
+            frame.to_csv(ens_avg_dir / f"{state}-{group}-{prop}-ensAvg.csv",
+                         index=False)
         return str(ens_avg_dir) + "/"
 
     return _make
@@ -492,23 +499,99 @@ def test_space_profiles_does_not_warn_on_a_raw_profile(make_profile_space,
                        "all", cyl_sizes)
 
 
+def test_space_profiles_carries_norm_sem_through(make_profile_space,
+                                                 cyl_sizes):
+    """A file's '-norm-sem' column passes through unchanged under the
+    default normalizer."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
+                                  [[0.2, 0.3, 0.1]],
+                                  norm_sems=[[0.0, 0.1, 0.2]])
+    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+                           "all", cyl_sizes)
+    assert space["rPhiCrd-norm-sem"].tolist() == [0.0, 0.1, 0.2]
+
+
+def test_space_profiles_folds_norm_sem_along_z(make_profile_space, cyl_sizes):
+    """Along z, '-norm-sem' is averaged with its mirror bin like every
+    other numeric column."""
+    database = make_profile_space("zPhiCrd", [-1.5, -0.5, 0.5, 1.5],
+                                  [[0.1, 0.3, 0.3, 0.1]],
+                                  norm_sems=[[0.2, 0.4, 0.6, 0.8]])
+    space = space_profiles(database, "Phi", "z", "Crd", SumRuleCyl, "N*", [],
+                           "all", cyl_sizes)
+    # Exact: (0.4 + 0.6) / 2 and (0.2 + 0.8) / 2 in float64
+    np.testing.assert_allclose(space["zPhiCrd-norm-sem"], [0.5, 0.5],
+                               rtol=1e-15)
+
+
+def test_space_profiles_drops_norm_sem_under_an_explicit_normalizer(
+    make_profile_space, cyl_sizes
+):
+    """An explicit normalizer drops a file's '-norm-sem', with a warning
+    that names the file and both normalizers."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
+                                  [[0.2, 0.3, 0.1]],
+                                  norm_sems=[[0.0, 0.1, 0.2]])
+    with pytest.warns(UserWarning,
+                      match=r"Dropping 'rPhiCrd-norm-sem' of '.*rPhiCrd-"
+                            r"ensAvg.csv'.*'first', not under 'max'"):
+        space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*",
+                               [], "all", cyl_sizes, normalizer="max")
+    assert "rPhiCrd-norm-sem" not in space.columns
+
+
 @pytest.fixture
 def species_profiles():
     """Factory: the scaled profiles of two species over two state points.
 
     Takes the monomer and crowder '-scale' values of each state point
-    (three bins each) and returns the mapping sum_rule_profiles takes.
+    (three bins each), optionally their '-norm-sem' values, and returns
+    the mapping sum_rule_profiles takes.
     """
 
-    def _make(mon, crd, bin_center=(0.5, 1.5, 2.5)):
+    def _make(mon, crd, bin_center=(0.5, 1.5, 2.5), mon_sem=None,
+              crd_sem=None):
         keys = {"ensemble_long": ["s1"] * 3 + ["s2"] * 3,
                 "bin_center": list(bin_center) * 2}
-        return {
+        profiles = {
             "Mon": pd.DataFrame({**keys, "rPhiMon-scale": np.ravel(mon)}),
             "Crd": pd.DataFrame({**keys, "rPhiCrd-scale": np.ravel(crd)}),
         }
+        if mon_sem is not None:
+            profiles["Mon"]["rPhiMon-norm-sem"] = np.ravel(mon_sem)
+        if crd_sem is not None:
+            profiles["Crd"]["rPhiCrd-norm-sem"] = np.ravel(crd_sem)
+        return profiles
 
     return _make
+
+
+def test_sum_rule_profiles_adds_norm_sem_in_quadrature(species_profiles):
+    """'<prop>Sum-norm-sem' is the square root of the sum of the species'
+    squared '-norm-sem', bin by bin."""
+    profiles = species_profiles(
+        mon=[[0.8, 0.4, 0.0], [0.6, 0.2, 0.0]],
+        crd=[[0.2, 0.6, 1.0], [0.4, 0.8, 2.0]],
+        mon_sem=[[0.3, 0.0, 0.06], [0.0, 0.3, 0.0]],
+        crd_sem=[[0.4, 0.0, 0.08], [0.0, 0.4, 0.0]],
+    )
+    total = sum_rule_profiles(profiles, "rPhi", "cylindrical", "r")
+    # 3-4-5 triangles: sqrt(0.09 + 0.16) and sqrt(0.0036 + 0.0064);
+    # float64 round-off of the squares
+    np.testing.assert_allclose(total["rPhiSum-norm-sem"],
+                               [0.5, 0.0, 0.1, 0.0, 0.5, 0.0], rtol=1e-12,
+                               atol=1e-15)
+
+
+def test_sum_rule_profiles_leaves_the_error_out_when_a_species_lacks_it(
+    species_profiles
+):
+    """Without '-norm-sem' on every species, the sum has no error column."""
+    profiles = species_profiles(mon=[[0.8, 0.4, 0.0], [0.6, 0.2, 0.0]],
+                                crd=[[0.2, 0.6, 1.0], [0.4, 0.8, 2.0]],
+                                mon_sem=[[0.3, 0.0, 0.0], [0.0, 0.3, 0.0]])
+    total = sum_rule_profiles(profiles, "rPhi", "cylindrical", "r")
+    assert "rPhiSum-norm-sem" not in total.columns
 
 
 def test_sum_rule_profiles_sums_species_per_bin(species_profiles):
