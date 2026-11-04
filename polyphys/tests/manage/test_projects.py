@@ -12,7 +12,7 @@ from polyphys.manage.parser import (
     Species,
     SumRuleCyl,
 )
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 
 @pytest.fixture
@@ -293,3 +293,157 @@ def test_probe_accepts_positive_bin_sizes(make_probe):
 
     assert list(probe.bin_sizes.items()) == [
         ('r', 0.1), ('z', 0.5), ('theta', 0.0873)]
+
+
+# BinderSpec
+
+
+@pytest.fixture
+def make_binders() -> Callable[..., BinderSpec]:
+    """Factory: a valid binder spec with the H-NS labels and the published
+    cutoff, with any field overridden."""
+
+    def _make(**overrides: Any) -> BinderSpec:
+        fields: dict[str, Any] = {
+            'patches': 'HnsPatch',
+            'binders': 'HnsCore',
+            'cutoff': 0.685,
+        }
+        fields.update(overrides)
+        return BinderSpec(**fields)
+
+    return _make
+
+
+@pytest.fixture
+def make_hns_probe(make_spec, make_binders) -> Callable[..., ProbeSpec]:
+    """Factory: a probe spec whose project lists the eight binding series
+    and whose selections include the patches, with any field overridden."""
+
+    def _make(**overrides: Any) -> ProbeSpec:
+        fields: dict[str, Any] = {
+            'project': make_spec(tseries_properties=(
+                'gyrTMon', 'nBoundTHnsPatch', 'nFreeTHnsPatch',
+                'nEngagedTHnsPatch', 'nFreeTHnsCore', 'nBridgeTHnsCore',
+                'nDangleTHnsCore', 'nCisTHnsCore', 'nTransTHnsCore')),
+            'selections': {'Mon': 'resid 1', 'HnsPatch': 'type 2'},
+            'chain': 'Mon',
+            'observables': ('gyrT',),
+            'unwrap': False,
+            'binders': make_binders(),
+        }
+        fields.update(overrides)
+        return ProbeSpec(**fields)
+
+    return _make
+
+
+def test_binders_series_take_the_patch_and_binder_labels(make_binders):
+    """The three patch counts are named by the patch label and the five
+    binder counts by the binder label, in the research code's order."""
+    binders = make_binders(patches='Site', binders='Prot')
+
+    assert list(binders.series.items()) == [
+        ('n_patch_monomer_contacts', 'nBoundTSite'),
+        ('n_patches_free', 'nFreeTSite'),
+        ('n_patches_engaged', 'nEngagedTSite'),
+        ('n_binders_free', 'nFreeTProt'),
+        ('n_binders_bridging', 'nBridgeTProt'),
+        ('n_binders_dangling', 'nDangleTProt'),
+        ('n_pairs_cis', 'nCisTProt'),
+        ('n_pairs_trans', 'nTransTProt')]
+
+
+def test_binders_defaults(make_binders):
+    """A binder spec defaults to an inclusive comparison, a cis threshold
+    of 4, two patches per binder, and no stored distances."""
+    binders = make_binders()
+
+    assert (binders.inclusive, binders.cis_threshold,
+            binders.patches_per_binder, binders.store_distances) == (
+        True, 4, 2, False)
+
+
+def test_binders_is_frozen(make_binders):
+    """A binder spec's fields cannot be reassigned."""
+    binders = make_binders()
+
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        binders.cutoff = 0.661  # type: ignore[misc]
+
+
+@pytest.mark.parametrize('overrides, match', [
+    pytest.param({'patches': ''}, "'patches' must be a non-empty",
+                 id='empty-patches'),
+    pytest.param({'binders': ''}, "'binders' must be a non-empty",
+                 id='empty-binders'),
+    pytest.param({'binders': 'HnsPatch'}, "must be different labels",
+                 id='same-labels'),
+    pytest.param({'cutoff': 0.0}, "'cutoff' must be a finite positive",
+                 id='zero-cutoff'),
+    pytest.param({'cutoff': -0.685}, "'cutoff' must be a finite positive",
+                 id='negative-cutoff'),
+    pytest.param({'cutoff': float('inf')},
+                 "'cutoff' must be a finite positive", id='infinite-cutoff'),
+    pytest.param({'cis_threshold': -1}, "'cis_threshold' must be",
+                 id='negative-cis'),
+    pytest.param({'cis_threshold': 2.5}, "'cis_threshold' must be",
+                 id='fractional-cis'),
+    pytest.param({'patches_per_binder': 3}, "'patches_per_binder' must be 2",
+                 id='three-patches'),
+])
+def test_binders_rejects_invalid_fields(make_binders, overrides, match):
+    """An empty or repeated label, a non-positive or infinite cutoff, a bad
+    cis threshold, or a valence other than two raises."""
+    with pytest.raises(ValueError, match=match):
+        make_binders(**overrides)
+
+
+def test_probe_has_no_binders_by_default(make_probe):
+    """A probe spec without a binder spec has binders None."""
+    assert make_probe().binders is None
+
+
+def test_probe_carries_its_binder_spec(make_hns_probe, make_binders):
+    """A probe spec keeps the binder spec whose patches it selects and
+    whose series its project lists."""
+    binders = make_binders(store_distances=True)
+
+    probe = make_hns_probe(binders=binders)
+
+    assert probe.binders == binders
+
+
+@pytest.mark.parametrize('overrides, match', [
+    pytest.param({'selections': {'Mon': 'resid 1'}},
+                 "patches of 'binders' must be a label in",
+                 id='patches-not-selected'),
+    pytest.param({'binders': BinderSpec('Mon', 'HnsCore', cutoff=0.685)},
+                 "patches of 'binders' must be a label in",
+                 id='patches-are-the-chain'),
+])
+def test_probe_rejects_binders_outside_its_selections(make_hns_probe,
+                                                      overrides, match):
+    """The patches of the binder spec must be a selected label other than
+    the chain."""
+    with pytest.raises(ValueError, match=match):
+        make_hns_probe(**overrides)
+
+
+def test_probe_rejects_binder_series_the_project_lacks(make_hns_probe,
+                                                       make_spec):
+    """Each of the eight binding series must be one of the project's
+    tseries_properties."""
+    project = make_spec(tseries_properties=(
+        'gyrTMon', 'nBoundTHnsPatch', 'nFreeTHnsPatch', 'nEngagedTHnsPatch',
+        'nFreeTHnsCore', 'nBridgeTHnsCore', 'nDangleTHnsCore'))
+
+    match = r"names the series \['nCisTHnsCore', 'nTransTHnsCore'\]"
+    with pytest.raises(ValueError, match=match):
+        make_hns_probe(project=project)
+
+
+def test_probe_rejects_a_non_binder_spec(make_hns_probe):
+    """binders must be a BinderSpec or None."""
+    with pytest.raises(TypeError, match="'binders' must be a BinderSpec"):
+        make_hns_probe(binders={'patches': 'HnsPatch'})

@@ -89,10 +89,14 @@ jobs:
       - name: Run tests with coverage
         # --cov-fail-under fails the job when total coverage drops below the
         # floor. coverage.py rounds the total to whole percent before the
-        # comparison, so keep the floor a whole number.
+        # comparison, so keep the floor a whole number. These jobs have no
+        # MDAnalysis, so .coveragerc-no-mda leaves the probe layer and its
+        # tests, which cannot run here, out of the measured set; the
+        # MDAnalysis job below measures them.
         run: |
           pytest polyphys README.md projects \
             --cov=polyphys \
+            --cov-config=.coveragerc-no-mda \
             --cov-report=term-missing \
             --cov-report=xml \
             --cov-fail-under=95 \
@@ -135,9 +139,9 @@ jobs:
 
       - name: Run tests with coverage
         # The probe layer needs MDAnalysis, so only this job runs its tests
-        # and doctests. Codecov merges this report with the matrix jobs',
-        # which see the probe layer as uncovered; the floor stays on the
-        # matrix job.
+        # and doctests and measures their coverage. Codecov merges this
+        # report with the matrix jobs', which leave the probe layer out; the
+        # floor stays on the matrix job.
         run: |
           pytest polyphys README.md projects \
             --cov=polyphys \
