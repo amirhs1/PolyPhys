@@ -21,6 +21,10 @@ version increase may introduce incompatible changes.
 - Add `BULK_NAME_MAP` and `rename_bulk_columns` to `polyphys.manage.organizer`, which rename the bulk-quantity columns of a stamp, ensemble-average, or `space` table the research code wrote to the PolyPhys names and leave every other column unchanged ([#105](https://github.com/amirhs1/PolyPhys/issues/105))
 - Write `<prop>-norm-sem`, the standard error over the wholes of each whole's density profile divided by its own value in the bin that the sum rule's default normalizer names, beside the ensAvg columns in `polyphys.analyze.pipeline`, through a `normalizer` field of `Derived` that `LocalDensities` sets; carry it through `polyphys.analyze.sumrule.space_profiles`, folded along `z` and dropped with a warning under an explicit normalizer; and add the species' columns in quadrature as `<prop>Sum-norm-sem` in `sum_rule_profiles` ([#143](https://github.com/amirhs1/PolyPhys/issues/143))
 
+### Fixed
+
+- Add Python 3.14 to the README's Python badge, which listed 3.11 to 3.13 while the package has supported 3.14 since it joined the CI matrix ([#149](https://github.com/amirhs1/PolyPhys/issues/149))
+
 ## [0.6.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.6.0) - 2026-11-03
 
 ### Changed
