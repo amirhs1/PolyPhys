@@ -1,7 +1,8 @@
 """
 The *HnsCyl* study: a ring polymer with H-NS proteins among crowders in a
 cylinder that is periodic along its axis. ``SPEC`` is its
-:class:`~polyphys.manage.projects.ProjectSpec` and ``ANALYSIS`` its
+:class:`~polyphys.manage.projects.ProjectSpec`, ``PROBE`` its
+:class:`~polyphys.manage.projects.ProbeSpec`, and ``ANALYSIS`` its
 :class:`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
 
 Values from the research code's registry (SciOps ``sciops/api.py``,
@@ -25,7 +26,7 @@ from polyphys.analyze.pipeline import (
     tseries,
 )
 from polyphys.manage.parser import HnsCyl
-from polyphys.manage.projects import ProjectSpec
+from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=HnsCyl,
@@ -41,6 +42,18 @@ SPEC = ProjectSpec(
                         'nBridgeTHnsCore', 'nDangleTHnsCore',
                         'nCisTHnsCore', 'nTransTHnsCore'),
     provisional=True,
+)
+
+# The probe of the polymer group: the selections, the chain-size observables
+# of its per-frame loop, and the unwrap convention of its asphericity (SciOps
+# ``sciops/probe/prober.py``, lines 4268-4319).
+PROBE = ProbeSpec(
+    project=SPEC,
+    selections={'Mon': 'resid 1', 'HnsPatch': 'type 2'},
+    chain='Mon',
+    observables=('asphericityT', 'fsdT', 'shapeT', 'gyrT', 'transSizeT',
+                 'principalT'),
+    unwrap=False,
 )
 
 # The largest lag of the autocorrelation functions, in frames (SciOps

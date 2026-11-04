@@ -1,8 +1,9 @@
 """
 The *HnsCub* study: a ring polymer with H-NS proteins among crowders in a
-periodic cube. ``SPEC`` is its :class:`~polyphys.manage.projects.ProjectSpec`
-and ``ANALYSIS`` its :class:`~polyphys.analyze.pipeline.AnalysisTable` per
-particle group.
+periodic cube. ``SPEC`` is its
+:class:`~polyphys.manage.projects.ProjectSpec`, ``PROBE`` its
+:class:`~polyphys.manage.projects.ProbeSpec`, and ``ANALYSIS`` its
+:class:`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
 
 Values from the research code's registry (SciOps ``sciops/api.py``,
 ``PROJECTS_DETAILS``), with the PolyPhys attribute names ``phi_bulk_c`` for
@@ -23,7 +24,7 @@ from polyphys.analyze.pipeline import (
     tseries,
 )
 from polyphys.manage.parser import HnsCub
-from polyphys.manage.projects import ProjectSpec
+from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=HnsCub,
@@ -38,6 +39,17 @@ SPEC = ProjectSpec(
                         'nFreeTHnsPatch', 'nEngagedTHnsPatch',
                         'nFreeTHnsCore', 'nBridgeTHnsCore',
                         'nDangleTHnsCore', 'nCisTHnsCore', 'nTransTHnsCore'),
+)
+
+# The probe of the polymer group: the selections, the chain-size observables
+# of its per-frame loop, and the unwrap convention of its asphericity (SciOps
+# ``sciops/probe/prober.py``, lines 3507-3555).
+PROBE = ProbeSpec(
+    project=SPEC,
+    selections={'Mon': 'resid 1', 'HnsPatch': 'type 2'},
+    chain='Mon',
+    observables=('asphericityT', 'gyrT', 'shapeT', 'principalT'),
+    unwrap=True,
 )
 
 # The largest lag of the autocorrelation functions, in frames (SciOps
