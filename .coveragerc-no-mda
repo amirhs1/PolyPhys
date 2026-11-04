@@ -1,0 +1,10 @@
+# Coverage configuration of the CI matrix jobs, which run without
+# MDAnalysis: the probe layer and its tests cannot run there, so they are
+# left out of the measured set that the floor in .github/workflows/ci.yaml
+# applies to. The MDAnalysis job measures them with pyproject.toml's
+# [tool.coverage.run], and Codecov merges the two reports.
+[run]
+omit =
+    polyphys/tests/data/*
+    polyphys/probe/*
+    polyphys/tests/probe/*
