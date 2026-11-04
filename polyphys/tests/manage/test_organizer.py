@@ -27,6 +27,7 @@ import pandas as pd
 import pytest
 
 from polyphys.manage.organizer import (
+    BULK_NAME_MAP,
     children_stamps,
     create_fullname,
     ens_avg_from_bin_edge,
@@ -41,6 +42,7 @@ from polyphys.manage.organizer import (
     find_unique_properties,
     make_database,
     parents_stamps,
+    rename_bulk_columns,
     save_artifact,
     space_hists,
     space_tseries,
@@ -1105,12 +1107,12 @@ def test_space_tseries_adds_phi_bulk_c_by_default(make_ens_avg_space,
 def test_space_tseries_rounds_crowder_with_round_to_multiple(
     make_ens_avg_space
 ):
-    """phi_c_bulk_round is round_to_multiple of the crowder column."""
+    """phi_bulk_c_round is round_to_multiple of the crowder column."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
     space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
                           divisor=0.05, round_to=2)
     expected = space["phi_bulk_c"].apply(round_to_multiple, args=(0.05, 2))
-    np.testing.assert_array_equal(space["phi_c_bulk_round"], expected)
+    np.testing.assert_array_equal(space["phi_bulk_c_round"], expected)
 
 
 def test_space_tseries_reads_named_crowder_attr(make_ens_avg_space,
@@ -1235,3 +1237,76 @@ def test_lineage_histogram_conserves_total_counts(segment_tree):
     # Sum of 1000e + 100w + 10s + k over e, w, s in {1, 2} and k in
     # {0, 1, 2}: 24 * (1500 + 150 + 15) + 8 * (0 + 1 + 2)
     assert total == pytest.approx(39984.0, rel=1e-12)
+
+
+# Renaming the bulk-quantity columns of research-code tables
+
+
+@pytest.fixture
+def old_bulk_table():
+    """A stamp-like row with every research-code bulk name and two others."""
+    columns = {"ensemble_long": ["N20ac1nc100"], "nmon": [20]}
+    columns.update({old: [float(i)] for i, old in enumerate(BULK_NAME_MAP)})
+    return pd.DataFrame(columns)
+
+
+@pytest.mark.parametrize(
+    "old, new",
+    [
+        pytest.param("phi_m_bulk", "phi_bulk_m", id="phi_m"),
+        pytest.param("rho_m_bulk", "rho_bulk_m", id="rho_m"),
+        pytest.param("phi_c_bulk", "phi_bulk_c", id="phi_c"),
+        pytest.param("rho_c_bulk", "rho_bulk_c", id="rho_c"),
+        pytest.param("phi_c_bulk_one", "phi_bulk_c_one", id="phi_c_one"),
+        pytest.param("phi_c_bulk_two", "phi_bulk_c_two", id="phi_c_two"),
+        pytest.param("rho_c_bulk_one", "rho_bulk_c_one", id="rho_c_one"),
+        pytest.param("rho_c_bulk_two", "rho_bulk_c_two", id="rho_c_two"),
+        pytest.param("phi_hns_bulk", "phi_bulk_hns", id="phi_hns"),
+        pytest.param("rho_hns_bulk", "rho_bulk_hns", id="rho_hns"),
+        pytest.param("phi_c_bulk_round", "phi_bulk_c_round", id="phi_c_round"),
+    ],
+)
+def test_bulk_name_map_pairs_each_old_name_with_its_new_name(old, new):
+    """Every research-code bulk name maps to its <quantity>_bulk_<species>."""
+    assert BULK_NAME_MAP[old] == new
+
+
+def test_bulk_name_map_has_only_the_eleven_pairs():
+    """The map holds exactly the eleven research-code names and no alias."""
+    assert len(BULK_NAME_MAP) == 11
+
+
+def test_bulk_name_map_is_read_only():
+    """The map rejects assignment."""
+    with pytest.raises(TypeError, match="does not support item assignment"):
+        BULK_NAME_MAP["phi_c_bulk"] = "other"  # type: ignore[index]
+
+
+def test_rename_bulk_columns_renames_every_mapped_column(old_bulk_table):
+    """Each mapped column takes its new name and keeps its value."""
+    new = rename_bulk_columns(old_bulk_table)
+    for old, expected in BULK_NAME_MAP.items():
+        assert old not in new.columns
+        assert new[expected].tolist() == old_bulk_table[old].tolist()
+
+
+def test_rename_bulk_columns_keeps_other_columns_and_order(old_bulk_table):
+    """Unmapped columns and the column order are unchanged."""
+    new = rename_bulk_columns(old_bulk_table)
+    expected = [BULK_NAME_MAP.get(c, c) for c in old_bulk_table.columns]
+    assert list(new.columns) == expected
+    assert new["ensemble_long"].tolist() == ["N20ac1nc100"]
+    assert new["nmon"].tolist() == [20]
+
+
+def test_rename_bulk_columns_does_not_modify_its_input(old_bulk_table):
+    """The input table keeps the research-code names after the call."""
+    before = list(old_bulk_table.columns)
+    rename_bulk_columns(old_bulk_table)
+    assert list(old_bulk_table.columns) == before
+
+
+def test_rename_bulk_columns_leaves_new_names_unchanged(old_bulk_table):
+    """A table that already carries the PolyPhys names comes back equal."""
+    new = rename_bulk_columns(old_bulk_table)
+    pd.testing.assert_frame_equal(rename_bulk_columns(new), new)

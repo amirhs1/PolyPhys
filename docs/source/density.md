@@ -275,6 +275,10 @@ offered.)
   stay unnormalized: its species sum $\sum_\alpha \phi_\alpha / a_\alpha$
   needs each profile's physical scale, and only its own `'first'` and
   `'max'` normalizations are scale-free.
+  {func}`~polyphys.analyze.sumrule.space_profiles` warns, naming the file,
+  when a profile's `-mean` sums to one, the signature of `normalize='sum'`;
+  it cannot tell `'integral'` or a hand normalization from one profile, so
+  the rule above is the caller's contract.
 
 ## Cost and use
 
@@ -308,7 +312,11 @@ averages them over replicates into the `ensAvg` profiles that
 {func}`~polyphys.analyze.sumrule.space_profiles` reads. The sum rule is
 linear in the profiles, so averaging over wholes and summing over species
 commute; its normalization is not, and the published estimator normalizes
-the ensemble average.
+the ensemble average. The error of that normalized curve comes from the
+wholes: the pipeline divides each whole's profile by its own value in the
+normalizer's bin and writes the standard error over the wholes as
+`<prop>-norm-sem` in the `ensAvg` file, which `space_profiles` carries
+through (see the [user guide](usage.md), "The density sum rule").
 
 ## References
 

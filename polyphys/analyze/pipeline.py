@@ -103,6 +103,13 @@ Conventions
   :func:`~polyphys.analyze.stats.sem_blocked`, since the frames of one
   run are correlated; across the wholes of an ensemble, independent
   runs, the organizer's plain standard error stays.
+- A density profile's ensemble average also carries ``<property>-norm-sem``,
+  the standard error over the wholes of each whole's profile divided by its
+  own value in the bin that the sum rule's default normalizer names
+  (:data:`~polyphys.analyze.sumrule.PROFILE_NORMALIZERS`): the error of the
+  normalized profile, which the ensemble average's ``-sem`` is not, since
+  a ratio's error needs the covariance between a bin and its normalizer.
+  See :class:`Derived`.
 - Progress is logged at INFO level; no warning is raised for a renamed
   artifact, because every output name is declared.
 - Complexities are stated in ``n_files`` (the files of one property),
@@ -155,6 +162,7 @@ import glob
 import logging
 import os
 import re
+import warnings
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, cast
@@ -166,6 +174,7 @@ import pandas as pd
 from polyphys.analyze import clusters, stats
 from polyphys.analyze.correlations import acf
 from polyphys.analyze.stats import PlateauMethod
+from polyphys.analyze.sumrule import PROFILE_NORMALIZERS
 from polyphys.manage import organizer
 from polyphys.manage.parser import ParserBase
 from polyphys.manage.projects import ProjectSpec
@@ -211,6 +220,9 @@ _ENS_TYPES: Mapping[str, Literal['dataframe', 'ndarray', 'bin_edge']] = {
     'matrix': 'ndarray',
     'bin_edge': 'bin_edge',
 }
+
+#: The reference bin of a per-whole normalization; see :class:`Derived`.
+ProfileNormalizerT = Literal['first', 'last', 'max']
 
 #: The wholes of one property as loaded from its files, by whole name.
 ArrayWholes = dict[str, np.ndarray]
@@ -289,12 +301,34 @@ class Derived:
     edges : mapping of str to numpy.ndarray, optional
         The bin edges of each whole, for a ``'vector'`` histogram, so its
         ensembles carry a ``bin_center`` column.
+    normalizer : {'first', 'last', 'max'}, optional
+        For a ``'vector'`` profile, the reference bin of a per-whole
+        normalization: the first bin, the last bin, or the bin where the
+        ensemble average is largest. Each whole is divided by its own value
+        in that bin, and the standard error over the wholes of the
+        normalized profile is written beside the ensemble average as
+        ``<name>-norm-sem``. The ensemble average itself is not normalized;
+        :func:`polyphys.analyze.sumrule.space_profiles` does that and
+        carries the column through.
 
     Raises
     ------
     ValueError
-        If `whole_type` is unknown, or `edges` is given for a whole type
-        other than ``'vector'``.
+        If `whole_type` is unknown, if `edges` or `normalizer` is given for
+        a whole type other than ``'vector'``, or if `normalizer` is not one
+        of its three values.
+
+    Notes
+    -----
+    The wholes of an ensemble are independent runs, so their spread is a
+    valid error of any function of the profile, the normalized one
+    included, with no covariance between a bin and its normalizer to track.
+    The ensemble picks the bin so that every whole is normalized at the
+    same place: a per-whole ``'max'`` would bias each ratio towards one
+    before the spread is taken. The error is zero in the reference bin by
+    construction. The scale of a profile, such as the ``1 / a`` or ``a^2``
+    of the sum rule, cancels in the ratio, so the column holds for the
+    scaled profile too.
 
     Examples
     --------
@@ -304,12 +338,15 @@ class Derived:
     ('gyrMon', 'vector')
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 0.7.0
+       Added `normalizer`.
     """
 
     name: str
     wholes: Wholes
     whole_type: WholeTypeT
     edges: Edges | None = None
+    normalizer: ProfileNormalizerT | None = None
 
     def __post_init__(self) -> None:
         _check_whole_type(self.whole_type)
@@ -318,6 +355,17 @@ class Derived:
                 f"'{self.name}': edges are only valid with whole_type "
                 f"'vector', not '{self.whole_type}'."
             )
+        if self.normalizer is not None:
+            if self.whole_type != 'vector':
+                raise ValueError(
+                    f"'{self.name}': a normalizer is only valid with "
+                    f"whole_type 'vector', not '{self.whole_type}'."
+                )
+            if self.normalizer not in ('first', 'last', 'max'):
+                raise ValueError(
+                    f"'{self.name}': normalizer must be 'first', 'last', or "
+                    f"'max', not {self.normalizer!r}."
+                )
 
 
 @dataclass(frozen=True)
@@ -803,7 +851,12 @@ class LocalDensities:
     Notes
     -----
     The three outputs share the histogram's edges, so their ensembles carry
-    the same ``bin_center`` column. Time is one kernel call per whole.
+    the same ``bin_center`` column. The two profiles get the normalizer of
+    :data:`~polyphys.analyze.sumrule.PROFILE_NORMALIZERS` for the parser's
+    geometry and the histogram's direction, when the pair has one, so their
+    ensemble averages carry ``<property>-norm-sem``, the error over wholes
+    of the normalized profile (see :class:`Derived`). Time is one kernel
+    call per whole.
 
     Examples
     --------
@@ -830,8 +883,12 @@ class LocalDensities:
     ['rHistCrd', 'rRhoCrd', 'rPhiCrd']
     >>> outputs[2].wholes[whole]
     array([1., 1.])
+    >>> outputs[2].normalizer
+    'first'
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 0.7.0
+       The profiles carry the sum rule's default normalizer.
     """
 
     def __call__(
@@ -861,6 +918,11 @@ class LocalDensities:
                 f"{dict(context.spec.species_sizes)}."
             )
         direction = prop.name[: -len('Hist')]
+        # The per-whole spread is defined for a bin reference only, which is
+        # what every default is; a numeric or callable one would be skipped.
+        default = PROFILE_NORMALIZERS.get(
+            (context.spec.parser._geometry, cast(DirectionT, direction)))
+        normalizer = default if isinstance(default, str) else None
         rhos: dict[str, np.ndarray] = {}
         phis: dict[str, np.ndarray] = {}
         for whole_name, counts in wholes.items():
@@ -874,9 +936,9 @@ class LocalDensities:
         return (
             Derived(prop.prop, wholes, 'vector', context.edges),
             Derived(f'{direction}Rho{prop.species}', rhos, 'vector',
-                    context.edges),
+                    context.edges, normalizer),
             Derived(f'{direction}Phi{prop.species}', phis, 'vector',
-                    context.edges),
+                    context.edges, normalizer),
         )
 
 
@@ -1584,11 +1646,65 @@ def _reduce_output(
                      else None),
         save_to=ens_dir,
     )
+    if output.normalizer is None:
+        averages = organizer.ensemble_avg(
+            output.name, ensembles, group, _ENS_TYPES[output.whole_type],
+            save_to=ens_avg_dir,
+        )
+        return dict(averages)
+    # The normalized spread needs the wholes and the average together, so
+    # the column is added before the average is saved.
     averages = organizer.ensemble_avg(
-        output.name, ensembles, group, _ENS_TYPES[output.whole_type],
-        save_to=ens_avg_dir,
-    )
-    return dict(averages)
+        output.name, ensembles, group, _ENS_TYPES[output.whole_type])
+    normalized: dict[str, np.ndarray | pd.DataFrame] = {}
+    for ens_name, average in averages.items():
+        ensemble = cast(pd.DataFrame, ensembles[ens_name])
+        frame = cast(pd.DataFrame, average)
+        frame[f'{output.name}-norm-sem'] = _normalized_sem(
+            output.name, ensemble, frame, output.normalizer, ens_name)
+        normalized[ens_name] = frame
+        if ens_avg_dir is not None:
+            organizer.save_artifact(
+                organizer.create_fullname(ens_name, group,
+                                          f'{output.name}-ensAvg'),
+                frame, ens_avg_dir)
+    return normalized
+
+
+def _normalized_sem(
+    prop: str,
+    ensemble: pd.DataFrame,
+    average: pd.DataFrame,
+    normalizer: ProfileNormalizerT,
+    ens_name: str,
+) -> np.ndarray:
+    """
+    The standard error over the wholes of `ensemble` (one column per whole,
+    after ``bin_center``) of each whole divided by its own value in the
+    reference bin: bin 0 for ``'first'``, the last bin for ``'last'``, and
+    the bin where ``<prop>-mean`` of `average` is largest for ``'max'``.
+    A whole whose reference value is zero warns, naming the ensemble, and
+    gives NaN in every bin. Time and space are
+    :math:`O(n_\\mathrm{bins} n_\\mathrm{wholes})`.
+    """
+    wholes = ensemble.drop(columns='bin_center', errors='ignore')
+    values = wholes.to_numpy(dtype=np.float64)
+    if normalizer == 'first':
+        index = 0
+    elif normalizer == 'last':
+        index = len(values) - 1
+    else:
+        index = int(np.argmax(average[f'{prop}-mean'].to_numpy()))
+    references = values[index]
+    if np.any(references == 0):
+        warnings.warn(
+            f"'{prop}': a whole of ensemble '{ens_name}' is zero in its "
+            f"reference bin {index}; its '{prop}-norm-sem' is NaN.",
+            UserWarning,
+        )
+        return np.full(len(values), np.nan)
+    normalized = pd.DataFrame(values / references)
+    return normalized.sem(axis=1, ddof=1).to_numpy()
 
 
 def _frame_ensembles(
