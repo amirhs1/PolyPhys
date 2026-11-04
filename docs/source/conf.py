@@ -54,15 +54,18 @@ autosummary_generate = True
 typehints_fully_qualified = True
 autodoc_typehints = 'description'  # Cleaner type hint formatting
 
-# No mocked imports: the package's only runtime dependencies are NumPy and
-# pandas, both of which are importable wherever the docs are built.
-autodoc_mock_imports: list[str] = []
+# The package's runtime dependencies, NumPy, pandas, and SciPy, are
+# importable wherever the docs are built. MDAnalysis is optional (the ``mda``
+# extra) and the docs build installs the ``docs`` extra only, so it is
+# mocked for the ``polyphys.probe`` pages.
+autodoc_mock_imports: list[str] = ['MDAnalysis']
 
 # Intersphinx mappings
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+    'MDAnalysis': ('https://docs.mdanalysis.org/stable/', None),
 }
 
 # MyST configuration

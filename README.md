@@ -61,7 +61,13 @@ cd PolyPhys
 python -m pip install -e ".[dev]"
 ```
 
-Requires Python 3.11+. The runtime dependencies are NumPy and pandas.
+Requires Python 3.11+. The runtime dependencies are NumPy, pandas, and SciPy.
+The probe layer, which reads LAMMPS trajectories, needs MDAnalysis as well;
+the `mda` extra installs it:
+
+```bash
+python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
+```
 
 ## Quickstart
 
@@ -136,9 +142,11 @@ frame:
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `manage.parser`    | Filename → typed physical attributes and lineage. One `ParserBase` subclass per project, declaring its own geometry, topology, and attribute schema.                                           |
 | `manage.organizer` | Walks the lineage, combining segments into wholes and reducing replicate ensembles to averaged measurements.                                                                                   |
-| `manage.projects`  | `ProjectSpec`, what a study's analysis needs beyond its parser: the polymer group, the rounding step of the crowder volume fraction, the attributes that become columns, the species-to-size map, and the time series. Each study's own spec lives in `projects/`, outside the package. |
+| `manage.projects`  | `ProjectSpec`, what a study's analysis needs beyond its parser: the polymer group, the rounding step of the crowder volume fraction, the attributes that become columns, the species-to-size map, and the time series; and `ProbeSpec`, what its probe needs: the selection of each species, the chain-size observables, and the unwrap convention. Each study's own specs live in `projects/`, outside the package. |
 | `manage.utils`     | Filename sorting, safe IO, and number-density / volume-fraction conversions for cubic and cylindrical geometries.                                                                              |
 | `manage.types`     | Domain type aliases (`LineageT`, `GeometryT`, `PhaseT`, …) that keep the vocabulary explicit and checkable.                                                                                    |
+| `probe.core`       | Opens a study's LAMMPS data file and dump as one MDAnalysis universe, and writes the stamps of a probed artifact. Needs the `mda` extra.                                                      |
+| `probe.chain_size` | `ChainSize`, an MDAnalysis analysis that measures a chain's end-to-end distance, span, transverse size, radius of gyration, asphericity, shape parameter, and principal axes in every frame, driven by a study's `ProbeSpec`. |
 | `analyze.measurer` | Per-frame structural observables — end-to-end distance, farthest-site distance, transverse size, maximum extent — plus fixed-size binning and radial, axial, azimuthal, and planar histograms. |
 | `analyze.clusters` | Contact and cluster statistics of a particle group (direct contacts under a cutoff, connected-component clusters, size and bond histograms), genomic distances, the probability density of a pair's separation, and the free, dangling, bridging, cis, and trans statistics of two-patch binders. |
 | `analyze.correlations` | The autocorrelation function of a time series by the FFT with Bartlett's confidence band, exponential and stretched-exponential decay fits with a recorded starting point, and the bond cosine correlation of a linear or ring chain, from which a persistence length follows. |

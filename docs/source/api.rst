@@ -38,3 +38,14 @@ Analyze
    polyphys.analyze.sumrule
    polyphys.analyze.density
    polyphys.analyze.pipeline
+
+Probe
+-----
+
+Needs MDAnalysis, which the ``mda`` extra installs.
+
+.. autosummary::
+   :toctree: generated
+
+   polyphys.probe.core
+   polyphys.probe.chain_size

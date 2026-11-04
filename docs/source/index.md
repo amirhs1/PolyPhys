@@ -27,6 +27,7 @@ clusters
 correlations
 density
 pipeline
+probe
 testing
 decisions
 api
