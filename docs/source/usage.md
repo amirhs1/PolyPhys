@@ -241,7 +241,14 @@ ensemble-averaged profiles: it scales each `Phi` profile by `1 / a_i` and each
 `Rho` profile by `a_i**2`, with `a_i` read from the parser attribute that the
 study's `species_sizes` names, normalizes the scaled profile by a reference
 value, folds a `z` profile about `z = 0`, and adds the state point's
-attributes:
+attributes. The profiles must be the raw ensemble averages, in their
+physical units: the rule relates the species through their scales, so a
+profile normalized beforehand, by its sum, its integral, or its maximum
+(the `normalize` option of `polyphys.analyze.density`, or by hand), enters
+the sum with an arbitrary weight and its `-scale` column loses its unit.
+`space_profiles` warns, naming the file, when a profile's `-mean` sums to
+one, the signature of a profile normalized by its sum; it cannot tell the
+other normalizations from one profile.
 
 ```python
 monomers = space_profiles(database, 'Phi', 'r', 'Mon', chain.parser,
@@ -278,6 +285,21 @@ is the crowder term, which for several crowders is eqn (7) of Jeon et al.
 Under cylindrical confinement the radial rule holds only where the wall
 layering is weak, which the ratio `kappa = (D - a_c) / a_c` controls (Sadeghi
 Isfahani, 2024, chapter 3).
+
+The error of a normalized profile is not the ensAvg file's `-sem`, which is
+the error of the mean, not of the ratio of a bin to its normalizer. The
+pipeline (`reduce_space` with `LocalDensities`) writes `<prop>-norm-sem`
+beside the ensAvg columns: each whole's profile is divided by its own value
+in the bin the default normalizer names, the first, the last, or the bin
+where the ensemble average peaks, and the standard error over the wholes,
+which are independent runs, is the error of the normalized curve. The curve
+itself stays the normalized ensemble average, the published estimator.
+`space_profiles` carries the column through under the default normalizer,
+folding it along `z`, and drops it with a warning under an explicit one;
+`sum_rule_profiles` adds the species' columns in quadrature as
+`<prop>Sum-norm-sem`, the error of the sum of the normalized species, which
+equals the error of `Sum-norm` only when the species share one normalizer
+value.
 
 See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
