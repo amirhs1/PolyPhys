@@ -16,7 +16,7 @@ from polyphys.analyze.pipeline import (
     LocalDensities,
 )
 from polyphys.manage.parser import TransFociCub, TransFociCyl
-from polyphys.manage.projects import ProjectSpec
+from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
 
 def _spec(module: str) -> ProjectSpec:
@@ -350,3 +350,86 @@ def test_foci_pair_distance_bound_is_the_half_contour(module: str) -> None:
     assert callable(hook.bin_size) and hook.bin_size(info) == 0.5
     # 202 bonds along the shorter arc, each at most 1.5 * (3 + 1) / 2 = 3.
     assert callable(hook.r_max) and hook.r_max(info) == 202 * 3.0
+
+
+# The probe specs
+
+
+def _probe(module: str) -> ProbeSpec:
+    """Return the ``PROBE`` of the study module `module`."""
+    probe: ProbeSpec = importlib.import_module(module).PROBE
+    return probe
+
+
+@pytest.mark.parametrize('module', STUDIES)
+def test_study_probe_is_built_on_its_spec(module: str) -> None:
+    """Each study's probe spec reads its parser from that study's SPEC."""
+    assert _probe(module).project is _spec(module)
+
+
+@pytest.mark.parametrize('module, selections', [
+    # SciOps prober.py: the select_atoms calls of each study's polymer-group
+    # probe, 'resid 1' for the chain and 'type 2' for the foci or the H-NS
+    # patches.
+    pytest.param('trans_foci_cyl', [('Mon', 'resid 1'), ('Foci', 'type 2')],
+                 id='TransFociCyl'),
+    pytest.param('trans_foci_cub', [('Mon', 'resid 1'), ('Foci', 'type 2')],
+                 id='TransFociCub'),
+    pytest.param('hns_cub', [('Mon', 'resid 1'), ('HnsPatch', 'type 2')],
+                 id='HnsCub'),
+    pytest.param('hns_cyl', [('Mon', 'resid 1'), ('HnsPatch', 'type 2')],
+                 id='HnsCyl'),
+])
+def test_study_probe_selections(module: str,
+                                selections: list[tuple[str, str]]) -> None:
+    """Each study selects its chain and its second species as the research
+    probe did, with the chain labelled Mon."""
+    probe = _probe(module)
+
+    assert (list(probe.selections.items()), probe.chain) == (
+        selections, 'Mon')
+
+
+@pytest.mark.parametrize('module, observables', [
+    # SciOps prober.py: the chain-size measures of each study's per-frame
+    # loop, in the order of the study's time series, with the principal
+    # axes last.
+    pytest.param('trans_foci_cyl',
+                 ('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'principalT'),
+                 id='TransFociCyl'),
+    pytest.param('trans_foci_cub',
+                 ('asphericityT', 'gyrT', 'shapeT', 'principalT'),
+                 id='TransFociCub'),
+    pytest.param('hns_cub', ('asphericityT', 'gyrT', 'shapeT', 'principalT'),
+                 id='HnsCub'),
+    pytest.param('hns_cyl',
+                 ('asphericityT', 'fsdT', 'shapeT', 'gyrT', 'transSizeT',
+                  'principalT'),
+                 id='HnsCyl'),
+])
+def test_study_probe_observables(module: str,
+                                 observables: tuple[str, ...]) -> None:
+    """Each study measures the chain-size observables of its research
+    probe."""
+    assert _probe(module).observables == observables
+
+
+@pytest.mark.parametrize('module, unwrap', [
+    # SciOps prober.py: the unwrap argument of bug.asphericity in each
+    # study's probe; the cylinders are periodic along z only.
+    pytest.param('trans_foci_cyl', False, id='TransFociCyl'),
+    pytest.param('trans_foci_cub', True, id='TransFociCub'),
+    pytest.param('hns_cub', True, id='HnsCub'),
+    pytest.param('hns_cyl', False, id='HnsCyl'),
+])
+def test_study_probe_unwraps_in_a_cube_only(module: str,
+                                            unwrap: bool) -> None:
+    """The cubic studies unwrap the chain for its asphericity; the
+    cylindrical ones do not."""
+    assert _probe(module).unwrap is unwrap
+
+
+@pytest.mark.parametrize('module', STUDIES)
+def test_study_probe_leaves_bin_sizes_to_confirm(module: str) -> None:
+    """No study sets histogram bin sizes yet; they are still to confirm."""
+    assert dict(_probe(module).bin_sizes) == {}

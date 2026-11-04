@@ -1,7 +1,8 @@
 """
 The *TransFociCyl* study: a ring of small and large monomers among crowders in
 a cylinder that is periodic along its axis. ``SPEC`` is its
-:class:`~polyphys.manage.projects.ProjectSpec` and ``ANALYSIS`` its
+:class:`~polyphys.manage.projects.ProjectSpec`, ``PROBE`` its
+:class:`~polyphys.manage.projects.ProbeSpec`, and ``ANALYSIS`` its
 :class:`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
 
 Values from the research code's registry (SciOps ``sciops/api.py``,
@@ -25,7 +26,7 @@ from polyphys.analyze.pipeline import (
     tseries,
 )
 from polyphys.manage.parser import ParserBase, TransFociCyl
-from polyphys.manage.projects import ProjectSpec
+from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=TransFociCyl,
@@ -38,6 +39,17 @@ SPEC = ProjectSpec(
                    'Foci': 'dmon_large'},
     tseries_properties=('asphericityTMon', 'fsdTMon', 'gyrTMon',
                         'shapeTMon'),
+)
+
+# The probe of the polymer group: the selections, the chain-size observables
+# of its per-frame loop, and the unwrap convention of its asphericity (SciOps
+# ``sciops/probe/prober.py``, lines 968-998).
+PROBE = ProbeSpec(
+    project=SPEC,
+    selections={'Mon': 'resid 1', 'Foci': 'type 2'},
+    chain='Mon',
+    observables=('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'principalT'),
+    unwrap=False,
 )
 
 # The largest lag of the autocorrelation functions, in frames (SciOps

@@ -19,8 +19,17 @@ To install a specific archived release, append the tag:
 python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.4.0"
 ```
 
-PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy and
-pandas.
+PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy,
+pandas, and SciPy. The probe layer, `polyphys.probe`, reads LAMMPS
+trajectories with [MDAnalysis](https://www.mdanalysis.org/), which the `mda`
+extra installs:
+
+```bash
+python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
+```
+
+Without it, `import polyphys.probe` raises `ImportError` with that hint, and
+the rest of the package works as before.
 
 ### Development install
 
@@ -30,7 +39,7 @@ development tools:
 ```bash
 git clone https://github.com/amirhs1/PolyPhys.git
 cd PolyPhys
-python -m pip install -e ".[docs,dev]"
+python -m pip install -e ".[docs,dev,mda]"
 ```
 
 ## Quickstart
@@ -178,12 +187,18 @@ the spec is built. Pass the fields to the organizer, as in
 `space_tseries(database, 'gyrTMon', chain.parser, chain.hierarchy,
 list(chain.physical_attrs), chain.group, divisor=chain.divisor)`.
 
+A study that probes its trajectories with `polyphys.probe` builds a
+`ProbeSpec` beside its `ProjectSpec`: the MDAnalysis selection of each
+species, the label of the chain, the chain-size observables to measure, and
+whether the chain is unwrapped for its asphericity; see [Probe](probe.md).
+
 PolyPhys holds no study: a study is a folder outside the package, and adding
 one changes nothing in `polyphys/`. The maintainer's published studies are in
 the repository's top-level
 [`projects/`](https://github.com/amirhs1/PolyPhys/tree/main/projects) folder,
-one package per study, whose `spec.py` builds the `ProjectSpec` and whose
-`__init__.py` exports it as `SPEC`; the study's probe, analysis, and figure
+one package per study, whose `spec.py` builds the `ProjectSpec`, the
+`ProbeSpec`, and the analysis tables and whose `__init__.py` exports them as
+`SPEC`, `PROBE`, and `ANALYSIS`; the study's probe, analysis, and figure
 code will join it there. The folder is not installed, and CI lints,
 type-checks, and tests it with the package. A study elsewhere uses the same
 layout in its own repository.

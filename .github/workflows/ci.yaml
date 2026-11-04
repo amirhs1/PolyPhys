@@ -59,7 +59,7 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Run mypy
-        run: mypy polyphys/analyze polyphys/manage polyphys/simulate projects
+        run: mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate projects
 
   test:
     name: Test Python ${{ matrix.python-version }}
@@ -103,6 +103,53 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: error
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: true
+
+  test-mda:
+    name: Test with MDAnalysis, Python 3.14
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install project with dev and mda dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev,mda]
+
+      - name: Run tests with coverage
+        # The probe layer needs MDAnalysis, so only this job runs its tests
+        # and doctests. Codecov merges this report with the matrix jobs',
+        # which see the probe layer as uncovered; the floor stays on the
+        # matrix job.
+        run: |
+          pytest polyphys README.md projects \
+            --cov=polyphys \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --doctest-modules \
+            --doctest-glob="README.md"
+
+      - name: Upload coverage XML
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-3.14-mda
           path: coverage.xml
           if-no-files-found: error
 

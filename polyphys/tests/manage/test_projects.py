@@ -12,7 +12,7 @@ from polyphys.manage.parser import (
     Species,
     SumRuleCyl,
 )
-from polyphys.manage.projects import ProjectSpec
+from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
 
 @pytest.fixture
@@ -178,3 +178,118 @@ def test_spec_fields_drive_space_tseries(make_spec, tmp_path):
     # 16000 / 48600 = 0.32922, which rounds to 0.329 on the spec's grid of
     # 0.001 (and to 0.325 on the default grid of 0.025).
     assert space['phi_bulk_c_round'].tolist() == [0.329, 0.329]
+
+
+# ProbeSpec
+
+
+@pytest.fixture
+def make_probe(make_spec) -> Callable[..., ProbeSpec]:
+    """Factory: a valid probe spec of the SumRuleCyl spec, with any field
+    overridden; the project lists the chain-size time series."""
+
+    def _make(**overrides: Any) -> ProbeSpec:
+        fields: dict[str, Any] = {
+            'project': make_spec(tseries_properties=(
+                'fsdTMon', 'gyrTMon', 'rfloryTMon', 'asphericityTMon')),
+            'selections': {'Mon': 'resid 1', 'Crd': 'resid 0'},
+            'chain': 'Mon',
+            'observables': ('rfloryT', 'fsdT', 'gyrT', 'asphericityT'),
+            'unwrap': False,
+        }
+        fields.update(overrides)
+        return ProbeSpec(**fields)
+
+    return _make
+
+
+def test_probe_reads_parser_and_geometry_from_its_project(make_probe):
+    """A probe spec's name, parser, and geometry are its project's."""
+    probe = make_probe()
+
+    assert (probe.name, probe.parser, probe.geometry) == (
+        'SumRuleCyl', SumRuleCyl, 'cylindrical')
+
+
+def test_probe_is_frozen(make_probe):
+    """A probe spec's fields cannot be reassigned."""
+    probe = make_probe()
+
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        probe.unwrap = True  # type: ignore[misc]
+
+
+def test_probe_copies_its_containers(make_probe):
+    """Changing the caller's dict or list later leaves a probe spec
+    unchanged, and its maps are read-only."""
+    selections = {'Mon': 'resid 1'}
+    observables = ['gyrT']
+    bin_sizes = {'r': 0.1}
+    probe = make_probe(selections=selections, observables=observables,
+                       bin_sizes=bin_sizes)
+
+    selections['Crd'] = 'resid 0'
+    observables.append('fsdT')
+    bin_sizes['z'] = 0.5
+
+    assert (dict(probe.selections), probe.observables,
+            dict(probe.bin_sizes)) == (
+        {'Mon': 'resid 1'}, ('gyrT',), {'r': 0.1})
+    with pytest.raises(TypeError):
+        probe.selections['Crd'] = 'resid 0'  # type: ignore[index]
+
+
+def test_probe_allows_the_matrix_observable_without_a_time_series(
+        make_probe):
+    """principalT, a per-frame matrix, needs no entry in the project's
+    tseries_properties."""
+    probe = make_probe(observables=('gyrT', 'principalT'))
+
+    assert probe.observables == ('gyrT', 'principalT')
+
+
+@pytest.mark.parametrize('overrides, match', [
+    pytest.param({'selections': {}}, "'selections' must map",
+                 id='no-selections'),
+    pytest.param({'selections': {'Mon': ''}}, "'selections' must map",
+                 id='empty-selection'),
+    pytest.param({'selections': {'': 'resid 1'}}, "'selections' must map",
+                 id='empty-label'),
+    pytest.param({'chain': 'Foci'}, "'chain' must be a label in",
+                 id='chain-not-selected'),
+    pytest.param({'observables': ()}, "'observables' must not be empty",
+                 id='no-observables'),
+    pytest.param({'observables': ('gyrT', 'radius')},
+                 r"names \['radius'\], which are not in",
+                 id='unknown-observable'),
+    pytest.param({'observables': ('gyrT', 'gyrT')}, "repeats a name",
+                 id='repeated-observable'),
+    pytest.param({'observables': ('gyrT', 'shapeT')},
+                 r"names \['shapeTMon'\], which are not among",
+                 id='observable-not-a-time-series'),
+    pytest.param({'bin_sizes': {'phi': 0.1}}, "has the direction 'phi'",
+                 id='unknown-direction'),
+    pytest.param({'bin_sizes': {'r': 0.0}}, "finite positive number",
+                 id='zero-bin-size'),
+    pytest.param({'bin_sizes': {'r': float('inf')}},
+                 "finite positive number", id='infinite-bin-size'),
+])
+def test_probe_rejects_invalid_fields(make_probe, overrides, match):
+    """A probe spec with a bad selection, chain, observable, or bin size
+    raises, naming the project."""
+    with pytest.raises(ValueError, match=match):
+        make_probe(**overrides)
+
+
+def test_probe_rejects_a_non_project(make_probe):
+    """A probe spec needs a ProjectSpec."""
+    with pytest.raises(TypeError, match="'project' must be a ProjectSpec"):
+        make_probe(project=SumRuleCyl)
+
+
+def test_probe_accepts_positive_bin_sizes(make_probe):
+    """Finite positive bin sizes along known directions are kept in order."""
+    probe = make_probe(bin_sizes={'r': 0.1, 'z': 0.5, 'theta': 0.0873})
+
+    assert list(probe.bin_sizes.items()) == [
+        ('r', 0.1), ('z', 0.5), ('theta', 0.0873)]
