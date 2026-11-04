@@ -177,4 +177,4 @@ def test_spec_fields_drive_space_tseries(make_spec, tmp_path):
     # with n = 1000, a = 2, Z = 2 lz = 50, D = 2 r - 1 = 20:
     # 16000 / 48600 = 0.32922, which rounds to 0.329 on the spec's grid of
     # 0.001 (and to 0.325 on the default grid of 0.025).
-    assert space['phi_c_bulk_round'].tolist() == [0.329, 0.329]
+    assert space['phi_bulk_c_round'].tolist() == [0.329, 0.329]

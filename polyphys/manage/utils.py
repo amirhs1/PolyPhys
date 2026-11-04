@@ -475,7 +475,7 @@ def round_to_multiple(dividend: float, divider: float, round_to: int) -> float:
     Round `dividend` to the nearest multiple of `divider`, then to
     `round_to` decimal places.
 
-    The result can lie below `dividend`. The ``phi_c_bulk_round`` labels that
+    The result can lie below `dividend`. The ``phi_bulk_c_round`` labels that
     :func:`polyphys.manage.organizer.space_tseries` and
     :func:`polyphys.manage.organizer.space_hists` add are made with it.
 

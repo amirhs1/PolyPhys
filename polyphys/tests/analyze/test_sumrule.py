@@ -374,7 +374,7 @@ def test_space_profiles_concatenates_files_in_name_order(make_profile_space,
 
 def test_space_profiles_adds_attributes_and_rounded_phi_c(make_profile_space,
                                                           cyl_sizes):
-    """physical_attrs, phi_bulk_c, and phi_c_bulk_round come from the name."""
+    """physical_attrs, phi_bulk_c, and phi_bulk_c_round come from the name."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
     space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*",
@@ -386,7 +386,7 @@ def test_space_profiles_adds_attributes_and_rounded_phi_c(make_profile_space,
     assert space["nmon"].tolist() == [200] * 3
     assert space["dcyl"].tolist() == [20.0] * 3
     assert space["phi_bulk_c"].tolist() == [info.phi_bulk_c] * 3
-    assert space["phi_c_bulk_round"].tolist() == [
+    assert space["phi_bulk_c_round"].tolist() == [
         round_to_multiple(info.phi_bulk_c, 0.05, 2)] * 3
 
 
