@@ -340,9 +340,10 @@ def test_probe_defaults_leave_histograms_and_pairs_unprobed(make_probe):
             probe.minimum_image) == ((), None, 'half', None, None, True)
 
 
-def test_probe_keeps_histogram_and_pair_fields(make_probe):
+def test_probe_keeps_histogram_and_pair_fields(make_probe, whole):
     """The histogram species, block length, pair species, contact cutoff,
-    and minimum-image flag are stored as given, the species as a tuple."""
+    and minimum-image flag are stored as given, the species as a tuple, and
+    the cutoff resolves for a whole."""
     def cutoff(info: ParserBase) -> float:
         return 1.5
 
@@ -353,6 +354,7 @@ def test_probe_keeps_histogram_and_pair_fields(make_probe):
     assert (probe.histogram_species, probe.block_frames, probe.pair_species,
             probe.contact_cutoff, probe.minimum_image) == (
         ('Crd', 'Mon'), 100, 'Mon', cutoff, False)
+    assert ProbeSpec.resolve(probe.contact_cutoff, whole) == 1.5
 
 
 @pytest.mark.parametrize('given, stored', [
@@ -365,14 +367,16 @@ def test_probe_stores_recentre(make_probe, given, stored):
     assert make_probe(recentre=given).recentre == stored
 
 
-def test_probe_accepts_callable_bin_sizes(make_probe):
-    """A bin size may be a function of the whole's parser, kept as given."""
+def test_probe_accepts_callable_bin_sizes(make_probe, whole):
+    """A bin size may be a function of the whole's parser, kept as given and
+    resolved for a whole: a tenth of its crowder diameter 0.5."""
     def bin_size(info: ParserBase) -> float:
         return 0.1 * float(getattr(info, 'dcrowd'))
 
     probe = make_probe(bin_sizes={'r': bin_size, 'z': 0.5})
 
     assert probe.bin_sizes['r'] is bin_size
+    assert ProbeSpec.resolve(probe.bin_sizes['r'], whole) == 0.05
 
 
 @pytest.fixture
