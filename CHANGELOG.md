@@ -14,6 +14,7 @@ version increase may introduce incompatible changes.
 ### Changed
 
 - **Breaking:** Rename the column that `space_tseries`, `space_hists`, and `space_profiles` round the crowder volume fraction into from `phi_c_bulk_round` to `phi_bulk_c_round`, so that every bulk name in PolyPhys reads `<quantity>_bulk_<species>` ([#105](https://github.com/amirhs1/PolyPhys/issues/105)). The research-code names map to the PolyPhys names as `phi_m_bulk` → `phi_bulk_m`, `rho_m_bulk` → `rho_bulk_m`, `phi_c_bulk` → `phi_bulk_c`, `rho_c_bulk` → `rho_bulk_c`, `phi_c_bulk_one` → `phi_bulk_c_one`, `phi_c_bulk_two` → `phi_bulk_c_two`, `rho_c_bulk_one` → `rho_bulk_c_one`, `rho_c_bulk_two` → `rho_bulk_c_two`, `phi_hns_bulk` → `phi_bulk_hns`, `rho_hns_bulk` → `rho_bulk_hns`, and `phi_c_bulk_round` → `phi_bulk_c_round`.
+- Add area `probe` in `CONTRIBUTING.md`, "Names", for `polyphys/probe/` and `polyphys/tests/probe/`, and give `polyphys/probe/` the Instrumented tier in `AGENTS.md` and the README ([#56](https://github.com/amirhs1/PolyPhys/issues/56))
 - Warn with a `UserWarning`, naming the file, in `polyphys.analyze.sumrule.space_profiles` when a profile's `<prop>-mean` sums to one within `1e-6`, the signature of a profile normalized by its sum, and state in `sumrule`, `usage.md`, and `density.md` that the sum rule takes the raw ensemble-averaged profiles, since a species normalized on its own enters the species sum with an arbitrary weight ([#140](https://github.com/amirhs1/PolyPhys/issues/140))
 
 ### Added

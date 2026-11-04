@@ -54,7 +54,8 @@ PolyPhys/
   polyphys/manage/     parser, organizer, utils, types: filenames → lineage → reduced ensembles
   polyphys/analyze/    measurer, stats, clusters, correlations, sumrule: per-frame observables, their statistics, and the sum rule on reduced profiles
   polyphys/simulate/   core, log, dump, data, build: LAMMPS logs, dumps, data files, and start configurations
-  polyphys/tests/      tests for analyze/, manage/, simulate/, and packaging
+  polyphys/probe/      core, chain_size: per-frame observables read from LAMMPS trajectories with MDAnalysis (the mda extra)
+  polyphys/tests/      tests for analyze/, manage/, probe/, simulate/, and packaging
   projects/            one folder per study: its ProjectSpec; not installed
   docs/source/         Sphinx sources
   README.md            user guide; its examples run as doctests
@@ -149,6 +150,7 @@ your role in each tier. Change both in the same commit.
 | `polyphys/analyze/`                                       | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/simulate/`                                      | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/probe/`                                         | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `projects/`                                               | Supervised   | Draft a study's spec from the research code's values; every line is read.        |
 | `docs/`                                                   | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
