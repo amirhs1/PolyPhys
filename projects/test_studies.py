@@ -16,7 +16,7 @@ from polyphys.analyze.pipeline import (
     LocalDensities,
 )
 from polyphys.manage.parser import TransFociCub, TransFociCyl
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 
 def _spec(module: str) -> ProjectSpec:
@@ -438,3 +438,30 @@ def test_study_probe_unwraps_in_a_cube_only(module: str,
 def test_study_probe_leaves_bin_sizes_to_confirm(module: str) -> None:
     """No study sets histogram bin sizes yet; they are still to confirm."""
     assert dict(_probe(module).bin_sizes) == {}
+
+
+@pytest.mark.parametrize('module, binders', [
+    pytest.param('trans_foci_cyl', None, id='TransFociCyl'),
+    pytest.param('trans_foci_cub', None, id='TransFociCub'),
+    # SciOps prober.py, the H-NS binding blocks: cis_threshold = 4 and the
+    # distance matrices saved per frame. The cutoff and the inclusive
+    # comparison are the thesis's binding criterion, r <= r_cut,mp = 0.685
+    # (Section 5.3, Table 5.1), chosen by the maintainer on 2026-11-04 over
+    # the research probe's 0.661 with a strict comparison.
+    pytest.param('hns_cub',
+                 BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685,
+                            inclusive=True, cis_threshold=4,
+                            patches_per_binder=2, store_distances=True),
+                 id='HnsCub'),
+    pytest.param('hns_cyl',
+                 BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685,
+                            inclusive=True, cis_threshold=4,
+                            patches_per_binder=2, store_distances=True),
+                 id='HnsCyl'),
+])
+def test_study_probe_binders(module: str,
+                             binders: BinderSpec | None) -> None:
+    """The H-NS studies count their two-patch binders at the published
+    cutoff with the research cis threshold and keep the distance matrices;
+    the foci studies have no binders."""
+    assert _probe(module).binders == binders

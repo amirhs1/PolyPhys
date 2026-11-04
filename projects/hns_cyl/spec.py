@@ -26,7 +26,7 @@ from polyphys.analyze.pipeline import (
     tseries,
 )
 from polyphys.manage.parser import HnsCyl
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=HnsCyl,
@@ -46,7 +46,13 @@ SPEC = ProjectSpec(
 
 # The probe of the polymer group: the selections, the chain-size observables
 # of its per-frame loop, and the unwrap convention of its asphericity (SciOps
-# ``sciops/probe/prober.py``, lines 4268-4319).
+# ``sciops/probe/prober.py``, lines 4268-4319), and the binding of the H-NS
+# patches (lines 4283-4383, ``cis_threshold = 4`` and the distance matrices
+# saved as ``distMatTMonHnsPatch``). The cutoff is the published binding
+# criterion, r <= r_cut,mp = 0.685 (thesis, Section 5.3 and Table 5.1),
+# which the maintainer chose on 2026-11-04 over the research probe's
+# ``round(2**(1/6) * (dmon + dhns_patch) / 2, 3) = 0.661`` with a strict
+# comparison; the probe guide, "Choosing the cutoff", gives both.
 PROBE = ProbeSpec(
     project=SPEC,
     selections={'Mon': 'resid 1', 'HnsPatch': 'type 2'},
@@ -54,6 +60,9 @@ PROBE = ProbeSpec(
     observables=('asphericityT', 'fsdT', 'shapeT', 'gyrT', 'transSizeT',
                  'principalT'),
     unwrap=False,
+    binders=BinderSpec(patches='HnsPatch', binders='HnsCore', cutoff=0.685,
+                       inclusive=True, cis_threshold=4,
+                       store_distances=True),
 )
 
 # The largest lag of the autocorrelation functions, in frames (SciOps
