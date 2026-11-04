@@ -77,5 +77,21 @@
     omit = ["polyphys/tests/data/*"]
 
 [tool.mypy]
-    files = ["polyphys/analyze", "polyphys/manage", "polyphys/simulate", "projects"]
+    files = [
+        "polyphys/analyze",
+        "polyphys/manage",
+        "polyphys/probe",
+        "polyphys/simulate",
+        "projects",
+    ]
     strict = true
+
+[[tool.mypy.overrides]]
+    # MDAnalysis ships no py.typed marker and no stubs, so its names are Any.
+    module = ["MDAnalysis", "MDAnalysis.*"]
+    ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+    # The probe analyses subclass MDAnalysis's AnalysisBase, which is Any.
+    module = ["polyphys.probe.*"]
+    disallow_subclassing_any = false

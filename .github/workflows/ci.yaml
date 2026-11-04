@@ -59,7 +59,7 @@ jobs:
           python -m pip install -e .[dev]
 
       - name: Run mypy
-        run: mypy polyphys/analyze polyphys/manage polyphys/simulate projects
+        run: mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate projects
 
   test:
     name: Test Python ${{ matrix.python-version }}
