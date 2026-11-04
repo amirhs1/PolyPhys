@@ -25,7 +25,9 @@ from polyphys.analyze.pipeline import (
     matrix_tseries,
     tseries,
 )
-from polyphys.manage.parser import HnsCyl
+import numpy as np
+
+from polyphys.manage.parser import HnsCyl, ParserBase
 from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
@@ -44,9 +46,37 @@ SPEC = ProjectSpec(
     provisional=True,
 )
 
+
+def _r_bin(info: ParserBase) -> float:
+    """A tenth of the smallest of the monomer, H-NS core, and crowder
+    diameters: the bin size along r. The research probe left the H-NS core
+    out of the minimum here, unlike ``hns_cub_all``; the maintainer called
+    that a mistake on 2026-11-04 and both studies now agree."""
+    return 0.1 * min(float(getattr(info, 'dmon')),
+                     float(getattr(info, 'dhns')),
+                     float(getattr(info, 'dcrowd')))
+
+
+def _l_bin(info: ParserBase) -> float:
+    """A tenth of the smaller of the monomer and crowder diameters: the bin
+    size along x and y (SciOps ``hns_cyl_all``, ``bin_edges``, ``lEdge``)."""
+    return 0.1 * min(float(getattr(info, 'dmon')),
+                     float(getattr(info, 'dcrowd')))
+
+
+def _z_bin(info: ParserBase) -> float:
+    """Half the smaller of the monomer and crowder diameters: the bin size
+    along z (SciOps ``hns_cyl_all``, ``bin_edges``)."""
+    return 0.5 * min(float(getattr(info, 'dmon')),
+                     float(getattr(info, 'dcrowd')))
+
+
 # The probe of the polymer group: the selections, the chain-size observables
 # of its per-frame loop, and the unwrap convention of its asphericity (SciOps
-# ``sciops/probe/prober.py``, lines 4268-4319), and the binding of the H-NS
+# ``sciops/probe/prober.py``, lines 4268-4319); the histograms of the all
+# group (``hns_cyl_all``, lines 4444-4500): its selections, bin sizes, and
+# species, the H-NS cores as 'Hns', with the block length and the recentring
+# the maintainer's decisions of 2026-11-04;
 # patches (lines 4283-4383, ``cis_threshold = 4`` and the distance matrices
 # saved as ``distMatTMonHnsPatch``). The cutoff is the published binding
 # criterion, r <= r_cut,mp = 0.685 (thesis, Section 5.3 and Table 5.1),
@@ -55,11 +85,17 @@ SPEC = ProjectSpec(
 # comparison; the probe guide, "Choosing the cutoff", gives both.
 PROBE = ProbeSpec(
     project=SPEC,
-    selections={'Mon': 'resid 1', 'HnsPatch': 'type 2'},
+    selections={'Mon': 'resid 1', 'HnsPatch': 'type 2', 'Crd': 'resid 0',
+                'Hns': 'type 3'},
     chain='Mon',
     observables=('asphericityT', 'fsdT', 'shapeT', 'gyrT', 'transSizeT',
                  'principalT'),
     unwrap=False,
+    bin_sizes={'r': _r_bin, 'z': _z_bin, 'theta': np.pi / 36, 'x': _l_bin,
+               'y': _l_bin},
+    histogram_species=('Crd', 'Mon', 'Hns'),
+    block_frames=100,
+    recentre='half',
     binders=BinderSpec(patches='HnsPatch', binders='HnsCore', cutoff=0.685,
                        inclusive=True, cis_threshold=4,
                        store_distances=True),

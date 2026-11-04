@@ -273,10 +273,45 @@ def test_probe_allows_the_matrix_observable_without_a_time_series(
                  id='zero-bin-size'),
     pytest.param({'bin_sizes': {'r': float('inf')}},
                  "finite positive number", id='infinite-bin-size'),
+    pytest.param({'bin_sizes': {'r': '0.1'}}, "finite positive number",
+                 id='string-bin-size'),
+    pytest.param({'histogram_species': ('Foci',), 'bin_sizes': {'r': 0.1},
+                  'block_frames': 100},
+                 r"'histogram_species' names \['Foci'\]",
+                 id='histogram-species-not-selected'),
+    pytest.param({'histogram_species': ('Mon', 'Mon'),
+                  'bin_sizes': {'r': 0.1}, 'block_frames': 100},
+                 "'histogram_species' repeats a label",
+                 id='repeated-histogram-species'),
+    pytest.param({'histogram_species': ('Mon',), 'block_frames': 100},
+                 "'histogram_species' needs 'bin_sizes'",
+                 id='histogram-species-without-bin-sizes'),
+    pytest.param({'histogram_species': ('Mon',), 'bin_sizes': {'r': 0.1}},
+                 "'histogram_species' needs 'block_frames'",
+                 id='histogram-species-without-block-frames'),
+    pytest.param({'block_frames': 0}, "'block_frames' must be a positive",
+                 id='zero-block-frames'),
+    pytest.param({'block_frames': 2.0}, "'block_frames' must be a positive",
+                 id='float-block-frames'),
+    pytest.param({'recentre': 'centre'}, "'recentre' must be",
+                 id='unknown-recentre'),
+    pytest.param({'recentre': (1.0, 2.0)}, "'recentre' must be",
+                 id='short-recentre'),
+    pytest.param({'recentre': (1.0, 2.0, float('nan'))}, "'recentre' must be",
+                 id='nan-recentre'),
+    pytest.param({'pair_species': 'Foci', 'contact_cutoff': 1.5},
+                 "'pair_species' must be a label in",
+                 id='pair-species-not-selected'),
+    pytest.param({'pair_species': 'Mon'},
+                 "'pair_species' needs 'contact_cutoff'",
+                 id='pair-species-without-cutoff'),
+    pytest.param({'contact_cutoff': 0.0}, "'contact_cutoff' must be",
+                 id='zero-contact-cutoff'),
 ])
 def test_probe_rejects_invalid_fields(make_probe, overrides, match):
-    """A probe spec with a bad selection, chain, observable, or bin size
-    raises, naming the project."""
+    """A probe spec with a bad selection, chain, observable, bin size,
+    histogram species, block length, recentring, pair species, or contact
+    cutoff raises, naming the project."""
     with pytest.raises(ValueError, match=match):
         make_probe(**overrides)
 
@@ -293,6 +328,88 @@ def test_probe_accepts_positive_bin_sizes(make_probe):
 
     assert list(probe.bin_sizes.items()) == [
         ('r', 0.1), ('z', 0.5), ('theta', 0.0873)]
+
+
+def test_probe_defaults_leave_histograms_and_pairs_unprobed(make_probe):
+    """Without the histogram and pair fields, a probe spec recentres by half
+    the box, uses the minimum image, and names no species for them."""
+    probe = make_probe()
+
+    assert (probe.histogram_species, probe.block_frames, probe.recentre,
+            probe.pair_species, probe.contact_cutoff,
+            probe.minimum_image) == ((), None, 'half', None, None, True)
+
+
+def test_probe_keeps_histogram_and_pair_fields(make_probe, whole):
+    """The histogram species, block length, pair species, contact cutoff,
+    and minimum-image flag are stored as given, the species as a tuple, and
+    the cutoff resolves for a whole."""
+    def cutoff(info: ParserBase) -> float:
+        return 1.5
+
+    probe = make_probe(bin_sizes={'r': 0.1}, histogram_species=['Crd', 'Mon'],
+                       block_frames=100, pair_species='Mon',
+                       contact_cutoff=cutoff, minimum_image=False)
+
+    assert (probe.histogram_species, probe.block_frames, probe.pair_species,
+            probe.contact_cutoff, probe.minimum_image) == (
+        ('Crd', 'Mon'), 100, 'Mon', cutoff, False)
+    assert ProbeSpec.resolve(probe.contact_cutoff, whole) == 1.5
+
+
+@pytest.mark.parametrize('given, stored', [
+    pytest.param('none', 'none', id='none'),
+    pytest.param('half', 'half', id='half'),
+    pytest.param([1, 2.5, -3], (1.0, 2.5, -3.0), id='triple-as-floats'),
+])
+def test_probe_stores_recentre(make_probe, given, stored):
+    """A recentring keyword is kept and a triple becomes a tuple of floats."""
+    assert make_probe(recentre=given).recentre == stored
+
+
+def test_probe_accepts_callable_bin_sizes(make_probe, whole):
+    """A bin size may be a function of the whole's parser, kept as given and
+    resolved for a whole: a tenth of its crowder diameter 0.5."""
+    def bin_size(info: ParserBase) -> float:
+        return 0.1 * float(getattr(info, 'dcrowd'))
+
+    probe = make_probe(bin_sizes={'r': bin_size, 'z': 0.5})
+
+    assert probe.bin_sizes['r'] is bin_size
+    assert ProbeSpec.resolve(probe.bin_sizes['r'], whole) == 0.05
+
+
+@pytest.fixture
+def whole() -> ParserBase:
+    """A SumRuleCyl whole with dmon 1 and dcrowd 0.5."""
+    return SumRuleCyl(
+        'N200epsilon5r10.5lz50sig0.5nc100dt0.005bdump1adump1ens1',
+        'whole', 'all')
+
+
+@pytest.mark.parametrize('value, expected', [
+    pytest.param(2, 2.0, id='number-as-float'),
+    pytest.param(lambda info: info.dmon + info.dcrowd, 1.5,
+                 id='callable-of-the-parser'),
+])
+def test_probe_resolve_returns_the_number_for_one_whole(whole, value,
+                                                        expected):
+    """resolve returns a number as a float and calls a callable with the
+    parser."""
+    assert ProbeSpec.resolve(value, whole) == expected
+
+
+@pytest.mark.parametrize('bad', [
+    pytest.param(lambda info: 0.0, id='zero'),
+    pytest.param(lambda info: -1.0, id='negative'),
+    pytest.param(lambda info: float('nan'), id='nan'),
+    pytest.param(lambda info: '1', id='string'),
+])
+def test_probe_resolve_rejects_a_bad_callable_result(whole, bad):
+    """resolve raises, naming the whole, when a callable does not return a
+    finite positive number."""
+    with pytest.raises(ValueError, match=f"{whole.name} must resolve to"):
+        ProbeSpec.resolve(bad, whole)
 
 
 # BinderSpec

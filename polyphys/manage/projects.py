@@ -69,10 +69,30 @@ Examples
 import math
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Mapping, get_args
+from typing import Callable, Literal, Mapping, get_args
 
 from .parser import ParserBase
 from .types import DirectionT, EntityT, GeometryT, GroupT, PropertyT, TopologyT
+
+#: A quantity of a probe that is either the same number for every whole of a
+#: study or a function of the whole's parser, such as a bin size that scales
+#: with the crowder diameter. :meth:`ProbeSpec.resolve` turns either into the
+#: number for one whole.
+#:
+#: .. versionadded:: 0.7.0
+PerWhole = float | Callable[[ParserBase], float]
+
+#: How a probe moves the positions of a frame before binning them. The
+#: LAMMPS dump reader of MDAnalysis 2.4 and later translates every frame so
+#: that the lower box bounds sit at the origin, which undoes the ``fix
+#: recenter`` of the studies' LAMMPS scripts. ``'half'`` subtracts half the
+#: box lengths of the frame, which restores the LAMMPS frame exactly;
+#: ``'none'`` keeps the reader's frame; a triple is subtracted as given, so
+#: the research code's shift by half the parser's ``(dcyl, dcyl, lcyl)`` or
+#: ``lcube`` is reproducible.
+#:
+#: .. versionadded:: 0.7.0
+RecentreT = Literal['none', 'half'] | tuple[float, float, float]
 
 # The parser attribute that holds the bulk volume fraction of crowders, which
 # the organizer adds and rounds into 'phi_bulk_c_round'.
@@ -249,6 +269,14 @@ class BinderSpec:
         return MappingProxyType({
             attr: f"{stem}{labels[which]}"
             for attr, (stem, which) in BINDER_SERIES.items()})
+
+
+def _is_per_whole(value: object) -> bool:
+    """Whether `value` is a finite positive number or a callable."""
+    if callable(value):
+        return True
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value) and value > 0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -473,10 +501,42 @@ class ProbeSpec:
         ``AtomGroup.asphericity`` and ``AtomGroup.shape_parameter``:
         ``False`` for a cylinder, which is periodic along its axis only, and
         ``True`` for a periodic cube.
-    bin_sizes : mapping of (:py:data:`DirectionT` -> float), default {}
+    bin_sizes : mapping of (:py:data:`DirectionT` -> :py:data:`PerWhole`), \
+            default {}
         The bin size of the histogram along each direction, in units of the
-        monomer diameter, each finite and positive. Stored read-only. Left
-        empty by a study whose histograms are not yet probed.
+        monomer diameter: a finite positive number, or a function of a
+        whole's parser returning one, for a size that scales with a whole's
+        particle diameters. Stored read-only. Left empty by a study whose
+        histograms are not probed.
+    histogram_species : tuple of :py:data:`EntityT`, default ()
+        The labels in `selections` of the species whose spatial histograms
+        :class:`polyphys.probe.SpatialHistograms` collects, each once. Left
+        empty by a study whose histograms are not probed; otherwise
+        `bin_sizes` and `block_frames` are required.
+    block_frames : int or None, default None
+        The block length :math:`b` of the two-dimensional maps: the number of
+        consecutive frames whose maps are averaged into one stored map, a
+        positive integer. Required with `histogram_species`.
+    recentre : :py:data:`RecentreT`, default 'half'
+        How the positions of a frame are moved before they are binned:
+        ``'half'`` subtracts half the frame's box lengths, which restores the
+        LAMMPS frame the dump reader translated; ``'none'`` keeps the reader's
+        frame; a triple ``(dx, dy, dz)`` is subtracted as given. Stored as a
+        tuple of floats when given as a triple.
+    pair_species : :py:data:`EntityT` or None, default None
+        The label in `selections` of the species whose pair distances and
+        contacts :class:`polyphys.probe.PairDistances` collects, such as
+        ``'Foci'``; ``None`` when the study has no such species. Requires
+        `contact_cutoff`.
+    contact_cutoff : :py:data:`PerWhole` or None, default None
+        The centre-to-centre distance, in units of the monomer diameter, at
+        or below which two particles of `pair_species` are in direct
+        contact: a finite positive number or a function of a whole's parser,
+        such as the sum of the large-monomer and crowder diameters.
+    minimum_image : bool, default True
+        Whether the pair distances use the minimum-image convention along
+        the periodic directions of the geometry: the axis of a cylinder, all
+        three directions of a cube.
     binders : BinderSpec, optional
         How the binding of the study's two-patch binders is counted, for a
         study with binders such as the H-NS ones; ``None`` for a study
@@ -505,10 +565,16 @@ class ProbeSpec:
         is not in :data:`CHAIN_SIZE_OBSERVABLES`; if a scalar observable
         with the chain label is not one of the project's
         ``tseries_properties``; if a bin size is keyed by an unknown
-        direction or is not a finite positive number; or if the patches of
-        `binders` are not a label in `selections` other than `chain`, or
-        one of its time series is not among the project's
-        ``tseries_properties``.
+        direction or is neither a finite positive number nor callable; if a
+        histogram species is not a label in `selections` or repeats, or is
+        given without `bin_sizes` or `block_frames`; if `block_frames` is
+        not a positive integer; if `recentre` is neither ``'none'``,
+        ``'half'``, nor a triple of finite numbers; if `pair_species` is not
+        a label in `selections` or is given without `contact_cutoff`; if
+        `contact_cutoff` is neither a finite positive number nor callable;
+        or if the patches of `binders` are not a label in `selections`
+        other than `chain`, or one of its time series is not among the
+        project's ``tseries_properties``.
 
     Examples
     --------
@@ -531,6 +597,22 @@ class ProbeSpec:
     ...
     ValueError: SumRuleCyl: 'observables' names ['shapeTMon'], which ...
 
+    A study whose histograms are probed names the species, the bin sizes,
+    which may depend on the whole, and the block length; the bin sizes are
+    resolved for one whole from its parser:
+
+    >>> probe = ProbeSpec(
+    ...     project=project, selections={'Mon': 'resid 1', 'Crd': 'resid 0'},
+    ...     chain='Mon', observables=('gyrT',), unwrap=False,
+    ...     bin_sizes={'r': lambda info: 0.1 * min(info.dmon, info.dcrowd),
+    ...                'z': 0.5},
+    ...     histogram_species=('Mon', 'Crd'), block_frames=100)
+    >>> whole = SumRuleCyl(
+    ...     'N200epsilon5r10.5lz50sig0.5nc100dt0.005bdump1adump1ens1',
+    ...     'whole', 'all')
+    >>> probe.resolve(probe.bin_sizes['r'], whole), probe.recentre
+    (0.05, 'half')
+
     A study with binders adds a :class:`BinderSpec`:
 
     >>> hns = ProjectSpec(
@@ -550,17 +632,23 @@ class ProbeSpec:
 
     Notes
     -----
-    Construction costs :math:`O(s + o + b)` for :math:`s` selections,
-    :math:`o` observables, and :math:`b` bin sizes; every derived attribute
-    is :math:`O(1)`.
+    Construction costs :math:`O(s + o + b + h)` for :math:`s` selections,
+    :math:`o` observables, :math:`b` bin sizes, and :math:`h` histogram
+    species; every derived attribute is :math:`O(1)`.
     """
     project: ProjectSpec
     selections: Mapping[EntityT, str] = field(hash=False)
     chain: EntityT
     observables: tuple[PropertyT, ...]
     unwrap: bool
-    bin_sizes: Mapping[DirectionT, float] = field(
+    bin_sizes: Mapping[DirectionT, PerWhole] = field(
         default_factory=dict, hash=False)
+    histogram_species: tuple[EntityT, ...] = ()
+    block_frames: int | None = None
+    recentre: RecentreT = 'half'
+    pair_species: EntityT | None = None
+    contact_cutoff: PerWhole | None = None
+    minimum_image: bool = True
     binders: BinderSpec | None = None
 
     def __post_init__(self) -> None:
@@ -618,11 +706,61 @@ class ProbeSpec:
                 raise ValueError(
                     f"{name}: 'bin_sizes' has the direction {direction!r}; "
                     f"each must be one of {list(directions)}.")
-            if not (isinstance(size, (int, float))
-                    and math.isfinite(size) and size > 0):
+            if not _is_per_whole(size):
                 raise ValueError(
                     f"{name}: the bin size along {direction!r} must be a "
-                    f"finite positive number, not {size!r}.")
+                    f"finite positive number or a callable, not {size!r}.")
+        object.__setattr__(self, 'histogram_species',
+                           tuple(self.histogram_species))
+        unselected = [species for species in self.histogram_species
+                      if species not in self.selections]
+        if unselected:
+            raise ValueError(
+                f"{name}: 'histogram_species' names {unselected}, which are "
+                f"not labels in 'selections' {list(self.selections)}.")
+        if len(set(self.histogram_species)) != len(self.histogram_species):
+            raise ValueError(
+                f"{name}: 'histogram_species' repeats a label: "
+                f"{list(self.histogram_species)}.")
+        if self.histogram_species and not self.bin_sizes:
+            raise ValueError(
+                f"{name}: 'histogram_species' needs 'bin_sizes'.")
+        if self.histogram_species and self.block_frames is None:
+            raise ValueError(
+                f"{name}: 'histogram_species' needs 'block_frames'.")
+        if self.block_frames is not None and not (
+                isinstance(self.block_frames, int)
+                and not isinstance(self.block_frames, bool)
+                and self.block_frames > 0):
+            raise ValueError(
+                f"{name}: 'block_frames' must be a positive integer, not "
+                f"{self.block_frames!r}.")
+        if self.recentre not in ('none', 'half'):
+            shift = self.recentre
+            if not (isinstance(shift, (tuple, list)) and len(shift) == 3
+                    and all(isinstance(value, (int, float))
+                            and not isinstance(value, bool)
+                            and math.isfinite(value) for value in shift)):
+                raise ValueError(
+                    f"{name}: 'recentre' must be 'none', 'half', or a triple "
+                    f"of finite numbers, not {shift!r}.")
+            object.__setattr__(self, 'recentre',
+                               tuple(float(value) for value in shift))
+        if self.pair_species is not None:
+            if self.pair_species not in self.selections:
+                raise ValueError(
+                    f"{name}: 'pair_species' must be a label in "
+                    f"'selections', one of {list(self.selections)}, not "
+                    f"{self.pair_species!r}.")
+            if self.contact_cutoff is None:
+                raise ValueError(
+                    f"{name}: 'pair_species' needs 'contact_cutoff'.")
+        if self.contact_cutoff is not None and not _is_per_whole(
+                self.contact_cutoff):
+            raise ValueError(
+                f"{name}: 'contact_cutoff' must be a finite positive number "
+                f"or a callable, not {self.contact_cutoff!r}.")
+
         if self.binders is not None:
             if self.binders.patches not in self.selections \
                     or self.binders.patches == self.chain:
@@ -638,6 +776,57 @@ class ProbeSpec:
                     f"{name}: 'binders' names the series {unlisted}, which "
                     f"are not among the project's 'tseries_properties' "
                     f"{list(self.project.tseries_properties)}.")
+
+    @staticmethod
+    def resolve(value: PerWhole, parser: ParserBase) -> float:
+        """
+        The number a :py:data:`PerWhole` quantity takes for one whole.
+
+        Parameters
+        ----------
+        value : :py:data:`PerWhole`
+            A number, returned as a float, or a function of `parser`.
+        parser : ParserBase
+            The whole's parser, passed to a callable `value`.
+
+        Returns
+        -------
+        float
+            The number for this whole.
+
+        Raises
+        ------
+        ValueError
+            If a callable `value` returns anything but a finite positive
+            number.
+
+        Examples
+        --------
+        >>> from polyphys.manage.parser import SumRuleCyl
+        >>> whole = SumRuleCyl(
+        ...     'N200epsilon5r10.5lz50sig0.5nc100dt0.005bdump1adump1ens1',
+        ...     'whole', 'all')
+        >>> ProbeSpec.resolve(0.5, whole)
+        0.5
+        >>> ProbeSpec.resolve(lambda info: info.dmon + info.dcrowd, whole)
+        1.5
+
+        Notes
+        -----
+        :math:`O(1)` beyond the cost of the callable.
+
+        .. versionadded:: 0.7.0
+        """
+        if callable(value):
+            result = value(parser)
+            if not (isinstance(result, (int, float))
+                    and not isinstance(result, bool)
+                    and math.isfinite(result) and result > 0):
+                raise ValueError(
+                    f"A per-whole quantity of {parser.name} must resolve to "
+                    f"a finite positive number, not {result!r}.")
+            return float(result)
+        return float(value)
 
     @property
     def name(self) -> str:

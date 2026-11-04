@@ -23,7 +23,7 @@ from polyphys.analyze.pipeline import (
     matrix_tseries,
     tseries,
 )
-from polyphys.manage.parser import HnsCub
+from polyphys.manage.parser import HnsCub, ParserBase
 from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
@@ -41,9 +41,29 @@ SPEC = ProjectSpec(
                         'nDangleTHnsCore', 'nCisTHnsCore', 'nTransTHnsCore'),
 )
 
+
+def _r_bin(info: ParserBase) -> float:
+    """A tenth of the smallest of the monomer, H-NS core, and crowder
+    diameters: the bin size along r (SciOps ``hns_cub_all``,
+    ``bin_edges``)."""
+    return 0.1 * min(float(getattr(info, 'dmon')),
+                     float(getattr(info, 'dhns')),
+                     float(getattr(info, 'dcrowd')))
+
+
+def _l_bin(info: ParserBase) -> float:
+    """Half the smaller of the monomer and crowder diameters: the bin size
+    along x, y, and z (SciOps ``hns_cub_all``, ``bin_edges``, ``lEdge``)."""
+    return 0.5 * min(float(getattr(info, 'dmon')),
+                     float(getattr(info, 'dcrowd')))
+
+
 # The probe of the polymer group: the selections, the chain-size observables
 # of its per-frame loop, and the unwrap convention of its asphericity (SciOps
-# ``sciops/probe/prober.py``, lines 3507-3555), and the binding of the H-NS
+# ``sciops/probe/prober.py``, lines 3507-3555); the histograms of the all
+# group (``hns_cub_all``, lines 3781-3830): its selections, bin sizes, and
+# species, the H-NS cores as 'Hns', with the block length and the recentring
+# the maintainer's decisions of 2026-11-04;
 # patches (lines 3520-3616, ``cis_threshold = 4`` and the distance matrices
 # saved as ``distMatTMonHnsPatch``). The cutoff is the published binding
 # criterion, r <= r_cut,mp = 0.685 (thesis, Section 5.3 and Table 5.1),
@@ -52,10 +72,15 @@ SPEC = ProjectSpec(
 # comparison; the probe guide, "Choosing the cutoff", gives both.
 PROBE = ProbeSpec(
     project=SPEC,
-    selections={'Mon': 'resid 1', 'HnsPatch': 'type 2'},
+    selections={'Mon': 'resid 1', 'HnsPatch': 'type 2', 'Crd': 'resid 0',
+                'Hns': 'type 3'},
     chain='Mon',
     observables=('asphericityT', 'gyrT', 'shapeT', 'principalT'),
     unwrap=True,
+    bin_sizes={'r': _r_bin, 'x': _l_bin, 'y': _l_bin, 'z': _l_bin},
+    histogram_species=('Crd', 'Mon', 'Hns'),
+    block_frames=100,
+    recentre='half',
     binders=BinderSpec(patches='HnsPatch', binders='HnsCore', cutoff=0.685,
                        inclusive=True, cis_threshold=4,
                        store_distances=True),
