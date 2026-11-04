@@ -49,3 +49,5 @@ Needs MDAnalysis, which the ``mda`` extra installs.
 
    polyphys.probe.core
    polyphys.probe.chain_size
+   polyphys.probe.histograms
+   polyphys.probe.pairs
