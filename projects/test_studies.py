@@ -188,9 +188,13 @@ def test_study_species_sizes(module: str,
 
 
 @pytest.mark.parametrize('module, expected', [
-    # SciOps api.py, 'time_varying_props', in its order.
+    # SciOps api.py, 'time_varying_props', in its order. TransFociCyl adds
+    # 'transSizeTMon', which the registry omitted although the research
+    # probe writes it and the analysis table reads it (maintainer,
+    # 2026-11-03).
     pytest.param('trans_foci_cyl',
-                 ('asphericityTMon', 'fsdTMon', 'gyrTMon', 'shapeTMon'),
+                 ('asphericityTMon', 'fsdTMon', 'gyrTMon', 'shapeTMon',
+                  'transSizeTMon'),
                  id='TransFociCyl'),
     pytest.param('trans_foci_cub',
                  ('asphericityTMon', 'gyrTMon', 'shapeTMon'),
@@ -395,7 +399,8 @@ def test_study_probe_selections(module: str,
     # loop, in the order of the study's time series, with the principal
     # axes last.
     pytest.param('trans_foci_cyl',
-                 ('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'principalT'),
+                 ('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'transSizeT',
+                  'principalT'),
                  id='TransFociCyl'),
     pytest.param('trans_foci_cub',
                  ('asphericityT', 'gyrT', 'shapeT', 'principalT'),

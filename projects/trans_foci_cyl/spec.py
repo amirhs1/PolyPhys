@@ -37,8 +37,11 @@ SPEC = ProjectSpec(
                     'phi_bulk_c'),
     species_sizes={'Mon': 'dmon_small', 'Crd': 'dcrowd',
                    'Foci': 'dmon_large'},
+    # 'transSizeTMon' is not in the research registry's list, although the
+    # research probe writes it and the analysis table below reads it; the
+    # maintainer added it on 2026-11-03.
     tseries_properties=('asphericityTMon', 'fsdTMon', 'gyrTMon',
-                        'shapeTMon'),
+                        'shapeTMon', 'transSizeTMon'),
 )
 
 # The probe of the polymer group: the selections, the chain-size observables
@@ -48,7 +51,8 @@ PROBE = ProbeSpec(
     project=SPEC,
     selections={'Mon': 'resid 1', 'Foci': 'type 2'},
     chain='Mon',
-    observables=('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'principalT'),
+    observables=('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'transSizeT',
+                 'principalT'),
     unwrap=False,
 )
 
