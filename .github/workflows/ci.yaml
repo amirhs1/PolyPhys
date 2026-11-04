@@ -113,6 +113,37 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: true
 
+  test-mda:
+    name: Test with MDAnalysis, Python 3.14
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install project with dev and mda dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev,mda]
+
+      - name: Run tests with coverage
+        # The probe layer needs MDAnalysis, so only this job runs its tests
+        # and doctests; the matrix job on 3.14 uploads the coverage report,
+        # so this job keeps its report in the log.
+        run: |
+          pytest polyphys README.md projects \
+            --cov=polyphys \
+            --cov-report=term-missing \
+            --doctest-modules \
+            --doctest-glob="README.md"
+
   docs:
     name: Build docs
     runs-on: ubuntu-24.04
