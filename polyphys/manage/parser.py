@@ -1226,6 +1226,10 @@ class TwoMonDepCub(ParserBase):
     ``ensemble_long``. The lineage names are documented in
     :class:`ParserBase`.
 
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
+
     Examples
     --------
     >>> artifact = TwoMonDepCub('nm2am5.0ac1.0nc1000', 'space', 'bug')
@@ -1315,7 +1319,9 @@ class SumRuleCyl(ParserBase):
         (keyword ``r``) in the long names; :math:`D` itself (keyword ``D``)
         in the short ones.
     epsilon : float
-        Strength of the wall-particle LJ interaction; keyword ``epsilon``.
+        Strength of the LJ interaction between the cylindrical wall and the
+        monomers; keyword ``epsilon``. The wall-crowder strength is fixed at
+        1.
     dt : float
         Simulation time step; keyword ``dt``.
     bdump : int
@@ -1350,6 +1356,10 @@ class SumRuleCyl(ParserBase):
     the bulk number density and volume fraction of that species both use
     the effective volume :math:`V_{\\mathrm{eff},\\alpha} = \\pi Z
     D_{\\mathrm{eff},\\alpha}^2 / 4`.
+
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
 
     Examples
     --------
@@ -1481,6 +1491,10 @@ class SumRuleCubHeteroRing(ParserBase):
     The mass density is uniform across all species, so a species whose mass
     is not in the name has the mass :math:`m_i = d_i^3`, where :math:`d_i` is
     its diameter.
+
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
 
     Examples
     --------
@@ -1621,6 +1635,10 @@ class SumRuleCubHeteroLinear(ParserBase):
     The mass density is uniform across all species, so a species whose mass
     is not in the name has the mass :math:`m_i = d_i^3`, where :math:`d_i` is
     its diameter.
+
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
 
     Examples
     --------
@@ -1783,6 +1801,10 @@ class SumRuleCubHeteroRingBiDisperse(ParserBase):
     of strength :math:`\\epsilon = 1`, the energy unit, and there is no wall:
     the project's LAMMPS input sets :math:`\\epsilon = 1` for all ten pairs of
     its four particle types.
+
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
 
     Examples
     --------
@@ -1963,6 +1985,10 @@ class TransFociCyl(ParserBase):
       the effective volume :math:`V_{\\mathrm{eff},\\alpha} = \\pi Z
       D_{\\mathrm{eff},\\alpha}^2 / 4`.
 
+    - The simulation design values that the name does not carry, such as
+      the interaction strengths, the bonds, and the thermostat, are
+      listed in :doc:`/design`.
+
     Examples
     --------
     >>> artifact = TransFociCyl(
@@ -2110,6 +2136,10 @@ class TransFociCub(ParserBase):
     is not in the name has the mass :math:`m_i = d_i^3`, where :math:`d_i` is
     its diameter.
 
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
+
     Examples
     --------
     >>> artifact = TransFociCub(
@@ -2218,8 +2248,10 @@ class HnsCub(ParserBase):
         Strength of the attractive LJ interaction between the H-NS poles and
         the monomers, fixed at 29; not in the name.
     eps_hc : float
-        Strength of the attractive LJ interaction between the H-NS cores and
-        the crowders; keyword ``epshc``.
+        Value of the keyword ``epshc``, named for the strength of the LJ
+        interaction between the H-NS cores and the crowders. The project's
+        LAMMPS inputs do not read it: they fix that strength at 1 with a
+        purely repulsive cutoff.
     lcube : float
         Side of the cube, :math:`L = 2 l`, from the half-side :math:`l`
         (keyword ``l``).
@@ -2248,6 +2280,10 @@ class HnsCub(ParserBase):
     The bulk values exist only at ``segment``, ``whole``, and
     ``ensemble_long``. The lineage names are documented in
     :class:`ParserBase`.
+
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
 
     Examples
     --------
@@ -2347,8 +2383,10 @@ class HnsCyl(ParserBase):
         Strength of the attractive LJ interaction between the H-NS poles and
         the monomers, fixed at 29; not in the name.
     eps_hc : float
-        Strength of the attractive LJ interaction between the H-NS cores and
-        the crowders; keyword ``epshc``.
+        Value of the keyword ``epshc``, named for the strength of the LJ
+        interaction between the H-NS cores and the crowders. The project's
+        LAMMPS inputs do not read it: they fix that strength at 1 with a
+        purely repulsive cutoff.
     lcyl : float
         Length of the cylinder, :math:`Z = 2 l_z`, from the half-length
         :math:`l_z` (keyword ``lz``).
@@ -2392,6 +2430,10 @@ class HnsCyl(ParserBase):
     the bulk number density and volume fraction of that species both use
     the effective volume :math:`V_{\\mathrm{eff},\\alpha} = \\pi Z
     D_{\\mathrm{eff},\\alpha}^2 / 4`.
+
+    The simulation design values that the name does not carry, such as
+    the interaction strengths, the bonds, and the thermostat, are listed
+    in :doc:`/design`.
 
     Examples
     --------
