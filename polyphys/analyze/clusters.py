@@ -7,8 +7,10 @@
 The :mod:`polyphys.analyze.clusters` module turns the positions of a group of
 particles in one frame into contact and cluster statistics, and the contacts
 between a polymer and two-patch binding proteins into binding statistics.
-Every routine is a pure numpy or scipy kernel on one frame; reading frames,
-choosing the particles, and accumulating over frames are the caller's work.
+Every routine is a pure numpy or scipy kernel on one frame, except
+:func:`threshold_sweep`, which recounts saved frames over a grid of cutoffs;
+reading frames, choosing the particles, and accumulating over frames are
+otherwise the caller's work.
 
 Notation
 ========
@@ -80,8 +82,11 @@ Binding:
 :func:`enforce_single_patch_contact`, :func:`monomer_binder_contacts`,
 :func:`split_binders`, and :func:`binder_contacts` reshape a monomer-patch
 contact matrix; :func:`binding_statistics` counts free, dangling, bridging,
-cis, and trans binders in one frame as a :class:`FrameBinding`, and
-:class:`BindingStats` accumulates frames and the loop-length histogram.
+cis, and trans binders in one frame as a :class:`FrameBinding`,
+:class:`BindingStats` accumulates frames and the loop-length histogram, and
+:func:`threshold_sweep` recounts the saved distance matrices of a whole at
+every cutoff and cis threshold of a grid, the research code's
+choice-of-threshold sweep.
 
 Conventions
 ===========
@@ -120,10 +125,11 @@ References
 """
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 from scipy.sparse import csr_array
 from scipy.sparse.csgraph import connected_components
 
@@ -146,10 +152,19 @@ __all__ = [
     'pair_distances',
     'pair_separation_density',
     'split_binders',
+    'threshold_sweep',
 ]
 
 Topology = Literal['linear', 'ring']
 """The polymer topologies the genomic distance is defined for."""
+
+# The eight counts of a FrameBinding, in the order BindingStats.as_dict and
+# threshold_sweep report them.
+_BINDING_COUNTS = (
+    'n_patch_monomer_contacts', 'n_patches_engaged',
+    'n_patches_free', 'n_binders_free', 'n_binders_dangling',
+    'n_binders_bridging', 'n_pairs_cis', 'n_pairs_trans',
+)
 
 
 def _as_contacts(matrix: npt.ArrayLike, name: str) -> npt.NDArray[np.bool_]:
@@ -1499,15 +1514,201 @@ class BindingStats:
             the :class:`FrameBinding` attribute name; `bridged_pairs` is not
             included.
         """
-        names = (
-            'n_patch_monomer_contacts', 'n_patches_engaged',
-            'n_patches_free', 'n_binders_free', 'n_binders_dangling',
-            'n_binders_bridging', 'n_pairs_cis', 'n_pairs_trans',
-        )
         return {
             name: np.array(
                 [getattr(frame, name) for frame in self.frames],
                 dtype=np.int64,
             )
-            for name in names
+            for name in _BINDING_COUNTS
         }
+
+
+def threshold_sweep(
+    distances: npt.ArrayLike,
+    cutoffs: Sequence[float] | npt.ArrayLike,
+    cis_thresholds: Sequence[int],
+    topology: Topology,
+    *,
+    inclusive: bool,
+) -> tuple[pd.DataFrame, npt.NDArray[np.float64]]:
+    """
+    Recount the binding statistics of saved distance matrices at every
+    cutoff and cis threshold of a grid.
+
+    Parameters
+    ----------
+    distances : array_like
+        The monomer-to-patch distance matrices of one whole, shape
+        ``(n_frames, n_monomers, n_patches)``, in the caller's length unit,
+        with the monomers in backbone order along the second axis and the
+        two patches of binder ``k`` at ``2k`` and ``2k + 1`` along the
+        third; the ``distances`` that
+        :class:`~polyphys.probe.binders.BinderStatistics` stores.
+    cutoffs : sequence of float
+        The contact distances :math:`r_c` to sweep, in the same unit, each
+        positive; non-empty. Swept in the order given.
+    cis_thresholds : sequence of int
+        The largest genomic distances, in bonds, of a cis bridge to sweep;
+        each non-negative, non-empty. Swept in the order given, inside each
+        cutoff.
+    topology : {'linear', 'ring'}
+        Whether the chain is open or closed.
+    inclusive : bool
+        Count a pair at exactly the cutoff as a contact (``dist <= cutoff``)
+        or not (``dist < cutoff``), as :func:`find_direct_contacts`. Keyword
+        only, with no default, because the comparison decides whether the
+        sweep reproduces stored counts: a sweep agrees with the series that
+        :class:`~polyphys.probe.binders.BinderStatistics` saved only at the
+        spec's cutoff, cis threshold, and comparison.
+
+    Returns
+    -------
+    counts : pandas.DataFrame
+        One row per ``(cutoff, cis_threshold)`` pair, cutoffs outer and cis
+        thresholds inner, in the order given, with no row repeated. Columns:
+        ``cutoff`` (float64), ``cis_threshold`` (int64), and the eight
+        counts of :class:`FrameBinding`, each the mean over the frames
+        (float64), under the attribute names ``n_patch_monomer_contacts``,
+        ``n_patches_engaged``, ``n_patches_free``, ``n_binders_free``,
+        ``n_binders_dangling``, ``n_binders_bridging``, ``n_pairs_cis``, and
+        ``n_pairs_trans``.
+    loop_length_histogram : numpy.ndarray
+        Shape ``(n_rows, n_lengths)``, ``float64``, one row per row of
+        `counts`: ``[k, d]`` is the mean over the frames of the number of
+        distinct bridged pairs at a genomic distance of ``d`` bonds at the
+        cutoff of row ``k``. ``n_lengths`` is ``n_monomers`` on a linear
+        chain and ``n_monomers // 2 + 1`` on a ring, as
+        :class:`BindingStats`; ``[:, 0]`` is always 0. The cis threshold
+        does not enter the histogram, so the rows of one cutoff are equal.
+
+    Raises
+    ------
+    ValueError
+        If `distances` is not three-dimensional or has no frames, if
+        `cutoffs` or `cis_thresholds` is empty, if a cutoff is not positive
+        or a cis threshold is negative, if the number of patches is odd, or
+        if `topology` is invalid.
+
+    Notes
+    -----
+    This is the research code's choice-of-threshold sweep on the saved
+    ``distMatTMonHnsPatch`` matrices, with its two tables, the
+    frame-averaged counts and the frame-averaged loop-length histogram,
+    returned side by side rather than written with repeated rows. The
+    research sweep compared strictly, while the H-NS study specs count with
+    ``inclusive=True`` at 0.685; the strict sweep's row at 0.685 therefore
+    omits the pairs at exactly the cutoff and does not match the stored
+    series. The research grid, ``numpy.arange(0.535, 0.685 + 0.01, 0.01)``,
+    also ran one step past its end to 0.695; build a grid with a count,
+    ``0.535 + 0.01 * numpy.arange(16)``, to stop at 0.685.
+
+    Every count and the histogram are means over the frames, which treats
+    the frames as exchangeable; they are not uncertainties. An error bar on
+    a swept count needs the per-frame series of :class:`BindingStats` and
+    an autocorrelation-aware estimate such as
+    :func:`polyphys.analyze.stats.block_average`.
+
+    The contacts and the bridged pairs of a frame depend on the cutoff only;
+    the cis threshold splits the bridged pairs into cis and trans. Each
+    frame is therefore counted once per cutoff, with
+    :func:`find_direct_contacts` and :func:`binding_statistics`, and its
+    bridged pairs are split once per cis threshold. With :math:`n_c`
+    cutoffs, :math:`n_t` cis thresholds, :math:`n_f` frames,
+    :math:`N_m` monomers, :math:`N_p` patches, and :math:`N_b = N_p / 2`
+    binders, time is :math:`O(n_c n_f (N_m N_p + N_b \\log N_b) + n_c n_t
+    n_f N_b)` and space, beyond the input, is :math:`O(N_m N_p + n_c n_t
+    n_\\mathrm{lengths})`.
+
+    Examples
+    --------
+    A linear chain of three monomers and one binder, in two frames. In the
+    first frame, patch 0 sits 0.5 from monomer 0 and patch 1 sits 0.6 from
+    monomer 2; in the second, patch 1 is far from every monomer. Below 0.6
+    the binder dangles in both frames; at 0.65 it bridges monomers 0 and 2,
+    two bonds apart, in the first frame, a trans bridge for a cis threshold
+    of 1.
+
+    >>> import numpy as np
+    >>> from polyphys.analyze.clusters import threshold_sweep
+    >>> distances = np.full((2, 3, 2), 2.0)
+    >>> distances[0, 0, 0] = distances[1, 0, 0] = 0.5
+    >>> distances[0, 2, 1] = 0.6
+    >>> counts, loops = threshold_sweep(
+    ...     distances, [0.55, 0.65], [1], 'linear', inclusive=True)
+    >>> counts[['cutoff', 'n_binders_dangling', 'n_binders_bridging',
+    ...         'n_pairs_trans']]
+       cutoff  n_binders_dangling  n_binders_bridging  n_pairs_trans
+    0    0.55                 1.0                 0.0            0.0
+    1    0.65                 0.5                 0.5            0.5
+    >>> loops
+    array([[0. , 0. , 0. ],
+           [0. , 0. , 0.5]])
+
+    .. versionadded:: 0.7.0
+    """
+    _check_topology(topology)
+    matrices = np.asarray(distances, dtype=np.float64)
+    if matrices.ndim != 3:
+        raise ValueError(
+            'distances must have shape (n_frames, n_monomers, n_patches);'
+            f' got {matrices.ndim} dimension(s).'
+        )
+    n_frames, n_monomers, n_patches = matrices.shape
+    if n_frames == 0:
+        raise ValueError('distances must hold at least one frame.')
+    if n_patches % 2 != 0:
+        raise ValueError(
+            'distances must have two patches per binder; got'
+            f' {n_patches} patches.'
+        )
+    cutoff_grid = np.asarray(cutoffs, dtype=np.float64).reshape(-1)
+    if cutoff_grid.size == 0:
+        raise ValueError('cutoffs must not be empty.')
+    if not np.all(cutoff_grid > 0):
+        raise ValueError(
+            f'every cutoff must be positive; got {cutoff_grid.tolist()}.'
+        )
+    cis_grid = np.asarray(cis_thresholds, dtype=np.int64).reshape(-1)
+    if cis_grid.size == 0:
+        raise ValueError('cis_thresholds must not be empty.')
+    if not np.all(cis_grid >= 0):
+        raise ValueError(
+            'every cis threshold must be non-negative; got'
+            f' {cis_grid.tolist()}.'
+        )
+    if topology == 'ring':
+        n_lengths = n_monomers // 2 + 1
+    else:
+        n_lengths = n_monomers
+    n_rows = cutoff_grid.size * cis_grid.size
+    means = np.zeros((n_rows, len(_BINDING_COUNTS)), dtype=np.float64)
+    histogram = np.zeros((n_rows, n_lengths), dtype=np.float64)
+    # The six counts that do not depend on the cis threshold, then the
+    # cis and trans pair counts, in the order of _BINDING_COUNTS.
+    n_fixed = len(_BINDING_COUNTS) - 2
+    for i, cutoff in enumerate(cutoff_grid):
+        fixed = np.zeros(n_fixed, dtype=np.int64)
+        n_cis = np.zeros(cis_grid.size, dtype=np.int64)
+        n_pairs = 0
+        loops = np.zeros(n_lengths, dtype=np.int64)
+        for matrix in matrices:
+            contacts = find_direct_contacts(matrix, cutoff, inclusive)
+            # Any cis threshold gives the same contacts and bridged pairs;
+            # 0 makes every pair trans, and the split is redone below.
+            frame = binding_statistics(contacts, topology, 0)
+            fixed += [getattr(frame, name)
+                      for name in _BINDING_COUNTS[:n_fixed]]
+            distance = frame.bridged_pairs[:, 2]
+            n_pairs += distance.size
+            n_cis += np.count_nonzero(
+                distance[None, :] <= cis_grid[:, None], axis=1)
+            loops += np.bincount(distance, minlength=n_lengths)
+        rows = slice(i * cis_grid.size, (i + 1) * cis_grid.size)
+        means[rows, :n_fixed] = fixed / n_frames
+        means[rows, n_fixed] = n_cis / n_frames
+        means[rows, n_fixed + 1] = (n_pairs - n_cis) / n_frames
+        histogram[rows] = loops / n_frames
+    counts = pd.DataFrame(means, columns=list(_BINDING_COUNTS))
+    counts.insert(0, 'cis_threshold', np.tile(cis_grid, cutoff_grid.size))
+    counts.insert(0, 'cutoff', np.repeat(cutoff_grid, cis_grid.size))
+    return counts, histogram

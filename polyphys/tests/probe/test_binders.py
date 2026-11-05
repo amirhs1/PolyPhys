@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
+from polyphys.analyze.clusters import threshold_sweep
 from polyphys.manage.parser import HnsCub, HnsCyl, ParserBase
 from polyphys.manage.projects import (
     BINDER_SERIES,
@@ -347,6 +348,30 @@ def test_parallel_run_matches_the_serial_run(make_binder_universe,
     assert parallel.keys == serial.keys
     for key in serial.keys:
         assert_array_equal(parallel.results[key], serial.results[key])
+
+
+def test_stored_distances_swept_at_the_spec_reproduce_the_series(
+        make_binder_universe, binding_frames):
+    """The threshold sweep of the stored matrices at the run's cutoff, cis
+    threshold, and comparison gives the frame means of the saved series and
+    histogram rows, so the sweep's grid point at the spec reproduces the
+    probe's counts."""
+    universe = make_binder_universe(*binding_frames)
+    analysis = BinderStatistics(
+        universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
+        cutoff=0.5, topology='ring', inclusive=True, cis_threshold=4,
+        store_distances=True).run()
+
+    counts, histogram = threshold_sweep(
+        analysis.results['distances'], [0.5], [4], 'ring', inclusive=True)
+
+    # Both sides are an integer sum over five frames divided by five.
+    for key in BINDER_SERIES:
+        assert counts.loc[0, key] == pytest.approx(
+            analysis.results[key].mean(), abs=1e-12)
+    assert_allclose(histogram[0],
+                    analysis.results['loop_length_histogram'].mean(axis=0),
+                    rtol=1e-12, atol=1e-12)
 
 
 def test_keys_list_the_series_then_the_histogram_then_the_distances(

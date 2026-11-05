@@ -533,6 +533,12 @@ with `inclusive=True`, as the maintainer decided on 2026-11-04. A study
 that must reproduce the research probe's artifacts exactly states
 `cutoff=0.661` with `inclusive=False` instead; the change is one spec edit.
 
+The sweep itself is {func}`~polyphys.analyze.clusters.threshold_sweep`,
+which takes the stored `distMatT<chain><patches>` array of a whole and a
+grid of cutoffs and cis thresholds; the clusters guide, "The threshold
+sweep", describes its tables and why its `inclusive` keyword has no
+default.
+
 ### Parallel runs and cost
 
 The class is marked parallelizable with the same three backends as

@@ -201,6 +201,62 @@ code's `foci_info` returned the number of monomers between a pair, one less;
 {func}`~polyphys.analyze.clusters.foci_pair_info` returns bonds and takes
 the topology, so a linear chain no longer gets the ring's shorter way round.
 
+### The threshold sweep
+
+The binding criterion has two parameters, the cutoff and the cis threshold,
+and the research code chose them with a sweep that PolyPhys reproduces:
+{func}`~polyphys.analyze.clusters.threshold_sweep` takes the float64
+monomer-to-patch distance matrices that
+{class}`~polyphys.probe.binders.BinderStatistics` stores when the study's
+`BinderSpec.store_distances` is on, shape `(n_frames, n_monomers,
+n_patches)`, and recounts every frame at every `(cutoff, cis_threshold)`
+pair of a grid:
+
+```python
+cutoffs = np.round(0.535 + 0.01 * np.arange(16), 3)   # 0.535, ..., 0.685
+counts, loops = clusters.threshold_sweep(
+    np.load('N200...ens1-nucleoid-distMatTMonHnsPatch.npy'),
+    cutoffs, [2, 4], 'ring', inclusive=True)
+counts            # one row per (cutoff, cis_threshold): eight frame means
+loops             # (n_rows, n_lengths): the frame-averaged loop-length histogram
+pd.concat([counts[['cutoff', 'cis_threshold']], pd.DataFrame(loops)], axis=1)
+```
+
+`counts` has the columns `cutoff`, `cis_threshold`, and the eight
+{class}`~polyphys.analyze.clusters.FrameBinding` attribute names, each a
+mean over the frames; its rows follow the cutoffs as given, with the cis
+thresholds inside each cutoff, and no row is repeated. `loops` has one row
+per row of `counts`, so the last line rebuilds the research
+`loopLengthHistMon` table; the cis threshold does not enter the histogram,
+so the rows of one cutoff are equal. Each frame is counted once per cutoff
+and its bridged pairs are split once per cis threshold, since only the
+cis-trans split depends on the threshold.
+
+Three things to know before comparing a sweep with other numbers:
+
+- `inclusive` is a required keyword. The research sweep compared strictly,
+  `dist < cutoff`, while the H-NS study specs count with `inclusive=True`
+  at 0.685 (the probe guide, "Choosing the cutoff"). A strict sweep's row
+  at 0.685 omits the pairs at exactly the cutoff, so only an inclusive sweep
+  reproduces the series that `BinderStatistics` saved, and only at the
+  spec's cutoff and cis threshold.
+- The research grid, `np.arange(0.535, 0.685 + 0.01, 0.01)`, ran one step
+  past its end to 0.695 because of float round-off, so its tables hold
+  seventeen cutoffs; the example above builds the grid from a count and
+  stops at 0.685.
+- The frame means treat the frames as exchangeable counts and are not
+  uncertainties. An error bar on a swept count needs the per-frame series
+  of {class}`~polyphys.analyze.clusters.BindingStats` and
+  {func}`~polyphys.analyze.stats.block_average`.
+
+The research script wrote two CSVs per whole,
+`*-choice_of_threshold-bindingStat.csv` and
+`*-choice_of_threshold-loopLengthHistMon.csv`, each rebuilt from lists that
+were never reset between cutoffs, so every table repeated the rows of the
+earlier cutoffs. The sweep returns each row once; the metadata columns the
+script added (`dcrowd`, `phi_c_bulk`, `nhns`, `whole`, `ensemble_id`) are
+the whole's parser attributes, which the caller attaches.
+
 ## References
 
 - E. M. Sevick, P. A. Monson, and J. M. Ottino, "Monte Carlo calculations of
