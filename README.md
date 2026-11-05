@@ -161,8 +161,10 @@ confinement with linear, ring, and bidisperse chain topologies.
 ## Documentation
 
 The full documentation, including the API reference, is at
-[polyphys.readthedocs.io](https://polyphys.readthedocs.io/en/latest/). To build
-it locally:
+[polyphys.readthedocs.io](https://polyphys.readthedocs.io/en/latest/). Its
+quickstart runs a synthetic sweep from segments to a `space` table, and its
+lineage, workflow, and studies pages explain the phases, the steps from
+trajectories to a space, and how to add a study. To build it locally:
 
 ```bash
 python -m pip install -e ".[docs]"
