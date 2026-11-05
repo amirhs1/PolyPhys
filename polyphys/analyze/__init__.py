@@ -15,7 +15,8 @@ Submodules
 - `stats`: Autocorrelation-aware uncertainty of a time average over
   correlated frames, by Flyvbjerg-Petersen block averaging.
 - `clusters`: Contact and cluster statistics of a particle group, pair
-  separation densities, and the binding statistics of two-patch binders.
+  separation densities, the binding statistics of two-patch binders, and
+  the binding-threshold sweep on saved distance matrices.
 - `correlations`: The autocorrelation function of a time series with
   Bartlett's band, decay-model fits, and the bond cosine correlation of a
   chain.

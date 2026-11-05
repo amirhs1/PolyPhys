@@ -15,8 +15,10 @@ R1. The Boolean transitive closure of an adjacency matrix, computed in
 R2. Brute force: a double loop over the definition, in
     :func:`_brute_force_distances` (minimum image, one pair at a time),
     :func:`_walk_genomic_distance` (steps along the backbone, each way round
-    a ring), and :func:`_binder_links_by_definition` (the same-monomer and
-    neighbouring-monomer rules, one pair of binders at a time).
+    a ring), :func:`_binder_links_by_definition` (the same-monomer and
+    neighbouring-monomer rules, one pair of binders at a time), and
+    :func:`_sweep_frame_by_frame` (the per-frame kernels called at one grid
+    point and one frame at a time, then averaged).
 
 R3. :func:`numpy.histogram`, an independent implementation of binning.
 
@@ -54,6 +56,7 @@ from polyphys.analyze.clusters import (
     pair_distances,
     pair_separation_density,
     split_binders,
+    threshold_sweep,
 )
 
 # Relative and absolute tolerance for results that differ only by float64
@@ -125,6 +128,21 @@ def _binder_links_by_definition(contacts: np.ndarray, topology: str):
     return linked
 
 
+def _sweep_frame_by_frame(
+    distances: np.ndarray, cutoff: float, cis_threshold: int,
+    topology: str, inclusive: bool,
+) -> tuple[dict, np.ndarray]:
+    """The frame means at one grid point, one frame at a time, from the
+    per-frame kernels: the eight counts and the loop-length histogram."""
+    n_monomers = distances.shape[1]
+    stats = BindingStats(n_monomers, topology, cis_threshold)
+    for matrix in distances:
+        stats.update(find_direct_contacts(matrix, cutoff, inclusive))
+    counts = {name: series.mean()
+              for name, series in stats.as_dict().items()}
+    return counts, stats.loop_length_histogram / len(distances)
+
+
 def _graph_from_edges(n_particles: int, edges: list) -> np.ndarray:
     """Symmetric adjacency matrix with a true diagonal from an edge list."""
     adjacency = np.eye(n_particles, dtype=bool)
@@ -160,6 +178,41 @@ def monomer_binder_matrices(draw) -> np.ndarray:
     seed = draw(st.integers(min_value=0, max_value=2**32 - 1))
     rng = np.random.default_rng(seed)
     return rng.random((n_monomers, n_binders)) < probability
+
+
+@st.composite
+def distance_stacks(draw) -> np.ndarray:
+    """Random monomer-to-patch distance matrices over a few frames, with
+    the distances spread across the sweep grid of 0.3 to 1.0."""
+    n_frames = draw(st.integers(min_value=1, max_value=4))
+    n_monomers = draw(st.integers(min_value=1, max_value=8))
+    n_binders = draw(st.integers(min_value=1, max_value=4))
+    seed = draw(st.integers(min_value=0, max_value=2**32 - 1))
+    rng = np.random.default_rng(seed)
+    return rng.uniform(0.3, 1.0, size=(n_frames, n_monomers, 2 * n_binders))
+
+
+@pytest.fixture
+def sweep_distances() -> np.ndarray:
+    """Two frames of four monomers and two binders on a linear chain, every
+    distance 2.0 but these; hand-counted in the sweep tests (H).
+
+    Frame 0: patch 0 is 0.5 from monomer 0, patch 1 is 0.6 from monomer 2,
+    patch 2 is exactly 0.685 from monomer 1, patch 3 is 0.7 from monomer 3.
+    Frame 1: patches 0 and 1 are 0.5 and 0.6 from monomer 0; binder 1 is far.
+    So at 0.55 binder 0 dangles in both frames; from 0.6 it bridges monomers
+    0 and 2 (two bonds) in frame 0 and holds monomer 0 with both patches in
+    frame 1, a bridge with no pair; binder 1 engages one patch only at an
+    inclusive 0.685.
+    """
+    distances = np.full((2, 4, 4), 2.0)
+    distances[0, 0, 0] = 0.5
+    distances[0, 2, 1] = 0.6
+    distances[0, 1, 2] = 0.685
+    distances[0, 3, 3] = 0.7
+    distances[1, 0, 0] = 0.5
+    distances[1, 0, 1] = 0.6
+    return distances
 
 
 @pytest.fixture
@@ -795,3 +848,177 @@ def test_monomer_binder_contacts_rejects_a_nonpositive_patch_count():
     """Zero patches per binder raises."""
     with pytest.raises(ValueError, match='patches_per_binder must be'):
         monomer_binder_contacts(np.zeros((2, 2)), 0)
+
+
+# ---------------------------------------------------------------------------
+# Threshold sweep
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ('cutoff', 'cis_threshold', 'expected'),
+    [
+        # (contacts, engaged, free patches, free, dangling, bridging,
+        #  cis, trans), each the mean over the two frames.
+        pytest.param(0.55, 1, (1.0, 1.0, 3.0, 1.0, 1.0, 0.0, 0.0, 0.0),
+                     id='dangling-below-0.6'),
+        pytest.param(0.65, 1, (2.0, 2.0, 2.0, 1.0, 0.0, 1.0, 0.0, 0.5),
+                     id='trans-at-cis-1'),
+        pytest.param(0.65, 2, (2.0, 2.0, 2.0, 1.0, 0.0, 1.0, 0.5, 0.0),
+                     id='cis-at-cis-2'),
+        pytest.param(0.685, 2, (2.5, 2.5, 1.5, 0.5, 0.5, 1.0, 0.5, 0.0),
+                     id='binder-1-engages-at-the-cutoff'),
+    ],
+)
+def test_threshold_sweep_counts_the_hand_frames(
+    sweep_distances, cutoff, cis_threshold, expected
+):
+    """Each row holds the frame means of the eight hand counts (H)."""
+    counts, _ = threshold_sweep(
+        sweep_distances, [0.55, 0.65, 0.685], [1, 2], 'linear',
+        inclusive=True)
+    row = counts[(counts['cutoff'] == cutoff)
+                 & (counts['cis_threshold'] == cis_threshold)]
+    assert len(row) == 1
+    # The means of small integers over two frames are exact in float64.
+    assert_allclose(row.iloc[0, 2:].to_numpy(dtype=float), expected,
+                    rtol=FLOAT64_RTOL, atol=FLOAT64_ATOL)
+
+
+@pytest.mark.parametrize(
+    ('inclusive', 'expected'),
+    [
+        pytest.param(True, 2.5, id='inclusive'),
+        pytest.param(False, 2.0, id='strict'),
+    ],
+)
+def test_threshold_sweep_inclusive_decides_a_pair_at_the_cutoff(
+    sweep_distances, inclusive, expected
+):
+    """A patch exactly at the cutoff is a contact only when inclusive, so
+    the mean contact count at 0.685 is 2.5 inclusive and 2.0 strict (H)."""
+    counts, _ = threshold_sweep(
+        sweep_distances, [0.685], [1], 'linear', inclusive=inclusive)
+    assert counts.loc[0, 'n_patch_monomer_contacts'] == pytest.approx(
+        expected, abs=FLOAT64_ATOL)
+
+
+@given(distances=distance_stacks(), inclusive=st.booleans(),
+       topology=st.sampled_from(['linear', 'ring']))
+def test_threshold_sweep_matches_the_per_frame_kernels(
+    distances, inclusive, topology
+):
+    """Every row and histogram row equals the per-frame kernels run at that
+    grid point and averaged over the frames (R2)."""
+    cutoffs = [0.5, 0.7, 0.9]
+    cis_thresholds = [1, 3]
+    counts, histogram = threshold_sweep(
+        distances, cutoffs, cis_thresholds, topology, inclusive=inclusive)
+    for row, (_, record) in enumerate(counts.iterrows()):
+        expected, loops = _sweep_frame_by_frame(
+            distances, record['cutoff'], int(record['cis_threshold']),
+            topology, inclusive)
+        for name, value in expected.items():
+            # Both sides are an integer sum divided by n_frames.
+            assert record[name] == pytest.approx(value, abs=FLOAT64_ATOL)
+        assert_allclose(histogram[row], loops,
+                        rtol=FLOAT64_RTOL, atol=FLOAT64_ATOL)
+
+
+@given(distances=distance_stacks(), inclusive=st.booleans())
+def test_threshold_sweep_contacts_grow_with_the_cutoff(distances, inclusive):
+    """Along an increasing grid the contacts and engaged patches never fall
+    and the free binders never rise (P: monotonicity of ``dist <= cutoff``)."""
+    counts, _ = threshold_sweep(
+        distances, [0.4, 0.6, 0.8, 1.0], [2], 'ring', inclusive=inclusive)
+    assert np.all(np.diff(counts['n_patch_monomer_contacts']) >= 0)
+    assert np.all(np.diff(counts['n_patches_engaged']) >= 0)
+    assert np.all(np.diff(counts['n_binders_free']) <= 0)
+
+
+@given(distances=distance_stacks(),
+       topology=st.sampled_from(['linear', 'ring']))
+def test_threshold_sweep_cis_threshold_only_splits_the_pairs(
+    distances, topology
+):
+    """Across the cis thresholds of one cutoff, the six other counts, the
+    sum of cis and trans pairs, and the histogram row are the same (P)."""
+    counts, histogram = threshold_sweep(
+        distances, [0.6], [0, 1, 2, 5], topology, inclusive=True)
+    fixed = ['n_patch_monomer_contacts', 'n_patches_engaged',
+             'n_patches_free', 'n_binders_free', 'n_binders_dangling',
+             'n_binders_bridging']
+    assert counts[fixed].nunique().eq(1).all()
+    pairs = counts['n_pairs_cis'] + counts['n_pairs_trans']
+    # The two means split one integer sum, so their sum differs across rows
+    # only by the round-off of two float64 divisions.
+    assert_allclose(pairs, pairs.iloc[0], rtol=FLOAT64_RTOL, atol=FLOAT64_ATOL)
+    assert_array_equal(histogram, np.broadcast_to(histogram[0],
+                                                  histogram.shape))
+
+
+@pytest.mark.parametrize(
+    ('topology', 'n_lengths'),
+    [
+        pytest.param('linear', 4, id='linear'),
+        pytest.param('ring', 3, id='ring'),
+    ],
+)
+def test_threshold_sweep_histogram_counts_the_bridged_pairs(
+    sweep_distances, topology, n_lengths
+):
+    """The histogram has one column per genomic distance of the topology,
+    an empty column 0, and rows that sum to the cis and trans pairs (P)."""
+    counts, histogram = threshold_sweep(
+        sweep_distances, [0.55, 0.65], [1, 2], topology, inclusive=True)
+    assert histogram.dtype == np.float64
+    assert histogram.shape == (4, n_lengths)
+    assert_array_equal(histogram[:, 0], 0.0)
+    assert_allclose(histogram.sum(axis=1),
+                    counts['n_pairs_cis'] + counts['n_pairs_trans'],
+                    rtol=FLOAT64_RTOL, atol=FLOAT64_ATOL)
+
+
+def test_threshold_sweep_keeps_the_grid_order_without_repeats(
+    sweep_distances
+):
+    """Rows follow the cutoffs as given, cis thresholds inside each, once
+    each; the research script's cumulative tables repeated earlier rows."""
+    counts, histogram = threshold_sweep(
+        sweep_distances, [0.65, 0.55], [4, 2], 'linear', inclusive=True)
+    assert list(counts.columns[:2]) == ['cutoff', 'cis_threshold']
+    assert_allclose(counts['cutoff'], [0.65, 0.65, 0.55, 0.55],
+                    rtol=FLOAT64_RTOL)
+    assert_array_equal(counts['cis_threshold'], [4, 2, 4, 2])
+    assert counts.shape == (4, 10)
+    assert histogram.shape[0] == 4
+
+
+@pytest.mark.parametrize(
+    ('distances', 'cutoffs', 'cis_thresholds', 'topology', 'message'),
+    [
+        pytest.param(np.ones((3, 4)), [0.5], [1], 'linear',
+                     'n_frames, n_monomers, n_patches', id='two-dimensional'),
+        pytest.param(np.ones((0, 3, 4)), [0.5], [1], 'linear',
+                     'at least one frame', id='no-frames'),
+        pytest.param(np.ones((1, 3, 4)), [], [1], 'linear',
+                     'cutoffs must not be empty', id='no-cutoffs'),
+        pytest.param(np.ones((1, 3, 4)), [0.5, 0.0], [1], 'linear',
+                     'cutoff must be positive', id='zero-cutoff'),
+        pytest.param(np.ones((1, 3, 4)), [0.5], [], 'linear',
+                     'cis_thresholds must not be empty', id='no-cis'),
+        pytest.param(np.ones((1, 3, 4)), [0.5], [1, -1], 'linear',
+                     'non-negative', id='negative-cis'),
+        pytest.param(np.ones((1, 3, 3)), [0.5], [1], 'linear',
+                     'two patches per binder', id='odd-patches'),
+        pytest.param(np.ones((1, 3, 4)), [0.5], [1], 'star',
+                     'topology', id='bad-topology'),
+    ],
+)
+def test_threshold_sweep_rejects_bad_input(
+    distances, cutoffs, cis_thresholds, topology, message
+):
+    """A malformed array, grid, or topology raises before any counting."""
+    with pytest.raises(ValueError, match=message):
+        threshold_sweep(distances, cutoffs, cis_thresholds, topology,
+                        inclusive=True)
