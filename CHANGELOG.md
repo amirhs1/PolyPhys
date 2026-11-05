@@ -42,6 +42,7 @@ version increase may introduce incompatible changes.
 
 - Describe `SumRuleCyl.epsilon` as the wall-monomer LJ strength, not the wall-particle one, since the wall-crowder strength is fixed at 1, and describe `HnsCub.eps_hc` and `HnsCyl.eps_hc` as a name keyword that the project's LAMMPS inputs do not read, not as an attractive core-crowder strength ([#104](https://github.com/amirhs1/PolyPhys/issues/104))
 - Add Python 3.14 to the README's Python badge, which listed 3.11 to 3.13 while the package has supported 3.14 since it joined the CI matrix ([#149](https://github.com/amirhs1/PolyPhys/issues/149))
+- Serve the README's Docs badge from shields.io, since GitHub's image proxy returned an error for the Read the Docs badge URL and the README showed a broken image
 
 ## [0.6.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.6.0) - 2026-11-03
 

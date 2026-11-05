@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/amirhs1/PolyPhys/actions/workflows/ci.yaml/badge.svg)](https://github.com/amirhs1/PolyPhys/actions/workflows/ci.yaml)
 [![codecov](https://codecov.io/gh/amirhs1/PolyPhys/branch/main/graph/badge.svg)](https://app.codecov.io/gh/amirhs1/PolyPhys)
-[![Docs](https://app.readthedocs.org/projects/polyphys/badge/?version=latest)](https://polyphys.readthedocs.io/en/latest/)
+[![Docs](https://img.shields.io/readthedocs/polyphys/latest)](https://polyphys.readthedocs.io/en/latest/)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/amirhs1/PolyPhys)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15858407.svg)](https://doi.org/10.5281/zenodo.15858407)
