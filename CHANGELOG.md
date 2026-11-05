@@ -17,6 +17,7 @@ version increase may introduce incompatible changes.
 - Add area `probe` in `CONTRIBUTING.md`, "Names", for `polyphys/probe/` and `polyphys/tests/probe/`, and give `polyphys/probe/` the Instrumented tier in `AGENTS.md` and the README ([#56](https://github.com/amirhs1/PolyPhys/issues/56))
 - Measure the CI matrix jobs' coverage floor without the probe layer and its tests, through `.coveragerc-no-mda`, since those jobs run without MDAnalysis and cannot execute them; the MDAnalysis job keeps measuring the probe layer, and Codecov merges the reports ([#156](https://github.com/amirhs1/PolyPhys/issues/156))
 - Warn with a `UserWarning`, naming the file, in `polyphys.analyze.sumrule.space_profiles` when a profile's `<prop>-mean` sums to one within `1e-6`, the signature of a profile normalized by its sum, and state in `sumrule`, `usage.md`, and `density.md` that the sum rule takes the raw ensemble-averaged profiles, since a species normalized on its own enters the species sum with an arbitrary weight ([#140](https://github.com/amirhs1/PolyPhys/issues/140))
+- Restructure `test_measurer.py` and `test_utils.py` into one behaviour per test with stated tolerances, add the cases that bring `polyphys.analyze.measurer` to full line coverage, and correct the walled-cube volume-fraction expectation to its closed form, `1000 / 9**3 * pi / 6` ([#82](https://github.com/amirhs1/PolyPhys/issues/82))
 
 ### Added
 
