@@ -9,7 +9,8 @@ artifacts along a five-level lineage — `segment`, `whole`, `ensemble_long`,
 `ensemble`, `space` — and reduces replicate ensembles into averaged measurements.
 
 Check out the [usage](usage.md) section for further information, including how to
-[install](#installation_target) the project.
+[install](#installation_target) the project, and the [quickstart](quickstart.md),
+which runs a small synthetic sweep from its segments to its `space` table.
 
 ```{note}
 This project is under active development.
@@ -22,6 +23,10 @@ caption: Contents:
 ---
 
 usage
+quickstart
+lineage
+workflow
+studies
 statistics
 clusters
 correlations
