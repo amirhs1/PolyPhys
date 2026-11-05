@@ -12,7 +12,7 @@ names of existing simulation artifacts into lineage and feeds
 `polyphys.analyze`. It does not build on [signac](https://signac.io/) or
 another data-space framework, and it is not developed as a standalone data
 manager. A study is added by declaring a parser class and a `ProjectSpec`
-(see [Usage](usage.md)).
+(see [Studies](studies.md)).
 
 **The question.** signac manages a data space of simulations indexed by
 *state points*, the key-value records that describe each job [^adorf2018].
