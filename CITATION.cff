@@ -13,8 +13,8 @@ type: software
 authors:
   - given-names: Amir
     family-names: Sadeghi
-version: 0.6.0
-date-released: 2026-11-03
+version: 0.7.0
+date-released: 2026-11-05
 license: MIT
 repository-code: "https://github.com/amirhs1/PolyPhys"
 url: "https://github.com/amirhs1/PolyPhys"
