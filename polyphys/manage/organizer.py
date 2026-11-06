@@ -1077,8 +1077,8 @@ def ensemble(
     'bin_center'). For 'vector' and 'matrix' types, columns represent
     individual wholes in the ensemble DataFrame.
 
-    The bin centre of bin ``i`` is the midpoint of its two edges,
-    ``0.5 * (edges[i] + edges[i + 1])``. A centre is invariant under
+    The bin center of bin ``i`` is the midpoint of its two edges,
+    ``0.5 * (edges[i] + edges[i + 1])``. A center is invariant under
     averaging over wholes, which is why :func:`ensemble_avg` excludes
     'bin_center' from its statistics by default.
 
@@ -1087,7 +1087,7 @@ def ensemble(
     one bin-edge array. Grouping parses each whole name once and merging
     copies every whole once, so time and extra memory are
     O(n_wholes * m): the caller's `wholes` and the merged ensembles are both
-    held in memory. With `whole_edges`, computing the centres adds
+    held in memory. With `whole_edges`, computing the centers adds
     O(n_ensembles * n_edges) time and memory.
 
     With `save_to`, each ensemble is saved by :func:`save_artifact` under
@@ -1133,7 +1133,7 @@ def ensemble(
         "bin_edge": ens_from_bin_edge,
     }
     # Collecting wholes for each ensemble; the wholes of an ensemble share
-    # their bin edges by design, so the centres come from its first whole
+    # their bin edges by design, so the centers come from its first whole
     ens_wholes: dict[str, dict[str, np.ndarray | pd.DataFrame]] = {}
     bin_centers: dict[str, np.ndarray] = {}
     for whole_name, whole_data in wholes.items():

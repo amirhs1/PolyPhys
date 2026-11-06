@@ -259,7 +259,7 @@ class DensityKernel(Protocol):
         ----------
         counts : numpy.ndarray
             The histogram of one whole, shape ``(n_bins,)``: the number of
-            particle centres in each bin, summed over the frames.
+            particle centers in each bin, summed over the frames.
         edges : numpy.ndarray
             Its bin edges, shape ``(n_bins + 1,)``, in the length unit.
         info : ParserBase
@@ -1014,7 +1014,7 @@ class FociPairDistances:
     Reduce the distance-matrix time series of the foci; a post-hook.
 
     On ``distMatT<species>``, whose whole is the ``(n_frames, n_foci,
-    n_foci)`` matrix of centre-to-centre distances between the foci with the
+    n_foci)`` matrix of center-to-center distances between the foci with the
     foci's backbone indices on the diagonal of frame 0, it writes three
     ``'dataframe'`` wholes with one column per pair, tagged
     ``loc<i>loc<j>genDist<d>`` with ``i < j`` the backbone indices and ``d``

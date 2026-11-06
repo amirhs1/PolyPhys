@@ -38,12 +38,12 @@ $N$, $\mathbf{r}_i$, $m_i$
   in the dump's length and mass units.
 
 $\mathbf{S}$, $\lambda_1 \ge \lambda_2 \ge \lambda_3$
-: The mass-weighted gyration tensor of the chain about its centre of mass,
+: The mass-weighted gyration tensor of the chain about its center of mass,
   and its eigenvalues.
 
 $D$, $Z$, $L$, $a_w$
 : The parser's `dcyl`, `lcyl`, and `lcube`, and the size $a_w = 1$ of the
-  beads whose centres form a cylindrical wall, so that the LAMMPS box is
+  beads whose centers form a cylindrical wall, so that the LAMMPS box is
   $(D + a_w) \times (D + a_w) \times Z$ for a cylinder and $L^3$ for a cube.
 
 $F$, $b$, $K = \lceil F / b \rceil$
@@ -140,9 +140,9 @@ PROBE = ProbeSpec(
 | `bin_sizes`         | The histogram bin size along each direction: a number, or a function of the whole's parser for a size that scales with its diameters (`PerWhole`) |
 | `histogram_species` | The species whose spatial histograms are collected, each a label in `selections`; empty when the study's histograms are not probed           |
 | `block_frames`      | The block length $b$ of the two-dimensional maps; required with `histogram_species`                                                          |
-| `recentre`          | How a frame's positions are moved before binning: `'half'` (half the box), `'none'`, or a triple (`RecentreT`); see "Recentring a frame"     |
+| `recentre`          | How a frame's positions are moved before binning: `'half'` (half the box), `'none'`, or a triple (`RecentreT`); see "Recentering a frame"     |
 | `pair_species`      | The species whose pair distances and contacts are collected, such as the foci; `None` when the study has none                                |
-| `contact_cutoff`    | The centre-to-centre distance at or below which two particles of `pair_species` touch, a number or a `PerWhole` function; required with it   |
+| `contact_cutoff`    | The center-to-center distance at or below which two particles of `pair_species` touch, a number or a `PerWhole` function; required with it   |
 | `minimum_image`     | Whether the pair distances use the minimum image along the periodic directions: the axis of a cylinder, every direction of a cube            |
 | `binders`           | A `BinderSpec` of how the study's two-patch binders are counted (see "The binder analysis"); `None` for a study without binders                |
 
@@ -178,7 +178,7 @@ every frame:
 | -------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | `rfloryT`      | $\lvert \mathbf{r}_N - \mathbf{r}_1 \rvert$, the end-to-end distance                                               | {func}`~polyphys.analyze.measurer.end_to_end`              |
 | `fsdT`         | $\max_i z_i - \min_i z_i$ along the cylinder axis, the span or Feret diameter                                     | {func}`~polyphys.analyze.measurer.fsd`                     |
-| `transSizeT`   | Twice the mean distance from the centre of geometry in the plane across the axis                                  | {func}`~polyphys.analyze.measurer.transverse_size`         |
+| `transSizeT`   | Twice the mean distance from the center of geometry in the plane across the axis                                  | {func}`~polyphys.analyze.measurer.transverse_size`         |
 | `gyrT`         | $R_g = \sqrt{\lambda_1 + \lambda_2 + \lambda_3}$, the mass-weighted radius of gyration                            | `AtomGroup.radius_of_gyration`                             |
 | `asphericityT` | $\tfrac{3}{2} \sum_k (\lambda_k - \bar\lambda)^2 / (\sum_k \lambda_k)^2$, from 0 (spherically symmetric) to 1 (a line) | `AtomGroup.asphericity(wrap=False, unwrap=unwrap)`        |
 | `shapeT`       | $27 \prod_k (\lambda_k - \bar\lambda) / (\sum_k \lambda_k)^3$, from 0 to 2                                        | `AtomGroup.shape_parameter(wrap=False)`                    |
@@ -231,18 +231,18 @@ parallel run gives the serial arrays.
 Every observable is a sum over the beads followed by at most a $3 \times 3$
 eigenproblem, so each frame costs $O(N)$ time, plus the
 $O(N + N_\mathrm{bonds})$ unwrap of the chain when `unwrap` is set, and
-$O(N)$ extra space for the recentred positions. Over a run of $F$ frames
+$O(N)$ extra space for the recentered positions. Over a run of $F$ frames
 the series take $O(F)$ space each and $O(9F)$ for `principalT`. Positions
 come from MDAnalysis as float32, so each value carries a relative round-off
 of about $10^{-7}$.
 
-## Recentring a frame
+## Recentering a frame
 
 The studies' LAMMPS scripts set the box to $[-r, r]^2 \times [-l_z, l_z]$
 for a cylinder and $[-l, l]^3$ for a cube, and `fix recenter` keeps the
-polymer's centre of mass at $z = 0$ or at the origin. The LAMMPS dump
+polymer's center of mass at $z = 0$ or at the origin. The LAMMPS dump
 reader of MDAnalysis 2.4 and later translates every frame so that the lower
-box bounds sit at the origin, which undoes that recentring, and no option
+box bounds sit at the origin, which undoes that recentering, and no option
 of the reader keeps the written frame; only the box lengths survive, as
 `ts.dimensions`. A spatial histogram therefore has to move the positions
 back, and `ProbeSpec.recentre` says how:
@@ -255,7 +255,7 @@ back, and `ProbeSpec.recentre` says how:
 
 The research code subtracted half the parser's $(D, D, Z)$ or $L$. In a
 cube that is half the box. In a cylinder the box spans the wall-bead
-centres, $D + a_w$ across, so the research shift of $D / 2$ left the
+centers, $D + a_w$ across, so the research shift of $D / 2$ left the
 cylinder's axis at $(a_w / 2, a_w / 2) = (0.5, 0.5)$ rather than at the
 origin, and the radial and azimuthal histograms of every cylindrical study
 were measured about that displaced point. The maintainer chose `'half'` on
@@ -266,7 +266,7 @@ ignore `recentre`.
 ## The spatial histograms
 
 {class}`~polyphys.probe.histograms.SpatialHistograms` bins every species of
-a `ProbeSpec` in every frame, after recentring, along the directions of the
+a `ProbeSpec` in every frame, after recentering, along the directions of the
 geometry and in the three Cartesian planes:
 
 | Geometry      | Per frame, int64 `(n_frames, n_bins)` | Per block, float64 `(n_blocks, n_a, n_b)` |
@@ -276,7 +276,7 @@ geometry and in the three Cartesian planes:
 
 each followed by the species label, with $r = \sqrt{x^2 + y^2}$ and
 $\theta = \operatorname{atan2}(y, x)$ about the $z$ axis in a cylinder
-and $r = |\mathbf{r}|$ from the box centre in a cube, through the helpers
+and $r = |\mathbf{r}|$ from the box center in a cube, through the helpers
 of {mod}`polyphys.analyze.measurer`. The one-dimensional counts are kept
 per frame, as the maintainer decided on 2026-11-03, so the time dependence
 of a profile and its block statistics stay available. A map per frame
@@ -305,7 +305,7 @@ to the species' particle number. The research code's `np.histogram`
 dropped such a position silently, and its ranges stopped at $D / 2$ in a
 cylinder and $L / 2$ in a cube; the maintainer extended them to the wall
 surface and the corner on 2026-11-04, since a repulsive wall lets a small
-particle's centre approach the surface closer than half a monomer and a
+particle's center approach the surface closer than half a monomer and a
 cube's corners lie beyond $L / 2$. The shells of a cube beyond $L / 2$ are
 only partly inside the box, which the density normalization downstream has
 to account for.
@@ -334,7 +334,7 @@ and concatenates the per-frame rows (`ResultsGroup.ndarray_vstack`), and
 `_conclude` divides each block's sum by its frame count. Per frame the cost
 is $O(S N \log B)$ time for $S$ species of $N$ particles and $B$ bins, from
 the sorted-edge search of `np.histogram`, and $O(N)$ extra space for the
-recentred positions; over a run $8 F B$ bytes per one-dimensional
+recentered positions; over a run $8 F B$ bytes per one-dimensional
 histogram and $8 K B_a B_b$ per map.
 
 ## The pair distances
@@ -555,11 +555,11 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
 
 - The research code shifted every position by half the box in every frame
   before measuring. Every chain-size observable is invariant under a
-  translation of all positions, because each one recentres the chain on
-  its centre of geometry or mass first, so the shift is dropped for this
-  family. The spatial histograms recentre by `ProbeSpec.recentre`, whose
+  translation of all positions, because each one recenters the chain on
+  its center of geometry or mass first, so the shift is dropped for this
+  family. The spatial histograms recenter by `ProbeSpec.recentre`, whose
   default `'half'` restores the LAMMPS frame and corrects the research
-  shift's half-bead offset in a cylinder (see "Recentring a frame").
+  shift's half-bead offset in a cylinder (see "Recentering a frame").
 - The spatial histograms keep the one-dimensional counts per frame and the
   two-dimensional maps per block of frames, where the research code summed
   both over the frames; the summed arrays are still written. Their ranges

@@ -21,11 +21,11 @@ Notation
     Their coordinates, shape ``(n_particles, n_dims)``, in the caller's length
     unit; every length below is in that unit.
 ``dist``
-    The matrix of centre-to-centre distances, shape
+    The matrix of center-to-center distances, shape
     ``(n_particles, n_particles)``, symmetric with a zero diagonal.
 ``cutoff``
     A length :math:`r_c`. Two particles are in *direct contact* when their
-    centre-to-centre distance is at most :math:`r_c` (``inclusive=True``) or
+    center-to-center distance is at most :math:`r_c` (``inclusive=True``) or
     below it (``inclusive=False``); this is the contact criterion of Sevick,
     Monson, and Ottino (1988).
 ``direct_contacts``
@@ -198,7 +198,7 @@ def pair_distances(
     box: npt.ArrayLike | None = None,
 ) -> npt.NDArray[np.float64]:
     """
-    Compute the matrix of centre-to-centre distances between all pairs.
+    Compute the matrix of center-to-center distances between all pairs.
 
     Parameters
     ----------
@@ -298,7 +298,7 @@ def find_direct_contacts(
     Parameters
     ----------
     dist : array_like
-        Centre-to-centre distances, shape ``(n_rows, n_cols)``, in the
+        Center-to-center distances, shape ``(n_rows, n_cols)``, in the
         caller's length unit: a self-distance matrix from
         :func:`pair_distances`, or the distances between two groups, such as
         monomers along the rows and binder patches along the columns.
@@ -642,7 +642,7 @@ def genomic_distance(
 
     Examples
     --------
-    On a ring of 10 monomers, 0 and 9 are neighbours:
+    On a ring of 10 monomers, 0 and 9 are neighbors:
 
     >>> from polyphys.analyze.clusters import genomic_distance
     >>> genomic_distance([0, 1], [3, 9], 'linear', 10)
@@ -885,7 +885,7 @@ def pair_separation_density(
     directly, since it carries no free constant. The estimate itself assumes
     no chain model and no geometry: the accessible volume of a confinement
     shapes :math:`\\bar P`, not its definition. The exact shell volume is
-    used rather than :math:`4\\pi R_c^2 \\Delta r` at the bin centre, which
+    used rather than :math:`4\\pi R_c^2 \\Delta r` at the bin center, which
     is 25% too small in the first bin. Time and space are
     :math:`O(n_\\mathrm{pairs} n_\\mathrm{bins})`.
 
@@ -952,7 +952,7 @@ def enforce_single_patch_contact(
     A patch is a single binding site and can hold one monomer, but a
     distance cutoff occasionally marks two or three adjacent monomers as its
     contacts. The project rule keeps the one with the lowest backbone index
-    and treats the rest as artefacts. Applying the rule twice changes
+    and treats the rest as artifacts. Applying the rule twice changes
     nothing. Time and space are :math:`O(n_\\mathrm{monomers}
     n_\\mathrm{patches})`.
 
@@ -1112,7 +1112,7 @@ def binder_contacts(
     topology: Topology,
 ) -> npt.NDArray[np.bool_]:
     """
-    Link binders that touch the same or neighbouring monomers.
+    Link binders that touch the same or neighboring monomers.
 
     Parameters
     ----------
@@ -1121,7 +1121,7 @@ def binder_contacts(
         boolean or 0/1, with the monomers in backbone order along the rows.
     topology : {'linear', 'ring'}
         Whether the chain is open or closed; on a ring the first and last
-        monomers are neighbours.
+        monomers are neighbors.
 
     Returns
     -------
@@ -1142,9 +1142,9 @@ def binder_contacts(
     -----
     With :math:`M` the monomer-binder matrix and :math:`N_i = M_i \\lor
     M_{i+1}` the matrix of the monomer pairs ``(i, i + 1)`` that are
-    neighbours, the result is :math:`M^\\top M > 0 \\lor N^\\top N > 0`
+    neighbors, the result is :math:`M^\\top M > 0 \\lor N^\\top N > 0`
     plus the identity: the first term links binders sharing a monomer, the
-    second links binders on neighbouring monomers. Time is
+    second links binders on neighboring monomers. Time is
     :math:`O(n_\\mathrm{monomers} n_\\mathrm{binders}^2)` from the two
     products; space is :math:`O(n_\\mathrm{monomers} n_\\mathrm{binders} +
     n_\\mathrm{binders}^2)`.
@@ -1152,7 +1152,7 @@ def binder_contacts(
     Examples
     --------
     Binder 0 on monomer 0 and binder 1 on monomer 3 are linked on a ring of
-    four monomers, where 0 and 3 are neighbours, but not on a linear chain:
+    four monomers, where 0 and 3 are neighbors, but not on a linear chain:
 
     >>> import numpy as np
     >>> from polyphys.analyze.clusters import binder_contacts
@@ -1173,12 +1173,12 @@ def binder_contacts(
     contacts = _as_contacts(direct_contacts, 'direct_contacts')
     n_binders = contacts.shape[1]
     if topology == 'ring':
-        neighbours = contacts | np.roll(contacts, -1, axis=0)
+        neighbors = contacts | np.roll(contacts, -1, axis=0)
     else:
-        neighbours = contacts[:-1] | contacts[1:]
+        neighbors = contacts[:-1] | contacts[1:]
     weights = contacts.astype(np.int64)
     shared = weights.T @ weights > 0
-    adjacent_weights = neighbours.astype(np.int64)
+    adjacent_weights = neighbors.astype(np.int64)
     adjacent = adjacent_weights.T @ adjacent_weights > 0
     linked = shared | adjacent | np.eye(n_binders, dtype=np.bool_)
     return np.asarray(linked, dtype=np.bool_)
@@ -1293,9 +1293,9 @@ def binding_statistics(
     Examples
     --------
     A ring of six monomers and four binders. Binder 0 bridges monomers 0 and
-    2; binder 1 has patch 2 on monomers 3 and 4 (an artefact) and patch 3
+    2; binder 1 has patch 2 on monomers 3 and 4 (an artifact) and patch 3
     free, so it dangles; binder 2 is free; binder 3 bridges monomers 5 and
-    0, neighbours on the ring. With ``cis_threshold=1`` the second bridge is
+    0, neighbors on the ring. With ``cis_threshold=1`` the second bridge is
     cis and the first, at 2 bonds, is trans.
 
     >>> import numpy as np

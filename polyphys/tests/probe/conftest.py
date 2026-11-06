@@ -29,7 +29,7 @@ def make_chain_files(
     tmp_path: Path, make_lammps_dump: Callable[..., Path]
 ) -> Callable[..., tuple[Path, Path]]:
     """Factory: write a ``bond``-style data file of one linear chain, with
-    masses and a bond between neighbours, and a dump of its frames.
+    masses and a bond between neighbors, and a dump of its frames.
 
     Takes `positions` of shape ``(n_frames, n_atoms, 3)``, `box` as three
     ``(lo, hi)`` pairs, `boundary` as the dump's three flags, `masses` per

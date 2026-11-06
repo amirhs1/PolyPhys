@@ -310,7 +310,7 @@ def test_probe_allows_the_matrix_observable_without_a_time_series(
 ])
 def test_probe_rejects_invalid_fields(make_probe, overrides, match):
     """A probe spec with a bad selection, chain, observable, bin size,
-    histogram species, block length, recentring, pair species, or contact
+    histogram species, block length, recentering, pair species, or contact
     cutoff raises, naming the project."""
     with pytest.raises(ValueError, match=match):
         make_probe(**overrides)
@@ -331,7 +331,7 @@ def test_probe_accepts_positive_bin_sizes(make_probe):
 
 
 def test_probe_defaults_leave_histograms_and_pairs_unprobed(make_probe):
-    """Without the histogram and pair fields, a probe spec recentres by half
+    """Without the histogram and pair fields, a probe spec recenters by half
     the box, uses the minimum image, and names no species for them."""
     probe = make_probe()
 
@@ -363,7 +363,7 @@ def test_probe_keeps_histogram_and_pair_fields(make_probe, whole):
     pytest.param([1, 2.5, -3], (1.0, 2.5, -3.0), id='triple-as-floats'),
 ])
 def test_probe_stores_recentre(make_probe, given, stored):
-    """A recentring keyword is kept and a triple becomes a tuple of floats."""
+    """A recentering keyword is kept and a triple becomes a tuple of floats."""
     assert make_probe(recentre=given).recentre == stored
 
 

@@ -83,16 +83,16 @@ Thermostat and integrator
   integrates with `fix nve/limit 0.01`, which caps each particle's
   displacement per step at 0.01.
 
-Recentring
-: `fix recenter` keeps the centre of mass of the chain at the origin, along
+Recentering
+: `fix recenter` keeps the center of mass of the chain at the origin, along
   the axis of a cylinder and in all three directions in a cube, by shifting
   every particle by the same amount at each step. TwoMonDepCub does not
-  recentre.
+  recenter.
 
 Preparing the start configuration
 : Several studies run a separate preparation input before the production
   input. Despite its name ("minimize"), it is a short Langevin run, not an
-  energy minimisation. In SumRuleCyl, the TransFoci studies, and the
+  energy minimization. In SumRuleCyl, the TransFoci studies, and the
   SumRuleCubHetero studies its bonds are harmonic, `bond_style harmonic`
   ([LAMMPS](https://docs.lammps.org/bond_harmonic.html)),
   $E = K (r - r_0)^2$ with $K = 80/\sigma_{ij}^2$ and $r_0 = \sigma_{ij}$;

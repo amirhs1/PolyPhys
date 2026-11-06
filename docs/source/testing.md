@@ -42,13 +42,13 @@ numbers.
 
 | Kind                       | Catches                                               | Notes                                                                                                                   |
 | -------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Unit test                  | a function breaking its own contract                  | tier A data; one behaviour per test                                                                                     |
+| Unit test                  | a function breaking its own contract                  | tier A data; one behavior per test                                                                                     |
 | Known-answer test          | code that runs but computes the wrong physics         | the expected value comes from an analytic result or a cited reference                                                   |
 | Property test              | edge cases nobody wrote down                          | checks an invariant, such as conservation of histogram counts, on hand-picked or Hypothesis-generated inputs            |
 | Integration test           | lineage levels that pass alone but disagree at a seam | runs a lineage tree from `segment` up through the organizer                                                             |
 | Regression test            | a fixed bug returning                                 | written before the fix and seen to fail against the unfixed code                                                        |
 | Comparison against old code | a port that changed a number                         | tier C; the old and new implementations run on the same data, and any number that changes is explained in the pull request |
-| Doctest                    | examples drifting from behaviour                      | every public name has an `Examples` section                                                                             |
+| Doctest                    | examples drifting from behavior                      | every public name has an `Examples` section                                                                             |
 | Static check               | type and style errors                                 | `flake8` and `mypy`                                                                                                     |
 
 Expected values never come from the code under test. Floating-point results are

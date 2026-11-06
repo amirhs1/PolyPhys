@@ -444,7 +444,7 @@ _BOX = ((0.0, 10.0), (0.0, 10.0), (0.0, 10.0))
 
 
 def _default_chain(n_atoms: int) -> np.ndarray:
-    """Return a straight chain along x, one unit between neighbours."""
+    """Return a straight chain along x, one unit between neighbors."""
     positions = np.full((n_atoms, 3), 5.0)
     positions[:, 0] = 1.0 + np.arange(n_atoms)
     return positions

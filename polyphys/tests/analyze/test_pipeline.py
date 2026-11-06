@@ -302,7 +302,7 @@ def test_segments_are_ordered_naturally(probe_dir, cyl_spec):
     assert_array_equal(whole, [2.0, 10.0])
 
 
-def test_segment_histograms_sum_and_ensembles_carry_bin_centres(
+def test_segment_histograms_sum_and_ensembles_carry_bin_centers(
         probe_dir, cyl_spec, write_tree, write_edges):
     """A segment-lineage histogram sums its segments element-wise, and its
     ensemble gets the midpoints of the shared edges as ``bin_center``."""

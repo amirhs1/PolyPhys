@@ -62,7 +62,7 @@ def _l_bin(info: ParserBase) -> float:
 # of its per-frame loop, and the unwrap convention of its asphericity (SciOps
 # ``sciops/probe/prober.py``, lines 3507-3555); the histograms of the all
 # group (``hns_cub_all``, lines 3781-3830): its selections, bin sizes, and
-# species, the H-NS cores as 'Hns', with the block length and the recentring
+# species, the H-NS cores as 'Hns', with the block length and the recentering
 # the maintainer's decisions of 2026-11-04;
 # patches (lines 3520-3616, ``cis_threshold = 4`` and the distance matrices
 # saved as ``distMatTMonHnsPatch``). The cutoff is the published binding

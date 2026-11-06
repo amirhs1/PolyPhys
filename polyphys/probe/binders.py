@@ -224,10 +224,10 @@ class BinderStatistics(AnalysisBase):
         column 0 always 0; and, with `store_distances`, ``'distances'``,
         float64 of shape ``(n_frames, n_monomers, n_patches)``.
     n_frames : int
-        After :meth:`run`, the number of frames analysed, from
+        After :meth:`run`, the number of frames analyzed, from
         :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames, times : numpy.ndarray
-        After :meth:`run`, the indices and times of the frames analysed,
+        After :meth:`run`, the indices and times of the frames analyzed,
         shape ``(n_frames,)``.
 
     Raises

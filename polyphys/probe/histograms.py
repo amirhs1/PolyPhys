@@ -56,13 +56,13 @@ Notation
     :math:`k` holds the frames :math:`kb, \\ldots, \\min((k + 1) b, F) - 1`
     in the order the run visits them.
 :math:`\\mathbf{r}_i = (x_i, y_i, z_i)`
-    The position of particle :math:`i` after recentring, in the dump's
+    The position of particle :math:`i` after recentering, in the dump's
     length unit, the monomer diameter in the studies.
 :math:`r`, :math:`\\theta`, :math:`z`
     In a cylinder whose axis is :math:`z`: :math:`\\sqrt{x^2 + y^2}`,
     :math:`\\operatorname{atan2}(y, x)` in :math:`[-\\pi, \\pi]`, and the
     axial coordinate. In a cube, :math:`r = |\\mathbf{r}|` from the box
-    centre.
+    center.
 :math:`D`, :math:`Z`, :math:`L`, :math:`a_w`
     The parser's ``dcyl``, ``lcyl``, and ``lcube``, and the wall-bead size
     :math:`a_w = 1` of the cylindrical studies, so that the LAMMPS box is
@@ -72,7 +72,7 @@ Examples
 ========
 Two particles in a periodic cube of side 20, three frames, with the dump
 reader's frame already translated to the origin, so that ``'half'`` moves
-the box centre to the origin:
+the box center to the origin:
 
 >>> import MDAnalysis as mda
 >>> import numpy as np
@@ -121,8 +121,8 @@ from ..manage.types import (
     Pathish,
 )
 
-# The size of the beads whose centres form the cylindrical wall, which the
-# parsers document: the LAMMPS box spans the wall-bead centres, so its
+# The size of the beads whose centers form the cylindrical wall, which the
+# parsers document: the LAMMPS box spans the wall-bead centers, so its
 # transverse length is dcyl + _WALL_BEAD.
 _WALL_BEAD = 1.0
 
@@ -167,7 +167,7 @@ def _required_edges(geometry: GeometryT) -> tuple[DirectionT, ...]:
 
 
 def _check_recentre(recentre: Any) -> RecentreT:
-    """Validate a recentring and return it with a triple as floats."""
+    """Validate a recentering and return it with a triple as floats."""
     if isinstance(recentre, str) and recentre == 'none':
         return 'none'
     if isinstance(recentre, str) and recentre == 'half':
@@ -330,7 +330,7 @@ class SpatialHistograms(AnalysisBase):
     geometry : :py:data:`GeometryT`
         ``'cylindrical'``, with the histograms along ``'r'``, ``'z'``, and
         ``'theta'`` about the ``z`` axis, or ``'cubic'``, with the
-        histogram along ``'r'`` from the box centre.
+        histogram along ``'r'`` from the box center.
     block_frames : int
         The block length :math:`b`, positive: consecutive frames of the
         run whose maps are averaged into one stored map.
@@ -352,7 +352,7 @@ class SpatialHistograms(AnalysisBase):
     block_frames : int
         The block length.
     recentre : :py:data:`~polyphys.manage.projects.RecentreT`
-        The recentring, a triple as floats.
+        The recentering, a triple as floats.
     results : :class:`~MDAnalysis.analysis.results.Results`
         After :meth:`run`, for each species ``S`` and direction ``d`` of
         the geometry, ``dHistTS``, int64 ``(n_frames, n_bins)``, the counts
@@ -364,13 +364,13 @@ class SpatialHistograms(AnalysisBase):
         frames; and ``blockFrames``, int64 ``(n_blocks,)``, the frames in
         each block.
     n_frames : int
-        After :meth:`run`, the number of frames analysed, from
+        After :meth:`run`, the number of frames analyzed, from
         :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames : numpy.ndarray
-        After :meth:`run`, the indices of the frames analysed, shape
+        After :meth:`run`, the indices of the frames analyzed, shape
         ``(n_frames,)``.
     times : numpy.ndarray
-        After :meth:`run`, the times of the frames analysed, shape
+        After :meth:`run`, the times of the frames analyzed, shape
         ``(n_frames,)``, in the trajectory's time unit.
 
     Raises
@@ -381,12 +381,12 @@ class SpatialHistograms(AnalysisBase):
         not a one-dimensional increasing array of at least two values; if
         `geometry` is unknown; if `block_frames` is not a positive integer;
         if `recentre` is neither ``'none'``, ``'half'``, nor a triple of
-        finite numbers; or, during :meth:`run`, if a recentred position
+        finite numbers; or, during :meth:`run`, if a recentered position
         falls outside the edges of a direction or a Cartesian axis.
 
     Notes
     -----
-    Per frame and species, the positions are copied, recentred, and binned
+    Per frame and species, the positions are copied, recentered, and binned
     with :func:`~polyphys.analyze.measurer.radial_cyl_histogram`,
     :func:`~polyphys.analyze.measurer.axial_histogram`, and
     :func:`~polyphys.analyze.measurer.azimuth_cyl_histogram` in a cylinder,
@@ -412,7 +412,7 @@ class SpatialHistograms(AnalysisBase):
     Cost per frame: :math:`O(S N \\log B)` time for :math:`S` species of
     :math:`N` particles and :math:`B` bins along a direction, from the
     sorted-edge search of ``np.histogram`` and ``np.histogram2d``, and
-    :math:`O(N)` extra space for the recentred positions. Over a run, each
+    :math:`O(N)` extra space for the recentered positions. Over a run, each
     one-dimensional histogram holds :math:`8 F B` bytes and each map
     :math:`8 K B_a B_b` bytes, for :math:`F` frames, :math:`K = \\lceil F /
     b \\rceil` blocks, and :math:`B_a \\times B_b` cells: with
@@ -421,7 +421,7 @@ class SpatialHistograms(AnalysisBase):
 
     Examples
     --------
-    One particle in a cylinder of radius 2 and length 4, recentred by a
+    One particle in a cylinder of radius 2 and length 4, recentered by a
     given shift, two frames; the frame's counts sum to its one particle
     along every direction:
 
@@ -525,7 +525,7 @@ class SpatialHistograms(AnalysisBase):
         The species are ``spec.histogram_species``, each selected with its
         string in ``spec.selections``; the edges are
         :func:`histogram_edges`'s; the geometry, block length, and
-        recentring are the spec's.
+        recentering are the spec's.
 
         .. versionadded:: 0.7.0
 
@@ -676,7 +676,7 @@ class SpatialHistograms(AnalysisBase):
 
     def _single_frame(self) -> None:
         """
-        Recentre and bin every species on the current frame: the histograms
+        Recenter and bin every species on the current frame: the histograms
         into this frame's rows, the maps into this frame's block.
         """
         block = (self._run_offset + self._frame_index) // self.block_frames

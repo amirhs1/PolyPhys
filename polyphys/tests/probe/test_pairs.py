@@ -41,7 +41,7 @@ def types() -> list[int]:
 def triangle(types) -> np.ndarray:
     """Two frames of ten beads about (10, 10, 10): the foci at the corners
     of a 3-4-5 triangle, (0, 0, 0), (3, 0, 0), and (3, 4, 0) from the
-    centre, the other beads at the centre; in frame 1 the third focus moves
+    center, the other beads at the center; in frame 1 the third focus moves
     to (3, 3, 0), 3 from the second and sqrt(18) from the first."""
     first = np.full((10, 3), 10.0)
     first[2] += [0.0, 0.0, 0.0]

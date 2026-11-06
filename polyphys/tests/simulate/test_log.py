@@ -616,7 +616,7 @@ def test_read_log_fixture_first_row_values(log_dir):
 
 
 def test_read_log_fixture_unchecked_builds_are_nan(log_dir):
-    """The run with neighbour checks off has no dangerous-builds count."""
+    """The run with neighbor checks off has no dangerous-builds count."""
     log = read_log(log_dir / "log.custom")
 
     np.testing.assert_array_equal(

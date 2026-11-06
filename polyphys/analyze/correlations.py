@@ -113,7 +113,7 @@ References
   "Autocorrelation Plot".
   https://www.itl.nist.gov/div898/handbook/eda/section3/autocopl.htm
 - G. Williams and D. C. Watts, "Non-symmetrical dielectric relaxation
-  behaviour arising from a simple empirical decay function", Trans. Faraday
+  behavior arising from a simple empirical decay function", Trans. Faraday
   Soc. 66, 80-85 (1970). https://doi.org/10.1039/TF9706600080
 - SciPy, :func:`scipy.optimize.curve_fit`.
   https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html
@@ -302,9 +302,9 @@ def acf(
     if np.any(np.all(series == series[0], axis=0)):
         raise ValueError('x has a constant series; its acf is undefined.')
 
-    centred = series - series.mean(axis=0)
+    centered = series - series.mean(axis=0)
     n_fft = _fft_length(n_frames)
-    spectrum = np.fft.rfft(centred, n=n_fft, axis=0)
+    spectrum = np.fft.rfft(centered, n=n_fft, axis=0)
     autocov = np.fft.irfft(np.abs(spectrum) ** 2, n=n_fft, axis=0)
     autocov = autocov[: nlags + 1] / n_frames
     values: FloatArray = autocov / autocov[0]
@@ -900,7 +900,7 @@ def bond_cosine_correlation(
     :math:`N - k` pairs at lag :math:`k`; on a ring :math:`C(k) =
     \\frac{1}{N} \\sum_{i=0}^{N-1} \\hat{\\mathbf{u}}_i \\cdot
     \\hat{\\mathbf{u}}_{(i+k) \\bmod N}` over all :math:`N` pairs, so that
-    the result does not depend on which monomer is labelled first and
+    the result does not depend on which monomer is labeled first and
     :math:`C(k) = C(N - k)`. The sums over :math:`i` are linear (zero-padded)
     or circular autocorrelations, computed by the FFT of each Cartesian
     component and summed over components.

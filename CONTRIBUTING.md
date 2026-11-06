@@ -56,7 +56,7 @@ areas: analyze manage simulate probe viz projects packaging guide ci agents deps
 | Type       | Means                                                                                              |
 | ---------- | -------------------------------------------------------------------------------------------------- |
 | `feat`     | Adds a capability to the package or its tooling.                                                   |
-| `fix`      | Corrects behaviour that was wrong.                                                                 |
+| `fix`      | Corrects behavior that was wrong.                                                                 |
 | `docs`     | Changes documentation only, in any area: the README, a `docs/` page, the changelog, a docstring.   |
 | `test`     | Adds or corrects tests without changing package code.                                              |
 | `refactor` | Restructures code without changing what it does.                                                   |
