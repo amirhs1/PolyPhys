@@ -35,6 +35,13 @@ R2. A Monte Carlo estimate of a ball-in-cylinder volume from
     ``numpy.random.default_rng(seed)`` with the seed shown, within five
     binomial standard deviations.
 
+R3. The research code's axial slab volume. Its ``SpatialDistribution``
+    integrates ``pi dcyl**2 / 4`` along ``z`` but passes the cylinder length
+    ``lcyl`` as the ``dcyl`` argument, so each of its slabs has volume
+    ``pi lcyl**2 dz / 4``. Its axial ``rho`` and ``phi`` therefore equal the
+    closed-form ones (A1) times ``(dcyl / lcyl)**2``; its radial ones carry
+    no such factor.
+
 P.  A property: conservation of the total bead volume, the symmetry
     ``V_i S_ij = V_j S_ji``, translation invariance of the periodic slab
     matrix, a uniform fluid returning ``rho v``, or row-wise independence.
@@ -698,34 +705,47 @@ def test_share_matrix_returns_a_sparse_band():
 
 
 @pytest.mark.private_data
-def test_center_sphere_profiles_match_the_research_code(private_data_dir):
-    """The research code's modes reproduce one SciOps whole's ``rho`` and
-    ``phi`` (R1, on the maintainer's data).
+@pytest.mark.parametrize(
+    ('direction', 'research_scale'),
+    [
+        pytest.param('r', lambda meta: 1.0, id='r'),
+        # R3: the research code's z slabs have lcyl, not dcyl, as diameter.
+        pytest.param('z', lambda meta: (meta['dcyl'] / meta['lcyl']) ** 2,
+                     id='z'),
+    ],
+)
+def test_center_sphere_profiles_match_the_research_code(
+    private_data_dir, direction, research_scale
+):
+    """The research code's ``rho`` and ``phi`` of one SciOps whole equal the
+    center-sphere ones times its known axial slab factor (R1, R3).
 
-    Expected layout under ``POLYPHYS_DATA_DIR/density/``, prepared by the
-    maintainer from one whole: ``edges.npy`` and ``counts.npy`` (the
-    whole's bin edges and summed histogram), ``rho_sciops.npy`` and
-    ``phi_sciops.npy`` (its ``distributions_generator`` output), and
-    ``meta.json`` with ``geometry``, ``direction``, ``bead_diameter``, and
-    ``lcyl`` or ``dcyl``. The research code divided by the quadrature of a
-    polynomial, never by the number of frames, used the sphere-sphere
-    kernel, and the full ``dcyl`` for its slabs, which is how the kernels
-    are called here.
+    Expected layout under ``POLYPHYS_DATA_DIR/density/<direction>/``,
+    prepared by the maintainer from one whole: ``edges.npy`` and
+    ``counts.npy`` (the whole's bin edges and summed histogram),
+    ``rho_sciops.npy`` and ``phi_sciops.npy`` (its ``distributions_generator``
+    output), and ``meta.json`` with ``geometry``, ``direction``,
+    ``bead_diameter``, ``lcyl``, and ``dcyl``. The research code divided by
+    the quadrature of a polynomial, never by the number of frames, and used
+    the sphere-sphere kernel, which is how the kernels are called here.
     """
-    folder = private_data_dir / 'density'
+    folder = private_data_dir / 'density' / direction
     meta = json.loads((folder / 'meta.json').read_text())
     edges = np.load(folder / 'edges.npy')
     counts = np.load(folder / 'counts.npy')
-    geometry, direction = meta['geometry'], meta['direction']
     volumes = bin_volumes(
-        edges, geometry, direction,
-        lcyl=meta.get('lcyl'), dcyl=meta.get('dcyl'),
+        edges, meta['geometry'], meta['direction'],
+        lcyl=meta['lcyl'], dcyl=meta['dcyl'],
     )
-    share = share_matrix(edges, meta['bead_diameter'], geometry, direction,
-                         shares='center', intersection='sphere')
+    share = share_matrix(edges, meta['bead_diameter'], meta['geometry'],
+                         meta['direction'], shares='center',
+                         intersection='sphere')
+    scale = research_scale(meta)
     rho = number_density(counts, volumes)
     phi = volume_fraction(rho, share)
     # scipy's quadrature of a polynomial agrees with the closed form to
     # about 1e-10 relative.
-    assert_allclose(rho, np.load(folder / 'rho_sciops.npy'), rtol=1e-8)
-    assert_allclose(phi, np.load(folder / 'phi_sciops.npy'), rtol=1e-8)
+    assert_allclose(scale * rho, np.load(folder / 'rho_sciops.npy'),
+                    rtol=1e-8)
+    assert_allclose(scale * phi, np.load(folder / 'phi_sciops.npy'),
+                    rtol=1e-8)
