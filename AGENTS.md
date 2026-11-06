@@ -92,6 +92,11 @@ one before it.
   `simsAll`, `simsCont`, `logs`, `trjs`, `probes`, `analysis`, `viz`,
   `galaxy`, `allInOne`; stages `segment`, `wholeSim`, `ens`, `ensAvg`,
   `space`, `galaxy`. A filename-parsing change needs matching parser tests.
+- Write American English (behavior, center, labeled, modeling). Names from
+  other tools, such as the LAMMPS `recenter` command, and titles of cited
+  works keep their own spelling. Older text still uses Canadian forms,
+  including the `recentre` API name, until #168 converts them; do not
+  convert them in an unrelated change.
 - Preserve physical units, array-shape contracts, numerical meaning, and
   established scientific assumptions. Explain a changed expected value, with
   its scientific basis, in the pull request.

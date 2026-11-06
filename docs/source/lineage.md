@@ -147,7 +147,7 @@ the prefix from the old directory's name, up to its first hyphen:
 ```
 
 A phase or stage outside the two vocabularies raises `ValueError`, so a
-misspelt directory name fails before anything is written.
+misspelled directory name fails before anything is written.
 
 ## File names inside a stage
 

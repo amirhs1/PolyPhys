@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report reproducible behaviour that looks incorrect
+about: Report reproducible behavior that looks incorrect
 title: "[area] "
 labels: type:fix
 assignees: ""

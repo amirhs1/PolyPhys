@@ -12,7 +12,7 @@ assignees: ""
 
 What problem would this solve?
 
-## Proposed Behaviour
+## Proposed Behavior
 
 What should PolyPhys do?
 

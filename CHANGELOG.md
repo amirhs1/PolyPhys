@@ -11,9 +11,13 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Adopt American English as the spelling of PolyPhys in `AGENTS.md`; the existing Canadian forms, including the `recentre` API name, are converted under [#168](https://github.com/amirhs1/PolyPhys/issues/168)
+
 ### Fixed
 
-- Correct the parser count, the module lists of the README and `AGENTS.md`, the contents of a study folder, the CI and coverage descriptions, and five Canadian spellings in the prose files ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+- Correct the parser count, the module lists of the README and `AGENTS.md`, the contents of a study folder, the CI and coverage descriptions, and four spellings, now American, in the prose files ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
 
 ## [0.7.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.7.0) - 2026-11-05
 

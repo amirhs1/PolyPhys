@@ -163,7 +163,7 @@ Keep the path out of tracked files; set the variable in your shell.
 
 | Setting                  | Effect                                                                                       |
 | ------------------------ | -------------------------------------------------------------------------------------------- |
-| `--strict-markers`       | An unregistered marker, such as a misspelt `private_data`, is an error rather than a warning |
+| `--strict-markers`       | An unregistered marker, such as a misspelled `private_data`, is an error rather than a warning |
 | `--strict-config`        | A warning while reading the pytest configuration is an error                                 |
 | `xfail_strict = true`    | A test marked `xfail` that passes fails the run                                              |
 | `-ra`                    | The summary lists every test that did not pass, with the reason for each skip                |
