@@ -46,8 +46,9 @@ without ``epshc``; their copies here insert ``epshc1``, the value of their
 H-NS core-crowder pair coefficients, so that the parser reads them.
 
 The tier C files, the ``all`` windows and data files of the other crowded
-wholes, stay in the maintainer's folder ``<POLYPHYS_DATA_DIR>/fixtures/``
-under the runs' own names.
+wholes, stay in the maintainer's folder
+``<POLYPHYS_DATA_DIR>/polyphys_test_files/probe_real_frames/`` under the
+runs' own names.
 
 A polymer dump holds only the polymer group, so it cannot be opened with
 its whole's full data file. It is opened with the data file of the whole
@@ -341,11 +342,13 @@ def private_window_files(
     private_data_dir: Path,
 ) -> Callable[[RealWhole], tuple[Path, Path]]:
     """Factory: the tier C ``all`` window and data file of a crowded whole,
-    under ``<POLYPHYS_DATA_DIR>/fixtures/<source>/``. Use it only in a test
-    marked ``private_data``."""
+    under
+    ``<POLYPHYS_DATA_DIR>/polyphys_test_files/probe_real_frames/<source>/``.
+    Use it only in a test marked ``private_data``."""
 
     def _files(whole: RealWhole) -> tuple[Path, Path]:
-        folder = private_data_dir / 'fixtures' / whole.source
+        folder = (private_data_dir / 'polyphys_test_files'
+                  / 'probe_real_frames' / whole.source)
         (window,) = sorted(folder.glob(f"{whole.source}.j*.ring.all.window."
                                        "lammpstrj.gz"))
         return window, folder / f"{whole.source}.ring.all.data.gz"
