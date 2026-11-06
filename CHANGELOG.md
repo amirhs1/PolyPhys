@@ -20,6 +20,7 @@ version increase may introduce incompatible changes.
 ### Added
 
 - Add `polyphys.viz`, the viz layer behind the new `viz` optional extra, `matplotlib>=3.7`: `viz.colors` holds the Tol bright, vibrant, and muted schemes, the Dutch Field palette, and the maintainer's `STUDY_COLORS` as `#RRGGBB` tuples, importable without a plotting library, and `truncate_colormap`, which cuts a color map to a sub-range; `viz.helpers` holds `set_xticks` and `set_yticks`, which place an axis's ticks every `step` between two limits inside a rounded-down-tenth-of-a-step frame, the proxy-handle makers `color_handles` and `line_handles`, `move_legend_to_axes`, which moves a legend into chosen panels, and `band_under_lines`, which shades a band under each line. These port the generic helpers and palettes of the research code's `visualize` package, with its removed `Legend.legendHandles` use fixed; its study tables, figure scripts, and unused or uncalled helpers are not ported. CI installs the extra in every test job, and `CONTRIBUTING.md` gains the area `viz` ([#80](https://github.com/amirhs1/PolyPhys/issues/80))
+- Add `benchmarks/organizer_timing.py`, a script outside the package that times `whole_from_segments`, `ensemble`, and `ensemble_avg` on one property of one space and prints timings, peak memory, and counts only, for step 1 of [#69](https://github.com/amirhs1/PolyPhys/issues/69) ([#171](https://github.com/amirhs1/PolyPhys/pull/171))
 
 ### Fixed
 
