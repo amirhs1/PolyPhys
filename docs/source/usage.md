@@ -16,7 +16,7 @@ python -m pip install "git+https://github.com/amirhs1/PolyPhys.git"
 To install a specific archived release, append the tag:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.4.0"
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.7.0"
 ```
 
 PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy,
@@ -95,8 +95,8 @@ its lineage and reading the rebuilt name gives the current form.
 
 ## Adding a study
 
-A study is a parser class, which says how its file names read, and a
-`ProjectSpec`, which says how its analysis reads them. The
+A study is a parser class, which says how its file names read, and its
+specs, which say how its probe and its analysis read them. The
 [Studies](studies.md) page shows how to declare both, where a study's
 folder lives, and how to read the tables the research code wrote; the
 examples below use the spec `chain` built there.

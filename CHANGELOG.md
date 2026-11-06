@@ -11,9 +11,19 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Adopt American English as the spelling of PolyPhys in `AGENTS.md`; the existing Canadian forms, including the `recentre` API name, are converted under [#168](https://github.com/amirhs1/PolyPhys/issues/168)
+- Take the commit template's `Why:` line from the issue, the maintainer, or an outside report, mark a breaking change with the changelog's `**Breaking:**` instead of `!`, and allow `Refs #n` in the pull request template ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+
 ### Added
 
 - Add `polyphys.viz`, the viz layer behind the new `viz` optional extra, `matplotlib>=3.7`: `viz.colors` holds the Tol bright, vibrant, and muted schemes, the Dutch Field palette, and the maintainer's `STUDY_COLORS` as `#RRGGBB` tuples, importable without a plotting library, and `truncate_colormap`, which cuts a color map to a sub-range; `viz.helpers` holds `set_xticks` and `set_yticks`, which place an axis's ticks every `step` between two limits inside a rounded-down-tenth-of-a-step frame, the proxy-handle makers `color_handles` and `line_handles`, `move_legend_to_axes`, which moves a legend into chosen panels, and `band_under_lines`, which shades a band under each line. These port the generic helpers and palettes of the research code's `visualize` package, with its removed `Legend.legendHandles` use fixed; its study tables, figure scripts, and unused or uncalled helpers are not ported. CI installs the extra in every test job, and `CONTRIBUTING.md` gains the area `viz` ([#80](https://github.com/amirhs1/PolyPhys/issues/80))
+
+### Fixed
+
+- Correct the parser count, the module lists of the README and `AGENTS.md`, the contents of a study folder, the CI and coverage descriptions, and four spellings, now American, in the prose files ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+- Update the README's current focus and tier-review date, the release tag of the install example in `usage.md`, the stage-directory wording for the probe's outputs in `lineage.md`, and a spelling in `CITATION.cff` ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
 
 ## [0.7.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.7.0) - 2026-11-05
 

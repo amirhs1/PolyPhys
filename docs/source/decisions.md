@@ -65,10 +65,9 @@ its parser, and checks it against the parser; PolyPhys holds no table of
 studies. Each study is one folder, `projects/<study>/`, which
 `pyproject.toml` excludes from the installed package and CI lints,
 type-checks, and tests with it. Today the folder holds the study's
-`ProjectSpec`; its probe settings and its analysis table will be records of
-their own there, built beside the spec, when the probe and the pipeline
-land, and its drivers and figure code follow. A correction to one study's
-data, such as merging two neighbouring crowder volume fractions, is code in
+`ProjectSpec`, its `ProbeSpec`, and its `AnalysisTable` records, built
+beside one another; its drivers and figure code follow. A correction to one
+study's data, such as merging two neighbouring crowder volume fractions, is code in
 that study's folder with its reason, never an option of the library. The
 published studies' folders are in this repository; unpublished studies use
 the same layout in the research repository.

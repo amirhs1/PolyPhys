@@ -12,7 +12,8 @@ from an AI tool; an agent gives it only as supplied.
 
 ## Related issues
 
-`Closes #n` for each issue this pull request completes, or `None`.
+`Closes #n` for each issue this pull request completes, `Refs #n` for one it
+covers in part, or `None`.
 
 ## Problem
 

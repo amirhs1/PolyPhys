@@ -51,13 +51,13 @@ deleted branches.
 
 ```text
 PolyPhys/
-  polyphys/manage/     parser, organizer, utils, types: filenames → lineage → reduced ensembles
-  polyphys/analyze/    measurer, stats, clusters, correlations, sumrule: per-frame observables, their statistics, and the sum rule on reduced profiles
+  polyphys/manage/     parser, organizer, projects, utils, types: filenames → lineage → reduced ensembles
+  polyphys/analyze/    measurer, stats, clusters, correlations, sumrule, density, pipeline: per-frame observables, their statistics, density profiles, the sum rule on reduced profiles, and the reduction of probe artifacts
   polyphys/simulate/   core, log, dump, data, build: LAMMPS logs, dumps, data files, and start configurations
-  polyphys/probe/      core, chain_size: per-frame observables read from LAMMPS trajectories with MDAnalysis (the mda extra)
+  polyphys/probe/      core, chain_size, binders, histograms, pairs: per-frame observables read from LAMMPS trajectories with MDAnalysis (the mda extra)
   polyphys/viz/        colors, helpers: color lists and matplotlib helpers for the studies' figures (the viz extra)
-  polyphys/tests/      tests for analyze/, manage/, probe/, simulate/, viz/, and packaging
-  projects/            one folder per study: its ProjectSpec; not installed
+  polyphys/tests/      tests for analyze/, manage/, probe/, simulate/, viz/, packaging, the docs pages, and the shared fixtures
+  projects/            one folder per study: its ProjectSpec, ProbeSpec, and analysis tables; not installed
   docs/source/         Sphinx sources
   README.md            user guide; its examples run as doctests
   AI-POLICY.md         AI policy, for contributors
@@ -93,6 +93,11 @@ one before it.
   `simsAll`, `simsCont`, `logs`, `trjs`, `probes`, `analysis`, `viz`,
   `galaxy`, `allInOne`; stages `segment`, `wholeSim`, `ens`, `ensAvg`,
   `space`, `galaxy`. A filename-parsing change needs matching parser tests.
+- Write American English (behavior, center, labeled, modeling). Names from
+  other tools, such as the LAMMPS `recenter` command, and titles of cited
+  works keep their own spelling. Older text still uses Canadian forms,
+  including the `recentre` API name, until #168 converts them; do not
+  convert them in an unrelated change.
 - Preserve physical units, array-shape contracts, numerical meaning, and
   established scientific assumptions. Explain a changed expected value, with
   its scientific basis, in the pull request.
