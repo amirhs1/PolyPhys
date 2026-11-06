@@ -27,7 +27,7 @@ to read the tables that the research code before PolyPhys wrote.
   {class}`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
 
 *species*
-: A kind of particle, labelled as in the property names: `Mon` for the
+: A kind of particle, labeled as in the property names: `Mon` for the
   monomers, `Crd` for the crowders, `Hns` for the H-NS cores.
 
 $a_i$

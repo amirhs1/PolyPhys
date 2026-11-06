@@ -7,7 +7,7 @@
 The :mod:`polyphys.analyze.sumrule` module tests the density sum rule of
 Jeon et al. (2016) on the ensemble-averaged density profiles of a space: it
 scales each species' profile by its particle size, normalizes it by a
-reference value, folds a longitudinal profile about the polymer's centre,
+reference value, folds a longitudinal profile about the polymer's center,
 and sums the species' scaled profiles state point by state point. The
 profiles come from the ``ensAvg`` stage of the artifact lineage that
 :mod:`polyphys.manage.organizer` builds; the per-frame densities behind them
@@ -37,11 +37,11 @@ Notation
     :math:`\\phi_i = \\pi a_i^3 \\rho_i / 6`.
 :math:`r`
     The radial coordinate: the distance from the cylinder axis in a
-    cylinder and from the polymer's centre of mass in a periodic cube. The
+    cylinder and from the polymer's center of mass in a periodic cube. The
     bins of an ``r`` profile run outward from :math:`r = 0`.
 :math:`z`
     The longitudinal coordinate: the axial distance from the polymer's
-    centre of mass in a cylinder, with bins symmetric about :math:`z = 0`.
+    center of mass in a cylinder, with bins symmetric about :math:`z = 0`.
 *scaled profile*
     One term of the sum rule, the column ``<prop>-scale``:
     :math:`\\phi_i / a_i` for a volume fraction and :math:`a_i^2 \\rho_i` for
@@ -119,7 +119,7 @@ logger = logging.getLogger(__name__)
 # direction). In a cylinder, r runs from the axis to the wall, whose crowder
 # layering makes the maximum the wrong reference, so the axis value is used;
 # along z and in a periodic cube the maximum is the far-field value of a
-# crowder profile and the centre value of a monomer profile.
+# crowder profile and the center value of a monomer profile.
 PROFILE_NORMALIZERS: dict[tuple[GeometryT, DirectionT], NormalizerT] = {
     ('cylindrical', 'r'): 'first',
     ('cylindrical', 'z'): 'max',
@@ -225,7 +225,7 @@ def normalize_r(
     ensemble-averaged distribution by a reference value.
 
     The radial coordinate :math:`r` is the distance from the cylinder axis
-    in a cylinder and from the polymer's centre of mass in a periodic cube,
+    in a cylinder and from the polymer's center of mass in a periodic cube,
     in the monomer diameter; the profile's bins run outward from
     :math:`r = 0`.
 
@@ -301,9 +301,9 @@ def normalize_z(
     fold it about :math:`z = 0`.
 
     The longitudinal coordinate :math:`z` is the axial distance from the
-    polymer's centre of mass, in the monomer diameter. The bins are assumed
+    polymer's center of mass, in the monomer diameter. The bins are assumed
     symmetric about :math:`z = 0`, so folding averages bin :math:`i` with
-    its mirror bin :math:`n - 1 - i` and keeps the centre bin of an odd
+    its mirror bin :math:`n - 1 - i` and keeps the center bin of an odd
     count as it is; the folded ``bin_center`` is :math:`|z|`.
 
     Parameters
@@ -316,7 +316,7 @@ def normalize_z(
         ``bin_center`` column when `fold` is True. It is not modified.
     normalizer : :py:data:`~polyphys.manage.types.NormalizerT`, default 'max'
         The reference value, as in :func:`normalize_r`; ``'max'`` is the
-        far-field value of a crowder profile and the centre value of a
+        far-field value of a crowder profile and the center value of a
         monomer profile when each is monotone in :math:`|z|`.
     fold : bool, default True
         Whether to fold the profile about :math:`z = 0`.
@@ -352,7 +352,7 @@ def normalize_z(
     0         0.5            3.0                 3.0      1.000000
     1         1.5            1.0                 3.0      0.333333
 
-    An odd number keeps its centre bin:
+    An odd number keeps its center bin:
 
     >>> profile = pd.DataFrame({'bin_center': [-1.0, 0.0, 1.0],
     ...                         'zRhoMon-scale': [2.0, 4.0, 2.0]})
@@ -377,7 +377,7 @@ def normalize_z(
     n_bins = len(out)
     half = n_bins // 2
     # The z > 0 half in increasing |z|, and the z < 0 half reversed to match
-    # it bin for bin; the centre bin of an odd count stays on its own.
+    # it bin for bin; the center bin of an odd count stays on its own.
     pos = out.iloc[n_bins - half:].reset_index(drop=True)
     neg = out.iloc[:half].iloc[::-1].reset_index(drop=True).copy()
     neg["bin_center"] = -neg["bin_center"]
@@ -385,9 +385,9 @@ def normalize_z(
     folded = pos.copy()
     folded[numeric] = 0.5 * (pos[numeric] + neg[numeric])
     if n_bins % 2:
-        centre = out.iloc[[half]].copy()
-        centre["bin_center"] = centre["bin_center"].abs()
-        folded = pd.concat([centre, folded], axis=0)
+        center = out.iloc[[half]].copy()
+        center["bin_center"] = center["bin_center"].abs()
+        folded = pd.concat([center, folded], axis=0)
     return folded.reset_index(drop=True)
 
 
@@ -432,9 +432,9 @@ def space_profiles(
     where the number density :math:`\\rho_i = 6 \\phi_i / (\\pi a_i^3)`
     makes the two forms the same statement, and :math:`x` is the radial
     coordinate :math:`r` (the distance from the cylinder axis in a cylinder
-    and from the polymer's centre of mass in a periodic cube) or the
+    and from the polymer's center of mass in a periodic cube) or the
     longitudinal coordinate :math:`z` (the axial distance from the
-    polymer's centre of mass). This function builds one term of the sum:
+    polymer's center of mass). This function builds one term of the sum:
     for ``quantity='Phi'`` the scaled profile ``<prop>-scale`` is the
     volume fraction divided by the species' diameter, and for
     ``quantity='Rho'`` the number density times the diameter squared.
@@ -466,7 +466,7 @@ def space_profiles(
         key of `species_sizes`.
     parser : ParserClassT
         The study's parser class; its geometry chooses the default
-        normalizer and the recentred columns.
+        normalizer and the recentered columns.
     hierarchy : str
         Pattern prefix of the filenames, such as ``'N*'``.
     physical_attrs : list of str
@@ -537,8 +537,8 @@ def space_profiles(
           entry of `physical_attrs`; `crowder_attr`; and
           ``phi_bulk_c_round``.
         - For each crowder of `crowders` with size attribute ``c``:
-          ``bin_center-<c>``, which is :math:`2 b / a_c` for the bin centre
-          :math:`b`, the bin centre in crowder radii. For ``'r'`` in a
+          ``bin_center-<c>``, which is :math:`2 b / a_c` for the bin center
+          :math:`b`, the bin center in crowder radii. For ``'r'`` in a
           cylinder of diameter :math:`D` also
           ``bin_center-<c>-recentered``, which is
           :math:`2 b / a_c - (D \\bmod a_c) / a_c`, so that the wall sits at
@@ -744,7 +744,7 @@ def space_profiles(
             lambda x: round_to_multiple(x, divisor, round_to)
         )
 
-        # Bin centres in crowder units, recentred on the wall in a cylinder
+        # Bin centers in crowder units, recentered on the wall in a cylinder
         for label in crowders:
             crowder_size_attr = species_sizes[label]
             crowder_size = getattr(prop_info, crowder_size_attr)

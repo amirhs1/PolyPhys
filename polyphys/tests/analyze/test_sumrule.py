@@ -46,7 +46,7 @@ def radial_profile():
 def make_profile_space(tmp_path):
     """Factory: write one '<state>-all-<prop>-ensAvg.csv' per state point.
 
-    Takes the property, the bin centres, one '-mean' column per state
+    Takes the property, the bin centers, one '-mean' column per state
     point, the ensemble_long names (default: two SumRuleCyl points), and
     optionally one '-norm-sem' column per state point. Returns the ensAvg
     directory, ending with '/'.
@@ -149,8 +149,8 @@ def test_normalize_z_folds_an_even_count_onto_abs_z():
     np.testing.assert_allclose(out["zRhoMon-norm"], [1.0, 1 / 3], rtol=1e-15)
 
 
-def test_normalize_z_keeps_the_centre_bin_of_an_odd_count():
-    """The centre bin of an odd count is kept as it is, first in |z| order."""
+def test_normalize_z_keeps_the_center_bin_of_an_odd_count():
+    """The center bin of an odd count is kept as it is, first in |z| order."""
     profile = pd.DataFrame({"bin_center": [-1.0, 0.0, 1.0],
                             "zRhoMon-scale": [2.0, 4.0, 2.0]})
     out = normalize_z("zRhoMon", profile)
@@ -267,7 +267,7 @@ def test_space_profiles_cylinder_r_normalizes_by_the_axis_value(
 
 
 def test_space_profiles_cube_r_normalizes_by_the_maximum(make_profile_space):
-    """In a cube, an r profile is divided by its maximum and not recentred."""
+    """In a cube, an r profile is divided by its maximum and not recentered."""
     state = "al5.0nl5ml125.0ns400ac1.5nc100l100.0dt0.005bdump2000adump5000"
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]], states=[state])
@@ -286,7 +286,7 @@ def test_space_profiles_z_folds_and_normalizes_by_the_maximum(
     make_profile_space, cyl_sizes
 ):
     """A z profile is folded about z = 0, divided by its maximum, and not
-    recentred."""
+    recentered."""
     database = make_profile_space("zPhiCrd", [-1.5, -0.5, 0.5, 1.5],
                                   [[0.1, 0.3, 0.3, 0.1]])
     space = space_profiles(database, "Phi", "z", "Crd", SumRuleCyl, "N*", [],
@@ -298,7 +298,7 @@ def test_space_profiles_z_folds_and_normalizes_by_the_maximum(
     assert not [c for c in space.columns if "recentered" in c]
 
 
-def test_space_profiles_recentres_cylinder_r_on_the_wall(make_profile_space,
+def test_space_profiles_recenters_cylinder_r_on_the_wall(make_profile_space,
                                                          cyl_sizes):
     """For r in a cylinder, 2b/a_c - (D mod a_c)/a_c and the normalized
     b - (D mod a_c) are added, with D = 20 and a_c = 1.5 from the name."""
@@ -335,10 +335,10 @@ def test_space_profiles_adds_one_column_set_per_crowder(make_profile_space):
                                [0.5, 1.5, 2.5], rtol=1e-15)
 
 
-def test_space_profiles_two_crowders_in_a_cylinder_recentre_each(
+def test_space_profiles_two_crowders_in_a_cylinder_recenter_each(
     make_profile_space
 ):
-    """Two crowder labels of one size in a cylinder give equal recentred
+    """Two crowder labels of one size in a cylinder give equal recentered
     columns, each suffixed by its size attribute.
 
     Property: the research code's bidisperse copy raised KeyError here.

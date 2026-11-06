@@ -68,7 +68,7 @@ def _contact_cutoff(info: ParserBase) -> float:
 # lines 1818-1860): its selections, bin sizes, and species. The research
 # all-group probe selected the crowders, the small monomers, and the foci;
 # 'Mon', the whole ring, is added because the analysis table below reads
-# its histograms. The block length and the recentring are the maintainer's
+# its histograms. The block length and the recentering are the maintainer's
 # decisions of 2026-11-04.
 PROBE = ProbeSpec(
     project=SPEC,

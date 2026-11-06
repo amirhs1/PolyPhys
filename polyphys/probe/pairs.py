@@ -163,13 +163,13 @@ class PairDistances(AnalysisBase):
         int64 ``(n_frames, n + 1)``, ``[t, s]`` the number of clusters of
         size ``s`` in frame ``t``, with ``[t, 0]`` always 0.
     n_frames : int
-        After :meth:`run`, the number of frames analysed, from
+        After :meth:`run`, the number of frames analyzed, from
         :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames : numpy.ndarray
-        After :meth:`run`, the indices of the frames analysed, shape
+        After :meth:`run`, the indices of the frames analyzed, shape
         ``(n_frames,)``.
     times : numpy.ndarray
-        After :meth:`run`, the times of the frames analysed, shape
+        After :meth:`run`, the times of the frames analyzed, shape
         ``(n_frames,)``, in the trajectory's time unit.
 
     Raises

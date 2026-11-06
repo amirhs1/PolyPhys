@@ -4,11 +4,11 @@
 ==========================================================
 
 
-The :mod:`polyphys.analyze.density` module turns a histogram of bead centres
+The :mod:`polyphys.analyze.density` module turns a histogram of bead centers
 along one coordinate into two profiles: the local number density, which
-counts centres per bin volume, and the local volume fraction, which counts
+counts centers per bin volume, and the local volume fraction, which counts
 the volume the beads occupy. The second is the harder one, because a bead of
-finite size reaches into the bins next to the one that holds its centre.
+finite size reaches into the bins next to the one that holds its center.
 Every routine is a numpy or scipy kernel on arrays: reading frames, binning
 positions, and averaging over frames are the caller's work, and the only
 geometric inputs are the bin edges, the bead diameter, and the box lengths.
@@ -30,7 +30,7 @@ Notation
     :math:`\\pi L (e_{i+1}^2 - e_i^2)`, or a spherical shell
     :math:`4 \\pi (e_{i+1}^3 - e_i^3) / 3`.
 :math:`H_i`, :math:`F`
-    The number of bead centres counted in bin :math:`i` over :math:`F`
+    The number of bead centers counted in bin :math:`i` over :math:`F`
     frames, ``counts`` and ``n_frames``.
 :math:`\\rho_i = H_i / (F V_i)`
     The local number density of bin :math:`i`, ``rho``, in beads per cubic
@@ -38,12 +38,12 @@ Notation
 :math:`a`, :math:`R_b = a / 2`, :math:`v = \\pi a^3 / 6`
     The bead diameter ``bead_diameter``, its radius, and its volume.
 :math:`s(x \\to j)`
-    The *share kernel*: the volume of one bead whose centre is at coordinate
+    The *share kernel*: the volume of one bead whose center is at coordinate
     :math:`x` that lies inside bin :math:`j`. It sums to :math:`v` over the
     bins when the bead is inside the domain.
 :math:`S_{ij}`
-    The *share matrix*, ``share``: the volume of a test bead centred in bin
-    :math:`i` that lies in bin :math:`j`, with the bead at the bin centre
+    The *share matrix*, ``share``: the volume of a test bead centered in bin
+    :math:`i` that lies in bin :math:`j`, with the bead at the bin center
     (``shares='centre'``) or averaged over the bin (``shares='average'``).
 :math:`\\phi_i = \\sum_j S_{ij} \\rho_j`
     The local volume fraction of bin :math:`i`, ``phi``, dimensionless.
@@ -68,7 +68,7 @@ The volume fraction field is the indicator of "inside some bead", and in the
 continuum its average over a region is the density convolved with a ball of
 radius :math:`R_b`. With the density piecewise constant on the bins, the
 value at a point :math:`x` is :math:`\\sum_j \\rho_j\\, s(x \\to j)`. The
-research code evaluated this at the bin centre, :math:`\\phi_i = \\sum_j
+research code evaluated this at the bin center, :math:`\\phi_i = \\sum_j
 \\rho_j\\, s(c_i \\to j)` (thesis, appendix "Discrete local distributions
 in the cylindrical coordinate system", eq. 7); ``shares='centre'`` keeps
 that form. The default, ``shares='average'``, averages the kernel over the
@@ -86,7 +86,7 @@ which is the exact bin average under the one assumption already made for
 that one identity the averaged form conserves the total bead volume,
 :math:`\\sum_i V_i \\phi_i = \\sum_j H_j v / F`, and returns
 :math:`\\phi = \\rho v` for a uniform fluid, both to round-off. The
-centred form gets the second right and misses the first by
+centered form gets the second right and misses the first by
 :math:`O(h^2)` along :math:`r`: about 2 % of a bead volume at a bin width
 :math:`h = a / 4` and 0.5 % at :math:`a / 8`.
 
@@ -116,7 +116,7 @@ Conventions the kernels do not fix
 
 :func:`bin_volumes` takes the slab diameter the caller passes.
 :func:`density_profiles` passes :math:`D_\\mathrm{eff} = D - a`, the
-diameter of the region a bead centre can reach, so that a uniform crowder
+diameter of the region a bead center can reach, so that a uniform crowder
 fluid returns the bulk volume fraction as the parsers define it,
 :math:`\\phi_c = N_c v_c / (\\pi D_\\mathrm{eff}^2 L / 4)`. Along
 :math:`r` no such choice arises. A spherical shell beyond half the box
@@ -144,7 +144,7 @@ References
   https://mathworld.wolfram.com/Circle-CircleIntersection.html
 - A. H. Sadeghi Isfahani, PhD thesis, University of Waterloo (2024),
   appendix "Discrete local distributions in the cylindrical coordinate
-  system", for the centred form.
+  system", for the centered form.
 - C. Jeon, C. Hyeon, Y. Jung, and B.-Y. Ha, Soft Matter 12, 9786-9796
   (2016), https://doi.org/10.1039/c6sm01924b, for the use of these profiles
   in the density sum rule (:mod:`polyphys.analyze.sumrule`).
@@ -182,7 +182,7 @@ FloatArray = npt.NDArray[np.float64]
 
 ShareMode = Literal['average', 'centre']
 """How the test bead sits in its bin: averaged over the bin, or at its
-centre as in the research code.
+center as in the research code.
 
 .. versionadded:: 0.6.0
 """
@@ -399,7 +399,7 @@ def _gauss_pieces(
 def _lens_area(r: FloatArray, r_cyl: float, d: FloatArray) -> FloatArray:
     """
     Return the area of the intersection of a disc of radius `r` with a disc
-    of radius `r_cyl` whose centres are `d` apart (MathWorld, Circle-Circle
+    of radius `r_cyl` whose centers are `d` apart (MathWorld, Circle-Circle
     Intersection, eq. 15), broadcast over `r` and `d`.
     """
     r, d = np.broadcast_arrays(r, d)
@@ -428,7 +428,7 @@ def _ball_in_cylinder(
     """
     Return the volume of a ball of radius `r_ball` inside the coaxial
     cylinder of radius `r_cyl`, for an array of axial distances `d` of the
-    ball's centre from the axis.
+    ball's center from the axis.
 
     The ball is sliced by planes normal to the axis; the slice at height
     ``z`` is a disc of radius ``sqrt(r_ball**2 - z**2)`` and its share is a
@@ -464,7 +464,7 @@ def sphere_cylinder_intersection(
 ) -> float:
     """
     Compute the volume of a ball that lies inside a cylinder whose axis
-    passes at distance `d` from the ball's centre.
+    passes at distance `d` from the ball's center.
 
     Parameters
     ----------
@@ -473,7 +473,7 @@ def sphere_cylinder_intersection(
     r_cylinder : float
         Radius of the cylinder; zero or negative gives an empty cylinder.
     d : float
-        Distance of the ball's centre from the cylinder's axis, ``>= 0``.
+        Distance of the ball's center from the cylinder's axis, ``>= 0``.
 
     Returns
     -------
@@ -488,7 +488,7 @@ def sphere_cylinder_intersection(
     Notes
     -----
     The ball is sliced by planes normal to the axis. At height :math:`z`
-    the slice is a disc of radius :math:`\\sqrt{R_b^2 - z^2}` whose centre
+    the slice is a disc of radius :math:`\\sqrt{R_b^2 - z^2}` whose center
     is :math:`d` from the axis, and the cylinder cuts the plane in a disc of
     radius :math:`R` about the axis; the slice's share is the lens area of
     the two discs (MathWorld, Circle-Circle Intersection, eq. 15), and the
@@ -534,7 +534,7 @@ def _segment_second_antiderivative(u: FloatArray, r_ball: float) -> FloatArray:
     """
     Return :math:`G_2(u) = \\int_{-\\infty}^{u} G`, where :math:`G(u)` is
     the volume of a ball of radius `r_ball` below the plane at signed height
-    `u` from its centre (the spherical segment from :math:`-R_b` to
+    `u` from its center (the spherical segment from :math:`-R_b` to
     :math:`u`); so :math:`G_2` is the second antiderivative of the ball's
     cross-section area, used to average a slab's share over the bead's
     position in closed form.
@@ -572,7 +572,7 @@ def _slab_entries(
             f' length {period}.'
         )
     widths = np.diff(edges)
-    centres = 0.5 * (edges[:-1] + edges[1:])
+    centers = 0.5 * (edges[:-1] + edges[1:])
     reach = int(np.ceil((r_ball + widths.max()) / widths.min())) + 1
     rows_i = np.arange(n_bins)
     rows, cols, vals = [], [], []
@@ -583,7 +583,7 @@ def _slab_entries(
         lo = edges[col] + image * period
         hi = edges[col + 1] + image * period
         if shares == 'centre':
-            value = _segment(r_ball, lo - centres, hi - centres)
+            value = _segment(r_ball, lo - centers, hi - centers)
         else:
             g2 = _segment_second_antiderivative
             value = (
@@ -608,13 +608,13 @@ def _shell_entries(
 ) -> tuple[npt.NDArray[np.intp], npt.NDArray[np.intp], FloatArray]:
     """
     Return the ``(row, col, value)`` triples of the share matrix of
-    concentric shells. `inside(edge, x)` is the volume of a bead centred at
+    concentric shells. `inside(edge, x)` is the volume of a bead centered at
     the radial positions `x` that lies within radius `edge`; a shell's share
     is the difference between its two edges.
     """
     n_bins = edges.size - 1
     power = _MEASURE_POWER[scheme]
-    centres = 0.5 * (edges[:-1] + edges[1:])
+    centers = 0.5 * (edges[:-1] + edges[1:])
     rows, cols, vals = [], [], []
     for i in range(n_bins):
         lo, hi = edges[i], edges[i + 1]
@@ -624,7 +624,7 @@ def _shell_entries(
         )
         shell_edges = edges[j_lo: j_hi + 2]
         if shares == 'centre':
-            x = np.array([centres[i]])
+            x = np.array([centers[i]])
             weights = np.array([1.0])
             norm = 1.0
         else:
@@ -655,7 +655,7 @@ def share_matrix(
     intersection: IntersectionMode = 'exact',
 ) -> csr_array:
     """
-    Build the share matrix: the volume of a test bead centred in each bin
+    Build the share matrix: the volume of a test bead centered in each bin
     that lies in each other bin.
 
     Parameters
@@ -672,7 +672,7 @@ def share_matrix(
         ``'r'`` for shells, or ``'z'`` for the periodic slabs of a cylinder.
     shares : :py:data:`ShareMode`, default ``'average'``
         ``'average'`` averages the test bead over its bin with the bin's
-        measure; ``'centre'`` places it at the bin centre, as the research
+        measure; ``'centre'`` places it at the bin center, as the research
         code did.
     intersection : :py:data:`IntersectionMode`, default ``'exact'``
         The kernel of a cylindrical shell: :func:`sphere_cylinder_intersection`
@@ -718,7 +718,7 @@ def share_matrix(
     Examples
     --------
     Four periodic slabs of width 1 and a bead of diameter 1: at the bin
-    centre the bead lies wholly in its own slab, so each row is the bead
+    center the bead lies wholly in its own slab, so each row is the bead
     volume :math:`\\pi / 6` on the diagonal:
 
     >>> import numpy as np
@@ -731,7 +731,7 @@ def share_matrix(
            [0.    , 0.    , 0.5236, 0.    ],
            [0.    , 0.    , 0.    , 0.5236]])
 
-    Averaged over the bin, the bead reaches into both neighbours, the last
+    Averaged over the bin, the bead reaches into both neighbors, the last
     slab's into the first through the periodic boundary, and every row
     still sums to :math:`\\pi / 6`:
 
@@ -784,7 +784,7 @@ def number_density(
     Parameters
     ----------
     counts : array_like
-        The bead centres counted per bin, shape ``(n_bins,)`` summed over
+        The bead centers counted per bin, shape ``(n_bins,)`` summed over
         the frames, or ``(n_frames, n_bins)`` with one row per frame (then
         leave `n_frames` at 1). Non-negative.
     volumes : array_like
@@ -1038,7 +1038,7 @@ def density_profiles(
     Parameters
     ----------
     counts : array_like
-        The bead centres counted per bin, shape ``(n_bins,)`` summed over
+        The bead centers counted per bin, shape ``(n_bins,)`` summed over
         the frames or ``(n_frames, n_bins)``; see :func:`number_density`.
     edges : array_like
         The bin edges, shape ``(n_bins + 1,)``.
@@ -1056,7 +1056,7 @@ def density_profiles(
         The cylinder length and diameter and the cube side, as
         :func:`bin_volumes` needs them. Along ``'z'`` the slabs take the
         effective diameter ``dcyl - bead_diameter``, the diameter of the
-        region a bead centre can reach, so that a uniform fluid returns the
+        region a bead center can reach, so that a uniform fluid returns the
         bulk volume fraction as the parsers define it.
     shares : :py:data:`ShareMode`, default ``'average'``
         See :func:`share_matrix`.

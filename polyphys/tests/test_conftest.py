@@ -334,8 +334,8 @@ def test_lammps_errors_when_lmp_is_not_an_executable(
     result.assert_outcomes(errors=1, passed=1)
 
 
-def test_strict_markers_rejects_misspelt_private_data(pytester):
-    """A misspelt private_data marker fails collection."""
+def test_strict_markers_rejects_misspelled_private_data(pytester):
+    """A misspelled private_data marker fails collection."""
     pytester.makeconftest(Path(__file__).with_name("conftest.py").read_text())
     pytester.makepyfile(
         test_typo="""

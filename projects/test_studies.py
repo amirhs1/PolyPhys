@@ -403,7 +403,7 @@ def test_study_probe_selections(module: str,
                                 selections: list[tuple[str, str]]) -> None:
     """Each study selects its chain, its second species, and the species of
     its all-group histograms as the research probes did, with the chain
-    labelled Mon."""
+    labeled Mon."""
     probe = _probe(module)
 
     assert (list(probe.selections.items()), probe.chain) == (
@@ -466,7 +466,7 @@ def test_study_probe_histogram_fields(module: str, species: tuple[str, ...],
                                       keys: list[str]) -> None:
     """Each study bins the species its analysis table reads, with a bin size
     along every direction its geometry needs, blocks of 100 frames, and the
-    frame recentred by half the box."""
+    frame recentered by half the box."""
     probe = _probe(module)
 
     assert probe.histogram_species == species

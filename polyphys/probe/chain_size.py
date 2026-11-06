@@ -15,7 +15,7 @@ array per observable in its ``results``.
 The research code measured the same seven quantities in one loop over the
 frames of each study's probe function, after shifting every position by
 half the box. Every quantity here is invariant under such a shift, because
-each one first recentres the chain on its centre of geometry or of mass,
+each one first recenters the chain on its center of geometry or of mass,
 so the shift is dropped.
 
 Contents
@@ -46,7 +46,7 @@ Notation
     The position and mass of bead :math:`i`, in the dump's length and mass
     units; the studies use the monomer diameter and mass.
 :math:`\\mathbf{r}_\\mathrm{cg}`, :math:`\\mathbf{r}_\\mathrm{cm}`
-    The centre of geometry :math:`\\sum_i \\mathbf{r}_i / N` and the centre
+    The center of geometry :math:`\\sum_i \\mathbf{r}_i / N` and the center
     of mass :math:`\\sum_i m_i \\mathbf{r}_i / \\sum_i m_i`.
 :math:`\\mathbf{S}`, :math:`\\lambda_1 \\ge \\lambda_2 \\ge \\lambda_3`
     The gyration tensor
@@ -179,13 +179,13 @@ class ChainSize(AnalysisBase):
         name: shape ``(n_frames,)`` for every scalar, ``(n_frames, 3, 3)``
         for ``principalT``.
     n_frames : int
-        After :meth:`run`, the number of frames analysed, from
+        After :meth:`run`, the number of frames analyzed, from
         :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames : numpy.ndarray
-        After :meth:`run`, the indices of the frames analysed, shape
+        After :meth:`run`, the indices of the frames analyzed, shape
         ``(n_frames,)``.
     times : numpy.ndarray
-        After :meth:`run`, the times of the frames analysed, shape
+        After :meth:`run`, the times of the frames analyzed, shape
         ``(n_frames,)``, in the trajectory's time unit.
 
     Raises
@@ -211,7 +211,7 @@ class ChainSize(AnalysisBase):
     ``transSizeTMon``
         :math:`2 \\langle |\\mathbf{r}_{i,\\perp} -
         \\mathbf{r}_{\\mathrm{cg},\\perp}| \\rangle_i`, twice the mean
-        distance from the centre of geometry in the plane across `axis`
+        distance from the center of geometry in the plane across `axis`
         (:func:`~polyphys.analyze.measurer.transverse_size`).
     ``gyrTMon``
         :math:`R_g = \\sqrt{\\lambda_1 + \\lambda_2 + \\lambda_3}`, the
@@ -237,7 +237,7 @@ class ChainSize(AnalysisBase):
     code did; `unwrap` reaches ``asphericityT`` only.
 
     No per-frame shift of the positions is applied: each observable
-    recentres the chain itself, so the research code's shift of every
+    recenters the chain itself, so the research code's shift of every
     position by half the box changed none of these values.
 
     The MDAnalysis contract: :meth:`_prepare` allocates one float64 array
@@ -252,7 +252,7 @@ class ChainSize(AnalysisBase):
     Cost per frame: :math:`O(N)` time for every observable, since each is a
     sum over the beads followed by at most a :math:`3 \\times 3`
     eigenproblem, plus the :math:`O(N + N_\\mathrm{bonds})` unwrap of the
-    chain when `unwrap` is set; :math:`O(N)` extra space for the recentred
+    chain when `unwrap` is set; :math:`O(N)` extra space for the recentered
     positions. Over a run, :math:`O(F)` space per scalar series and
     :math:`O(9 F)` for ``principalT``, for :math:`F` frames. Positions come
     from MDAnalysis as float32, so each value carries a relative round-off
@@ -285,7 +285,7 @@ class ChainSize(AnalysisBase):
     >>> analysis.results['fsdT']
     array([0., 2.])
 
-    The frames to analyse are chosen as in any MDAnalysis analysis:
+    The frames to analyze are chosen as in any MDAnalysis analysis:
 
     >>> ChainSize(universe.atoms, ('fsdT',)).run(start=1).results['fsdT']
     array([2.])

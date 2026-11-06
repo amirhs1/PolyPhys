@@ -18,8 +18,8 @@ A3. The volume of a ball of radius ``R_b`` inside a coaxial cylinder of
     4 pi [R_b**3 - (R_b**2 - R**2)**1.5] / 3``.
 
 A4. The averaged slab shares of a bead of diameter 1 in slabs of width 1:
-    the cap beyond the next plane has height ``t = x - 1/2`` for a centre at
-    ``x > 1/2``, so the share into a neighbour is ``int_0^{1/2} pi t**2 (3/2
+    the cap beyond the next plane has height ``t = x - 1/2`` for a center at
+    ``x > 1/2``, so the share into a neighbor is ``int_0^{1/2} pi t**2 (3/2
     - t) / 3 dt = pi / 64`` and the share into the bead's own slab is
     ``pi / 6 - 2 pi / 64 = 13 pi / 96``.
 
@@ -28,7 +28,7 @@ A5. An ideal gas: ``N`` points uniform in a volume ``V`` give a bin count
     within ``5 sqrt(N V_i / V) / V_i`` in every bin.
 
 R1. The research code's volume shares, restated in
-    :func:`_sciops_concentric_shares`: for a bead at each bin centre, the
+    :func:`_sciops_concentric_shares`: for a bead at each bin center, the
     difference of the sphere-sphere volumes at consecutive edges.
 
 R2. A Monte Carlo estimate of a ball-in-cylinder volume from
@@ -83,19 +83,19 @@ def _bead_volume(diameter: float) -> float:
 
 
 def _sciops_concentric_shares(edges: np.ndarray, r_bead: float) -> np.ndarray:
-    """Return the research code's concentric shares, bead at each centre (R1).
+    """Return the research code's concentric shares, bead at each center (R1).
 
-    ``distributions.py`` built, for the bead centred at ``centres[c]``, the
+    ``distributions.py`` built, for the bead centered at ``centers[c]``, the
     share of bin ``k`` as the sphere-sphere volume at edge ``k + 1`` minus
     the one at edge ``k``, with the sphere-sphere formula standing in for
     the sphere-cylinder one along ``r`` in a cylinder.
     """
-    centres = 0.5 * (edges[:-1] + edges[1:])
-    shares = np.zeros((centres.size, centres.size))
-    for c, centre in enumerate(centres):
+    centers = 0.5 * (edges[:-1] + edges[1:])
+    shares = np.zeros((centers.size, centers.size))
+    for c, center in enumerate(centers):
         previous = 0.0
         for k in range(1, edges.size):
-            current = sphere_sphere_intersection(r_bead, edges[k], centre)
+            current = sphere_sphere_intersection(r_bead, edges[k], center)
             shares[c, k - 1] = current - previous
             previous = current
     return shares
@@ -266,14 +266,14 @@ def test_sphere_cylinder_intersection_rejects_bad_input(r_sphere, d, message):
 
 
 def test_share_matrix_centre_slab_entries_are_spherical_segments():
-    """Centred slab shares are the segments between the slab planes (A2)."""
+    """Centered slab shares are the segments between the slab planes (A2)."""
     edges = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
     r_bead = 0.75
     share = share_matrix(edges, 2 * r_bead, 'cylindrical', 'z',
                          shares='centre').toarray()
-    centre = 1.5
+    center = 1.5
     expected = [
-        spherical_segment(r_bead, edges[k] - centre, edges[k + 1] - centre)
+        spherical_segment(r_bead, edges[k] - center, edges[k + 1] - center)
         for k in range(3)
     ]
     assert_allclose(share[1, :3], expected, atol=FLOAT64_ATOL)
@@ -301,10 +301,10 @@ def test_share_matrix_average_slab_entries_match_the_cap_integral():
     ],
 )
 def test_share_matrix_keeps_a_small_bead_in_its_first_shell(geometry, kwargs):
-    """A centred bead reaching no edge of its shell lies wholly in it (A1).
+    """A centered bead reaching no edge of its shell lies wholly in it (A1).
 
-    With edges 0, 1, 2 and a bead of radius 0.25, the bead at centre 0.5
-    spans 0.25 to 0.75 and the one at centre 1.5 spans 1.25 to 1.75.
+    With edges 0, 1, 2 and a bead of radius 0.25, the bead at center 0.5
+    spans 0.25 to 0.75 and the one at center 1.5 spans 1.25 to 1.75.
     """
     share = share_matrix([0.0, 1.0, 2.0], 0.5, geometry, 'r',
                          shares='centre', **kwargs).toarray()
@@ -319,7 +319,7 @@ def test_share_matrix_keeps_a_small_bead_in_its_first_shell(geometry, kwargs):
      pytest.param('cylindrical', id='cylindrical-r')],
 )
 def test_share_matrix_centre_sphere_reproduces_the_research_code(geometry):
-    """The centre mode with the sphere kernel equals the SciOps loop (R1)."""
+    """The center mode with the sphere kernel equals the SciOps loop (R1)."""
     edges = np.arange(0.0, 6.01, 0.25)
     share = share_matrix(edges, 1.0, geometry, 'r', shares='centre',
                          intersection='sphere').toarray()
@@ -409,7 +409,7 @@ def test_volume_fraction_conserves_the_bead_volume(geometry, direction,
 
 def test_share_matrix_wraps_a_bead_across_the_periodic_boundary():
     """A bead in the last slab reaches into the first as much as into its
-    inner neighbour, and the matrix is invariant under a cyclic shift (P)."""
+    inner neighbor, and the matrix is invariant under a cyclic shift (P)."""
     edges = np.arange(0.0, 4.01, 0.5)
     share = share_matrix(edges, 1.0, 'cylindrical', 'z').toarray()
     assert share[7, 0] > 0.0

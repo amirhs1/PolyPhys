@@ -45,7 +45,7 @@ def bond_lengths() -> Callable[..., np.ndarray]:
 
 @pytest.fixture
 def make_box() -> Callable[..., Box]:
-    """A box centred on the origin, by default a cube of side 10."""
+    """A box centered on the origin, by default a cube of side 10."""
     def _box(half: float = 5.0, half_height: float | None = None,
              **kwargs: Any) -> Box:
         height = half if half_height is None else half_height
@@ -84,7 +84,7 @@ def make_record(make_box: Callable[..., Box]) -> Callable[..., DataFile]:
 
 def test_helix_steps_by_the_chord_root_angle() -> None:
     """A bond of sqrt(2) on a helix of radius 1 and pitch 6 steps by pi/3 and
-    rises by 1 per bead, centred on z = 0."""
+    rises by 1 per bead, centered on z = 0."""
     # 4 sin^2(pi/6) + (6 / 2 pi)^2 (pi/3)^2 = 1 + 1 = 2 = b^2 (analytic)
     k = np.arange(7)
     expected = np.column_stack(
@@ -119,10 +119,10 @@ def test_helix_bonds_equal_the_bond_length(
     ("radius", "pitch"),
     [pytest.param(2.0, 2.5, id="narrow"), pytest.param(10.0, 1.5, id="wide")],
 )
-def test_helix_lies_on_its_cylinder_centred_on_z(
+def test_helix_lies_on_its_cylinder_centered_on_z(
     radius: float, pitch: float
 ) -> None:
-    """Every bead is the radius from the z axis and the beads are centred on
+    """Every bead is the radius from the z axis and the beads are centered on
     z = 0."""
     beads = helix(50, radius=radius, pitch=pitch)
 
@@ -362,11 +362,11 @@ def test_plectoneme_ring_bonds_equal_the_bond_length(
     [pytest.param(200, 2.0, 2.5, id="docs-ring"),
      pytest.param(90, 1.0, 2.0, id="narrow")],
 )
-def test_plectoneme_ring_stays_inside_its_radius_centred_on_z(
+def test_plectoneme_ring_stays_inside_its_radius_centered_on_z(
     n_beads: int, radius: float, pitch: float
 ) -> None:
     """No bead is farther than the radius from the axis, the strands reach
-    it, and the ring is centred on z = 0."""
+    it, and the ring is centered on z = 0."""
     beads = plectoneme_ring(n_beads, radius=radius, pitch=pitch)
     radial = np.hypot(beads[:, 0], beads[:, 1])
 
@@ -846,7 +846,7 @@ def test_check_conformation_box_rule_uses_fractions_in_a_triclinic_box(
 def test_check_conformation_cylinder_axis_is_the_box_centre(
     make_record: Callable[..., DataFile], position: list[float], passes: bool
 ) -> None:
-    """The cylinder axis runs through the box centre, here (5, 3), not the
+    """The cylinder axis runs through the box center, here (5, 3), not the
     origin: a bead 2.49 from it passes and one 2.51 from it fails."""
     box = Box(lo=np.array([0.0, 0.0, -5.0]), hi=np.array([10.0, 6.0, 5.0]))
     data = make_record([position], box=box)

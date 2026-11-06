@@ -62,7 +62,7 @@ WholeRelationT = Literal['histogram', 'tseries', 'bin_edge']
 PhaseT = Literal['simsAll', 'simsCont', 'logs', 'trjs', 'probes', 'analysis',
                  'viz', 'galaxy', 'allInOne']
 # How a density profile is normalized: the value of its first bin (r = 0, the
-# cylinder axis or the chain's centre of mass), its last bin (the far field
+# cylinder axis or the chain's center of mass), its last bin (the far field
 # along z or in a periodic cube), its maximum, a value given as a number, or a
 # function of the scaled profile returning the value.
 NormalizerT = (Literal['first', 'last', 'max'] | float

@@ -117,10 +117,10 @@ one before it.
 - Every new or materially changed public function, method, and class has a
   meaningful `Examples` section with small, deterministic examples. Treat
   doctest examples as executable tests, and run them when their output or the
-  behaviour under them changes.
+  behavior under them changes.
 - Every new or materially changed test function or method has a concise
-  docstring stating the behaviour, invariant, or regression it protects. Add or
-  update focused tests for every behaviour change and bug fix; do not rewrite
+  docstring stating the behavior, invariant, or regression it protects. Add or
+  update focused tests for every behavior change and bug fix; do not rewrite
   unrelated legacy tests to satisfy newer style rules.
 - Update the relevant `docs/source/` page or the README for every new or
   materially changed user-facing feature.
@@ -185,8 +185,8 @@ person running you:
   before running it.
 - Create a release or a tag, or change a release version or Zenodo release
   metadata.
-- Change the licence or the attribution policy, or add code under another
-  licence.
+- Change the license or the attribution policy, or add code under another
+  license.
 - Make a breaking change to the public API that the task did not authorize.
 - Make a destructive migration, a broad deletion, or an irreversible data
   change.
@@ -246,7 +246,7 @@ person running you:
    compatibility implications, and what could break.
 4. Implement only against acceptance criteria the maintainer has approved. You
    may propose criteria or ask; do not decide them. When porting or materially
-   revising a module, the criteria include a test-case list (behaviour, input,
+   revising a module, the criteria include a test-case list (behavior, input,
    and the source of each expected value); revise the module to completion
    against that list, then write its test file in one pass, in the same pull
    request, as the `write-test` skill describes.

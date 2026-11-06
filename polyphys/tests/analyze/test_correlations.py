@@ -31,7 +31,7 @@ R2. Bartlett's variance as the e-Handbook states it and ``statsmodels``
     :func:`_bartlett_half_width`.
 
 P.  A property: shape, normalization, invariance under affine rescaling of
-    a series, rigid motion of a chain, relabelling of a ring, or
+    a series, rigid motion of a chain, relabeling of a ring, or
     column-wise independence.
 
 Random inputs come from ``numpy.random.default_rng(seed)`` with the seed
@@ -74,9 +74,10 @@ FLOAT64_ATOL = 1e-10
 def _acf_by_definition(x: np.ndarray, nlags: int) -> np.ndarray:
     """Return the ``1/N`` sample autocorrelation by its defining sum (R1)."""
     n = len(x)
-    centred = x - x.mean()
+    centered = x - x.mean()
     autocov = np.array(
-        [np.sum(centred[: n - k] * centred[k:]) / n for k in range(nlags + 1)]
+        [np.sum(centered[: n - k] * centered[k:]) / n
+         for k in range(nlags + 1)]
     )
     return autocov / autocov[0]
 
@@ -594,7 +595,7 @@ def test_bond_cosine_keeps_leading_frames_axis(make_random_walk):
         )
 
 
-def test_bond_cosine_of_ring_is_symmetric_and_relabelling_invariant(
+def test_bond_cosine_of_ring_is_symmetric_and_relabeling_invariant(
     make_random_walk,
 ):
     """On a ring ``C(k) = C(N - k)``, and starting the labels at another
@@ -602,8 +603,8 @@ def test_bond_cosine_of_ring_is_symmetric_and_relabelling_invariant(
     positions = make_random_walk(n_atoms=21, seed=13)
     result = bond_cosine_correlation(positions, 'ring')
     assert_allclose(result[1:], result[1:][::-1], atol=FLOAT64_ATOL)
-    relabelled = bond_cosine_correlation(np.roll(positions, 5, axis=0), 'ring')
-    assert_allclose(relabelled, result, atol=FLOAT64_ATOL)
+    relabeled = bond_cosine_correlation(np.roll(positions, 5, axis=0), 'ring')
+    assert_allclose(relabeled, result, atol=FLOAT64_ATOL)
 
 
 def test_bond_cosine_runs_on_linear_chain():

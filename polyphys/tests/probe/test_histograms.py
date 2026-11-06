@@ -4,7 +4,7 @@ The inputs are tier A: two species of hand-placed beads in a box of side 20
 about (10, 10, 10), written as a data file and a dump by the
 ``make_chain_universe`` fixture, binned with hand edges of unit or
 half-unit width. Expected values are analytic: the bin of each bead by
-hand from its recentred coordinates; the conservation of each species'
+hand from its recentered coordinates; the conservation of each species'
 particle number per frame; the per-block means from the block sums
 divided by the frame counts; and the edges of ``histogram_edges`` from the
 research code's bin sizes over the ranges the maintainer set on
@@ -35,24 +35,24 @@ ATOL = 1e-12
 
 
 @pytest.fixture
-def centre() -> float:
-    """The box centre along each axis, for a box from 0 to 20."""
+def center() -> float:
+    """The box center along each axis, for a box from 0 to 20."""
     return 10.0
 
 
 @pytest.fixture
-def two_species(centre) -> np.ndarray:
+def two_species(center) -> np.ndarray:
     """Five frames of six beads: beads 1-3 (type 1, ``Mon``) and 4-6 (type 2,
     ``Crd``), the first of each species moved 0.5 along z per frame.
 
-    About the centre ``c``: bead 1 at ``(c + 2.5, c, c)``, bead 2 at
+    About the center ``c``: bead 1 at ``(c + 2.5, c, c)``, bead 2 at
     ``(c, c + 1, c + 3.2)``, bead 3 at ``(c - 1.5, c - 1.5, c - 2)``, bead 4
     at ``(c + 0.5, c + 0.5, c + 0.5)``, bead 5 at ``(c - 3, c, c - 7)``, and
     bead 6 at ``(c, c - 2.5, c + 6)``.
     """
     first = np.array([
         [2.5, 0.0, 0.0], [0.0, 1.0, 3.2], [-1.5, -1.5, -2.0],
-        [0.5, 0.5, 0.5], [-3.0, 0.0, -7.0], [0.0, -2.5, 6.0]]) + centre
+        [0.5, 0.5, 0.5], [-3.0, 0.0, -7.0], [0.0, -2.5, 6.0]]) + center
     frames = np.stack([first.copy() for _ in range(5)])
     frames[:, 0, 2] += 0.5 * np.arange(5)
     frames[:, 3, 2] += 0.5 * np.arange(5)
@@ -118,10 +118,10 @@ def make_analysis(make_chain_universe, two_species, types, cylinder_edges):
                  id='theta-0-pi-over-2-and-minus-3pi-over-4'),
     pytest.param('z', {20: 1, 26: 1, 16: 1}, id='z-0-3.2-and-minus-2'),
 ])
-def test_histograms_bin_each_bead_by_its_recentred_coordinate(
+def test_histograms_bin_each_bead_by_its_recentered_coordinate(
         make_analysis, key, filled):
     """In frame 0 the three Mon beads, at (2.5, 0, 0), (0, 1, 3.2), and
-    (-1.5, -1.5, -2) from the centre, fill the r, theta, and z bins
+    (-1.5, -1.5, -2) from the center, fill the r, theta, and z bins
     computed by hand from the edges and nothing else."""
     analysis = make_analysis().run()
 
@@ -242,7 +242,7 @@ def test_empty_group_gives_zero_histograms(make_chain_universe, two_species,
                        np.full(5, 3))
 
 
-# Recentring
+# Recentering
 
 
 @pytest.mark.parametrize('recentre', [
@@ -277,7 +277,7 @@ def test_recentre_half_undoes_the_readers_translation(
 def test_recentre_none_keeps_the_readers_frame(make_chain_universe,
                                                cube_edges):
     """With 'none', positions stay in the reader's frame, from 0 to 20, so
-    a bead written at (12.5, 10, 10) lies beyond cube edges centred on the
+    a bead written at (12.5, 10, 10) lies beyond cube edges centered on the
     origin and the run raises instead of binning it."""
     positions = np.array([[[12.5, 10.0, 10.0], [10.0, 10.0, 10.0]]])
     universe = make_chain_universe(positions)
@@ -323,8 +323,8 @@ def test_position_outside_the_cartesian_edges_raises(
 # Cube geometry
 
 
-def test_cube_bins_r_from_the_box_centre(make_chain_universe, cube_edges):
-    """In a cube, r is the distance from the box centre: a bead at
+def test_cube_bins_r_from_the_box_center(make_chain_universe, cube_edges):
+    """In a cube, r is the distance from the box center: a bead at
     (c + 3, c + 4, c) is in r bin 5, and only r is binned."""
     positions = np.array([[[13.0, 14.0, 10.0], [10.0, 10.0, 10.0]]])
     universe = make_chain_universe(positions)
@@ -353,7 +353,7 @@ def test_cube_bins_r_from_the_box_centre(make_chain_universe, cube_edges):
                  id='short-recentre'),
 ])
 def test_invalid_arguments_raise(make_analysis, overrides, match):
-    """A bad geometry, block length, or recentring raises at construction."""
+    """A bad geometry, block length, or recentering raises at construction."""
     with pytest.raises(ValueError, match=match):
         make_analysis(**overrides)
 
@@ -508,7 +508,7 @@ def test_histogram_edges_need_every_key(cylinder_spec):
 def test_from_spec_selects_the_species_and_carries_the_spec(
         make_chain_universe, two_species, types, cylinder_spec):
     """from_spec selects each histogram species, builds the whole's edges,
-    and takes the geometry, block length, and recentring from the spec."""
+    and takes the geometry, block length, and recentering from the spec."""
     universe = make_chain_universe(two_species, atom_types=types,
                                    masses=(1.0, 1.0))
     whole = SumRuleCyl(

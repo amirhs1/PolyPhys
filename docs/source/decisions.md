@@ -67,7 +67,7 @@ studies. Each study is one folder, `projects/<study>/`, which
 type-checks, and tests with it. Today the folder holds the study's
 `ProjectSpec`, its `ProbeSpec`, and its `AnalysisTable` records, built
 beside one another; its drivers and figure code follow. A correction to one
-study's data, such as merging two neighbouring crowder volume fractions, is code in
+study's data, such as merging two neighboring crowder volume fractions, is code in
 that study's folder with its reason, never an option of the library. The
 published studies' folders are in this repository; unpublished studies use
 the same layout in the research repository.

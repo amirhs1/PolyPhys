@@ -13,7 +13,7 @@ standard error of the mean, :math:`\\sigma / \\sqrt{n}`, where :math:`n` is
 the number of frames and :math:`\\sigma` the standard deviation of the
 observable over them, counts every frame as a fresh observation and so
 understates the true error, often by a large factor. Blocking averages
-neighbouring frames in pairs, repeatedly, and recomputes the standard error at
+neighboring frames in pairs, repeatedly, and recomputes the standard error at
 each level. Once the blocks are longer than the correlation time, the lag over
 which the observable's autocorrelation decays, the block means are effectively
 independent and the estimate stops growing: that plateau is the error bar to

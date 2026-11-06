@@ -1,6 +1,6 @@
 ---
 name: write-test
-description: Write or change a test in polyphys/tests/. Use when writing a module's test file, adding a test for a behaviour change or bug fix, or materially changing one; not for doctest Examples in source docstrings.
+description: Write or change a test in polyphys/tests/. Use when writing a module's test file, adding a test for a behavior change or bug fix, or materially changing one; not for doctest Examples in source docstrings.
 ---
 
 # Write a test
@@ -10,7 +10,7 @@ description: Write or change a test in polyphys/tests/. Use when writing a modul
 1. For a module's test file, `polyphys/tests/<layer>/test_<module>.py`, start
    once the module is complete, and land the file in the same pull request as
    the module. Start from the test-case list in the approved acceptance
-   criteria: for each case the behaviour, the input, and the source of the
+   criteria: for each case the behavior, the input, and the source of the
    expected value. Write the file in one pass against the finished API. Use
    one fixture set for the module. Do not add cases the list lacks without
    saying so.
@@ -19,18 +19,18 @@ description: Write or change a test in polyphys/tests/. Use when writing a modul
    only with its reason given in the pull request; the module's coverage must
    not fall.
 3. For a bug fix, write the regression test first and watch it fail against
-   the unfixed code, then fix the code. For any other behaviour change, the
+   the unfixed code, then fix the code. For any other behavior change, the
    claim comes from the change.
 
 ## Each test
 
-4. Name it after the behaviour: `test_<unit>_<behaviour>`.
-5. Give it a one-line docstring stating the behaviour, invariant, or regression
+4. Name it after the behavior: `test_<unit>_<behavior>`.
+5. Give it a one-line docstring stating the behavior, invariant, or regression
    it protects, in the present tense: the claim that is false if the test
    fails. No issue numbers; no "Test that…" or restating the name.
-6. Test one behaviour, in arrange, act, assert order: set up, call the code
+6. Test one behavior, in arrange, act, assert order: set up, call the code
    once, then assert. Several asserts are fine when they check that one
-   behaviour.
+   behavior.
 7. Keep loops and branches out of the test body. Put cases in
    `@pytest.mark.parametrize` with `pytest.param(..., id="...")`, so each case
    has a readable id and fails on its own.

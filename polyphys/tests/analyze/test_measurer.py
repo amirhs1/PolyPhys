@@ -98,7 +98,7 @@ def test_end_to_end_of_straight_chain_is_its_length():
     """Three beads one unit apart on a line are two units end to end."""
     positions = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
     result = end_to_end(positions)
-    # float64 round-off of centring and a norm:
+    # float64 round-off of centering and a norm:
     assert result == pytest.approx(2.0, rel=1e-12)
 
 
@@ -110,10 +110,10 @@ def test_end_to_end_rejects_single_atom():
 
 def test_transverse_size_is_twice_mean_distance_from_axis():
     """Two atoms at (0, 0) and (2, 2) in the y-z plane are each sqrt(2) from
-    their centre, so the transverse size about x is 2 sqrt(2)."""
+    their center, so the transverse size about x is 2 sqrt(2)."""
     positions = np.array([[1, 0, 0], [1, 2, 2]])
     result = transverse_size(positions, axis=0)
-    # float64 round-off of centring and a norm:
+    # float64 round-off of centering and a norm:
     assert result == pytest.approx(2 * np.sqrt(2), rel=1e-12)
 
 
@@ -137,7 +137,7 @@ def test_max_distance_is_extent_along_each_axis():
     """The extent along each axis is the spread of that coordinate."""
     positions = np.array([[0, 0, 0], [4, 2, 6]])
     result = max_distance(positions)
-    # float64 round-off of centring:
+    # float64 round-off of centering:
     assert_allclose(result, [4.0, 2.0, 6.0], rtol=1e-12)
 
 
@@ -145,7 +145,7 @@ def test_fsd_is_spread_along_axis():
     """Feret's diameter along y is the spread of the y coordinates, 8 - 2."""
     positions = np.array([[1, 2, 3], [4, 8, 6]])
     result = fsd(positions, axis=1)
-    # float64 round-off of centring:
+    # float64 round-off of centering:
     assert result == pytest.approx(6.0, rel=1e-12)
 
 

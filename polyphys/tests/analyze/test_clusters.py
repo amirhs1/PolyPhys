@@ -16,7 +16,7 @@ R2. Brute force: a double loop over the definition, in
     :func:`_brute_force_distances` (minimum image, one pair at a time),
     :func:`_walk_genomic_distance` (steps along the backbone, each way round
     a ring), :func:`_binder_links_by_definition` (the same-monomer and
-    neighbouring-monomer rules, one pair of binders at a time), and
+    neighboring-monomer rules, one pair of binders at a time), and
     :func:`_sweep_frame_by_frame` (the per-frame kernels called at one grid
     point and one frame at a time, then averaged).
 
@@ -24,7 +24,7 @@ R3. :func:`numpy.histogram`, an independent implementation of binning.
 
 P.  A property: conservation (sizes sum to the particle count, the handshake
     lemma, unit normalization), symmetry, idempotence, or invariance under
-    relabelling.
+    relabeling.
 
 Random inputs are drawn by Hypothesis from a seed, then built with
 ``numpy.random.default_rng(seed)``, so every example is reproducible from its
@@ -227,7 +227,7 @@ def hns_toy() -> np.ndarray:
 
     Binder 0: patch 0 on monomer 0, patch 1 on monomer 2 (bridge, 2 bonds on
     a ring of six, 2 on a line). Binder 1: patch 2 on monomers 3 and 4 (an
-    artefact), patch 3 free (dangling). Binder 2: free. Binder 3: patch 6 on
+    artifact), patch 3 free (dangling). Binder 2: free. Binder 3: patch 6 on
     monomer 5, patch 7 on monomer 0 (bridge, 1 bond on the ring, 5 on a
     line).
     """
@@ -310,7 +310,7 @@ def test_contact_matrix_is_a_closure(adjacency):
 
 
 @given(adjacency=contact_graphs(), seed=st.integers(0, 2**32 - 1))
-def test_count_clusters_is_invariant_under_relabelling(adjacency, seed):
+def test_count_clusters_is_invariant_under_relabeling(adjacency, seed):
     """Permuting the particles leaves the size histogram unchanged (P)."""
     order = np.random.default_rng(seed).permutation(len(adjacency))
     permuted = adjacency[np.ix_(order, order)]
@@ -578,12 +578,12 @@ def test_pair_separation_density_integrates_to_one_and_keeps_the_moment(seed):
     counts, edges = pair_distance_histograms(series, bin_size, r_max)
     density = pair_separation_density(counts, edges)
     shells = 4.0 * np.pi / 3.0 * np.diff(edges**3)
-    centres = 0.5 * (edges[1:] + edges[:-1])
+    centers = 0.5 * (edges[1:] + edges[:-1])
     assert_allclose(np.sum(density * shells, axis=1), [1.0, 1.0, 1.0],
                     rtol=FLOAT64_RTOL, atol=FLOAT64_ATOL)
-    # Replacing each separation r by its bin centre changes r**2 by at most
+    # Replacing each separation r by its bin center changes r**2 by at most
     # (bin_size / 2) * 2 r_max, so the moment agrees to bin_size * r_max.
-    assert_allclose(np.sum(density * shells * centres**2, axis=1),
+    assert_allclose(np.sum(density * shells * centers**2, axis=1),
                     np.mean(series**2, axis=1), atol=bin_size * r_max)
 
 

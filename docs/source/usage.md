@@ -109,8 +109,8 @@ its particle diameter, sum to the far-field crowder term:
 `sum_i phi_i(x) / a_i ~ phi_c(inf) / a_c`, or equivalently
 `sum_i a_i**2 rho_i(x) ~ a_c**2 rho_c(inf)` for the number densities. Here
 `x` is `r`, the distance from the cylinder axis in a cylinder and from the
-polymer's centre of mass in a periodic cube, or `z`, the axial distance from
-the centre of mass.
+polymer's center of mass in a periodic cube, or `z`, the axial distance from
+the center of mass.
 
 `space_profiles` in `polyphys.analyze.sumrule` builds one term of the sum from a space of
 ensemble-averaged profiles: it scales each `Phi` profile by `1 / a_i` and each
@@ -142,8 +142,8 @@ maximum otherwise (`PROFILE_NORMALIZERS`). `normalizer` also takes `'last'`,
 a number, or a function of the scaled frame and the file's parser instance,
 such as `lambda df, info: info.phi_bulk_c / info.dcrowd` for the nominal bulk
 value of a `Phi` profile. `normalize_r` and `normalize_z` are the two steps on
-their own. For `r` in a cylinder, `space_profiles` also adds the bin centre in
-crowder radii, recentred so that the wall sits at an integer number of crowder
+their own. For `r` in a cylinder, `space_profiles` also adds the bin center in
+crowder radii, recentered so that the wall sits at an integer number of crowder
 diameters and the layers of different state points overlay.
 
 `sum_rule_profiles` adds the species' scaled profiles state point by state

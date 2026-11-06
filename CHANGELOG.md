@@ -14,6 +14,7 @@ version increase may introduce incompatible changes.
 ### Changed
 
 - Adopt American English as the spelling of PolyPhys in `AGENTS.md`; the existing Canadian forms, including the `recentre` API name, are converted under [#168](https://github.com/amirhs1/PolyPhys/issues/168)
+- Convert the prose, comments, docstrings, test docstrings, and private and test names to American English spelling; the public names `RecentreT`, `recentre`, and the `'centre'` value of `ShareMode` keep their spelling until a separate change renames them ([#168](https://github.com/amirhs1/PolyPhys/issues/168))
 - Take the commit template's `Why:` line from the issue, the maintainer, or an outside report, mark a breaking change with the changelog's `**Breaking:**` instead of `!`, and allow `Refs #n` in the pull request template ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
 
 ### Added
