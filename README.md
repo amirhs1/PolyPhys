@@ -69,6 +69,13 @@ the `mda` extra installs it:
 python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
 ```
 
+The viz layer's figure helpers need matplotlib; the `viz` extra installs it
+(the color lists in `viz.colors` need nothing extra):
+
+```bash
+python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.git"
+```
+
 ## Quickstart
 
 Decode a simulation filename into physics, and read off where it sits in the
@@ -154,6 +161,8 @@ frame:
 | `analyze.clusters` | Contact and cluster statistics of a particle group (direct contacts under a cutoff, connected-component clusters, size and bond histograms), genomic distances, the probability density of a pair's separation, the free, dangling, bridging, cis, and trans statistics of two-patch binders, and the binding-threshold sweep on saved distance matrices. |
 | `analyze.correlations` | The autocorrelation function of a time series by the FFT with Bartlett's confidence band, exponential and stretched-exponential decay fits with a recorded starting point, and the bond cosine correlation of a linear or ring chain, from which a persistence length follows. |
 | `analyze.pipeline` | Reduces one space's probe artifacts down the lineage for every property of a study's `AnalysisTable`, with post-hooks that derive time averages, autocorrelations, density profiles through an injected kernel, and the pair distances of the foci; and reduces each whole's time series to its equilibrium value with a blocked error. |
+| `viz.colors`       | The qualitative color lists of the studies' figures as `#RRGGBB` tuples (Paul Tol's bright, vibrant, and muted schemes, the Dutch Field palette, and the maintainer's own list), which need no plotting library, and `truncate_colormap`, a matplotlib color map cut down to a sub-range of its domain. |
+| `viz.helpers`      | `set_xticks` and `set_yticks`, which place an axis's major ticks every `step` from `lower` to `upper` inside a small frame; proxy legend handles keyed by color or by line style and marker; a legend moved from a figure into chosen panels; and a band shaded under each line in its own color. Needs the `viz` extra. |
 
 Eight parser subclasses ship with the package, covering cylindrical and cubic
 confinement with linear, ring, and bidisperse chain topologies.
@@ -221,6 +230,7 @@ records the checks or human review applied to each part:
 | `polyphys/manage/`                                        | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; parser tests for filename-parsing changes; maintainer review |
 | `polyphys/simulate/`                                      | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; tests against LAMMPS-written files; maintainer review        |
 | `polyphys/probe/`                                         | Instrumented | CI: flake8, mypy; pytest with doctests on Python 3.14 with MDAnalysis installed; maintainer review                        |
+| `polyphys/viz/`                                           | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14 with matplotlib installed; maintainer review                   |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review                          |
 | `projects/`                                               | Supervised   | CI: flake8, mypy, pytest of each spec against its parser and the research code's values; maintainer review of every line |
 | `docs/`                                                   | Instrumented | CI: Sphinx build with warnings as errors for `docs/source/`; maintainer review                                           |

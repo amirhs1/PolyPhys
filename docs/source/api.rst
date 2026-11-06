@@ -52,3 +52,15 @@ Needs MDAnalysis, which the ``mda`` extra installs.
    polyphys.probe.binders
    polyphys.probe.histograms
    polyphys.probe.pairs
+
+Viz
+---
+
+Needs matplotlib, which the ``viz`` extra installs; the color lists in
+``colors`` do not.
+
+.. autosummary::
+   :toctree: generated
+
+   polyphys.viz.colors
+   polyphys.viz.helpers

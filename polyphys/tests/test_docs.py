@@ -23,6 +23,7 @@ def docs_source() -> Path:
     pytest.param("lineage.md", id="lineage"),
     pytest.param("studies.md", id="studies"),
     pytest.param("usage.md", id="usage"),
+    pytest.param("viz.md", id="viz"),
 ])
 def test_docs_page_examples_run(docs_source: Path, page: str) -> None:
     """Every example of the page gives the output the page shows."""

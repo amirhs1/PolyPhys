@@ -33,6 +33,7 @@ correlations
 density
 pipeline
 probe
+viz
 testing
 design
 decisions

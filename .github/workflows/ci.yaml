@@ -81,10 +81,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install project with dev dependencies
+      - name: Install project with dev and viz dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .[dev]
+          python -m pip install -e .[dev,viz]
 
       - name: Run tests with coverage
         # --cov-fail-under fails the job when total coverage drops below the
@@ -132,10 +132,10 @@ jobs:
           python-version: "3.14"
           cache: pip
 
-      - name: Install project with dev and mda dependencies
+      - name: Install project with dev, mda, and viz dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .[dev,mda]
+          python -m pip install -e .[dev,mda,viz]
 
       - name: Run tests with coverage
         # The probe layer needs MDAnalysis, so only this job runs its tests
