@@ -90,7 +90,7 @@ PROBE = ProbeSpec(
                'y': _r_bin},
     histogram_species=('Crd', 'Mon', 'Dna', 'Foci'),
     block_frames=100,
-    recentre='half',
+    recenter='half',
     pair_species='Foci',
     contact_cutoff=_contact_cutoff,
     minimum_image=True,

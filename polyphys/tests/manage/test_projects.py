@@ -293,12 +293,12 @@ def test_probe_allows_the_matrix_observable_without_a_time_series(
                  id='zero-block-frames'),
     pytest.param({'block_frames': 2.0}, "'block_frames' must be a positive",
                  id='float-block-frames'),
-    pytest.param({'recentre': 'centre'}, "'recentre' must be",
-                 id='unknown-recentre'),
-    pytest.param({'recentre': (1.0, 2.0)}, "'recentre' must be",
-                 id='short-recentre'),
-    pytest.param({'recentre': (1.0, 2.0, float('nan'))}, "'recentre' must be",
-                 id='nan-recentre'),
+    pytest.param({'recenter': 'center'}, "'recenter' must be",
+                 id='unknown-recenter'),
+    pytest.param({'recenter': (1.0, 2.0)}, "'recenter' must be",
+                 id='short-recenter'),
+    pytest.param({'recenter': (1.0, 2.0, float('nan'))}, "'recenter' must be",
+                 id='nan-recenter'),
     pytest.param({'pair_species': 'Foci', 'contact_cutoff': 1.5},
                  "'pair_species' must be a label in",
                  id='pair-species-not-selected'),
@@ -335,7 +335,7 @@ def test_probe_defaults_leave_histograms_and_pairs_unprobed(make_probe):
     the box, uses the minimum image, and names no species for them."""
     probe = make_probe()
 
-    assert (probe.histogram_species, probe.block_frames, probe.recentre,
+    assert (probe.histogram_species, probe.block_frames, probe.recenter,
             probe.pair_species, probe.contact_cutoff,
             probe.minimum_image) == ((), None, 'half', None, None, True)
 
@@ -362,9 +362,9 @@ def test_probe_keeps_histogram_and_pair_fields(make_probe, whole):
     pytest.param('half', 'half', id='half'),
     pytest.param([1, 2.5, -3], (1.0, 2.5, -3.0), id='triple-as-floats'),
 ])
-def test_probe_stores_recentre(make_probe, given, stored):
+def test_probe_stores_recenter(make_probe, given, stored):
     """A recentering keyword is kept and a triple becomes a tuple of floats."""
-    assert make_probe(recentre=given).recentre == stored
+    assert make_probe(recenter=given).recenter == stored
 
 
 def test_probe_accepts_callable_bin_sizes(make_probe, whole):

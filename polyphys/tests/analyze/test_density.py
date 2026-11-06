@@ -265,12 +265,12 @@ def test_sphere_cylinder_intersection_rejects_bad_input(r_sphere, d, message):
 # ---------------------------------------------------------------------------
 
 
-def test_share_matrix_centre_slab_entries_are_spherical_segments():
+def test_share_matrix_center_slab_entries_are_spherical_segments():
     """Centered slab shares are the segments between the slab planes (A2)."""
     edges = np.array([0.0, 1.0, 2.0, 3.0, 4.0])
     r_bead = 0.75
     share = share_matrix(edges, 2 * r_bead, 'cylindrical', 'z',
-                         shares='centre').toarray()
+                         shares='center').toarray()
     center = 1.5
     expected = [
         spherical_segment(r_bead, edges[k] - center, edges[k + 1] - center)
@@ -307,7 +307,7 @@ def test_share_matrix_keeps_a_small_bead_in_its_first_shell(geometry, kwargs):
     spans 0.25 to 0.75 and the one at center 1.5 spans 1.25 to 1.75.
     """
     share = share_matrix([0.0, 1.0, 2.0], 0.5, geometry, 'r',
-                         shares='centre', **kwargs).toarray()
+                         shares='center', **kwargs).toarray()
     v = _bead_volume(0.5)
     assert_allclose(share, [[v, 0.0], [0.0, v]],
                     atol=1e-8)  # the exact kernel's quadrature level
@@ -318,10 +318,10 @@ def test_share_matrix_keeps_a_small_bead_in_its_first_shell(geometry, kwargs):
     [pytest.param('cubic', id='cubic-r'),
      pytest.param('cylindrical', id='cylindrical-r')],
 )
-def test_share_matrix_centre_sphere_reproduces_the_research_code(geometry):
+def test_share_matrix_center_sphere_reproduces_the_research_code(geometry):
     """The center mode with the sphere kernel equals the SciOps loop (R1)."""
     edges = np.arange(0.0, 6.01, 0.25)
-    share = share_matrix(edges, 1.0, geometry, 'r', shares='centre',
+    share = share_matrix(edges, 1.0, geometry, 'r', shares='center',
                          intersection='sphere').toarray()
     assert_allclose(share, _sciops_concentric_shares(edges, 0.5),
                     atol=FLOAT64_ATOL)
@@ -339,9 +339,9 @@ def test_share_matrix_centre_sphere_reproduces_the_research_code(geometry):
         pytest.param('cylindrical', 'r', 'average',
                      id='cylindrical-average'),
         pytest.param('cylindrical', 'z', 'average', id='slab-average'),
-        pytest.param('cubic', 'r', 'centre', id='spherical-centre'),
-        pytest.param('cylindrical', 'r', 'centre', id='cylindrical-centre'),
-        pytest.param('cylindrical', 'z', 'centre', id='slab-centre'),
+        pytest.param('cubic', 'r', 'center', id='spherical-center'),
+        pytest.param('cylindrical', 'r', 'center', id='cylindrical-center'),
+        pytest.param('cylindrical', 'z', 'center', id='slab-center'),
     ],
 )
 def test_share_matrix_rows_sum_to_the_bead_volume(geometry, direction, shares):
@@ -426,9 +426,9 @@ def test_share_matrix_wraps_a_bead_across_the_periodic_boundary():
                      id='cylindrical-average'),
         pytest.param('cylindrical', 'z', {'dcyl': 2.0}, 'average',
                      id='slab-average'),
-        pytest.param('cubic', 'r', {}, 'centre', id='spherical-centre'),
-        pytest.param('cylindrical', 'z', {'dcyl': 2.0}, 'centre',
-                     id='slab-centre'),
+        pytest.param('cubic', 'r', {}, 'center', id='spherical-center'),
+        pytest.param('cylindrical', 'z', {'dcyl': 2.0}, 'center',
+                     id='slab-center'),
     ],
 )
 def test_volume_fraction_of_a_uniform_fluid_is_rho_v(geometry, direction,
@@ -698,7 +698,7 @@ def test_share_matrix_returns_a_sparse_band():
 
 
 @pytest.mark.private_data
-def test_centre_sphere_profiles_match_the_research_code(private_data_dir):
+def test_center_sphere_profiles_match_the_research_code(private_data_dir):
     """The research code's modes reproduce one SciOps whole's ``rho`` and
     ``phi`` (R1, on the maintainer's data).
 
@@ -722,7 +722,7 @@ def test_centre_sphere_profiles_match_the_research_code(private_data_dir):
         lcyl=meta.get('lcyl'), dcyl=meta.get('dcyl'),
     )
     share = share_matrix(edges, meta['bead_diameter'], geometry, direction,
-                         shares='centre', intersection='sphere')
+                         shares='center', intersection='sphere')
     rho = number_density(counts, volumes)
     phi = volume_fraction(rho, share)
     # scipy's quadrature of a polynomial agrees with the closed form to

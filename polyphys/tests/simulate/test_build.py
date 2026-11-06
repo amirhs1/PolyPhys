@@ -843,7 +843,7 @@ def test_check_conformation_box_rule_uses_fractions_in_a_triclinic_box(
     [pytest.param([7.49, 3.0, 0.0], True, id="inside-along-x"),
      pytest.param([5.0, 5.51, 0.0], False, id="beyond-along-y")],
 )
-def test_check_conformation_cylinder_axis_is_the_box_centre(
+def test_check_conformation_cylinder_axis_is_the_box_center(
     make_record: Callable[..., DataFile], position: list[float], passes: bool
 ) -> None:
     """The cylinder axis runs through the box center, here (5, 3), not the

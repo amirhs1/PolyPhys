@@ -102,7 +102,7 @@ def make_analysis(make_chain_universe, two_species, types, cylinder_edges):
         groups = {'Mon': universe.select_atoms('type 1'),
                   'Crd': universe.select_atoms('type 2')}
         kwargs = {'geometry': 'cylindrical', 'block_frames': 2,
-                  'recentre': 'half'}
+                  'recenter': 'half'}
         kwargs.update(overrides)
         return SpatialHistograms(groups, cylinder_edges, **kwargs)
 
@@ -245,19 +245,19 @@ def test_empty_group_gives_zero_histograms(make_chain_universe, two_species,
 # Recentering
 
 
-@pytest.mark.parametrize('recentre', [
+@pytest.mark.parametrize('recenter', [
     pytest.param('half', id='half-the-box'),
     pytest.param((10.0, 10.0, 10.0), id='the-same-triple'),
 ])
-def test_recentre_half_and_its_triple_agree(make_analysis, recentre):
+def test_recenter_half_and_its_triple_agree(make_analysis, recenter):
     """Half of a box of side 20 and the triple (10, 10, 10) give the same
     bins: the Mon r row [0, 1, 2, 0]."""
-    analysis = make_analysis(recentre=recentre).run()
+    analysis = make_analysis(recenter=recenter).run()
 
     assert_array_equal(analysis.results['rHistTMon'][0], [0, 1, 2, 0])
 
 
-def test_recentre_half_undoes_the_readers_translation(
+def test_recenter_half_undoes_the_readers_translation(
         make_chain_universe, cylinder_edges):
     """For a box from -10 to 10, which the dump reader moves to the origin,
     'half' restores the written coordinates: a bead written at x = 2.5 is
@@ -267,14 +267,14 @@ def test_recentre_half_undoes_the_readers_translation(
 
     analysis = SpatialHistograms(
         {'Mon': universe.atoms}, cylinder_edges, geometry='cylindrical',
-        block_frames=1, recentre='half').run()
+        block_frames=1, recenter='half').run()
 
     assert analysis.results['rHistTMon'][0, 2] == 1
     assert analysis.results['xyHistBlockMon'][0, 6, 4] == pytest.approx(
         1.0, abs=ATOL)
 
 
-def test_recentre_none_keeps_the_readers_frame(make_chain_universe,
+def test_recenter_none_keeps_the_readers_frame(make_chain_universe,
                                                cube_edges):
     """With 'none', positions stay in the reader's frame, from 0 to 20, so
     a bead written at (12.5, 10, 10) lies beyond cube edges centered on the
@@ -284,7 +284,7 @@ def test_recentre_none_keeps_the_readers_frame(make_chain_universe,
 
     analysis = SpatialHistograms(
         {'Mon': universe.atoms}, cube_edges, geometry='cubic',
-        block_frames=1, recentre='none')
+        block_frames=1, recenter='none')
 
     with pytest.raises(ValueError, match="positions fall outside"):
         analysis.run()
@@ -347,10 +347,10 @@ def test_cube_bins_r_from_the_box_center(make_chain_universe, cube_edges):
                  id='zero-block-frames'),
     pytest.param({'block_frames': 2.0}, "'block_frames' must be a positive",
                  id='float-block-frames'),
-    pytest.param({'recentre': 'centre'}, "'recentre' must be",
-                 id='unknown-recentre'),
-    pytest.param({'recentre': (1.0, 2.0)}, "'recentre' must be",
-                 id='short-recentre'),
+    pytest.param({'recenter': 'center'}, "'recenter' must be",
+                 id='unknown-recenter'),
+    pytest.param({'recenter': (1.0, 2.0)}, "'recenter' must be",
+                 id='short-recenter'),
 ])
 def test_invalid_arguments_raise(make_analysis, overrides, match):
     """A bad geometry, block length, or recentering raises at construction."""
@@ -518,7 +518,7 @@ def test_from_spec_selects_the_species_and_carries_the_spec(
 
     assert [group.n_atoms for group in analysis.groups.values()] == [3, 3]
     assert list(analysis.groups) == ['Mon', 'Crd']
-    assert (analysis.geometry, analysis.block_frames, analysis.recentre) == (
+    assert (analysis.geometry, analysis.block_frames, analysis.recenter) == (
         'cylindrical', 2, 'half')
     assert analysis.edges['r'].size == 26
 

@@ -45,7 +45,7 @@ Dependencies
   :func:`~polyphys.analyze.measurer.planar_cartesian_histogram`.
 - :mod:`polyphys.manage.projects`:
   :class:`~polyphys.manage.projects.ProbeSpec` and
-  :data:`~polyphys.manage.projects.RecentreT`.
+  :data:`~polyphys.manage.projects.RecenterT`.
 - :mod:`polyphys.manage.parser`:
   :class:`~polyphys.manage.parser.ParserBase`.
 
@@ -111,7 +111,7 @@ from MDAnalysis.core.universe import Universe
 
 from ..analyze import measurer
 from ..manage.parser import ParserBase
-from ..manage.projects import ProbeSpec, RecentreT
+from ..manage.projects import ProbeSpec, RecenterT
 from ..manage.types import (
     AxisT,
     BinT,
@@ -166,20 +166,20 @@ def _required_edges(geometry: GeometryT) -> tuple[DirectionT, ...]:
     return tuple(dict.fromkeys((*_DIRECTIONS[geometry], *_CARTESIAN)))
 
 
-def _check_recentre(recentre: Any) -> RecentreT:
+def _check_recenter(recenter: Any) -> RecenterT:
     """Validate a recentering and return it with a triple as floats."""
-    if isinstance(recentre, str) and recentre == 'none':
+    if isinstance(recenter, str) and recenter == 'none':
         return 'none'
-    if isinstance(recentre, str) and recentre == 'half':
+    if isinstance(recenter, str) and recenter == 'half':
         return 'half'
-    if (isinstance(recentre, (tuple, list)) and len(recentre) == 3
+    if (isinstance(recenter, (tuple, list)) and len(recenter) == 3
             and all(isinstance(value, (int, float))
                     and not isinstance(value, bool)
-                    and math.isfinite(value) for value in recentre)):
-        return (float(recentre[0]), float(recentre[1]), float(recentre[2]))
+                    and math.isfinite(value) for value in recenter)):
+        return (float(recenter[0]), float(recenter[1]), float(recenter[2]))
     raise ValueError(
-        f"'recentre' must be 'none', 'half', or a triple of finite numbers, "
-        f"not {recentre!r}.")
+        f"'recenter' must be 'none', 'half', or a triple of finite numbers, "
+        f"not {recenter!r}.")
 
 
 def _planar(
@@ -334,7 +334,7 @@ class SpatialHistograms(AnalysisBase):
     block_frames : int
         The block length :math:`b`, positive: consecutive frames of the
         run whose maps are averaged into one stored map.
-    recentre : :py:data:`~polyphys.manage.projects.RecentreT`, default 'half'
+    recenter : :py:data:`~polyphys.manage.projects.RecenterT`, default 'half'
         How a frame's positions are moved before binning: ``'half'``
         subtracts half the frame's box lengths, ``'none'`` nothing, a
         triple its values. The positions in the trajectory are untouched.
@@ -351,7 +351,7 @@ class SpatialHistograms(AnalysisBase):
         The geometry.
     block_frames : int
         The block length.
-    recentre : :py:data:`~polyphys.manage.projects.RecentreT`
+    recenter : :py:data:`~polyphys.manage.projects.RecenterT`
         The recentering, a triple as floats.
     results : :class:`~MDAnalysis.analysis.results.Results`
         After :meth:`run`, for each species ``S`` and direction ``d`` of
@@ -380,7 +380,7 @@ class SpatialHistograms(AnalysisBase):
         if `edges` lacks a key the geometry needs or has edges that are
         not a one-dimensional increasing array of at least two values; if
         `geometry` is unknown; if `block_frames` is not a positive integer;
-        if `recentre` is neither ``'none'``, ``'half'``, nor a triple of
+        if `recenter` is neither ``'none'``, ``'half'``, nor a triple of
         finite numbers; or, during :meth:`run`, if a recentered position
         falls outside the edges of a direction or a Cartesian axis.
 
@@ -439,7 +439,7 @@ class SpatialHistograms(AnalysisBase):
     ...          'y': np.array([-2.0, 0.0, 2.0])}
     >>> analysis = SpatialHistograms(
     ...     {'Crd': universe.atoms}, edges, geometry='cylindrical',
-    ...     block_frames=2, recentre=(0.0, 0.0, 0.0)).run()
+    ...     block_frames=2, recenter=(0.0, 0.0, 0.0)).run()
     >>> analysis.results['rHistTCrd'], analysis.results['zHistTCrd']
     (array([[0, 1],
            [1, 0]]), array([[0, 1],
@@ -460,7 +460,7 @@ class SpatialHistograms(AnalysisBase):
         *,
         geometry: GeometryT,
         block_frames: int,
-        recentre: RecentreT = 'half',
+        recenter: RecenterT = 'half',
         verbose: bool = False,
     ) -> None:
         groups = dict(groups)
@@ -504,7 +504,7 @@ class SpatialHistograms(AnalysisBase):
         self.edges: Mapping[str, np.ndarray] = checked
         self.geometry: GeometryT = geometry
         self.block_frames = block_frames
-        self.recentre = _check_recentre(recentre)
+        self.recenter = _check_recenter(recenter)
         self._directions = _DIRECTIONS[geometry]
         self._histograms = _HISTOGRAMS[geometry]
         self._run_n_frames = 0
@@ -592,7 +592,7 @@ class SpatialHistograms(AnalysisBase):
                   for species in spec.histogram_species}
         return cls(groups, histogram_edges(spec, parser),
                    geometry=spec.geometry, block_frames=spec.block_frames,
-                   recentre=spec.recentre, verbose=verbose)
+                   recenter=spec.recenter, verbose=verbose)
 
     @classmethod
     def get_supported_backends(cls) -> tuple[str, ...]:
@@ -667,12 +667,12 @@ class SpatialHistograms(AnalysisBase):
 
     def _shift(self) -> np.ndarray:
         """The vector subtracted from this frame's positions."""
-        if self.recentre == 'none':
+        if self.recenter == 'none':
             return np.zeros(3)
-        if self.recentre == 'half':
+        if self.recenter == 'half':
             return 0.5 * np.asarray(self._ts.dimensions[:3],
                                     dtype=np.float64)
-        return np.asarray(self.recentre, dtype=np.float64)
+        return np.asarray(self.recenter, dtype=np.float64)
 
     def _single_frame(self) -> None:
         """
