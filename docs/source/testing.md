@@ -14,9 +14,12 @@ python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-mi
 The README's examples run as doctests, and so do the `Examples` sections of the
 docstrings in `polyphys/`.
 
-CI runs the same command with `--cov-fail-under=95`, so a pull request fails
-when total coverage drops below 95 percent. coverage.py rounds the total to a
-whole percent before it compares, so 94.6 percent passes. Add
+CI's Python-matrix jobs, which have no MDAnalysis, run the same command
+with `--cov-config=.coveragerc-no-mda`, which leaves the probe layer out of
+the measured set, and `--cov-fail-under=95`, so a pull request fails when
+total coverage drops below 95 percent; the MDAnalysis job measures the probe
+layer and has no floor. coverage.py rounds the total to a whole percent
+before it compares, so 94.6 percent passes. Add
 `--cov-fail-under=95` to the command above to run the same check locally.
 
 ## Test data: three tiers

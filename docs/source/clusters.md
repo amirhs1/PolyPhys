@@ -171,7 +171,7 @@ The counting rules, kept from the research code so that its numbers are
 reproduced:
 
 - The patch and binder counts use the contacts as given, so a patch marked
-  on two adjacent monomers (a cutoff artefact) is one engaged patch.
+  on two adjacent monomers (a cutoff artifact) is one engaged patch.
 - The bridged pairs use the contacts after
   {func}`~polyphys.analyze.clusters.enforce_single_patch_contact`, which
   keeps the lowest-index monomer of each patch, so each bridging binder

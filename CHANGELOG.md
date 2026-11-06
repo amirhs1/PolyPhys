@@ -11,6 +11,10 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Correct the parser count, the module lists of the README and `AGENTS.md`, the contents of a study folder, the CI and coverage descriptions, and five Canadian spellings in the prose files ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+
 ## [0.7.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.7.0) - 2026-11-05
 
 ### Changed

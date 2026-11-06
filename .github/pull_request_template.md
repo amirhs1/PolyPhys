@@ -37,7 +37,7 @@ for anything not checked, and why.
 
 ## Scientific correctness
 
-- [ ] No measurement/statistics behavior changed
+- [ ] No measurement/statistics behaviour changed
 - [ ] Units, numerical fixtures, and domain assumptions are preserved or explained
 - [ ] Parser lineage and organizer vocabulary are unchanged, or matching parser tests/docs were updated
 
