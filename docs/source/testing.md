@@ -29,7 +29,7 @@ Every test uses data from one of three tiers.
 | Tier | Data                                                                                                                                                   | Where it lives                                   | Who runs it                    |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ | ------------------------------ |
 | A    | Synthetic inputs a test generates itself: lineage trees of tiny files, short LAMMPS files, random or analytic arrays                                   | the test module or `polyphys/tests/conftest.py`  | everyone, including CI         |
-| B    | Small trimmed real files, used only where a file format is under test, such as a few dump frames or a filename listing; the maintainer approves each one | `polyphys/tests/data/`, each about 200 KB or less | everyone, including CI         |
+| B    | Small trimmed real files, used only where a file format is under test, such as a few dump frames or a filename listing; the maintainer approves each one | `polyphys/tests/data/`, each about 300 KB or less | everyone, including CI         |
 | C    | Full-size processed artifacts, such as a whole space                                                                                                   | outside the repository, under `POLYPHYS_DATA_DIR` | the maintainer, locally; never CI |
 
 Tier A is the default. The algorithms are what is under test, and properties
@@ -110,6 +110,33 @@ in the Hypothesis documentation.
 The fixtures are factories, called inside a test with the arguments that test
 needs; see [Factories as fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html#factories-as-fixtures)
 in the pytest documentation. Their tests are in `polyphys/tests/test_conftest.py`.
+
+## Real frames of the probes
+
+The probe tests in `polyphys/tests/probe/` also run on real frames of the
+four live studies, 22 wholes in all: per study, two replicates without
+crowders and two at a bulk crowder volume fraction of about 0.36 to 0.38;
+for the Hns studies, also the wholes without H-NS; and for HnsCyl, crowders
+of size 1 as well as 2. The maintainer trimmed them from the studies' runs.
+
+- Tier B, in `polyphys/tests/data/probe/<whole>/`: every whole's last 50
+  frames of the polymer group dump,
+  `<whole>.ring.<group>.last50.lammpstrj.gz`; and, for the wholes without
+  crowders and the HnsCyl wholes at `ac2 nc386`, the `all` frames of the
+  same time window, `<whole>.j<NN>.ring.all.window.lammpstrj.gz`, and the
+  whole's data file, `<whole>.ring.all.data.gz`.
+- Tier C, in `<POLYPHYS_DATA_DIR>/fixtures/<whole>/`: the `all` windows
+  and data files of the other crowded wholes, under the runs' own names.
+
+The HnsCyl runs name their wholes without `epshc`, which the `HnsCyl` parser
+reads; the tier B copies insert `epshc1`, the value of their H-NS
+core-crowder pair coefficients.
+
+A polymer dump holds only the polymer group, so it is opened with the data
+file of the whole without crowders of its family and replicate, whose atoms
+are that group; the polymer atoms carry the IDs 1 to n in every system. The
+`RealWhole` cases and the fixtures that open the files are in
+`polyphys/tests/probe/conftest.py`.
 
 ## Tests that need LAMMPS
 

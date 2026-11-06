@@ -266,8 +266,8 @@ ignore `recenter`.
 ## The spatial histograms
 
 {class}`~polyphys.probe.histograms.SpatialHistograms` bins every species of
-a `ProbeSpec` in every frame, after recentering, along the directions of the
-geometry and in the three Cartesian planes:
+a `ProbeSpec` in every frame, after wrapping and recentering, along the
+directions of the geometry and in the three Cartesian planes:
 
 | Geometry      | Per frame, int64 `(n_frames, n_bins)` | Per block, float64 `(n_blocks, n_a, n_b)` |
 | ------------- | ------------------------------------- | ----------------------------------------- |
@@ -299,9 +299,18 @@ from the spec's bin sizes, resolved for the whole, with
 | `cubic`       | `r`                | $[0, \sqrt{3} L / 2]$, the corner        | `nonnegative` |
 | `cubic`       | `x`, `y`, `z`      | $[-L / 2, L / 2]$                        | `ordinary`    |
 
-A position outside the edges of a direction, or outside the Cartesian
-edges of the maps, raises and aborts the run, so every frame's counts sum
-to the species' particle number. The research code's `np.histogram`
+Before recentering, each position is wrapped into the box of the reader's
+frame, $[0, L)$, along the directions the geometry makes periodic: all
+three in a cube, $z$ in a cylinder. LAMMPS enforces the periodic boundaries
+only when it rebuilds the neighbor lists, so "the coordinates of an atom
+written to a dump file may be slightly outside the simulation box"
+([LAMMPS `dump`](https://docs.lammps.org/dump.html)); the HnsCub dumps
+place H-NS cores up to $0.04$ monomer diameters past a face. The image
+inside the box is the same particle. A position past a wall is not wrapped.
+
+After wrapping, a position outside the edges of a direction, or outside the
+Cartesian edges of the maps, raises and aborts the run, so every frame's
+counts sum to the species' particle number. The research code's `np.histogram`
 dropped such a position silently, and its ranges stopped at $D / 2$ in a
 cylinder and $L / 2$ in a cube; the maintainer extended them to the wall
 surface and the corner on 2026-11-04, since a repulsive wall lets a small
@@ -563,8 +572,9 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
 - The spatial histograms keep the one-dimensional counts per frame and the
   two-dimensional maps per block of frames, where the research code summed
   both over the frames; the summed arrays are still written. Their ranges
-  reach the wall surface and the cube's corner, and a position outside
-  them raises instead of being dropped.
+  reach the wall surface and the cube's corner, a position a little past a
+  periodic face is wrapped into the box, and a position outside the edges
+  after that raises instead of being dropped.
 - The pair distances write 0-based backbone indices on the diagonal of the
   distance matrix, use the minimum image along the periodic directions,
   and store the contact matrix as bool (see "The pair distances").

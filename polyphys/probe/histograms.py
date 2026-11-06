@@ -137,6 +137,14 @@ _CARTESIAN: tuple[DirectionT, ...] = ('x', 'y', 'z')
 _PLANES: tuple[str, ...] = ('xy', 'xz', 'yz')
 _AXIS: AxisT = 2  # the cylinder axis, z, in every study
 
+# The directions each geometry makes periodic, along which a position is
+# wrapped into the box before binning: every one in a periodic cube, the
+# axis only in a cylinder (LAMMPS boundary ``ff ff pp``).
+_PERIODIC: Mapping[GeometryT, tuple[int, ...]] = {
+    'cubic': (0, 1, 2),
+    'cylindrical': (_AXIS,),
+}
+
 # One frame's one-dimensional histogram along a direction.
 _Histogram = Callable[[np.ndarray, np.ndarray], np.ndarray]
 
@@ -381,21 +389,33 @@ class SpatialHistograms(AnalysisBase):
         not a one-dimensional increasing array of at least two values; if
         `geometry` is unknown; if `block_frames` is not a positive integer;
         if `recenter` is neither ``'none'``, ``'half'``, nor a triple of
-        finite numbers; or, during :meth:`run`, if a recentered position
-        falls outside the edges of a direction or a Cartesian axis.
+        finite numbers; or, during :meth:`run`, if a frame carries no box,
+        or if a wrapped and recentered position falls outside the edges of
+        a direction or a Cartesian axis.
 
     Notes
     -----
-    Per frame and species, the positions are copied, recentered, and binned
-    with :func:`~polyphys.analyze.measurer.radial_cyl_histogram`,
+    Per frame and species, the positions are copied, wrapped, recentered,
+    and binned. Wrapping maps each position into the box of the reader's
+    frame, :math:`[0, L)`, along the directions the geometry makes
+    periodic, every one in a cube and ``z`` in a cylinder: LAMMPS enforces
+    the periodic boundaries only when it rebuilds the neighbor lists, so a
+    dump can place an atom slightly outside the box [1]_, as the HnsCub
+    dumps do by up to :math:`0.04` monomer diameters. The box of the
+    reader's frame is MDAnalysis's primary unit cell, :math:`[0, L)`, where
+    its LAMMPS dump reader puts the box by subtracting the lower bounds; a
+    universe built in memory must place its positions there too. A position
+    past a wall is not wrapped. The positions are binned with
+    :func:`~polyphys.analyze.measurer.radial_cyl_histogram`,
     :func:`~polyphys.analyze.measurer.axial_histogram`, and
     :func:`~polyphys.analyze.measurer.azimuth_cyl_histogram` in a cylinder,
     :func:`~polyphys.analyze.measurer.radial_histogram` in a cube, and
     :func:`~polyphys.analyze.measurer.planar_cartesian_histogram` in each
     plane, with the ``xz`` map transposed to rows along ``x`` as the
-    research code stored it. A position outside the edges raises, so every
-    frame's counts sum to the species' particle number: the research code's
-    ``np.histogram`` dropped such a position silently.
+    research code stored it. A position outside the edges after wrapping
+    raises, so every frame's counts sum to the species' particle number:
+    the research code's ``np.histogram`` dropped such a position silently,
+    and did not wrap.
 
     Blocks are numbered over the frames of the whole run in the order
     :meth:`run` visits them, whatever ``start``, ``stop``, ``step``, or
@@ -417,17 +437,26 @@ class SpatialHistograms(AnalysisBase):
     :math:`8 K B_a B_b` bytes, for :math:`F` frames, :math:`K = \\lceil F /
     b \\rceil` blocks, and :math:`B_a \\times B_b` cells: with
     :math:`b = 100` and :math:`200 \\times 200` cells, about 1 MB per
-    block per species for the three planes.
+    block per species for the three planes. Wrapping adds :math:`O(N)`
+    time per frame and species.
+
+    References
+    ----------
+    .. [1] LAMMPS Developers, "dump command", LAMMPS documentation, note
+       on periodic boundaries: "the coordinates of an atom written to a dump
+       file may be slightly outside the simulation box".
+       https://docs.lammps.org/dump.html
 
     Examples
     --------
-    One particle in a cylinder of radius 2 and length 4, recentered by a
-    given shift, two frames; the frame's counts sum to its one particle
-    along every direction:
+    One particle in a cylinder of radius 2 and length 4, two frames in the
+    reader's frame, the box from 0 to 4, recentered by a given shift to
+    (1.5, 0, 1) and (0, 0.5, -1); the frame's counts sum to its one
+    particle along every direction:
 
     >>> import MDAnalysis as mda
     >>> import numpy as np
-    >>> frames = np.array([[[1.5, 0.0, 1.0]], [[0.0, 0.5, -1.0]]])
+    >>> frames = np.array([[[3.5, 2.0, 3.0]], [[2.0, 2.5, 1.0]]])
     >>> universe = mda.Universe.empty(1, trajectory=True)
     >>> universe.load_new(frames, format='MEMORY', dimensions=np.tile(
     ...     [4.0, 4.0, 4.0, 90.0, 90.0, 90.0], (2, 1)))
@@ -439,7 +468,7 @@ class SpatialHistograms(AnalysisBase):
     ...          'y': np.array([-2.0, 0.0, 2.0])}
     >>> analysis = SpatialHistograms(
     ...     {'Crd': universe.atoms}, edges, geometry='cylindrical',
-    ...     block_frames=2, recenter=(0.0, 0.0, 0.0)).run()
+    ...     block_frames=2, recenter=(2.0, 2.0, 2.0)).run()
     >>> analysis.results['rHistTCrd'], analysis.results['zHistTCrd']
     (array([[0, 1],
            [1, 0]]), array([[0, 1],
@@ -674,16 +703,30 @@ class SpatialHistograms(AnalysisBase):
                                     dtype=np.float64)
         return np.asarray(self.recenter, dtype=np.float64)
 
+    def _wrap(self, positions: np.ndarray) -> np.ndarray:
+        """Wrap `positions` into the frame's box, :math:`[0, L)`, along the
+        geometry's periodic directions, in place."""
+        if self._ts.dimensions is None:
+            raise ValueError(
+                f"Frame {self._ts.frame} carries no box, which wrapping "
+                f"along the periodic directions needs.")
+        axes = list(_PERIODIC[self.geometry])
+        lengths = np.asarray(self._ts.dimensions[:3],
+                             dtype=np.float64)[axes]
+        positions[:, axes] -= lengths * np.floor(positions[:, axes] / lengths)
+        return positions
+
     def _single_frame(self) -> None:
         """
-        Recenter and bin every species on the current frame: the histograms
-        into this frame's rows, the maps into this frame's block.
+        Wrap, recenter, and bin every species on the current frame: the
+        histograms into this frame's rows, the maps into this frame's block.
         """
         block = (self._run_offset + self._frame_index) // self.block_frames
         self.results['blockFrames'][block] += 1
         shift = self._shift()
         for species, group in self.groups.items():
-            positions = group.positions.astype(np.float64) - shift
+            positions = self._wrap(
+                group.positions.astype(np.float64)) - shift
             for direction in self._directions:
                 self.results[f"{direction}HistT{species}"][
                     self._frame_index] = self._histograms[direction](
