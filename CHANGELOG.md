@@ -17,6 +17,7 @@ version increase may introduce incompatible changes.
 - Convert the prose, comments, docstrings, test docstrings, and private and test names to American English spelling ([#168](https://github.com/amirhs1/PolyPhys/issues/168))
 - **Breaking:** Rename `polyphys.manage.projects.RecentreT` to `RecenterT`, the `recentre` field of `ProbeSpec` and the `recentre` keyword and attribute of `SpatialHistograms` to `recenter`, and the `'centre'` value of `polyphys.analyze.density.ShareMode`, which `share_matrix` and `density_profiles` take as `shares`, to `'center'`, with no alias; no file the probes or the organizer write stores these names ([#168](https://github.com/amirhs1/PolyPhys/issues/168))
 - Take the commit template's `Why:` line from the issue, the maintainer, or an outside report, mark a breaking change with the changelog's `**Breaking:**` instead of `!`, and allow `Refs #n` in the pull request template ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+- Read the tier C probe test files from `<POLYPHYS_DATA_DIR>/polyphys_test_files/probe_real_frames/<whole>/` instead of `<POLYPHYS_DATA_DIR>/fixtures/<whole>/`; `POLYPHYS_DATA_DIR` stays the datasets root ([#174](https://github.com/amirhs1/PolyPhys/pull/174))
 
 ### Added
 
