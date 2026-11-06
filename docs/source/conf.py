@@ -55,10 +55,11 @@ typehints_fully_qualified = True
 autodoc_typehints = 'description'  # Cleaner type hint formatting
 
 # The package's runtime dependencies, NumPy, pandas, and SciPy, are
-# importable wherever the docs are built. MDAnalysis is optional (the ``mda``
-# extra) and the docs build installs the ``docs`` extra only, so it is
-# mocked for the ``polyphys.probe`` pages.
-autodoc_mock_imports: list[str] = ['MDAnalysis']
+# importable wherever the docs are built. MDAnalysis and matplotlib are
+# optional (the ``mda`` and ``viz`` extras) and the docs build installs the
+# ``docs`` extra only, so they are mocked for the ``polyphys.probe`` and
+# ``polyphys.viz`` pages.
+autodoc_mock_imports: list[str] = ['MDAnalysis', 'matplotlib']
 
 # Intersphinx mappings
 intersphinx_mapping = {

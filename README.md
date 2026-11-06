@@ -69,6 +69,13 @@ the `mda` extra installs it:
 python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
 ```
 
+The viz layer's figure helpers need matplotlib; the `viz` extra installs it
+(the color lists in `viz.colors` need nothing extra):
+
+```bash
+python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.git"
+```
+
 ## Quickstart
 
 Decode a simulation filename into physics, and read off where it sits in the
@@ -162,6 +169,8 @@ frame:
 | `analyze.sumrule`  | The density sum rule of Jeon et al. (2016) on a space's ensemble-averaged density profiles: each species' profile scaled by its size, normalized, folded, and summed per state point.          |
 | `analyze.density`  | Local number density and volume fraction profiles from a histogram of bead centres along one coordinate, with the share of each finite-size bead in the bins it reaches.                       |
 | `analyze.pipeline` | Reduces one space's probe artifacts down the lineage for every property of a study's `AnalysisTable`, with post-hooks that derive time averages, autocorrelations, density profiles through an injected kernel, and the pair distances of the foci; and reduces each whole's time series to its equilibrium value with a blocked error. |
+| `viz.colors`       | The qualitative color lists of the studies' figures as `#RRGGBB` tuples (Paul Tol's bright, vibrant, and muted schemes, the Dutch Field palette, and the maintainer's own list), which need no plotting library, and `truncate_colormap`, a matplotlib color map cut down to a sub-range of its domain. |
+| `viz.helpers`      | `set_xticks` and `set_yticks`, which place an axis's major ticks every `step` from `lower` to `upper` inside a small frame; proxy legend handles keyed by color or by line style and marker; a legend moved from a figure into chosen panels; and a band shaded under each line in its own color. Needs the `viz` extra. |
 
 Nine parser subclasses ship with the package, covering cylindrical and cubic
 confinement: linear and ring chains, some with two monomer sizes, among
@@ -233,6 +242,7 @@ records the checks or human review applied to each part:
 | `polyphys/manage/`                                        | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; parser tests for filename-parsing changes; maintainer review |
 | `polyphys/simulate/`                                      | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; tests against LAMMPS-written files; maintainer review        |
 | `polyphys/probe/`                                         | Instrumented | CI: flake8, mypy; pytest with doctests on Python 3.14 with MDAnalysis installed; maintainer review                        |
+| `polyphys/viz/`                                           | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14 with matplotlib installed; maintainer review                   |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review                          |
 | `projects/`                                               | Supervised   | CI: flake8, mypy, pytest of each spec against its parser and the research code's values; maintainer review of every line |
 | `docs/`                                                   | Instrumented | CI: Sphinx build with warnings as errors for `docs/source/`; maintainer review                                           |
