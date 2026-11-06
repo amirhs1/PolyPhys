@@ -320,6 +320,61 @@ def test_position_outside_the_cartesian_edges_raises(
         analysis.run()
 
 
+@pytest.mark.parametrize('position, axis, expected_bin', [
+    pytest.param([20.03, 10.0, 10.0], 'x', 0, id='beyond-hi-x'),
+    pytest.param([10.0, -0.02, 10.0], 'y', 19, id='below-lo-y'),
+    pytest.param([10.0, 10.0, 20.04], 'z', 0, id='beyond-hi-z'),
+])
+def test_cube_bins_a_position_past_the_box_as_its_periodic_image(
+        make_chain_universe, cube_edges, position, axis, expected_bin):
+    """A position a little past a periodic face, as a LAMMPS dump writes
+    between reneighborings, is binned as its periodic image."""
+    positions = np.array([[position, [10.0, 10.0, 10.0]]])
+    universe = make_chain_universe(positions, boundary='pp pp pp')
+
+    analysis = SpatialHistograms(
+        {'Mon': universe.atoms}, cube_edges, geometry='cubic',
+        block_frames=1).run()
+
+    # One bead at the center and one at the periodic image: x = 0.03 and
+    # z = 0.04 fall in the first unit bin, y = 19.98 in the last.
+    plane = {'x': 'xyHistMon', 'y': 'xyHistMon', 'z': 'xzHistMon'}[axis]
+    marginal = analysis.results[plane].sum(axis={'x': 1, 'y': 0,
+                                                 'z': 0}[axis])
+    assert marginal[expected_bin] == 1
+    assert int(analysis.results['rHistTMon'].sum()) == 2
+
+
+def test_frame_without_a_box_raises(cube_edges):
+    """A frame that carries no box cannot be wrapped, and the run says
+    so."""
+    import MDAnalysis as mda
+
+    universe = mda.Universe.empty(1, trajectory=True)
+    universe.atoms.positions = np.array([[1.0, 2.0, 3.0]])
+    analysis = SpatialHistograms({'Mon': universe.atoms}, cube_edges,
+                                 geometry='cubic', block_frames=1,
+                                 recenter='none')
+
+    with pytest.raises(ValueError, match="carries no box"):
+        analysis.run()
+
+
+def test_cylinder_bins_a_position_past_the_axis_end_as_its_periodic_image(
+        make_analysis, two_species):
+    """A position a little past the end of the periodic cylinder axis is
+    binned as its periodic image, while the walls still bound x and y."""
+    positions = two_species.copy()
+    positions[0, 1, 2] = 20.03  # z past the box [0, 20]: image at 0.03
+
+    analysis = make_analysis(positions=positions).run()
+
+    # Recentered by half the box, the image is at z = -9.97, in the first
+    # half-unit bin of [-10, 10].
+    assert analysis.results['zHistTMon'][0, 0] == 1
+    assert int(analysis.results['zHistTMon'][0].sum()) == 3
+
+
 # Cube geometry
 
 

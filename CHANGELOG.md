@@ -26,6 +26,7 @@ version increase may introduce incompatible changes.
 ### Fixed
 
 - Correct the parser count, the module lists of the README and `AGENTS.md`, the contents of a study folder, the CI and coverage descriptions, and four spellings, now American, in the prose files ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+- Wrap each position into the box along the periodic directions in `SpatialHistograms` before binning, since a LAMMPS dump can place an atom slightly outside the box between neighbor-list rebuilds; real HnsCub frames raised `ValueError` before ([#56](https://github.com/amirhs1/PolyPhys/issues/56))
 - Update the README's current focus and tier-review date, the release tag of the install example in `usage.md`, the stage-directory wording for the probe's outputs in `lineage.md`, and a spelling in `CITATION.cff` ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
 
 ## [0.7.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.7.0) - 2026-11-05
