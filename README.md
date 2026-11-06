@@ -145,18 +145,28 @@ frame:
 | `manage.projects`  | `ProjectSpec`, what a study's analysis needs beyond its parser: the polymer group, the rounding step of the crowder volume fraction, the attributes that become columns, the species-to-size map, and the time series; and `ProbeSpec`, what its probe needs: the selection of each species, the chain-size observables, the unwrap convention, the histogram species, bin sizes, and block length, how a frame is recentred, the pair species and its contact cutoff, and, for a study with binders, a `BinderSpec` of the binding cutoff and cis threshold. Each study's own specs live in `projects/`, outside the package. |
 | `manage.utils`     | Filename sorting, safe IO, and number-density / volume-fraction conversions for cubic and cylindrical geometries.                                                                              |
 | `manage.types`     | Domain type aliases (`LineageT`, `GeometryT`, `PhaseT`, …) that keep the vocabulary explicit and checkable.                                                                                    |
+| `simulate.core`    | `Box`, the LAMMPS simulation box, and `LammpsFormatError`, the base class of the errors of the log, dump, and data-file readers.                                                               |
+| `simulate.log`     | Reads a LAMMPS log file into pandas DataFrames: the thermodynamic output of every run, each run's summary, and the total wall time.                                                            |
+| `simulate.dump`    | Reads the text dumps of the LAMMPS `dump atom` and `dump custom` commands into numpy arrays, one frame at a time, without MDAnalysis.                                                           |
+| `simulate.data`    | Reads and writes LAMMPS data files of atoms, bonds, and angles, both as start configurations and as topologies for analysis tools such as MDAnalysis.                                          |
+| `simulate.build`   | Builds LAMMPS start configurations of a bead-spring polymer, a helix or a closed plectoneme, and checks that LAMMPS can start from them.                                                        |
 | `probe.core`       | Opens a study's LAMMPS data file and dump as one MDAnalysis universe, and writes the stamps of a probed artifact. Needs the `mda` extra.                                                      |
 | `probe.chain_size` | `ChainSize`, an MDAnalysis analysis that measures a chain's end-to-end distance, span, transverse size, radius of gyration, asphericity, shape parameter, and principal axes in every frame, driven by a study's `ProbeSpec`. |
 | `probe.binders`    | `BinderStatistics`, an MDAnalysis analysis that counts, in every frame, the patches of two-patch binders in contact with the chain, the free, dangling, and bridging binders, the cis and trans bridged pairs, and the loop-length histogram, with the minimum image along the geometry's periodic directions, driven by a study's `BinderSpec`. |
 | `probe.histograms` | `SpatialHistograms`, an MDAnalysis analysis that bins every species of a whole along the directions of its geometry per frame and in the three Cartesian planes per block of frames, after recentring each frame, and `histogram_edges`, the whole's bin edges from its `ProbeSpec` and parser. |
 | `probe.pairs`      | `PairDistances`, an MDAnalysis analysis that measures the pair distances, direct contacts, bonds, and clusters of one species, such as the foci, in every frame, with the minimum image along the periodic directions. |
 | `analyze.measurer` | Per-frame structural observables — end-to-end distance, farthest-site distance, transverse size, maximum extent — plus fixed-size binning and radial, axial, azimuthal, and planar histograms. |
+| `analyze.stats`    | The uncertainty of a time average over correlated frames by the blocking method of Flyvbjerg and Petersen: the blocked standard error, its plateau, and the statistical inefficiency.          |
 | `analyze.clusters` | Contact and cluster statistics of a particle group (direct contacts under a cutoff, connected-component clusters, size and bond histograms), genomic distances, the probability density of a pair's separation, the free, dangling, bridging, cis, and trans statistics of two-patch binders, and the binding-threshold sweep on saved distance matrices. |
 | `analyze.correlations` | The autocorrelation function of a time series by the FFT with Bartlett's confidence band, exponential and stretched-exponential decay fits with a recorded starting point, and the bond cosine correlation of a linear or ring chain, from which a persistence length follows. |
+| `analyze.sumrule`  | The density sum rule of Jeon et al. (2016) on a space's ensemble-averaged density profiles: each species' profile scaled by its size, normalized, folded, and summed per state point.          |
+| `analyze.density`  | Local number density and volume fraction profiles from a histogram of bead centres along one coordinate, with the share of each finite-size bead in the bins it reaches.                       |
 | `analyze.pipeline` | Reduces one space's probe artifacts down the lineage for every property of a study's `AnalysisTable`, with post-hooks that derive time averages, autocorrelations, density profiles through an injected kernel, and the pair distances of the foci; and reduces each whole's time series to its equilibrium value with a blocked error. |
 
-Eight parser subclasses ship with the package, covering cylindrical and cubic
-confinement with linear, ring, and bidisperse chain topologies.
+Nine parser subclasses ship with the package, covering cylindrical and cubic
+confinement: linear and ring chains, some with two monomer sizes, among
+crowders of one or two sizes, and a pair of monomers held at a fixed distance
+(`TwoMonDepCub`).
 
 ## Documentation
 
@@ -176,19 +186,21 @@ python -m sphinx -W -b html docs/source docs/_build
 PolyPhys is under active development toward a stable 1.0 API. It is used to
 produce published research results, and the parsing and measurement layers are
 covered by tests that run against Python 3.11, 3.12, 3.13, and 3.14 on every
-push.
+pull request and every push to `main`; the probe layer's tests run on Python
+3.14 with MDAnalysis.
 
 The examples above are executed as part of the test suite, so anything shown in
 this README is guaranteed to run against the current code.
 
 Current focus, in order:
 
-1. Broaden test coverage and executable examples for `manage.organizer`,
-   including autocorrelation-aware error estimation for correlated MD frames.
-2. Expand `analyze` with the polymer- and crowding-specific observables that
-   general MD toolkits do not provide.
-3. Reduce the per-project coupling in the `manage` layer so a new study can
-   _use_ PolyPhys from outside the package rather than extend it.
+1. Expand `analyze` with the polymer- and crowding-specific observables that
+   general MD toolkits do not provide, and finish the trajectory probes of
+   `probe`.
+2. Check `analyze.density` against the research code's density profiles.
+3. Move the study parsers out of `manage.parser` into their study folders,
+   so a new study _uses_ PolyPhys from outside the package rather than
+   extending it; the study specs have already moved to `projects/`.
 
 ## Citation
 
@@ -227,7 +239,7 @@ records the checks or human review applied to each part:
 
 Nothing that handles security, credentials, private data, or published results,
 or that can block a merge, is Delegated. Where a tier is unclear, I treat the
-part as Supervised. Tiers last reviewed: 2026-10-03.
+part as Supervised. Tiers last reviewed: 2026-11-06.
 
 Instructions for AI agents: [`AGENTS.md`](AGENTS.md).
 

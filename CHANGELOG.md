@@ -11,6 +11,16 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Adopt American English as the spelling of PolyPhys in `AGENTS.md`; the existing Canadian forms, including the `recentre` API name, are converted under [#168](https://github.com/amirhs1/PolyPhys/issues/168)
+- Take the commit template's `Why:` line from the issue, the maintainer, or an outside report, mark a breaking change with the changelog's `**Breaking:**` instead of `!`, and allow `Refs #n` in the pull request template ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+
+### Fixed
+
+- Correct the parser count, the module lists of the README and `AGENTS.md`, the contents of a study folder, the CI and coverage descriptions, and four spellings, now American, in the prose files ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+- Update the README's current focus and tier-review date, the release tag of the install example in `usage.md`, the stage-directory wording for the probe's outputs in `lineage.md`, and a spelling in `CITATION.cff` ([#166](https://github.com/amirhs1/PolyPhys/issues/166))
+
 ## [0.7.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.7.0) - 2026-11-05
 
 ### Changed

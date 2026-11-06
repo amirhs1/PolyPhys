@@ -1,9 +1,11 @@
 # Study specs
 
-This folder holds the `ProjectSpec` of each of the maintainer's studies: the
-facts their analysis needs beyond the parser class, such as the polymer group,
-the rounding step of the bulk crowder volume fraction, the attributes added as
-columns, the species-to-size map of the density profiles, and the time series.
+This folder holds the specs of each of the maintainer's studies: its
+`ProjectSpec` (`SPEC`), `ProbeSpec` (`PROBE`), and `AnalysisTable` records
+(`ANALYSIS`). The `ProjectSpec` holds the facts the study's analysis needs
+beyond the parser class, such as the polymer group, the rounding step of the
+bulk crowder volume fraction, the attributes added as columns, the
+species-to-size map of the density profiles, and the time series.
 `ProjectSpec` itself is in `polyphys.manage.projects`.
 
 The folder is part of the repository, not of the installed package
@@ -20,9 +22,9 @@ A study elsewhere builds its own `ProjectSpec` in the same way.
 A provisional spec belongs to a study whose molecular dynamics data is not yet
 confirmed. The specs of unpublished studies are kept out of this public
 repository. Each folder is a package whose `spec.py` builds the study's
-`ProjectSpec` and whose `__init__.py` exports it as `SPEC`; the probe,
-analysis, and figure code of a study will join it there. From an analysis
-script in a checkout of this repository:
+specs and whose `__init__.py` exports the three; the study's drivers and
+figure code will join them there. From an analysis script in a checkout of
+this repository:
 
 ```python
 import sys

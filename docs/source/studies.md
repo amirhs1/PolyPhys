@@ -160,10 +160,10 @@ list(chain.physical_attrs), chain.group, divisor=chain.divisor)`.
 
 A study that probes its trajectories with `polyphys.probe` builds a
 `ProbeSpec` beside its `ProjectSpec`: the MDAnalysis selection of each
-species, the label of the chain, the chain-size observables to measure, and
-whether the chain is unwrapped for its asphericity; see [Probe](probe.md).
-The study's probe, analysis, and figure code will join its specs in its
-folder.
+species, the label of the chain, the chain-size observables to measure,
+whether the chain is unwrapped for its asphericity, and the settings of its
+spatial histograms, pair distances, and binders; see [Probe](probe.md).
+The study's drivers and figure code will join its specs in its folder.
 
 ## Reading tables the research code wrote
 
