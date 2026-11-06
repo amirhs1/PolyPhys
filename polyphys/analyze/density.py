@@ -44,7 +44,7 @@ Notation
 :math:`S_{ij}`
     The *share matrix*, ``share``: the volume of a test bead centered in bin
     :math:`i` that lies in bin :math:`j`, with the bead at the bin center
-    (``shares='centre'``) or averaged over the bin (``shares='average'``).
+    (``shares='center'``) or averaged over the bin (``shares='average'``).
 :math:`\\phi_i = \\sum_j S_{ij} \\rho_j`
     The local volume fraction of bin :math:`i`, ``phi``, dimensionless.
 
@@ -70,7 +70,7 @@ radius :math:`R_b`. With the density piecewise constant on the bins, the
 value at a point :math:`x` is :math:`\\sum_j \\rho_j\\, s(x \\to j)`. The
 research code evaluated this at the bin center, :math:`\\phi_i = \\sum_j
 \\rho_j\\, s(c_i \\to j)` (thesis, appendix "Discrete local distributions
-in the cylindrical coordinate system", eq. 7); ``shares='centre'`` keeps
+in the cylindrical coordinate system", eq. 7); ``shares='center'`` keeps
 that form. The default, ``shares='average'``, averages the kernel over the
 bead's position in its bin with the bin's own measure,
 
@@ -180,7 +180,7 @@ __all__ = [
 
 FloatArray = npt.NDArray[np.float64]
 
-ShareMode = Literal['average', 'centre']
+ShareMode = Literal['average', 'center']
 """How the test bead sits in its bin: averaged over the bin, or at its
 center as in the research code.
 
@@ -582,7 +582,7 @@ def _slab_entries(
         col = unwrapped - image * n_bins
         lo = edges[col] + image * period
         hi = edges[col + 1] + image * period
-        if shares == 'centre':
+        if shares == 'center':
             value = _segment(r_ball, lo - centers, hi - centers)
         else:
             g2 = _segment_second_antiderivative
@@ -623,7 +623,7 @@ def _shell_entries(
             int(np.searchsorted(edges, hi + r_ball, 'left')) - 1, n_bins - 1
         )
         shell_edges = edges[j_lo: j_hi + 2]
-        if shares == 'centre':
+        if shares == 'center':
             x = np.array([centers[i]])
             weights = np.array([1.0])
             norm = 1.0
@@ -672,7 +672,7 @@ def share_matrix(
         ``'r'`` for shells, or ``'z'`` for the periodic slabs of a cylinder.
     shares : :py:data:`ShareMode`, default ``'average'``
         ``'average'`` averages the test bead over its bin with the bin's
-        measure; ``'centre'`` places it at the bin center, as the research
+        measure; ``'center'`` places it at the bin center, as the research
         code did.
     intersection : :py:data:`IntersectionMode`, default ``'exact'``
         The kernel of a cylindrical shell: :func:`sphere_cylinder_intersection`
@@ -709,7 +709,7 @@ def share_matrix(
     With ``shares='average'`` the matrix satisfies
     :math:`V_i S_{ij} = V_j S_{ji}`, which makes :func:`volume_fraction`
     conserve the total bead volume and return :math:`\\rho v` for a uniform
-    fluid, both to round-off. With ``shares='centre'`` the row sums are
+    fluid, both to round-off. With ``shares='center'`` the row sums are
     still the bead volume, but the symmetry, and with it the conservation,
     holds only to :math:`O(h^2)` along :math:`r`. The symmetry also needs
     the kernel to be the true indicator, so with ``intersection='sphere'``
@@ -724,7 +724,7 @@ def share_matrix(
     >>> import numpy as np
     >>> from polyphys.analyze.density import share_matrix
     >>> s = share_matrix([0, 1, 2, 3, 4], 1.0, 'cylindrical', 'z',
-    ...                  shares='centre')
+    ...                  shares='center')
     >>> np.round(s.toarray(), 4)
     array([[0.5236, 0.    , 0.    , 0.    ],
            [0.    , 0.5236, 0.    , 0.    ],
@@ -746,7 +746,7 @@ def share_matrix(
     scheme = _check_scheme(geometry, direction)
     e = _check_edges(edges, scheme)
     r_ball = 0.5 * _check_positive('bead_diameter', bead_diameter)
-    _check_choice('shares', shares, ('average', 'centre'))
+    _check_choice('shares', shares, ('average', 'center'))
     _check_choice('intersection', intersection, ('exact', 'sphere'))
     if scheme == 'slab':
         rows, cols, vals = _slab_entries(e, r_ball, shares)

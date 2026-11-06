@@ -471,7 +471,7 @@ def test_study_probe_histogram_fields(module: str, species: tuple[str, ...],
 
     assert probe.histogram_species == species
     assert list(probe.bin_sizes) == keys
-    assert (probe.block_frames, probe.recentre) == (100, 'half')
+    assert (probe.block_frames, probe.recenter) == (100, 'half')
 
 
 @pytest.mark.parametrize('module, info, r, cartesian, theta', [

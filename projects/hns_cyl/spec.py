@@ -95,7 +95,7 @@ PROBE = ProbeSpec(
                'y': _l_bin},
     histogram_species=('Crd', 'Mon', 'Hns'),
     block_frames=100,
-    recentre='half',
+    recenter='half',
     binders=BinderSpec(patches='HnsPatch', binders='HnsCore', cutoff=0.685,
                        inclusive=True, cis_threshold=4,
                        store_distances=True),

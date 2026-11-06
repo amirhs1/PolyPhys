@@ -124,7 +124,7 @@ PROBE = ProbeSpec(
                'y': _r_bin},
     histogram_species=('Crd', 'Mon', 'Dna', 'Foci'),
     block_frames=100,
-    recentre='half',
+    recenter='half',
     pair_species='Foci',
     contact_cutoff=_contact_cutoff,
     minimum_image=True,
@@ -140,7 +140,7 @@ PROBE = ProbeSpec(
 | `bin_sizes`         | The histogram bin size along each direction: a number, or a function of the whole's parser for a size that scales with its diameters (`PerWhole`) |
 | `histogram_species` | The species whose spatial histograms are collected, each a label in `selections`; empty when the study's histograms are not probed           |
 | `block_frames`      | The block length $b$ of the two-dimensional maps; required with `histogram_species`                                                          |
-| `recentre`          | How a frame's positions are moved before binning: `'half'` (half the box), `'none'`, or a triple (`RecentreT`); see "Recentering a frame"     |
+| `recenter`          | How a frame's positions are moved before binning: `'half'` (half the box), `'none'`, or a triple (`RecenterT`); see "Recentering a frame"     |
 | `pair_species`      | The species whose pair distances and contacts are collected, such as the foci; `None` when the study has none                                |
 | `contact_cutoff`    | The center-to-center distance at or below which two particles of `pair_species` touch, a number or a `PerWhole` function; required with it   |
 | `minimum_image`     | Whether the pair distances use the minimum image along the periodic directions: the axis of a cylinder, every direction of a cube            |
@@ -245,9 +245,9 @@ reader of MDAnalysis 2.4 and later translates every frame so that the lower
 box bounds sit at the origin, which undoes that recentering, and no option
 of the reader keeps the written frame; only the box lengths survive, as
 `ts.dimensions`. A spatial histogram therefore has to move the positions
-back, and `ProbeSpec.recentre` says how:
+back, and `ProbeSpec.recenter` says how:
 
-| `recentre`     | Subtracts, per frame                                     | Use                                                                 |
+| `recenter`     | Subtracts, per frame                                     | Use                                                                 |
 | -------------- | -------------------------------------------------------- | ------------------------------------------------------------------- |
 | `'half'`       | Half the frame's box lengths, `ts.dimensions[:3] / 2`    | The default: restores the LAMMPS frame exactly, the axis at $(0, 0)$ |
 | `'none'`       | Nothing                                                  | Keep the reader's frame, positions in $[0, L)$                      |
@@ -261,7 +261,7 @@ origin, and the radial and azimuthal histograms of every cylindrical study
 were measured about that displaced point. The maintainer chose `'half'` on
 2026-11-04; the research numbers remain reproducible with the triple
 `(D / 2, D / 2, Z / 2)`. The pair distances are translation invariant and
-ignore `recentre`.
+ignore `recenter`.
 
 ## The spatial histograms
 
@@ -557,7 +557,7 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
   before measuring. Every chain-size observable is invariant under a
   translation of all positions, because each one recenters the chain on
   its center of geometry or mass first, so the shift is dropped for this
-  family. The spatial histograms recenter by `ProbeSpec.recentre`, whose
+  family. The spatial histograms recenter by `ProbeSpec.recenter`, whose
   default `'half'` restores the LAMMPS frame and corrects the research
   shift's half-bead offset in a cylinder (see "Recentering a frame").
 - The spatial histograms keep the one-dimensional counts per frame and the

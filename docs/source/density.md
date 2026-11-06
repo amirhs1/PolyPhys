@@ -90,7 +90,7 @@ $\phi(\mathbf r) = \int \rho(\mathbf r')\,\Theta(R_b - |\mathbf r -
 $\rho$ piecewise constant the value at a point $x$ is
 $\sum_j \rho_j\, s(x \to j)$.
 
-### The centered form, `shares='centre'`
+### The centered form, `shares='center'`
 
 The research code evaluated that convolution at the bin center
 $c_i = \tfrac{1}{2}(e_i + e_{i+1})$,

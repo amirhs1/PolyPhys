@@ -92,7 +92,7 @@ PerWhole = float | Callable[[ParserBase], float]
 #: ``lcube`` is reproducible.
 #:
 #: .. versionadded:: 0.7.0
-RecentreT = Literal['none', 'half'] | tuple[float, float, float]
+RecenterT = Literal['none', 'half'] | tuple[float, float, float]
 
 # The parser attribute that holds the bulk volume fraction of crowders, which
 # the organizer adds and rounds into 'phi_bulk_c_round'.
@@ -517,7 +517,7 @@ class ProbeSpec:
         The block length :math:`b` of the two-dimensional maps: the number of
         consecutive frames whose maps are averaged into one stored map, a
         positive integer. Required with `histogram_species`.
-    recentre : :py:data:`RecentreT`, default 'half'
+    recenter : :py:data:`RecenterT`, default 'half'
         How the positions of a frame are moved before they are binned:
         ``'half'`` subtracts half the frame's box lengths, which restores the
         LAMMPS frame the dump reader translated; ``'none'`` keeps the reader's
@@ -568,7 +568,7 @@ class ProbeSpec:
         direction or is neither a finite positive number nor callable; if a
         histogram species is not a label in `selections` or repeats, or is
         given without `bin_sizes` or `block_frames`; if `block_frames` is
-        not a positive integer; if `recentre` is neither ``'none'``,
+        not a positive integer; if `recenter` is neither ``'none'``,
         ``'half'``, nor a triple of finite numbers; if `pair_species` is not
         a label in `selections` or is given without `contact_cutoff`; if
         `contact_cutoff` is neither a finite positive number nor callable;
@@ -610,7 +610,7 @@ class ProbeSpec:
     >>> whole = SumRuleCyl(
     ...     'N200epsilon5r10.5lz50sig0.5nc100dt0.005bdump1adump1ens1',
     ...     'whole', 'all')
-    >>> probe.resolve(probe.bin_sizes['r'], whole), probe.recentre
+    >>> probe.resolve(probe.bin_sizes['r'], whole), probe.recenter
     (0.05, 'half')
 
     A study with binders adds a :class:`BinderSpec`:
@@ -645,7 +645,7 @@ class ProbeSpec:
         default_factory=dict, hash=False)
     histogram_species: tuple[EntityT, ...] = ()
     block_frames: int | None = None
-    recentre: RecentreT = 'half'
+    recenter: RecenterT = 'half'
     pair_species: EntityT | None = None
     contact_cutoff: PerWhole | None = None
     minimum_image: bool = True
@@ -735,16 +735,16 @@ class ProbeSpec:
             raise ValueError(
                 f"{name}: 'block_frames' must be a positive integer, not "
                 f"{self.block_frames!r}.")
-        if self.recentre not in ('none', 'half'):
-            shift = self.recentre
+        if self.recenter not in ('none', 'half'):
+            shift = self.recenter
             if not (isinstance(shift, (tuple, list)) and len(shift) == 3
                     and all(isinstance(value, (int, float))
                             and not isinstance(value, bool)
                             and math.isfinite(value) for value in shift)):
                 raise ValueError(
-                    f"{name}: 'recentre' must be 'none', 'half', or a triple "
+                    f"{name}: 'recenter' must be 'none', 'half', or a triple "
                     f"of finite numbers, not {shift!r}.")
-            object.__setattr__(self, 'recentre',
+            object.__setattr__(self, 'recenter',
                                tuple(float(value) for value in shift))
         if self.pair_species is not None:
             if self.pair_species not in self.selections:
