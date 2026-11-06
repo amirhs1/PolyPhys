@@ -6,7 +6,7 @@ as a data file and a dump by the ``make_binder_universe`` fixture. Expected
 values are worked by hand from the counting rules of
 :func:`polyphys.analyze.clusters.binding_statistics`, as the clusters guide
 states them: a patch 0.3 off a monomer touches it at a cutoff of 0.5, a
-patch at the midpoint of two neighbours is exactly 0.5 from both, the
+patch at the midpoint of two neighbors is exactly 0.5 from both, the
 single-patch rule keeps the lower index, cis is a genomic distance of at
 most ``cis_threshold`` bonds, and the loop-length row is the bincount of
 the bridged pairs' distances. The minimum-image distances are checked
@@ -226,7 +226,7 @@ def test_loop_length_rows_count_bridged_pairs_by_distance(
 def test_inclusive_decides_a_pair_at_the_cutoff(make_binder_universe,
                                                 binding_frames, inclusive,
                                                 expected):
-    """A patch exactly at the cutoff from two neighbours is in contact with
+    """A patch exactly at the cutoff from two neighbors is in contact with
     both when inclusive and with neither when strict."""
     universe = make_binder_universe(*binding_frames)
 

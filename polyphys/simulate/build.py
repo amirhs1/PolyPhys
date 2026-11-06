@@ -32,7 +32,7 @@ Notation
 :math:`N`
     The number of beads.
 :math:`b`
-    The bond length, the distance between bonded bead centres.
+    The bond length, the distance between bonded bead centers.
 :math:`\\sigma`, :math:`\\epsilon`
     The bead diameter and the energy unit of the Lennard-Jones (LJ) units of
     the run; all lengths here are in :math:`\\sigma`.
@@ -40,7 +40,7 @@ Notation
     The radius and the pitch (the axial rise per turn) of a helix;
     :math:`c = p / 2\\pi` is the rise per radian.
 :math:`\\Delta t`
-    The angle between neighbouring beads on a helix.
+    The angle between neighboring beads on a helix.
 :math:`\\theta_A`
     The helical angle, between a strand's tangent and the axis:
     :math:`\\tan\\theta_A = 2\\pi R / p`.
@@ -53,7 +53,7 @@ Notation
     beads that are not bonded.
 :math:`D`, :math:`a`
     The diameter of a cylindrical confinement and the bead diameter;
-    :math:`D - a` is the effective diameter, the diameter the bead centres
+    :math:`D - a` is the effective diameter, the diameter the bead centers
     can reach.
 
 Physical background
@@ -96,7 +96,7 @@ default, `bond_length` ``= 0.97``.
 the bond force when :math:`1 - (r/R_0)^2 < 0.1`, that is for :math:`r >
 \\sqrt{0.9}\\,R_0 = 1.423\\,\\sigma` at :math:`R_0 = 1.5\\,\\sigma`, and
 stops with ``Bad FENE bond`` at :math:`r \\ge 2R_0` (``bond_fene.cpp``). A
-bond longer than the ghost-atom cutoff, the pair cutoff plus the neighbour
+bond longer than the ghost-atom cutoff, the pair cutoff plus the neighbor
 skin (:math:`1.42\\,\\sigma` for a WCA cutoff and a skin of :math:`0.3`),
 stops a run with ``Bond atoms missing`` or a wrong periodic image as soon
 as it crosses a periodic face or a processor boundary. ``read_data`` loses
@@ -115,8 +115,8 @@ Shapes
 ======
 
 *Helix.* Bead :math:`k` sits at :math:`(R\\cos k\\Delta t, R\\sin k\\Delta
-t, c k\\Delta t)`, centred on :math:`z = 0`. The distance between
-neighbouring beads is the chord
+t, c k\\Delta t)`, centered on :math:`z = 0`. The distance between
+neighboring beads is the chord
 
 .. math::
 
@@ -329,7 +329,7 @@ def helix(
 
     Bead :math:`k` sits at :math:`(R\cos k\Delta t, R\sin k\Delta t, c k
     \Delta t)` on a right-handed helix of radius :math:`R` and pitch
-    :math:`p` about the :math:`z` axis, with :math:`c = p/2\pi`, centred on
+    :math:`p` about the :math:`z` axis, with :math:`c = p/2\pi`, centered on
     :math:`z = 0`. The angle step :math:`\Delta t` is the root of the chord
     equation :math:`b^2 = 4R^2\sin^2(\Delta t/2) + c^2\Delta t^2`, so every
     bond has the length :math:`b` exactly.
@@ -407,7 +407,7 @@ def plectoneme_ring(
     :math:`b` from the one before, and the strand arclength :math:`L_A` is
     solved so that :math:`N` chords close the curve: every bond, the one
     between the last bead and the first included, has the length :math:`b`,
-    and :math:`R` and :math:`p` are exactly as given. The ring is centred on
+    and :math:`R` and :math:`p` are exactly as given. The ring is centered on
     the origin with its axis along :math:`z`; no bead lies farther than
     :math:`R` from the axis.
 
@@ -822,7 +822,7 @@ def check_conformation(
        R_0`, where LAMMPS warns ``FENE bond too long`` and clamps the force
        (and stops at :math:`2R_0`).
     2. A bond is at or above `ghost_cutoff`, the pair cutoff plus the
-       neighbour skin, beyond which a bond across a periodic face or a
+       neighbor skin, beyond which a bond across a periodic face or a
        processor boundary stops the run.
     3. Two atoms, bonded or not, are closer than :math:`10^{-9}`, which
        gives a non-finite force.
@@ -834,8 +834,8 @@ def check_conformation(
        axis ``read_data`` remaps it, and the distances above use the
        minimum image.
     6. With a cylinder, an atom lies farther than :math:`(D - a)/2` from
-       the :math:`z` axis through the box centre, the effective radius the
-       bead centres can reach; a bead there is one bead diameter from a
+       the :math:`z` axis through the box center, the effective radius the
+       bead centers can reach; a bead there is one bead diameter from a
        wall of diameter :math:`D` built from beads of diameter :math:`a`.
 
     .. versionadded:: 0.6.0
@@ -850,7 +850,7 @@ def check_conformation(
         the Kremer-Grest model.
     ghost_cutoff : float
         The ghost-atom cutoff of the run, positive: the largest pair cutoff
-        plus the neighbour skin, unless ``comm_modify cutoff`` sets more;
+        plus the neighbor skin, unless ``comm_modify cutoff`` sets more;
         :math:`2^{1/6} + 0.3 = 1.42` for a WCA run with the LJ default skin.
     periodic : sequence of bool
         Which of the x, y, and z axes are periodic in the run; a data file
@@ -995,9 +995,9 @@ def check_conformation(
             f"{' ...' if out_rows.size > 3 else ''})")
     max_radial: float | None = None
     if dcyl is not None and dmon is not None:
-        centre = 0.5 * (box.lo + box.hi)
-        radial = np.hypot(positions[:, 0] - centre[0],
-                          positions[:, 1] - centre[1])
+        center = 0.5 * (box.lo + box.hi)
+        radial = np.hypot(positions[:, 0] - center[0],
+                          positions[:, 1] - center[1])
         max_radial = float(radial.max()) if n_atoms else math.nan
         limit = 0.5 * (dcyl - dmon)
         beyond = radial > limit
@@ -1166,14 +1166,14 @@ def _march_curve(
 
 
 def _first_beyond(
-    samples: FloatArray, start: int, window: int, centre: FloatArray,
+    samples: FloatArray, start: int, window: int, center: FloatArray,
     radius: float,
 ) -> int | None:
     """Return the index of the first sample from `start` on that is farther
-    than `radius` from `centre`, scanning `window` samples at a time."""
+    than `radius` from `center`, scanning `window` samples at a time."""
     while True:
         block = samples[start:start + window]
-        delta = block - centre
+        delta = block - center
         outside = np.flatnonzero(
             np.einsum("ij,ij->i", delta, delta) > radius * radius)
         if outside.size:
@@ -1216,13 +1216,13 @@ def _march_polyline(
 
 
 def _first_beyond_vertex(
-    vertices: FloatArray, start: int, centre: FloatArray, radius: float
+    vertices: FloatArray, start: int, center: FloatArray, radius: float
 ) -> int | None:
     """Return the index of the first vertex from `start` on that is at
-    least `radius` from `centre`, scanning 256 vertices at a time."""
+    least `radius` from `center`, scanning 256 vertices at a time."""
     while start < vertices.shape[0]:
         block = vertices[start:start + 256]
-        delta = block - centre
+        delta = block - center
         outside = np.flatnonzero(
             np.einsum("ij,ij->i", delta, delta) >= radius * radius)
         if outside.size:

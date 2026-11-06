@@ -23,7 +23,7 @@ Submodules
 - `sumrule`: The density sum rule on a space's ensemble-averaged density
   profiles: scaled, normalized, folded, and summed over species.
 - `density`: The local number density and volume fraction of a species
-  from a histogram of its bead centres, with the share of a finite bead
+  from a histogram of its bead centers, with the share of a finite bead
   spread over the bins it reaches.
 - `pipeline`: The reducer of one space's probe artifacts down the lineage,
   driven by a study's analysis tables, with the post-hooks that derive time

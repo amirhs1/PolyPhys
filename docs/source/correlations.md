@@ -145,7 +145,7 @@ $C(k) = \frac{1}{N-k} \sum_{i=0}^{N-k-1} \hat{\mathbf{u}}_i \cdot
 \hat{\mathbf{u}}_{i+k}$. On a ring every lag has $N$ pairs, going round the
 ring, $C(k) = \frac{1}{N} \sum_{i=0}^{N-1} \hat{\mathbf{u}}_i \cdot
 \hat{\mathbf{u}}_{(i+k) \bmod N}$, so that the result does not depend on
-which monomer is labelled first and $C(k) = C(N - k)$: lags $0$ to $N/2$
+which monomer is labeled first and $C(k) = C(N - k)$: lags $0$ to $N/2$
 carry the information, and a fit stops there. The sums are linear or
 circular autocorrelations by the FFT of each Cartesian component,
 $O(N \log N)$ per frame against the $O(N^2)$ pairwise matrix of the
@@ -184,7 +184,7 @@ are not ported: that work belongs to the analysis pipeline.
   "Autocorrelation Plot".
   <https://www.itl.nist.gov/div898/handbook/eda/section3/autocopl.htm>
 - G. Williams and D. C. Watts, "Non-symmetrical dielectric relaxation
-  behaviour arising from a simple empirical decay function", Trans. Faraday
+  behavior arising from a simple empirical decay function", Trans. Faraday
   Soc. 66, 80-85 (1970). <https://doi.org/10.1039/TF9706600080>
 - SciPy, {func}`scipy.optimize.curve_fit`.
 - M. Rubinstein and R. H. Colby, Polymer Physics (Oxford University Press,

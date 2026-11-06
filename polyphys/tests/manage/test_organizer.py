@@ -577,7 +577,7 @@ def hist_wholes():
 def hist_edges(hist_wholes):
     """Return the same non-uniform bin edges for every whole in hist_wholes.
 
-    The edges are non-uniform so a wrong centre formula cannot pass by
+    The edges are non-uniform so a wrong center formula cannot pass by
     accident.
     """
     return {name: np.array([0.0, 1.0, 3.0, 6.0]) for name in hist_wholes}
@@ -1138,7 +1138,7 @@ def test_space_tseries_saves_space_csv(tmp_path, make_ens_avg_space):
 
 def test_space_hists_concatenates_and_normalizes(make_ens_avg_space,
                                                  state_attr):
-    """space_hists adds bin centres and each normalized histogram sums to 1."""
+    """space_hists adds bin centers and each normalized histogram sums to 1."""
     database = make_ens_avg_space(
         "rhoMon", [[1.0, 2.0, 1.0], [2.0, 4.0, 2.0]]
     )

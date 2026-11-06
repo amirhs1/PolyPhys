@@ -13,7 +13,7 @@ $n$
 
 $r_c$
 : The contact cutoff, `cutoff`, in the caller's length unit. Two particles
-  are in *direct contact* when their centre-to-centre distance is at most
+  are in *direct contact* when their center-to-center distance is at most
   $r_c$ (or below it, with `inclusive=False`).
 
 $A$
@@ -180,7 +180,7 @@ reproduced:
   same pair count once, and a binder whose two patches hold one monomer is
   bridging but bridges no pair.
 - In {func}`~polyphys.analyze.clusters.binder_contacts`, which links binders
-  on the same or neighbouring monomers for cluster counting, every binder is
+  on the same or neighboring monomers for cluster counting, every binder is
   a cluster of at least size 1, bound or not.
 
 Names changed from the research code's `hns_binding` dictionary:

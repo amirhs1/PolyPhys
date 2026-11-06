@@ -49,7 +49,7 @@ Notation
 ========
 :math:`\\phi_c`
     The bulk volume fraction of crowders, the parser attribute
-    ``phi_bulk_c``: the fraction of the volume available to crowder centres
+    ``phi_bulk_c``: the fraction of the volume available to crowder centers
     that the crowders fill (dimensionless).
 :math:`\\Delta`
     The rounding step, `divisor`, of :math:`\\phi_c` in the
@@ -529,7 +529,7 @@ class ProbeSpec:
         ``'Foci'``; ``None`` when the study has no such species. Requires
         `contact_cutoff`.
     contact_cutoff : :py:data:`PerWhole` or None, default None
-        The centre-to-centre distance, in units of the monomer diameter, at
+        The center-to-center distance, in units of the monomer diameter, at
         or below which two particles of `pair_species` are in direct
         contact: a finite positive number or a function of a whole's parser,
         such as the sum of the large-monomer and crowder diameters.

@@ -49,7 +49,7 @@ def straight_chain() -> np.ndarray:
 @pytest.fixture
 def cube_vertices() -> np.ndarray:
     """One frame of the eight vertices of a cube of side 2 about (10, 10,
-    10), plus two beads at its centre so the chain has ten beads."""
+    10), plus two beads at its center so the chain has ten beads."""
     corners = np.array([[sx, sy, sz] for sx in (-1.0, 1.0)
                         for sy in (-1.0, 1.0) for sz in (-1.0, 1.0)])
     return (np.vstack([corners, np.zeros((2, 3))]) + 10.0)[np.newaxis]
@@ -83,7 +83,7 @@ def test_fsd_is_the_span_along_the_axis(make_chain_universe):
 
 def test_transverse_size_of_beads_on_a_circle(make_chain_universe):
     """Ten beads on a circle of radius 2 in the xy plane have transverse
-    size 4 across z: twice the mean distance from their centre."""
+    size 4 across z: twice the mean distance from their center."""
     angles = 2 * np.pi * np.arange(10) / 10
     first = np.full((10, 3), 10.0)
     first[:, 0] += 2.0 * np.cos(angles)

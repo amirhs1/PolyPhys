@@ -242,11 +242,11 @@ class LogFile:
         - ``<section>_avg_time`` and ``<section>_total_pct``: average time,
           in seconds, and percent of the loop time spent in each section of
           the MPI task timing breakdown, such as ``Pair_avg_time``.
-        - ``dangerous_builds``: dangerous neighbour-list builds.
+        - ``dangerous_builds``: dangerous neighbor-list builds.
 
         A field the run does not report is NaN: LAMMPS prints no
         performance line after ``minimize`` or in ``cgs`` and ``si`` units,
-        and no count of dangerous builds when neighbour checks are off.
+        and no count of dangerous builds when neighbor checks are off.
     wall_time : pandas.DataFrame
         One row: ``wall_time_s`` (int64, seconds) and ``wall_time_hr``
         (float64, hours) from the ``Total wall time`` line, and ``n_cores``

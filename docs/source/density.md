@@ -2,9 +2,9 @@
 
 This page explains what {mod}`polyphys.analyze.density` computes and why it
 computes it the way it does: the local number density of a species from a
-histogram of its bead centres, and the local volume fraction, which has to
+histogram of its bead centers, and the local volume fraction, which has to
 account for a bead of finite size reaching into the bins next to the one
-that holds its centre. Every routine is a numpy or scipy kernel on arrays;
+that holds its center. Every routine is a numpy or scipy kernel on arrays;
 reading frames, binning positions, averaging over frames, and placing the
 result in the artifact lineage are the caller's job.
 
@@ -26,7 +26,7 @@ $w(x)\,dx$, $V_i$
   $V_i = \int_{e_i}^{e_{i+1}} w(x)\,dx$, `volumes`.
 
 $H_i$, $F$
-: The bead centres counted in bin $i$ over $F$ frames, `counts` and
+: The bead centers counted in bin $i$ over $F$ frames, `counts` and
   `n_frames`.
 
 $\rho_i$
@@ -37,20 +37,20 @@ $a$, $R_b = a/2$, $v = \pi a^3 / 6$
 : The bead diameter, `bead_diameter`, its radius, and its volume.
 
 $s(x \to j)$
-: The *share kernel*: the volume of one bead whose centre is at coordinate
+: The *share kernel*: the volume of one bead whose center is at coordinate
   $x$ that lies inside bin $j$. Summed over $j$ it is $v$ whenever the bead
   is inside the domain.
 
 $S_{ij}$
 : The *share matrix*, `share`, from {func}`~polyphys.analyze.density.share_matrix`:
-  the volume of a test bead centred in bin $i$ that lies in bin $j$.
+  the volume of a test bead centered in bin $i$ that lies in bin $j$.
 
 $\phi_i$
 : The local volume fraction of bin $i$, `phi`, dimensionless.
 
 ## The number density
 
-Counting centres per bin volume,
+Counting centers per bin volume,
 
 $$
 \rho_i = \frac{H_i}{F\, V_i},
@@ -90,13 +90,13 @@ $\phi(\mathbf r) = \int \rho(\mathbf r')\,\Theta(R_b - |\mathbf r -
 $\rho$ piecewise constant the value at a point $x$ is
 $\sum_j \rho_j\, s(x \to j)$.
 
-### The centred form, `shares='centre'`
+### The centered form, `shares='centre'`
 
-The research code evaluated that convolution at the bin centre
+The research code evaluated that convolution at the bin center
 $c_i = \tfrac{1}{2}(e_i + e_{i+1})$,
 
 $$
-\phi_i^{\text{centre}} = \sum_j \rho_j\, s(c_i \to j),
+\phi_i^{\text{center}} = \sum_j \rho_j\, s(c_i \to j),
 $$
 
 which is eq. 7 of the thesis appendix "Discrete local distributions in the
@@ -123,7 +123,7 @@ This is exact under the one assumption already made for $\rho$, that the
 beads of a bin are spread uniformly over it. Writing the kernel as an
 integral of the indicator, $s(x \to j) = \int_{e_j}^{e_{j+1}} \chi(x, y)\,
 w(y)\,dy$ with $\chi(x, y)$ the fraction of the surface at $y$ inside a
-bead centred at $x$,
+bead centered at $x$,
 
 $$
 V_i\, \bar s(i \to j) = \int_{e_i}^{e_{i+1}}\!\!\int_{e_j}^{e_{j+1}}
@@ -145,9 +145,9 @@ round-off in every scheme:
    v$: the beads' total volume comes back.
 2. **Uniform fluid.** $\phi_i = \rho \sum_j \bar s(i \to j) = \rho v$.
 
-The averaged form is also the exact bin average of the centred form, so it
+The averaged form is also the exact bin average of the centered form, so it
 is the research code's formula with its one remaining approximation
-removed. The plan's scatter form, which moves each bead to its bin centre
+removed. The plan's scatter form, which moves each bead to its bin center
 and spreads it ($\phi_i = \tfrac{1}{V_i}\sum_j (H_j / F)\, s(c_j \to i)$),
 conserves volume but misses the uniform fluid by the same 2 % at $h = a/4$;
 it is the other half of the same missing average, and it is not offered.
@@ -156,7 +156,7 @@ it is the other half of the same missing average, and it is not offered.
 
 ### Slabs
 
-The volume of a bead below the plane at signed height $u$ from its centre
+The volume of a bead below the plane at signed height $u$ from its center
 is the spherical segment $G(u) = \int_{-R_b}^{u} \pi (R_b^2 - t^2)\,dt$
 (MathWorld, "Spherical Segment", eq. 14, as
 {func}`~polyphys.analyze.measurer.spherical_segment` computes it), and the
@@ -182,11 +182,11 @@ The axial direction of a cylinder is periodic: the slabs at one end are
 also reached, through their images shifted by the domain length, from the
 other end, and the same bracket is summed over the images. For a bead of
 diameter 1 in slabs of width 1 the shares are $13\pi/96$ into the bead's
-own slab and $\pi/64$ into each neighbour.
+own slab and $\pi/64$ into each neighbor.
 
 ### Spherical shells
 
-The volume of a bead centred at distance $x$ from the origin that lies
+The volume of a bead centered at distance $x$ from the origin that lies
 inside the ball of radius $e$ is the sphere-sphere intersection volume
 $W(R_b, e, x)$ (MathWorld, "Sphere-Sphere Intersection", eq. 16, as
 {func}`~polyphys.analyze.measurer.sphere_sphere_intersection` computes it),
@@ -198,11 +198,11 @@ each piece integrates it exactly.
 
 ### Cylindrical shells
 
-The kernel is the volume $C(R_b, R, d)$ of a bead whose centre is at axial
+The kernel is the volume $C(R_b, R, d)$ of a bead whose center is at axial
 distance $d$ inside the coaxial cylinder of radius $R$,
 {func}`~polyphys.analyze.density.sphere_cylinder_intersection`. Slicing the
 bead by planes normal to the axis, the slice at height $z$ is a disc of
-radius $\sqrt{R_b^2 - z^2}$ whose centre is $d$ from the axis, the
+radius $\sqrt{R_b^2 - z^2}$ whose center is $d$ from the axis, the
 cylinder cuts the plane in a disc of radius $R$ about the axis, and the
 slice's share is their lens area (MathWorld, "Circle-Circle Intersection",
 eq. 15):
@@ -239,7 +239,7 @@ It is first order in $a / R$ and independent of the bin width, so finer
 bins never remove it, and it is largest at the innermost edges, where
 `sumrule` takes the `'first'` normalizer of a radial profile. The shares
 still telescope to $v$ over all shells, so the error moves volume between
-neighbouring shells rather than losing it; but the symmetry
+neighboring shells rather than losing it; but the symmetry
 $V_i S_{ij} = V_j S_{ji}$ needs the true indicator, so with the sphere
 kernel the conservation of the averaged form holds only to the same order.
 (A planar cut, the "strips" of the maintainer's 2021 report, errs by the
@@ -253,7 +253,7 @@ offered.)
 - **The slab diameter.** {func}`~polyphys.analyze.density.bin_volumes` uses
   the diameter it is given. {func}`~polyphys.analyze.density.density_profiles`
   passes $D_\mathrm{eff} = D - a$, the diameter of the region a bead
-  centre can reach, which is how the parsers define the bulk values,
+  center can reach, which is how the parsers define the bulk values,
   $\rho_c = N_c / (\pi D_{\mathrm{eff},c}^2 L / 4)$ and $\phi_c = \rho_c
   v_c$ (thesis, chapter 3). A uniform crowder fluid then returns $\phi_c$
   exactly, so the scaled profiles of `sumrule` compare with the nominal

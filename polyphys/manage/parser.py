@@ -151,7 +151,7 @@ class KeywordSpec:
     >>> KeywordSpec('nmon', int).parse('200')
     200
 
-    The keyword ``r`` is the radius of the cylinder on which the centres of
+    The keyword ``r`` is the radius of the cylinder on which the centers of
     the wall beads of size 1 lie, so the cylinder size is :math:`D = 2r - 1`:
 
     >>> spec = KeywordSpec('dcyl', float, scale=2.0, offset=-1.0)
@@ -1347,10 +1347,10 @@ class SumRuleCyl(ParserBase):
     :class:`ParserBase`.
 
     The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
-    centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
+    centers lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
     ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
     The keyword ``lz`` is the half-length of the cylinder, so its length is
-    :math:`Z = 2 l_z`, stored as `lcyl`. The centres of particles of
+    :math:`Z = 2 l_z`, stored as `lcyl`. The centers of particles of
     species :math:`\\alpha` with size :math:`a_\\alpha` are confined to a
     cylinder of size :math:`D_{\\mathrm{eff},\\alpha} = D - a_\\alpha`, and
     the bulk number density and volume fraction of that species both use
@@ -1975,10 +1975,10 @@ class TransFociCyl(ParserBase):
       :math:`d_i` is its diameter.
 
     - The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
-      centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
+      centers lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
       ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
       The keyword ``lz`` is the half-length of the cylinder, so its length is
-      :math:`Z = 2 l_z`, stored as `lcyl`. The centres of particles of
+      :math:`Z = 2 l_z`, stored as `lcyl`. The centers of particles of
       species :math:`\\alpha` with size :math:`a_\\alpha` are confined to a
       cylinder of size :math:`D_{\\mathrm{eff},\\alpha} = D - a_\\alpha`, and
       the bulk number density and volume fraction of that species both use
@@ -2421,10 +2421,10 @@ class HnsCyl(ParserBase):
     :class:`ParserBase`.
 
     The cylindrical wall is a layer of beads of size :math:`a_w = 1` whose
-    centres lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
+    centers lie on the cylinder of radius :math:`r` set in LAMMPS (keyword
     ``r``), so the cylinder size is :math:`D = 2r - a_w`, stored as `dcyl`.
     The keyword ``lz`` is the half-length of the cylinder, so its length is
-    :math:`Z = 2 l_z`, stored as `lcyl`. The centres of particles of
+    :math:`Z = 2 l_z`, stored as `lcyl`. The centers of particles of
     species :math:`\\alpha` with size :math:`a_\\alpha` are confined to a
     cylinder of size :math:`D_{\\mathrm{eff},\\alpha} = D - a_\\alpha`, and
     the bulk number density and volume fraction of that species both use
