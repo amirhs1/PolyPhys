@@ -116,7 +116,10 @@ writes, and no function of PolyPhys writes the `viz`, `galaxy`, or
 
 A phase holds one directory per particle group and stage, named
 `<prefix>-<group>-<stage>`; in the examples on these pages, `<prefix>` is
-the space name.
+the space name. The probe's output directories are the exception: a study's
+driver names them, and the examples on these pages end them in `-probe`,
+which is not a stage. {func}`~polyphys.manage.organizer.make_database`
+reads only their prefix.
 {data}`~polyphys.manage.types.StageT` lists the stages:
 
 | Stage      | Holds                                                          | Written by                                   |

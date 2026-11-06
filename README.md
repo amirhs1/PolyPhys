@@ -194,12 +194,13 @@ this README is guaranteed to run against the current code.
 
 Current focus, in order:
 
-1. Broaden test coverage and executable examples for `manage.organizer`,
-   including autocorrelation-aware error estimation for correlated MD frames.
-2. Expand `analyze` with the polymer- and crowding-specific observables that
-   general MD toolkits do not provide.
-3. Reduce the per-project coupling in the `manage` layer so a new study can
-   _use_ PolyPhys from outside the package rather than extend it.
+1. Expand `analyze` with the polymer- and crowding-specific observables that
+   general MD toolkits do not provide, and finish the trajectory probes of
+   `probe`.
+2. Check `analyze.density` against the research code's density profiles.
+3. Move the study parsers out of `manage.parser` into their study folders,
+   so a new study _uses_ PolyPhys from outside the package rather than
+   extending it; the study specs have already moved to `projects/`.
 
 ## Citation
 
@@ -238,7 +239,7 @@ records the checks or human review applied to each part:
 
 Nothing that handles security, credentials, private data, or published results,
 or that can block a merge, is Delegated. Where a tier is unclear, I treat the
-part as Supervised. Tiers last reviewed: 2026-10-03.
+part as Supervised. Tiers last reviewed: 2026-11-06.
 
 Instructions for AI agents: [`AGENTS.md`](AGENTS.md).
 

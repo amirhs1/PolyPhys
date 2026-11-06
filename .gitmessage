@@ -2,13 +2,14 @@
 #
 # Describe the changes using concise imperative bullet points.
 #
-# Why: <reason supplied by a person; omit for a trivial change>
+# Why: <reason from the issue, the maintainer, or an outside report; omit otherwise>
 #
 # TYPES AND SCOPES
 # Types and scopes are in CONTRIBUTING.md, "Names"; a scope is an area there.
 #   Types: feat, fix, docs, test, refactor, chore, release, question
 # Pick one dominant scope.
-# For a breaking change, add ! after the type or scope and explain it in the body.
+# For a breaking change, explain it in the body; its changelog line starts
+# with **Breaking:** (CONTRIBUTING.md, "Changelog").
 #
 # AI PROVENANCE
 # Add each applicable trailer as an uncommented line. All trailers sit in one

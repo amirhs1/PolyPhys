@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata from this file."
 title: "PolyPhys: research data management and analysis for polymer molecular-dynamics simulations"
 abstract: >-
-  PolyPhys manages and analyses data from large-scale coarse-grained
+  PolyPhys manages and analyzes data from large-scale coarse-grained
   molecular-dynamics simulations of polymers under macromolecular crowding,
   with a focus on bacterial chromosome organization. It decodes
   physics-encoding simulation filenames into typed attributes, organizes
