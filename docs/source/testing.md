@@ -125,7 +125,7 @@ of size 1 as well as 2. The maintainer trimmed them from the studies' runs.
   crowders and the HnsCyl wholes at `ac2 nc386`, the `all` frames of the
   same time window, `<whole>.j<NN>.ring.all.window.lammpstrj.gz`, and the
   whole's data file, `<whole>.ring.all.data.gz`.
-- Tier C, in `<POLYPHYS_DATA_DIR>/fixtures/<whole>/`: the `all` windows
+- Tier C, in `<POLYPHYS_DATA_DIR>/polyphys_test_files/probe_real_frames/<whole>/`: the `all` windows
   and data files of the other crowded wholes, under the runs' own names.
 
 The HnsCyl runs name their wholes without `epshc`, which the `HnsCyl` parser
