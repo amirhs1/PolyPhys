@@ -42,7 +42,8 @@
         "mypy",
         "pandas-stubs",
         "scipy-stubs",
-        "build"
+        "build",
+        "sphinx"
     ]
     mda = [
         "MDAnalysis>=2.8"
