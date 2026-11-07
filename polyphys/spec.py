@@ -32,9 +32,14 @@ analysis lives. The specs of the maintainer's studies are in the repository's
 top-level ``projects/`` folder, which is not part of the installed package.
 
 .. versionadded:: 0.9.0
-   The records of :mod:`polyphys.manage.projects` and the table records and
+   The records of ``polyphys.manage.projects`` and the table records and
    builders of :mod:`polyphys.analyze.pipeline` moved here; their old import
-   paths warn with :exc:`DeprecationWarning` until 1.0.0.
+   paths warned with :exc:`DeprecationWarning`.
+
+.. versionchanged:: 1.0.0
+   The old import paths are removed: ``polyphys.manage.projects`` no
+   longer exists, and :mod:`polyphys.analyze.pipeline` no longer serves the
+   table records and builders.
 
 Contents
 ========

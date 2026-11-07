@@ -40,14 +40,12 @@ from polyphys.manage.organizer import (
     ens_from_vec,
     ensemble,
     ensemble_avg,
-    find_unique_properties,
     make_database,
     parents_stamps,
     rename_bulk_columns,
     save_artifact,
     space_hists,
     space_tseries,
-    whole_from_dist_mat_t,
     whole_from_file,
     whole_from_segments,
 )
@@ -447,26 +445,6 @@ def test_whole_from_file_rejects_unsupported_path_item():
     """An item that is neither a path nor a sequence of one raises."""
     with pytest.raises(TypeError, match="Unsupported path item"):
         whole_from_file([42], SumRuleCyl, "bug")
-
-
-def test_whole_from_dist_mat_t_keys_outputs_by_parsed_name(
-    whole_tree, whole_names
-):
-    """func runs once per whole and its three outputs key by whole name."""
-    calls = []
-
-    def func(whole_path, whole_info):
-        calls.append(whole_path)
-        frame = pd.DataFrame({"x": [0.0]})
-        return frame, frame, frame
-
-    grouped = list(zip(map(str, whole_tree.paths)))
-    freqs, rdfs, tseries = whole_from_dist_mat_t(
-        grouped, SumRuleCyl, "bug", func
-    )
-    expected = list(whole_names.values())
-    assert list(freqs) == list(rdfs) == list(tseries) == expected
-    assert calls == [str(p) for p in whole_tree.paths]
 
 
 # Grouping wholes into ensembles
@@ -1181,37 +1159,6 @@ def test_parents_stamps_rejects_unknown_lineage(segment_stamps):
     """A lineage other than segment or whole raises ValueError."""
     with pytest.raises(ValueError, match="'nope' is an invalid option"):
         parents_stamps(segment_stamps, "nope")
-
-
-# Unique properties
-
-
-@pytest.fixture
-def property_files(tmp_path):
-    """Return a glob over four ensemble-averaged files of one ensemble."""
-    for name in ("N20-bug-gyrTMon-ensAvg.csv",
-                 "N20-bug-gyrTMon-acf-ensAvg.csv",
-                 "N20-bug-rhoMon-ensAvg.csv",
-                 "N20-bug-transSizeTMon-ensAvg.csv"):
-        (tmp_path / name).touch()
-    return str(tmp_path / "*")
-
-
-def test_find_unique_properties_splits_properties_and_measures(
-    property_files
-):
-    """Properties and property-measures come back sorted and separate."""
-    props, measures = find_unique_properties(property_files, 2, ["-ensAvg"])
-    assert props == ["gyrTMon", "rhoMon", "transSizeTMon"]
-    assert measures == ["gyrTMon-acf"]
-
-
-def test_find_unique_properties_drops_named_properties(property_files):
-    """Names in drop_properties are left out of the result."""
-    props, _ = find_unique_properties(
-        property_files, 2, ["-ensAvg"], drop_properties=["transSizeTMon"]
-    )
-    assert props == ["gyrTMon", "rhoMon"]
 
 
 # Space level: ensemble-averaged files of two state points that differ only

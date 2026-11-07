@@ -89,8 +89,7 @@ Naming and persistence:
 :func:`create_fullname`, :func:`save_artifact`, and :func:`make_database`.
 
 Building wholes from their parts:
-:func:`whole_from_segments`, :func:`whole_from_file`, and
-:func:`whole_from_dist_mat_t`.
+:func:`whole_from_segments` and :func:`whole_from_file`.
 
 Grouping wholes into ensembles:
 :func:`ens_from_bin_edge`, :func:`ens_from_vec`, :func:`ens_from_mat_t`,
@@ -101,8 +100,7 @@ Averaging over an ensemble:
 :func:`ens_avg_from_df`, and :func:`ensemble_avg`.
 
 Space-level collection and bookkeeping:
-:func:`children_stamps`, :func:`parents_stamps`,
-:func:`find_unique_properties`, :func:`space_tseries`, and
+:func:`children_stamps`, :func:`parents_stamps`, :func:`space_tseries`, and
 :func:`space_hists`.
 
 Reading tables the research code wrote:
@@ -183,7 +181,6 @@ from .types import (
     AnyPathIter,
     GroupT,
     PropertyT,
-    ParserInstanceT,
     ParserClassT,
     StageT,
     PhaseT,
@@ -196,6 +193,29 @@ if TYPE_CHECKING:
     # Unused here, but sphinx_autodoc_typehints runs this block to resolve
     # the "ParserBase" forward reference inside ParserClassT.
     from .parser import ParserBase  # noqa: F401
+
+__all__ = [
+    'BULK_NAME_MAP',
+    'children_stamps',
+    'create_fullname',
+    'ens_avg_from_bin_edge',
+    'ens_avg_from_df',
+    'ens_avg_from_ndarray',
+    'ens_from_bin_edge',
+    'ens_from_df',
+    'ens_from_mat_t',
+    'ens_from_vec',
+    'ensemble',
+    'ensemble_avg',
+    'make_database',
+    'parents_stamps',
+    'rename_bulk_columns',
+    'save_artifact',
+    'space_hists',
+    'space_tseries',
+    'whole_from_file',
+    'whole_from_segments',
+]
 
 logger = logging.getLogger(__name__)
 
@@ -728,103 +748,6 @@ def whole_from_file(
         wholes[name] = np.load(whole_path)
 
     return wholes
-
-
-def whole_from_dist_mat_t(
-    whole_paths: list[tuple[str]],
-    parser: type[ParserInstanceT],
-    group: GroupT,
-    func: Callable[[str, ParserInstanceT],
-                   tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]
-) -> tuple[
-    dict[str, pd.DataFrame], dict[str, pd.DataFrame], dict[str, pd.DataFrame]
-]:
-    """
-    Load pair distance matrix 'whole' data from given file paths, processing
-    specific distance-related physical properties (i.e., frequencies, radial
-    distribution functions, time series).
-
-    Depending on the project, you must supply the `func` argument that knows
-    how to process the distance matrix for your specific project.
-
-    Parameters
-    ----------
-    whole_paths : list[tuple[str]]
-        List of 1-tuples, as :func:`~polyphys.manage.utils.sort_filenames`
-        returns them, each holding the path to a file representing a 'whole'
-        dataset (typically a NumPy `.npy` distance matrix). Bare path
-        strings are not supported: the first element of each item is taken
-        as the path.
-    parser : type[ParserInstanceT]
-        A parser class used to create parser instances for each file. The
-        parser provides attributes such as `whole` (name identifier) and
-        simulation metadata.
-    group : GroupT
-        The particle group to which the data pertains (e.g., 'bug', 'all').
-    func : Callable[[str, ParserInstanceT],
-                    tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]]
-        Project-specific processing function. It must accept two arguments:
-
-        - `whole_path` (str): path to the distance matrix file.
-        - `whole_info` (ParserInstanceT): parser instance for the file.
-
-        It must return a tuple of three pandas DataFrames corresponding to
-        frequency/histogram data, radial distribution data, and time-series
-        data.
-
-    Returns
-    -------
-    tuple[dict[str, pd.DataFrame], dict[str, pd.DataFrame],
-          dict[str, pd.DataFrame]]
-        Three dictionaries with whole names as keys and DataFrames as values:
-
-        - Frequency/histogram DataFrames
-        - Radial distribution function (RDF) DataFrames
-        - Time series DataFrames
-
-    Notes
-    -----
-    Arguments are not validated here; errors raised by `parser` or `func`
-    propagate.
-
-    Let n_wholes be the number of files. `func` is called once per whole,
-    and its three outputs for every whole are held in memory at once, so
-    time and memory are n_wholes times those of one call of `func`.
-
-    Examples
-    --------
-    A stand-in for a project-specific processor that summarizes each matrix
-    by its mean:
-
-    >>> import tempfile
-    >>> from polyphys.manage.parser import SumRuleCyl
-    >>> def summarize(whole_path, whole_info):
-    ...     frame = pd.DataFrame({'mean': [np.load(whole_path).mean()]})
-    ...     return frame, frame, frame
-    >>> tmp = tempfile.TemporaryDirectory()
-    >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000'
-    ...          'adump5000ens1')
-    >>> path = Path(tmp.name) / f'{whole}-bug-distMatTFoci.npy'
-    >>> np.save(path, np.array([[0.0, 2.0], [2.0, 0.0]]))
-    >>> freqs, rdfs, tseries = whole_from_dist_mat_t(
-    ...     [(str(path),)], SumRuleCyl, 'bug', summarize)
-    >>> freqs[whole]
-       mean
-    0   1.0
-    >>> tmp.cleanup()
-    """
-    wholes_freqs: dict[str, pd.DataFrame] = {}
-    wholes_rdfs: dict[str, pd.DataFrame] = {}
-    wholes_tseries: dict[str, pd.DataFrame] = {}
-    for whole_path in whole_paths:
-        whole_info = parser(whole_path[0], "whole", group, ispath=True)
-        whole_freqs, whole_rdfs, whole_tseries = \
-            func(whole_path[0], whole_info)
-        whole_name = getattr(whole_info, "whole")
-        wholes_freqs[whole_name] = whole_freqs
-        wholes_rdfs[whole_name] = whole_rdfs
-        wholes_tseries[whole_name] = whole_tseries
-    return wholes_freqs, wholes_rdfs, wholes_tseries
 
 
 def ens_from_bin_edge(
@@ -1852,102 +1775,6 @@ def parents_stamps(
         parent_stamps.to_csv(os.path.join(save_to, filename), index=False)
 
     return parent_stamps
-
-
-def find_unique_properties(
-    filepath: str,
-    prop_idx: int,
-    extensions: list[str],
-    drop_properties: list[str] | None = None,
-    sep: str = "-",
-) -> tuple[list[str], list[str]]:
-    """
-    Extract unique physical properties and property-measures from filenames
-    matched by a glob pattern. The function identifies unique segments in
-    filenames based on specified extensions and index position, then sorts and
-    returns them.
-
-    Parameters
-    ----------
-    filepath : str
-        The glob-friendly pattern used to locate filenames, e.g.,
-        `path/to/files/*`.
-    prop_idx : int
-        The index position in the filename where the property or
-        property-measure name starts after splitting by the separator.
-    extensions : list[str]
-        A list of suffixes that indicate the end of a property or
-        property-measure name (e.g., `'-ensAvg'`, `'-ens'`, `'-whole'`). These
-        are not file extensions like `".csv"` or `".npy"`.
-    drop_properties : list[str] | None, default None
-        A list of property names to ignore when determining unique properties
-        and property-measures.
-    sep : str, default '-'
-        The separator used to split properties and measures within a filename.
-
-    Returns
-    -------
-    tuple[list[str], list[str]]
-        A tuple containing:
-
-        - **uniq_props** (*list[str]*): A sorted list of unique physical
-          properties.
-        - **uniq_prop_measures** (*list[str]*): A sorted list of unique
-          property-measures.
-
-    Examples
-    --------
-    Three ensemble-averaged files of one ensemble; the property starts at
-    index 2 after splitting the name by ``-``:
-
-    >>> import tempfile
-    >>> tmp = tempfile.TemporaryDirectory()
-    >>> for name in ('N20-bug-gyrTMon-ensAvg.csv',
-    ...              'N20-bug-gyrTMon-acf-ensAvg.csv',
-    ...              'N20-bug-rhoMon-ensAvg.csv'):
-    ...     (Path(tmp.name) / name).touch()
-    >>> find_unique_properties(str(Path(tmp.name) / '*'), prop_idx=2,
-    ...                        extensions=['-ensAvg'])
-    (['gyrTMon', 'rhoMon'], ['gyrTMon-acf'])
-    >>> tmp.cleanup()
-
-    Notes
-    -----
-    - Ensure `prop_idx` accurately reflects the location in the filename where
-      the property or measure name starts after splitting by `sep`.
-    - This function assumes a consistent filename format where property-measure
-      segments follow each other with defined separators and suffixes.
-    - Every file is split by every entry of `extensions`, so each matched
-      file should contain all of them; a file that lacks one contributes
-      the rest of its basename, file extension included, under that entry.
-    - Basenames are taken by splitting paths on ``/``.
-    - Let n_files be the number of matched files, n_ext the number of
-      `extensions`, and n_uniq the number of unique names. Time is
-      O(n_files * n_ext + n_uniq log n_uniq); memory is O(n_files) for the
-      list of matched paths.
-    """
-    props_measures = glob(filepath)
-    uniq_prop_measures = set()
-    for ext in extensions:
-        for prop in props_measures:
-            prop_name = sep.join(
-                prop.split("/")[-1].split(ext)[0].split(sep)[prop_idx:]
-            )
-            uniq_prop_measures.add(prop_name)
-
-    if drop_properties is not None:
-        uniq_prop_measures.difference_update(drop_properties)
-
-    # Extract unique properties (first segment before `sep`)
-    # from property-measures
-    uniq_props = {prop.split(sep)[0] for prop in uniq_prop_measures}
-
-    # Remove any full properties that match unique property names from
-    # prop-measures
-    uniq_prop_measures.difference_update(uniq_props)
-
-    # Sort and return the results as lists
-    return sorted(uniq_props), sorted(uniq_prop_measures)
 
 
 def space_tseries(

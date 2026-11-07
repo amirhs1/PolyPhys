@@ -33,6 +33,45 @@ import pandas as pd
 if TYPE_CHECKING:
     from .parser import ParserBase
 
+__all__ = [
+    'AnyPathIter',
+    'AxisT',
+    'BinT',
+    'DirectionT',
+    'EdgeDataT',
+    'EdgeT',
+    'EnsembleName',
+    'EnsembleT',
+    'EntityT',
+    'FreqDataT',
+    'GeometryT',
+    'GroupT',
+    'HasEdgeT',
+    'HistogramT',
+    'HnsStatdictT',
+    'InputType',
+    'LineageT',
+    'NonScalarHistT',
+    'NonScalarMatT',
+    'NormalizerT',
+    'ParserClassT',
+    'ParserInstanceT',
+    'PathGroup',
+    'PathGroupIter',
+    'PathIter',
+    'Pathish',
+    'PhaseT',
+    'PlaneT',
+    'PrimitiveLineageT',
+    'PropertyT',
+    'StageT',
+    'TimeSeriesT',
+    'TopologyT',
+    'WholeName',
+    'WholeRelationT',
+    'WholeT',
+]
+
 ParserInstanceT = TypeVar("ParserInstanceT", bound="ParserBase")
 # A concrete alias, not type[ParserInstanceT]: an alias over a TypeVar is
 # generic, and every bare use of it fails mypy --strict with [type-arg].
