@@ -15,6 +15,10 @@ version increase may introduce incompatible changes.
 
 - Move `ProjectSpec`, `ProbeSpec`, `BinderSpec`, `PerWhole`, `RecenterT`, `CHAIN_SIZE_OBSERVABLES`, and `BINDER_SERIES` from `polyphys.manage.projects`, and `AnalysisTable`, `PropertySpec`, `PostHook`, `tseries`, `histogram`, `histogram_2d`, `edge`, and `matrix_tseries` from `polyphys.analyze.pipeline`, to the new module `polyphys.spec`, which imports no MDAnalysis, and define `PerWhole` once; the old import paths warn with `DeprecationWarning` until 1.0.0 ([#196](https://github.com/amirhs1/PolyPhys/issues/196))
 
+### Added
+
+- Add a release step: the maintainer runs the full test command with `POLYPHYS_DATA_DIR` set and LAMMPS available, since CI runs neither the `private_data` nor the `lammps` tests, and the release commit records the result in a `Checks-run:` line; in `CONTRIBUTING.md`, "Releases", and the `draft-release` skill ([#190](https://github.com/amirhs1/PolyPhys/issues/190))
+
 ### Fixed
 
 - Report a `fit_decay` fit as failed, with `converged=False` and NaN parameters, when the model is not finite at the start or the fit does not move from its start and has no finite covariance, instead of reporting it converged under the default method and raising `ValueError` under `method='trf'` ([#178](https://github.com/amirhs1/PolyPhys/issues/178))
@@ -27,6 +31,8 @@ version increase may introduce incompatible changes.
 - Reject bin centers that are not symmetric about `z = 0` when `normalize_z` folds, and fold `<prop>-scale-normalized_curve` by summing mirror bins, so it is the distribution of `|z|` and sums to one ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Reject an `AnalysisTable` whose hooks declare one output name twice, or an output that another entry also yields, through a new `outputs(prop)` method of `TimeAverage`, `Autocorrelation`, `LocalDensities`, and `FociPairDistances`, and raise in `reduce_space` when a hook that declares none repeats a name, instead of overwriting the earlier output ([#185](https://github.com/amirhs1/PolyPhys/issues/185))
 - Select every property's files in `reduce_space` before any analysis directory is made, so a typo in a table raises `FileNotFoundError` with nothing written ([#185](https://github.com/amirhs1/PolyPhys/issues/185))
+- Raise `BrokenLogError` from `parse_log` for a `Loop time of` line of another form than LAMMPS writes and for a thermo header that repeats a keyword, and `BrokenDumpError` from the dump reader for an atom line of the wrong length even when the frame's total is right; `with_frame` documents that it needs wrapped coordinates and says so when a frame has unwrapped ones only ([#179](https://github.com/amirhs1/PolyPhys/issues/179))
+- Take one color, a name or an RGB(A) tuple, for every label in `color_handles`, and one NumPy integer or dash tuple for every label in `line_handles`, instead of reading it as one entry per label ([#186](https://github.com/amirhs1/PolyPhys/issues/186))
 
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 
