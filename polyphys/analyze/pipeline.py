@@ -302,8 +302,9 @@ class DensityKernel(Protocol):
         edges : numpy.ndarray
             Its bin edges, shape ``(n_bins + 1,)``, in the length unit.
         info : ParserBase
-            The whole's parser instance, which holds the box sizes and the
-            number of frames it needs.
+            The whole's parser instance, which holds the box sizes. It holds
+            no number of frames, so a kernel that divides `counts` by the
+            frames gets them from the study's driver.
         direction : str
             The direction of the histogram, such as ``'r'`` or ``'z'``.
         diameter : float

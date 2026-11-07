@@ -58,8 +58,11 @@ For a development checkout:
 ```bash
 git clone https://github.com/amirhs1/PolyPhys.git
 cd PolyPhys
-python -m pip install -e ".[dev]"
+python -m pip install -e ".[dev,viz]"
 ```
+
+The `viz` extra installs matplotlib, which the doctests of `polyphys/viz/`
+import; without it the documented test command stops with an `ImportError`.
 
 Requires Python 3.11+. The runtime dependencies are NumPy, pandas, and SciPy.
 The probe layer, which reads LAMMPS trajectories, needs MDAnalysis as well;
@@ -201,15 +204,10 @@ pull request and every push to `main`; the probe layer's tests run on Python
 The examples above are executed as part of the test suite, so anything shown in
 this README is guaranteed to run against the current code.
 
-Current focus, in order:
-
-1. Expand `analyze` with the polymer- and crowding-specific observables that
-   general MD toolkits do not provide, and finish the trajectory probes of
-   `probe`.
-2. Check `analyze.density` against the research code's density profiles.
-3. Move the study parsers out of `manage.parser` into their study folders,
-   so a new study _uses_ PolyPhys from outside the package rather than
-   extending it; the study specs have already moved to `projects/`.
+Current focus: move the study parsers out of `manage.parser` into their
+study folders, so a new study _uses_ PolyPhys from outside the package rather
+than extending it; the study specs have already moved to `projects/`
+([#197](https://github.com/amirhs1/PolyPhys/issues/197)).
 
 ## Citation
 
@@ -242,7 +240,7 @@ records the checks or human review applied to each part:
 | `polyphys/manage/`                                        | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; parser tests for filename-parsing changes; maintainer review |
 | `polyphys/simulate/`                                      | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; tests against LAMMPS-written files; maintainer review        |
 | `polyphys/probe/`                                         | Instrumented | CI: flake8, mypy; pytest with doctests on Python 3.14 with MDAnalysis installed; maintainer review                        |
-| `polyphys/viz/`                                           | Instrumented | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14 with matplotlib installed; maintainer review                   |
+| `polyphys/viz/`                                           | Instrumented | CI: flake8, pytest with doctests on Python 3.11–3.14 with matplotlib installed; maintainer review                         |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review                          |
 | `projects/`                                               | Supervised   | CI: flake8, mypy, pytest of each spec against its parser and the research code's values; maintainer review of every line |
 | `docs/`                                                   | Instrumented | CI: Sphinx build with warnings as errors for `docs/source/`; maintainer review                                           |

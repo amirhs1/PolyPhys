@@ -58,6 +58,13 @@ build the kinds the studies use:
 | `edge('x')`                      | `xEdge`            | `'bin_edge'`  | `'bin_edge'` | the edges                           |
 | `matrix_tseries('principalT', 'Mon')` | `principalTMon` | `'tseries'` | `'matrix'`   | one array per statistic             |
 
+The density profiles that {class}`~polyphys.analyze.pipeline.LocalDensities`
+adds to a histogram, `<direction>Rho<species>` and
+`<direction>Phi<species>`, also carry `<property>-norm-sem` in their
+ensemble average: the standard error over the wholes of the profile
+normalized per whole, which {func}`~polyphys.analyze.sumrule.space_profiles`
+carries into the `space` table.
+
 A table lists each artifact once; listing one twice is an error, and so is
 naming one output twice, among the outputs the hooks declare with their
 `outputs` method: a hook output that another entry also yields would
@@ -114,7 +121,9 @@ through under the property's own name.
   through the {class}`~polyphys.analyze.pipeline.DensityKernel` given to
   {func}`~polyphys.analyze.pipeline.reduce_space`. The species' diameter is
   read from the attribute the spec's `species_sizes` names. The module
-  imports no density model; the study's driver supplies one.
+  imports no density model; the study's driver supplies one, as "Building
+  the density kernel" below shows. The two profiles' ensemble averages
+  carry `<property>-norm-sem` beside `-mean`, `-var`, and `-sem`.
 
 {class}`~polyphys.analyze.pipeline.FociPairDistances`
 : Turns the `(n_frames, n_foci, n_foci)` distance-matrix time series of
@@ -133,13 +142,26 @@ through under the property's own name.
 ## Running a space
 
 ```python
+import sys
+sys.path.insert(0, "<path to PolyPhys>/projects")
+
 from polyphys.analyze.pipeline import reduce_space
 from trans_foci_cub.spec import ANALYSIS, SPEC
 
 for table in ANALYSIS:
-    reduce_space('probes/al5.0nl5ml125ns400ac1.0-bug-probe', SPEC, table,
-                 density=my_density_kernel)
+    reduce_space(f'probes/ns400nl5al5ac1-{table.group}-probe', SPEC, table,
+                 density=kernel)
 ```
+
+`kernel` is the study's density kernel, which the `all` table's
+`LocalDensities` hooks need; "Building the density kernel" below shows how to build it.
+
+Each table reads the probe directory of its own group, here
+`ns400nl5al5ac1-bug-probe` and `ns400nl5al5ac1-all-probe`, whose prefix is
+the space name the parser gives. The study's folder is not an installed
+package, so the driver puts `projects/` on the import path, as
+[`projects/README.md`](https://github.com/amirhs1/PolyPhys/tree/main/projects)
+shows.
 
 `reduce_space` lists the files under `<input_database>/<hierarchy>` (the
 default hierarchy is the spec's `dir/file` layout), combines the stamps if
@@ -167,6 +189,60 @@ whole name, when the wholes of an ensemble differ in length (a shorter
 replicate is an incomplete run, not one to average over), and when a stamps
 row has no parent name.
 
+## Building the density kernel
+
+A table with a {class}`~polyphys.analyze.pipeline.LocalDensities` hook,
+such as the `all` table of every study in `projects/`, needs the `density`
+argument of `reduce_space`; without it the hook raises. The argument is any
+callable of the {class}`~polyphys.analyze.pipeline.DensityKernel` protocol:
+it takes one whole's histogram, summed over its frames, with its edges, the
+whole's parser instance, the direction, and the species' diameter, and
+returns the number density and the volume fraction. The study's driver maps
+the parser's attributes onto
+{func}`~polyphys.analyze.density.density_profiles`:
+
+```python
+from polyphys.analyze import density
+
+
+class StudyKernel:
+    """The DensityKernel of one space."""
+
+    def __init__(self, spec, n_frames):
+        self.geometry = spec.geometry
+        self.n_frames = n_frames  # whole name -> frames summed into counts
+
+    def __call__(self, counts, edges, info, direction, diameter):
+        if self.geometry == 'cylindrical':
+            box = {'lcyl': info.lcyl, 'dcyl': info.dcyl}
+        else:
+            box = {'lcube': info.lcube}
+        out = density.density_profiles(
+            counts, edges, diameter, self.geometry, direction,
+            n_frames=self.n_frames[info.name], **box)
+        return out.rho, out.phi
+```
+
+- **Frames.** The counts are summed over the whole's frames, and no parser
+  attribute holds the number of frames, so the driver supplies it per whole:
+  the `whole` and `n_frames` columns of the whole stamps that
+  {func}`~polyphys.analyze.pipeline.reduce_stamps` returns for the group's
+  probe stamps, where `n_frames` is the sum over a whole's segments.
+- **The slab diameter.** The kernel passes the parser's full cylinder
+  diameter `dcyl`, $D$; `density_profiles` itself takes $D - a$ for the
+  slabs along $z$, so a uniform fluid returns the bulk volume fraction as
+  the parsers define it. The [Density](density.md) page, "Conventions the
+  kernels leave to the caller", gives the reason.
+- **Cost.** `density_profiles` builds the share matrix on every call, about
+  a second for 300 cylindrical shells. A driver with many wholes on the same
+  edges can build it once per edges and diameter with
+  {func}`~polyphys.analyze.density.share_matrix` and apply it with
+  {func}`~polyphys.analyze.density.number_density` and
+  {func}`~polyphys.analyze.density.volume_fraction`.
+
+Then `density=StudyKernel(SPEC, n_frames)` is the `density` argument of
+"Running a space".
+
 ## The equilibrium value of each whole
 
 `reduce_space` keeps every frame of a time series. The `allInOne` tables
@@ -182,10 +258,13 @@ output name of each property is declared, so `gyrTMon` can become
 or the other way round, raises and is named.
 
 ```python
+import pandas as pd
 from polyphys.analyze.pipeline import equilibrium_wholes
 
+whole_stamps = pd.read_csv(
+    'analysis/ns400nl5al5ac1-bug-ens/ns400nl5al5ac1-bug-stamps-whole.csv')
 table = equilibrium_wholes(
-    'analysis/al5.0nl5ml125ns400ac1.0-bug-ens',
+    'analysis/ns400nl5al5ac1-bug-ens',
     {'gyrTMon': 'gyrMon', 'shapeTMon': 'shapeMon'},
     whole_stamps, topology='ring')
 ```

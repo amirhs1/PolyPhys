@@ -131,7 +131,7 @@ $\epsilon_t$, of $2^{16}$ frames. Its exact inefficiency is
 $s = (1 + \phi) / (1 - \phi) = 19$. Left, the standard error rises from the naive
 value (dotted) to the exact one (dashed) and levels off from $B \approx 128$.
 Right, the estimated $s(B)$ follows the exact curve. `method='sem_err'`
-(square) stops at the start of the plateau, `method='lee'` (triangle) four
+(square) stops at the start of the plateau, `method='lee'` (triangle) two
 levels later; both agree with the exact value within their error bars. In the
 shaded region 50 blocks or fewer remain and the points scatter.
 ```
@@ -188,13 +188,13 @@ smaller.
 A run can also be too short without failing outright: the table flattens
 because it runs out of blocks, not because it has reached the plateau. Lee et
 al. (2011) guard against this with an acceptance criterion: their optimal
-block size, $B_\mathrm{opt} = (2 n s^2)^{1/3}$ by their Eq. (14), must leave
-more than 50 blocks. Since $n / B_\mathrm{opt} > 50$ amounts to $n / s > 500$,
+block size, $B_\mathrm{opt} = (2 n s^2)^{1/3}$ by their Eq. (14), must be
+below $n / 50$. Since $n / B_\mathrm{opt} > 50$ amounts to $n / s > 500$,
 the criterion asks whether the run holds more than about 500 independent
 samples, a property of the run rather than of the rule. So under either
 `method`, {func}`~polyphys.analyze.stats.select_plateau` takes the block size
 that `method="lee"` selects as $B_\mathrm{opt}$ and raises a `RuntimeWarning`
-when it leaves 50 blocks or fewer, or when that rule finds no level, while
+when it is not below $n / 50$, or when that rule finds no level, while
 still returning the selected level. `method="sem_err"` alone cannot tell: it
 can stop where more than 50 blocks remain on a run that fails the criterion.
 

@@ -101,11 +101,16 @@ $$
 
 which is eq. 7 of the thesis appendix "Discrete local distributions in the
 cylindrical coordinate system". It returns $\rho v$ exactly for a uniform
-fluid, because the row $\sum_j s(c_i \to j) = v$. It does not conserve the
-total bead volume along $r$: $\sum_i V_i \phi_i$ differs from $N v$ because
-the point value at $c_i$ is not the bin average, by about 2 % of a bead
-volume at a bin width $h = a/4$ and 0.5 % at $a/8$, second order in $h$.
-Along $z$ with equal slabs the two coincide. This mode is kept so that the
+fluid wherever the test bead stays inside the last edge, because there the
+row $\sum_j s(c_i \to j) = v$; in the outermost radial bins the bead
+reaches past the last edge and the row sum falls short of $v$. It does not
+conserve the total bead volume along $r$: $\sum_i V_i \phi_i$ differs from
+$N v$ because the point value at $c_i$ is not the bin average. The volume a
+bin's beads return is off by up to 2.65 % of a bead volume for cylindrical
+shells and 7.27 % for spherical shells at a bin width $h = a/4$, and by
+0.71 % and 1.88 % at $a/8$, second order in $h$; the largest errors are in
+the innermost bins, the shells thinnest against the bead. Along $z$ with
+equal slabs the two coincide. This mode is kept so that the
 research code's numbers can be reproduced.
 
 ### The averaged form, `shares='average'`
@@ -143,13 +148,21 @@ round-off in every scheme:
 1. **Conservation.** $\sum_i V_i \phi_i = \sum_j \rho_j \sum_i V_i \bar
    s(i \to j) = \sum_j \rho_j V_j \sum_i \bar s(j \to i) = \sum_j (H_j / F)\,
    v$: the beads' total volume comes back.
-2. **Uniform fluid.** $\phi_i = \rho \sum_j \bar s(i \to j) = \rho v$.
+2. **Uniform fluid.** $\phi_i = \rho \sum_j \bar s(i \to j) = \rho v$, in
+   every bin whose test bead stays inside the last edge.
+
+The second fails, in both forms, in the outermost radial bins, where part
+of the test bead lies beyond the last edge and no bin holds it. With edges
+from 0 to $5a$ in steps of $a/4$, the row sums of the last two cylindrical
+shells are $0.942\,v$ and $0.670\,v$ averaged, and $0.955\,v$ and
+$0.675\,v$ centered.
 
 The averaged form is also the exact bin average of the centered form, so it
 is the research code's formula with its one remaining approximation
 removed. The plan's scatter form, which moves each bead to its bin center
 and spreads it ($\phi_i = \tfrac{1}{V_i}\sum_j (H_j / F)\, s(c_j \to i)$),
-conserves volume but misses the uniform fluid by the same 2 % at $h = a/4$;
+conserves volume but misses the uniform fluid by the same amounts, up to
+2.65 % (cylindrical) and 7.27 % (spherical) at $h = a/4$;
 it is the other half of the same missing average, and it is not offered.
 
 ## The kernels
@@ -229,11 +242,12 @@ $\tfrac{4\pi}{3}[R_b^3 - (R_b^2 - R^2)^{3/2}]$.
 The research code used the sphere-sphere volume $W(R_b, R, d)$ in place of
 $C$ "for the sake of simplicity". That is `intersection='sphere'`, kept for
 reproducing its numbers. Its error, as a fraction of the bead volume and at
-the worst axial distance, is about $0.09\,a / R$:
+the worst axial distance, is about $0.047\,a / R$, with $R$ the edge radius
+and $a = 2 R_b$ the bead diameter:
 
 | $R / a$ | 1 | 2 | 5 | 10 | 20 | 40 |
 | --- | --- | --- | --- | --- | --- | --- |
-| $\max_d \lvert W - C \rvert / v$ | 0.12 | 0.049 | 0.019 | 0.0094 | 0.0047 | 0.0023 |
+| $\max_d \lvert W - C \rvert / v$ | 0.0491 | 0.0237 | 0.0094 | 0.0047 | 0.0023 | 0.0012 |
 
 It is first order in $a / R$ and independent of the bin width, so finer
 bins never remove it, and it is largest at the innermost edges, where
@@ -245,8 +259,7 @@ kernel the conservation of the averaged form holds only to the same order.
 (A planar cut, the "strips" of the maintainer's 2021 report, errs by the
 same amount with the opposite sign; the mean of the two is second order in
 $a / R$, because a cylinder's mean curvature is half a sphere's. The exact
-kernel costs well under a second per space, so neither shortcut is
-offered.)
+kernel costs about a second per space, so neither shortcut is offered.)
 
 ## Conventions the kernels leave to the caller
 
@@ -284,8 +297,9 @@ offered.)
 
 The share matrix depends on the edges and the bead diameter only. Building
 it is $O(B k)$ kernel evaluations, with $k \approx a / h + 2$ the band
-width (for 300 cylindrical shells with the exact kernel, under a second;
-for 6000 periodic slabs, milliseconds), and it is returned as a sparse
+width (for 300 cylindrical shells with the exact kernel, about a second at
+a bin width of $a/10$ and twice that at $a/20$, where the band is nearly twice
+as wide; for 6000 periodic slabs, milliseconds), and it is returned as a sparse
 `csr_array` of $O(B k)$ entries. Applying it is one sparse product per
 profile. So build it once per space and reuse it for every whole, frame, and
 species of the same diameter:

@@ -221,9 +221,10 @@ class PairDistances(AnalysisBase):
     contact matrices and the connected components. Over a run,
     :math:`8 F n^2` bytes for the distance matrices, :math:`F n^2` for the
     contact matrices, and :math:`8 F (2 n + 1)` for the two histograms:
-    for the five foci of the *TransFoci* studies, about 230 bytes per
-    frame. Positions come from MDAnalysis as float32, so each distance
-    carries a relative round-off of about :math:`10^{-7}`.
+    for the five foci of the *TransFoci* studies,
+    :math:`8 \\cdot 25 + 25 + 8 \\cdot 11 = 313` bytes per frame. Positions
+    come from MDAnalysis as float32, so each distance carries a relative
+    round-off of about :math:`10^{-7}`.
 
     Examples
     --------

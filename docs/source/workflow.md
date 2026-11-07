@@ -37,7 +37,7 @@ $\Delta$
 | Step | Reads                                | Runs                                              | Writes                                   | Page |
 | ---- | ------------------------------------ | ------------------------------------------------- | ---------------------------------------- | ---- |
 | 1    | a whole or segment in `trjs`, with its data file | an analysis of {mod}`polyphys.probe`, built from `PROBE` | one `.npy` file per observable and a stamps file | [Probe](probe.md) |
-| 2    | the probe files of one space         | {func}`~polyphys.analyze.pipeline.reduce_space` with one table of `ANALYSIS` | `analysis/<space>-<group>-wholeSim`, `-ens`, and `-ensAvg` | [Pipeline](pipeline.md) |
+| 2    | the probe files of one space         | {func}`~polyphys.analyze.pipeline.reduce_space` with one table of `ANALYSIS` | `analysis/<space>-<group>-ens` and `-ensAvg`, and `-wholeSim` for a `segment` table | [Pipeline](pipeline.md) |
 | 3    | the `ensAvg` stage                   | {func}`~polyphys.manage.organizer.space_tseries`, {func}`~polyphys.manage.organizer.space_hists`, {func}`~polyphys.analyze.sumrule.space_profiles` | `analysis/<space>-<group>-space` | below |
 | 4    | the `ens` stage and the stamps       | {func}`~polyphys.analyze.pipeline.equilibrium_wholes` | a table of one row per whole, returned | [Pipeline](pipeline.md) |
 
@@ -60,16 +60,25 @@ its number of frames, with {func}`~polyphys.probe.core.write_stamps`.
 one space, the study's `SPEC`, and one `AnalysisTable` of its `ANALYSIS`. For
 each property of the table, it joins the segments of each whole, groups the
 wholes of each state point into an ensemble, and averages each ensemble over
-its replicates, writing each level to its stage:
+its replicates, writing each level to its stage. A study's folder is not an
+installed package, so its driver puts `projects/` on the import path, as
+[`projects/README.md`](https://github.com/amirhs1/PolyPhys/tree/main/projects)
+shows. Each table reads the probe directory of its own group:
 
 ```python
+import sys
+sys.path.insert(0, "<path to PolyPhys>/projects")
+
 from polyphys.analyze.pipeline import reduce_space
 from trans_foci_cub import ANALYSIS, SPEC
 
 for table in ANALYSIS:
-    reduce_space('probes/al5.0nl5ml125ns400ac1.0-bug-probe', SPEC, table,
-                 density=my_density_kernel)
+    reduce_space(f'probes/ns400nl5al5ac1-{table.group}-probe', SPEC, table,
+                 density=kernel)
 ```
+
+`kernel` is the study's density kernel, which the `all` table's
+`LocalDensities` hooks need; "Building the density kernel" on the [Pipeline](pipeline.md) page shows how to build it.
 
 The ensemble average holds `<property>-mean`, `<property>-var`, and
 `<property>-sem` per frame or bin. The wholes of an ensemble are independent
@@ -89,8 +98,10 @@ differ in what a row is:
   `t_index` times the time step `dt`.
 
 {func}`~polyphys.manage.organizer.space_hists`
-: A bin of a histogram, with its `bin_center`; with `normalize=True` it adds
-  `<property>-norm`, the histogram divided by its sum.
+: A bin of a histogram. Its `bin_center` column is the one the `ensAvg`
+  file carries, or the array passed as `bin_center`, which also adds
+  `bin_center-norm`; with `normalize=True` it adds `<property>-norm`, the
+  histogram divided by its sum.
 
 {func}`~polyphys.analyze.sumrule.space_profiles`
 : A bin of a density profile, scaled and normalized for the density sum
@@ -110,10 +121,10 @@ from polyphys.analyze.sumrule import space_profiles_from_spec
 from trans_foci_cub import SPEC
 
 table = space_tseries_from_spec(
-    'analysis/al5.0nl5ml125ns400ac1.0-bug-ensAvg', SPEC, 'gyrTMon',
+    'analysis/ns400nl5al5ac1-bug-ensAvg', SPEC, 'gyrTMon',
     save=True)
 profiles = space_profiles_from_spec(
-    'analysis/al5.0nl5ml125ns400ac1.0-all-ensAvg', SPEC, 'Phi', 'r', 'Crd',
+    'analysis/ns400nl5al5ac1-all-ensAvg', SPEC, 'Phi', 'r', 'Crd',
     save=True)
 ```
 
@@ -133,7 +144,13 @@ A time series keeps every frame through step 2. For tables of one number
 per whole, {func}`~polyphys.analyze.pipeline.equilibrium_wholes` reduces each
 whole's series in the `ens` stage to its time average, its variance, and the
 blocked standard error of its time average, and merges them with the whole
-stamps. The frames of one run are correlated, so this error comes from block
+stamps, the table `<space>-<group>-stamps-whole.csv` that step 2 writes into
+the `ens` stage when the table has `stamps=True`.
+{func}`~polyphys.analyze.pipeline.reduce_stamps` writes it, combining the
+probe's stamps files with {func}`~polyphys.manage.organizer.children_stamps`
+and rolling them up a level with
+{func}`~polyphys.manage.organizer.parents_stamps`; the [Lineage](lineage.md)
+page lists the stamps tables of each stage. The frames of one run are correlated, so this error comes from block
 averaging within the whole, not from the per-frame standard error; the
 [Statistics](statistics.md) page explains why and how.
 

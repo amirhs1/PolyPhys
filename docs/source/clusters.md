@@ -147,7 +147,7 @@ This is a probability density over the chain's configurations, not the
 radial distribution function $g(r)$ of liquid-state theory, whose reference
 state, two independent uniform points in the container, is not defined
 here. For spatial densities of particles in the confinement, see
-{mod}`polyphys.analyze.measurer`.
+{mod}`polyphys.analyze.density` and the [Density](density.md) page.
 
 ## Binding statistics
 

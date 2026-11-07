@@ -5,7 +5,9 @@ kinds of test the project writes, the shared fixtures, and the pytest settings.
 
 ## Running the tests
 
-From the repository root, in an environment with the `dev` extra installed:
+From the repository root, in an environment with the `dev` and `viz` extras
+installed; `--doctest-modules` imports `polyphys/viz/`, which needs
+matplotlib, the `viz` extra:
 
 ```bash
 python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob='README.md'
@@ -29,7 +31,7 @@ Every test uses data from one of three tiers.
 | Tier | Data                                                                                                                                                   | Where it lives                                   | Who runs it                    |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ | ------------------------------ |
 | A    | Synthetic inputs a test generates itself: lineage trees of tiny files, short LAMMPS files, random or analytic arrays                                   | the test module or `polyphys/tests/conftest.py`  | everyone, including CI         |
-| B    | Small trimmed real files, used only where a file format is under test, such as a few dump frames or a filename listing; the maintainer approves each one | `polyphys/tests/data/`, each about 300 KB or less | everyone, including CI         |
+| B    | Small trimmed real files, such as a few dump frames or a filename listing, used where a file format is under test and, for the probes, to check results on real frames (see "Real frames of the probes"); the maintainer approves each one | `polyphys/tests/data/`, each about 300 KB or less | everyone, including CI         |
 | C    | Full-size processed artifacts, such as a whole space                                                                                                   | outside the repository, under `POLYPHYS_DATA_DIR` | the maintainer, locally; never CI |
 
 Tier A is the default. The algorithms are what is under test, and properties
@@ -107,7 +109,8 @@ in the Hypothesis documentation.
 `lammps_executable`
 : The LAMMPS executable, for a test marked `lammps` (see below).
 
-The fixtures are factories, called inside a test with the arguments that test
+The fixtures other than `lammps_executable`, which gives the executable as a
+string, are factories, called inside a test with the arguments that test
 needs; see [Factories as fixtures](https://docs.pytest.org/en/stable/how-to/fixtures.html#factories-as-fixtures)
 in the pytest documentation. Their tests are in `polyphys/tests/test_conftest.py`.
 
@@ -196,6 +199,15 @@ Keep the path out of tracked files; set the variable in your shell.
 | `-ra`                    | The summary lists every test that did not pass, with the reason for each skip                |
 | `--import-mode=importlib` | Test modules are imported without changing `sys.path`                                       |
 | `-p pytester`            | Loads the `pytester` fixture, which `test_conftest.py` uses to run nested pytest sessions    |
+| `--doctest-modules`      | Runs the `Examples` sections of the docstrings in the modules pytest collects               |
+| `--doctest-glob=README.md` | Runs the examples of `README.md` as doctests                                              |
+| `testpaths = ["polyphys/tests"]` | The directory pytest collects when no path is given                                 |
+
+The documented command passes `polyphys README.md projects`, so the
+modules' docstrings, the README, and the studies are collected as well as
+`polyphys/tests`. The examples of five pages, `quickstart.md`,
+`lineage.md`, `studies.md`, `usage.md`, and `viz.md`, run through
+`polyphys/tests/test_docs.py`.
 
 See [Working with custom markers](https://docs.pytest.org/en/stable/how-to/mark.html)
 and the [configuration reference](https://docs.pytest.org/en/stable/reference/reference.html)
