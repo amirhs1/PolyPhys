@@ -236,16 +236,20 @@ def pair_distance(
     ----------
     positions : numpy.ndarray
         Array of shape (2, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
+        by atom number form 1 to N; integer positions are converted to
+        ``float64``.
     pbc : Optional[Dict[:py:data:`AxisT`, float]], default None
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths as
-        values. If provided, periodic boundary conditions (PBC) are applied;
-        see :mod:`polyphys.manage.types`.
+        values. If provided, periodic boundary conditions (PBC) are applied
+        along each axis with a finite length; an ``inf`` length leaves its
+        axis non-periodic, as in
+        :func:`polyphys.analyze.clusters.pair_distances`; see
+        :mod:`polyphys.manage.types`.
 
     Returns
     -------
     np.ndarray
-        A 1D array with pair distances along each axis.
+        A 1D ``float64`` array with pair distances along each axis.
 
     Raises
     ------
@@ -268,6 +272,7 @@ def pair_distance(
     >>> pair_distance(positions, pbc)
     array([0.5, 0. , 0. ])
     """
+    positions = np.asarray(positions, dtype=np.float64)
     n_atoms, n_dims = positions.shape
     if n_atoms != 2:
         raise ValueError("'pair_distance' only works for two atoms.")
@@ -275,13 +280,16 @@ def pair_distance(
     delta = positions[1] - positions[0]
 
     if pbc is not None:
-        n_dims = positions.shape[1]
         # Prepare length and inverse-length arrays
         pbc_lengths, pbc_lengths_inverse = apply_pbc_orthogonal(
             np.zeros(n_dims), np.zeros(n_dims), pbc
         )
-        # Apply Minimum Image Convention
-        delta -= pbc_lengths * np.round(delta * pbc_lengths_inverse)
+        # Apply the minimum image convention along the finite lengths; an
+        # infinite length is not periodic, and inf * 0 would give NaN.
+        periodic = np.isfinite(pbc_lengths)
+        delta[periodic] -= pbc_lengths[periodic] * np.round(
+            delta[periodic] * pbc_lengths_inverse[periodic]
+        )
 
     # cast: numpy's stubs return Any; at runtime this is an ndarray.
     return cast(np.ndarray, delta)
@@ -382,8 +390,8 @@ def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
     trans_axes = {0: [1, 2], 1: [0, 2], 2: [0, 1]}
     if axis >= positions.shape[1]:
         raise IndexError(
-            "Axis {axis} is out of bounds for positions array"
-            f"with shape {positions.shape}."
+            f"Axis {axis} is out of bounds for positions array"
+            f" with shape {positions.shape}."
         )
     trans_pos = positions[:, trans_axes[axis]] - np.mean(
         positions[:, trans_axes[axis]], axis=0
@@ -475,8 +483,8 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
     """
     if axis >= positions.shape[1]:
         raise IndexError(
-            "Axis {axis} is out of bounds for positions array"
-            f"with shape {positions.shape}."
+            f"Axis {axis} is out of bounds for positions array"
+            f" with shape {positions.shape}."
         )
     # calculation in the center of geometry of the atom group:
     positions = positions - np.mean(positions, axis=0)
@@ -510,7 +518,8 @@ def simple_stats(
     Raises
     ------
     ValueError
-        If `data` is empty.
+        If `data` is empty or holds one sample, whose unbiased variance
+        divides by ``n - 1 = 0``.
 
     Examples
     --------
@@ -520,6 +529,11 @@ def simple_stats(
     """
     if len(data) == 0:
         raise ValueError('Input array must not be empty.')
+    if len(data) < 2:
+        raise ValueError(
+            'Input array must hold at least two samples for an unbiased'
+            ' variance.'
+        )
 
     # Unbiased std, var, and sem.
     return {
@@ -546,7 +560,8 @@ def sem(data: np.ndarray) -> float:
     Raises
     ------
     ValueError
-        If `data` is empty.
+        If `data` is empty or holds one sample, whose unbiased standard
+        deviation divides by ``n - 1 = 0``.
 
     Notes
     -----
@@ -563,6 +578,11 @@ def sem(data: np.ndarray) -> float:
     """
     if len(data) == 0:
         raise ValueError('Input data array must not be empty.')
+    if len(data) < 2:
+        raise ValueError(
+            'Input data array must hold at least two samples for an unbiased'
+            ' standard deviation.'
+        )
 
     # cast: numpy's stubs return Any. The value is a NumPy floating scalar
     # (np.float32 for float32 input), not always a float; the cast only

@@ -34,6 +34,7 @@ where it is used.
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 from hypothesis import given, strategies as st
 from numpy.testing import assert_allclose, assert_array_equal
@@ -540,6 +541,25 @@ def test_pair_distance_histograms_rounds_the_grid_up_to_whole_bins():
     assert counts.shape == (3,)
 
 
+@pytest.mark.parametrize(
+    ('bin_size', 'r_max', 'n_bins'),
+    [
+        pytest.param(0.3, 2.1, 7, id='ratio-above-whole'),
+        pytest.param(0.03, 15.9, 530, id='edge-below-r-max'),
+    ],
+)
+def test_pair_distance_histograms_counts_whole_bins_without_round_off(
+    bin_size, r_max, n_bins
+):
+    """A range that is a whole number of bins in decimal arithmetic gets
+    exactly that many, ending at `r_max`, although its float64 ratio or
+    product misses the whole number by an ulp."""
+    counts, edges = pair_distance_histograms([r_max], bin_size, r_max)
+    assert counts.shape == (n_bins,)
+    assert edges[-1] == r_max
+    assert counts[-1] == 1
+
+
 def test_pair_distance_histograms_rejects_a_separation_beyond_the_grid():
     """A separation above the last edge raises instead of being dropped."""
     with pytest.raises(ValueError, match='must lie in'):
@@ -994,6 +1014,18 @@ def test_threshold_sweep_keeps_the_grid_order_without_repeats(
     assert histogram.shape[0] == 4
 
 
+def test_threshold_sweep_accepts_whole_float_cis_thresholds():
+    """A cis threshold given as a whole float counts as that integer."""
+    distances = np.full((2, 3, 2), 2.0)
+    distances[0, 0, 0] = 0.5
+    distances[0, 2, 1] = 0.6
+    as_ints, _ = threshold_sweep(distances, [0.65], [1, 2], 'linear',
+                                 inclusive=True)
+    as_floats, _ = threshold_sweep(distances, [0.65], [1.0, 2.0], 'linear',
+                                   inclusive=True)
+    pd.testing.assert_frame_equal(as_floats, as_ints)
+
+
 @pytest.mark.parametrize(
     ('distances', 'cutoffs', 'cis_thresholds', 'topology', 'message'),
     [
@@ -1011,6 +1043,8 @@ def test_threshold_sweep_keeps_the_grid_order_without_repeats(
                      'non-negative', id='negative-cis'),
         pytest.param(np.ones((1, 3, 3)), [0.5], [1], 'linear',
                      'two patches per binder', id='odd-patches'),
+        pytest.param(np.ones((1, 3, 4)), [0.5], [2.7, 0.5], 'linear',
+                     'whole number of bonds', id='fractional-cis'),
         pytest.param(np.ones((1, 3, 4)), [0.5], [1], 'star',
                      'topology', id='bad-topology'),
     ],
