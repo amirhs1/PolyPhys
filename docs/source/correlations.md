@@ -94,7 +94,7 @@ Watts, 1970); $\beta = 1$ is the pure exponential.
 ```python
 lags = np.arange(0, 501)
 fit = correlations.fit_decay(lags, result.values[:501], 'stretched_amp_offset')
-fit.converged           # True when curve_fit returned
+fit.converged           # False when the fit failed; see below
 fit.names, fit.params   # ('tau', 'beta', 'amp', 'offset'), the fitted values
 fit.stderr              # sqrt of the covariance diagonal
 fit.p0                  # the start the fit used
@@ -115,7 +115,9 @@ Conventions to note:
   of the curve, $A = y_0 - B$, $\tau$ as the first $x$ at which
   $(y - B)/A$ is at or below $1/e$, and $\beta = 1$. The start used is
   recorded in `fit.p0`, and a caller can pass its own.
-- A fit the optimizer gives up on never raises: `fit.converged` is false,
+- A failed fit never raises: a start where the model is not finite, an
+  optimizer that gives up, or a fit that does not move from its start and
+  has no finite covariance gives `fit.converged` false,
   the parameters are NaN with the model's length, and a warning goes to the
   `polyphys.analyze.correlations` logger. The research drivers padded four
   zeros whatever the model.
