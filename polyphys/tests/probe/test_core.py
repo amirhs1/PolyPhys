@@ -280,3 +280,45 @@ def test_borrowed_topology_is_the_crowded_whole_own_polymer_topology(
                        borrowed.masses[borrowed.types - 1])
     assert_array_equal(as_set(own.bonds[in_polymer]),
                        as_set(borrowed.bonds))
+
+
+@pytest.mark.private_data
+def test_write_stamps_of_a_real_whole_match_the_research_code(
+        real_transfocicub_whole, study_spec, research_probe_file, tmp_path):
+    """The stamps of a TransFociCub whole hold the research code's lineage
+    names under the documented mapping (Usage, "Lineage names"), the same
+    attribute values under the spec's renaming, every research attribute
+    but ``eps_others``, and the 50 frames the research probe counted."""
+    whole = real_transfocicub_whole
+    spec = study_spec(whole.study).SPEC
+    parser = spec.parser(f"{whole.whole}.ring", 'whole', spec.group)
+    theirs = pd.read_csv(research_probe_file(whole, 'stamps', ext='csv'))
+    # The research names of the bulk fractions and densities and their
+    # PolyPhys names (projects/trans_foci_cub/spec.py, module docstring).
+    renamed = {'phi_c_bulk': 'phi_bulk_c', 'rho_c_bulk': 'rho_bulk_c',
+               'phi_m_bulk': 'phi_bulk_m', 'rho_m_bulk': 'rho_bulk_m'}
+    names = ('lineage_name', 'whole', 'ensemble_long', 'ensemble', 'space')
+
+    ours = pd.read_csv(write_stamps(parser, 50, tmp_path))
+
+    # A research whole name keeps ``.ring``; a short name parsed at its
+    # lineage and rebuilt gives the current form.
+    assert ours.loc[0, 'whole'] == theirs.loc[0, 'whole'].removesuffix(
+        '.ring')
+    assert ours.loc[0, 'ensemble_long'] == theirs.loc[0, 'ensemble_long']
+    assert {lineage: ours.loc[0, lineage] for lineage in ('ensemble', 'space')
+            } == {lineage: getattr(spec.parser(theirs.loc[0, lineage],
+                                               lineage, spec.group), lineage)
+                  for lineage in ('ensemble', 'space')}
+    attributes = [column for column in theirs.columns
+                  if column not in names and column != 'n_frames']
+    unmatched = [column for column in attributes
+                 if renamed.get(column, column) not in ours.columns]
+    assert unmatched == ['eps_others']
+    matched = [column for column in attributes if column not in unmatched]
+    # Both codes compute the fractions in float64 from the same integers.
+    assert_allclose(
+        ours.loc[0, [renamed.get(column, column) for column in matched]]
+        .to_numpy(dtype=float),
+        theirs.loc[0, matched].to_numpy(dtype=float), rtol=1e-12, atol=0)
+    assert int(theirs.loc[0, 'n_frames']) == int(ours.loc[0, 'n_frames']) == 50

@@ -22,6 +22,12 @@ real_files
     opened with, and its ``all`` window and data file when they are tier B.
 private_window_files
     The ``all`` window and data file of a crowded whole, tier C.
+real_transfocicub_whole
+    The 4 TransFociCub wholes, whose research-code probe output is the
+    tier C reference of the pipeline tests.
+research_probe_file
+    One property file of the research code's probe output of a whole,
+    tier C.
 real_universe
     A real dump opened with :func:`polyphys.probe.make_universe`.
 trajectory_arrays
@@ -364,3 +370,37 @@ def reference_distances() -> Callable[..., np.ndarray]:
             for a, b, box in zip(first, second, lengths)])
 
     return _distances
+
+
+@pytest.fixture(params=_params(lambda whole: whole.study == 'trans_foci_cub'))
+def real_transfocicub_whole(request: pytest.FixtureRequest) -> RealWhole:
+    """Each of the 4 TransFociCub wholes: the research code probed the same
+    50 frames of their polymer dumps, and that output, tier C, is the
+    reference of the pipeline tests."""
+    return request.param
+
+
+@pytest.fixture
+def research_probe_file(
+    private_data_dir: Path,
+    study_spec: Callable[[str], ModuleType],
+) -> Callable[..., Path]:
+    """Factory: the file of one property in the research code's probe output
+    of a real whole,
+    ``<POLYPHYS_DATA_DIR>/<project>/probes/<space>-<group>-probe/<whole>.ring/``
+    ``<whole>.ring-<group>-<property>.<ext>``, with ``<project>`` the
+    study's ``SPEC.name``; the research probe named a whole with its
+    topology suffix. The test is skipped when the study has no single such
+    probe folder. Use it only in a test marked ``private_data``."""
+
+    def _file(whole: RealWhole, prop: str, ext: str = 'npy') -> Path:
+        project = study_spec(whole.study).SPEC.name
+        probes = private_data_dir / project / 'probes'
+        folders = sorted(probes.glob(f"*-{whole.group}-probe"))
+        if len(folders) != 1:
+            pytest.skip(f"no single research {whole.group} probe folder "
+                        f"under {probes}")
+        return (folders[0] / f"{whole.whole}.ring"
+                / f"{whole.whole}.ring-{whole.group}-{prop}.{ext}")
+
+    return _file

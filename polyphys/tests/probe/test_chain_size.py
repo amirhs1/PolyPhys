@@ -507,3 +507,51 @@ def test_block_average_of_a_real_gyration_series_starts_at_the_naive_error(
     # Both are float64 reductions of the same 50 values.
     assert result.sem[0] == pytest.approx(
         series.std(ddof=1) / np.sqrt(series.size), rel=1e-12)
+
+
+# Against the research code's probe (tier C)
+
+
+@pytest.mark.private_data
+@pytest.mark.parametrize('observable', ['gyrT', 'shapeT', 'asphericityT'])
+def test_real_chain_size_matches_the_research_code(
+        real_transfocicub_whole, real_files, real_universe, study_spec,
+        research_probe_file, observable):
+    """On the 50 frames of a TransFociCub polymer dump, each scalar
+    chain-size observable of the spec equals the research code's probe of
+    the same frames (SciOps ``trans_foci_cub_bug``)."""
+    whole = real_transfocicub_whole
+    probe = study_spec(whole.study).PROBE
+    files = real_files(whole)
+    universe = real_universe(files.topology, files.polymer)
+    expected = np.load(research_probe_file(whole, f"{observable}Mon"))
+
+    results = ChainSize.from_spec(universe, probe).run().results
+
+    # The research code shifted the float32 positions by half the box
+    # before measuring, and this probe recenters the chain, so the two
+    # differ by the float32 round-off of coordinates of about 20: 1e-6.
+    assert_allclose(results[observable], expected, rtol=RTOL, atol=ATOL)
+
+
+@pytest.mark.private_data
+def test_real_principal_axes_match_the_research_code_up_to_sign(
+        real_transfocicub_whole, real_files, real_universe, study_spec,
+        research_probe_file):
+    """On the 50 frames of a TransFociCub polymer dump, each frame's
+    principal axes equal the research code's up to the sign of each axis,
+    which the eigenvector solver sets arbitrarily."""
+    whole = real_transfocicub_whole
+    probe = study_spec(whole.study).PROBE
+    files = real_files(whole)
+    universe = real_universe(files.topology, files.polymer)
+    expected = np.load(research_probe_file(whole, 'principalTMon'))
+
+    axes = ChainSize.from_spec(universe, probe).run().results['principalT']
+
+    # Per frame and axis, the smaller of |a - b| and |a + b|; the same
+    # float32 round-off as the scalar observables.
+    closest = np.minimum(np.linalg.norm(axes - expected, axis=-1),
+                         np.linalg.norm(axes + expected, axis=-1))
+    assert closest.shape == (50, 3)
+    assert_allclose(closest, np.zeros_like(closest), rtol=0, atol=ATOL)

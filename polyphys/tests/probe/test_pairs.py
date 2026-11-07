@@ -448,3 +448,28 @@ def test_real_foci_bonds_and_clusters_conserve_the_foci(real_foci_whole,
     assert_array_equal(analysis.results['bondsHistTFoci'].sum(axis=1),
                        np.full(50, real_foci_whole.n_foci))
     assert_array_equal(clusters @ sizes, np.full(50, real_foci_whole.n_foci))
+
+
+# Against the research code's probe (tier C)
+
+
+@pytest.mark.private_data
+@pytest.mark.parametrize('histogram, sizes', [
+    pytest.param('bondsHistTFoci', slice(None), id='bonds'),
+    pytest.param('clustersHistTFoci', slice(1, None), id='clusters'),
+])
+def test_real_foci_histograms_match_the_research_code(
+        real_transfocicub_whole, real_pairs, research_probe_file, histogram,
+        sizes):
+    """On the 50 frames of a TransFociCub polymer dump, the foci bonds
+    histogram and the clusters histogram from size 1 up equal the research
+    code's probe of the same frames (SciOps ``trans_foci_cub_bug``), whose
+    contacts took no minimum image: the ring is whole in these dumps, so
+    the image changes no contact. The research clusters histogram counted
+    the zero eigenvalues of the contact matrix in its size-0 column, which
+    the analysis table drops; this probe writes no cluster of size 0."""
+    analysis, _ = real_pairs(real_transfocicub_whole)
+    expected = np.load(research_probe_file(real_transfocicub_whole, histogram))
+
+    assert_array_equal(analysis.results[histogram][:, sizes],
+                       expected[:, sizes])
