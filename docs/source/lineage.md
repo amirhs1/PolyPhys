@@ -206,4 +206,6 @@ The `wholeSim` table exists only when the probe ran on segments.
   and the stage word or the extension, not one hyphen-separated field.
 - Inside a lineage name, a segment joins its `j<NN>` keyword with a dot, as
   in `...ens1.j03`, as the simulation writes it, and so do a topology suffix
-  such as `.ring` and the file extension.
+  such as `.ring` and the file extension. A file is grouped on its full name
+  with the matched extension removed, never on the part before its last dot,
+  so `...epshc1.0nc0` and `...epshc1.0nc500` stay apart.

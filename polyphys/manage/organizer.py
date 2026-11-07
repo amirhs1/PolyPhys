@@ -1841,8 +1841,8 @@ def space_tseries(
     ----------
     input_database : str
         Path to the directory containing the ensemble-averaged time-series
-        files, named ``<ensemble_long>-<group>-<prop>-ensAvg.csv``, ending
-        with a path separator.
+        files, named ``<ensemble_long>-<group>-<prop>-ensAvg.csv``, with or
+        without a trailing path separator.
     prop : str
         Name of the physical property of interest.
     parser : ParserClassT
@@ -1905,8 +1905,9 @@ def space_tseries(
 
     Notes
     -----
-    - Files are selected by globbing ``input_database + hierarchy +
-      '-<prop>-ensAvg.csv'`` and sorted alphanumerically by name.
+    - Files are selected by globbing
+      ``os.path.join(input_database, hierarchy + '-<prop>-ensAvg.csv')``
+      and sorted alphanumerically by their full names.
     - Requires a parser class with methods to retrieve attribute information
       for each file.
     - Let n_files be the number of matched files, n_rows the total number
@@ -1917,7 +1918,7 @@ def space_tseries(
     """
     prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs = sort_filenames(
-        glob(input_database + hierarchy + prop_ext), ["csv"]
+        glob(os.path.join(input_database, hierarchy + prop_ext)), ["csv"]
     )
     prop_csvs = []
 
@@ -1987,8 +1988,8 @@ def space_hists(
     ----------
     input_database : str
         Path to the directory containing the ensemble-averaged histogram
-        files, named ``<ensemble_long>-<group>-<prop>-ensAvg.csv``, ending
-        with a path separator.
+        files, named ``<ensemble_long>-<group>-<prop>-ensAvg.csv``, with or
+        without a trailing path separator.
     prop: str
         Name of the physical property of interest.
     parser : ParserClassT
@@ -2060,8 +2061,9 @@ def space_hists(
 
     Notes
     -----
-    - Files are selected by globbing ``input_database + hierarchy +
-      '-<prop>-ensAvg.csv'`` and sorted alphanumerically by name.
+    - Files are selected by globbing
+      ``os.path.join(input_database, hierarchy + '-<prop>-ensAvg.csv')``
+      and sorted alphanumerically by their full names.
     - If `normalize` is True, histogram values will be scaled to sum to 1.
     - Let n_files be the number of matched files, n_rows the total number
       of rows across them, and n_cols the number of columns of the result.
@@ -2074,7 +2076,8 @@ def space_hists(
       `bin_center` may not be provided.
     """
     prop_ext = f"-{prop}-ensAvg.csv"
-    ens_avg_csvs_ungrouped = glob(input_database + hierarchy + prop_ext)
+    ens_avg_csvs_ungrouped = glob(
+        os.path.join(input_database, hierarchy + prop_ext))
     ens_avg_csvs = sort_filenames(ens_avg_csvs_ungrouped, formats=["csv"])
     prop_csvs = []
 

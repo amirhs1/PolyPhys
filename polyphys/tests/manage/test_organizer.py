@@ -1118,6 +1118,22 @@ def test_space_tseries_concatenates_ensembles(make_ens_avg_space,
     np.testing.assert_allclose(space["dcyl"], state_attr("dcyl", 3))
 
 
+def test_space_tseries_reads_database_without_trailing_separator(
+        make_ens_avg_space):
+    """The directory is joined to the glob as a path, so it reads the same
+    files with or without a trailing separator."""
+    database = make_ens_avg_space(
+        "gyrTMon", [[0.0, 1.0, 2.0], [10.0, 11.0, 12.0]]
+    )
+
+    space = space_tseries(database.rstrip("/"), "gyrTMon", SumRuleCyl, "N*",
+                          [], "all")
+
+    np.testing.assert_allclose(
+        space["gyrTMon-mean"], [0.0, 1.0, 2.0, 10.0, 11.0, 12.0]
+    )
+
+
 def test_space_tseries_scales_t_index_and_time(make_ens_avg_space):
     """For all, t_index is frame index times adump; time is t_index * dt."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
