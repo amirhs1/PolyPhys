@@ -172,8 +172,12 @@ profiles, and the planar histograms with their edges:
    and the builders :func:`~polyphys.spec.tseries`,
    :func:`~polyphys.spec.histogram`, :func:`~polyphys.spec.histogram_2d`,
    :func:`~polyphys.spec.edge`, and :func:`~polyphys.spec.matrix_tseries`
-   moved to :mod:`polyphys.spec`; importing them from here warns with
-   :exc:`DeprecationWarning` until 1.0.0.
+   moved to :mod:`polyphys.spec`; importing them from here warned with
+   :exc:`DeprecationWarning`.
+
+.. versionchanged:: 1.0.0
+   Those names are no longer served from here; import them from
+   :mod:`polyphys.spec`.
 """
 import glob
 import logging
@@ -222,32 +226,6 @@ __all__ = [
 ]
 
 logger = logging.getLogger(__name__)
-
-
-# The table records and builders that moved to polyphys.spec in 0.9.0, which
-# this module still serves, with a DeprecationWarning, until 1.0.0.
-_MOVED_TO_SPEC = frozenset({
-    'AnalysisTable', 'PostHook', 'PropertySpec', 'edge', 'histogram',
-    'histogram_2d', 'matrix_tseries', 'tseries'})
-
-
-def __getattr__(name: str) -> object:
-    """
-    Serve a name that moved to :mod:`polyphys.spec`, with a warning.
-
-    Raises
-    ------
-    AttributeError
-        If `name` is not one of the moved names.
-    """
-    if name in _MOVED_TO_SPEC:
-        warnings.warn(
-            f"polyphys.analyze.pipeline.{name} moved to polyphys.spec in "
-            f"0.9.0; import it from there. The old path is removed in 1.0.0.",
-            DeprecationWarning, stacklevel=2)
-        return getattr(_spec, name)
-    raise AttributeError(
-        f"module 'polyphys.analyze.pipeline' has no attribute {name!r}")
 
 
 #: The shape of one whole; see "whole type" in the module notation.
