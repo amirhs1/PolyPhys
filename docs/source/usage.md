@@ -16,7 +16,7 @@ python -m pip install "git+https://github.com/amirhs1/PolyPhys.git"
 To install a specific archived release, append the tag:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.7.0"
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.8.0"
 ```
 
 PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy,
@@ -39,7 +39,7 @@ development tools:
 ```bash
 git clone https://github.com/amirhs1/PolyPhys.git
 cd PolyPhys
-python -m pip install -e ".[docs,dev,mda]"
+python -m pip install -e ".[docs,dev,mda,viz]"
 ```
 
 ## Quickstart

@@ -158,8 +158,7 @@ length and $\ell_p$ the persistence length (Rubinstein and Colby, 2003,
 section 2.3), so the `exp` fit gives $\tau = \ell_p / b$ in bonds. On a
 linear chain this is the quantity and the fit of
 {class}`MDAnalysis.analysis.polymer.PersistenceLength`, whose `results.lp`
-is in length units; the Phase 4 probe layer checks the two against each
-other.
+is in length units. No test compares the two.
 
 Two differences from the research code to keep in mind when comparing with
 stored `bondCosineCorrVecMon` files:

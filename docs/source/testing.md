@@ -5,7 +5,9 @@ kinds of test the project writes, the shared fixtures, and the pytest settings.
 
 ## Running the tests
 
-From the repository root, in an environment with the `dev` extra installed:
+From the repository root, in an environment with the `dev` and `viz` extras
+installed; `--doctest-modules` imports `polyphys/viz/`, which needs
+matplotlib, the `viz` extra:
 
 ```bash
 python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob='README.md'

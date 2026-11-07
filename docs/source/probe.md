@@ -97,7 +97,7 @@ Two facts about the files matter:
   are in atom-ID order, the order along the chain, which the end-to-end
   distance relies on.
 
-This pull request does not convert frames to simulation time: the universe
+The probe does not convert frames to simulation time: the universe
 is opened without `dt`, the dump reader warns that it has no time step, and
 the `times` of an analysis are the dump's time steps. The research code
 passed `dt` as the dump interval times the time step times the
@@ -267,8 +267,12 @@ centers, $D + a_w$ across, so the research shift of $D / 2$ left the
 cylinder's axis at $(a_w / 2, a_w / 2) = (0.5, 0.5)$ rather than at the
 origin, and the radial and azimuthal histograms of every cylindrical study
 were measured about that displaced point. The maintainer chose `'half'` on
-2026-11-04; the research numbers remain reproducible with the triple
-`(D / 2, D / 2, Z / 2)`. The pair distances are translation invariant and
+2026-11-04. The triple `(D / 2, D / 2, Z / 2)` reproduces the research
+shift but not the research histograms:
+{func}`~polyphys.probe.histograms.histogram_edges` gives the extended
+ranges of the next section, centered on the origin, and
+{class}`~polyphys.probe.histograms.SpatialHistograms` raises on a position
+outside them, where the research code dropped it. The pair distances are translation invariant and
 ignore `recenter`.
 
 ## The spatial histograms
@@ -480,7 +484,7 @@ their int64 counts; the research probe saved their sum over the frames as
 `loopLengthHistMon`, which is `rows.sum(axis=0)`. The H-NS analysis tables
 in `projects/` still read that research artifact through
 `tseries('loopLengthHist', 'Mon')`; reading the per-frame rows is an
-analysis-side change for a later pull request.
+analysis-side change not made yet.
 
 The distance matrices are kept because two research post-steps read them
 rather than the trajectory: the threshold sweep described next, and the

@@ -133,13 +133,23 @@ through under the property's own name.
 ## Running a space
 
 ```python
+import sys
+sys.path.insert(0, "<path to PolyPhys>/projects")
+
 from polyphys.analyze.pipeline import reduce_space
 from trans_foci_cub.spec import ANALYSIS, SPEC
 
 for table in ANALYSIS:
-    reduce_space('probes/al5.0nl5ml125ns400ac1.0-bug-probe', SPEC, table,
+    reduce_space(f'probes/ns400nl5al5ac1-{table.group}-probe', SPEC, table,
                  density=my_density_kernel)
 ```
+
+Each table reads the probe directory of its own group, here
+`ns400nl5al5ac1-bug-probe` and `ns400nl5al5ac1-all-probe`, whose prefix is
+the space name the parser gives. The study's folder is not an installed
+package, so the driver puts `projects/` on the import path, as
+[`projects/README.md`](https://github.com/amirhs1/PolyPhys/tree/main/projects)
+shows.
 
 `reduce_space` lists the files under `<input_database>/<hierarchy>` (the
 default hierarchy is the spec's `dir/file` layout), combines the stamps if
@@ -185,7 +195,7 @@ or the other way round, raises and is named.
 from polyphys.analyze.pipeline import equilibrium_wholes
 
 table = equilibrium_wholes(
-    'analysis/al5.0nl5ml125ns400ac1.0-bug-ens',
+    'analysis/ns400nl5al5ac1-bug-ens',
     {'gyrTMon': 'gyrMon', 'shapeTMon': 'shapeMon'},
     whole_stamps, topology='ring')
 ```
