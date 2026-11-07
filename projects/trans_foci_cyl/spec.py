@@ -21,7 +21,7 @@ from polyphys.analyze.pipeline import (
 )
 import numpy as np
 
-from polyphys.manage.parser import ParserBase, TransFociCyl
+from polyphys.manage.parser import ParserBase
 from polyphys.spec import (
     AnalysisTable,
     ProbeSpec,
@@ -32,6 +32,8 @@ from polyphys.spec import (
     matrix_tseries,
     tseries,
 )
+
+from .parser import TransFociCyl
 
 SPEC = ProjectSpec(
     parser=TransFociCyl,

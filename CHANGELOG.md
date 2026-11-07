@@ -24,6 +24,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 ### Removed
 
 - **Breaking:** Remove `polyphys.manage.projects` and the table records and builders that `polyphys.analyze.pipeline` served, the import paths that 0.9.0 deprecated; import them from `polyphys.spec` ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
+- **Breaking:** Remove the nine study parsers from `polyphys.manage.parser`, which now ships only `KeywordSpec`, `Species`, and `ParserBase`: `TransFociCyl`, `TransFociCub`, `HnsCub`, and `HnsCyl` move to `projects/<study>/parser.py` in the repository, which is not installed, and `SumRuleCyl`, `SumRuleCubHeteroRing`, `SumRuleCubHeteroLinear`, `SumRuleCubHeteroRingBiDisperse`, and `TwoMonDepCub` leave PolyPhys; importing any of them from `polyphys.manage.parser` raises `ImportError` that says where it went ([#197](https://github.com/amirhs1/PolyPhys/issues/197))
 - **Breaking:** Remove `whole_from_dist_mat_t` and `find_unique_properties` from `polyphys.manage.organizer`, which nothing in PolyPhys called ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 
 ### Fixed
@@ -39,6 +40,7 @@ Each breaking change since 0.4.0, oldest last, with its migration path.
 | Release | Change | Migration |
 | ------- | ------ | --------- |
 | 1.0.0 | `polyphys.manage.projects` and the table names of `polyphys.analyze.pipeline` removed | Import them from `polyphys.spec`. |
+| 1.0.0 | The nine study parsers removed from `polyphys.manage.parser` | Copy the parser of a published study from `projects/<study>/parser.py` into your study's code; pin `polyphys` 0.9.0 to keep the others. |
 | 1.0.0 | `whole_from_dist_mat_t` and `find_unique_properties` removed | None; nothing in PolyPhys called them. |
 | 0.9.0 | `ProjectSpec` requires `crowder_attr`, keyword-only, with no default | Pass `crowder_attr='phi_bulk_c'` to keep the old behavior. |
 | 0.9.0 | `polyphys.manage.utils.sort_filenames_str` removed | Use `sort_filenames`. |

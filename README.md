@@ -82,12 +82,49 @@ python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.g
 ## Quickstart
 
 Decode a simulation filename into physics, and read off where it sits in the
-hierarchy:
+hierarchy. A study declares its parser, a subclass of `ParserBase` that lists
+the keywords of its names; this one reads a linear chain among crowders in a
+cylinder, and the [Studies](docs/source/studies.md) page shows how to declare
+one:
 
 ```python
->>> from polyphys.manage.parser import SumRuleCyl
->>> artifact = SumRuleCyl(
-...     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1.j03',
+>>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
+>>> long_keys = ('N', 'r', 'lz', 'ac', 'nc', 'dt', 'bdump', 'adump')
+>>> bulk = ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']
+>>> class ChainCyl(ParserBase):
+...     """A linear chain among crowders in a cylinder, periodic along z."""
+...     _geometry = 'cylindrical'
+...     _topology = 'linear'
+...     _groups = ['bug', 'all']
+...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
+...     _keywords = {
+...         'N': KeywordSpec('nmon', int),
+...         'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+...         'D': KeywordSpec('dcyl', float),
+...         'lz': KeywordSpec('lcyl', float, scale=2.0),
+...         'ac': KeywordSpec('dcrowd', float),
+...         'nc': KeywordSpec('ncrowd', int),
+...         'dt': KeywordSpec('dt', float),
+...         'bdump': KeywordSpec('bdump', int),
+...         'adump': KeywordSpec('adump', int),
+...         'ens': KeywordSpec('ensemble_id', int),
+...         'j': KeywordSpec('segment_id', int),
+...     }
+...     _patterns = {
+...         'segment': (*long_keys, 'ens', 'j'),
+...         'whole': (*long_keys, 'ens'),
+...         'ensemble_long': long_keys,
+...         'ensemble': ('N', 'D', 'ac', 'nc'),
+...         'space': ('N', 'D', 'ac'),
+...     }
+...     _defaults = {'dmon': 1}
+...     _species = (Species('m', 'nmon', 'dmon'),
+...                 Species('c', 'ncrowd', 'dcrowd'))
+...     _project_attributes = {
+...         'segment': bulk, 'whole': bulk, 'ensemble_long': bulk,
+...         'ensemble': ['dmon'], 'space': ['dmon']}
+>>> artifact = ChainCyl(
+...     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1.j03',
 ...     lineage='segment',
 ...     group='all',
 ... )
@@ -124,7 +161,7 @@ replicates and its sweep without touching the filesystem:
 >>> artifact.lineage_genealogy
 ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
 >>> artifact.whole
-'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1'
+'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1'
 >>> artifact.ensemble
 'N200D20ac2nc1000'
 >>> artifact.space
@@ -175,10 +212,9 @@ frame:
 | `viz.colors`       | The qualitative color lists of the studies' figures as `#RRGGBB` tuples (Paul Tol's bright, vibrant, and muted schemes, the Dutch Field palette, and the maintainer's own list), which need no plotting library, and `truncate_colormap`, a matplotlib color map cut down to a sub-range of its domain. |
 | `viz.helpers`      | `set_xticks` and `set_yticks`, which place an axis's major ticks every `step` from `lower` to `upper` inside a small frame; proxy legend handles keyed by color or by line style and marker; a legend moved from a figure into chosen panels; and a band shaded under each line in its own color. Needs the `viz` extra. |
 
-Nine parser subclasses ship with the package, covering cylindrical and cubic
-confinement: linear and ring chains, some with two monomer sizes, among
-crowders of one or two sizes, and a pair of monomers held at a fixed distance
-(`TwoMonDepCub`).
+The package ships no study's parser: each study declares its own
+`ParserBase` subclass in its own folder. The parsers of the maintainer's
+published studies are in `projects/`, outside the installed package.
 
 ## Documentation
 
@@ -204,10 +240,8 @@ pull request and every push to `main`; the probe layer's tests run on Python
 The examples above are executed as part of the test suite, so anything shown in
 this README is guaranteed to run against the current code.
 
-Current focus: move the study parsers out of `manage.parser` into their
-study folders, so a new study _uses_ PolyPhys from outside the package rather
-than extending it; the study specs have already moved to `projects/`
-([#197](https://github.com/amirhs1/PolyPhys/issues/197)).
+A study _uses_ PolyPhys from outside the package rather than extending it:
+its parser and its specs live in its own folder, as `projects/` shows.
 
 ## Citation
 

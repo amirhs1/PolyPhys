@@ -18,7 +18,7 @@ known.
 from polyphys.analyze.pipeline import Autocorrelation, LocalDensities
 import numpy as np
 
-from polyphys.manage.parser import HnsCyl, ParserBase
+from polyphys.manage.parser import ParserBase
 from polyphys.spec import (
     AnalysisTable,
     BinderSpec,
@@ -30,6 +30,8 @@ from polyphys.spec import (
     matrix_tseries,
     tseries,
 )
+
+from .parser import HnsCyl
 
 SPEC = ProjectSpec(
     parser=HnsCyl,

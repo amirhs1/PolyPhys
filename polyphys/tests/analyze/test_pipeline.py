@@ -47,7 +47,7 @@ from polyphys.analyze.pipeline import (
     space_tseries_from_spec,
 )
 from polyphys.manage import organizer
-from polyphys.manage.parser import SumRuleCyl, TransFociCub
+from polyphys.tests.synthetic import ChainCyl, RingCub
 from polyphys.spec import (
     AnalysisTable,
     ProjectSpec,
@@ -72,9 +72,9 @@ HIERARCHY = "*/*/*"
 
 @pytest.fixture
 def cyl_spec():
-    """A SumRuleCyl spec whose crowder size is ``dcrowd``."""
+    """A ChainCyl spec whose crowder size is ``dcrowd``."""
     return ProjectSpec(
-        parser=SumRuleCyl, group="bug", divisor=0.025,
+        parser=ChainCyl, group="bug", divisor=0.025,
         crowder_attr="phi_bulk_c",
         physical_attrs=("space",),
         species_sizes={"Mon": "dmon", "Crd": "dcrowd"},
@@ -84,9 +84,9 @@ def cyl_spec():
 
 @pytest.fixture
 def foci_spec():
-    """A TransFociCub spec: a ring of 20 small and 2 large monomers."""
+    """A RingCub spec: a ring of 20 small and 2 large monomers."""
     return ProjectSpec(
-        parser=TransFociCub, group="bug", divisor=0.025,
+        parser=RingCub, group="bug", divisor=0.025,
         crowder_attr="phi_bulk_c",
         physical_attrs=("space",),
         species_sizes={"Mon": "dmon_small", "Foci": "dmon_large"},
@@ -173,7 +173,7 @@ def test_dataframe_output_must_hold_dataframes(probe_dir, cyl_spec,
                                                write_tree):
     """A hook that declares ``'dataframe'`` wholes but returns arrays is
     an error, not a silent reinterpretation."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
 
     def hook(wholes, context):
         return (Derived("gyrMon", wholes, "dataframe"),)
@@ -192,7 +192,7 @@ def test_two_wholes_give_exact_mean_var_sem(probe_dir, cyl_spec,
                                             write_tree):
     """Two wholes 100 apart in every row average to w1 + 50 with variance
     5000 and standard error 50, by the ddof = 1 formulas."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1,
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1,
                n_wholes=2, n_rows=3)
     table = AnalysisTable("bug", "whole", False, (tseries("gyrT", "Mon"),))
 
@@ -210,10 +210,10 @@ def test_ensemble_csv_has_one_column_per_whole_named_by_parser(
         probe_dir, cyl_spec, write_tree):
     """The ensemble file holds one column per whole, under the whole names
     the parser reads from the written files."""
-    tree = write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1,
+    tree = write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1,
                       n_wholes=2, n_rows=3)
-    names = _parsed(tree, SumRuleCyl, "whole")
-    (ens_name,) = set(_parsed(tree, SumRuleCyl, "ensemble_long").values())
+    names = _parsed(tree, ChainCyl, "whole")
+    (ens_name,) = set(_parsed(tree, ChainCyl, "ensemble_long").values())
     table = AnalysisTable("bug", "whole", False, (tseries("gyrT", "Mon"),))
 
     reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
@@ -228,9 +228,9 @@ def test_segment_tseries_concatenate_in_segment_order(probe_dir, cyl_spec,
                                                       write_tree):
     """A segment-lineage time series joins its segments j01 then j02 into
     the whole file."""
-    tree = write_tree(SumRuleCyl, "gyrTMon", n_ensembles=1, n_wholes=1,
+    tree = write_tree(ChainCyl, "gyrTMon", n_ensembles=1, n_wholes=1,
                       n_segments=2, n_rows=2)
-    (whole_name,) = set(_parsed(tree, SumRuleCyl, "whole").values())
+    (whole_name,) = set(_parsed(tree, ChainCyl, "whole").values())
     table = AnalysisTable("bug", "segment", False,
                           (tseries("gyrT", "Mon"),))
 
@@ -245,8 +245,8 @@ def test_segment_tseries_concatenate_in_segment_order(probe_dir, cyl_spec,
 def test_segments_are_ordered_naturally(probe_dir, cyl_spec):
     """Segments j9 and j10 join in numeric order, not in text order, which
     puts j10 first."""
-    stem = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000ens1"
-    folder = probe_dir / "gyrTMon" / "SumRuleCyl-bug-segment"
+    stem = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000ens1"
+    folder = probe_dir / "gyrTMon" / "ChainCyl-bug-segment"
     folder.mkdir(parents=True)
     for seg_id in (9, 10):
         np.save(folder / f"{stem}.j{seg_id}.bug.gyrTMon.npy",
@@ -265,11 +265,11 @@ def test_segment_histograms_sum_and_ensembles_carry_bin_centers(
         probe_dir, cyl_spec, write_tree, write_edges):
     """A segment-lineage histogram sums its segments element-wise, and its
     ensemble gets the midpoints of the shared edges as ``bin_center``."""
-    tree = write_tree(SumRuleCyl, "rHistMon", n_ensembles=1, n_wholes=2,
+    tree = write_tree(ChainCyl, "rHistMon", n_ensembles=1, n_wholes=2,
                       n_segments=2, n_rows=3)
     write_edges(tree, "rEdgeMon", np.array([0.0, 1.0, 2.0, 4.0]))
-    names = _parsed(tree, SumRuleCyl, "whole")
-    (ens_name,) = set(_parsed(tree, SumRuleCyl, "ensemble_long").values())
+    names = _parsed(tree, ChainCyl, "whole")
+    (ens_name,) = set(_parsed(tree, ChainCyl, "ensemble_long").values())
     table = AnalysisTable("bug", "segment", False, (histogram("r", "Mon"),))
 
     result = reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
@@ -291,12 +291,12 @@ def test_mismatched_edges_between_wholes_of_one_ensemble_raise(
         probe_dir, cyl_spec, write_tree, write_edges):
     """Two wholes of one ensemble with different edges raise, naming the
     ensemble and both wholes."""
-    tree = write_tree(SumRuleCyl, "rHistMon", lineage="whole", n_ensembles=1,
+    tree = write_tree(ChainCyl, "rHistMon", lineage="whole", n_ensembles=1,
                       n_wholes=2, n_rows=3)
     write_edges(tree, "rEdgeMon", None, per_whole={
         1: np.array([0.0, 1.0, 2.0, 3.0]), 2: np.array([0.0, 1.0, 2.0, 3.5])})
-    names = _parsed(tree, SumRuleCyl, "whole")
-    (ens_name,) = set(_parsed(tree, SumRuleCyl, "ensemble_long").values())
+    names = _parsed(tree, ChainCyl, "whole")
+    (ens_name,) = set(_parsed(tree, ChainCyl, "ensemble_long").values())
     table = AnalysisTable("bug", "whole", False, (histogram("r", "Mon"),))
 
     with pytest.raises(ValueError, match="different bin edges") as excinfo:
@@ -311,7 +311,7 @@ def test_mismatched_edges_between_wholes_of_one_ensemble_raise(
 def test_missing_edge_file_for_a_whole_raises(probe_dir, cyl_spec,
                                               write_tree, write_edges):
     """A histogram whose edge files do not cover every whole raises."""
-    tree = write_tree(SumRuleCyl, "rHistMon", lineage="whole", n_ensembles=1,
+    tree = write_tree(ChainCyl, "rHistMon", lineage="whole", n_ensembles=1,
                       n_wholes=2, n_rows=3)
     write_edges(tree, "rEdgeMon", np.arange(4.0))
     (first_edge,) = sorted(
@@ -327,7 +327,7 @@ def test_missing_edge_file_for_a_whole_raises(probe_dir, cyl_spec,
 def test_property_without_files_raises(probe_dir, cyl_spec, write_tree):
     """A property that matches no file raises instead of writing nothing
     (the research code's ``Crdtwo`` row was silent)."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
     table = AnalysisTable("bug", "whole", False,
                           (histogram("r", "Crdtwo"),))
 
@@ -340,7 +340,7 @@ def test_missing_property_raises_before_any_directory_is_made(
         probe_dir, cyl_spec, write_tree):
     """A property that matches no file, such as a typo, raises before the
     analysis directories are made or another property is reduced."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
     table = AnalysisTable("bug", "whole", False,
                           (tseries("gyrT", "Mon"), tseries("gyrT", "Mno")))
 
@@ -354,8 +354,8 @@ def test_repeated_output_of_an_undeclared_hook_raises(probe_dir, cyl_spec,
                                                       write_tree):
     """Two outputs of one name from hooks that declare no outputs raise at
     the second instead of overwriting the first."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
-    write_tree(SumRuleCyl, "fsdTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "fsdTMon", lineage="whole", n_ensembles=1)
 
     def hook(wholes, context):
         return (Derived("sizeMon", wholes, "vector"),)
@@ -375,7 +375,7 @@ def test_default_hierarchy_is_the_spec_dir_file_layout(probe_dir, cyl_spec,
                                                        write_tree):
     """Without ``hierarchy`` the files are listed under
     ``<spec.hierarchy>/<spec.hierarchy>``, the research code's layout."""
-    tree = write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    tree = write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
     # Move the tree's folder under a name the ensemble_long prefix matches.
     tree.paths[0].parent.rename(probe_dir / "N20ac1.0")
     table = AnalysisTable("bug", "whole", False, (tseries("gyrT", "Mon"),))
@@ -402,9 +402,9 @@ def test_file_selection_matches_the_last_name_token_exactly(
         probe_dir, cyl_spec, write_tree, prop, n_rows):
     """With ``gyrTMon`` and ``xgyrTMon`` files side by side, each property
     reads only its own files, told apart by their row counts."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1,
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1,
                n_rows=3)
-    write_tree(SumRuleCyl, "xgyrTMon", lineage="whole", n_ensembles=1,
+    write_tree(ChainCyl, "xgyrTMon", lineage="whole", n_ensembles=1,
                n_rows=5)
     name = prop[:-len("Mon")]
     table = AnalysisTable("bug", "whole", False, (tseries(name, "Mon"),))
@@ -420,10 +420,10 @@ def test_outputs_land_in_the_analysis_stage_folders(probe_dir, cyl_spec,
                                                     write_tree):
     """A segment-lineage run writes the wholeSim, ens, and ensAvg folders
     next to the probe phase, with the organizer's file names."""
-    tree = write_tree(SumRuleCyl, "gyrTMon", n_ensembles=1, n_wholes=2,
+    tree = write_tree(ChainCyl, "gyrTMon", n_ensembles=1, n_wholes=2,
                       n_segments=2, n_rows=2)
-    names = _parsed(tree, SumRuleCyl, "whole")
-    (ens_name,) = set(_parsed(tree, SumRuleCyl, "ensemble_long").values())
+    names = _parsed(tree, ChainCyl, "whole")
+    (ens_name,) = set(_parsed(tree, ChainCyl, "ensemble_long").values())
     table = AnalysisTable("bug", "segment", False,
                           (tseries("gyrT", "Mon"),))
 
@@ -444,7 +444,7 @@ def test_outputs_land_in_the_analysis_stage_folders(probe_dir, cyl_spec,
 def test_whole_lineage_writes_no_wholesim_folder(probe_dir, cyl_spec,
                                                  write_tree):
     """A whole-lineage run writes the ens and ensAvg folders only."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
     table = AnalysisTable("bug", "whole", False, (tseries("gyrT", "Mon"),))
 
     reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
@@ -456,7 +456,7 @@ def test_whole_lineage_writes_no_wholesim_folder(probe_dir, cyl_spec,
 
 def test_save_false_writes_nothing(probe_dir, cyl_spec, write_tree):
     """With ``save=False`` no analysis folder appears."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
     table = AnalysisTable("bug", "whole", False, (tseries("gyrT", "Mon"),))
 
     reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY, save=False)
@@ -467,7 +467,7 @@ def test_save_false_writes_nothing(probe_dir, cyl_spec, write_tree):
 def test_reduce_space_logs_each_property(probe_dir, cyl_spec, write_tree,
                                          caplog):
     """Progress is logged at INFO, one record per property."""
-    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1)
     table = AnalysisTable("bug", "whole", False, (tseries("gyrT", "Mon"),))
 
     with caplog.at_level(logging.INFO, logger="polyphys.analyze.pipeline"):
@@ -484,7 +484,7 @@ def test_matrix_outputs_average_element_wise(probe_dir, cyl_spec,
                                              write_tree):
     """A two-dimensional histogram's ensemble average is taken element by
     element across the wholes, as one array per statistic."""
-    tree = write_tree(SumRuleCyl, "xyHistCrd", lineage="whole",
+    tree = write_tree(ChainCyl, "xyHistCrd", lineage="whole",
                       n_ensembles=1, n_wholes=2, n_rows=1)
     matrices = {1: np.array([[1.0, 2.0], [3.0, 4.0]]),
                 2: np.array([[3.0, 2.0], [7.0, 0.0]])}
@@ -506,7 +506,7 @@ def test_matrix_outputs_average_element_wise(probe_dir, cyl_spec,
 def test_edge_property_passes_shared_edges_through(probe_dir, cyl_spec,
                                                    write_tree):
     """An edge property's ensemble average is the edges themselves."""
-    tree = write_tree(SumRuleCyl, "xEdge", group="all", lineage="whole",
+    tree = write_tree(ChainCyl, "xEdge", group="all", lineage="whole",
                       n_ensembles=1, n_wholes=2, n_rows=1)
     edges = np.array([-1.0, 0.0, 1.0])
     for path in tree.paths:
@@ -550,7 +550,7 @@ def test_autocorrelation_passes_series_through_and_adds_acf(probe_dir,
     """``Autocorrelation`` writes the series under its own name and the
     autocorrelation of each whole, equal to ``correlations.acf``, under
     ``<property>-acf``."""
-    tree = write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1,
+    tree = write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1,
                       n_wholes=2, n_rows=1)
     rng = np.random.default_rng(7)
     series = {}
@@ -561,8 +561,8 @@ def test_autocorrelation_passes_series_through_and_adds_acf(probe_dir,
             values[t] = 0.6 * values[t - 1] + rng.standard_normal()
         np.save(path, values)
         series[whole] = values
-    names = _parsed(tree, SumRuleCyl, "whole")
-    (ens_name,) = set(_parsed(tree, SumRuleCyl, "ensemble_long").values())
+    names = _parsed(tree, ChainCyl, "whole")
+    (ens_name,) = set(_parsed(tree, ChainCyl, "ensemble_long").values())
     table = AnalysisTable("bug", "whole", False, (
         tseries("gyrT", "Mon", post_hook=Autocorrelation(nlags=5)),))
 
@@ -584,11 +584,11 @@ def test_local_densities_calls_the_kernel_once_per_whole(probe_dir, cyl_spec,
     """``LocalDensities`` calls the kernel with each whole's counts, edges,
     direction, and the species' diameter from the spec, and reduces the
     histogram and both profiles on the same bins."""
-    tree = write_tree(SumRuleCyl, "rHistCrd", group="all", lineage="whole",
+    tree = write_tree(ChainCyl, "rHistCrd", group="all", lineage="whole",
                       n_ensembles=1, n_wholes=2, n_rows=3)
     edges = np.array([0.0, 1.0, 2.0, 3.0])
     write_edges(tree, "rEdgeCrd", edges)
-    names = _parsed(tree, SumRuleCyl, "whole")
+    names = _parsed(tree, ChainCyl, "whole")
     kernel = RecordingKernel()
     table = AnalysisTable("all", "whole", False, (
         histogram("r", "Crd", post_hook=LocalDensities()),))
@@ -603,7 +603,7 @@ def test_local_densities_calls_the_kernel_once_per_whole(probe_dir, cyl_spec,
         assert_array_equal(counts, lineage_tree_value(*index, 0, 3))
         assert_array_equal(call_edges, edges)
         assert direction == "r"
-        assert diameter == 1.0   # sig1.0 in the written names
+        assert diameter == 1.0   # ac1.0 in the written names
     (rho,) = result["rRhoCrd"].values()
     (phi,) = result["rPhiCrd"].values()
     assert_allclose(rho["rRhoCrd-mean"],
@@ -617,7 +617,7 @@ def test_local_densities_without_a_kernel_raises(probe_dir, cyl_spec,
                                                  write_tree, write_edges):
     """A ``LocalDensities`` property needs the kernel passed to
     ``reduce_space``."""
-    tree = write_tree(SumRuleCyl, "rHistCrd", group="all", lineage="whole",
+    tree = write_tree(ChainCyl, "rHistCrd", group="all", lineage="whole",
                       n_ensembles=1)
     write_edges(tree, "rEdgeCrd", np.arange(4.0))
     table = AnalysisTable("all", "whole", False, (
@@ -680,11 +680,11 @@ def test_local_densities_take_the_sum_rule_default_normalizer(
     """The two density profiles carry the ``PROFILE_NORMALIZERS`` entry of
     the spec's geometry and the histogram's direction; the histogram does
     not."""
-    whole = ("N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000"
+    whole = ("N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000"
              "ens1")
     context = HookContext(
         histogram(direction, "Crd"), spec=cyl_spec, group="all",
-        infos={whole: SumRuleCyl(whole, "whole", "all")},
+        infos={whole: ChainCyl(whole, "whole", "all")},
         edges={whole: np.arange(3.0)}, density=RecordingKernel())
     hist, rho, phi = LocalDensities()({whole: np.ones(2)}, context)
     assert hist.normalizer is None
@@ -694,9 +694,9 @@ def test_local_densities_take_the_sum_rule_default_normalizer(
 @pytest.fixture
 def write_density_wholes(probe_dir):
     """Factory: write the histogram and edge files of two wholes of one
-    SumRuleCyl state point, group 'all', in the probe directory, and
+    ChainCyl state point, group 'all', in the probe directory, and
     return the histogram's property name."""
-    stem = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000"
+    stem = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000"
 
     def _write(direction, counts_1, counts_2, edges=(0.0, 1.0, 2.0, 3.0)):
         for k, counts in enumerate((counts_1, counts_2), start=1):
@@ -832,7 +832,7 @@ def test_density_profile_error_takes_the_last_bin_as_reference(
 
 @pytest.fixture
 def foci_context(foci_spec):
-    """A context for ``distMatTFoci`` of the TransFociCub ring."""
+    """A context for ``distMatTFoci`` of the RingCub ring."""
     return HookContext(matrix_tseries("distMatT", "Foci"), spec=foci_spec)
 
 
@@ -950,7 +950,7 @@ def test_foci_pair_distances_resolve_callables_on_the_whole(foci_context):
     each whole."""
     foci_context = HookContext(
         foci_context.prop, spec=foci_context.spec,
-        infos={"w": TransFociCub(
+        infos={"w": RingCub(
             "al2.0nl2ml8.0ns20ac1.0nc100l10.0dt0.005bdump1000adump5000ens1",
             "whole", "bug")})
     whole = _distance_frames([0, 11], [[2.5], [2.5]])
@@ -1023,10 +1023,10 @@ def test_dataframe_wholes_of_unequal_length_raise(probe_dir, cyl_spec,
     """Two 'dataframe' wholes of one ensemble with 3 and 2 rows raise,
     naming the ensemble and the lengths, instead of averaging over the
     first whole's rows."""
-    tree = write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1,
+    tree = write_tree(ChainCyl, "gyrTMon", lineage="whole", n_ensembles=1,
                       n_wholes=2)
-    names = _parsed(tree, SumRuleCyl, "whole")
-    (ens_name,) = set(_parsed(tree, SumRuleCyl, "ensemble_long").values())
+    names = _parsed(tree, ChainCyl, "whole")
+    (ens_name,) = set(_parsed(tree, ChainCyl, "ensemble_long").values())
     lengths = {names[(1, 1)]: 3, names[(1, 2)]: 2}
 
     def hook(wholes, context):
@@ -1047,13 +1047,13 @@ def test_dataframe_wholes_reduce_to_long_ensembles_and_row_statistics(
     """Through ``reduce_space``, the pair histograms of two wholes give an
     ensemble file with every whole's rows and an ensemble average with the
     mean, variance, and standard error of each pair's counts, row by row."""
-    tree = write_tree(TransFociCub, "distMatTFoci", lineage="whole",
+    tree = write_tree(RingCub, "distMatTFoci", lineage="whole",
                       n_ensembles=1, n_wholes=2, n_rows=1)
     separations = {1: [[1.5], [1.5]], 2: [[2.5], [2.5]]}
     for path, (_, whole, _) in tree.index.items():
         np.save(path, _distance_frames([0, 11], separations[whole]))
-    names = _parsed(tree, TransFociCub, "whole")
-    (ens_name,) = set(_parsed(tree, TransFociCub, "ensemble_long").values())
+    names = _parsed(tree, RingCub, "whole")
+    (ens_name,) = set(_parsed(tree, RingCub, "ensemble_long").values())
     table = AnalysisTable("bug", "whole", False, (
         matrix_tseries("distMatT", "Foci", post_hook=FociPairDistances(
             bin_size=1.0, r_max=3.0,
@@ -1109,9 +1109,9 @@ def _write_stamps(probe_dir, parser_name, group, whole_names, n_segments):
 def test_reduce_stamps_rolls_segments_up_to_wholes_and_ensembles(probe_dir):
     """Segment stamps give one row per whole, with the segments counted and
     the frames summed, then one row per ensemble with the wholes counted."""
-    stem = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000"
+    stem = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000"
     wholes = [f"{stem}ens1", f"{stem}ens2"]
-    _write_stamps(probe_dir, "SumRuleCyl", "bug", wholes, n_segments=2)
+    _write_stamps(probe_dir, "ChainCyl", "bug", wholes, n_segments=2)
     files = [(str(path),) for path in sorted(probe_dir.rglob("*.stamps.csv"))]
 
     whole_stamps, ensemble_stamps = reduce_stamps(files, "segment")
@@ -1126,9 +1126,9 @@ def test_reduce_stamps_rolls_segments_up_to_wholes_and_ensembles(probe_dir):
 def test_reduce_stamps_combines_whole_stamps_directly(probe_dir):
     """Whole-lineage stamps combine into one row per whole, with their
     segment columns dropped, then roll up to one row per ensemble."""
-    stem = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000"
+    stem = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000"
     wholes = [f"{stem}ens1", f"{stem}ens2"]
-    _write_stamps(probe_dir, "SumRuleCyl", "bug", wholes, n_segments=1)
+    _write_stamps(probe_dir, "ChainCyl", "bug", wholes, n_segments=1)
     files = [(str(path),) for path in sorted(probe_dir.rglob("*.stamps.csv"))]
 
     with pytest.warns(UserWarning, match="dropped"):
@@ -1143,8 +1143,8 @@ def test_reduce_space_writes_the_stamp_files_of_each_stage(probe_dir,
                                                            cyl_spec):
     """With ``stamps=True`` the segment, whole, and ensemble stamps land in
     the wholeSim, ens, and ensAvg folders."""
-    stem = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000"
-    _write_stamps(probe_dir, "SumRuleCyl", "bug", [f"{stem}ens1"],
+    stem = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000"
+    _write_stamps(probe_dir, "ChainCyl", "bug", [f"{stem}ens1"],
                   n_segments=2)
     table = AnalysisTable("bug", "segment", True, ())
 
@@ -1166,12 +1166,12 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
     """One segment-lineage run of a time series with its autocorrelation, a
     histogram with density profiles, and a time-averaged histogram gives
     the hand-composed averages of the segment, whole, and ensemble steps."""
-    gyr = write_tree(SumRuleCyl, "gyrTMon", n_ensembles=1, n_wholes=2,
+    gyr = write_tree(ChainCyl, "gyrTMon", n_ensembles=1, n_wholes=2,
                      n_segments=2, n_rows=3)
-    hist = write_tree(SumRuleCyl, "rHistMon", n_ensembles=1, n_wholes=2,
+    hist = write_tree(ChainCyl, "rHistMon", n_ensembles=1, n_wholes=2,
                       n_segments=2, n_rows=3)
     write_edges(hist, "rEdgeMon", np.arange(4.0))
-    clusters = write_tree(SumRuleCyl, "clustersHistTMon", n_ensembles=1,
+    clusters = write_tree(ChainCyl, "clustersHistTMon", n_ensembles=1,
                           n_wholes=2, n_segments=2, n_rows=2)
     for path, (e, w, s) in clusters.index.items():
         # Two frames per segment, three columns: the tree value plus 0, 1, 2.
@@ -1184,7 +1184,7 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
         matrix_tseries("clustersHistT", "Mon", post_hook=TimeAverage(
             "clustersHist", drop_first_column=True)),
     ))
-    (ens_name,) = set(_parsed(gyr, SumRuleCyl, "ensemble_long").values())
+    (ens_name,) = set(_parsed(gyr, ChainCyl, "ensemble_long").values())
 
     result = reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY,
                           density=kernel)
@@ -1209,7 +1209,7 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
     assert_allclose(clusters_avg["clustersHistMon-mean"],
                     frames_1.mean() + np.array([1.0, 2.0]) + 50)
     # The wholeSim folder holds the combined wholes and every derived whole.
-    (names,) = [set(_parsed(hist, SumRuleCyl, "whole").values())]
+    (names,) = [set(_parsed(hist, ChainCyl, "whole").values())]
     assert sorted(path.name for path in _analysis(probe_dir, "wholeSim")
                   .iterdir()) == sorted(
         f"{name}-bug-{prop}.npy" for name in names for prop in (
@@ -1223,7 +1223,7 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
 @pytest.fixture
 def probe_space(probe_dir, make_chain_files):
     """Run ``ChainSize`` on two segments of each of two replicates of one
-    SumRuleCyl state point, saving its ``rfloryT`` series and stamps into
+    ChainCyl state point, saving its ``rfloryT`` series and stamps into
     one folder per segment of the probe directory. Each chain is straight
     along z with bond length ``e + s / 10 + f / 100`` for replicate ``e``,
     segment ``s``, and frame ``f``, so every value differs. Returns the
@@ -1233,7 +1233,7 @@ def probe_space(probe_dir, make_chain_files):
     pytest.importorskip("MDAnalysis")
     from polyphys.probe import ChainSize, make_universe, write_stamps
 
-    stem = "N4epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1"
+    stem = "N4r2.5lz10ac1nc0dt0.005bdump1adump1"
     results = {}
     for ens in (1, 2):
         for seg in (1, 2):
@@ -1242,7 +1242,7 @@ def probe_space(probe_dir, make_chain_files):
             frames = np.full((3, 4, 3), 10.0)
             frames[:, :, 2] = 5.0 + bonds[:, None] * np.arange(4)
             data, dump = make_chain_files(frames, name=name)
-            parser = SumRuleCyl(name, "segment", "bug")
+            parser = ChainCyl(name, "segment", "bug")
             folder = probe_dir / name
             folder.mkdir()
             universe = make_universe(data, dump)
@@ -1262,8 +1262,8 @@ def test_probe_outputs_reduce_to_the_stage_files(probe_dir, cyl_spec,
     whole of the probed segments to wholeSim and the ensemble and its
     average to ens and ensAvg, with the stamps of each level, under the
     names the parser gives the probed segments."""
-    parsers = [SumRuleCyl(next((probe_dir / f).glob("*.npy")).name, "segment",
-                          "bug", ispath=True)
+    parsers = [ChainCyl(next((probe_dir / f).glob("*.npy")).name, "segment",
+                        "bug", ispath=True)
                for f in sorted(path.name for path in probe_dir.iterdir())]
     (space,) = {parser.space for parser in parsers}
     (ensemble,) = {parser.ensemble_long for parser in parsers}
@@ -1325,7 +1325,7 @@ def write_ensemble(ens_dir):
     """Factory: write the ensemble CSV of one property, one column per
     whole named ``<stem>ens<i>``, and return the whole names."""
     def _write(prop, columns, stem=None):
-        stem = stem or ("N20epsilon5.0r5.5lz25.0sig1.0nc100"
+        stem = stem or ("N20r5.5lz25.0ac1.0nc100"
                         "dt0.005bdump1000adump5000")
         frame = pd.DataFrame({f"{stem}ens{i}": column
                               for i, column in enumerate(columns, start=1)})
@@ -1731,11 +1731,11 @@ def test_space_tseries_from_spec_matches_the_research_code(  # pragma: no cover
 @pytest.fixture
 def ens_avg_db(tmp_path):
     """An ``ensAvg`` directory with the gyrTMon time series and the rHistMon
-    histogram of one SumRuleCyl state point with n = 1000 crowders of
+    histogram of one ChainCyl state point with n = 1000 crowders of
     a = 2 in a cylinder of r = 10.5 and lz = 25."""
     database = tmp_path / "analysis" / "N200-bug-ensAvg"
     database.mkdir(parents=True)
-    state = "N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000"
+    state = "N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000"
     pd.DataFrame({"gyrTMon-mean": [1.0, 2.0]}).to_csv(
         database / f"{state}-bug-gyrTMon-ensAvg.csv", index=False)
     pd.DataFrame({"rHistMon-mean": [1.0, 3.0]}).to_csv(

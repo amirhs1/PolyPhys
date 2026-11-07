@@ -367,10 +367,10 @@ class PairDistances(_ProbeAnalysis):
 
         >>> import MDAnalysis as mda
         >>> import numpy as np
-        >>> from polyphys.manage.parser import TransFociCyl
+        >>> from polyphys.tests.synthetic import RingCub
         >>> from polyphys.spec import ProbeSpec, ProjectSpec
         >>> project = ProjectSpec(
-        ...     parser=TransFociCyl, group='bug', divisor=0.025,
+        ...     parser=RingCub, group='bug', divisor=0.025,
         ...     crowder_attr='phi_bulk_c',
         ...     physical_attrs=('space', 'nmon_small', 'nmon_large'),
         ...     species_sizes={'Mon': 'dmon_small', 'Foci': 'dmon_large',
@@ -380,8 +380,8 @@ class PairDistances(_ProbeAnalysis):
         ...     project, {'Mon': 'resid 1', 'Foci': 'type 2'}, 'Mon',
         ...     ('gyrT',), unwrap=False, pair_species='Foci',
         ...     contact_cutoff=lambda info: info.dmon_large + info.dcrowd)
-        >>> whole = TransFociCyl(
-        ...     'epss5epsl5r5al2nl3ml8ns3ac1nc0lz10dt0.005bdump1adump1ens1',
+        >>> whole = RingCub(
+        ...     'al2nl3ml8ns3ac1nc0l5dt0.005bdump1adump1ens1',
         ...     'whole', 'bug')
         >>> universe = mda.Universe.empty(
         ...     6, n_residues=1, atom_resindex=[0] * 6, trajectory=True)
@@ -395,7 +395,7 @@ class PairDistances(_ProbeAnalysis):
         <Universe with 6 atoms>
         >>> analysis = PairDistances.from_spec(universe, spec, whole)
         >>> analysis.genomic_positions, analysis.cutoff, analysis.periodic
-        (array([1, 3, 5]), 3.0, (False, False, True))
+        (array([1, 3, 5]), 3.0, (True, True, True))
         >>> analysis.run().results['distMatTFoci'][0]
         array([[1.        , 2.        , 2.82842712],
                [0.        , 3.        , 2.        ],

@@ -14,13 +14,11 @@ import numpy as np
 import pytest
 
 from polyphys.analyze.pipeline import FociPairDistances, LocalDensities
-from polyphys.manage.parser import (
-    HnsCub,
-    HnsCyl,
-    ParserBase,
-    TransFociCub,
-    TransFociCyl,
-)
+from hns_cub.parser import HnsCub
+from hns_cyl.parser import HnsCyl
+from polyphys.manage.parser import ParserBase
+from trans_foci_cub.parser import TransFociCub
+from trans_foci_cyl.parser import TransFociCyl
 from polyphys.spec import AnalysisTable, BinderSpec, ProbeSpec, ProjectSpec
 
 

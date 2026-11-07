@@ -23,7 +23,7 @@ from numpy.testing import (
     assert_equal,
 )
 
-from polyphys.manage.parser import TransFociCyl
+from polyphys.tests.synthetic import RingCyl
 from polyphys.spec import ProbeSpec, ProjectSpec
 from polyphys.simulate.data import read_data
 
@@ -226,10 +226,10 @@ def test_serial_parts_match_the_multiprocessing_run(make_analysis):
 
 @pytest.fixture
 def foci_spec():
-    """A TransFociCyl probe spec whose pair species is the foci, with the
+    """A RingCyl probe spec whose pair species is the foci, with the
     research code's cutoff, the large-monomer and crowder diameters summed."""
     project = ProjectSpec(
-        parser=TransFociCyl, group='bug', divisor=0.025,
+        parser=RingCyl, group='bug', divisor=0.025,
         crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon_small', 'nmon_large', 'dcyl'),
         species_sizes={'Mon': 'dmon_small', 'Foci': 'dmon_large',
@@ -246,10 +246,10 @@ def foci_spec():
 
 @pytest.fixture
 def foci_whole():
-    """A TransFociCyl whole with dmon_large 2 and dcrowd 1.5, so the cutoff
+    """A RingCyl whole with dmon_large 2 and dcrowd 1.5, so the cutoff
     is 3.5."""
-    return TransFociCyl(
-        'epss5epsl5r5al2nl3ml8ns7ac1.5nc0lz10dt0.005bdump1adump1ens1',
+    return RingCyl(
+        'r5al2nl3ml8ns7ac1.5nc0lz10dt0.005bdump1adump1ens1',
         'whole', 'bug')
 
 

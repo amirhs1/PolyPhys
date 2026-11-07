@@ -481,11 +481,11 @@ class BinderStatistics(_ProbeAnalysis):
         --------
         >>> import MDAnalysis as mda
         >>> import numpy as np
-        >>> from polyphys.manage.parser import HnsCub
+        >>> from polyphys.tests.synthetic import RingCubBinders
         >>> from polyphys.spec import (
         ...     BinderSpec, ProbeSpec, ProjectSpec)
         >>> project = ProjectSpec(
-        ...     parser=HnsCub, group='nucleoid', divisor=0.01,
+        ...     parser=RingCubBinders, group='nucleoid', divisor=0.01,
         ...     crowder_attr='phi_bulk_c',
         ...     physical_attrs=('space', 'nmon', 'nhns'),
         ...     species_sizes={'Mon': 'dmon', 'Hns': 'dhns'},

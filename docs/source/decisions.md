@@ -78,11 +78,16 @@ of time series, a selection string, or which attributes become columns are
 choices of one study, not facts of the library; and the research code
 carried the same study table in three copies, one per stage.
 
-**Open.** The parser classes of nine studies, such as `HnsCub` and
-`TransFociCub`, still ship in `polyphys.manage.parser`.
-The maintainer decided on 2026-11-02 that they move to their studies'
-folders, with a deprecation period for the public ones; that change is
-amirhs1/PolyPhys#197.
+**The parsers.** Until 1.0.0 the parser classes of nine studies, such as
+`HnsCub` and `TransFociCub`, shipped in `polyphys.manage.parser`. The
+maintainer decided on 2026-11-02 that they move to their studies' folders,
+and on 2026-11-07 how (amirhs1/PolyPhys#197): the parsers of the four
+published studies are in `projects/<study>/parser.py`, those of the
+unpublished studies are in the research repository, and importing any of
+the nine from `polyphys.manage.parser` raises `ImportError` that says where
+it went, since a module in the installed package cannot import from
+`projects/`. The package's own tests and examples use made-up parsers in
+`polyphys.tests.synthetic`.
 
 [^adorf2018]: C. S. Adorf, P. M. Dodd, V. Ramasubramani, and S. C. Glotzer,
     "Simple data and workflow management with the signac framework,"

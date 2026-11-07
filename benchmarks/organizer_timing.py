@@ -58,7 +58,7 @@ Usage
 Run from a checkout or an environment where ``polyphys`` imports::
 
     python benchmarks/organizer_timing.py <probe_dir> \\
-        --parser TransFociCub --group bug --prop gyrTMon \\
+        --parser trans_foci_cub --group bug --prop gyrTMon \\
         --relation tseries --repeats 5
 
 ``<probe_dir>`` is the probe directory of one space, as
@@ -78,6 +78,7 @@ from __future__ import annotations
 import argparse
 import gc
 import glob
+import importlib
 import json
 import os
 import platform
@@ -88,6 +89,7 @@ import sys
 import time
 import tracemalloc
 from collections import Counter
+from pathlib import Path
 from typing import Any, Callable, Sequence
 
 import numpy as np
@@ -95,7 +97,6 @@ import pandas as pd
 
 import polyphys
 from polyphys.manage import organizer
-from polyphys.manage import parser as parser_module
 
 #: The ensemble_avg type each whole type maps to, as reduce_space maps it.
 ENS_TYPES = {'vector': 'dataframe', 'matrix': 'ndarray',
@@ -273,9 +274,22 @@ def residual(end_to_end: dict[str, float],
     return end_to_end['median_s'] - sum(p['median_s'] for p in parts)
 
 
+def _study_parser(study: str) -> type:
+    """Return the parser class that ``projects/<study>/parser.py``
+    exports, the only class in its ``__all__``; ``projects/`` is not an
+    installed package, so its folder is put on the import path."""
+    projects = Path(__file__).resolve().parents[1] / 'projects'
+    if str(projects) not in sys.path:
+        sys.path.insert(0, str(projects))
+    module = importlib.import_module(f'{study}.parser')
+    (name,) = module.__all__
+    parser: type = getattr(module, name)
+    return parser
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     """Time the three stages and return the summary."""
-    parser = getattr(parser_module, args.parser)
+    parser = _study_parser(args.parser)
     pattern = os.path.join(args.probe_dir, args.hierarchy)
     observations = sorted(glob.glob(pattern))
     paths = select(observations, args.prop)
@@ -490,8 +504,8 @@ def main(argv: Sequence[str] | None = None) -> None:
                     'Prints timings and counts only; writes nothing.')
     cli.add_argument('probe_dir', help='the probe directory of one space')
     cli.add_argument('--parser', required=True,
-                     help='parser class in polyphys.manage.parser, such as '
-                          'TransFociCub')
+                     help="study folder in projects/ whose parser.py "
+                          "reads the names, such as 'trans_foci_cub'")
     cli.add_argument('--group', required=True, help="particle group, 'bug'")
     cli.add_argument('--prop', required=True,
                      help="property in the file names, such as 'gyrTMon'")

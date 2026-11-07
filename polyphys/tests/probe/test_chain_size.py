@@ -30,7 +30,7 @@ from numpy.testing import (
 )
 
 from polyphys.analyze.stats import block_average
-from polyphys.manage.parser import SumRuleCyl
+from polyphys.tests.synthetic import ChainCyl
 from polyphys.spec import (
     CHAIN_SIZE_OBSERVABLES,
     ProbeSpec,
@@ -319,7 +319,7 @@ def test_from_spec_selects_the_chain_and_carries_the_spec(
     """from_spec picks the spec's chain selection and its observables,
     chain label, and unwrap."""
     project = ProjectSpec(
-        parser=SumRuleCyl, group='bug', divisor=0.025,
+        parser=ChainCyl, group='bug', divisor=0.025,
         crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon'),
         species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},

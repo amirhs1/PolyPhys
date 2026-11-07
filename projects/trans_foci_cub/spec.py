@@ -19,7 +19,7 @@ from polyphys.analyze.pipeline import (
     TimeAverage,
     half_contour,
 )
-from polyphys.manage.parser import ParserBase, TransFociCub
+from polyphys.manage.parser import ParserBase
 from polyphys.spec import (
     AnalysisTable,
     ProbeSpec,
@@ -30,6 +30,8 @@ from polyphys.spec import (
     matrix_tseries,
     tseries,
 )
+
+from .parser import TransFociCub
 
 SPEC = ProjectSpec(
     parser=TransFociCub,

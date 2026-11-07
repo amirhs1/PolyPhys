@@ -55,21 +55,56 @@ A `segment` is a chunk of a simulation run, not a segment of the polymer
 chain, and an `ensemble` is a set of replicates of one state point, not a
 statistical-mechanics ensemble such as NVT.
 
-A parser class of {mod}`polyphys.manage.parser` reads an artifact's name and
+A parser, a subclass of {class}`~polyphys.manage.parser.ParserBase` that a
+study declares, reads an artifact's name and
 gives the name of the artifact at its own level and at every level above it,
 so a file knows its replicate, its state point, and its sweep without
 touching the file system:
 
 ```python
->>> from polyphys.manage.parser import SumRuleCyl
->>> artifact = SumRuleCyl(
-...     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1.j03',
+>>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
+>>> long_keys = ('N', 'r', 'lz', 'ac', 'nc', 'dt', 'bdump', 'adump')
+>>> bulk = ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']
+>>> class ChainCyl(ParserBase):
+...     """A linear chain among crowders in a cylinder, periodic along z."""
+...     _geometry = 'cylindrical'
+...     _topology = 'linear'
+...     _groups = ['bug', 'all']
+...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
+...     _keywords = {
+...         'N': KeywordSpec('nmon', int),
+...         'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+...         'D': KeywordSpec('dcyl', float),
+...         'lz': KeywordSpec('lcyl', float, scale=2.0),
+...         'ac': KeywordSpec('dcrowd', float),
+...         'nc': KeywordSpec('ncrowd', int),
+...         'dt': KeywordSpec('dt', float),
+...         'bdump': KeywordSpec('bdump', int),
+...         'adump': KeywordSpec('adump', int),
+...         'ens': KeywordSpec('ensemble_id', int),
+...         'j': KeywordSpec('segment_id', int),
+...     }
+...     _patterns = {
+...         'segment': (*long_keys, 'ens', 'j'),
+...         'whole': (*long_keys, 'ens'),
+...         'ensemble_long': long_keys,
+...         'ensemble': ('N', 'D', 'ac', 'nc'),
+...         'space': ('N', 'D', 'ac'),
+...     }
+...     _defaults = {'dmon': 1}
+...     _species = (Species('m', 'nmon', 'dmon'),
+...                 Species('c', 'ncrowd', 'dcrowd'))
+...     _project_attributes = {
+...         'segment': bulk, 'whole': bulk, 'ensemble_long': bulk,
+...         'ensemble': ['dmon'], 'space': ['dmon']}
+>>> artifact = ChainCyl(
+...     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1.j03',
 ...     lineage='segment', group='all')
 >>> for level in artifact.lineage_genealogy:
 ...     print(f'{level:13} {getattr(artifact, level)}')
-segment       N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1.j03
-whole         N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1
-ensemble_long N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000
+segment       N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1.j03
+whole         N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1
+ensemble_long N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000
 ensemble      N200D20ac2nc1000
 space         N200D20ac2
 
@@ -77,7 +112,7 @@ space         N200D20ac2
 
 The long names, `segment`, `whole`, and `ensemble_long`, are cut from the
 parsed name; the short names, `ensemble` and `space`, are built from the
-parsed values, so `r10.5` becomes the cylinder diameter `D20` and `sig2.0`
+parsed values, so `r10.5` becomes the cylinder diameter `D20` and `ac2.0`
 the crowder size `ac2`. The [Usage](usage.md) page, "Lineage names", gives
 the rules that fix their text, and the [Studies](studies.md) page shows how a
 study declares which keywords each level's name holds.

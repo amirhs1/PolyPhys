@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from polyphys.manage import parser as parsers
+from polyphys.tests import synthetic
 
 
 def _sections(text: str) -> dict[str, list[str]]:
@@ -43,16 +43,10 @@ def _dump_frames(text: str) -> list[list[str]]:
     return [frame.strip().splitlines() for frame in frames]
 
 
-@pytest.fixture(
-    params=[
-        "TwoMonDepCub", "SumRuleCyl", "SumRuleCubHeteroRing",
-        "SumRuleCubHeteroLinear", "TransFociCyl", "TransFociCub", "HnsCub",
-        "HnsCyl",
-    ],
-)
+@pytest.fixture(params=synthetic.__all__)
 def parser_class(request: pytest.FixtureRequest) -> type:
-    """Each parser class in polyphys.manage.parser, one per test run."""
-    return getattr(parsers, request.param)
+    """Each synthetic parser class, one per test run."""
+    return getattr(synthetic, request.param)
 
 
 @pytest.fixture
@@ -99,7 +93,7 @@ def lammps_project(pytester: pytest.Pytester) -> pytest.Pytester:
 def test_make_lineage_tree_writes_one_file_per_segment(make_lineage_tree):
     """A segment tree holds n_ensembles * n_wholes * n_segments files."""
     tree = make_lineage_tree(
-        parsers.SumRuleCyl, n_ensembles=2, n_wholes=3, n_segments=2
+        synthetic.ChainCyl, n_ensembles=2, n_wholes=3, n_segments=2
     )
 
     assert len(tree.paths) == 12
@@ -137,7 +131,7 @@ def test_make_lineage_tree_groups_into_wholes_and_ensembles(
 
 def test_make_lineage_tree_index_is_read_only(make_lineage_tree):
     """A tree's file index cannot be changed after the tree is written."""
-    tree = make_lineage_tree(parsers.SumRuleCyl, n_ensembles=1)
+    tree = make_lineage_tree(synthetic.ChainCyl, n_ensembles=1)
 
     with pytest.raises(TypeError, match="does not support item assignment"):
         tree.index[tree.paths[0]] = (9, 9, 9)
@@ -148,10 +142,10 @@ def test_make_lineage_tree_numbers_wholes_and_segments_from_one(
 ):
     """The ens and j values in the names count wholes and segments from 1."""
     tree = make_lineage_tree(
-        parsers.SumRuleCyl, n_ensembles=1, n_wholes=3, n_segments=2
+        synthetic.ChainCyl, n_ensembles=1, n_wholes=3, n_segments=2
     )
 
-    parsed = [parsers.SumRuleCyl(path, "segment", tree.group, ispath=True)
+    parsed = [synthetic.ChainCyl(path, "segment", tree.group, ispath=True)
               for path in tree.paths]
 
     assert [(p.ensemble_id, p.segment_id) for p in parsed] == [
@@ -176,7 +170,7 @@ def test_make_lineage_tree_file_holds_documented_values(
 ):
     """A file holds 1000*ensemble + 100*whole + 10*segment + row."""
     tree = make_lineage_tree(
-        parsers.SumRuleCyl, n_ensembles=2, n_wholes=3, lineage=lineage,
+        synthetic.ChainCyl, n_ensembles=2, n_wholes=3, lineage=lineage,
         ext=ext, prop="gyrTMon", n_rows=3,
     )
     path = next(p for p, index in tree.index.items() if index == key)
@@ -367,7 +361,7 @@ def test_strict_markers_rejects_misspelled_private_data(pytester):
         pytest.param({"attrs": {"ens": 1}}, "'attrs' cannot set",
                      id="reserved-keyword"),
         pytest.param({"vary": "xyz"},
-                     "not keywords of SumRuleCyl whole names",
+                     "not keywords of ChainCyl whole names",
                      id="unknown-keyword"),
     ],
 )
@@ -376,7 +370,7 @@ def test_make_lineage_tree_rejects_invalid_arguments(
 ):
     """A lineage tree with an invalid argument raises before writing."""
     with pytest.raises(ValueError, match=match):
-        make_lineage_tree(parsers.SumRuleCyl, **kwargs)
+        make_lineage_tree(synthetic.ChainCyl, **kwargs)
 
 
 @pytest.mark.parametrize(

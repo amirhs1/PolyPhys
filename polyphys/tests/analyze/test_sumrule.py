@@ -1,8 +1,8 @@
 """Tests for :mod:`polyphys.analyze.sumrule`.
 
 Every expected value is hand arithmetic on the written ``-mean`` columns and
-the sizes encoded in the filenames: crowder diameter ``sig1.5``
-(``SumRuleCyl``) or ``ac1.5`` (``SumRuleCubHeteroRing``), cylinder radius
+the sizes encoded in the filenames: crowder diameter ``ac1.5``
+(``ChainCyl``) or ``ac1.5`` (``RingCub``), cylinder radius
 ``r10.5``, so ``D = 2 * 10.5 - 1 = 20`` and ``D mod a_c = 0.5``. The sum-rule
 tests build a small ``analysis`` phase on disk with one ensAvg CSV per state
 point. The spec-taking tests take ``phi_bulk_c`` and ``phi_bulk_m`` from the
@@ -31,11 +31,7 @@ from polyphys.analyze.sumrule import (
     space_profiles_from_spec,
     sum_rule_profiles,
 )
-from polyphys.manage.parser import (
-    SumRuleCubHeteroRing,
-    SumRuleCubHeteroRingBiDisperse,
-    SumRuleCyl,
-)
+from polyphys.tests.synthetic import ChainCyl, RingCub, RingCubTwoCrowders
 from polyphys.manage.utils import round_to_multiple
 from polyphys.spec import ProjectSpec
 
@@ -55,13 +51,13 @@ def make_profile_space(tmp_path):
     """Factory: write one '<state>-all-<prop>-ensAvg.csv' per state point.
 
     Takes the property, the bin centers, one '-mean' column per state
-    point, the ensemble_long names (default: two SumRuleCyl points), and
+    point, the ensemble_long names (default: two ChainCyl points), and
     optionally one '-norm-sem' column per state point. Returns the ensAvg
     directory, ending with '/'.
     """
     cyl_states = [
-        "N200epsilon5.0r10.5lz25.0sig1.5nc1000dt0.005bdump2000adump5000",
-        "N200epsilon5.0r10.5lz25.0sig1.5nc2000dt0.005bdump2000adump5000",
+        "N200r10.5lz25.0ac1.5nc1000dt0.005bdump2000adump5000",
+        "N200r10.5lz25.0ac1.5nc2000dt0.005bdump2000adump5000",
     ]
 
     def _make(prop, bin_center, means, states=cyl_states, group="all",
@@ -88,7 +84,7 @@ def make_profile_space(tmp_path):
 
 @pytest.fixture
 def cyl_sizes():
-    """The species-to-size map of a SumRuleCyl study."""
+    """The species-to-size map of a ChainCyl study."""
     return {"Mon": "dmon", "Crd": "dcrowd"}
 
 
@@ -267,7 +263,7 @@ def test_space_profiles_scales_phi_by_the_species_size(make_profile_space,
     """A 'Phi' profile is divided by the species diameter from the name."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     assert space["rPhiCrd-scaler"].tolist() == [1.5, 1.5, 1.5]
     assert space["rPhiCrd-sumrule_constant"].tolist() == [1.5, 1.5, 1.5]
@@ -280,7 +276,7 @@ def test_space_profiles_scales_rho_by_the_size_squared(make_profile_space,
     """A 'Rho' profile is multiplied by the species diameter squared."""
     database = make_profile_space("rRhoCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
-    space = space_profiles(database, "Rho", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Rho", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     assert space["rRhoCrd-scaler"].tolist() == [2.25, 2.25, 2.25]
     np.testing.assert_allclose(space["rRhoCrd-scale"],
@@ -300,9 +296,9 @@ def test_space_profiles_phi_and_rho_normalize_to_the_same_curve(
     rho = 6 * phi / (np.pi * 1.5 ** 3)
     make_profile_space("rPhiCrd", [0.5, 1.5, 2.5], [phi])
     database = make_profile_space("rRhoCrd", [0.5, 1.5, 2.5], [rho])
-    by_phi = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    by_phi = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                             "all", cyl_sizes)
-    by_rho = space_profiles(database, "Rho", "r", "Crd", SumRuleCyl, "N*", [],
+    by_rho = space_profiles(database, "Rho", "r", "Crd", ChainCyl, "N*", [],
                             "all", cyl_sizes)
     # float64 round-off of a few multiplications
     np.testing.assert_allclose(by_rho["rRhoCrd-norm"], by_phi["rPhiCrd-norm"],
@@ -315,7 +311,7 @@ def test_space_profiles_cylinder_r_normalizes_by_the_axis_value(
     """In a cylinder, an r profile is divided by its r = 0 bin by default."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     np.testing.assert_allclose(space["rPhiCrd-normalizer"], [0.2 / 1.5] * 3,
                                rtol=1e-15)
@@ -328,7 +324,7 @@ def test_space_profiles_cube_r_normalizes_by_the_maximum(make_profile_space):
     state = "al5.0nl5ml125.0ns400ac1.5nc100l100.0dt0.005bdump2000adump5000"
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]], states=[state])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCubHeteroRing,
+    space = space_profiles(database, "Phi", "r", "Crd", RingCub,
                            "al*", [], "all",
                            {"Mon": "dmon_small", "Crd": "dcrowd",
                             "Foci": "dmon_large"})
@@ -346,7 +342,7 @@ def test_space_profiles_z_folds_and_normalizes_by_the_maximum(
     recentered."""
     database = make_profile_space("zPhiCrd", [-1.5, -0.5, 0.5, 1.5],
                                   [[0.1, 0.3, 0.3, 0.1]])
-    space = space_profiles(database, "Phi", "z", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "z", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     assert space["bin_center"].tolist() == [0.5, 1.5]
     np.testing.assert_allclose(space["zPhiCrd-norm"], [1.0, 1 / 3], rtol=1e-15)
@@ -361,7 +357,7 @@ def test_space_profiles_recenters_cylinder_r_on_the_wall(make_profile_space,
     b - (D mod a_c) are added, with D = 20 and a_c = 1.5 from the name."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     # D mod a_c = 20 mod 1.5 = 0.5, so the shift is 1/3 crowder radii
     np.testing.assert_allclose(space["bin_center-dcrowd"],
@@ -375,12 +371,12 @@ def test_space_profiles_recenters_cylinder_r_on_the_wall(make_profile_space,
 
 def test_space_profiles_adds_one_column_set_per_crowder(make_profile_space):
     """Two crowders give 'bin_center-<size>' for each, in a cube."""
-    state = ("al5.0nl5ns400ac1.0ab2.0pctc40.0nc100nb50l100.0dt0.005"
+    state = ("al5.0nl5ns400ac1.0ab2.0nc100nb50l100.0dt0.005"
              "bdump2000adump5000")
     database = make_profile_space("rPhiCrdOne", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]], states=[state])
     space = space_profiles(
-        database, "Phi", "r", "CrdOne", SumRuleCubHeteroRingBiDisperse,
+        database, "Phi", "r", "CrdOne", RingCubTwoCrowders,
         "al*", [], "all",
         {"Dna": "dmon_small", "CrdOne": "dcrowd_one", "CrdTwo": "dcrowd_two",
          "Foci": "dmon_large"},
@@ -403,7 +399,7 @@ def test_space_profiles_two_crowders_in_a_cylinder_recenter_each(
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
     space = space_profiles(
-        database, "Phi", "r", "Crd", SumRuleCyl, "N*", [], "all",
+        database, "Phi", "r", "Crd", ChainCyl, "N*", [], "all",
         {"Mon": "dmon", "Crd": "dcrowd", "Big": "dmon"},
         crowders=("Crd", "Big"),
     )
@@ -420,7 +416,7 @@ def test_space_profiles_concatenates_files_in_name_order(make_profile_space,
     ensemble_long name as a column."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1], [0.4, 0.2, 0.2]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     assert len(space) == 6
     assert space["ensemble_long"].str.extract(r"nc(\d+)")[0].tolist() == (
@@ -434,11 +430,11 @@ def test_space_profiles_adds_attributes_and_rounded_phi_c(make_profile_space,
     """physical_attrs, phi_bulk_c, and phi_bulk_c_round come from the name."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*",
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*",
                            ["nmon", "dcyl"], "all", cyl_sizes, divisor=0.05,
                            round_to=2)
-    info = SumRuleCyl(
-        "N200epsilon5.0r10.5lz25.0sig1.5nc1000dt0.005bdump2000adump5000",
+    info = ChainCyl(
+        "N200r10.5lz25.0ac1.5nc1000dt0.005bdump2000adump5000",
         "ensemble_long", "all")
     assert space["nmon"].tolist() == [200] * 3
     assert space["dcyl"].tolist() == [20.0] * 3
@@ -453,7 +449,7 @@ def test_space_profiles_two_argument_normalizer_sees_the_parser(
     """A callable normalizer receives the frame and the file's parser."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes,
                            normalizer=lambda df, info: info.dcrowd)
     assert space["rPhiCrd-normalizer"].tolist() == [1.5, 1.5, 1.5]
@@ -466,7 +462,7 @@ def test_space_profiles_records_and_logs_an_override(make_profile_space,
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
     caplog.set_level(logging.INFO, logger="polyphys.analyze.sumrule")
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes, normalizer="max")
     np.testing.assert_allclose(space["rPhiCrd-normalizer"], [0.3 / 1.5] * 3,
                                rtol=1e-15)
@@ -482,7 +478,7 @@ def test_space_profiles_saves_with_the_direction_in_the_name(
 Rescaled-space.csv' in the analysis phase's space directory."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes, is_save=True)
     saved = pd.read_csv(tmp_path / "analysis" / "N200-all-space" /
                         "N200-all-rPhiCrd-normalizedRescaled-space.csv")
@@ -498,7 +494,7 @@ Rescaled-space.csv' in the analysis phase's space directory."""
                      "Species 'Hns' is not in 'species_sizes'", id="species"),
         pytest.param({"crowders": ("Crd", "Hns")}, KeyError,
                      r"Crowders \['Hns'\] are not in", id="crowder"),
-        pytest.param({"parser": SumRuleCubHeteroRing, "direction": "z"},
+        pytest.param({"parser": RingCub, "direction": "z"},
                      ValueError, "No density profile along 'z' in a cubic",
                      id="cubic-z"),
         pytest.param({"hierarchy": "M*"}, ValueError,
@@ -512,7 +508,7 @@ def test_space_profiles_rejects_bad_arguments(make_profile_space, cyl_sizes,
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]])
     args = dict(input_database=database, quantity="Phi", direction="r",
-                species="Crd", parser=SumRuleCyl, hierarchy="N*",
+                species="Crd", parser=ChainCyl, hierarchy="N*",
                 physical_attrs=[], group="all", species_sizes=cyl_sizes)
     args.update(kwargs)
     with pytest.raises(error, match=message):
@@ -533,7 +529,7 @@ def test_space_profiles_warns_on_a_profile_that_sums_to_one(
     and the file is processed regardless."""
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5], [means])
     with pytest.warns(UserWarning, match="rPhiCrd-ensAvg.csv' sums to one"):
-        space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*",
+        space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*",
                                [], "all", cyl_sizes)
     assert len(space) == 3
 
@@ -552,7 +548,7 @@ def test_space_profiles_does_not_warn_on_a_raw_profile(make_profile_space,
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5], [means])
     with warnings.catch_warnings():
         warnings.simplefilter("error")
-        space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+        space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                        "all", cyl_sizes)
 
 
@@ -563,7 +559,7 @@ def test_space_profiles_carries_norm_sem_through(make_profile_space,
     database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
                                   [[0.2, 0.3, 0.1]],
                                   norm_sems=[[0.0, 0.1, 0.2]])
-    space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     assert space["rPhiCrd-norm-sem"].tolist() == [0.0, 0.1, 0.2]
 
@@ -574,7 +570,7 @@ def test_space_profiles_folds_norm_sem_along_z(make_profile_space, cyl_sizes):
     database = make_profile_space("zPhiCrd", [-1.5, -0.5, 0.5, 1.5],
                                   [[0.1, 0.3, 0.3, 0.1]],
                                   norm_sems=[[0.2, 0.4, 0.6, 0.8]])
-    space = space_profiles(database, "Phi", "z", "Crd", SumRuleCyl, "N*", [],
+    space = space_profiles(database, "Phi", "z", "Crd", ChainCyl, "N*", [],
                            "all", cyl_sizes)
     # Exact: (0.4 + 0.6) / 2 and (0.2 + 0.8) / 2 in float64
     np.testing.assert_allclose(space["zPhiCrd-norm-sem"], [0.5, 0.5],
@@ -592,17 +588,17 @@ def test_space_profiles_drops_norm_sem_under_an_explicit_normalizer(
     with pytest.warns(UserWarning,
                       match=r"Dropping 'rPhiCrd-norm-sem' of '.*rPhiCrd-"
                             r"ensAvg.csv'.*'first', not under 'max'"):
-        space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*",
+        space = space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*",
                                [], "all", cyl_sizes, normalizer="max")
     assert "rPhiCrd-norm-sem" not in space.columns
 
 
 @pytest.fixture
 def make_cyl_spec():
-    """Factory: a SumRuleCyl ProjectSpec; keyword arguments override fields."""
+    """Factory: a ChainCyl ProjectSpec; keyword arguments override fields."""
     def _make(**overrides):
         fields = {
-            "parser": SumRuleCyl, "group": "bug", "divisor": 0.025,
+            "parser": ChainCyl, "group": "bug", "divisor": 0.025,
             "crowder_attr": "phi_bulk_c", "physical_attrs": ("nmon", "dcyl"),
             "species_sizes": {"Mon": "dmon", "Crd": "dcrowd"},
             "tseries_properties": ("gyrTMon",),
@@ -651,7 +647,7 @@ def test_space_profiles_from_spec_rounds_with_the_spec_divisor(
     # grid of 0.025.
     database = make_profile_space(
         "rPhiCrd", [0.5, 1.5, 2.5], [[0.2, 0.3, 0.1]],
-        states=["N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000"
+        states=["N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000"
                 "adump5000"])
     space = space_profiles_from_spec(database, make_cyl_spec(divisor=divisor),
                                      "Phi", "r", "Crd")
@@ -666,7 +662,7 @@ def test_space_profiles_from_spec_rounds_the_spec_crowder_attr(
     # = 0.0073869, which rounds to 0.007 on a grid of 0.001.
     database = make_profile_space(
         "rPhiCrd", [0.5, 1.5, 2.5], [[0.2, 0.3, 0.1]],
-        states=["N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000"
+        states=["N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000"
                 "adump5000"])
     spec = make_cyl_spec(divisor=0.001, crowder_attr="phi_bulk_m")
     space = space_profiles_from_spec(database, spec, "Phi", "r", "Crd")

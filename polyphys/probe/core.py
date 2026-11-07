@@ -45,13 +45,13 @@ they made.
 Examples
 ========
 >>> import tempfile
->>> from polyphys.manage.parser import SumRuleCyl
->>> parser = SumRuleCyl('N4epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1ens1',
+>>> from polyphys.tests.synthetic import ChainCyl
+>>> parser = ChainCyl('N4r2.5lz10ac1nc0dt0.005bdump1adump1ens1',
 ...                     'whole', 'bug')
 >>> with tempfile.TemporaryDirectory() as tmp:
 ...     path = write_stamps(parser, n_frames=5, save_to=tmp)
 ...     path.name
-'N4epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1ens1-bug-stamps.csv'
+'N4r2.5lz10ac1nc0dt0.005bdump1adump1ens1-bug-stamps.csv'
 
 .. versionadded:: 0.7.0
 """
@@ -241,9 +241,9 @@ def write_stamps(
     Examples
     --------
     >>> import tempfile
-    >>> from polyphys.manage.parser import SumRuleCyl
-    >>> parser = SumRuleCyl(
-    ...     'N4epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1ens1.j01', 'segment',
+    >>> from polyphys.tests.synthetic import ChainCyl
+    >>> parser = ChainCyl(
+    ...     'N4r2.5lz10ac1nc0dt0.005bdump1adump1ens1.j01', 'segment',
     ...     'bug')
     >>> with tempfile.TemporaryDirectory() as tmp:
     ...     stamps = pd.read_csv(write_stamps(parser, 3, tmp))

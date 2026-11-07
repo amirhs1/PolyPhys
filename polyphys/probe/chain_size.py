@@ -426,10 +426,10 @@ class ChainSize(_ProbeAnalysis):
         --------
         >>> import MDAnalysis as mda
         >>> import numpy as np
-        >>> from polyphys.manage.parser import SumRuleCyl
+        >>> from polyphys.tests.synthetic import ChainCyl
         >>> from polyphys.spec import ProbeSpec, ProjectSpec
         >>> project = ProjectSpec(
-        ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+        ...     parser=ChainCyl, group='bug', divisor=0.025,
         ...     crowder_attr='phi_bulk_c',
         ...     physical_attrs=('space', 'nmon'),
         ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
