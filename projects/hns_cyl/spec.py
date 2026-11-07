@@ -1,9 +1,9 @@
 """
 The *HnsCyl* study: a ring polymer with H-NS proteins among crowders in a
 cylinder that is periodic along its axis. ``SPEC`` is its
-:class:`~polyphys.manage.projects.ProjectSpec`, ``PROBE`` its
-:class:`~polyphys.manage.projects.ProbeSpec`, and ``ANALYSIS`` its
-:class:`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
+:class:`~polyphys.spec.ProjectSpec`, ``PROBE`` its
+:class:`~polyphys.spec.ProbeSpec`, and ``ANALYSIS`` its
+:class:`~polyphys.spec.AnalysisTable` per particle group.
 
 Values from the research code's registry (SciOps ``sciops/api.py``,
 ``PROJECTS_DETAILS``), with the PolyPhys attribute names ``phi_bulk_c`` for
@@ -15,20 +15,21 @@ analysis tables (SciOps ``sciops/analyze/analyzer.py``,
 Provisional: whether the study has molecular dynamics data is not yet
 known.
 """
-from polyphys.analyze.pipeline import (
+from polyphys.analyze.pipeline import Autocorrelation, LocalDensities
+import numpy as np
+
+from polyphys.manage.parser import HnsCyl, ParserBase
+from polyphys.spec import (
     AnalysisTable,
-    Autocorrelation,
-    LocalDensities,
+    BinderSpec,
+    ProbeSpec,
+    ProjectSpec,
     edge,
     histogram,
     histogram_2d,
     matrix_tseries,
     tseries,
 )
-import numpy as np
-
-from polyphys.manage.parser import HnsCyl, ParserBase
-from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=HnsCyl,

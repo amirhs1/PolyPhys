@@ -34,9 +34,9 @@ Dependencies
 - :mod:`polyphys.analyze.measurer`: :func:`~polyphys.analyze.measurer.fsd`,
   :func:`~polyphys.analyze.measurer.end_to_end`, and
   :func:`~polyphys.analyze.measurer.transverse_size`.
-- :mod:`polyphys.manage.projects`:
-  :data:`~polyphys.manage.projects.CHAIN_SIZE_OBSERVABLES` and
-  :class:`~polyphys.manage.projects.ProbeSpec`.
+- :mod:`polyphys.spec`:
+  :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES` and
+  :class:`~polyphys.spec.ProbeSpec`.
 
 Notation
 ========
@@ -80,7 +80,7 @@ from MDAnalysis.core.groups import AtomGroup
 from MDAnalysis.core.universe import Universe
 
 from ..analyze import measurer
-from ..manage.projects import CHAIN_SIZE_OBSERVABLES, ProbeSpec
+from ..spec import CHAIN_SIZE_OBSERVABLES, ProbeSpec
 from ..manage.types import AxisT, EntityT, Pathish, PropertyT
 
 # One frame's value of an observable: a function of the chain, the cylinder
@@ -146,7 +146,7 @@ class ChainSize(AnalysisBase):
         the backbone, which ``Universe.select_atoms`` gives.
     observables : sequence of :py:data:`PropertyT`
         The observables to measure, each a name in
-        :data:`~polyphys.manage.projects.CHAIN_SIZE_OBSERVABLES`, in the
+        :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES`, in the
         order ``results`` and :meth:`save` list them.
     chain : :py:data:`EntityT`, default 'Mon'
         The species label of the chain, which names the files
@@ -193,7 +193,7 @@ class ChainSize(AnalysisBase):
     ValueError
         If `observables` is empty, repeats a name, or names an observable
         that is not in
-        :data:`~polyphys.manage.projects.CHAIN_SIZE_OBSERVABLES`; if
+        :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES`; if
         `chain` is empty; if `axis` is not ``0``, ``1``, or ``2``; or if
         `atomgroup` has fewer than two beads.
 
@@ -352,7 +352,7 @@ class ChainSize(AnalysisBase):
         universe : :class:`~MDAnalysis.core.universe.Universe`
             The trajectory, as :func:`~polyphys.probe.core.make_universe`
             opens it.
-        spec : :class:`~polyphys.manage.projects.ProbeSpec`
+        spec : :class:`~polyphys.spec.ProbeSpec`
             The study's probe spec.
         axis : :py:data:`AxisT`, default 2
             The cylinder axis.
@@ -374,7 +374,7 @@ class ChainSize(AnalysisBase):
         >>> import MDAnalysis as mda
         >>> import numpy as np
         >>> from polyphys.manage.parser import SumRuleCyl
-        >>> from polyphys.manage.projects import ProbeSpec, ProjectSpec
+        >>> from polyphys.spec import ProbeSpec, ProjectSpec
         >>> project = ProjectSpec(
         ...     parser=SumRuleCyl, group='bug', divisor=0.025,
         ...     physical_attrs=('space', 'nmon'),

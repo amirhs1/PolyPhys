@@ -36,8 +36,8 @@ Dependencies
   :func:`~polyphys.analyze.clusters.find_direct_contacts`,
   :func:`~polyphys.analyze.clusters.count_bonds`, and
   :func:`~polyphys.analyze.clusters.count_clusters`.
-- :mod:`polyphys.manage.projects`:
-  :class:`~polyphys.manage.projects.ProbeSpec`.
+- :mod:`polyphys.spec`:
+  :class:`~polyphys.spec.ProbeSpec`.
 - :mod:`polyphys.manage.parser`:
   :class:`~polyphys.manage.parser.ParserBase`.
 
@@ -86,7 +86,7 @@ from MDAnalysis.core.universe import Universe
 
 from ..analyze import clusters
 from ..manage.parser import ParserBase
-from ..manage.projects import ProbeSpec
+from ..spec import ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish
 
 # The periodic directions of each geometry, for the minimum image: a
@@ -329,7 +329,7 @@ class PairDistances(AnalysisBase):
         universe : :class:`~MDAnalysis.core.universe.Universe`
             The trajectory, as :func:`~polyphys.probe.core.make_universe`
             opens it.
-        spec : :class:`~polyphys.manage.projects.ProbeSpec`
+        spec : :class:`~polyphys.spec.ProbeSpec`
             The study's probe spec, with ``pair_species`` and
             ``contact_cutoff`` set.
         parser : :class:`~polyphys.manage.parser.ParserBase`
@@ -356,7 +356,7 @@ class PairDistances(AnalysisBase):
         >>> import MDAnalysis as mda
         >>> import numpy as np
         >>> from polyphys.manage.parser import TransFociCyl
-        >>> from polyphys.manage.projects import ProbeSpec, ProjectSpec
+        >>> from polyphys.spec import ProbeSpec, ProjectSpec
         >>> project = ProjectSpec(
         ...     parser=TransFociCyl, group='bug', divisor=0.025,
         ...     physical_attrs=('space', 'nmon_small', 'nmon_large'),

@@ -43,9 +43,9 @@ Dependencies
   :func:`~polyphys.analyze.measurer.axial_histogram`,
   :func:`~polyphys.analyze.measurer.azimuth_cyl_histogram`, and
   :func:`~polyphys.analyze.measurer.planar_cartesian_histogram`.
-- :mod:`polyphys.manage.projects`:
-  :class:`~polyphys.manage.projects.ProbeSpec` and
-  :data:`~polyphys.manage.projects.RecenterT`.
+- :mod:`polyphys.spec`:
+  :class:`~polyphys.spec.ProbeSpec` and
+  :data:`~polyphys.spec.RecenterT`.
 - :mod:`polyphys.manage.parser`:
   :class:`~polyphys.manage.parser.ParserBase`.
 
@@ -111,7 +111,7 @@ from MDAnalysis.core.universe import Universe
 
 from ..analyze import measurer
 from ..manage.parser import ParserBase
-from ..manage.projects import ProbeSpec, RecenterT
+from ..spec import ProbeSpec, RecenterT
 from ..manage.types import (
     AxisT,
     BinT,
@@ -212,7 +212,7 @@ def histogram_edges(
     The bin edges of one whole's histograms and maps.
 
     The bin sizes are the spec's, resolved for this whole by
-    :meth:`~polyphys.manage.projects.ProbeSpec.resolve`; the ranges follow
+    :meth:`~polyphys.spec.ProbeSpec.resolve`; the ranges follow
     the geometry, so that every position inside the confinement falls
     between the edges:
 
@@ -235,7 +235,7 @@ def histogram_edges(
 
     Parameters
     ----------
-    spec : :class:`~polyphys.manage.projects.ProbeSpec`
+    spec : :class:`~polyphys.spec.ProbeSpec`
         The study's probe spec, whose ``bin_sizes`` holds every key that
         ``geometry`` needs: ``'r'``, ``'z'``, ``'theta'``, ``'x'``, ``'y'``
         for a cylinder; ``'r'``, ``'x'``, ``'y'``, ``'z'`` for a cube.
@@ -261,7 +261,7 @@ def histogram_edges(
     Examples
     --------
     >>> from polyphys.manage.parser import SumRuleCyl
-    >>> from polyphys.manage.projects import ProbeSpec, ProjectSpec
+    >>> from polyphys.spec import ProbeSpec, ProjectSpec
     >>> project = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
     ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
@@ -342,7 +342,7 @@ class SpatialHistograms(AnalysisBase):
     block_frames : int
         The block length :math:`b`, positive: consecutive frames of the
         run whose maps are averaged into one stored map.
-    recenter : :py:data:`~polyphys.manage.projects.RecenterT`, default 'half'
+    recenter : :py:data:`~polyphys.spec.RecenterT`, default 'half'
         How a frame's positions are moved before binning: ``'half'``
         subtracts half the frame's box lengths, ``'none'`` nothing, a
         triple its values. The positions in the trajectory are untouched.
@@ -359,7 +359,7 @@ class SpatialHistograms(AnalysisBase):
         The geometry.
     block_frames : int
         The block length.
-    recenter : :py:data:`~polyphys.manage.projects.RecenterT`
+    recenter : :py:data:`~polyphys.spec.RecenterT`
         The recentering, a triple as floats.
     results : :class:`~MDAnalysis.analysis.results.Results`
         After :meth:`run`, for each species ``S`` and direction ``d`` of
@@ -563,7 +563,7 @@ class SpatialHistograms(AnalysisBase):
         universe : :class:`~MDAnalysis.core.universe.Universe`
             The trajectory, as :func:`~polyphys.probe.core.make_universe`
             opens it.
-        spec : :class:`~polyphys.manage.projects.ProbeSpec`
+        spec : :class:`~polyphys.spec.ProbeSpec`
             The study's probe spec, with ``histogram_species``,
             ``bin_sizes``, and ``block_frames`` set.
         parser : :class:`~polyphys.manage.parser.ParserBase`
@@ -587,7 +587,7 @@ class SpatialHistograms(AnalysisBase):
         >>> import MDAnalysis as mda
         >>> import numpy as np
         >>> from polyphys.manage.parser import SumRuleCyl
-        >>> from polyphys.manage.projects import ProbeSpec, ProjectSpec
+        >>> from polyphys.spec import ProbeSpec, ProjectSpec
         >>> project = ProjectSpec(
         ...     parser=SumRuleCyl, group='bug', divisor=0.025,
         ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),

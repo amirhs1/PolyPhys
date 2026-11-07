@@ -11,6 +11,10 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Move `ProjectSpec`, `ProbeSpec`, `BinderSpec`, `PerWhole`, `RecenterT`, `CHAIN_SIZE_OBSERVABLES`, and `BINDER_SERIES` from `polyphys.manage.projects`, and `AnalysisTable`, `PropertySpec`, `PostHook`, `tseries`, `histogram`, `histogram_2d`, `edge`, and `matrix_tseries` from `polyphys.analyze.pipeline`, to the new module `polyphys.spec`, which imports no MDAnalysis, and define `PerWhole` once; the old import paths warn with `DeprecationWarning` until 1.0.0 ([#196](https://github.com/amirhs1/PolyPhys/issues/196))
+
 ### Added
 
 - Add a release step: the maintainer runs the full test command with `POLYPHYS_DATA_DIR` set and LAMMPS available, since CI runs neither the `private_data` nor the `lammps` tests, and the release commit records the result in a `Checks-run:` line; in `CONTRIBUTING.md`, "Releases", and the `draft-release` skill ([#190](https://github.com/amirhs1/PolyPhys/issues/190))
