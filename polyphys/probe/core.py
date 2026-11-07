@@ -55,6 +55,10 @@ Examples
 
 .. versionadded:: 0.7.0
 """
+# Annotations stay strings, so the docs build, which mocks MDAnalysis,
+# never evaluates a union such as ``str | BackendBase``.
+from __future__ import annotations
+
 import copy
 import os
 from multiprocessing import Pool

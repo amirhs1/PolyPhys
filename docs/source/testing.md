@@ -239,7 +239,7 @@ Keep the path out of tracked files; set the variable in your shell.
 | `--doctest-modules`      | Runs the `Examples` sections of the docstrings in the modules pytest collects               |
 | `--doctest-glob=README.md` | Runs the examples of `README.md` as doctests                                              |
 | `testpaths = ["polyphys/tests"]` | The directory pytest collects when no path is given                                 |
-| `filterwarnings = ["error"]` | Every warning raised during a test is an error; a test that expects one wraps the call in `pytest.warns`, and a test module that must ignore one names it in a `filterwarnings` mark |
+| `filterwarnings = ["error", ...]` | Every warning raised during a test is an error; a test that expects one wraps the call in `pytest.warns`, and a test module that must ignore one names it in a `filterwarnings` mark. One warning is ignored everywhere: pyparsing 3.3's deprecation of `enablePackrat`, which matplotlib 3.8.4, the floor of the `viz` extra, calls on import |
 
 The documented command passes `polyphys README.md projects`, so the
 modules' docstrings, the README, and the studies are collected as well as
