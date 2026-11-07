@@ -13,8 +13,8 @@ Contents
 
 String parsing and filename sorting:
 :func:`read_camel_case`, :func:`to_float_if_possible`,
-:func:`split_alphanumeric`, :func:`normalize_exts`, :func:`sort_filenames`,
-and :func:`sort_filenames_str`.
+:func:`split_alphanumeric`, :func:`normalize_exts`, and
+:func:`sort_filenames`.
 
 File handling:
 :func:`openany` and :func:`openany_context`.
@@ -167,9 +167,6 @@ def normalize_exts(exts: Union[str, Tuple[str, ...]]) -> Tuple[str, ...]:
     return tuple(e if e.startswith(".") else f".{e}" for e in exts)
 
 
-_normalize_exts = normalize_exts
-
-
 def sort_filenames(
     filenames: PathIter,
     formats: Sequence[Union[str, Tuple[str, ...]]],
@@ -177,8 +174,9 @@ def sort_filenames(
     """
     Group and alphanumerically sort `filenames` by basename across `formats`.
 
-    Files are paired by the same basename (stem) such that each tuple contains
-    exactly one file for each format group. A format group may list multiple,
+    Files are paired by the same basename, the full file name with the
+    matched extension removed, such that each tuple contains exactly one
+    file for each format group. A format group may list multiple,
     equivalent extensions, e.g. ``("trj", "lammpstrj")``. Only complete
     basenames (with all slots present) are returned.
 
@@ -218,15 +216,21 @@ def sort_filenames(
       that each format group matches at least one file.
     - Incomplete basenames are **ignored** and a warning is emitted for each
       present file mentioning its missing counterpart(s).
-    - Grouping is by **basename** (stem); directory paths are not used.
+    - Grouping is by **basename**: the full file name without the matched
+      extension, dots included, never the part before the last dot, so
+      ``...epshc1.0nc0`` and ``...epshc1.0nc500`` are two basenames.
+      Directory paths are not used.
+    - Let n be the number of files and k the number of extensions in
+      `formats`. Time is O(n k) to match the extensions plus
+      O(n log n) to sort the basenames; memory is O(n).
 
     Raises
     ------
     ValueError
-        If an extension is assigned to multiple format groups, if a file’s
-        name matches multiple groups (e.g., both ``.gz`` and ``.tar.gz``
-        present in different groups and the file ends with ``.tar.gz``), or if
-        there are duplicate files for the same basename and format slot.
+        If an extension is assigned to multiple format groups, or if there
+        are duplicate files for the same basename and format slot. A file
+        whose name ends in extensions of two groups, such as ``.tar.gz`` and
+        ``.gz``, goes to the group of the longer one.
 
     Examples
     --------
@@ -279,27 +283,14 @@ def sort_filenames(
         matches = [(e, s) for e, s in ext_to_slot.items() if name.endswith(e)]
         if not matches:
             continue
-        # Longest-suffix-wins disambiguation
-        max_len = max(len(ext) for ext, _ in matches)
-        longest = [(ext, slot) for ext, slot in matches if len(ext) == max_len]
-        if len({slot for _, slot in longest}) > 1:
-            # Two different slots have equally long matches → ambiguous
-            matched_groups = [
-                norm_formats[slot]
-                for slot in sorted({slot for _, slot in longest})
-            ]
-            raise ValueError(
-                f"Filename '{p.name}' matches multiple format groups: "
-                f"{matched_groups}"
-            )
+        # Longest-suffix-wins disambiguation. Two matching extensions of
+        # equal length are the same string, and an extension sits in one
+        # slot only, so the longest match is unique.
+        win_ext, slot = max(matches, key=lambda match: len(match[0]))
 
-        # Single winning (ext, slot)
-        win_ext, slot = longest[0]
-
-        # Derive basename by stripping the winning extension
+        # The basename is the full name without the winning extension; it
+        # keeps every dot of the name, such as the one in 'epshc1.0nc500'.
         base = name[:-len(win_ext)]
-        # Normalize to stem semantics (in case there are leftover dots/dirs)
-        base = Path(base).stem
 
         slot_map = by_base.setdefault(base, {})
         if slot in slot_map:
@@ -335,65 +326,6 @@ def sort_filenames(
         tuple(by_base[base][i] for i in range(nslots)) for base in comp_bases
     ]
     return result
-
-
-def sort_filenames_str(
-    filenames: List[str], formats: List[Union[str, Tuple[str, ...]]]
-) -> List[Tuple[str, ...]]:
-    """
-    Group and alphanumerically sort `filenames` by specified formats.
-
-    This function groups `filenames` by the extensions in `formats`, sorting
-    each group alphanumerically. It then returns a list of tuples where each
-    tuple contains filenames with matching base names across the specified
-    formats.
-
-    Parameters
-    ----------
-    filenames : List[str]
-        A list of filenames to sort and group.
-    formats : List[Union[str, Tuple[str, ...]]]
-        A list specifying the file formats. Each item in `formats` can be a
-        string representing a file extension (e.g., 'data'), or a tuple of
-        alternative extensions considered equivalent (e.g.,
-        ('trj', 'lammpstrj')).
-
-    Returns
-    -------
-    List[Tuple[str, ...]]
-        A list of tuples where each tuple contains filenames grouped and
-        sorted by the specified formats.
-
-    Notes
-    -----
-    If any of the specified formats match no files, the returned list may be
-    empty. This is because Python's built-in `zip()` truncates to the shortest
-    input sequence. It is the caller's responsibility to ensure that each
-    format group matches at least one file.
-
-    Consider validating inputs beforehand or adding error handling if such
-    cases should be treated as exceptional.
-
-    Examples
-    --------
-    >>> sort_filenames_str(
-    ...     ['file1.data', 'file2.trj', 'file1.trj', 'file2.data'],
-    ...     ['data', ('lammpstrj', 'trj')]
-    ... )
-    [('file1.data', 'file1.trj'), ('file2.data', 'file2.trj')]
-
-    >>> sort_filenames_str(['file1.data', 'file2.data'], ['data', ('trj',)])
-    []
-    """
-    grouped_filenames = []
-    for exts in formats:
-        grouped_filenames.append([f for f in filenames if f.endswith(exts)])
-
-    for idx, filenames_group in enumerate(grouped_filenames):
-        grouped_filenames[idx] = sorted(
-            filenames_group, key=split_alphanumeric
-        )
-    return list(zip(*grouped_filenames))
 
 
 def openany(filepath: str, mode: str = "rt") -> InputType:

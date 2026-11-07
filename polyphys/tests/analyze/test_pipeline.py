@@ -1084,11 +1084,11 @@ def test_reduce_space_writes_the_stamp_files_of_each_stage(probe_dir,
     reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
 
     assert (_analysis(probe_dir, "wholeSim")
-            / "N20ac1.0-bug-segment-stamps.csv").exists()
+            / "N20ac1.0-bug-stamps-segment.csv").exists()
     assert (_analysis(probe_dir, "ens") / "N20ac1.0-bug-stamps-whole.csv"
             ).exists()
-    assert (_analysis(probe_dir, "ensAvg") / "N20ac1.0-bug-stamps-ensAvg.csv"
-            ).exists()
+    assert (_analysis(probe_dir, "ensAvg")
+            / "N20ac1.0-bug-stamps-ensemble_long.csv").exists()
 
 
 # End to end
