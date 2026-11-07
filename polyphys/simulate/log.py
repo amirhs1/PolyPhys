@@ -366,8 +366,10 @@ def parse_log(text: str, path: Path | None = None) -> LogFile:
     ------
     BrokenLogError
         If the log has no run; a run has no ``Loop time of`` line, as after a
-        walltime kill; an ``ERROR`` line appears; a thermo table holds a line
-        that is neither data nor a skipped message; or the log has no
+        walltime kill, or one of another form than ``Loop time of <t> on <n>
+        procs for <steps> steps with <atoms> atoms``; an ``ERROR`` line
+        appears; a thermo header repeats a keyword; a thermo table holds a
+        line that is neither data nor a skipped message; or the log has no
         ``Total wall time`` line.
 
     Notes
@@ -469,7 +471,8 @@ def _split_runs(lines: Sequence[str]) -> list[_RunBlock]:
     ------
     BrokenLogError
         If there is no run-start line, a run has no ``Loop time of`` line,
-        or a line starts with ``ERROR``.
+        a run's ``Loop time of`` line has another form than the one LAMMPS
+        writes, or a line starts with ``ERROR``.
 
     Notes
     -----
@@ -498,6 +501,12 @@ def _split_runs(lines: Sequence[str]) -> list[_RunBlock]:
             raise BrokenLogError(
                 f"Run {index} (line {start + 1}) has no {_RUN_END!r} line; "
                 "the log may be cut off."
+            )
+        if not _LOOP.match(lines[end]):
+            raise BrokenLogError(
+                f"Line {end + 1} starts with {_RUN_END!r} but is not the "
+                f"line 'Loop time of <t> on <n> procs for <steps> steps with "
+                f"<atoms> atoms' that LAMMPS writes: {lines[end]!r}"
             )
         blocks.append(
             _RunBlock(
@@ -555,8 +564,9 @@ def _parse_thermo(block: _RunBlock) -> pd.DataFrame:
     Raises
     ------
     BrokenLogError
-        If the table has no header, or a line is neither data, blank, nor a
-        skipped message; the message names its line number in the log.
+        If the table has no header, its header repeats a keyword, or a line
+        is neither data, blank, nor a skipped message; the message names its
+        line number in the log.
 
     Notes
     -----
@@ -584,6 +594,7 @@ def _parse_one(block: _RunBlock) -> pd.DataFrame:
             "header."
         )
     keywords = header[1].split()
+    _check_unique(header[0], keywords)
     rows = [_floats(number, line.split(), len(keywords), line)
             for number, line in numbered]
     return pd.DataFrame(rows, columns=keywords, dtype="float64")
@@ -618,6 +629,7 @@ def _parse_yaml(block: _RunBlock) -> pd.DataFrame:
         if stripped.startswith("keywords: [") and stripped.endswith("]"):
             keywords = [word.strip().strip("'\"")
                         for word in _yaml_items(stripped[len("keywords:"):])]
+            _check_unique(number, keywords)
         elif (keywords is not None and stripped.startswith("- [")
                 and stripped.endswith("]")):
             rows.append(_floats(number, _yaml_items(stripped[1:]),
@@ -630,6 +642,18 @@ def _parse_yaml(block: _RunBlock) -> pd.DataFrame:
             "'keywords:' line."
         )
     return pd.DataFrame(rows, columns=keywords, dtype="float64")
+
+
+def _check_unique(number: int, keywords: Sequence[str]) -> None:
+    """Raise BrokenLogError if a thermo header repeats a keyword."""
+    seen: set[str] = set()
+    for keyword in keywords:
+        if keyword in seen:
+            raise BrokenLogError(
+                f"Line {number} repeats the thermo keyword {keyword!r}; "
+                "each keyword must name one column."
+            )
+        seen.add(keyword)
 
 
 def _yaml_items(flow_list: str) -> list[str]:

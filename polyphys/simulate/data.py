@@ -889,9 +889,9 @@ def with_frame(template: DataFile, frame: DumpFrame) -> DataFile:
         A data file of the same system, such as the one the run started
         from.
     frame : DumpFrame
-        A frame with an ``id`` column and coordinate columns that
-        :meth:`~polyphys.simulate.dump.DumpFrame.positions` can use,
-        scaled or not.
+        A frame with an ``id`` column and wrapped coordinate columns,
+        ``x y z`` or the scaled ``xs ys zs``. Unwrapped columns alone, ``xu
+        yu zu`` or ``xsu ysu zsu``, are not accepted.
 
     Returns
     -------
@@ -907,7 +907,8 @@ def with_frame(template: DataFile, frame: DumpFrame) -> DataFile:
         `template`, or its ``type`` column, when present, disagrees with the
         template's types.
     KeyError
-        If the frame has no coordinate columns.
+        If the frame has no wrapped coordinate columns, as in a dump of
+        unwrapped coordinates only.
 
     Notes
     -----
@@ -950,6 +951,14 @@ def with_frame(template: DataFile, frame: DumpFrame) -> DataFile:
         frame.column("type")[rows], template.types
     ):
         raise ValueError("the frame's atom types differ from the template's")
+    try:
+        positions = frame.positions()
+    except KeyError:
+        raise KeyError(
+            "with_frame needs wrapped coordinates, x y z or xs ys zs; a frame "
+            "with unwrapped coordinates only, or none, has no positions "
+            f"inside the box: {frame.columns}"
+        ) from None
     columns = set(frame.columns)
     image: IntArray | None = None
     if {"ix", "iy", "iz"} <= columns:
@@ -963,6 +972,6 @@ def with_frame(template: DataFile, frame: DumpFrame) -> DataFile:
         ).astype(np.float64)[rows]
     return dataclasses.replace(
         template,
-        positions=frame.positions()[rows], box=frame.box,
+        positions=positions[rows], box=frame.box,
         image_flags=image, velocities=velocities,
     )

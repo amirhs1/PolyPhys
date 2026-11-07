@@ -783,6 +783,23 @@ def test_parser_reports_empty_ext_for_file_without_suffix(make_temp_file):
         '', Path(os.path.dirname(full_path)), 'N200D10ac2')
 
 
+@pytest.mark.parametrize('filename, name, ext, dcrowd', [
+    pytest.param('N20D10ac1.5', 'N20D10ac1.5', '', 1.5, id='trailing-float'),
+    pytest.param('N20D10ac1.5.csv', 'N20D10ac1.5', '.csv', 1.5,
+                 id='trailing-float-with-extension'),
+    pytest.param('N20D10ac1.', 'N20D10ac1.', '', 1.0, id='trailing-dot'),
+])
+def test_parser_strips_only_an_extension_with_a_letter(
+        make_temp_file, filename, name, ext, dcrowd):
+    """With ispath, a suffix made of digits, or a lone dot, stays part of the
+    name instead of being dropped as an extension."""
+    full_path = make_temp_file(filename)
+
+    parser = SumRuleCyl(full_path, 'space', 'bug', ispath=True)
+
+    assert (parser.name, parser.ext, parser.dcrowd) == (name, ext, dcrowd)
+
+
 @pytest.mark.parametrize('parser_class, lineage, group, artifact, expected', [
     pytest.param(SumRuleCyl, 'ensemble', 'bug', 'N2000D20.0ac1.0nc117000',
                  ['nmon', 'dcyl', 'dcrowd', 'ncrowd'],
@@ -1299,6 +1316,32 @@ def test_cylinder_bulk_values_match_utils(parser_class, artifact, suffix,
          volume_fraction_cylinder(n, d, lcyl, dcyl, pbc=True)), rel=1e-12)
 
 
+def test_cylinder_bulk_fraction_above_one_is_nominal():
+    """Five large monomers of size 5 in a cylinder of size 6 and length 20
+    parse, with the nominal fraction 5 (pi 5^3 / 6) / (pi 20 1^2 / 4) =
+    125 / 6, above one."""
+    parser = TransFociCyl(
+        'epss1epsl5r3.5al5nl5ml125ns400ac1nc0lz10dt0.005bdump1000adump5000'
+        'ens1.ring', 'whole', 'bug')
+
+    actual = parser.phi_bulk_m_large
+
+    # float64 round-off of a few products and divisions:
+    assert actual == pytest.approx(125 / 6, rel=1e-12)
+
+
+def test_cylinder_species_that_does_not_fit_raises_value_error():
+    """A large monomer as wide as the cylinder, D - a = 0, raises ValueError
+    naming the state point and the species instead of dividing by zero."""
+    artifact = ('epss1epsl5r3al5nl5ml125ns400ac1nc0lz10dt0.005bdump1000'
+                'adump5000ens1.ring')
+
+    with pytest.raises(ValueError, match=re.escape(
+            "species 'm_large' of 'epss1epsl5r3al5nl5ml125ns400ac1nc0lz10"
+            "dt0.005bdump1000adump5000ens1.ring' (lineage 'whole')")):
+        TransFociCyl(artifact, 'whole', 'bug')
+
+
 @pytest.mark.parametrize('parser_class, artifact', [
     pytest.param(SumRuleCubHeteroRing,
                  'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
@@ -1464,6 +1507,44 @@ def test_short_name_prints_fractional_float_as_repr(
     parser = parser_class(artifact, lineage, group)
 
     assert (parser.ensemble, parser.space) == (ensemble, space)
+
+
+@pytest.mark.parametrize('token, expected', [
+    pytest.param('4.1', 7.2, id='r4.1'),
+    pytest.param('3.3', 5.6, id='r3.3'),
+    pytest.param('5.5', 10.0, id='r5.5'),
+])
+def test_keyword_spec_converts_decimal_token_exactly(token, expected):
+    """The conversion 2r - 1 of a decimal token gives the float nearest the
+    exact decimal result, not one carrying binary round-off."""
+    spec = KeywordSpec('dcyl', float, scale=2.0, offset=-1.0)
+
+    value = spec.parse(token)
+
+    assert value == expected
+
+
+@pytest.mark.parametrize('parser_class, group, artifact, ensemble', [
+    pytest.param(SumRuleCyl, 'bug',
+                 'N20epsilon5r4.1lz10sig1nc100dt0.005bdump1000adump5000',
+                 'N20D7.2ac1nc100', id='SumRuleCyl-r4.1'),
+    pytest.param(TransFociCyl, 'bug',
+                 'epss5epsl5r4.1al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
+                 'bdump2000adump5000',
+                 'ns400nl5al3D7.2ac1nc8340', id='TransFociCyl-r4.1'),
+    pytest.param(HnsCyl, 'nucleoid', 'N200kbmm2r4.1nh4ac1lz75epshc1.0nc1152',
+                 'N200D7.2nh4ac1epshc1nc1152', id='HnsCyl-r4.1'),
+    pytest.param(SumRuleCyl, 'bug',
+                 'N20epsilon5r5.5lz10sig1nc100dt0.005bdump1000adump5000',
+                 'N20D10ac1nc100', id='SumRuleCyl-r5.5'),
+])
+def test_short_name_prints_cylinder_size_from_r_as_decimal(
+        parser_class, group, artifact, ensemble):
+    """The size D = 2r - 1 converted from a decimal r prints as the decimal
+    result in the ensemble name, so it matches the files named with it."""
+    parser = parser_class(artifact, 'ensemble_long', group)
+
+    assert parser.ensemble == ensemble
 
 
 @pytest.mark.parametrize('short_lineage', [
