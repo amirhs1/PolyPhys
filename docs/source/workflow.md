@@ -97,22 +97,25 @@ differ in what a row is:
   rule, as the [Usage](usage.md) page, "The density sum rule", describes.
 
 All three take the study's parser, its `hierarchy` glob, its
-`physical_attrs`, and its `divisor`, so a study passes its `SPEC`:
+`physical_attrs`, its `divisor`, and its crowder attribute.
+{func}`~polyphys.analyze.pipeline.space_tseries_from_spec` and
+{func}`~polyphys.analyze.pipeline.space_hists_from_spec` read them from the
+study's `SPEC`, so no study choice comes from a library default:
 
 ```python
-from polyphys.manage.organizer import space_tseries
+from polyphys.analyze.pipeline import space_tseries_from_spec
 from trans_foci_cub import SPEC
 
-table = space_tseries(
-    'analysis/al5.0nl5ml125ns400ac1.0-bug-ensAvg/', 'gyrTMon', SPEC.parser,
-    SPEC.hierarchy, list(SPEC.physical_attrs), SPEC.group,
-    divisor=SPEC.divisor, is_save=True)
+table = space_tseries_from_spec(
+    'analysis/al5.0nl5ml125ns400ac1.0-bug-ensAvg', SPEC, 'gyrTMon',
+    save=True)
 ```
 
-Each also adds the column `phi_bulk_c` and its rounded copy,
+Each also adds the column named by the spec's `crowder_attr`, such as
+`phi_bulk_c`, and its rounded copy,
 `phi_bulk_c_round`: $\phi_c$ rounded to the nearest multiple of $\Delta$ by
 {func}`~polyphys.manage.utils.round_to_multiple`, then to `round_to`
-decimal places. The unrounded `phi_bulk_c` stays in the table beside it.
+decimal places. The unrounded fraction stays in the table beside it.
 
 ### Step 4: one value per whole
 

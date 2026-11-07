@@ -476,6 +476,7 @@ class BinderStatistics(AnalysisBase):
         ...     BinderSpec, ProbeSpec, ProjectSpec)
         >>> project = ProjectSpec(
         ...     parser=HnsCub, group='nucleoid', divisor=0.01,
+        ...     crowder_attr='phi_bulk_c',
         ...     physical_attrs=('space', 'nmon', 'nhns'),
         ...     species_sizes={'Mon': 'dmon', 'Hns': 'dhns'},
         ...     tseries_properties=(

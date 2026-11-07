@@ -35,6 +35,7 @@ SPEC = ProjectSpec(
     parser=TransFociCub,
     group='bug',
     divisor=0.025,
+    crowder_attr='phi_bulk_c',
     physical_attrs=('space', 'ensemble_long', 'ensemble', 'nmon_small',
                     'nmon_large', 'dmon_large', 'dcrowd', 'phi_bulk_c'),
     species_sizes={'Mon': 'dmon_small', 'Crd': 'dcrowd',

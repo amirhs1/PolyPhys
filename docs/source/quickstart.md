@@ -70,6 +70,7 @@ properties to reduce: here one time series, `gyrTMon`, read as segments:
 >>> from polyphys.spec import AnalysisTable, ProjectSpec, tseries
 >>> spec = ProjectSpec(
 ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+...     crowder_attr='phi_bulk_c',
 ...     physical_attrs=('space', 'ensemble_long', 'ncrowd'),
 ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
 ...     tseries_properties=('gyrTMon',))
@@ -123,17 +124,15 @@ Four wholes, and two state points at each of the ensemble stages.
 
 ## The space table
 
-{func}`~polyphys.manage.organizer.space_tseries` stacks the ensemble
-averages of the two state points into one table and adds the time and the
-state point's attributes:
+{func}`~polyphys.analyze.pipeline.space_tseries_from_spec` stacks the
+ensemble averages of the two state points into one table and adds the time
+and the state point's attributes, with the columns and the rounding step the
+spec declares:
 
 ```python
->>> from polyphys.manage.organizer import space_tseries
+>>> from polyphys.analyze.pipeline import space_tseries_from_spec
 >>> ens_avg = root / 'analysis' / 'N200D20ac2-bug-ensAvg'
->>> space = space_tseries(
-...     f'{ens_avg}/', 'gyrTMon', spec.parser, spec.hierarchy,
-...     list(spec.physical_attrs), spec.group, divisor=spec.divisor,
-...     is_save=True)
+>>> space = space_tseries_from_spec(ens_avg, spec, 'gyrTMon', save=True)
 >>> space['ncrowd'].tolist()
 [1000, 1000, 1000, 1000, 2000, 2000, 2000, 2000]
 >>> space['time'].tolist()

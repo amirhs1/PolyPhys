@@ -35,6 +35,7 @@ SPEC = ProjectSpec(
     parser=HnsCyl,
     group='nucleoid',
     divisor=0.01,
+    crowder_attr='phi_bulk_c',
     physical_attrs=('space', 'ensemble_long', 'ensemble', 'dcyl', 'nmon',
                     'nhns', 'dcrowd', 'phi_bulk_c', 'rho_bulk_hns'),
     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd', 'Hns': 'dhns'},
