@@ -40,8 +40,10 @@ Dependencies
   :class:`~polyphys.spec.ProbeSpec`.
 - :mod:`polyphys.manage.parser`:
   :class:`~polyphys.manage.parser.ParserBase`.
-- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
-  part of a split run on its own copy of the analysis.
+- :mod:`polyphys.probe.core`: ``_ProbeAnalysis``, the base whose ``run``
+  closes the pool of the ``multiprocessing`` backend, and
+  ``_compute_part``, which computes each part of a split run on its own
+  copy of the analysis.
 
 Notation
 ========
@@ -81,7 +83,6 @@ from pathlib import Path
 from typing import Any, Self, Sequence
 
 import numpy as np
-from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.analysis.results import ResultsGroup
 from MDAnalysis.core.groups import AtomGroup
 from MDAnalysis.core.universe import Universe
@@ -90,7 +91,7 @@ from ..analyze import clusters
 from ..manage.parser import ParserBase
 from ..spec import ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish
-from .core import _compute_part
+from .core import _ProbeAnalysis, _compute_part
 
 # The periodic directions of each geometry, for the minimum image: a
 # cylinder is periodic along its axis, z, a cube in every direction.
@@ -107,7 +108,7 @@ _QUANTITIES = ('distMatT', 'directContactsMatT', 'bondsHistT',
 _BACKENDS = ('serial', 'multiprocessing', 'dask')
 
 
-class PairDistances(AnalysisBase):
+class PairDistances(_ProbeAnalysis):
     """
     The pair distances, direct contacts, bonds, and clusters of one
     species, measured in every frame.

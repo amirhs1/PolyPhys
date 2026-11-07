@@ -24,7 +24,8 @@ Contents
 
 Dependencies
 ============
-- Python standard library: `copy`, `os`, `pathlib`, `types`, `typing`.
+- Python standard library: `copy`, `multiprocessing`, `os`, `pathlib`,
+  `types`, `typing`.
 - `MDAnalysis <https://docs.mdanalysis.org/>`_ 2.8 or later, through the
   ``mda`` extra.
 - `pandas <https://pandas.pydata.org/>`_.
@@ -35,6 +36,11 @@ copy of itself (``_compute_part``), so that the ``serial`` backend, which
 hands every part the same analysis object, keeps each part's ``results``,
 ``frames``, and ``times`` apart, as the ``multiprocessing`` and ``dask``
 backends do by pickling.
+
+Every probe analysis also takes its ``run`` from ``_ProbeAnalysis``, which
+closes and joins the pool of the ``multiprocessing`` backend instead of
+terminating it, so the workers exit normally and release the semaphores
+they made.
 
 Examples
 ========
@@ -51,13 +57,15 @@ Examples
 """
 import copy
 import os
+from multiprocessing import Pool
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 import MDAnalysis as mda
 import numpy as np
 import pandas as pd
+from MDAnalysis.analysis.backends import BackendBase, BackendMultiprocessing
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.analysis.results import Results
 
@@ -319,3 +327,101 @@ def _compute_part(
     part.results = Results()
     return AnalysisBase._compute(part, indexed_frames, verbose,
                                  progressbar_kwargs=progressbar_kwargs)
+
+
+class _ClosingMultiprocessing(BackendMultiprocessing):
+    """
+    The ``multiprocessing`` backend of MDAnalysis, with a pool that is
+    closed and joined instead of terminated.
+
+    :class:`MDAnalysis.analysis.backends.BackendMultiprocessing` maps the
+    parts in ``with multiprocessing.Pool(...)``, whose exit calls
+    :meth:`multiprocessing.pool.Pool.terminate`. That kills the workers
+    before their finalizers run, so a semaphore a worker made is never
+    released. Each worker makes one: the progress bar of
+    :meth:`MDAnalysis.analysis.base.AnalysisBase._compute` builds the lock
+    of tqdm, a :func:`multiprocessing.RLock`, even when the bar is hidden.
+    At shutdown the resource tracker then reports the semaphores as leaked.
+    Closing and joining the pool lets each worker exit normally and release
+    its semaphore.
+
+    Notes
+    -----
+    The parts, their order, and their results are those of the MDAnalysis
+    backend: both call :meth:`multiprocessing.pool.Pool.map`. If the map
+    raises, the pool is terminated, as the MDAnalysis backend does, and the
+    error propagates.
+    """
+
+    def apply(self, func: Callable[[Any], Any],
+              computations: list[Any]) -> list[Any]:
+        """
+        Apply `func` to each of `computations` on a pool of
+        ``n_workers`` processes, and return the results in order.
+        """
+        pool = Pool(processes=self.n_workers)
+        try:
+            results = pool.map(func, computations)
+            pool.close()
+        except BaseException:
+            pool.terminate()
+            raise
+        finally:
+            pool.join()
+        return results
+
+
+class _ProbeAnalysis(AnalysisBase):
+    """
+    The base of the probe analyses: an MDAnalysis analysis whose
+    ``'multiprocessing'`` backend is :class:`_ClosingMultiprocessing`.
+    """
+
+    def run(
+        self,
+        start: int | None = None,
+        stop: int | None = None,
+        step: int | None = None,
+        frames: Any = None,
+        verbose: bool | None = None,
+        n_workers: int | None = None,
+        n_parts: int | None = None,
+        backend: str | BackendBase | None = None,
+        *,
+        unsupported_backend: bool = False,
+        progressbar_kwargs: dict[str, Any] | None = None,
+    ) -> Any:
+        """
+        Run the analysis, as :meth:`MDAnalysis.analysis.base.AnalysisBase.run`
+        does.
+
+        The arguments and the result are those of
+        :meth:`MDAnalysis.analysis.base.AnalysisBase.run`. The one difference
+        is the ``'multiprocessing'`` backend: its pool of `n_workers`
+        processes, one if `n_workers` is ``None``, is closed and joined at
+        the end of the run instead of terminated, so the workers exit
+        normally and release the semaphores they made.
+
+        Examples
+        --------
+        >>> import MDAnalysis as mda
+        >>> from polyphys.probe.chain_size import ChainSize
+        >>> frames = np.zeros((4, 2, 3))
+        >>> frames[:, 1, 2] = [1.0, 2.0, 3.0, 4.0]
+        >>> universe = mda.Universe.empty(2, trajectory=True)
+        >>> universe.add_TopologyAttr('masses', np.ones(2))
+        >>> universe.load_new(frames, format='MEMORY')
+        <Universe with 2 atoms>
+        >>> analysis = ChainSize(universe.atoms, ('rfloryT',))
+        >>> analysis.run(backend='multiprocessing', n_workers=2,
+        ...              n_parts=2).results['rfloryT']
+        array([1., 2., 3., 4.])
+        """
+        if isinstance(backend, str) and backend == 'multiprocessing':
+            backend = _ClosingMultiprocessing(
+                n_workers=1 if n_workers is None else n_workers)
+            unsupported_backend = True
+        return super().run(
+            start, stop, step, frames, verbose, n_workers, n_parts, backend,
+            unsupported_backend=unsupported_backend,
+            progressbar_kwargs=progressbar_kwargs)

@@ -40,8 +40,10 @@ Dependencies
 - :mod:`polyphys.spec`:
   :data:`~polyphys.spec.BINDER_SERIES` and
   :class:`~polyphys.spec.ProbeSpec`.
-- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
-  part of a split run on its own copy of the analysis.
+- :mod:`polyphys.probe.core`: ``_ProbeAnalysis``, the base whose ``run``
+  closes the pool of the ``multiprocessing`` backend, and
+  ``_compute_part``, which computes each part of a split run on its own
+  copy of the analysis.
 
 Notation
 ========
@@ -90,7 +92,6 @@ from typing import Any, Mapping, Self, cast, get_args
 
 import numpy as np
 import numpy.typing as npt
-from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.analysis.results import ResultsGroup
 from MDAnalysis.core.groups import AtomGroup
 from MDAnalysis.core.universe import Universe
@@ -103,7 +104,7 @@ from ..analyze.clusters import (
 )
 from ..spec import BINDER_SERIES, ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish, TopologyT
-from .core import _compute_part
+from .core import _ProbeAnalysis, _compute_part
 
 #: The result key of the per-frame loop-length histogram.
 LOOP_KEY = 'loop_length_histogram'
@@ -144,7 +145,7 @@ def _pair_distances(
                       dtype=np.float64)
 
 
-class BinderStatistics(AnalysisBase):
+class BinderStatistics(_ProbeAnalysis):
     """
     The binding of two-patch binders to one polymer chain, counted in every
     frame.
