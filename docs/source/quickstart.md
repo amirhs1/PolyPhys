@@ -33,7 +33,7 @@ x_{ewsk} = 1000\,e + 100\,w + 10\,s + k,
 $$
 
 so each value names its file and frame, and every average below can be
-written down by hand. The files are named for the `SumRuleCyl` parser, a
+written down by hand. The files are named for the `ChainCyl` parser declared below, a
 linear chain of 200 monomers in a cylinder among crowders; the two state
 points differ only in the number of crowders, `nc1000` and `nc2000`. Each
 segment file is named `<whole>.j<NN>.<group>.<property>.npy`, in a directory
@@ -47,7 +47,7 @@ per whole under the space's probe directory:
 >>> root = Path(tmp.name)
 >>> probe = root / 'probes' / 'N200D20ac2-bug-probe'
 >>> for e, nc in enumerate((1000, 2000), start=1):
-...     state = f'N200epsilon5.0r10.5lz25.0sig2.0nc{nc}dt0.005bdump2000adump5000'
+...     state = f'N200r10.5lz25.0ac2.0nc{nc}dt0.005bdump2000adump5000'
 ...     for w in (1, 2):
 ...         whole = probe / f'{state}ens{w}'
 ...         whole.mkdir(parents=True)
@@ -66,10 +66,44 @@ rounded. An {class}`~polyphys.spec.AnalysisTable` says which
 properties to reduce: here one time series, `gyrTMon`, read as segments:
 
 ```python
->>> from polyphys.manage.parser import SumRuleCyl
+>>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
+>>> long_keys = ('N', 'r', 'lz', 'ac', 'nc', 'dt', 'bdump', 'adump')
+>>> bulk = ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']
+>>> class ChainCyl(ParserBase):
+...     """A linear chain among crowders in a cylinder, periodic along z."""
+...     _geometry = 'cylindrical'
+...     _topology = 'linear'
+...     _groups = ['bug', 'all']
+...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
+...     _keywords = {
+...         'N': KeywordSpec('nmon', int),
+...         'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+...         'D': KeywordSpec('dcyl', float),
+...         'lz': KeywordSpec('lcyl', float, scale=2.0),
+...         'ac': KeywordSpec('dcrowd', float),
+...         'nc': KeywordSpec('ncrowd', int),
+...         'dt': KeywordSpec('dt', float),
+...         'bdump': KeywordSpec('bdump', int),
+...         'adump': KeywordSpec('adump', int),
+...         'ens': KeywordSpec('ensemble_id', int),
+...         'j': KeywordSpec('segment_id', int),
+...     }
+...     _patterns = {
+...         'segment': (*long_keys, 'ens', 'j'),
+...         'whole': (*long_keys, 'ens'),
+...         'ensemble_long': long_keys,
+...         'ensemble': ('N', 'D', 'ac', 'nc'),
+...         'space': ('N', 'D', 'ac'),
+...     }
+...     _defaults = {'dmon': 1}
+...     _species = (Species('m', 'nmon', 'dmon'),
+...                 Species('c', 'ncrowd', 'dcrowd'))
+...     _project_attributes = {
+...         'segment': bulk, 'whole': bulk, 'ensemble_long': bulk,
+...         'ensemble': ['dmon'], 'space': ['dmon']}
 >>> from polyphys.spec import AnalysisTable, ProjectSpec, tseries
 >>> spec = ProjectSpec(
-...     parser=SumRuleCyl, group='bug', divisor=0.025,
+...     parser=ChainCyl, group='bug', divisor=0.025,
 ...     crowder_attr='phi_bulk_c',
 ...     physical_attrs=('space', 'ensemble_long', 'ncrowd'),
 ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
@@ -91,7 +125,7 @@ replicates:
 ```python
 >>> from polyphys.analyze.pipeline import reduce_space
 >>> result = reduce_space(probe, spec, table)
->>> state = 'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000'
+>>> state = 'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
 >>> average = result['gyrTMon'][state]
 >>> average['gyrTMon-mean'].tolist()
 [1160.0, 1161.0, 1170.0, 1171.0]

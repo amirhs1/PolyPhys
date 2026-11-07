@@ -620,20 +620,20 @@ def space_profiles(
     Examples
     --------
     One ensemble-averaged radial volume fraction of crowders of diameter
-    ``sig2.0`` in a cylinder, normalized by its axis value:
+    ``ac2.0`` in a cylinder, normalized by its axis value:
 
     >>> import tempfile
     >>> from pathlib import Path
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> tmp = tempfile.TemporaryDirectory()
     >>> database = Path(tmp.name) / 'analysis' / 'N20-all-ensAvg'
     >>> database.mkdir(parents=True)
-    >>> state = 'N20epsilon5.0r5.5lz25.0sig2.0nc100dt0.005bdump1000adump5000'
+    >>> state = 'N20r5.5lz25.0ac2.0nc100dt0.005bdump1000adump5000'
     >>> pd.DataFrame({'bin_center': [0.5, 1.5, 2.5],
     ...               'rPhiCrd-mean': [0.2, 0.3, 0.1]}).to_csv(
     ...     database / f'{state}-all-rPhiCrd-ensAvg.csv', index=False)
     >>> space = space_profiles(str(database) + '/', 'Phi', 'r', 'Crd',
-    ...                        SumRuleCyl, 'N*', ['dcyl'], 'all',
+    ...                        ChainCyl, 'N*', ['dcyl'], 'all',
     ...                        {'Mon': 'dmon', 'Crd': 'dcrowd'})
     >>> space[['bin_center', 'rPhiCrd-scale', 'rPhiCrd-norm',
     ...        'bin_center-dcrowd-recentered']]
@@ -934,17 +934,17 @@ def space_profiles_from_spec(
 
     >>> import tempfile
     >>> from pathlib import Path
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> from polyphys.spec import ProjectSpec
     >>> spec = ProjectSpec(
-    ...     parser=SumRuleCyl, group='bug', divisor=0.1,
+    ...     parser=ChainCyl, group='bug', divisor=0.1,
     ...     crowder_attr='phi_bulk_c', physical_attrs=('dcyl',),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
     ...     tseries_properties=('gyrTMon',))
     >>> tmp = tempfile.TemporaryDirectory()
     >>> database = Path(tmp.name) / 'analysis' / 'N20-all-ensAvg'
     >>> database.mkdir(parents=True)
-    >>> state = 'N20epsilon5.0r5.5lz25.0sig2.0nc100dt0.005bdump1000adump5000'
+    >>> state = 'N20r5.5lz25.0ac2.0nc100dt0.005bdump1000adump5000'
     >>> pd.DataFrame({'bin_center': [0.5, 1.5, 2.5],
     ...               'rPhiCrd-mean': [0.2, 0.3, 0.1]}).to_csv(
     ...     database / f'{state}-all-rPhiCrd-ensAvg.csv', index=False)

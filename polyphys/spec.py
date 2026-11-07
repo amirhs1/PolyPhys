@@ -91,9 +91,9 @@ table* of the analysis records are as :mod:`polyphys.analyze.pipeline`,
 
 Examples
 ========
->>> from polyphys.manage.parser import SumRuleCyl
+>>> from polyphys.tests.synthetic import ChainCyl
 >>> spec = ProjectSpec(
-...     parser=SumRuleCyl, group='bug', divisor=0.025,
+...     parser=ChainCyl, group='bug', divisor=0.025,
 ...     crowder_attr='phi_bulk_c',
 ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
 ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
@@ -424,27 +424,27 @@ class ProjectSpec:
 
     Examples
     --------
-    >>> from polyphys.manage.parser import HnsCub, SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl, RingCubBinders
     >>> spec = ProjectSpec(
-    ...     parser=HnsCub, group='nucleoid', divisor=0.01,
+    ...     parser=RingCubBinders, group='nucleoid', divisor=0.01,
     ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space', 'nmon', 'nhns', 'dcrowd'),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd', 'Hns': 'dhns'},
     ...     tseries_properties=('gyrTMon',))
     >>> spec.name, spec.geometry, spec.directions
-    ('HnsCub', 'cubic', ('r',))
+    ('RingCubBinders', 'cubic', ('r',))
     >>> spec.space_pattern, spec.space_hierarchy, spec.hierarchy
-    ('N*kbmm*nh*ac*epshc*', 'N*', 'N*')
+    ('N*nh*ac*', 'N*', 'N*')
     >>> spec.species_sizes['Hns']
     'dhns'
 
     A spec that names an attribute the parser does not set fails at once:
 
-    >>> ProjectSpec(SumRuleCyl, 'bug', 0.025, ('nhns',), {}, (),
+    >>> ProjectSpec(ChainCyl, 'bug', 0.025, ('nhns',), {}, (),
     ...             crowder_attr='phi_bulk_c')
     Traceback (most recent call last):
     ...
-    ValueError: SumRuleCyl does not set ['nhns'] at 'ensemble_long'.
+    ValueError: ChainCyl does not set ['nhns'] at 'ensemble_long'.
 
     Notes
     -----
@@ -661,9 +661,9 @@ class ProbeSpec:
 
     Examples
     --------
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> project = ProjectSpec(
-    ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     parser=ChainCyl, group='bug', divisor=0.025,
     ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
@@ -672,14 +672,14 @@ class ProbeSpec:
     ...     project=project, selections={'Mon': 'resid 1'}, chain='Mon',
     ...     observables=('rfloryT', 'fsdT', 'gyrT'), unwrap=False)
     >>> probe.name, probe.geometry, probe.selections['Mon']
-    ('SumRuleCyl', 'cylindrical', 'resid 1')
+    ('ChainCyl', 'cylindrical', 'resid 1')
 
     An observable the project's time series do not list fails at once:
 
     >>> ProbeSpec(project, {'Mon': 'resid 1'}, 'Mon', ('shapeT',), False)
     Traceback (most recent call last):
     ...
-    ValueError: SumRuleCyl: 'observables' names ['shapeTMon'], which ...
+    ValueError: ChainCyl: 'observables' names ['shapeTMon'], which ...
 
     A study whose histograms are probed names the species, the bin sizes,
     which may depend on the whole, and the block length; the bin sizes are
@@ -691,8 +691,8 @@ class ProbeSpec:
     ...     bin_sizes={'r': lambda info: 0.1 * min(info.dmon, info.dcrowd),
     ...                'z': 0.5},
     ...     histogram_species=('Mon', 'Crd'), block_frames=100)
-    >>> whole = SumRuleCyl(
-    ...     'N200epsilon5r10.5lz50sig0.5nc100dt0.005bdump1adump1ens1',
+    >>> whole = ChainCyl(
+    ...     'N200r10.5lz50ac0.5nc100dt0.005bdump1adump1ens1',
     ...     'whole', 'all')
     >>> probe.resolve(probe.bin_sizes['r'], whole), probe.recenter
     (0.05, 'half')
@@ -700,7 +700,7 @@ class ProbeSpec:
     A study with binders adds a :class:`BinderSpec`:
 
     >>> hns = ProjectSpec(
-    ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     parser=ChainCyl, group='bug', divisor=0.025,
     ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
@@ -887,9 +887,9 @@ class ProbeSpec:
 
         Examples
         --------
-        >>> from polyphys.manage.parser import SumRuleCyl
-        >>> whole = SumRuleCyl(
-        ...     'N200epsilon5r10.5lz50sig0.5nc100dt0.005bdump1adump1ens1',
+        >>> from polyphys.tests.synthetic import ChainCyl
+        >>> whole = ChainCyl(
+        ...     'N200r10.5lz50ac0.5nc100dt0.005bdump1adump1ens1',
         ...     'whole', 'all')
         >>> ProbeSpec.resolve(0.5, whole)
         0.5

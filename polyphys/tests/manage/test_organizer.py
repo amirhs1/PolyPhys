@@ -2,7 +2,7 @@
 
 Most inputs come from the ``make_lineage_tree`` factory in
 ``polyphys/tests/conftest.py``: tiny ``.npy`` files named for the
-``SumRuleCyl`` parser, under a directory whose name contains hyphens, as
+``ChainCyl`` parser, under a directory whose name contains hyphens, as
 every lineage directory name does. File ``(e, w, s)`` (ensemble, whole,
 segment, each from 1; ``s = 0`` for a whole file) holds
 ``1000 * e + 100 * w + 10 * s + k`` in row ``k``, so every expected sum,
@@ -49,7 +49,7 @@ from polyphys.manage.organizer import (
     whole_from_file,
     whole_from_segments,
 )
-from polyphys.manage.parser import SumRuleCyl
+from polyphys.tests.synthetic import ChainCyl
 from polyphys.manage.types import PhaseT, StageT
 from polyphys.manage.utils import round_to_multiple
 
@@ -63,14 +63,14 @@ pytestmark = pytest.mark.filterwarnings("error::pandas.errors.Pandas4Warning")
 @pytest.fixture
 def segment_tree(make_lineage_tree):
     """Return a segment tree: 2 ensembles x 2 wholes x 2 segments x 3 rows."""
-    return make_lineage_tree(SumRuleCyl, group="bug", n_rows=3)
+    return make_lineage_tree(ChainCyl, group="bug", n_rows=3)
 
 
 @pytest.fixture
 def whole_tree(make_lineage_tree):
     """Return a whole tree: 2 ensembles x 2 wholes x 3 rows."""
     return make_lineage_tree(
-        SumRuleCyl, group="bug", lineage="whole", n_rows=3
+        ChainCyl, group="bug", lineage="whole", n_rows=3
     )
 
 
@@ -78,7 +78,7 @@ def _parsed_names(tree, attr):
     """Map each tree file's (ensemble, whole) indices to a parsed name."""
     return {
         index[:2]: getattr(
-            SumRuleCyl(str(path), tree.lineage, tree.group, ispath=True),
+            ChainCyl(str(path), tree.lineage, tree.group, ispath=True),
             attr,
         )
         for path, index in tree.index.items()
@@ -110,11 +110,11 @@ def ensemble_names(whole_tree):
 def write_segments(tmp_path):
     """Factory: write arrays as segments j01, j02, ... of one whole."""
     stem = (
-        "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000ens1"
+        "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000ens1"
     )
 
     def _write(arrays):
-        directory = tmp_path / "SumRuleCyl-bug-segment"
+        directory = tmp_path / "ChainCyl-bug-segment"
         directory.mkdir(exist_ok=True)
         paths = []
         for seg_id, array in enumerate(arrays, start=1):
@@ -280,7 +280,7 @@ def test_whole_from_segments_tseries_concatenates_in_segment_order(
 ):
     """A tseries whole is its segments' rows, j01 first, then j02."""
     paths = [str(p) for p in segment_tree.paths]
-    wholes = whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", paths, ChainCyl, "bug",
                                  "tseries")
     np.testing.assert_array_equal(
         wholes[segment_whole_names[(1, 2)]],
@@ -293,7 +293,7 @@ def test_whole_from_segments_histogram_sums_segments(
 ):
     """A histogram whole is the element-wise sum of its segments."""
     paths = [str(p) for p in segment_tree.paths]
-    wholes = whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", paths, ChainCyl, "bug",
                                  "histogram")
     # (1210 + 1220, 1211 + 1221, 1212 + 1222)
     np.testing.assert_array_equal(
@@ -306,7 +306,7 @@ def test_whole_from_segments_keys_wholes_by_parsed_name(
 ):
     """There is one whole per parsed whole name, whatever the directory."""
     paths = [str(p) for p in segment_tree.paths]
-    wholes = whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", paths, ChainCyl, "bug",
                                  "tseries")
     assert "-" in segment_tree.root.name
     assert list(wholes) == list(segment_whole_names.values())
@@ -316,7 +316,7 @@ def test_whole_from_segments_bin_edge_keeps_shared_edges(write_segments):
     """Identical segment edges reduce to one copy of them."""
     edges = np.array([0.0, 1.0, 3.0])
     paths = write_segments([edges, edges])
-    wholes = whole_from_segments("binEdge", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("binEdge", paths, ChainCyl, "bug",
                                  "bin_edge")
     (whole,) = wholes.values()
     np.testing.assert_array_equal(whole, edges)
@@ -326,7 +326,7 @@ def test_whole_from_segments_bin_edge_rejects_differing_edges(write_segments):
     """Segments of one whole with different edges raise ValueError."""
     paths = write_segments([[0.0, 1.0, 3.0], [0.0, 1.0, 4.0]])
     with pytest.raises(ValueError, match="Bin edges are not identical"):
-        whole_from_segments("binEdge", paths, SumRuleCyl, "bug", "bin_edge")
+        whole_from_segments("binEdge", paths, ChainCyl, "bug", "bin_edge")
 
 
 def test_whole_from_segments_saves_each_whole(
@@ -336,7 +336,7 @@ def test_whole_from_segments_saves_each_whole(
     out = tmp_path / "out"
     out.mkdir()
     paths = [str(p) for p in segment_tree.paths]
-    wholes = whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", paths, ChainCyl, "bug",
                                  "tseries", save_to=out)
     name = segment_whole_names[(2, 1)]
     np.testing.assert_array_equal(
@@ -351,7 +351,7 @@ def test_whole_from_segments_rejects_descending_segment_ids(
     """Segments of a whole given in descending segment_id order raise."""
     paths = [str(p) for p in segment_tree.paths[1::-1]]
     with pytest.raises(ValueError, match=r"segment_id .*\[2, 1\]"):
-        whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug", relation)
+        whole_from_segments("gyrTMon", paths, ChainCyl, "bug", relation)
 
 
 @pytest.mark.parametrize("relation", ["histogram", "tseries", "bin_edge"])
@@ -360,7 +360,7 @@ def test_whole_from_segments_rejects_duplicate_segment(segment_tree, relation):
     first = str(segment_tree.paths[0])
     with pytest.raises(ValueError, match=r"segment_id .*\[1, 1\]"):
         whole_from_segments(
-            "gyrTMon", [first, first], SumRuleCyl, "bug", relation
+            "gyrTMon", [first, first], ChainCyl, "bug", relation
         )
 
 
@@ -368,7 +368,7 @@ def test_whole_from_segments_rejects_duplicate_segment(segment_tree, relation):
 def test_whole_from_segments_rejects_a_gap_in_segment_ids(tmp_path, relation):
     """Segments j01 and j03 of one whole raise instead of being joined as if
     adjacent, which would shift the time of every later frame."""
-    whole = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000ens1"
+    whole = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000ens1"
     paths = []
     for seg_id in (1, 3):
         path = tmp_path / f"{whole}.j{seg_id:02d}.bug.gyrTMon.npy"
@@ -377,7 +377,7 @@ def test_whole_from_segments_rejects_a_gap_in_segment_ids(tmp_path, relation):
 
     with pytest.raises(ValueError, match=re.escape(
             f"The segments of whole '{whole}' skip a segment_id: [1, 3]")):
-        whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug", relation)
+        whole_from_segments("gyrTMon", paths, ChainCyl, "bug", relation)
 
 
 def test_whole_from_segments_accepts_interleaved_wholes(segment_tree):
@@ -385,9 +385,9 @@ def test_whole_from_segments_accepts_interleaved_wholes(segment_tree):
     ordered = [str(p) for p in segment_tree.paths]
     # All j01 files first, then all j02 files; each whole stays in order.
     interleaved = ordered[0::2] + ordered[1::2]
-    expected = whole_from_segments("gyrTMon", ordered, SumRuleCyl, "bug",
+    expected = whole_from_segments("gyrTMon", ordered, ChainCyl, "bug",
                                    "tseries")
-    wholes = whole_from_segments("gyrTMon", interleaved, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", interleaved, ChainCyl, "bug",
                                  "tseries")
     assert list(wholes) == list(expected)
     np.testing.assert_array_equal(
@@ -399,14 +399,14 @@ def test_whole_from_segments_rejects_unknown_relation(segment_tree):
     """A relation other than histogram, tseries, or bin_edge raises."""
     paths = [str(p) for p in segment_tree.paths]
     with pytest.raises(ValueError, match="'nope' is an invalid option"):
-        whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug", "nope")
+        whole_from_segments("gyrTMon", paths, ChainCyl, "bug", "nope")
 
 
 def test_whole_from_file_loads_each_whole_by_parsed_name(
     whole_tree, whole_names
 ):
     """Each whole file loads under its parsed whole name."""
-    wholes = whole_from_file(whole_tree.paths, SumRuleCyl, "bug")
+    wholes = whole_from_file(whole_tree.paths, ChainCyl, "bug")
     assert "-" in whole_tree.root.name
     assert list(wholes) == list(whole_names.values())
     np.testing.assert_array_equal(
@@ -417,8 +417,8 @@ def test_whole_from_file_loads_each_whole_by_parsed_name(
 def test_whole_from_file_accepts_grouped_paths(whole_tree):
     """1-tuples of paths, as sort_filenames gives, load like bare paths."""
     grouped = list(zip(map(str, whole_tree.paths)))
-    bare = whole_from_file(whole_tree.paths, SumRuleCyl, "bug")
-    wholes = whole_from_file(grouped, SumRuleCyl, "bug")
+    bare = whole_from_file(whole_tree.paths, ChainCyl, "bug")
+    wholes = whole_from_file(grouped, ChainCyl, "bug")
     assert list(wholes) == list(bare)
     np.testing.assert_array_equal(
         np.stack(list(wholes.values())), np.stack(list(bare.values()))
@@ -428,7 +428,7 @@ def test_whole_from_file_accepts_grouped_paths(whole_tree):
 def test_whole_from_file_rejects_two_files_of_one_whole(tmp_path):
     """Two files that parse to one whole name raise, naming both, instead of
     the second silently replacing the first."""
-    whole = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000ens1"
+    whole = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000ens1"
     paths = []
     for folder in ("a", "b"):
         (tmp_path / folder).mkdir()
@@ -438,13 +438,13 @@ def test_whole_from_file_rejects_two_files_of_one_whole(tmp_path):
 
     with pytest.raises(ValueError, match=re.escape(
             f"'{paths[0]}' and '{paths[1]}' are both whole '{whole}'")):
-        whole_from_file(paths, SumRuleCyl, "bug")
+        whole_from_file(paths, ChainCyl, "bug")
 
 
 def test_whole_from_file_rejects_unsupported_path_item():
     """An item that is neither a path nor a sequence of one raises."""
     with pytest.raises(TypeError, match="Unsupported path item"):
-        whole_from_file([42], SumRuleCyl, "bug")
+        whole_from_file([42], ChainCyl, "bug")
 
 
 # Grouping wholes into ensembles
@@ -527,8 +527,8 @@ def test_ensemble_groups_wholes_by_state_point(
     whole_tree, whole_names, ensemble_names
 ):
     """Wholes of two state points form two ensembles keyed by ensemble_long."""
-    wholes = whole_from_file(whole_tree.paths, SumRuleCyl, "bug")
-    ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "vector")
+    wholes = whole_from_file(whole_tree.paths, ChainCyl, "bug")
+    ens = ensemble("gyrTMon", wholes, ChainCyl, "bug", "vector")
     assert list(ens) == [ensemble_names[1], ensemble_names[2]]
     assert list(ens[ensemble_names[2]].columns) == [
         whole_names[(2, 1)], whole_names[(2, 2)]
@@ -539,7 +539,7 @@ def test_ensemble_takes_bin_center_from_each_ensemble_edges(
     whole_tree, whole_names, ensemble_names
 ):
     """Each ensemble's bin_center comes from its own wholes' edges."""
-    wholes = whole_from_file(whole_tree.paths, SumRuleCyl, "bug")
+    wholes = whole_from_file(whole_tree.paths, ChainCyl, "bug")
     edges_1 = np.array([0.0, 1.0, 3.0, 6.0])
     edges_2 = np.array([0.0, 2.0, 4.0, 8.0])
     whole_edges = {
@@ -548,7 +548,7 @@ def test_ensemble_takes_bin_center_from_each_ensemble_edges(
         whole_names[(2, 1)]: edges_2,
         whole_names[(2, 2)]: edges_2,
     }
-    ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "vector",
+    ens = ensemble("gyrTMon", wholes, ChainCyl, "bug", "vector",
                    whole_edges=whole_edges)
     # Analytic midpoints of each ensemble's edges
     np.testing.assert_allclose(
@@ -587,7 +587,7 @@ def test_ensemble_merges_by_whole_type(
 ):
     """matrix stacks, dataframe averages, and bin_edge shares the wholes."""
     wholes = {whole_names[(1, 1)]: first, whole_names[(1, 2)]: second}
-    ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", whole_type)
+    ens = ensemble("gyrTMon", wholes, ChainCyl, "bug", whole_type)
     np.testing.assert_array_equal(np.asarray(ens[ensemble_names[1]]),
                                   expected)
 
@@ -598,8 +598,8 @@ def test_ensemble_saves_each_ensemble(
     """save_to writes each ensemble to <ensemble_long>-<group>-<prop>.csv."""
     out = tmp_path / "out"
     out.mkdir()
-    wholes = whole_from_file(whole_tree.paths, SumRuleCyl, "bug")
-    ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "vector",
+    wholes = whole_from_file(whole_tree.paths, ChainCyl, "bug")
+    ens = ensemble("gyrTMon", wholes, ChainCyl, "bug", "vector",
                    save_to=out)
     name = ensemble_names[2]
     pd.testing.assert_frame_equal(
@@ -609,16 +609,16 @@ def test_ensemble_saves_each_ensemble(
 
 def test_ensemble_rejects_unknown_whole_type(whole_tree):
     """A whole_type outside the four accepted values raises ValueError."""
-    wholes = whole_from_file(whole_tree.paths, SumRuleCyl, "bug")
+    wholes = whole_from_file(whole_tree.paths, ChainCyl, "bug")
     with pytest.raises(ValueError, match="'nope' is an invalid option"):
-        ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "nope")
+        ensemble("gyrTMon", wholes, ChainCyl, "bug", "nope")
 
 
 @pytest.fixture
 def hist_wholes():
     """Return two replicate histogram wholes of one state point."""
     base = (
-        "N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000adump"
+        "N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump"
         "10000ens"
     )
     return {
@@ -641,7 +641,7 @@ def test_ensemble_vector_bin_center_is_edge_midpoints(hist_wholes,
                                                       hist_edges):
     """With whole_edges, a vector ensemble's bin_center is the midpoints."""
     ens = ensemble(
-        "rhoMon", hist_wholes, SumRuleCyl, "bug", "vector",
+        "rhoMon", hist_wholes, ChainCyl, "bug", "vector",
         whole_edges=hist_edges,
     )
     (ens_df,) = ens.values()
@@ -654,7 +654,7 @@ def test_ensemble_vector_bin_center_is_edge_midpoints(hist_wholes,
 
 def test_ensemble_without_whole_edges_has_no_bin_center(hist_wholes):
     """Without whole_edges, a vector ensemble has one column per whole only."""
-    ens = ensemble("rhoMon", hist_wholes, SumRuleCyl, "bug", "vector")
+    ens = ensemble("rhoMon", hist_wholes, ChainCyl, "bug", "vector")
     (ens_df,) = ens.values()
     assert list(ens_df.columns) == list(hist_wholes)
 
@@ -663,7 +663,7 @@ def test_ensemble_avg_keeps_bin_center_from_ensemble(hist_wholes,
                                                      hist_edges):
     """ensemble_avg passes an ensemble's bin_center through unchanged."""
     ens = ensemble(
-        "rhoMon", hist_wholes, SumRuleCyl, "bug", "vector",
+        "rhoMon", hist_wholes, ChainCyl, "bug", "vector",
         whole_edges=hist_edges,
     )
     (ens_df,) = ens.values()
@@ -682,7 +682,7 @@ def test_ensemble_rejects_whole_edges_for_non_vector(
     """whole_edges with any whole_type other than 'vector' raises."""
     with pytest.raises(ValueError, match="'whole_edges' is only valid"):
         ensemble(
-            "rhoMon", hist_wholes, SumRuleCyl, "bug", whole_type,
+            "rhoMon", hist_wholes, ChainCyl, "bug", whole_type,
             whole_edges=hist_edges,
         )
 
@@ -1169,8 +1169,8 @@ def test_parents_stamps_rejects_unknown_lineage(segment_stamps):
 def space_states():
     """Return the ensemble_long names of the two synthetic state points."""
     return [
-        "N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000",
-        "N200epsilon5.0r10.5lz25.0sig2.0nc2000dt0.005bdump2000adump5000",
+        "N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000",
+        "N200r10.5lz25.0ac2.0nc2000dt0.005bdump2000adump5000",
     ]
 
 
@@ -1208,7 +1208,7 @@ def state_attr(space_states):
     """Factory: an attribute of each state point, repeated n_rows times."""
 
     def _values(attr, n_rows):
-        parsers = [SumRuleCyl(s, "ensemble_long", "all") for s in space_states]
+        parsers = [ChainCyl(s, "ensemble_long", "all") for s in space_states]
         return np.repeat([getattr(p, attr) for p in parsers], n_rows)
 
     return _values
@@ -1220,7 +1220,7 @@ def test_space_tseries_concatenates_ensembles(make_ens_avg_space,
     database = make_ens_avg_space(
         "gyrTMon", [[0.0, 1.0, 2.0], [10.0, 11.0, 12.0]]
     )
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", ["dcyl"],
+    space = space_tseries(database, "gyrTMon", ChainCyl, "N*", ["dcyl"],
                           "all")
     assert list(space.index) == list(range(6))
     assert "other-mean" not in space.columns
@@ -1239,7 +1239,7 @@ def test_space_tseries_reads_database_without_trailing_separator(
         "gyrTMon", [[0.0, 1.0, 2.0], [10.0, 11.0, 12.0]]
     )
 
-    space = space_tseries(database.rstrip("/"), "gyrTMon", SumRuleCyl, "N*",
+    space = space_tseries(database.rstrip("/"), "gyrTMon", ChainCyl, "N*",
                           [], "all")
 
     np.testing.assert_allclose(
@@ -1250,7 +1250,7 @@ def test_space_tseries_reads_database_without_trailing_separator(
 def test_space_tseries_scales_t_index_and_time(make_ens_avg_space):
     """For all, t_index is frame index times adump; time is t_index * dt."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all")
+    space = space_tseries(database, "gyrTMon", ChainCyl, "N*", [], "all")
     frames = np.array([0, 1, 2, 0, 1, 2])
     # adump = 5000 and dt = 0.005 in the filenames
     np.testing.assert_array_equal(space["t_index"], frames * 5000)
@@ -1261,7 +1261,7 @@ def test_space_tseries_scales_bug_by_bdump(make_ens_avg_space):
     """For bug, t_index is frame index times bdump, not adump."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2,
                                   group="bug")
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "bug")
+    space = space_tseries(database, "gyrTMon", ChainCyl, "N*", [], "bug")
     frames = np.array([0, 1, 2, 0, 1, 2])
     # bdump = 2000 and dt = 0.005 in the filenames
     np.testing.assert_array_equal(space["t_index"], frames * 2000)
@@ -1272,7 +1272,7 @@ def test_space_tseries_rejects_dump_key_argument(make_ens_avg_space):
     """A dump keyword passed by position fails instead of binding divisor."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
     with pytest.raises(TypeError, match="takes 6 positional arguments"):
-        space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
+        space_tseries(database, "gyrTMon", ChainCyl, "N*", [], "all",
                       "adump")
 
 
@@ -1280,7 +1280,7 @@ def test_space_tseries_adds_phi_bulk_c_by_default(make_ens_avg_space,
                                                   state_attr):
     """The crowder fraction comes from phi_bulk_c without being listed."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", ["dcyl"],
+    space = space_tseries(database, "gyrTMon", ChainCyl, "N*", ["dcyl"],
                           "all")
     assert "phi_c_bulk" not in space.columns
     np.testing.assert_allclose(space["phi_bulk_c"],
@@ -1292,7 +1292,7 @@ def test_space_tseries_rounds_crowder_with_round_to_multiple(
 ):
     """phi_bulk_c_round is round_to_multiple of the crowder column."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
+    space = space_tseries(database, "gyrTMon", ChainCyl, "N*", [], "all",
                           divisor=0.05, round_to=2)
     expected = space["phi_bulk_c"].apply(round_to_multiple, args=(0.05, 2))
     np.testing.assert_array_equal(space["phi_bulk_c_round"], expected)
@@ -1302,7 +1302,7 @@ def test_space_tseries_reads_named_crowder_attr(make_ens_avg_space,
                                                 state_attr):
     """crowder_attr selects the parser attribute that is rounded."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", [], "all",
+    space = space_tseries(database, "gyrTMon", ChainCyl, "N*", [], "all",
                           crowder_attr="phi_bulk_m")
     assert "phi_bulk_c" not in space.columns
     np.testing.assert_allclose(space["phi_bulk_m"],
@@ -1312,7 +1312,7 @@ def test_space_tseries_reads_named_crowder_attr(make_ens_avg_space,
 def test_space_tseries_saves_space_csv(tmp_path, make_ens_avg_space):
     """is_save writes the returned frame to the analysis space directory."""
     database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
-    space = space_tseries(database, "gyrTMon", SumRuleCyl, "N*", ["dcyl"],
+    space = space_tseries(database, "gyrTMon", ChainCyl, "N*", ["dcyl"],
                           "all", is_save=True)
     saved = tmp_path / "analysis" / "N200-all-space" / \
         "N200-all-gyrTMon-space.csv"
@@ -1326,7 +1326,7 @@ def test_space_hists_concatenates_and_normalizes(make_ens_avg_space,
         "rhoMon", [[1.0, 2.0, 1.0], [2.0, 4.0, 2.0]]
     )
     bin_center = np.array([0.5, 1.5, 2.5])
-    space = space_hists(database, "rhoMon", SumRuleCyl, "N*", ["dcyl"],
+    space = space_hists(database, "rhoMon", ChainCyl, "N*", ["dcyl"],
                         "all", bin_center=bin_center, normalize=True)
     assert len(space) == 6
     assert "other-mean" not in space.columns
@@ -1345,7 +1345,7 @@ def test_space_hists_zero_histogram_normalizes_to_zero(make_ens_avg_space):
     """An all-zero histogram warns and gets a zero normalized column."""
     database = make_ens_avg_space("rhoMon", [[0.0, 0.0], [0.0, 0.0]])
     with pytest.warns(UserWarning, match="All values are zero"):
-        space = space_hists(database, "rhoMon", SumRuleCyl, "N*", [], "all",
+        space = space_hists(database, "rhoMon", ChainCyl, "N*", [], "all",
                             normalize=True)
     np.testing.assert_array_equal(space["rhoMon-norm"], np.zeros(4))
 
@@ -1353,7 +1353,7 @@ def test_space_hists_zero_histogram_normalizes_to_zero(make_ens_avg_space):
 def test_space_hists_saves_space_csv(tmp_path, make_ens_avg_space):
     """is_save writes the returned frame to the analysis space directory."""
     database = make_ens_avg_space("rhoMon", [[1.0, 2.0, 1.0]] * 2)
-    space = space_hists(database, "rhoMon", SumRuleCyl, "N*", [], "all",
+    space = space_hists(database, "rhoMon", ChainCyl, "N*", [], "all",
                         is_save=True)
     saved = tmp_path / "analysis" / "N200-all-space" / \
         "N200-all-rhoMon-space.csv"
@@ -1369,9 +1369,9 @@ def test_lineage_tseries_ensemble_average_matches_tree_values(
 ):
     """Two wholes 100 apart average to 1000e + 150 + 10s + k, var 5000."""
     paths = [str(p) for p in segment_tree.paths]
-    wholes = whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", paths, ChainCyl, "bug",
                                  "tseries")
-    ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "vector")
+    ens = ensemble("gyrTMon", wholes, ChainCyl, "bug", "vector")
     avg = ensemble_avg("gyrTMon", ens, "bug", "dataframe")
     ens_1 = avg[ensemble_names[1]]
     np.testing.assert_allclose(
@@ -1389,11 +1389,11 @@ def test_lineage_saved_ens_avg_feeds_space_tseries(tmp_path, segment_tree):
     ens_avg_dir = tmp_path / "analysis" / "N20-bug-ensAvg"
     ens_avg_dir.mkdir(parents=True)
     paths = [str(p) for p in segment_tree.paths]
-    wholes = whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", paths, ChainCyl, "bug",
                                  "tseries")
-    ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "vector")
+    ens = ensemble("gyrTMon", wholes, ChainCyl, "bug", "vector")
     ensemble_avg("gyrTMon", ens, "bug", "dataframe", save_to=ens_avg_dir)
-    space = space_tseries(str(ens_avg_dir) + "/", "gyrTMon", SumRuleCyl,
+    space = space_tseries(str(ens_avg_dir) + "/", "gyrTMon", ChainCyl,
                           "N*", [], "bug")
     # 2 ensembles x 6 frames; ensemble 2 is 1000 above ensemble 1
     np.testing.assert_allclose(
@@ -1411,9 +1411,9 @@ def test_lineage_saved_ens_avg_feeds_space_tseries(tmp_path, segment_tree):
 def test_lineage_histogram_conserves_total_counts(segment_tree):
     """Histogram counts summed over a space equal those over its segments."""
     paths = [str(p) for p in segment_tree.paths]
-    wholes = whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug",
+    wholes = whole_from_segments("gyrTMon", paths, ChainCyl, "bug",
                                  "histogram")
-    ens = ensemble("gyrTMon", wholes, SumRuleCyl, "bug", "vector")
+    ens = ensemble("gyrTMon", wholes, ChainCyl, "bug", "vector")
     avg = ensemble_avg("gyrTMon", ens, "bug", "dataframe")
     # Ensemble mean times 2 wholes, summed over bins and ensembles
     total = 2 * pd.concat(avg.values())["gyrTMon-mean"].sum()

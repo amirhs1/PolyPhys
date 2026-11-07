@@ -82,12 +82,49 @@ python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.g
 ## Quickstart
 
 Decode a simulation filename into physics, and read off where it sits in the
-hierarchy:
+hierarchy. A study declares its parser, a subclass of `ParserBase` that lists
+the keywords of its names; this one reads a linear chain among crowders in a
+cylinder, and the [Studies](docs/source/studies.md) page shows how to declare
+one:
 
 ```python
->>> from polyphys.manage.parser import SumRuleCyl
->>> artifact = SumRuleCyl(
-...     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1.j03',
+>>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
+>>> long_keys = ('N', 'r', 'lz', 'ac', 'nc', 'dt', 'bdump', 'adump')
+>>> bulk = ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']
+>>> class ChainCyl(ParserBase):
+...     """A linear chain among crowders in a cylinder, periodic along z."""
+...     _geometry = 'cylindrical'
+...     _topology = 'linear'
+...     _groups = ['bug', 'all']
+...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
+...     _keywords = {
+...         'N': KeywordSpec('nmon', int),
+...         'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+...         'D': KeywordSpec('dcyl', float),
+...         'lz': KeywordSpec('lcyl', float, scale=2.0),
+...         'ac': KeywordSpec('dcrowd', float),
+...         'nc': KeywordSpec('ncrowd', int),
+...         'dt': KeywordSpec('dt', float),
+...         'bdump': KeywordSpec('bdump', int),
+...         'adump': KeywordSpec('adump', int),
+...         'ens': KeywordSpec('ensemble_id', int),
+...         'j': KeywordSpec('segment_id', int),
+...     }
+...     _patterns = {
+...         'segment': (*long_keys, 'ens', 'j'),
+...         'whole': (*long_keys, 'ens'),
+...         'ensemble_long': long_keys,
+...         'ensemble': ('N', 'D', 'ac', 'nc'),
+...         'space': ('N', 'D', 'ac'),
+...     }
+...     _defaults = {'dmon': 1}
+...     _species = (Species('m', 'nmon', 'dmon'),
+...                 Species('c', 'ncrowd', 'dcrowd'))
+...     _project_attributes = {
+...         'segment': bulk, 'whole': bulk, 'ensemble_long': bulk,
+...         'ensemble': ['dmon'], 'space': ['dmon']}
+>>> artifact = ChainCyl(
+...     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1.j03',
 ...     lineage='segment',
 ...     group='all',
 ... )
@@ -124,7 +161,7 @@ replicates and its sweep without touching the filesystem:
 >>> artifact.lineage_genealogy
 ['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
 >>> artifact.whole
-'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1'
+'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1'
 >>> artifact.ensemble
 'N200D20ac2nc1000'
 >>> artifact.space

@@ -27,7 +27,7 @@ from numpy.testing import (
     assert_equal,
 )
 
-from polyphys.manage.parser import SumRuleCyl, TransFociCub
+from polyphys.tests.synthetic import ChainCyl, RingCub
 from polyphys.spec import ProbeSpec, ProjectSpec
 
 pytest.importorskip("MDAnalysis")
@@ -492,11 +492,11 @@ def test_groups_from_two_universes_raise(make_chain_universe, two_species,
 
 @pytest.fixture
 def cylinder_spec():
-    """A SumRuleCyl probe spec with the research code's bin sizes: 0.1 of
+    """A ChainCyl probe spec with the research code's bin sizes: 0.1 of
     the smaller diameter along r, x, and y, half of it along z, pi/36 along
     theta."""
     project = ProjectSpec(
-        parser=SumRuleCyl, group='bug', divisor=0.025,
+        parser=ChainCyl, group='bug', divisor=0.025,
         crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
         species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
@@ -519,8 +519,8 @@ def test_histogram_edges_of_a_cylinder(cylinder_spec):
     """For dcyl = 4 and lcyl = 20 with unit beads: r has 25 bins of 0.1 to
     the wall surface 2.5, z 40 bins of 0.5 over [-10, 10], theta 72 bins
     over [-pi, pi], and x and y 50 bins of 0.1 over [-2.5, 2.5]."""
-    whole = SumRuleCyl(
-        'N10epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1ens1', 'whole', 'all')
+    whole = ChainCyl(
+        'N10r2.5lz10ac1nc0dt0.005bdump1adump1ens1', 'whole', 'all')
 
     edges = histogram_edges(cylinder_spec, whole)
 
@@ -539,8 +539,8 @@ def test_histogram_edges_of_a_cylinder(cylinder_spec):
 def test_histogram_edges_scale_with_the_whole(cylinder_spec):
     """A crowder of diameter 0.5 halves the r bin size, so the same cylinder
     gets 50 r bins."""
-    whole = SumRuleCyl(
-        'N10epsilon5r2.5lz10sig0.5nc4dt0.005bdump1adump1ens1', 'whole',
+    whole = ChainCyl(
+        'N10r2.5lz10ac0.5nc4dt0.005bdump1adump1ens1', 'whole',
         'all')
 
     edges = histogram_edges(cylinder_spec, whole)
@@ -553,7 +553,7 @@ def test_histogram_edges_of_a_cube():
     extended upward to a whole bin; x, y, and z have 60 bins of 1.5 over
     [-45, 45]."""
     project = ProjectSpec(
-        parser=TransFociCub, group='bug', divisor=0.025,
+        parser=RingCub, group='bug', divisor=0.025,
         crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon_small', 'lcube'),
         species_sizes={'Mon': 'dmon_small', 'Foci': 'dmon_large',
@@ -563,7 +563,7 @@ def test_histogram_edges_of_a_cube():
         project, {'Mon': 'resid 1', 'Crd': 'resid 0'}, 'Mon', ('gyrT',),
         unwrap=True, histogram_species=('Mon',), block_frames=2,
         bin_sizes={'r': 0.3, 'x': 1.5, 'y': 1.5, 'z': 1.5})
-    whole = TransFociCub(
+    whole = RingCub(
         'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000ens4', 'whole',
         'all')
 
@@ -585,8 +585,8 @@ def test_histogram_edges_need_every_key(cylinder_spec):
         cylinder_spec.project, dict(cylinder_spec.selections), 'Mon',
         ('gyrT',), unwrap=False, histogram_species=('Mon',), block_frames=2,
         bin_sizes={'r': 0.1, 'z': 0.5, 'theta': np.pi / 36})
-    whole = SumRuleCyl(
-        'N10epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1ens1', 'whole', 'all')
+    whole = ChainCyl(
+        'N10r2.5lz10ac1nc0dt0.005bdump1adump1ens1', 'whole', 'all')
 
     with pytest.raises(ValueError, match=r"lacks \['x', 'y'\]"):
         histogram_edges(spec, whole)
@@ -598,8 +598,8 @@ def test_from_spec_selects_the_species_and_carries_the_spec(
     and takes the geometry, block length, and recentering from the spec."""
     universe = make_chain_universe(two_species, atom_types=types,
                                    masses=(1.0, 1.0))
-    whole = SumRuleCyl(
-        'N3epsilon5r2.5lz10sig1nc3dt0.005bdump1adump1ens1', 'whole', 'all')
+    whole = ChainCyl(
+        'N3r2.5lz10ac1nc3dt0.005bdump1adump1ens1', 'whole', 'all')
 
     analysis = SpatialHistograms.from_spec(universe, cylinder_spec, whole)
 
@@ -616,8 +616,8 @@ def test_from_spec_needs_histogram_species(make_chain_universe, two_species,
     spec = ProbeSpec(cylinder_spec.project, dict(cylinder_spec.selections),
                      'Mon', ('gyrT',), unwrap=False)
     universe = make_chain_universe(two_species)
-    whole = SumRuleCyl(
-        'N3epsilon5r2.5lz10sig1nc3dt0.005bdump1adump1ens1', 'whole', 'all')
+    whole = ChainCyl(
+        'N3r2.5lz10ac1nc3dt0.005bdump1adump1ens1', 'whole', 'all')
 
     with pytest.raises(ValueError, match="names no histogram species"):
         SpatialHistograms.from_spec(universe, spec, whole)

@@ -588,23 +588,23 @@ class LocalDensities:
     Examples
     --------
     With a stub kernel that returns the counts and a constant, on one whole
-    of the ``SumRuleCyl`` study:
+    of the ``ChainCyl`` study:
 
     >>> import numpy as np
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> from polyphys.spec import ProjectSpec, histogram
     >>> spec = ProjectSpec(
-    ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     parser=ChainCyl, group='bug', divisor=0.025,
     ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space',), species_sizes={'Crd': 'dcrowd'},
     ...     tseries_properties=())
-    >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100'
+    >>> whole = ('N20r5.5lz25.0ac1.0nc100'
     ...          'dt0.005bdump1000adump5000ens1')
     >>> def kernel(counts, edges, info, direction, size):
     ...     return counts, np.full(counts.shape, size)
     >>> context = HookContext(
     ...     histogram('r', 'Crd'), spec=spec, group='all',
-    ...     infos={whole: SumRuleCyl(whole, 'whole', 'all')},
+    ...     infos={whole: ChainCyl(whole, 'whole', 'all')},
     ...     edges={whole: np.array([0.0, 1.0, 2.0])}, density=kernel)
     >>> outputs = LocalDensities()({whole: np.array([3.0, 5.0])}, context)
     >>> [out.name for out in outputs]
@@ -814,10 +814,10 @@ class FociPairDistances:
     over two frames, on a grid of unit bins to 3:
 
     >>> import numpy as np
-    >>> from polyphys.manage.parser import SumRuleCubHeteroRing
+    >>> from polyphys.tests.synthetic import RingCub
     >>> from polyphys.spec import ProjectSpec, matrix_tseries
     >>> spec = ProjectSpec(
-    ...     parser=SumRuleCubHeteroRing, group='bug', divisor=0.025,
+    ...     parser=RingCub, group='bug', divisor=0.025,
     ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space',), species_sizes={},
     ...     tseries_properties=())
@@ -1065,19 +1065,19 @@ def reduce_space(
 
     Examples
     --------
-    Two replicates of one state point of the ``SumRuleCyl`` study, written
+    Two replicates of one state point of the ``ChainCyl`` study, written
     as wholes and reduced without saving:
 
     >>> import tempfile
     >>> import numpy as np
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> from polyphys.spec import AnalysisTable, ProjectSpec, tseries
     >>> spec = ProjectSpec(
-    ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     parser=ChainCyl, group='bug', divisor=0.025,
     ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space',), species_sizes={'Mon': 'dmon'},
     ...     tseries_properties=('gyrTMon',))
-    >>> stem = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> stem = 'N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000'
     >>> root = tempfile.mkdtemp()
     >>> np.save(f'{root}/{stem}ens1-bug-gyrTMon.npy', np.array([1.0, 2.0]))
     >>> np.save(f'{root}/{stem}ens2-bug-gyrTMon.npy', np.array([3.0, 6.0]))
@@ -1223,15 +1223,15 @@ def space_tseries_from_spec(
     >>> import tempfile
     >>> import pandas as pd
     >>> from pathlib import Path
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> from polyphys.spec import ProjectSpec
     >>> spec = ProjectSpec(
-    ...     parser=SumRuleCyl, group='bug', divisor=0.1,
+    ...     parser=ChainCyl, group='bug', divisor=0.1,
     ...     crowder_attr='phi_bulk_c', physical_attrs=('nmon',),
     ...     species_sizes={'Mon': 'dmon'}, tseries_properties=('gyrTMon',))
     >>> database = Path(tempfile.mkdtemp()) / 'analysis' / 'N20-bug-ensAvg'
     >>> database.mkdir(parents=True)
-    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> state = 'N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000'
     >>> pd.DataFrame({'gyrTMon-mean': [1.0, 2.0]}).to_csv(
     ...     database / f'{state}-bug-gyrTMon-ensAvg.csv', index=False)
     >>> space = space_tseries_from_spec(database, spec, 'gyrTMon')
@@ -1318,15 +1318,15 @@ def space_hists_from_spec(
     >>> import numpy as np
     >>> import pandas as pd
     >>> from pathlib import Path
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> from polyphys.spec import ProjectSpec
     >>> spec = ProjectSpec(
-    ...     parser=SumRuleCyl, group='bug', divisor=0.1,
+    ...     parser=ChainCyl, group='bug', divisor=0.1,
     ...     crowder_attr='phi_bulk_c', physical_attrs=('nmon',),
     ...     species_sizes={'Mon': 'dmon'}, tseries_properties=())
     >>> database = Path(tempfile.mkdtemp()) / 'analysis' / 'N20-all-ensAvg'
     >>> database.mkdir(parents=True)
-    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> state = 'N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000'
     >>> pd.DataFrame({'rHistMon-mean': [1.0, 3.0]}).to_csv(
     ...     database / f'{state}-all-rHistMon-ensAvg.csv', index=False)
     >>> space = space_hists_from_spec(
@@ -1446,7 +1446,7 @@ def equilibrium_wholes(
     >>> import tempfile
     >>> import numpy as np
     >>> import pandas as pd
-    >>> stem = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> stem = 'N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000'
     >>> wholes = [f'{stem}ens1', f'{stem}ens2']
     >>> root = tempfile.mkdtemp()
     >>> pd.DataFrame({wholes[0]: np.tile([0.0, 2.0], 2048),

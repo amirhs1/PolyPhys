@@ -182,8 +182,10 @@ _KEYWORD_DEFAULTS: dict[str, float] = {
     "nl": 2,
     "nh": 2,
     "nc": 100,
+    "nb": 10,
     "am": 1.0,
     "ac": 1.0,
+    "ab": 2.0,
     "al": 2.0,
     "ml": 8.0,
     "sig": 1.0,
@@ -355,7 +357,7 @@ def write_lineage_tree(
     .. code-block:: python
 
         def test_example(make_lineage_tree):
-            tree = make_lineage_tree(SumRuleCyl, n_ensembles=1)
+            tree = make_lineage_tree(ChainCyl, n_ensembles=1)
             assert len(tree.paths) == 4
     """
     sizes = {

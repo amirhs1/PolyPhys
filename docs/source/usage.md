@@ -44,13 +44,50 @@ python -m pip install -e ".[docs,dev,mda,viz]"
 
 ## Quickstart
 
-`polyphys.manage.parser` decodes a simulation filename into typed physical
-attributes and derives the artifact's position in the project hierarchy:
+A parser decodes a simulation filename into typed physical attributes and
+derives the artifact's position in the project hierarchy. A study declares
+its parser as a subclass of {class}`~polyphys.manage.parser.ParserBase`, as
+the [Studies](studies.md) page shows; this one reads a linear chain among
+crowders in a cylinder:
 
 ```python
->>> from polyphys.manage.parser import SumRuleCyl
->>> artifact = SumRuleCyl(
-...     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000ens1.j03',
+>>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
+>>> long_keys = ('N', 'r', 'lz', 'ac', 'nc', 'dt', 'bdump', 'adump')
+>>> bulk = ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']
+>>> class ChainCyl(ParserBase):
+...     """A linear chain among crowders in a cylinder, periodic along z."""
+...     _geometry = 'cylindrical'
+...     _topology = 'linear'
+...     _groups = ['bug', 'all']
+...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
+...     _keywords = {
+...         'N': KeywordSpec('nmon', int),
+...         'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+...         'D': KeywordSpec('dcyl', float),
+...         'lz': KeywordSpec('lcyl', float, scale=2.0),
+...         'ac': KeywordSpec('dcrowd', float),
+...         'nc': KeywordSpec('ncrowd', int),
+...         'dt': KeywordSpec('dt', float),
+...         'bdump': KeywordSpec('bdump', int),
+...         'adump': KeywordSpec('adump', int),
+...         'ens': KeywordSpec('ensemble_id', int),
+...         'j': KeywordSpec('segment_id', int),
+...     }
+...     _patterns = {
+...         'segment': (*long_keys, 'ens', 'j'),
+...         'whole': (*long_keys, 'ens'),
+...         'ensemble_long': long_keys,
+...         'ensemble': ('N', 'D', 'ac', 'nc'),
+...         'space': ('N', 'D', 'ac'),
+...     }
+...     _defaults = {'dmon': 1}
+...     _species = (Species('m', 'nmon', 'dmon'),
+...                 Species('c', 'ncrowd', 'dcrowd'))
+...     _project_attributes = {
+...         'segment': bulk, 'whole': bulk, 'ensemble_long': bulk,
+...         'ensemble': ['dmon'], 'space': ['dmon']}
+>>> artifact = ChainCyl(
+...     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1.j03',
 ...     lineage='segment',
 ...     group='all',
 ... )
@@ -71,20 +108,20 @@ and `space`; the organizer uses them as join keys. Two rules fix their text.
 
 - The long names, `segment`, `whole`, and `ensemble_long`, are cut from the
   parsed name, so they keep its text, and they carry no topology suffix. A
-  segment `…ens1.j03.ring` and a whole `…ens1.ring` of one simulation both
-  give the `whole` name `…ens1`.
+  segment `…ens1.j03.linear` and a whole `…ens1.linear` of one simulation
+  both give the `whole` name `…ens1`.
 - The short names, `ensemble` and `space`, are built from the parsed values.
   A float that is a whole number prints as an integer, and any other float
   prints as Python's `repr`, the shortest text that reads back as the same
-  float. The `space` above is `N200D20ac2` although the name wrote `sig2.0`
+  float. The `space` above is `N200D20ac2` although the name wrote `ac2.0`
   and `r10.5`, while a crowder size of `1.5` stays `ac1.5`.
 
 ```python
->>> from polyphys.manage.parser import HnsCub
->>> artifact = HnsCub('N200kbmm2nh12ac2l25epshc1.5nc0ens1.ring', 'whole',
-...                   'nucleoid')
+>>> artifact = ChainCyl(
+...     'N200r10.5lz25ac1.5nc0dt0.005bdump2000adump5000ens1.linear', 'whole',
+...     'bug')
 >>> artifact.whole, artifact.space
-('N200kbmm2nh12ac2l25epshc1.5nc0ens1', 'N200kbmm2nh12ac2epshc1.5')
+('N200r10.5lz25ac1.5nc0dt0.005bdump2000adump5000ens1', 'N200D20ac1.5')
 
 ```
 

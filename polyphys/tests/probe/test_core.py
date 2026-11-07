@@ -18,7 +18,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.manage.organizer import children_stamps
-from polyphys.manage.parser import SumRuleCyl
+from polyphys.tests.synthetic import ChainCyl
 from polyphys.simulate.data import read_data
 from polyphys.simulate.dump import iter_dump
 
@@ -42,10 +42,10 @@ def chain_frames() -> np.ndarray:
 
 
 @pytest.fixture
-def whole_parser() -> SumRuleCyl:
-    """A SumRuleCyl parser of a whole, from a hand-written name."""
-    return SumRuleCyl(
-        'N10epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1ens1', 'whole', 'bug')
+def whole_parser() -> ChainCyl:
+    """A ChainCyl parser of a whole, from a hand-written name."""
+    return ChainCyl(
+        'N10r2.5lz10ac1nc0dt0.005bdump1adump1ens1', 'whole', 'bug')
 
 
 # make_universe
@@ -121,8 +121,8 @@ def test_write_stamps_columns_are_genealogy_group_attributes_and_frames(
 def test_write_stamps_reads_back_through_children_stamps(whole_parser,
                                                          tmp_path):
     """The organizer combines two written stamps into one row per whole."""
-    second = SumRuleCyl(
-        'N10epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1ens2', 'whole', 'bug')
+    second = ChainCyl(
+        'N10r2.5lz10ac1nc0dt0.005bdump1adump1ens2', 'whole', 'bug')
     paths = [(str(write_stamps(parser, n, tmp_path)),)
              for parser, n in ((whole_parser, 3), (second, 4))]
 

@@ -125,10 +125,10 @@ series. Segment ``s`` of replicate ``e`` holds two frames of the value
 ``10 * e + s``:
 
 >>> import tempfile
->>> from polyphys.manage.parser import SumRuleCyl
+>>> from polyphys.tests.synthetic import ChainCyl
 >>> tmp = tempfile.TemporaryDirectory()
 >>> root = Path(tmp.name)
->>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+>>> state = 'N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000'
 >>> paths = []
 >>> for e in (1, 2):
 ...     for s in (1, 2):
@@ -139,11 +139,11 @@ series. Segment ``s`` of replicate ``e`` holds two frames of the value
 Join each replicate's segments into a whole, collect the wholes of the
 state point into an ensemble, and average over the replicates:
 
->>> wholes = whole_from_segments('gyrTMon', paths, SumRuleCyl, 'bug',
+>>> wholes = whole_from_segments('gyrTMon', paths, ChainCyl, 'bug',
 ...                              'tseries')
 >>> wholes[state + 'ens1']
 array([11., 11., 12., 12.])
->>> ensembles = ensemble('gyrTMon', wholes, SumRuleCyl, 'bug', 'vector')
+>>> ensembles = ensemble('gyrTMon', wholes, ChainCyl, 'bug', 'vector')
 >>> averages = ensemble_avg('gyrTMon', ensembles, 'bug', 'dataframe')
 >>> averages[state]
    gyrTMon-mean  gyrTMon-var  gyrTMon-sem
@@ -604,29 +604,29 @@ def whole_from_segments(
     into one time series in ``segment_id`` order:
 
     >>> import tempfile
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> tmp = tempfile.TemporaryDirectory()
-    >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000'
+    >>> whole = ('N20r5.5lz25.0ac1.0nc100dt0.005bdump1000'
     ...          'adump5000ens1')
     >>> paths = []
     >>> for seg_id in (1, 2):
     ...     path = Path(tmp.name) / f'{whole}.j0{seg_id}.bug.gyrTMon.npy'
     ...     np.save(path, np.array([10.0, 11.0]) * seg_id)
     ...     paths.append(path)
-    >>> wholes = whole_from_segments('gyrTMon', paths, SumRuleCyl, 'bug',
+    >>> wholes = whole_from_segments('gyrTMon', paths, ChainCyl, 'bug',
     ...                              'tseries')
     >>> wholes[whole]
     array([10., 11., 20., 22.])
 
     'histogram' sums the same segments element-wise:
 
-    >>> whole_from_segments('gyrTMon', paths, SumRuleCyl, 'bug',
+    >>> whole_from_segments('gyrTMon', paths, ChainCyl, 'bug',
     ...                     'histogram')[whole]
     array([30., 33.])
 
     Segments out of order raise rather than giving a reversed series:
 
-    >>> whole_from_segments('gyrTMon', paths[::-1], SumRuleCyl, 'bug',
+    >>> whole_from_segments('gyrTMon', paths[::-1], ChainCyl, 'bug',
     ...                     'tseries')  # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
@@ -725,13 +725,13 @@ def whole_from_file(
     Examples
     --------
     >>> import tempfile
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> tmp = tempfile.TemporaryDirectory()
-    >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000'
+    >>> whole = ('N20r5.5lz25.0ac1.0nc100dt0.005bdump1000'
     ...          'adump5000ens1')
     >>> path = Path(tmp.name) / f'{whole}-bug-gyrTMon.npy'
     >>> np.save(path, np.array([1.0, 2.0, 3.0]))
-    >>> whole_from_file([path], SumRuleCyl, 'bug')[whole]
+    >>> whole_from_file([path], ChainCyl, 'bug')[whole]
     array([1., 2., 3.])
     >>> tmp.cleanup()
     """
@@ -1095,13 +1095,13 @@ def ensemble(
     Two replicates of one state point, with shared edges, merge into one
     ensemble that carries the edge midpoints as 'bin_center':
 
-    >>> from polyphys.manage.parser import SumRuleCyl
-    >>> base = ('N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000'
+    >>> from polyphys.tests.synthetic import ChainCyl
+    >>> base = ('N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000'
     ...         'adump10000ens')
     >>> wholes = {base + '1': np.array([1., 2., 3.]),
     ...           base + '2': np.array([3., 4., 5.])}
     >>> edges = {name: np.array([0., 1., 2., 4.]) for name in wholes}
-    >>> ens = ensemble('rhoMon', wholes, SumRuleCyl, 'bug', 'vector',
+    >>> ens = ensemble('rhoMon', wholes, ChainCyl, 'bug', 'vector',
     ...                whole_edges=edges)
     >>> ens_df = next(iter(ens.values()))
     >>> ens_df['bin_center'].tolist()
@@ -1109,7 +1109,7 @@ def ensemble(
 
     Without `whole_edges`, the ensemble has one column per whole only:
 
-    >>> ens = ensemble('rhoMon', wholes, SumRuleCyl, 'bug', 'vector')
+    >>> ens = ensemble('rhoMon', wholes, ChainCyl, 'bug', 'vector')
     >>> 'bin_center' in next(iter(ens.values())).columns
     False
     """
@@ -1846,14 +1846,14 @@ def space_tseries(
     trajectory, dumped every 1000 steps (``bdump``) of 0.005 time units:
 
     >>> import tempfile
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> tmp = tempfile.TemporaryDirectory()
     >>> database = Path(tmp.name) / 'analysis' / 'N20-bug-ensAvg'
     >>> database.mkdir(parents=True)
-    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> state = 'N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000'
     >>> pd.DataFrame({'gyrTMon-mean': [1.0, 2.0]}).to_csv(
     ...     database / f'{state}-bug-gyrTMon-ensAvg.csv', index=False)
-    >>> space = space_tseries(str(database) + '/', 'gyrTMon', SumRuleCyl,
+    >>> space = space_tseries(str(database) + '/', 'gyrTMon', ChainCyl,
     ...                       'N*', ['nmon'], 'bug')
     >>> space[['t_index', 'time', 'gyrTMon-mean', 'nmon']]
        t_index  time  gyrTMon-mean  nmon
@@ -1999,14 +1999,14 @@ def space_hists(
     One ensemble-averaged histogram of three bins, normalized to sum to one:
 
     >>> import tempfile
-    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.tests.synthetic import ChainCyl
     >>> tmp = tempfile.TemporaryDirectory()
     >>> database = Path(tmp.name) / 'analysis' / 'N20-bug-ensAvg'
     >>> database.mkdir(parents=True)
-    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> state = 'N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000'
     >>> pd.DataFrame({'rhoMon-mean': [1.0, 2.0, 1.0]}).to_csv(
     ...     database / f'{state}-bug-rhoMon-ensAvg.csv', index=False)
-    >>> space = space_hists(str(database) + '/', 'rhoMon', SumRuleCyl, 'N*',
+    >>> space = space_hists(str(database) + '/', 'rhoMon', ChainCyl, 'N*',
     ...                     ['nmon'], 'bug',
     ...                     bin_center=np.array([0.5, 1.5, 2.5]),
     ...                     normalize=True)

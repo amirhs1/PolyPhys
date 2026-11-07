@@ -11,8 +11,8 @@ from polyphys.manage.parser import (
     KeywordSpec,
     ParserBase,
     Species,
-    SumRuleCyl,
 )
+from polyphys.tests.synthetic import ChainCyl
 from polyphys.analyze import pipeline
 from polyphys.analyze.pipeline import (
     Autocorrelation,
@@ -37,11 +37,11 @@ from polyphys.spec import (
 
 @pytest.fixture
 def make_spec() -> Callable[..., ProjectSpec]:
-    """Factory: a valid SumRuleCyl spec, with any field overridden."""
+    """Factory: a valid ChainCyl spec, with any field overridden."""
 
     def _make(**overrides: Any) -> ProjectSpec:
         fields: dict[str, Any] = {
-            'parser': SumRuleCyl,
+            'parser': ChainCyl,
             'group': 'bug',
             'divisor': 0.025,
             'crowder_attr': 'phi_bulk_c',
@@ -100,9 +100,9 @@ def test_spec_imports_without_mdanalysis():
     script = (
         "import sys\n"
         "sys.modules['MDAnalysis'] = None\n"
-        "from polyphys.manage.parser import SumRuleCyl\n"
+        "from polyphys.tests.synthetic import ChainCyl\n"
         "from polyphys.spec import ProbeSpec, ProjectSpec\n"
-        "spec = ProjectSpec(SumRuleCyl, 'bug', 0.025, (), {}, ('gyrTMon',),\n"
+        "spec = ProjectSpec(ChainCyl, 'bug', 0.025, (), {}, ('gyrTMon',),\n"
         "                   crowder_attr='phi_bulk_c')\n"
         "ProbeSpec(spec, {'Mon': 'resid 1'}, 'Mon', ('gyrT',), False)\n"
         "print('polyphys.probe' in sys.modules)\n")
@@ -169,7 +169,7 @@ def test_spec_species_sizes_are_read_only(make_spec):
 
 @pytest.mark.parametrize('overrides, match', [
     pytest.param({'physical_attrs': ('nmon', 'nhns')},
-                 r"SumRuleCyl does not set \['nhns'\] at 'ensemble_long'",
+                 r"ChainCyl does not set \['nhns'\] at 'ensemble_long'",
                  id='unknown-physical-attribute'),
     pytest.param({'species_sizes': {'Hns': 'dhns'}},
                  r"does not set \['dhns'\]", id='unknown-size-attribute'),
@@ -198,7 +198,7 @@ def test_spec_rejects_invalid_fields(make_spec, overrides, match):
 def test_spec_requires_the_crowder_attribute():
     """A spec names its crowder attribute; the library supplies none."""
     with pytest.raises(TypeError, match='crowder_attr'):
-        ProjectSpec(parser=SumRuleCyl, group='bug', divisor=0.025,
+        ProjectSpec(parser=ChainCyl, group='bug', divisor=0.025,
                     physical_attrs=(), species_sizes={},
                     tseries_properties=())
 
@@ -244,7 +244,7 @@ def test_spec_for_parser_declared_outside_polyphys(chain_cub):
 
 @pytest.fixture
 def make_probe(make_spec) -> Callable[..., ProbeSpec]:
-    """Factory: a valid probe spec of the SumRuleCyl spec, with any field
+    """Factory: a valid probe spec of the ChainCyl spec, with any field
     overridden; the project lists the chain-size time series."""
 
     def _make(**overrides: Any) -> ProbeSpec:
@@ -267,7 +267,7 @@ def test_probe_reads_parser_and_geometry_from_its_project(make_probe):
     probe = make_probe()
 
     assert (probe.name, probe.parser, probe.geometry) == (
-        'SumRuleCyl', SumRuleCyl, 'cylindrical')
+        'ChainCyl', ChainCyl, 'cylindrical')
 
 
 def test_probe_is_frozen(make_probe):
@@ -378,7 +378,7 @@ def test_probe_rejects_invalid_fields(make_probe, overrides, match):
 def test_probe_rejects_a_non_project(make_probe):
     """A probe spec needs a ProjectSpec."""
     with pytest.raises(TypeError, match="'project' must be a ProjectSpec"):
-        make_probe(project=SumRuleCyl)
+        make_probe(project=ChainCyl)
 
 
 def test_probe_accepts_positive_bin_sizes(make_probe):
@@ -440,9 +440,9 @@ def test_probe_accepts_callable_bin_sizes(make_probe, whole):
 
 @pytest.fixture
 def whole() -> ParserBase:
-    """A SumRuleCyl whole with dmon 1 and dcrowd 0.5."""
-    return SumRuleCyl(
-        'N200epsilon5r10.5lz50sig0.5nc100dt0.005bdump1adump1ens1',
+    """A ChainCyl whole with dmon 1 and dcrowd 0.5."""
+    return ChainCyl(
+        'N200r10.5lz50ac0.5nc100dt0.005bdump1adump1ens1',
         'whole', 'all')
 
 
