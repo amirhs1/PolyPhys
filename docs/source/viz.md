@@ -2,10 +2,11 @@
 
 This page explains what {mod}`polyphys.viz` offers a figure script: the
 color lists the studies' figures use, a way to cut a color map down to part
-of its range, a rule for placing an axis's ticks, and three legend helpers.
-Everything here is a thin layer over matplotlib; the figures themselves,
-with their study-specific labels, filters, and layouts, belong to each
-study under `projects/<study>/`, not to the package.
+of its range, a rule for placing an axis's ticks, two legend-handle makers,
+a legend mover, and a band shader. Everything here is a thin layer over
+matplotlib; the figures themselves, with their study-specific labels,
+filters, and layouts, belong to each study under `projects/<study>/`, not to
+the package.
 
 The layer is an optional extra, since the rest of PolyPhys never draws:
 

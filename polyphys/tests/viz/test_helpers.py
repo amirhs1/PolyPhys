@@ -119,6 +119,39 @@ def test_color_handles_make_one_patch_per_label_in_order():
         to_rgba("#ff0000"), to_rgba("#0000ff")]
 
 
+@pytest.mark.parametrize("labels, color", [
+    pytest.param(["a", "b", "c"], (0.1, 0.2, 0.3), id="rgb-tuple"),
+    pytest.param(["a", "b"], (0.1, 0.2, 0.3, 0.5), id="rgba-tuple"),
+    pytest.param(["a", "b"], "red", id="name"),
+])
+def test_color_handles_repeat_one_color_for_every_label(labels, color):
+    """One color, a name or an RGB(A) tuple, is given to every label."""
+    handles = color_handles(labels, color)
+
+    assert [handle.get_facecolor() for handle in handles] == \
+        [to_rgba(color)] * len(labels)
+
+
+def test_color_handles_reject_a_list_of_the_wrong_length():
+    """A list of colors must have one entry per label."""
+    with pytest.raises(ValueError, match="colors has 3 entries"):
+        color_handles(["a", "b"], ["red", "green", "blue"])
+
+
+def test_line_handles_repeat_a_numpy_integer_width():
+    """A NumPy integer width is one value, given to every label."""
+    handles = line_handles(["a", "b"], linewidths=np.int64(2))
+
+    assert [h.get_linewidth() for h in handles] == [2, 2]
+
+
+def test_line_handles_repeat_a_dash_tuple_for_every_label():
+    """An (offset, on-off sequence) dash tuple is one line style."""
+    handles = line_handles(["a", "b"], linestyles=(0, (5, 2)))
+
+    assert [h.get_linestyle() for h in handles] == ["--", "--"]
+
+
 def test_line_handles_carry_the_style_marker_and_color_given():
     """Each label gets a Line2D with its own style and marker and the shared
     color and width."""

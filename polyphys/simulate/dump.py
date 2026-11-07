@@ -710,12 +710,17 @@ def _read_atoms(
         raise _broken(lines, index, timestep,
                       f"{len(rows)} of {n_atoms} atom lines; "
                       "the dump may be cut off")
-    fields = "".join(rows).split()
+    # Each line's own count: a short line offset by a long one would keep
+    # the frame's total right and shift every later value.
+    split = [row.split() for row in rows]
     try:
-        values = np.asarray(fields, dtype=np.float64)
+        values = np.asarray([field for fields in split for field in fields],
+                            dtype=np.float64)
     except ValueError:
         values = np.empty(0)
-    if values.size != n_atoms * n_columns:
+    if values.size != n_atoms * n_columns or any(
+        len(fields) != n_columns for fields in split
+    ):
         for offset, row in enumerate(rows):
             if not _is_atom_line(row, n_columns):
                 lines.number = first + offset
