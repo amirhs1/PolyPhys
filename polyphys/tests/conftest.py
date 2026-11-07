@@ -149,8 +149,8 @@ def private_data_dir() -> Path:
     .. code-block:: python
 
         @pytest.mark.private_data
-        def test_space_matches_reference(private_data_dir):
-            space_dir = private_data_dir / "SumRuleCyl-allInOne"
+        def test_profiles_match_reference(private_data_dir):
+            folder = private_data_dir / "TransFociCyl" / "golden" / "density"
     """
     return Path(os.environ[DATA_DIR_ENV])
 
