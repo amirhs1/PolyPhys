@@ -11,8 +11,20 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Move `ProjectSpec`, `ProbeSpec`, `BinderSpec`, `PerWhole`, `RecenterT`, `CHAIN_SIZE_OBSERVABLES`, and `BINDER_SERIES` from `polyphys.manage.projects`, and `AnalysisTable`, `PropertySpec`, `PostHook`, `tseries`, `histogram`, `histogram_2d`, `edge`, and `matrix_tseries` from `polyphys.analyze.pipeline`, to the new module `polyphys.spec`, which imports no MDAnalysis, and define `PerWhole` once; the old import paths warn with `DeprecationWarning` until 1.0.0 ([#196](https://github.com/amirhs1/PolyPhys/issues/196))
+
 ### Fixed
 
+- Report a `fit_decay` fit as failed, with `converged=False` and NaN parameters, when the model is not finite at the start or the fit does not move from its start and has no finite covariance, instead of reporting it converged under the default method and raising `ValueError` under `method='trf'` ([#178](https://github.com/amirhs1/PolyPhys/issues/178))
+- Count the bins of `pair_distance_histograms` and `FociPairDistances` with the round-off tolerance of `create_bin_edge_and_hist`, so a range of a whole number of bins, such as `r_max=2.1` with `bin_size=0.3`, ends at `r_max` instead of one bin past it or an ulp below it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Treat an `inf` box length as non-periodic and accept integer positions in `measurer.pair_distance`, as `clusters.pair_distances` does ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Format the axis and shape in the `IndexError` of `transverse_size` and `fsd` ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Raise `ValueError` for a single sample in `simple_stats` and `sem` instead of returning NaN ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Raise `ValueError` for a cis threshold that is not a whole number in `threshold_sweep` instead of truncating it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Correct the memory note of `pair_distances` to the four `(n, n)` arrays it holds at once ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Reject bin centers that are not symmetric about `z = 0` when `normalize_z` folds, and fold `<prop>-scale-normalized_curve` by summing mirror bins, so it is the distribution of `|z|` and sums to one ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Compute each part of a split probe run on its own copy of the analysis, so that `ChainSize`, `BinderStatistics`, `SpatialHistograms`, and `PairDistances` with the `serial` backend and `n_parts > 1` give the results, frames, and times of the other backends instead of repeating the last part ([#182](https://github.com/amirhs1/PolyPhys/issues/182))
 - Raise `ValueError` instead of `TypeError` in `PairDistances` on a frame with no box when a direction is periodic, and accept NumPy booleans as its periodic flags, as `BinderStatistics` does ([#182](https://github.com/amirhs1/PolyPhys/issues/182))
 

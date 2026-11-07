@@ -1,6 +1,16 @@
 API
 ===
 
+Spec
+----
+
+The records that describe one study as data; no MDAnalysis needed.
+
+.. autosummary::
+   :toctree: generated
+
+   polyphys.spec
+
 Manage
 ------
 

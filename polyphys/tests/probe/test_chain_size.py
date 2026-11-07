@@ -31,7 +31,7 @@ from numpy.testing import (
 
 from polyphys.analyze.stats import block_average
 from polyphys.manage.parser import SumRuleCyl
-from polyphys.manage.projects import (
+from polyphys.spec import (
     CHAIN_SIZE_OBSERVABLES,
     ProbeSpec,
     ProjectSpec,

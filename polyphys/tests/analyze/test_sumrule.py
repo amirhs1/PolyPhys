@@ -189,6 +189,55 @@ def test_normalize_z_folds_var_and_sem_like_any_column():
     np.testing.assert_allclose(out["zRhoMon-sem"], [0.5, 0.5], rtol=1e-15)
 
 
+@pytest.mark.parametrize(
+    "centers",
+    [
+        pytest.param([-2.0, -1.0, 0.5, 1.5], id="shifted-half"),
+        pytest.param([-1.0, 0.1, 1.0], id="off-center-middle"),
+        pytest.param([1.5, 0.5, -0.5, -1.5], id="decreasing"),
+    ],
+)
+def test_normalize_z_fold_rejects_bins_not_symmetric_about_zero(centers):
+    """Folding pairs bin i with bin n-1-i, which is its mirror only when
+    the centers increase and are symmetric about z = 0."""
+    profile = pd.DataFrame({"bin_center": centers,
+                            "zRhoMon-scale": np.ones(len(centers))})
+    with pytest.raises(ValueError, match="symmetric about z = 0"):
+        normalize_z("zRhoMon", profile)
+
+
+def test_normalize_z_fold_accepts_round_off_asymmetry():
+    """Centers that miss their mirror by float64 round-off still fold."""
+    profile = pd.DataFrame({"bin_center": [-1.5, -0.5, 0.5 + 1e-15, 1.5],
+                            "zRhoMon-scale": [1.0, 3.0, 3.0, 1.0]})
+    out = normalize_z("zRhoMon", profile)
+    assert len(out) == 2
+
+
+@pytest.mark.parametrize(
+    "centers,curve,expected",
+    [
+        pytest.param([-1.5, -0.5, 0.5, 1.5], [0.1, 0.2, 0.3, 0.4],
+                     [0.5, 0.5], id="even"),
+        pytest.param([-1.0, 0.0, 1.0], [0.25, 0.5, 0.25], [0.5, 0.5],
+                     id="odd"),
+    ],
+)
+def test_normalize_z_folds_the_normalized_curve_onto_abs_z(
+    centers, curve, expected
+):
+    """Folding sums mirror bins of ``-scale-normalized_curve``, so the
+    folded curve is the distribution of |z| and still sums to 1:
+    P(|z|) = P(z) + P(-z) for z != 0 (analytic)."""
+    profile = pd.DataFrame({"bin_center": centers,
+                            "zRhoMon-scale": np.ones(len(centers)),
+                            "zRhoMon-scale-normalized_curve": curve})
+    out = normalize_z("zRhoMon", profile)
+    # float64 round-off of one addition:
+    np.testing.assert_allclose(out["zRhoMon-scale-normalized_curve"],
+                               expected, rtol=1e-15)
+
+
 def test_normalize_z_fold_needs_bin_center():
     """Folding a frame without 'bin_center' raises ValueError."""
     with pytest.raises(ValueError, match="needs a 'bin_center' column"):

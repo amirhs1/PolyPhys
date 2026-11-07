@@ -28,7 +28,7 @@ from numpy.testing import (
 )
 
 from polyphys.manage.parser import SumRuleCyl, TransFociCub
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.spec import ProbeSpec, ProjectSpec
 
 pytest.importorskip("MDAnalysis")
 

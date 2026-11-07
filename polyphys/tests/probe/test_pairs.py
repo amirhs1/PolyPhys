@@ -24,7 +24,7 @@ from numpy.testing import (
 )
 
 from polyphys.manage.parser import TransFociCyl
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.spec import ProbeSpec, ProjectSpec
 from polyphys.simulate.data import read_data
 
 pytest.importorskip("MDAnalysis")

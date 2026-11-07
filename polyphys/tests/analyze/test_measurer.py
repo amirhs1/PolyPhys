@@ -94,6 +94,25 @@ def test_pair_distance_rejects_other_than_two_positions():
         pair_distance(np.array([[1.0, 2.0, 3.0]]))
 
 
+def test_pair_distance_treats_an_infinite_length_as_non_periodic():
+    """An infinite box length leaves its axis without the minimum image,
+    as in :func:`polyphys.analyze.clusters.pair_distances`, instead of
+    giving NaN from ``inf * 0``."""
+    positions = np.array([[1.0, 2.0, 3.0], [4.0, 2.0, 3.0]])
+    result = pair_distance(positions, pbc={0: np.inf})
+    # float64 round-off of one subtraction; atol for the zero components:
+    assert_allclose(result, [3.0, 0.0, 0.0], rtol=1e-12, atol=1e-12)
+
+
+def test_pair_distance_accepts_integer_positions_with_pbc():
+    """Integer positions are measured in float64: a separation of 9 along a
+    periodic axis of length 8 folds to 1."""
+    positions = np.array([[1, 2, 3], [10, 2, 3]])
+    result = pair_distance(positions, pbc={0: 8.0})
+    # float64 round-off of a subtraction and a product; atol for the zeros:
+    assert_allclose(result, [1.0, 0.0, 0.0], rtol=1e-12, atol=1e-12)
+
+
 def test_end_to_end_of_straight_chain_is_its_length():
     """Three beads one unit apart on a line are two units end to end."""
     positions = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
@@ -131,6 +150,24 @@ def test_size_measures_reject_axis_beyond_positions(measure, positions, axis):
     """An axis index at or beyond the number of coordinates is rejected."""
     with pytest.raises(IndexError, match="out of bounds"):
         measure(positions, axis=axis)
+
+
+@pytest.mark.parametrize(
+    "measure,positions",
+    [
+        pytest.param(
+            transverse_size, np.array([[1, 0, 0], [1, 2, 2]]),
+            id="transverse-size",
+        ),
+        pytest.param(fsd, np.array([[1, 2, 3]]), id="fsd"),
+    ],
+)
+def test_size_measures_name_the_axis_out_of_bounds(measure, positions):
+    """The error names the rejected axis and the array shape."""
+    with pytest.raises(IndexError,
+                       match="Axis 3 is out of bounds for positions array"
+                             " with shape"):
+        measure(positions, axis=3)
 
 
 def test_max_distance_is_extent_along_each_axis():
@@ -177,6 +214,20 @@ def test_statistics_reject_empty_data(statistic):
     NaN."""
     with pytest.raises(ValueError, match="must not be empty"):
         statistic(np.array([]))
+
+
+@pytest.mark.parametrize(
+    "statistic",
+    [
+        pytest.param(partial(simple_stats, "energy"), id="simple-stats"),
+        pytest.param(sem, id="sem"),
+    ],
+)
+def test_statistics_reject_a_single_sample(statistic):
+    """One sample has no unbiased variance, since ``ddof=1`` divides by
+    ``n - 1 = 0``, so it is rejected rather than returned as NaN."""
+    with pytest.raises(ValueError, match="at least two samples"):
+        statistic(np.array([1.0]))
 
 
 def test_sem_is_sample_std_over_root_n():

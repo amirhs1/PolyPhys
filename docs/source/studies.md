@@ -22,9 +22,9 @@ to read the tables that the research code before PolyPhys wrote.
 
 *spec*
 : A record of a study's choices: the
-  {class}`~polyphys.manage.projects.ProjectSpec` of its analysis, the
-  {class}`~polyphys.manage.projects.ProbeSpec` of its probe, and one
-  {class}`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
+  {class}`~polyphys.spec.ProjectSpec` of its analysis, the
+  {class}`~polyphys.spec.ProbeSpec` of its probe, and one
+  {class}`~polyphys.spec.AnalysisTable` per particle group.
 
 *species*
 : A kind of particle, labeled as in the property names: `Mon` for the
@@ -130,7 +130,7 @@ such as the complementary percentage `pct_two = 100 - pct_one` of
 ## Declaring the ProjectSpec
 
 A parser says how a study's names read; a `ProjectSpec` from
-`polyphys.manage.projects` says how its analysis reads them. It holds what the
+`polyphys.spec` says how its analysis reads them. It holds what the
 parser does not: the polymer's particle group; the step `divisor` to which the
 bulk volume fraction of crowders, `phi_bulk_c`, is rounded in the
 `phi_bulk_c_round` column; the parser attributes that become columns of the
@@ -139,7 +139,7 @@ holding that species' diameter; and the study's time series. The geometry,
 topology, and glob patterns come from the parser:
 
 ```python
->>> from polyphys.manage.projects import ProjectSpec
+>>> from polyphys.spec import ProjectSpec
 >>> chain = ProjectSpec(
 ...     parser=ChainCub, group='bug', divisor=0.025,
 ...     physical_attrs=('space', 'ensemble_long', 'nmon', 'dcrowd'),
