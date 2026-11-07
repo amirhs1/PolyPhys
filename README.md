@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/amirhs1/PolyPhys/branch/main/graph/badge.svg)](https://app.codecov.io/gh/amirhs1/PolyPhys)
 [![Docs](https://img.shields.io/readthedocs/polyphys/latest)](https://polyphys.readthedocs.io/en/latest/)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/amirhs1/PolyPhys)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://github.com/amirhs1/PolyPhys/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15858407.svg)](https://doi.org/10.5281/zenodo.15858407)
 
 **Research data management and analysis for large-scale polymer
@@ -47,10 +47,24 @@ level.
 
 ## Installation
 
-PolyPhys is distributed from source and archived on Zenodo; it is not on PyPI.
+From v1.0.0, PolyPhys is on PyPI, and each release is archived on Zenodo:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/PolyPhys.git"
+python -m pip install polyphys
+```
+
+With [uv](https://docs.astral.sh/uv/), install it into the active environment,
+or add it as a dependency of a uv project:
+
+```bash
+uv pip install polyphys
+uv add polyphys
+```
+
+Releases before v1.0.0 are not on PyPI; install one from its tag:
+
+```bash
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.9.0"
 ```
 
 For a development checkout:
@@ -69,14 +83,14 @@ Requires Python 3.11+. The runtime dependencies are NumPy 2.0 or newer, pandas
 trajectories, needs MDAnalysis as well; the `mda` extra installs it:
 
 ```bash
-python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
+python -m pip install "polyphys[mda]"
 ```
 
 The viz layer's figure helpers need matplotlib 3.8.4 or newer; the `viz` extra
 installs it (the color lists in `viz.colors` need nothing extra):
 
 ```bash
-python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.git"
+python -m pip install "polyphys[viz]"
 ```
 
 ## Quickstart
@@ -84,7 +98,7 @@ python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.g
 Decode a simulation filename into physics, and read off where it sits in the
 hierarchy. A study declares its parser, a subclass of `ParserBase` that lists
 the keywords of its names; this one reads a linear chain among crowders in a
-cylinder, and the [Studies](docs/source/studies.md) page shows how to declare
+cylinder, and the [Studies](https://polyphys.readthedocs.io/en/latest/studies.html) page shows how to declare
 one:
 
 ```python
@@ -246,7 +260,7 @@ its parser and its specs live in its own folder, as `projects/` shows.
 ## Citation
 
 If you use PolyPhys in published work, please cite the archived release. The
-DOI above resolves to the latest version; see [`CITATION.cff`](CITATION.cff)
+DOI above resolves to the latest version; see [`CITATION.cff`](https://github.com/amirhs1/PolyPhys/blob/main/CITATION.cff)
 for machine-readable metadata, or use GitHub's _Cite this repository_ button.
 
 ## AI assistance
@@ -255,7 +269,7 @@ PolyPhys is developed with the help of AI coding assistants. Every change is
 reviewed and merged by the maintainer, who is accountable for the result; no AI
 system is an author of this software or of any release. Numerical fixtures,
 formulas, and citations are derived or verified rather than accepted from a
-model — see [`AI-POLICY.md`](AI-POLICY.md) for the full policy, including what
+model — see [`AI-POLICY.md`](https://github.com/amirhs1/PolyPhys/blob/main/AI-POLICY.md) for the full policy, including what
 is expected of AI-assisted contributions.
 
 Each part has a tier, set by whether I can evaluate AI output there. The table
@@ -283,15 +297,15 @@ Nothing that handles security, credentials, private data, or published results,
 or that can block a merge, is Delegated. Where a tier is unclear, I treat the
 part as Supervised. Tiers last reviewed: 2026-11-06.
 
-Instructions for AI agents: [`AGENTS.md`](AGENTS.md).
+Instructions for AI agents: [`AGENTS.md`](https://github.com/amirhs1/PolyPhys/blob/main/AGENTS.md).
 
 ## Contributing
 
 Bug reports and questions are welcome via
 [issues](https://github.com/amirhs1/PolyPhys/issues). Please see
-[`SECURITY.md`](SECURITY.md) for reporting suspected vulnerabilities privately.
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for how to contribute.
+[`SECURITY.md`](https://github.com/amirhs1/PolyPhys/blob/main/SECURITY.md) for reporting suspected vulnerabilities privately.
+See [`CONTRIBUTING.md`](https://github.com/amirhs1/PolyPhys/blob/main/CONTRIBUTING.md) for how to contribute.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
+MIT — see [`LICENSE`](https://github.com/amirhs1/PolyPhys/blob/main/LICENSE).

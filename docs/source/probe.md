@@ -12,7 +12,7 @@ built on [MDAnalysis](https://www.mdanalysis.org/), which the rest of the
 package does not need, so the layer is an optional extra:
 
 ```bash
-python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
+python -m pip install "polyphys[mda]"
 ```
 
 Without MDAnalysis, `import polyphys.probe` raises `ImportError` with that

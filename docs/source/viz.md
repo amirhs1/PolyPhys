@@ -11,7 +11,7 @@ the package.
 The layer is an optional extra, since the rest of PolyPhys never draws:
 
 ```bash
-python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.git"
+python -m pip install "polyphys[viz]"
 ```
 
 {mod}`polyphys.viz.colors` imports no plotting library, so its color lists

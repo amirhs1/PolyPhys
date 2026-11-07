@@ -6,17 +6,25 @@ To begin using **PolyPhys**, first install the package as described in the
 (installation_target)=
 ## Installation
 
-PolyPhys is distributed from source and archived on Zenodo. It is not published
-to PyPI, so install it directly from the repository:
+From v1.0.0, PolyPhys is published to PyPI, and each release is archived on
+Zenodo:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/PolyPhys.git"
+python -m pip install polyphys
 ```
 
-To install a specific archived release, append the tag:
+With [uv](https://docs.astral.sh/uv/), install it into the active environment,
+or add it as a dependency of a uv project:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.8.0"
+uv pip install polyphys
+uv add polyphys
+```
+
+Releases before v1.0.0 are not on PyPI. To install one, give its tag:
+
+```bash
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.9.0"
 ```
 
 PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy 2.0
@@ -25,7 +33,7 @@ or newer, pandas 3.0 or newer, and SciPy 1.14.1 or newer. The probe layer,
 [MDAnalysis](https://www.mdanalysis.org/), which the `mda` extra installs:
 
 ```bash
-python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
+python -m pip install "polyphys[mda]"
 ```
 
 Without it, `import polyphys.probe` raises `ImportError` with that hint, and
