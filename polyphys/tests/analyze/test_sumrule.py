@@ -5,13 +5,18 @@ the sizes encoded in the filenames: crowder diameter ``sig1.5``
 (``SumRuleCyl``) or ``ac1.5`` (``SumRuleCubHeteroRing``), cylinder radius
 ``r10.5``, so ``D = 2 * 10.5 - 1 = 20`` and ``D mod a_c = 0.5``. The sum-rule
 tests build a small ``analysis`` phase on disk with one ensAvg CSV per state
-point. Two tests state properties instead: the ``Phi`` and ``Rho`` forms of
+point. The spec-taking tests take ``phi_bulk_c`` and ``phi_bulk_m`` from the
+analytic volume fraction ``2 n a**3 / (3 Z (D - a)**2)`` of ``n`` spheres of
+diameter ``a`` in a cylinder of length ``Z = 2 * lz`` and diameter ``D``, or
+check a result against ``space_profiles`` called with the spec's fields. Two
+tests state properties instead: the ``Phi`` and ``Rho`` forms of
 the rule normalize to one curve, and the normalized sum is one wherever the
 rule holds.
 """
 import logging
 import re
 import warnings
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -23,6 +28,7 @@ from polyphys.analyze.sumrule import (
     normalize_r,
     normalize_z,
     space_profiles,
+    space_profiles_from_spec,
     sum_rule_profiles,
 )
 from polyphys.manage.parser import (
@@ -31,6 +37,7 @@ from polyphys.manage.parser import (
     SumRuleCyl,
 )
 from polyphys.manage.utils import round_to_multiple
+from polyphys.spec import ProjectSpec
 
 # A Pandas4Warning marks a deprecated pandas call; fail on it.
 pytestmark = pytest.mark.filterwarnings("error::pandas.errors.Pandas4Warning")
@@ -588,6 +595,119 @@ def test_space_profiles_drops_norm_sem_under_an_explicit_normalizer(
         space = space_profiles(database, "Phi", "r", "Crd", SumRuleCyl, "N*",
                                [], "all", cyl_sizes, normalizer="max")
     assert "rPhiCrd-norm-sem" not in space.columns
+
+
+@pytest.fixture
+def make_cyl_spec():
+    """Factory: a SumRuleCyl ProjectSpec; keyword arguments override fields."""
+    def _make(**overrides):
+        fields = {
+            "parser": SumRuleCyl, "group": "bug", "divisor": 0.025,
+            "crowder_attr": "phi_bulk_c", "physical_attrs": ("nmon", "dcyl"),
+            "species_sizes": {"Mon": "dmon", "Crd": "dcrowd"},
+            "tseries_properties": ("gyrTMon",),
+        }
+        return ProjectSpec(**{**fields, **overrides})
+
+    return _make
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        pytest.param({}, id="defaults"),
+        pytest.param({"normalizer": "last", "round_to": 2}, id="overrides"),
+    ],
+)
+def test_space_profiles_from_spec_matches_space_profiles_with_spec_fields(
+        make_profile_space, make_cyl_spec, kwargs):
+    """The spec-taking table equals space_profiles called with the spec's
+    fields one by one."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
+                                  [[0.2, 0.3, 0.1], [0.4, 0.2, 0.2]])
+    spec = make_cyl_spec(divisor=0.05)
+    expected = space_profiles(
+        database, "Phi", "r", "Crd", spec.parser, spec.hierarchy,
+        list(spec.physical_attrs), "all", spec.species_sizes,
+        divisor=spec.divisor, crowder_attr=spec.crowder_attr, **kwargs)
+    space = space_profiles_from_spec(database, spec, "Phi", "r", "Crd",
+                                     **kwargs)
+    pd.testing.assert_frame_equal(space, expected)
+
+
+@pytest.mark.parametrize(
+    "divisor, rounded",
+    [
+        pytest.param(0.001, 0.329, id="step-0.001"),
+        pytest.param(0.025, 0.325, id="step-0.025"),
+    ],
+)
+def test_space_profiles_from_spec_rounds_with_the_spec_divisor(
+        make_profile_space, make_cyl_spec, divisor, rounded):
+    """phi_bulk_c_round rounds phi_bulk_c to a multiple of the spec's
+    divisor."""
+    # n = 1000 crowders of a = 2 in D = 20, Z = 50: phi_c = 16000 / 48600
+    # = 0.32922, which rounds to 0.329 on a grid of 0.001 and to 0.325 on a
+    # grid of 0.025.
+    database = make_profile_space(
+        "rPhiCrd", [0.5, 1.5, 2.5], [[0.2, 0.3, 0.1]],
+        states=["N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000"
+                "adump5000"])
+    space = space_profiles_from_spec(database, make_cyl_spec(divisor=divisor),
+                                     "Phi", "r", "Crd")
+    assert space["phi_bulk_c_round"].tolist() == [rounded] * 3
+
+
+def test_space_profiles_from_spec_rounds_the_spec_crowder_attr(
+        make_profile_space, make_cyl_spec):
+    """The spec's crowder_attr names the attribute that is added and
+    rounded."""
+    # N = 200 monomers of a = 1 in D = 20, Z = 50: phi_m = 400 / 54150
+    # = 0.0073869, which rounds to 0.007 on a grid of 0.001.
+    database = make_profile_space(
+        "rPhiCrd", [0.5, 1.5, 2.5], [[0.2, 0.3, 0.1]],
+        states=["N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000"
+                "adump5000"])
+    spec = make_cyl_spec(divisor=0.001, crowder_attr="phi_bulk_m")
+    space = space_profiles_from_spec(database, spec, "Phi", "r", "Crd")
+    # rel: float64 round-off of the parser's arithmetic is far below the
+    # five significant figures of the analytic value.
+    assert space["phi_bulk_m"].tolist() == pytest.approx([400 / 54150] * 3,
+                                                         rel=1e-12)
+    assert space["phi_bulk_c_round"].tolist() == [0.007] * 3
+
+
+@pytest.mark.parametrize(
+    "written, kwargs",
+    [
+        pytest.param("all", {}, id="default-all"),
+        pytest.param("bug", {"group": "bug"}, id="override-bug"),
+    ],
+)
+def test_space_profiles_from_spec_reads_the_group_profiles(
+        make_profile_space, make_cyl_spec, written, kwargs):
+    """The profiles come from the 'all' group, not spec.group, unless group
+    names another."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
+                                  [[0.2, 0.3, 0.1]], group=written)
+    space = space_profiles_from_spec(database, make_cyl_spec(), "Phi", "r",
+                                     "Crd", **kwargs)
+    # Phi / a_c with a_c = 1.5; rtol: float64 round-off of one division.
+    np.testing.assert_allclose(space["rPhiCrd-scale"],
+                               np.array([0.2, 0.3, 0.1]) / 1.5, rtol=1e-15)
+
+
+def test_space_profiles_from_spec_saves_from_a_path(make_profile_space,
+                                                    make_cyl_spec, tmp_path):
+    """A path-like database with save=True writes the table that
+    space_profiles names."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
+                                  [[0.2, 0.3, 0.1]])
+    space = space_profiles_from_spec(Path(database), make_cyl_spec(), "Phi",
+                                     "r", "Crd", save=True)
+    saved = pd.read_csv(tmp_path / "analysis" / "N200-all-space" /
+                        "N200-all-rPhiCrd-normalizedRescaled-space.csv")
+    pd.testing.assert_frame_equal(saved, space)
 
 
 @pytest.fixture

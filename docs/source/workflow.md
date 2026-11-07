@@ -98,18 +98,28 @@ differ in what a row is:
 
 All three take the study's parser, its `hierarchy` glob, its
 `physical_attrs`, its `divisor`, and its crowder attribute.
-{func}`~polyphys.analyze.pipeline.space_tseries_from_spec` and
-{func}`~polyphys.analyze.pipeline.space_hists_from_spec` read them from the
-study's `SPEC`, so no study choice comes from a library default:
+{func}`~polyphys.analyze.pipeline.space_tseries_from_spec`,
+{func}`~polyphys.analyze.pipeline.space_hists_from_spec`, and
+{func}`~polyphys.analyze.sumrule.space_profiles_from_spec` read them, and
+the species sizes of the profiles, from the study's `SPEC`, so no study
+choice comes from a library default:
 
 ```python
 from polyphys.analyze.pipeline import space_tseries_from_spec
+from polyphys.analyze.sumrule import space_profiles_from_spec
 from trans_foci_cub import SPEC
 
 table = space_tseries_from_spec(
     'analysis/al5.0nl5ml125ns400ac1.0-bug-ensAvg', SPEC, 'gyrTMon',
     save=True)
+profiles = space_profiles_from_spec(
+    'analysis/al5.0nl5ml125ns400ac1.0-all-ensAvg', SPEC, 'Phi', 'r', 'Crd',
+    save=True)
 ```
+
+The density profiles are in the `'all'` group, the default of
+`space_profiles_from_spec`, not in the polymer group `SPEC.group`, which the
+other two take by default.
 
 Each also adds the column named by the spec's `crowder_attr`, such as
 `phi_bulk_c`, and its rounded copy,
