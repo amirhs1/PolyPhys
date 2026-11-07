@@ -126,14 +126,17 @@ the sum with an arbitrary weight and its `-scale` column loses its unit.
 one, the signature of a profile normalized by its sum; it cannot tell the
 other normalizations from one profile.
 
+`space_profiles_from_spec` reads the parser, the `hierarchy` glob, the
+`physical_attrs`, the `species_sizes`, the `divisor`, and the `crowder_attr`
+from the study's spec, and takes the profiles from the `'all'` group unless
+`group` says otherwise:
+
 ```python
-monomers = space_profiles(database, 'Phi', 'r', 'Mon', chain.parser,
-                          chain.hierarchy, list(chain.physical_attrs), 'all',
-                          chain.species_sizes, divisor=chain.divisor)
-crowders = space_profiles(database, 'Phi', 'r', 'Crd', chain.parser,
-                          chain.hierarchy, list(chain.physical_attrs), 'all',
-                          chain.species_sizes, divisor=chain.divisor)
+monomers = space_profiles_from_spec(database, chain, 'Phi', 'r', 'Mon')
+crowders = space_profiles_from_spec(database, chain, 'Phi', 'r', 'Crd')
 ```
+
+`space_profiles` takes the same values one by one.
 
 The reference value follows the research code unless `normalizer` says
 otherwise: the value at `r = 0` for `r` in a cylinder, where the outermost
