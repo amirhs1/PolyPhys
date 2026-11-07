@@ -31,6 +31,7 @@ version increase may introduce incompatible changes.
 - Return the rows of `sum_rule_profiles` in the input order, as documented, when a state point's rows are not contiguous ([#180](https://github.com/amirhs1/PolyPhys/issues/180))
 - Convert a `KeywordSpec` value with a scale or an offset in exact decimal arithmetic, so `r4.1` gives the cylinder size `7.2` and the short name `D7.2` instead of `D7.199999999999999` ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
 - Strip an extension with `ispath=True` only when the suffix holds a letter, so a name ending with a value, such as `ac1.5`, or with a dot keeps it ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
+- Reduce the research code's probe stamps, which have no `group` column: `children_stamps` adds the column from the file names, `<name>-<group>-stamps.csv`, instead of raising `KeyError`, so `reduce_space` runs on an archived `-probe` folder; `parents_stamps` raises `ValueError` naming the missing `space` or `group` column when asked to save without one
 
 ### Added
 

@@ -955,6 +955,77 @@ def test_children_stamps_saves_under_rows_lineage(
     pd.testing.assert_frame_equal(pd.read_csv(tmp_path / filename), combined)
 
 
+@pytest.fixture
+def write_research_stamps(tmp_path):
+    """Factory: write each row of a stamps frame, without its 'group'
+    column, to its own CSV named <lineage_name><suffix>, as the research
+    code's probe did (the group is in the file name, not a column)."""
+
+    def _write(stamps, suffix="-bug-stamps.csv"):
+        directory = tmp_path / "stamps"
+        directory.mkdir(exist_ok=True)
+        stamps = stamps.drop(columns=["group"])
+        paths = []
+        for row in range(len(stamps)):
+            path = directory / f"{stamps.loc[row, 'lineage_name']}{suffix}"
+            stamps.iloc[[row]].to_csv(path, index=False)
+            paths.append((str(path),))
+        return paths
+
+    return _write
+
+
+@pytest.mark.parametrize(
+    "stamps_fixture, child_lineage, filename",
+    [
+        pytest.param("segment_stamps", "segment",
+                     "N20-bug-stamps-segment.csv", id="segment"),
+        pytest.param("whole_stamps", "whole", "N20-bug-stamps-whole.csv",
+                     id="whole", marks=pytest.mark.filterwarnings(
+                         "ignore:'segment' and 'segment_id':UserWarning")),
+    ],
+)
+def test_children_stamps_without_group_column_takes_it_from_the_file_names(
+    request, tmp_path, write_research_stamps, stamps_fixture, child_lineage,
+    filename
+):
+    """Stamps without a 'group' column, as the research code wrote them, get
+    one after 'space' from their <name>-<group>-stamps.csv file names, and
+    save under that group."""
+    stamps = request.getfixturevalue(stamps_fixture)
+    paths = write_research_stamps(stamps)
+
+    combined = children_stamps(paths, child_lineage, save_to=tmp_path)
+
+    assert (combined.columns.get_loc("group")
+            == combined.columns.get_loc("space") + 1)
+    assert combined["group"].tolist() == ["bug"] * len(combined)
+    pd.testing.assert_frame_equal(pd.read_csv(tmp_path / filename), combined)
+
+
+def test_children_stamps_without_group_rejects_a_name_without_a_group(
+    write_research_stamps, segment_stamps
+):
+    """Stamps with neither a 'group' column nor <name>-<group>-stamps.csv
+    file names raise ValueError naming the file."""
+    paths = write_research_stamps(segment_stamps, suffix="-stamps.csv")
+    with pytest.raises(ValueError, match="w1.j01-stamps.csv"):
+        children_stamps(paths, "segment")
+
+
+def test_children_stamps_without_group_rejects_mixed_groups(
+    write_research_stamps, segment_stamps
+):
+    """File names that give more than one group raise ValueError naming
+    them, instead of taking the first."""
+    paths = (write_research_stamps(segment_stamps.iloc[:3].reset_index(
+                drop=True))
+             + write_research_stamps(segment_stamps.iloc[3:].reset_index(
+                drop=True), suffix="-all-stamps.csv"))
+    with pytest.raises(ValueError, match=r"\['all', 'bug'\]"):
+        children_stamps(paths, "segment")
+
+
 def test_children_stamps_takes_child_lineage_by_keyword(
     write_stamps, segment_stamps
 ):
@@ -1025,6 +1096,17 @@ def test_parents_stamps_saves_under_parents_lineage(
     stamps = request.getfixturevalue(stamps_fixture)
     parents = parents_stamps(stamps, lineage, save_to=tmp_path)
     pd.testing.assert_frame_equal(pd.read_csv(tmp_path / filename), parents)
+
+
+@pytest.mark.parametrize("column", ["space", "group"])
+def test_parents_stamps_saving_without_a_name_column_raises(
+    tmp_path, whole_stamps, column
+):
+    """Saving parent stamps that lack 'space' or 'group' raises ValueError
+    naming the column, since the file name needs both."""
+    stamps = whole_stamps.drop(columns=[column])
+    with pytest.raises(ValueError, match=f"'{column}'"):
+        parents_stamps(stamps, "whole", save_to=tmp_path)
 
 
 @pytest.mark.parametrize(
