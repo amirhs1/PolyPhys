@@ -892,9 +892,10 @@ default None
     ------
     ValueError
         If `profiles` is empty; if the species disagree on the `by` columns
-        or on ``bin_center`` in any row; if (`geometry`, `direction`) has no
-        entry in :data:`SUM_NORMALIZERS`; or if `normalizer` is none of the
-        accepted forms.
+        or on ``bin_center`` in any row; if a row has NaN in a `by` column;
+        if (`geometry`, `direction`) has no entry in
+        :data:`SUM_NORMALIZERS`; or if `normalizer` is none of the accepted
+        forms.
 
     Warns
     -----
@@ -958,7 +959,7 @@ default None
     # species must match them row for row.
     labels = list(profiles)
     first = profiles[labels[0]]
-    total = first[keys].copy()
+    total = first[keys].reset_index(drop=True)
     total[f"{sum_prop}-scale"] = 0.0
     # The species' normalized errors add in quadrature when every species
     # has one; the column is left out otherwise.
@@ -987,10 +988,18 @@ default None
     if with_error:
         total[f"{sum_prop}-norm-sem"] = np.sqrt(total[f"{sum_prop}-norm-sem"])
 
-    # Normalize each state point's sum by its own reference value
+    # Normalize each state point's sum by its own reference value; a row
+    # with no state point would be dropped by the group-by, and the groups
+    # are put back in the input row order.
     if by:
+        missing = int(total[list(by)].isna().any(axis=1).sum())
+        if missing:
+            rows = "row has" if missing == 1 else "rows have"
+            raise ValueError(
+                f"{missing} {rows} no value in the 'by' columns "
+                f"{list(by)}; the group-by would drop them.")
         groups = [group for _, group in total.groupby(list(by), sort=False)]
     else:
         groups = [total]
     normalized = [_normalize(sum_prop, group, normalizer) for group in groups]
-    return pd.concat(normalized, axis=0).reset_index(drop=True)
+    return pd.concat(normalized, axis=0).sort_index().reset_index(drop=True)
