@@ -1,9 +1,9 @@
 """
 The *TransFociCub* study: a ring of small and large monomers among crowders in
 a periodic cube. ``SPEC`` is its
-:class:`~polyphys.manage.projects.ProjectSpec`, ``PROBE`` its
-:class:`~polyphys.manage.projects.ProbeSpec`, and ``ANALYSIS`` its
-:class:`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
+:class:`~polyphys.spec.ProjectSpec`, ``PROBE`` its
+:class:`~polyphys.spec.ProbeSpec`, and ``ANALYSIS`` its
+:class:`~polyphys.spec.AnalysisTable` per particle group.
 
 Values from the research code's registry (SciOps ``sciops/api.py``,
 ``PROJECTS_DETAILS``), with the PolyPhys attribute names ``phi_bulk_c`` for
@@ -13,20 +13,23 @@ Values from the research code's registry (SciOps ``sciops/api.py``,
 listed once.
 """
 from polyphys.analyze.pipeline import (
-    AnalysisTable,
     Autocorrelation,
     FociPairDistances,
     LocalDensities,
     TimeAverage,
-    edge,
     half_contour,
+)
+from polyphys.manage.parser import ParserBase, TransFociCub
+from polyphys.spec import (
+    AnalysisTable,
+    ProbeSpec,
+    ProjectSpec,
+    edge,
     histogram,
     histogram_2d,
     matrix_tseries,
     tseries,
 )
-from polyphys.manage.parser import ParserBase, TransFociCub
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=TransFociCub,

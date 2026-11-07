@@ -6,7 +6,7 @@ This folder holds the specs of each of the maintainer's studies: its
 beyond the parser class, such as the polymer group, the rounding step of the
 bulk crowder volume fraction, the attributes added as columns, the
 species-to-size map of the density profiles, and the time series.
-`ProjectSpec` itself is in `polyphys.manage.projects`.
+`ProjectSpec` itself is in `polyphys.spec`.
 
 The folder is part of the repository, not of the installed package
 (`pyproject.toml` excludes `projects*`), so PolyPhys holds no table of studies.

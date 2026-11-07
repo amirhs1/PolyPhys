@@ -508,7 +508,7 @@ def space_profiles(
     species_sizes : mapping of (EntityT -> str)
         Each species label mapped to the parser attribute holding its
         particle diameter, in the monomer diameter: the ``species_sizes`` of
-        the study's :class:`~polyphys.manage.projects.ProjectSpec`.
+        the study's :class:`~polyphys.spec.ProjectSpec`.
     crowders : sequence of EntityT, default ('Crd',)
         The crowder species, each a key of `species_sizes`; one set of
         ``bin_center`` columns in crowder units is added per crowder.

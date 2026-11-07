@@ -23,30 +23,33 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
+from polyphys import spec
+from polyphys.analyze import pipeline
 from polyphys.analyze.clusters import foci_pair_info
 from polyphys.analyze.correlations import acf
 from polyphys.analyze.stats import sem_blocked
 from polyphys.analyze.pipeline import (
-    AnalysisTable,
     Autocorrelation,
     Derived,
     FociPairDistances,
     HookContext,
     LocalDensities,
-    PropertySpec,
     TimeAverage,
-    edge,
     equilibrium_wholes,
     half_contour,
+    reduce_space,
+    reduce_stamps,
+)
+from polyphys.manage.parser import SumRuleCyl, TransFociCub
+from polyphys.spec import (
+    AnalysisTable,
+    ProjectSpec,
+    edge,
     histogram,
     histogram_2d,
     matrix_tseries,
-    reduce_space,
-    reduce_stamps,
     tseries,
 )
-from polyphys.manage.parser import SumRuleCyl, TransFociCub
-from polyphys.manage.projects import ProjectSpec
 from polyphys.tests.conftest import lineage_tree_value, write_lineage_tree
 
 # A Pandas4Warning marks a deprecated pandas call; fail on it.
@@ -144,58 +147,30 @@ def _analysis(probe_dir, stage):
 # Records
 
 
-@pytest.mark.parametrize("kwargs, match", [
-    pytest.param(dict(name="", species="Mon", relation="tseries",
-                      whole_type="vector"), "must not be empty",
-                 id="empty-name"),
-    pytest.param(dict(name="gyrT", species="Mon", relation="series",
-                      whole_type="vector"), "relation must be",
-                 id="unknown-relation"),
-    pytest.param(dict(name="gyrT", species="Mon", relation="tseries",
-                      whole_type="frame"), "whole_type must be",
-                 id="unknown-whole-type"),
-    pytest.param(dict(name="xEdge", species="", relation="bin_edge",
-                      whole_type="vector"), "do not match",
-                 id="edge-relation-vector-whole"),
-    pytest.param(dict(name="xEdge", species="", relation="tseries",
-                      whole_type="bin_edge"), "do not match",
-                 id="tseries-relation-edge-whole"),
-    pytest.param(dict(name="gyrT", species="Mon", relation="tseries",
-                      whole_type="vector", edge_prop="gyrEdgeMon"),
-                 "edge_prop is only valid", id="edges-on-tseries"),
-    pytest.param(dict(name="xyHist", species="Crd", relation="histogram",
-                      whole_type="matrix", edge_prop="xyEdgeCrd"),
-                 "edge_prop is only valid", id="edges-on-matrix"),
+@pytest.mark.parametrize("name", [
+    pytest.param("AnalysisTable", id="AnalysisTable"),
+    pytest.param("PropertySpec", id="PropertySpec"),
+    pytest.param("PostHook", id="PostHook"),
+    pytest.param("tseries", id="tseries"),
+    pytest.param("histogram", id="histogram"),
+    pytest.param("histogram_2d", id="histogram_2d"),
+    pytest.param("edge", id="edge"),
+    pytest.param("matrix_tseries", id="matrix_tseries"),
 ])
-def test_property_spec_rejects_inconsistent_kinds(kwargs, match):
-    """A property whose relation, shape, and edges disagree is rejected."""
-    with pytest.raises(ValueError, match=match):
-        PropertySpec(**kwargs)
+def test_pipeline_serves_names_moved_to_spec_with_a_warning(name):
+    """A table record or builder that moved to polyphys.spec is the same
+    object from the pipeline, with a DeprecationWarning."""
+    with pytest.warns(DeprecationWarning,
+                      match=f"pipeline.{name} moved to polyphys\\.spec"):
+        served = getattr(pipeline, name)
+
+    assert served is getattr(spec, name)
 
 
-def test_constructors_build_the_kinds_the_studies_use():
-    """Each named constructor sets the property, relation, shape, and edges
-    of its kind."""
-    assert (tseries("gyrT", "Mon").prop, tseries("gyrT", "Mon").relation,
-            tseries("gyrT", "Mon").whole_type) == ("gyrTMon", "tseries",
-                                                   "vector")
-    hist = histogram("z", "Crd")
-    assert (hist.prop, hist.relation, hist.edge_prop) == (
-        "zHistCrd", "histogram", "zEdgeCrd")
-    assert (histogram_2d("xz", "Dna").prop,
-            histogram_2d("xz", "Dna").whole_type) == ("xzHistDna", "matrix")
-    assert (edge("y").prop, edge("y").relation, edge("y").has_edges) == (
-        "yEdge", "bin_edge", False)
-    assert matrix_tseries("principalT", "Mon").whole_type == "matrix"
-
-
-def test_analysis_table_rejects_bad_lineage_and_repeated_properties():
-    """A table needs a known lineage and lists each artifact once."""
-    with pytest.raises(ValueError, match="lineage must be"):
-        AnalysisTable("bug", "ensemble", False, ())
-    with pytest.raises(ValueError, match=r"more than once: \['gyrTMon'\]"):
-        AnalysisTable("bug", "whole", False,
-                      (tseries("gyrT", "Mon"), tseries("gyrT", "Mon")))
+def test_pipeline_rejects_an_unknown_name():
+    """A name the pipeline neither defines nor serves raises AttributeError."""
+    with pytest.raises(AttributeError, match="no attribute 'Table'"):
+        getattr(pipeline, "Table")
 
 
 def test_derived_rejects_edges_on_non_vector():

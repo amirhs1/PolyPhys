@@ -24,7 +24,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.manage.parser import SumRuleCyl, TransFociCub
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.spec import ProbeSpec, ProjectSpec
 
 pytest.importorskip("MDAnalysis")
 

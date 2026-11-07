@@ -12,10 +12,11 @@ ensembles, and the ensemble averages, and lets a *post-hook* derive further
 artifacts from the wholes, such as a time average, an autocorrelation
 function, a density profile, or the pair-separation histograms of the foci.
 
-A study describes its analysis as data: one :class:`AnalysisTable` per
-particle group, listing a :class:`PropertySpec` per probe artifact. The
-tables of the maintainer's studies live beside each study's
-:class:`~polyphys.manage.projects.ProjectSpec` in the repository's
+A study describes its analysis as data: one
+:class:`~polyphys.spec.AnalysisTable` per particle group, listing a
+:class:`~polyphys.spec.PropertySpec` per probe artifact; both records are in
+:mod:`polyphys.spec`. The tables of the maintainer's studies live beside each
+study's :class:`~polyphys.spec.ProjectSpec` in the repository's
 ``projects/`` folder, so a data correction or a special case is code in the
 study's folder, never an option of this module.
 
@@ -63,11 +64,10 @@ Contents
 ========
 
 Records:
-:class:`PropertySpec` describes one probe artifact; :func:`tseries`,
-:func:`histogram`, :func:`histogram_2d`, :func:`edge`, and
-:func:`matrix_tseries` build the kinds the studies use. :class:`AnalysisTable`
-lists the properties of one group. :class:`Derived` is one artifact a hook
-returns, and :class:`HookContext` what a hook may read.
+:class:`Derived` is one artifact a hook returns, and :class:`HookContext`
+what a hook may read. The table records, :class:`~polyphys.spec.PropertySpec`
+and :class:`~polyphys.spec.AnalysisTable`, and their builders are in
+:mod:`polyphys.spec`.
 
 Hooks:
 :class:`TimeAverage` averages a time series over its frames;
@@ -126,8 +126,8 @@ Dependencies
 - :mod:`polyphys.analyze.stats`:
   :func:`~polyphys.analyze.stats.sem_blocked`.
 - :mod:`polyphys.manage.organizer`: the lineage reducers.
-- :mod:`polyphys.manage.projects`:
-  :class:`~polyphys.manage.projects.ProjectSpec`.
+- :mod:`polyphys.spec`: :class:`~polyphys.spec.ProjectSpec`, the table
+  records, and :data:`~polyphys.spec.PerWhole`.
 
 References
 ==========
@@ -143,9 +143,9 @@ A table that reads as data: the gyration radius time series with its
 autocorrelation, the radial histogram of the crowders with their density
 profiles, and the planar histograms with their edges:
 
->>> from polyphys.analyze.pipeline import (
-...     AnalysisTable, Autocorrelation, LocalDensities, edge, histogram,
-...     histogram_2d, tseries)
+>>> from polyphys.analyze.pipeline import Autocorrelation, LocalDensities
+>>> from polyphys.spec import (
+...     AnalysisTable, edge, histogram, histogram_2d, tseries)
 >>> table = AnalysisTable(
 ...     group='all', lineage='segment', stamps=False, properties=(
 ...         tseries('gyrT', 'Mon', post_hook=Autocorrelation(nlags=100)),
@@ -157,6 +157,15 @@ profiles, and the planar histograms with their edges:
 ['gyrTMon', 'rHistCrd', 'xyHistCrd', 'xEdge']
 
 .. versionadded:: 0.6.0
+
+.. versionchanged:: 0.9.0
+   :class:`~polyphys.spec.AnalysisTable`,
+   :class:`~polyphys.spec.PropertySpec`, :data:`~polyphys.spec.PostHook`,
+   and the builders :func:`~polyphys.spec.tseries`,
+   :func:`~polyphys.spec.histogram`, :func:`~polyphys.spec.histogram_2d`,
+   :func:`~polyphys.spec.edge`, and :func:`~polyphys.spec.matrix_tseries`
+   moved to :mod:`polyphys.spec`; importing them from here warns with
+   :exc:`DeprecationWarning` until 1.0.0.
 """
 import glob
 import logging
@@ -175,41 +184,61 @@ from polyphys.analyze import clusters, measurer, stats
 from polyphys.analyze.correlations import acf
 from polyphys.analyze.stats import PlateauMethod
 from polyphys.analyze.sumrule import PROFILE_NORMALIZERS
+from polyphys import spec as _spec
 from polyphys.manage import organizer
 from polyphys.manage.parser import ParserBase
-from polyphys.manage.projects import ProjectSpec
 from polyphys.manage.types import (
     DirectionT,
-    EntityT,
     GroupT,
     Pathish,
     PrimitiveLineageT,
     PropertyT,
     WholeRelationT,
 )
+from polyphys.spec import PerWhole, ProjectSpec
 
 __all__ = [
-    'AnalysisTable',
     'Autocorrelation',
     'DensityKernel',
     'Derived',
     'FociPairDistances',
     'HookContext',
     'LocalDensities',
-    'PropertySpec',
     'TimeAverage',
-    'edge',
     'equilibrium_wholes',
     'half_contour',
-    'histogram',
-    'histogram_2d',
-    'matrix_tseries',
     'reduce_space',
     'reduce_stamps',
-    'tseries',
 ]
 
 logger = logging.getLogger(__name__)
+
+
+# The table records and builders that moved to polyphys.spec in 0.9.0, which
+# this module still serves, with a DeprecationWarning, until 1.0.0.
+_MOVED_TO_SPEC = frozenset({
+    'AnalysisTable', 'PostHook', 'PropertySpec', 'edge', 'histogram',
+    'histogram_2d', 'matrix_tseries', 'tseries'})
+
+
+def __getattr__(name: str) -> object:
+    """
+    Serve a name that moved to :mod:`polyphys.spec`, with a warning.
+
+    Raises
+    ------
+    AttributeError
+        If `name` is not one of the moved names.
+    """
+    if name in _MOVED_TO_SPEC:
+        warnings.warn(
+            f"polyphys.analyze.pipeline.{name} moved to polyphys.spec in "
+            f"0.9.0; import it from there. The old path is removed in 1.0.0.",
+            DeprecationWarning, stacklevel=2)
+        return getattr(_spec, name)
+    raise AttributeError(
+        f"module 'polyphys.analyze.pipeline' has no attribute {name!r}")
+
 
 #: The shape of one whole; see "whole type" in the module notation.
 WholeTypeT = Literal['vector', 'matrix', 'bin_edge', 'dataframe']
@@ -369,117 +398,13 @@ class Derived:
 
 
 @dataclass(frozen=True)
-class PropertySpec:
-    """
-    One probe artifact of a particle group, and how it reduces.
-
-    Attributes
-    ----------
-    name : str
-        The property's name without its species, such as ``'gyrT'`` or
-        ``'rHist'``.
-    species : str
-        The species the property is measured on, such as ``'Mon'``; the
-        empty string for a property without one, such as an edge file.
-    relation : {'tseries', 'histogram', 'bin_edge'}
-        How the segments of a whole combine; see the module notation.
-    whole_type : {'vector', 'matrix', 'bin_edge'}
-        The shape of one whole as loaded; see the module notation.
-    edge_prop : str, optional
-        The property of the file that holds this histogram's bin edges, such
-        as ``'rEdgeMon'`` for ``'rHistMon'``. Only for a ``'vector'``
-        ``'histogram'``.
-    post_hook : callable, optional
-        A post-hook ``(wholes, context) -> tuple[Derived, ...]``; see the
-        module notation. ``None`` passes the wholes through under `prop`.
-
-    Raises
-    ------
-    ValueError
-        If `name` is empty; if `relation` or `whole_type` is unknown; if
-        exactly one of them is ``'bin_edge'``; or if `edge_prop` is given
-        for anything but a ``'vector'`` ``'histogram'``.
-
-    Notes
-    -----
-    The named constructors :func:`tseries`, :func:`histogram`,
-    :func:`histogram_2d`, :func:`edge`, and :func:`matrix_tseries` build the
-    kinds the studies use, so a table reads as data.
-
-    Examples
-    --------
-    >>> spec = PropertySpec('rHist', 'Mon', 'histogram', 'vector',
-    ...                     edge_prop='rEdgeMon')
-    >>> spec.prop, spec.has_edges
-    ('rHistMon', True)
-
-    An edge file is a ``'bin_edge'`` in both its relation and its shape:
-
-    >>> PropertySpec('xEdge', '', 'bin_edge', 'vector')
-    Traceback (most recent call last):
-    ...
-    ValueError: 'xEdge': relation 'bin_edge' and whole_type 'vector' ...
-
-    .. versionadded:: 0.6.0
-    """
-
-    name: str
-    species: EntityT
-    relation: WholeRelationT
-    whole_type: Literal['vector', 'matrix', 'bin_edge']
-    edge_prop: PropertyT | None = None
-    post_hook: 'PostHook | None' = None
-
-    def __post_init__(self) -> None:
-        if not self.name:
-            raise ValueError("A property's name must not be empty.")
-        if self.relation not in ('tseries', 'histogram', 'bin_edge'):
-            raise ValueError(
-                f"'{self.prop}': relation must be 'tseries', 'histogram', or "
-                f"'bin_edge', not '{self.relation}'."
-            )
-        if self.whole_type not in ('vector', 'matrix', 'bin_edge'):
-            raise ValueError(
-                f"'{self.prop}': whole_type must be 'vector', 'matrix', or "
-                f"'bin_edge', not '{self.whole_type}'."
-            )
-        if (self.relation == 'bin_edge') != (self.whole_type == 'bin_edge'):
-            raise ValueError(
-                f"'{self.prop}': relation '{self.relation}' and whole_type "
-                f"'{self.whole_type}' do not match; an edge file is "
-                "'bin_edge' in both."
-            )
-        if self.edge_prop is not None and not (
-            self.relation == 'histogram' and self.whole_type == 'vector'
-        ):
-            raise ValueError(
-                f"'{self.prop}': edge_prop is only valid for a 'vector' "
-                f"'histogram', not a '{self.whole_type}' '{self.relation}'."
-            )
-
-    @property
-    def prop(self) -> PropertyT:
-        """
-        The property as it appears in file names: `name` then `species`.
-        """
-        return self.name + self.species
-
-    @property
-    def has_edges(self) -> bool:
-        """
-        Whether the property has a bin-edge file.
-        """
-        return self.edge_prop is not None
-
-
-@dataclass(frozen=True)
 class HookContext:
     """
     What a post-hook may read besides the wholes.
 
     Attributes
     ----------
-    prop : PropertySpec
+    prop : ~polyphys.spec.PropertySpec
         The property the wholes belong to.
     spec : ProjectSpec, optional
         The study's spec: its parser, topology, and species sizes.
@@ -496,230 +421,12 @@ class HookContext:
     .. versionadded:: 0.6.0
     """
 
-    prop: PropertySpec
+    prop: _spec.PropertySpec
     spec: ProjectSpec | None = None
     group: GroupT = 'bug'
     infos: Mapping[str, ParserBase] = field(default_factory=dict)
     edges: Edges | None = None
     density: DensityKernel | None = None
-
-
-#: A post-hook; see the module notation.
-PostHook = Callable[[ArrayWholes, HookContext], tuple[Derived, ...]]
-
-
-@dataclass(frozen=True)
-class AnalysisTable:
-    """
-    The analysis of one particle group of a study, as data.
-
-    Attributes
-    ----------
-    group : str
-        The particle group whose artifacts the table reduces.
-    lineage : {'segment', 'whole'}
-        The lineage of the group's probe artifacts; see the module notation.
-    stamps : bool
-        Whether the group's stamp files are combined by
-        :func:`reduce_stamps`.
-    properties : tuple of PropertySpec
-        The artifacts to reduce, each listed once.
-
-    Raises
-    ------
-    ValueError
-        If `lineage` is unknown, or two properties name the same artifact.
-
-    Examples
-    --------
-    >>> table = AnalysisTable('bug', 'whole', True, (tseries('gyrT', 'Mon'),))
-    >>> table.lineage, len(table.properties)
-    ('whole', 1)
-
-    Listing an artifact twice is an error, so a table cannot reduce one file
-    two ways by accident:
-
-    >>> AnalysisTable('bug', 'whole', True,
-    ...               (tseries('gyrT', 'Mon'), tseries('gyrT', 'Mon')))
-    Traceback (most recent call last):
-    ...
-    ValueError: Properties listed more than once: ['gyrTMon'].
-
-    .. versionadded:: 0.6.0
-    """
-
-    group: GroupT
-    lineage: PrimitiveLineageT
-    stamps: bool
-    properties: tuple[PropertySpec, ...]
-
-    def __post_init__(self) -> None:
-        if self.lineage not in ('segment', 'whole'):
-            raise ValueError(
-                f"lineage must be 'segment' or 'whole', not "
-                f"'{self.lineage}'."
-            )
-        object.__setattr__(self, 'properties', tuple(self.properties))
-        seen: set[str] = set()
-        repeated: list[str] = []
-        for prop in self.properties:
-            if prop.prop in seen and prop.prop not in repeated:
-                repeated.append(prop.prop)
-            seen.add(prop.prop)
-        if repeated:
-            raise ValueError(f"Properties listed more than once: {repeated}.")
-
-
-def tseries(
-    name: str, species: EntityT, post_hook: 'PostHook | None' = None
-) -> PropertySpec:
-    """
-    A scalar time series: one value per frame, concatenated over segments.
-
-    Parameters
-    ----------
-    name : str
-        The property's name, such as ``'gyrT'``.
-    species : str
-        The species, such as ``'Mon'``.
-    post_hook : callable, optional
-        A post-hook; see :class:`PropertySpec`.
-
-    Returns
-    -------
-    PropertySpec
-        A ``'tseries'`` ``'vector'`` property.
-
-    Examples
-    --------
-    >>> tseries('gyrT', 'Mon').prop
-    'gyrTMon'
-
-    .. versionadded:: 0.6.0
-    """
-    return PropertySpec(name, species, 'tseries', 'vector',
-                        post_hook=post_hook)
-
-
-def histogram(
-    direction: DirectionT, species: EntityT,
-    post_hook: 'PostHook | None' = None,
-) -> PropertySpec:
-    """
-    A one-dimensional histogram with its bin-edge file.
-
-    Parameters
-    ----------
-    direction : str
-        The direction, such as ``'r'``, ``'z'``, or ``'theta'``: the property
-        is ``<direction>Hist<species>`` and its edges
-        ``<direction>Edge<species>``.
-    species : str
-        The species, such as ``'Crd'``.
-    post_hook : callable, optional
-        A post-hook; see :class:`PropertySpec`.
-
-    Returns
-    -------
-    PropertySpec
-        A ``'histogram'`` ``'vector'`` property with `edge_prop` set.
-
-    Examples
-    --------
-    >>> spec = histogram('r', 'Crd')
-    >>> spec.prop, spec.edge_prop
-    ('rHistCrd', 'rEdgeCrd')
-
-    .. versionadded:: 0.6.0
-    """
-    return PropertySpec(f'{direction}Hist', species, 'histogram', 'vector',
-                        edge_prop=f'{direction}Edge{species}',
-                        post_hook=post_hook)
-
-
-def histogram_2d(plane: str, species: EntityT) -> PropertySpec:
-    """
-    A two-dimensional histogram, summed over segments and stacked over wholes.
-
-    Parameters
-    ----------
-    plane : str
-        The plane as the probe phase names it, such as ``'xy'`` or
-        ``'xz'``: the property is ``<plane>Hist<species>``. Its edges are
-        the :func:`edge` properties of the plane's two directions.
-    species : str
-        The species, such as ``'Crd'``.
-
-    Returns
-    -------
-    PropertySpec
-        A ``'histogram'`` ``'matrix'`` property.
-
-    Examples
-    --------
-    >>> histogram_2d('xy', 'Crd').prop
-    'xyHistCrd'
-
-    .. versionadded:: 0.6.0
-    """
-    return PropertySpec(f'{plane}Hist', species, 'histogram', 'matrix')
-
-
-def edge(direction: DirectionT) -> PropertySpec:
-    """
-    A bin-edge file shared by the two-dimensional histograms of a direction.
-
-    Parameters
-    ----------
-    direction : str
-        The direction, such as ``'x'``: the property is
-        ``<direction>Edge``, with no species.
-
-    Returns
-    -------
-    PropertySpec
-        A ``'bin_edge'`` property.
-
-    Examples
-    --------
-    >>> edge('x').prop
-    'xEdge'
-
-    .. versionadded:: 0.6.0
-    """
-    return PropertySpec(f'{direction}Edge', '', 'bin_edge', 'bin_edge')
-
-
-def matrix_tseries(
-    name: str, species: EntityT, post_hook: 'PostHook | None' = None
-) -> PropertySpec:
-    """
-    A time series of arrays: one array per frame, concatenated over segments.
-
-    Parameters
-    ----------
-    name : str
-        The property's name, such as ``'principalT'`` (one matrix per frame)
-        or ``'clustersHistT'`` (one histogram per frame).
-    species : str
-        The species, such as ``'Mon'``.
-    post_hook : callable, optional
-        A post-hook; see :class:`PropertySpec`.
-
-    Returns
-    -------
-    PropertySpec
-        A ``'tseries'`` ``'matrix'`` property.
-
-    Examples
-    --------
-    >>> matrix_tseries('principalT', 'Mon').whole_type
-    'matrix'
-
-    .. versionadded:: 0.6.0
-    """
-    return PropertySpec(name, species, 'tseries', 'matrix',
-                        post_hook=post_hook)
 
 
 # ---------------------------------------------------------------------------
@@ -753,6 +460,7 @@ class TimeAverage:
     Examples
     --------
     >>> import numpy as np
+    >>> from polyphys.spec import matrix_tseries
     >>> hook = TimeAverage('clustersHist', drop_first_column=True)
     >>> context = HookContext(matrix_tseries('clustersHistT', 'Foci'))
     >>> wholes = {'w1': np.array([[0, 1, 2], [0, 3, 4], [0, 5, 6]])}
@@ -805,6 +513,7 @@ class Autocorrelation:
     The alternating series has :math:`r_1 = -7/8` and :math:`r_2 = 6/8`:
 
     >>> import numpy as np
+    >>> from polyphys.spec import tseries
     >>> hook = Autocorrelation(nlags=2)
     >>> context = HookContext(tseries('gyrT', 'Mon'))
     >>> series, acf_out = hook({'w1': np.tile([1.0, -1.0], 4)}, context)
@@ -839,7 +548,7 @@ class LocalDensities:
     local number density, and ``<direction>Phi<species>``, the local volume
     fraction, from the :class:`DensityKernel` given to :func:`reduce_space`,
     with the species' diameter read from the attribute the study's
-    :attr:`~polyphys.manage.projects.ProjectSpec.species_sizes` names.
+    :attr:`~polyphys.spec.ProjectSpec.species_sizes` names.
 
     Raises
     ------
@@ -865,7 +574,7 @@ class LocalDensities:
 
     >>> import numpy as np
     >>> from polyphys.manage.parser import SumRuleCyl
-    >>> from polyphys.manage.projects import ProjectSpec
+    >>> from polyphys.spec import ProjectSpec, histogram
     >>> spec = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
     ...     physical_attrs=('space',), species_sizes={'Crd': 'dcrowd'},
@@ -940,10 +649,6 @@ class LocalDensities:
             Derived(f'{direction}Phi{prop.species}', phis, 'vector',
                     context.edges, normalizer),
         )
-
-
-#: A number, or a function of a whole's parser instance that gives one.
-PerWhole = float | Callable[[ParserBase], float]
 
 
 def _resolve(value: PerWhole, info: ParserBase | None, what: str) -> float:
@@ -1064,7 +769,7 @@ class FociPairDistances:
 
     >>> import numpy as np
     >>> from polyphys.manage.parser import SumRuleCubHeteroRing
-    >>> from polyphys.manage.projects import ProjectSpec
+    >>> from polyphys.spec import ProjectSpec, matrix_tseries
     >>> spec = ProjectSpec(
     ...     parser=SumRuleCubHeteroRing, group='bug', divisor=0.025,
     ...     physical_attrs=('space',), species_sizes={},
@@ -1228,7 +933,7 @@ def reduce_stamps(
 def reduce_space(
     input_database: Pathish,
     spec: ProjectSpec,
-    table: AnalysisTable,
+    table: _spec.AnalysisTable,
     *,
     hierarchy: str | None = None,
     density: DensityKernel | None = None,
@@ -1245,7 +950,7 @@ def reduce_space(
         research code's drivers pass it.
     spec : ProjectSpec
         The study's spec: its parser, topology, and species sizes.
-    table : AnalysisTable
+    table : ~polyphys.spec.AnalysisTable
         The group's analysis table.
     hierarchy : str, optional
         The glob, relative to `input_database`, that lists the artifact
@@ -1298,7 +1003,7 @@ def reduce_space(
     >>> import tempfile
     >>> import numpy as np
     >>> from polyphys.manage.parser import SumRuleCyl
-    >>> from polyphys.manage.projects import ProjectSpec
+    >>> from polyphys.spec import AnalysisTable, ProjectSpec, tseries
     >>> spec = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
     ...     physical_attrs=('space',), species_sizes={'Mon': 'dmon'},
@@ -1592,7 +1297,7 @@ def _load_wholes(
 
 
 def _check_edges(
-    prop: PropertySpec,
+    prop: _spec.PropertySpec,
     wholes: Mapping[str, np.ndarray],
     edges: Mapping[str, np.ndarray],
     parser: type[ParserBase],
