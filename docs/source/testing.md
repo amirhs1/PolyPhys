@@ -258,3 +258,11 @@ leaked semaphores from a process of its own after pytest has exited, so
 `test_multiprocessing_run_leaves_no_leaked_semaphore` in
 `polyphys/tests/probe/test_core.py` runs a parallel probe in a subprocess
 and checks its standard error instead.
+
+The documentation build replaces MDAnalysis and matplotlib with mocks, and
+Python 3.13, which Read the Docs runs, evaluates annotations when a function
+is defined, where Python 3.14 defers them. So
+`test_mocked_modules_import_with_their_annotations_evaluated` in
+`polyphys/tests/test_docs.py` imports the probe and viz modules under the
+mocks of Sphinx and evaluates every annotation. Sphinx is in the `dev`
+extra so that the test runs in every CI job that installs it.
