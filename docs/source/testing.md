@@ -82,6 +82,23 @@ example and reports it. For example,
 positions within that range, and checks that each position is counted exactly
 once.
 
+Five more properties are checked on generated inputs, none against a
+reference value:
+
+- a parser name built from the parser's own pattern parses to its values
+  and rebuilds to itself, for every synthetic parser in
+  `polyphys/tests/synthetic.py` and every study parser in `projects/`;
+  `polyphys.tests.strategies.lineage_names` draws the names;
+- `block_average` of `a x + b` keeps every blocking level, with the mean
+  `a mean + b`, the variance `a² var`, the standard error `|a| sem`, and the
+  inefficiency unchanged;
+- on a generated grid, each row of `share_matrix` whose bead stays in the
+  domain sums to the bead volume;
+- species profiles that add up to one constant give a normalized
+  `sum_rule_profiles` of one in every bin;
+- a generated linear or ring chain, with or without angles, survives
+  `write_data` and `read_data` unchanged.
+
 Hypothesis is in the `dev` extra. Its built-in `ci` settings profile is active
 whenever the `CI` environment variable is set, as it is on GitHub Actions: CI
 runs then draw the same inputs every time (`derandomize=True`) and keep no

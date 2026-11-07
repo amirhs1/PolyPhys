@@ -56,6 +56,8 @@ import warnings
 
 import numpy as np
 import pytest
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.analyze.density import (
@@ -754,3 +756,58 @@ def test_center_sphere_profiles_match_the_research_code(
                     rtol=1e-8)
     assert_allclose(scale * phi, np.load(folder / 'phi_sciops.npy'),
                     rtol=1e-8)
+
+
+# ---------------------------------------------------------------------------
+# share_matrix: generated grids (P)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize('geometry, shares', [
+    pytest.param('cubic', 'average', id='spherical-average'),
+    pytest.param('cubic', 'center', id='spherical-center'),
+    pytest.param('cylindrical', 'average', id='cylindrical-average'),
+    pytest.param('cylindrical', 'center', id='cylindrical-center'),
+])
+@settings(max_examples=50, deadline=None)
+@given(n_bins=st.integers(min_value=4, max_value=40),
+       width=st.floats(min_value=0.1, max_value=2.0),
+       diameter=st.floats(min_value=0.2, max_value=3.0))
+def test_share_matrix_radial_rows_conserve_a_generated_bead_volume(
+        geometry, shares, n_bins, width, diameter):
+    """On a generated radial grid, every bin whose bead stays inside the
+    last edge shares out exactly the bead volume: volume conservation, with
+    no reference value."""
+    edges = width * np.arange(n_bins + 1)
+    inside = edges[1:] + diameter / 2 <= edges[-1]
+    assume(inside.any())
+
+    share = share_matrix(edges, diameter, geometry, 'r', shares=shares)
+
+    row_sums = np.asarray(share.sum(axis=1)).ravel()
+    # The exact cylinder kernel is a quadrature: 1e-8 of a bead volume.
+    assert_allclose(row_sums[inside], _bead_volume(diameter), rtol=1e-8)
+
+
+@pytest.mark.parametrize('shares', [
+    pytest.param('average', id='slab-average'),
+    pytest.param('center', id='slab-center'),
+])
+@settings(max_examples=50, deadline=None)
+@given(n_bins=st.integers(min_value=4, max_value=40),
+       width=st.floats(min_value=0.1, max_value=2.0),
+       diameter=st.floats(min_value=0.2, max_value=3.0))
+def test_share_matrix_slab_rows_conserve_a_generated_bead_volume(
+        shares, n_bins, width, diameter):
+    """On a generated periodic axis of a cylinder, every bin shares out
+    exactly the bead volume through the periodic images: volume
+    conservation, with no reference value."""
+    length = n_bins * width
+    assume(diameter < length)
+    edges = width * np.arange(n_bins + 1) - length / 2
+
+    share = share_matrix(edges, diameter, 'cylindrical', 'z', shares=shares)
+
+    row_sums = np.asarray(share.sum(axis=1)).ravel()
+    # Closed-form slab kernels: float64 round-off over about 30 bins.
+    assert_allclose(row_sums, _bead_volume(diameter), rtol=1e-10)

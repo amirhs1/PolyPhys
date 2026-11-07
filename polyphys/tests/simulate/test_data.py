@@ -21,7 +21,11 @@ from typing import Any, Callable, Sequence
 
 import numpy as np
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import arrays
 
+from polyphys.simulate.build import chain_data
 from polyphys.simulate.core import Box
 from polyphys.simulate.data import (
     BrokenDataError,
@@ -823,3 +827,32 @@ def test_with_frame_rejects_a_frame_with_only_unwrapped_coordinates(
 
     with pytest.raises(KeyError, match="unwrapped coordinates only"):
         with_frame(make_record("bond"), frame)
+
+
+# Generated chains -----------------------------------------------------------
+
+
+@pytest.mark.parametrize(("ring", "angles"), [
+    pytest.param(False, False, id="linear"),
+    pytest.param(False, True, id="linear-angles"),
+    pytest.param(True, False, id="ring"),
+    pytest.param(True, True, id="ring-angles"),
+])
+# tmp_path is reused across the examples of one case: each example
+# overwrites the one file, and record_fields only reads its argument.
+@settings(max_examples=50, deadline=None,
+          suppress_health_check=[HealthCheck.function_scoped_fixture])
+@given(positions=arrays(
+    np.float64,
+    st.tuples(st.integers(min_value=3, max_value=50), st.just(3)),
+    elements=st.floats(min_value=0.5, max_value=9.5)))
+def test_write_data_round_trips_a_generated_chain(
+        record_fields, tmp_path, ring, angles, positions):
+    """A generated linear or ring chain, with or without angles, reads back
+    with every field unchanged: the round trip, with no reference value."""
+    record = chain_data(positions, Box(lo=np.zeros(3), hi=np.full(3, 10.0)),
+                        ring=ring, angles=angles)
+
+    back = read_data(write_data(record, tmp_path / "chain.data"))
+
+    assert record_fields(back) == record_fields(record)

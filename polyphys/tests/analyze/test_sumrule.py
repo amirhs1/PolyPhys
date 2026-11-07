@@ -21,6 +21,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import arrays
 
 from polyphys.analyze.sumrule import (
     PROFILE_NORMALIZERS,
@@ -869,3 +872,46 @@ def test_sum_rule_profiles_rejects_bad_arguments(profiles, geometry,
     raises ValueError."""
     with pytest.raises(ValueError, match=message):
         sum_rule_profiles(profiles, "rPhi", geometry, direction)
+
+
+# Generated profiles
+
+
+def _profiles_of_a_constant_sum(
+    prop: str, total: float, weights: np.ndarray
+) -> dict[str, pd.DataFrame]:
+    """Split `total` over the species in every bin, in the proportions of
+    the columns of `weights`, shape ``(n_species, n_bins)``: scaled profiles
+    whose sum over species is `total` everywhere, where the sum rule holds
+    (Jeon et al., 2016, eqns 5 and 7)."""
+    shares = total * weights / weights.sum(axis=0)
+    keys = {"ensemble_long": ["s1"] * weights.shape[1],
+            "bin_center": np.arange(weights.shape[1]) + 0.5}
+    return {f"Sp{i}": pd.DataFrame({**keys, f"{prop}Sp{i}-scale": share})
+            for i, share in enumerate(shares)}
+
+
+@pytest.mark.parametrize("geometry, direction, prop", [
+    pytest.param("cylindrical", "r", "rPhi", id="cylinder-r"),
+    pytest.param("cylindrical", "z", "zPhi", id="cylinder-z"),
+    pytest.param("cubic", "r", "rRho", id="cube-r"),
+])
+@settings(max_examples=50, deadline=None)
+@given(
+    total=st.floats(min_value=0.01, max_value=10.0),
+    weights=arrays(np.float64,
+                   st.tuples(st.integers(min_value=1, max_value=4),
+                             st.integers(min_value=2, max_value=30)),
+                   elements=st.floats(min_value=0.01, max_value=1.0)),
+)
+def test_sum_rule_profiles_are_one_where_a_generated_rule_holds(
+        geometry, direction, prop, total, weights):
+    """Species profiles that add up to one constant in every bin give a
+    normalized sum of one in every bin: the sum rule's own statement, with
+    no reference value."""
+    profiles = _profiles_of_a_constant_sum(prop, total, weights)
+
+    summed = sum_rule_profiles(profiles, prop, geometry, direction)
+
+    # float64 round-off of a sum of at most four shares and one division.
+    np.testing.assert_allclose(summed[f"{prop}Sum-norm"], 1.0, rtol=1e-12)
