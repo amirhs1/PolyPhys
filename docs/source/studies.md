@@ -73,7 +73,12 @@ attribute that holds each group's dump period (here fixed in `_defaults`).
 `ParserBase` does the parsing. Each keyword gets a `KeywordSpec` naming the
 attribute that stores its value and the value's type; a `float` keyword may
 also convert the value as `scale * value + offset`, here `lcube = 2 l` from
-the half-side `l`:
+the half-side `l`. The conversion is exact decimal arithmetic on the value's
+text, rounded once to a float, so the cylinder size `D = 2 r - 1` of `r4.1`
+is `7.2` and prints as `D7.2` in the short names. A bulk volume fraction is
+nominal, the species' bead volume over the volume its centers can reach, and
+can exceed one for a species nearly as wide as the box; a species with no
+room for its centers raises `ValueError` naming the state point:
 
 ```python
 >>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
