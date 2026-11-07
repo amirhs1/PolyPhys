@@ -1714,7 +1714,11 @@ def _frame_ensembles(
     """
     The long-form ensembles of ``'dataframe'`` wholes: every whole's rows,
     with a ``whole`` and a ``row`` column, saved as
-    ``<ensemble_long>-<group>-<prop>.csv``.
+    ``<ensemble_long>-<group>-<prop>.csv``. Raises ``ValueError`` if the
+    wholes of an ensemble have unequal numbers of rows, as
+    :func:`~polyphys.manage.organizer.ens_from_df` does, before anything is
+    saved; :func:`_frame_ensemble_avg` would otherwise take its rows from
+    the first whole.
     """
     members: dict[str, dict[str, pd.DataFrame]] = {}
     for whole_name, frame in wholes.items():
@@ -1723,6 +1727,8 @@ def _frame_ensembles(
         members.setdefault(ens_name, {})[whole_name] = frame
     ensembles: dict[str, pd.DataFrame] = {}
     for ens_name, frames in members.items():
+        organizer._assert_equal_lengths(
+            ens_name, {name: len(frame) for name, frame in frames.items()})
         long_frame = pd.concat(
             list(frames.values()), keys=list(frames),
             names=['whole', 'row'],
