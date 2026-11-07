@@ -9,9 +9,12 @@ subfolder. A tree's values are ``1000 e + 100 w + 10 s + k``
 two-dimensional wholes are written over the tree's files by hand. The hooks
 are also tested on their own with a ``HookContext``; the density kernel is a
 stub that records its calls. The equilibrium values of the wholes are read
-from ensemble CSV files written by hand. The golden comparison with the
-research code's output is written blind and runs only with the
-maintainer's data.
+from ensemble CSV files written by hand. Two tests reduce the output of a
+probe run in the test: ``ChainSize`` on chains written by
+``make_chain_files``, which skip without MDAnalysis and take their expected
+names from the parser and their expected means from the probe's own
+results. The golden comparison with the research code's output is written
+blind and runs only with the maintainer's data.
 """
 import importlib
 import logging
@@ -1183,6 +1186,98 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
         f"{name}-bug-{prop}.npy" for name in names for prop in (
             "gyrTMon", "gyrTMon-acf", "rHistMon", "rEdgeMon", "rRhoMon",
             "rPhiMon", "clustersHistTMon", "clustersHistMon"))
+
+
+# A probe's own output, reduced
+
+
+@pytest.fixture
+def probe_space(probe_dir, make_chain_files):
+    """Run ``ChainSize`` on two segments of each of two replicates of one
+    SumRuleCyl state point, saving its ``rfloryT`` series and stamps into
+    one folder per segment of the probe directory. Each chain is straight
+    along z with bond length ``e + s / 10 + f / 100`` for replicate ``e``,
+    segment ``s``, and frame ``f``, so every value differs. Returns the
+    probe's ``rfloryT`` results by (replicate, segment). The dumps carry no
+    time step, so the tests that use it ignore the dump reader's warning
+    that the frames have no ``dt``."""
+    pytest.importorskip("MDAnalysis")
+    from polyphys.probe import ChainSize, make_universe, write_stamps
+
+    stem = "N4epsilon5r2.5lz10sig1nc0dt0.005bdump1adump1"
+    results = {}
+    for ens in (1, 2):
+        for seg in (1, 2):
+            name = f"{stem}ens{ens}.j{seg:02d}"
+            bonds = ens + seg / 10 + np.arange(3) / 100
+            frames = np.full((3, 4, 3), 10.0)
+            frames[:, :, 2] = 5.0 + bonds[:, None] * np.arange(4)
+            data, dump = make_chain_files(frames, name=name)
+            parser = SumRuleCyl(name, "segment", "bug")
+            folder = probe_dir / name
+            folder.mkdir()
+            universe = make_universe(data, dump)
+            analysis = ChainSize(universe.select_atoms("resid 1"),
+                                 ("rfloryT",)).run()
+            analysis.save(folder, f"{parser.name}-{parser.group}")
+            write_stamps(parser, analysis.n_frames, folder)
+            results[(ens, seg)] = analysis.results["rfloryT"]
+    return results
+
+
+@pytest.mark.filterwarnings(
+    "ignore:Reader has no dt information:UserWarning")
+def test_probe_outputs_reduce_to_the_stage_files(probe_dir, cyl_spec,
+                                                 probe_space):
+    """The files a probe writes parse in the pipeline, which writes each
+    whole of the probed segments to wholeSim and the ensemble and its
+    average to ens and ensAvg, with the stamps of each level, under the
+    names the parser gives the probed segments."""
+    parsers = [SumRuleCyl(next((probe_dir / f).glob("*.npy")).name, "segment",
+                          "bug", ispath=True)
+               for f in sorted(path.name for path in probe_dir.iterdir())]
+    (space,) = {parser.space for parser in parsers}
+    (ensemble,) = {parser.ensemble_long for parser in parsers}
+    wholes = sorted({parser.whole for parser in parsers})
+    table = AnalysisTable("bug", "segment", True, (tseries("rfloryT", "Mon"),))
+
+    result = reduce_space(probe_dir, cyl_spec, table, hierarchy="*/*")
+
+    assert list(result["rfloryTMon"]) == [ensemble]
+    assert sorted(path.name for path in _analysis(probe_dir, "wholeSim")
+                  .iterdir()) == sorted(
+        [f"{space}-bug-stamps-segment.csv"]
+        + [f"{whole}-bug-rfloryTMon.npy" for whole in wholes])
+    assert sorted(path.name for path in _analysis(probe_dir, "ens")
+                  .iterdir()) == sorted([
+                      f"{space}-bug-stamps-whole.csv",
+                      f"{ensemble}-bug-rfloryTMon.csv"])
+    assert sorted(path.name for path in _analysis(probe_dir, "ensAvg")
+                  .iterdir()) == sorted([
+                      f"{space}-bug-stamps-ensemble_long.csv",
+                      f"{ensemble}-bug-rfloryTMon-ensAvg.csv"])
+
+
+@pytest.mark.filterwarnings(
+    "ignore:Reader has no dt information:UserWarning")
+def test_probe_outputs_reduce_to_the_mean_of_the_wholes(probe_dir, cyl_spec,
+                                                        probe_space):
+    """The ensemble average of a probed series is, frame by frame, the mean
+    over the replicates of each replicate's segments joined in order: a
+    property of the reduction, computed from the probe's own results."""
+    whole_1 = np.concatenate([probe_space[(1, 1)], probe_space[(1, 2)]])
+    whole_2 = np.concatenate([probe_space[(2, 1)], probe_space[(2, 2)]])
+    table = AnalysisTable("bug", "segment", False,
+                          (tseries("rfloryT", "Mon"),))
+
+    result = reduce_space(probe_dir, cyl_spec, table, hierarchy="*/*",
+                          save=False)
+
+    (average,) = result["rfloryTMon"].values()
+    # Both sides average the same float64 copies of the probe's values, so
+    # only float64 round-off separates them.
+    assert_allclose(average["rfloryTMon-mean"], (whole_1 + whole_2) / 2,
+                    rtol=1e-12)
 
 
 # The equilibrium values of the wholes

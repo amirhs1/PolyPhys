@@ -27,6 +27,7 @@ version increase may introduce incompatible changes.
 
 ### Added
 
+- Add a tier A test that runs `ChainSize` on chains written in the test and reduces its files with `reduce_space`, checking the stage files' names and the ensemble mean; `make_chain_files` moves to the shared test `conftest.py` ([#191](https://github.com/amirhs1/PolyPhys/issues/191))
 - Add a release step: the maintainer runs the full test command with `POLYPHYS_DATA_DIR` set and LAMMPS available, since CI runs neither the `private_data` nor the `lammps` tests, and the release commit records the result in a `Checks-run:` line; in `CONTRIBUTING.md`, "Releases", and the `draft-release` skill ([#190](https://github.com/amirhs1/PolyPhys/issues/190))
 
 ### Fixed
