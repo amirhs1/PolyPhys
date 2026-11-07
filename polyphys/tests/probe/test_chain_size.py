@@ -27,7 +27,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.analyze.stats import block_average
 from polyphys.manage.parser import SumRuleCyl
-from polyphys.manage.projects import (
+from polyphys.spec import (
     CHAIN_SIZE_OBSERVABLES,
     ProbeSpec,
     ProjectSpec,

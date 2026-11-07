@@ -27,7 +27,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.analyze.clusters import threshold_sweep
 from polyphys.manage.parser import HnsCub, HnsCyl, ParserBase
-from polyphys.manage.projects import (
+from polyphys.spec import (
     BINDER_SERIES,
     BinderSpec,
     ProbeSpec,
