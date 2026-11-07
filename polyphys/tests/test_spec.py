@@ -462,6 +462,8 @@ def whole() -> ParserBase:
                  id='callable-of-the-parser'),
     pytest.param(lambda info: np.float32(0.5), 0.5, id='numpy-float32'),
     pytest.param(lambda info: np.int64(2), 2.0, id='numpy-int64'),
+    pytest.param(np.float32(0.5), 0.5, id='numpy-float32-constant'),
+    pytest.param(np.int64(2), 2.0, id='numpy-int64-constant'),
 ])
 def test_probe_resolve_returns_the_number_for_one_whole(whole, value,
                                                         expected):
@@ -481,6 +483,21 @@ def test_probe_resolve_returns_the_number_for_one_whole(whole, value,
 def test_probe_resolve_rejects_a_bad_callable_result(whole, bad):
     """resolve raises, naming the whole, when a callable does not return a
     finite positive number."""
+    with pytest.raises(ValueError, match=f"{whole.name} must resolve to"):
+        ProbeSpec.resolve(bad, whole)
+
+
+@pytest.mark.parametrize('bad', [
+    pytest.param(0.0, id='zero'),
+    pytest.param(-1.0, id='negative'),
+    pytest.param(float('nan'), id='nan'),
+    pytest.param(float('inf'), id='inf'),
+    pytest.param('1.0', id='string'),
+    pytest.param(True, id='bool'),
+])
+def test_probe_resolve_rejects_a_bad_constant(whole, bad):
+    """resolve raises, naming the whole, when a constant is not a finite
+    positive number."""
     with pytest.raises(ValueError, match=f"{whole.name} must resolve to"):
         ProbeSpec.resolve(bad, whole)
 

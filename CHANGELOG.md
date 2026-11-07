@@ -32,6 +32,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Fixed
 
+- **Breaking:** Check a per-whole constant where it resolves: `ProbeSpec.resolve` raises `ValueError` for a constant that is not a finite positive number, as for a callable's result, and `FociPairDistances` checks `bin_size`, `r_max`, and `n_monomers` when it is built; `n_monomers`, a constant or what a callable gives, must be a positive integer, never a float such as `10.5`, which was truncated to 10 ([#228](https://github.com/amirhs1/PolyPhys/issues/228))
 - Close and join the worker pool of a probe run on the `multiprocessing` backend instead of terminating it, so the resource tracker reports no leaked semaphores, and turn every warning in the test suite into an error ([#192](https://github.com/amirhs1/PolyPhys/issues/192))
 - Raise `ValueError` naming the quantity and the whole when a `bin_size`, `r_max`, or `n_monomers` function of `FociPairDistances` gives anything but a finite positive number, instead of failing inside NumPy or turning a string into a number, and accept a NumPy integer or float such as `numpy.float32` wherever a finite positive per-whole number is checked ([#210](https://github.com/amirhs1/PolyPhys/issues/210))
 - Keep the annotations of `polyphys.probe.core` unevaluated, so the documentation builds where MDAnalysis is mocked, as on Read the Docs with Python 3.13, and ignore pyparsing 3.3's deprecation of `enablePackrat`, which matplotlib 3.8.4 calls, so the lowest-versions tests run under warnings as errors ([#224](https://github.com/amirhs1/PolyPhys/pull/224))
@@ -42,6 +43,7 @@ Each breaking change since 0.4.0, oldest last, with its migration path.
 
 | Release | Change | Migration |
 | ------- | ------ | --------- |
+| 1.0.0 | `ProbeSpec.resolve` and `FociPairDistances` reject a constant that is not a finite positive number, and `FociPairDistances` an `n_monomers` that is not a positive integer | Pass a positive number; give `n_monomers` as an `int`, or have its function return `int(...)` of a whole number. |
 | 1.0.0 | `polyphys.manage.projects` and the table names of `polyphys.analyze.pipeline` removed | Import them from `polyphys.spec`. |
 | 1.0.0 | The nine study parsers removed from `polyphys.manage.parser` | Copy the parser of a published study from `projects/<study>/parser.py` into your study's code; pin `polyphys` 0.9.0 to keep the others. |
 | 1.0.0 | `whole_from_dist_mat_t` and `find_unique_properties` removed | None; nothing in PolyPhys called them. |

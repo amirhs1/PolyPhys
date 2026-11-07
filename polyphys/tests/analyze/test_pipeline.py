@@ -39,6 +39,7 @@ from polyphys.analyze.pipeline import (
     HookContext,
     LocalDensities,
     TimeAverage,
+    _resolve,
     equilibrium_wholes,
     half_contour,
     reduce_space,
@@ -986,8 +987,6 @@ def test_foci_pair_distances_need_a_parser_instance_for_a_callable(
                  id="bin_size-zero"),
     pytest.param({"r_max": lambda info: float("nan")}, "r_max",
                  id="r_max-nan"),
-    pytest.param({"n_monomers": lambda info: "10"}, "n_monomers",
-                 id="n_monomers-string"),
 ])
 def test_foci_pair_distances_reject_a_bad_callable_result(
         foci_context, overrides, what):
@@ -1001,6 +1000,93 @@ def test_foci_pair_distances_reject_a_bad_callable_result(
                        match=f"{what} of whole 'w' must resolve to a finite"):
         hook({"w": _distance_frames([0, 4, 8], [[1.0, 1.0, 1.0]])},
              foci_context)
+
+
+@pytest.mark.parametrize("result", [
+    pytest.param(10.5, id="fraction"),
+    pytest.param(10.0, id="whole-float"),
+    pytest.param(0, id="zero"),
+    pytest.param("10", id="string"),
+    pytest.param(True, id="bool"),
+])
+def test_foci_pair_distances_reject_a_non_integer_n_monomers_result(
+        foci_context, result):
+    """A callable ``n_monomers`` that does not give a positive integer
+    raises, naming the quantity and the whole, instead of being
+    truncated."""
+    foci_context = HookContext(foci_context.prop, spec=foci_context.spec,
+                               infos={"w": object()})
+    hook = FociPairDistances(bin_size=1.0, r_max=3.0,
+                             n_monomers=lambda info: result)
+    with pytest.raises(ValueError, match="n_monomers of whole 'w' must "
+                                         "resolve to a positive integer"):
+        hook({"w": _distance_frames([0, 4, 8], [[1.0, 1.0, 1.0]])},
+             foci_context)
+
+
+def test_foci_pair_distances_accept_a_numpy_integer_n_monomers(
+        foci_context):
+    """A callable ``n_monomers`` may give a NumPy integer; the tags are
+    those of the same ring given as a Python ``int``."""
+    foci_context = HookContext(foci_context.prop, spec=foci_context.spec,
+                               infos={"w": object()})
+    hook = FociPairDistances(bin_size=1.0, r_max=3.0,
+                             n_monomers=lambda info: np.int64(10))
+
+    hist, _, _ = hook({"w": _distance_frames([0, 4, 8], [[1.0, 1.0, 1.0]])},
+                      foci_context)
+
+    assert list(hist.wholes["w"].columns) == [
+        "loc0loc4genDist4", "loc0loc8genDist2", "loc4loc8genDist4",
+        "bin_center"]
+
+
+@pytest.mark.parametrize("overrides, match", [
+    pytest.param({"bin_size": -1.0}, "'bin_size' must be a finite positive",
+                 id="bin_size-negative"),
+    pytest.param({"bin_size": 0.0}, "'bin_size' must be a finite positive",
+                 id="bin_size-zero"),
+    pytest.param({"bin_size": True}, "'bin_size' must be a finite positive",
+                 id="bin_size-bool"),
+    pytest.param({"r_max": float("nan")}, "'r_max' must be a finite positive",
+                 id="r_max-nan"),
+    pytest.param({"r_max": float("inf")}, "'r_max' must be a finite positive",
+                 id="r_max-inf"),
+    pytest.param({"n_monomers": 10.5}, "'n_monomers' must be a positive int",
+                 id="n_monomers-fraction"),
+    pytest.param({"n_monomers": 10.0}, "'n_monomers' must be a positive int",
+                 id="n_monomers-whole-float"),
+    pytest.param({"n_monomers": 0}, "'n_monomers' must be a positive int",
+                 id="n_monomers-zero"),
+    pytest.param({"n_monomers": -2}, "'n_monomers' must be a positive int",
+                 id="n_monomers-negative"),
+    pytest.param({"n_monomers": True}, "'n_monomers' must be a positive int",
+                 id="n_monomers-bool"),
+])
+def test_foci_pair_distances_reject_a_bad_constant(overrides, match):
+    """Building the hook raises, naming the quantity, when a constant
+    ``bin_size`` or ``r_max`` is not a finite positive number or a
+    constant ``n_monomers`` is not a positive integer."""
+    with pytest.raises(ValueError, match=match):
+        FociPairDistances(
+            **({"bin_size": 1.0, "r_max": 3.0, "n_monomers": 10} | overrides))
+
+
+def test_foci_pair_distances_accept_numpy_constants():
+    """NumPy scalars are valid constants: a float for ``bin_size`` and
+    ``r_max``, an integer for ``n_monomers``."""
+    hook = FociPairDistances(bin_size=np.float32(0.5), r_max=np.float64(3.0),
+                             n_monomers=np.int64(10))
+
+    assert hook.n_monomers == 10
+
+
+def test_resolve_rejects_a_bad_constant():
+    """``_resolve`` checks a constant as it checks a callable's result,
+    naming the quantity and the whole."""
+    with pytest.raises(ValueError, match="r_max of whole 'w1' must resolve "
+                                         "to a finite positive number"):
+        _resolve(-1.0, None, "r_max", "w1")
 
 
 @pytest.mark.parametrize("n_monomers, bond_max, match", [
