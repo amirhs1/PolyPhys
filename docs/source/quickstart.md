@@ -59,16 +59,15 @@ per whole under the space's probe directory:
 
 ## The study's specs
 
-A {class}`~polyphys.manage.projects.ProjectSpec` says which parser reads the
+A {class}`~polyphys.spec.ProjectSpec` says which parser reads the
 names, which particle group the polymer is, which attributes become columns
 of the `space` table, and the step to which the crowder volume fraction is
-rounded. An {class}`~polyphys.analyze.pipeline.AnalysisTable` says which
+rounded. An {class}`~polyphys.spec.AnalysisTable` says which
 properties to reduce: here one time series, `gyrTMon`, read as segments:
 
 ```python
 >>> from polyphys.manage.parser import SumRuleCyl
->>> from polyphys.manage.projects import ProjectSpec
->>> from polyphys.analyze.pipeline import AnalysisTable, tseries
+>>> from polyphys.spec import AnalysisTable, ProjectSpec, tseries
 >>> spec = ProjectSpec(
 ...     parser=SumRuleCyl, group='bug', divisor=0.025,
 ...     physical_attrs=('space', 'ensemble_long', 'ncrowd'),

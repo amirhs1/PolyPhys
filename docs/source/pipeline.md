@@ -43,11 +43,11 @@ $\bar P(R)$
 
 ## A study's analysis as data
 
-A study declares one {class}`~polyphys.analyze.pipeline.AnalysisTable` per
+A study declares one {class}`~polyphys.spec.AnalysisTable` per
 particle group: the group, the *lineage* of its probe artifacts (`'segment'`
 when the probe phase wrote them in chunks, `'whole'` when it wrote one file
 per run), whether its stamp files are combined, and a tuple of
-{class}`~polyphys.analyze.pipeline.PropertySpec` records. Five constructors
+{class}`~polyphys.spec.PropertySpec` records. Five constructors
 build the kinds the studies use:
 
 | Constructor                      | Property           | Relation      | Whole type   | Ensemble average                    |
@@ -65,9 +65,9 @@ folder, so a data correction or a special case is code in the study's
 folder, never an option of the module.
 
 ```python
-from polyphys.analyze.pipeline import (
-    AnalysisTable, Autocorrelation, LocalDensities, edge, histogram,
-    histogram_2d, tseries)
+from polyphys.analyze.pipeline import Autocorrelation, LocalDensities
+from polyphys.spec import (
+    AnalysisTable, edge, histogram, histogram_2d, tseries)
 
 ANALYSIS = (
     AnalysisTable(group='bug', lineage='whole', stamps=True, properties=(
@@ -202,7 +202,7 @@ table keeps the stamps' names.
 
 The module replaces the research code's `analyzer`, whose nine
 near-identical blocks differed only in the six facts a
-{class}`~polyphys.analyze.pipeline.PropertySpec` holds. The outputs match
+{class}`~polyphys.spec.PropertySpec` holds. The outputs match
 it except where the change was deliberate:
 
 - A property with no file raises; the research code wrote nothing and said

@@ -20,7 +20,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.manage.parser import TransFociCyl
-from polyphys.manage.projects import ProbeSpec, ProjectSpec
+from polyphys.spec import ProbeSpec, ProjectSpec
 from polyphys.simulate.data import read_data
 
 pytest.importorskip("MDAnalysis")

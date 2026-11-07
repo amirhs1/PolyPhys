@@ -13,11 +13,7 @@ from typing import cast
 import numpy as np
 import pytest
 
-from polyphys.analyze.pipeline import (
-    AnalysisTable,
-    FociPairDistances,
-    LocalDensities,
-)
+from polyphys.analyze.pipeline import FociPairDistances, LocalDensities
 from polyphys.manage.parser import (
     HnsCub,
     HnsCyl,
@@ -25,7 +21,7 @@ from polyphys.manage.parser import (
     TransFociCub,
     TransFociCyl,
 )
-from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
+from polyphys.spec import AnalysisTable, BinderSpec, ProbeSpec, ProjectSpec
 
 
 def _spec(module: str) -> ProjectSpec:

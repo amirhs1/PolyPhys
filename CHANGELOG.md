@@ -13,6 +13,7 @@ version increase may introduce incompatible changes.
 
 ### Changed
 
+- Move `ProjectSpec`, `ProbeSpec`, `BinderSpec`, `PerWhole`, `RecenterT`, `CHAIN_SIZE_OBSERVABLES`, and `BINDER_SERIES` from `polyphys.manage.projects`, and `AnalysisTable`, `PropertySpec`, `PostHook`, `tseries`, `histogram`, `histogram_2d`, `edge`, and `matrix_tseries` from `polyphys.analyze.pipeline`, to the new module `polyphys.spec`, which imports no MDAnalysis, and define `PerWhole` once; the old import paths warn with `DeprecationWarning` until 1.0.0 ([#196](https://github.com/amirhs1/PolyPhys/issues/196))
 - **Breaking:** Return a bulk volume fraction above one from `volume_fraction_cube` and `volume_fraction_cylinder`, and so from the parsers, as the nominal fraction it is, instead of raising `ValueError`; `number_density_cube` and `number_density_cylinder` raise `ValueError` when a particle leaves its center no room, and a parser names the species, the artifact, and the lineage in it, instead of dividing by zero ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
 
 ### Fixed

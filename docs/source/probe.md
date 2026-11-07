@@ -105,13 +105,13 @@ Lennard-Jones time unit, which issue #56 lists as still to confirm.
 
 ## A study's probe as data
 
-A study builds a {class}`~polyphys.manage.projects.ProbeSpec` beside its
-{class}`~polyphys.manage.projects.ProjectSpec`, in its own folder, and
+A study builds a {class}`~polyphys.spec.ProbeSpec` beside its
+{class}`~polyphys.spec.ProjectSpec`, in its own folder, and
 reads the parser class and the geometry from the project spec rather than
 storing them twice:
 
 ```python
-from polyphys.manage.projects import ProbeSpec
+from polyphys.spec import ProbeSpec
 
 PROBE = ProbeSpec(
     project=SPEC,
@@ -157,7 +157,7 @@ the pair species needs `contact_cutoff`, and a `BinderSpec` must name a
 selected label other than the chain as its patches and eight binding
 series that the project's `tseries_properties` list. Every field after
 `unwrap` has a default, so a record that probes only the chain size is
-unchanged. {meth}`~polyphys.manage.projects.ProbeSpec.resolve` turns a
+unchanged. {meth}`~polyphys.spec.ProbeSpec.resolve` turns a
 `PerWhole` value into the number for one whole, given its parser.
 
 The `unwrap` value is the research code's: its probes read wrapped dumps,
@@ -171,7 +171,7 @@ the data; switching a study is a spec edit, not a code change.
 {class}`~polyphys.probe.chain_size.ChainSize` is an MDAnalysis
 {class}`~MDAnalysis.analysis.base.AnalysisBase`. It measures the
 observables of a `ProbeSpec`, or any sequence of names from
-{data}`~polyphys.manage.projects.CHAIN_SIZE_OBSERVABLES`, on one chain in
+{data}`~polyphys.spec.CHAIN_SIZE_OBSERVABLES`, on one chain in
 every frame:
 
 | Observable     | One frame's value                                                                                                 | From                                                       |
@@ -405,10 +405,10 @@ distance of at most 3 bonds; `cis_threshold` of 4 reproduces that on the
 studies' chains.
 
 A study declares the facts the analysis needs in a
-{class}`~polyphys.manage.projects.BinderSpec` inside its `ProbeSpec`:
+{class}`~polyphys.spec.BinderSpec` inside its `ProbeSpec`:
 
 ```python
-from polyphys.manage.projects import BinderSpec, ProbeSpec
+from polyphys.spec import BinderSpec, ProbeSpec
 
 PROBE = ProbeSpec(
     project=SPEC,
@@ -464,7 +464,7 @@ code's names:
 
 The eight series are keyed by the attributes of
 {class}`~polyphys.analyze.clusters.FrameBinding` and named by
-{data}`~polyphys.manage.projects.BINDER_SERIES`, which maps each one to the
+{data}`~polyphys.spec.BINDER_SERIES`, which maps each one to the
 stem of its time series and to the label, patches or binders, that
 completes the name. The loop-length rows are the maintainer's 2026-11-03
 convention for a per-frame histogram, as the 1-D histogram probes keep
