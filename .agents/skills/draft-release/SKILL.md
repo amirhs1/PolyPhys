@@ -26,11 +26,18 @@ tag an older commit to leave later work out; stop and report instead.
    the issues and pull requests to the person running you.
 4. List the changes since the last tag:
    `git log --no-merges --format='%h %s' <last tag>..HEAD`.
-5. On a new branch, make one bookkeeping commit: the version in
+5. Ask the person running you to run the full test command of AGENTS.md,
+   "Commands", on their own machine, with `-rs` added, `POLYPHYS_DATA_DIR`
+   set to their data directory, and `lmp_serial` on `PATH` or `LMP` naming
+   LAMMPS, and to report the summary line. Do not run it yourself: a failing
+   `private_data` test can print data values. Stop if a test fails or any
+   test is skipped. The bookkeeping commit of step 6 carries the result as
+   `Checks-run: full test command with POLYPHYS_DATA_DIR and LMP set — <summary line>`.
+6. On a new branch, make one bookkeeping commit: the version in
    `polyphys/__version__.py`, `version` and `date-released` in
-   `CITATION.cff`, and the changelog section of step 6. Open a pull request;
+   `CITATION.cff`, and the changelog section of step 7. Open a pull request;
    the release commit is its merge commit.
-6. CHANGELOG.md: rename `## [Unreleased]` to a version heading whose version
+7. CHANGELOG.md: rename `## [Unreleased]` to a version heading whose version
    links to the release,
    `## [<MAJOR>.<MINOR>.<PATCH>](<release URL>) - <YYYY-MM-DD>`, and add an
    empty `## [Unreleased]` above it. The section has no trailer; its commit
@@ -40,14 +47,14 @@ tag an older commit to leave later work out; stop and report instead.
    `**Breaking:**` lines first, citing its commit, and its pull request when
    there is one. Add a missing change, and the commit references the entries
    lack.
-7. Release notes: the same categories without the heading, then your trailer
+8. Release notes: the same categories without the heading, then your trailer
    block (AGENTS.md, "Provenance"). Once CI passes on the release commit,
    create the draft there, and never publish it:
    `gh release create v<version> --draft --target <full SHA> --title v<version> --notes-file <file>`.
    `--target` fixes the commit that the tag lands on when the release is
    published, even if `main` moves first.
-8. To revise the draft: `gh release edit v<version> --notes-file <file>`.
-9. After the maintainer publishes, confirm the new version under the
+9. To revise the draft: `gh release edit v<version> --notes-file <file>`.
+10. After the maintainer publishes, confirm the new version under the
    concept record in `CITATION.cff`, `doi`, through the Zenodo API, not the
    webhook's response:
    `curl -s 'https://zenodo.org/api/records?q=conceptrecid:15858407&all_versions=true&sort=mostrecent&size=1'`.

@@ -21,6 +21,10 @@ version increase may introduce incompatible changes.
 - Convert a `KeywordSpec` value with a scale or an offset in exact decimal arithmetic, so `r4.1` gives the cylinder size `7.2` and the short name `D7.2` instead of `D7.199999999999999` ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
 - Strip an extension with `ispath=True` only when the suffix holds a letter, so a name ending with a value, such as `ac1.5`, or with a dot keeps it ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
 
+### Added
+
+- Add a release step: the maintainer runs the full test command with `POLYPHYS_DATA_DIR` set and LAMMPS available, since CI runs neither the `private_data` nor the `lammps` tests, and the release commit records the result in a `Checks-run:` line; in `CONTRIBUTING.md`, "Releases", and the `draft-release` skill ([#190](https://github.com/amirhs1/PolyPhys/issues/190))
+
 ### Fixed
 
 - Report a `fit_decay` fit as failed, with `converged=False` and NaN parameters, when the model is not finite at the start or the fit does not move from its start and has no finite covariance, instead of reporting it converged under the default method and raising `ValueError` under `method='trf'` ([#178](https://github.com/amirhs1/PolyPhys/issues/178))
