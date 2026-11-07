@@ -12,6 +12,11 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ## [Unreleased]
 
+### Changed
+
+- Require NumPy 2.0, pandas 3.0, and, in the `viz` extra, matplotlib 3.8.4 or newer, the lowest versions the test suite passes with on Python 3.11, and test them in a CI job that installs the lowest allowed versions ([#193](https://github.com/amirhs1/PolyPhys/issues/193))
+- Hold the Codecov `codecov/project` and `codecov/patch` statuses of a commit until all five of its coverage reports have arrived, so a status no longer reports the coverage of the first report alone ([#218](https://github.com/amirhs1/PolyPhys/issues/218))
+
 ### Added
 
 - Declare the public API, the `__all__` of every public module, with each module stable or provisional, and a deprecation policy under Semantic Versioning on the "API stability" page ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
