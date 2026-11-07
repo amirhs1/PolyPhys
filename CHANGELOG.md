@@ -11,6 +11,10 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Close and join the worker pool of a probe run on the `multiprocessing` backend instead of terminating it, so the resource tracker reports no leaked semaphores, and turn every warning in the test suite into an error ([#192](https://github.com/amirhs1/PolyPhys/issues/192))
+
 ## [0.9.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.9.0) - 2026-11-07
 
 ### Changed

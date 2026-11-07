@@ -72,6 +72,7 @@
         -ra --strict-markers --strict-config --import-mode=importlib \
         -p pytester"""
     testpaths = ["polyphys/tests"]
+    filterwarnings = ["error"]
     xfail_strict = true
 
 [tool.coverage.run]
