@@ -133,6 +133,8 @@ import pandas as pd
 from scipy.sparse import csr_array
 from scipy.sparse.csgraph import connected_components
 
+from .measurer import create_bin_edge_and_hist
+
 __all__ = [
     'BindingStats',
     'FrameBinding',
@@ -234,8 +236,11 @@ def pair_distances(
     pair that straddles the boundary. Positions need not be wrapped.
 
     Time is :math:`O(n^2 d)` for :math:`n` particles in :math:`d` dimensions.
-    Space is two ``(n, n)`` ``float64`` arrays; the dimensions are accumulated
-    one at a time, so no ``(d, n, n)`` temporary is built.
+    Space is :math:`O(n^2)`: at most four ``(n, n)`` ``float64`` arrays at
+    once, the running sum of squares, the separation along one axis, and,
+    along a periodic axis, the temporaries of its minimum image. The
+    dimensions are accumulated one at a time, so no ``(d, n, n)`` temporary
+    is built.
 
     Examples
     --------
@@ -749,7 +754,9 @@ def pair_distance_histograms(
     r_max : float
         The upper end of the grid, positive. The grid runs from 0 to the
         first multiple of `bin_size` at or above `r_max`, so every pair,
-        whole, and ensemble shares the same bins.
+        whole, and ensemble shares the same bins; a range that is a whole
+        number of bins up to float64 round-off ends exactly at `r_max`, as
+        :func:`polyphys.analyze.measurer.create_bin_edge_and_hist` gives.
 
     Returns
     -------
@@ -758,9 +765,10 @@ def pair_distance_histograms(
         input, ``int64``: the number of frames whose separation falls in each
         bin. Each row sums to ``n_frames``.
     edges : numpy.ndarray
-        Shape ``(n_bins + 1,)``, ``float64``: the bin edges,
-        ``k * bin_size``. Bin ``k`` is ``[edges[k], edges[k + 1])``, except
-        the last, which also includes its upper edge, as
+        Shape ``(n_bins + 1,)``, ``float64``: the bin edges, equally
+        spaced ``bin_size`` apart from 0. Bin ``k`` is
+        ``[edges[k], edges[k + 1])``, except the last, which also includes
+        its upper edge, as
         :func:`numpy.histogram` does.
 
     Raises
@@ -797,6 +805,9 @@ def pair_distance_histograms(
     array([0., 1., 2., 3.])
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 0.9.0
+       Count the bins with the round-off tolerance of
+       :func:`polyphys.analyze.measurer.create_bin_edge_and_hist`.
     """
     if not bin_size > 0:
         raise ValueError(f'bin_size must be positive; got {bin_size}.')
@@ -811,8 +822,11 @@ def pair_distance_histograms(
     one_pair = series.ndim == 1
     rows = series.reshape(1, -1) if one_pair else series
     n_pairs, n_frames = rows.shape
-    n_bins = int(np.ceil(r_max / bin_size))
-    edges = bin_size * np.arange(n_bins + 1, dtype=np.float64)
+    # The bin count tolerates float64 round-off in r_max / bin_size, as
+    # every fixed-width grid of the package does, so a range of a whole
+    # number of bins ends exactly at r_max.
+    edges, _ = create_bin_edge_and_hist(bin_size, 0.0, r_max)
+    n_bins = edges.size - 1
     if np.any(np.isnan(rows)) or np.any(rows < 0) or np.any(rows > edges[-1]):
         raise ValueError(
             f'distances must lie in [0, {edges[-1]}], the histogram grid.'
@@ -1586,7 +1600,8 @@ def threshold_sweep(
     ValueError
         If `distances` is not three-dimensional or has no frames, if
         `cutoffs` or `cis_thresholds` is empty, if a cutoff is not positive
-        or a cis threshold is negative, if the number of patches is odd, or
+        or a cis threshold is negative or not a whole number, if the number
+        of patches is odd, or
         if `topology` is invalid.
 
     Notes
@@ -1645,6 +1660,9 @@ def threshold_sweep(
            [0. , 0. , 0.5]])
 
     .. versionadded:: 0.7.0
+    .. versionchanged:: 0.9.0
+       Reject a cis threshold that is not a whole number instead of
+       truncating it.
     """
     _check_topology(topology)
     matrices = np.asarray(distances, dtype=np.float64)
@@ -1668,9 +1686,15 @@ def threshold_sweep(
         raise ValueError(
             f'every cutoff must be positive; got {cutoff_grid.tolist()}.'
         )
-    cis_grid = np.asarray(cis_thresholds, dtype=np.int64).reshape(-1)
-    if cis_grid.size == 0:
+    cis_values = np.asarray(cis_thresholds).reshape(-1)
+    if cis_values.size == 0:
         raise ValueError('cis_thresholds must not be empty.')
+    if not np.all(np.mod(cis_values, 1) == 0):
+        raise ValueError(
+            'every cis threshold must be a whole number of bonds; got'
+            f' {cis_values.tolist()}.'
+        )
+    cis_grid = cis_values.astype(np.int64)
     if not np.all(cis_grid >= 0):
         raise ValueError(
             'every cis threshold must be non-negative; got'
