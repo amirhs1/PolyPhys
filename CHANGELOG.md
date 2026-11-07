@@ -11,6 +11,10 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Raise `BrokenLogError` from `parse_log` for a `Loop time of` line of another form than LAMMPS writes and for a thermo header that repeats a keyword, and `BrokenDumpError` from the dump reader for an atom line of the wrong length even when the frame's total is right; `with_frame` documents that it needs wrapped coordinates and says so when a frame has unwrapped ones only ([#179](https://github.com/amirhs1/PolyPhys/issues/179))
+
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 
 ### Changed

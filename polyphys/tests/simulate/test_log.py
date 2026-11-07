@@ -309,6 +309,33 @@ def test_parse_log_accepts_old_run_start_line(make_log):
             [["---", "data:", "..."]], {},
             r"Run 0 \(line 2\) has no 'keywords:' line",
             id="yaml-without-keywords"),
+        pytest.param(
+            [["Step Temp", "0 1.0"]],
+            {"summaries": [["Loop time of 0.01 on 4 procs (2 MPI x 2 OpenMP) "
+                            "for 100 steps with 20 atoms"]]},
+            r"Line 5 starts with 'Loop time of' but is not",
+            id="loop-line-of-another-form"),
+        pytest.param(
+            [["Step Temp", "0 1.0"], ["Step Temp", "100 1.1"]],
+            {"summaries": [
+                ["Loop time of 0.01 on 4 procs (2 MPI x 2 OpenMP) for 100 "
+                 "steps with 20 atoms"],
+                ["Loop time of 0.5 on 1 procs for 100 steps with 20 atoms"]]},
+            r"Line 5 starts with 'Loop time of' but is not",
+            id="loop-line-of-another-form-in-first-run"),
+        pytest.param(
+            [["Step Temp Temp", "0 1.0 1.0"]], {},
+            r"Line 3 repeats the thermo keyword 'Temp'",
+            id="repeated-keyword"),
+        pytest.param(
+            [["Step Temp Temp", "0 1.0 1.0"], ["Step Press", "100 0.5"]], {},
+            r"Line 3 repeats the thermo keyword 'Temp'",
+            id="repeated-keyword-then-another-header"),
+        pytest.param(
+            [["---", "keywords: ['Step', 'Temp', 'Temp', ]", "data:",
+              "  - [0, 1.0, 1.0, ]", "..."]], {},
+            r"Line 4 repeats the thermo keyword 'Temp'",
+            id="yaml-repeated-keyword"),
     ],
 )
 def test_parse_log_raises_broken_log_error(make_log, tables, options, match):
