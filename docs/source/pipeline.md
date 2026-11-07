@@ -59,7 +59,10 @@ build the kinds the studies use:
 | `matrix_tseries('principalT', 'Mon')` | `principalTMon` | `'tseries'` | `'matrix'`   | one array per statistic             |
 
 A table lists each artifact once; listing one twice is an error, and so is
-a property whose files are not found. The tables of the maintainer's
+naming one output twice, among the outputs the hooks declare with their
+`outputs` method: a hook output that another entry also yields would
+overwrite it. A property whose files are not found, such as a typo, raises
+`FileNotFoundError` before any directory is made. The tables of the maintainer's
 studies live beside each study's spec in the repository's `projects/`
 folder, so a data correction or a special case is code in the study's
 folder, never an option of the module.

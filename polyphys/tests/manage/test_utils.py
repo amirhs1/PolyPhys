@@ -21,7 +21,6 @@ from polyphys.manage.utils import (
     split_alphanumeric,
     normalize_exts,
     sort_filenames,
-    sort_filenames_str,
     openany,
     openany_context,
     round_down_first_non_zero,
@@ -230,41 +229,52 @@ def test_sort_filenames_rejects_extension_in_two_format_groups():
         sort_filenames(files, formats)
 
 
-@pytest.mark.parametrize(
-    "filenames,formats,expected",
-    [
-        pytest.param(
-            ["file2.trj", "file1.trj", "file1.data", "file2.data",
-             "file3.lammpstrj", "file3.data"],
-            ["data", ("trj", "lammpstrj")],
-            [("file1.data", "file1.trj"),
-             ("file2.data", "file2.trj"),
-             ("file3.data", "file3.lammpstrj")],
-            id="equivalent-extensions",
-        ),
-        pytest.param(
-            [], ["data", ("trj", "lammpstrj")], [], id="empty-input"
-        ),
-        pytest.param(
-            ["file1.data", "file2.data", "file3.data"],
-            ["data"],
-            [("file1.data",), ("file2.data",), ("file3.data",)],
-            id="one-format",
-        ),
-        pytest.param(
-            ["file1.data", "file2.data", "file3.data"],
-            ["data", ("trj", "lammpstrj")],
-            [],
-            id="missing-format-group",
-        ),
-    ],
-)
-def test_sort_filenames_str_zips_naturally_sorted_groups(
-    filenames, formats, expected
-):
-    """Each format group is sorted naturally and the groups are zipped, so a
-    group with no files gives an empty result."""
-    assert sort_filenames_str(filenames, formats) == expected
+def test_sort_filenames_keeps_names_that_differ_after_last_dot():
+    """Two names that differ only after their last dot, as every HnsCyl name
+    ending in ``epshc1.0nc<n>`` does, stay two groups instead of colliding
+    on the part before the dot, with the format the space collectors pass."""
+    files = ["N200epshc1.0nc500-nucleoid-rhoMon-ensAvg.csv",
+             "N200epshc1.0nc0-nucleoid-rhoMon-ensAvg.csv"]
+
+    result = sort_filenames(files, ["csv"])
+
+    assert result == [
+        (PosixPath("N200epshc1.0nc0-nucleoid-rhoMon-ensAvg.csv"),),
+        (PosixPath("N200epshc1.0nc500-nucleoid-rhoMon-ensAvg.csv"),),
+    ]
+
+
+def test_sort_filenames_pairs_formats_by_full_name():
+    """A .data file pairs with the .lammpstrj file of the same full name, not
+    with one that shares only the part before the last dot."""
+    files = ["N200D10.0ac2.0nc500.lammpstrj", "N200D10.0ac2.0nc0.data",
+             "N200D10.0ac2.0nc500.data", "N200D10.0ac2.0nc0.lammpstrj"]
+
+    result = sort_filenames(files, ["data", "lammpstrj"])
+
+    assert result == [
+        (PosixPath("N200D10.0ac2.0nc0.data"),
+         PosixPath("N200D10.0ac2.0nc0.lammpstrj")),
+        (PosixPath("N200D10.0ac2.0nc500.data"),
+         PosixPath("N200D10.0ac2.0nc500.lammpstrj")),
+    ]
+
+
+def test_sort_filenames_does_not_pair_different_full_names():
+    """A .data and a .lammpstrj file whose names differ after the last dot
+    are both incomplete: no pair, and a warning for each."""
+    files = ["N200D10.0ac2.0nc0.data", "N200D10.0ac2.0nc500.lammpstrj"]
+
+    with pytest.warns(UserWarning) as record:
+        result = sort_filenames(files, ["data", "lammpstrj"])
+
+    assert result == []
+    assert [str(warning.message) for warning in record] == [
+        "'N200D10.0ac2.0nc0.data' does not have matching "
+        "'N200D10.0ac2.0nc0.lammpstrj' so it is ignored",
+        "'N200D10.0ac2.0nc500.lammpstrj' does not have matching "
+        "'N200D10.0ac2.0nc500.data' so it is ignored",
+    ]
 
 
 @pytest.mark.parametrize(

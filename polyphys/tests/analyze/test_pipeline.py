@@ -354,6 +354,41 @@ def test_property_without_files_raises(probe_dir, cyl_spec, write_tree):
                      save=False)
 
 
+def test_missing_property_raises_before_any_directory_is_made(
+        probe_dir, cyl_spec, write_tree):
+    """A property that matches no file, such as a typo, raises before the
+    analysis directories are made or another property is reduced."""
+    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    table = AnalysisTable("bug", "whole", False,
+                          (tseries("gyrT", "Mon"), tseries("gyrT", "Mno")))
+
+    with pytest.raises(FileNotFoundError, match="gyrTMno"):
+        reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
+
+    assert not (probe_dir.parent.parent / "analysis").exists()
+
+
+def test_repeated_output_of_an_undeclared_hook_raises(probe_dir, cyl_spec,
+                                                      write_tree):
+    """Two outputs of one name from hooks that declare no outputs raise at
+    the second instead of overwriting the first."""
+    write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1)
+    write_tree(SumRuleCyl, "fsdTMon", lineage="whole", n_ensembles=1)
+
+    def hook(wholes, context):
+        return (Derived("sizeMon", wholes, "vector"),)
+
+    table = AnalysisTable("bug", "whole", False, (
+        tseries("gyrT", "Mon", post_hook=hook),
+        tseries("fsdT", "Mon", post_hook=hook),
+    ))
+
+    with pytest.raises(ValueError,
+                       match="output 'sizeMon' is named more than once"):
+        reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY,
+                     save=False)
+
+
 def test_default_hierarchy_is_the_spec_dir_file_layout(probe_dir, cyl_spec,
                                                        write_tree):
     """Without ``hierarchy`` the files are listed under
@@ -1110,11 +1145,11 @@ def test_reduce_space_writes_the_stamp_files_of_each_stage(probe_dir,
     reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
 
     assert (_analysis(probe_dir, "wholeSim")
-            / "N20ac1.0-bug-segment-stamps.csv").exists()
+            / "N20ac1.0-bug-stamps-segment.csv").exists()
     assert (_analysis(probe_dir, "ens") / "N20ac1.0-bug-stamps-whole.csv"
             ).exists()
-    assert (_analysis(probe_dir, "ensAvg") / "N20ac1.0-bug-stamps-ensAvg.csv"
-            ).exists()
+    assert (_analysis(probe_dir, "ensAvg")
+            / "N20ac1.0-bug-stamps-ensemble_long.csv").exists()
 
 
 # End to end
