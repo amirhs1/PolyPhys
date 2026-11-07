@@ -26,6 +26,10 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - **Breaking:** Remove `polyphys.manage.projects` and the table records and builders that `polyphys.analyze.pipeline` served, the import paths that 0.9.0 deprecated; import them from `polyphys.spec` ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 - **Breaking:** Remove `whole_from_dist_mat_t` and `find_unique_properties` from `polyphys.manage.organizer`, which nothing in PolyPhys called ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 
+### Fixed
+
+- Raise `ValueError` naming the quantity and the whole when a `bin_size`, `r_max`, or `n_monomers` function of `FociPairDistances` gives anything but a finite positive number, instead of failing inside NumPy or turning a string into a number, and accept a NumPy integer or float such as `numpy.float32` wherever a finite positive per-whole number is checked ([#210](https://github.com/amirhs1/PolyPhys/issues/210))
+
 ### Migrating to 1.0.0
 
 Each breaking change since 0.4.0, oldest last, with its migration path.

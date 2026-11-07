@@ -207,7 +207,7 @@ from polyphys.manage.types import (
     PropertyT,
     WholeRelationT,
 )
-from polyphys.spec import PerWhole, ProjectSpec
+from polyphys.spec import PerWhole, ProjectSpec, _check_resolved
 
 __all__ = [
     'Autocorrelation',
@@ -697,15 +697,23 @@ class LocalDensities:
         )
 
 
-def _resolve(value: PerWhole, info: ParserBase | None, what: str) -> float:
-    """Return `value`, calling it on `info` when it is a function."""
+def _resolve(
+    value: PerWhole, info: ParserBase | None, what: str, whole: str
+) -> float:
+    """
+    Return `value`, calling it on `info` when it is a function.
+
+    `what` names the quantity and `whole` the whole in an error. A callable
+    must give a finite positive number, the check of
+    :meth:`~polyphys.spec.ProbeSpec.resolve`.
+    """
     if callable(value):
         if info is None:
             raise ValueError(
                 f"{what} is a function of the whole, but the context has no "
-                "parser instance for it."
+                f"parser instance for whole '{whole}'."
             )
-        return float(value(info))
+        return _check_resolved(value(info), f"{what} of whole '{whole}'")
     return float(value)
 
 
@@ -884,13 +892,14 @@ class FociPairDistances:
             info = context.infos.get(whole_name)
             n_foci = matrix.shape[1]
             genomic_pos = np.rint(np.diagonal(matrix[0])).astype(np.int64)
-            n_monomers = int(_resolve(self.n_monomers, info, 'n_monomers'))
+            n_monomers = int(_resolve(self.n_monomers, info, 'n_monomers',
+                                      whole_name))
             pairs = clusters.foci_pair_info(genomic_pos, n_monomers, topology)
             tags = [f'loc{i}loc{j}genDist{d}' for i, j, d in pairs]
             first, second = np.triu_indices(n_foci, 1)
             distances = matrix[:, first, second].T
-            bin_size = _resolve(self.bin_size, info, 'bin_size')
-            r_max = _resolve(self.r_max, info, 'r_max')
+            bin_size = _resolve(self.bin_size, info, 'bin_size', whole_name)
+            r_max = _resolve(self.r_max, info, 'r_max', whole_name)
             # The grid pair_distance_histograms builds, so the check below
             # tolerates the same round-off.
             upper = measurer.create_bin_edge_and_hist(

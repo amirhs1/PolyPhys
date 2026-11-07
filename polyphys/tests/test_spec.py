@@ -5,6 +5,7 @@ import subprocess
 import sys
 from typing import Any, Callable
 
+import numpy as np
 import pytest
 
 from polyphys.manage.parser import (
@@ -334,6 +335,8 @@ def test_probe_allows_the_matrix_observable_without_a_time_series(
                  "finite positive number", id='infinite-bin-size'),
     pytest.param({'bin_sizes': {'r': '0.1'}}, "finite positive number",
                  id='string-bin-size'),
+    pytest.param({'bin_sizes': {'r': True}}, "finite positive number",
+                 id='bool-bin-size'),
     pytest.param({'histogram_species': ('Foci',), 'bin_sizes': {'r': 0.1},
                   'block_frames': 100},
                  r"'histogram_species' names \['Foci'\]",
@@ -387,6 +390,13 @@ def test_probe_accepts_positive_bin_sizes(make_probe):
 
     assert list(probe.bin_sizes.items()) == [
         ('r', 0.1), ('z', 0.5), ('theta', 0.0873)]
+
+
+def test_probe_accepts_numpy_scalar_bin_sizes(make_probe):
+    """A NumPy integer or float bin size is a finite positive number."""
+    probe = make_probe(bin_sizes={'r': np.float32(0.5), 'z': np.int64(2)})
+
+    assert list(probe.bin_sizes.items()) == [('r', 0.5), ('z', 2)]
 
 
 def test_probe_defaults_leave_histograms_and_pairs_unprobed(make_probe):
@@ -450,6 +460,8 @@ def whole() -> ParserBase:
     pytest.param(2, 2.0, id='number-as-float'),
     pytest.param(lambda info: info.dmon + info.dcrowd, 1.5,
                  id='callable-of-the-parser'),
+    pytest.param(lambda info: np.float32(0.5), 0.5, id='numpy-float32'),
+    pytest.param(lambda info: np.int64(2), 2.0, id='numpy-int64'),
 ])
 def test_probe_resolve_returns_the_number_for_one_whole(whole, value,
                                                         expected):
@@ -463,6 +475,8 @@ def test_probe_resolve_returns_the_number_for_one_whole(whole, value,
     pytest.param(lambda info: -1.0, id='negative'),
     pytest.param(lambda info: float('nan'), id='nan'),
     pytest.param(lambda info: '1', id='string'),
+    pytest.param(lambda info: True, id='bool'),
+    pytest.param(lambda info: np.bool_(True), id='numpy-bool'),
 ])
 def test_probe_resolve_rejects_a_bad_callable_result(whole, bad):
     """resolve raises, naming the whole, when a callable does not return a
