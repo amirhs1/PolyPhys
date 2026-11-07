@@ -12,11 +12,18 @@ LAMMPS readers, :func:`polyphys.simulate.dump.iter_dump` and
 :func:`polyphys.simulate.data.read_data`, read them, and the particle
 counts in the wholes' names.
 """
+import os
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
+import polyphys
 from polyphys.manage.organizer import children_stamps
 from polyphys.tests.synthetic import ChainCyl
 from polyphys.simulate.data import read_data
@@ -25,6 +32,12 @@ from polyphys.simulate.dump import iter_dump
 pytest.importorskip("MDAnalysis")
 
 from polyphys.probe import make_universe, write_stamps  # noqa: E402
+from polyphys.probe.binders import BinderStatistics  # noqa: E402
+from polyphys.probe.chain_size import ChainSize  # noqa: E402
+from polyphys.probe.core import (  # noqa: E402
+    _ClosingMultiprocessing, _ProbeAnalysis)
+from polyphys.probe.histograms import SpatialHistograms  # noqa: E402
+from polyphys.probe.pairs import PairDistances  # noqa: E402
 
 # The dump reader warns that the frames carry no time step; the tests that
 # give no dt measure per frame.
@@ -142,6 +155,60 @@ def test_write_stamps_rejects_a_bad_frame_count(whole_parser, tmp_path,
     """n_frames must be a non-negative integer."""
     with pytest.raises(ValueError, match="non-negative integer"):
         write_stamps(whole_parser, n_frames, tmp_path)
+
+
+# The multiprocessing backend
+
+
+def test_multiprocessing_run_leaves_no_leaked_semaphore():
+    """A run on the multiprocessing backend lets its workers exit, so the
+    resource tracker finds no leaked semaphore at shutdown."""
+    script = textwrap.dedent("""\
+        import numpy as np
+        import MDAnalysis as mda
+        from polyphys.probe.chain_size import ChainSize
+
+        if __name__ == '__main__':
+            frames = np.zeros((4, 2, 3))
+            frames[:, 1, 2] = [1.0, 2.0, 3.0, 4.0]
+            universe = mda.Universe.empty(2, trajectory=True)
+            universe.add_TopologyAttr('masses', np.ones(2))
+            universe.load_new(frames, format='MEMORY')
+            ChainSize(universe.atoms, ('rfloryT',)).run(
+                backend='multiprocessing', n_workers=2, n_parts=2)
+        """)
+    # The child and its workers import this checkout's package.
+    env = dict(os.environ,
+               PYTHONPATH=str(Path(polyphys.__file__).parents[1]))
+
+    completed = subprocess.run(
+        [sys.executable, '-W', 'default', '-c', script], env=env,
+        capture_output=True, text=True, timeout=120, check=False)
+
+    assert completed.returncode == 0, completed.stderr
+    assert 'leaked semaphore' not in completed.stderr
+
+
+def test_closing_multiprocessing_apply_passes_a_worker_error_on():
+    """An error raised in a worker reaches the caller, after the pool is
+    terminated and joined."""
+    backend = _ClosingMultiprocessing(n_workers=1)
+
+    # int of a non-numeric string raises ValueError in the worker.
+    with pytest.raises(ValueError, match="invalid literal for int"):
+        backend.apply(int, ['1', 'x'])
+
+
+@pytest.mark.parametrize('analysis_class', [
+    pytest.param(BinderStatistics, id='BinderStatistics'),
+    pytest.param(ChainSize, id='ChainSize'),
+    pytest.param(PairDistances, id='PairDistances'),
+    pytest.param(SpatialHistograms, id='SpatialHistograms'),
+])
+def test_every_probe_analysis_runs_on_the_closing_pool(analysis_class):
+    """Every probe analysis takes its run, and so its multiprocessing
+    backend, from the shared probe base."""
+    assert analysis_class.run is _ProbeAnalysis.run
 
 
 # Real frames

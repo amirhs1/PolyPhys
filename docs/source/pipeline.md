@@ -137,7 +137,11 @@ through under the property's own name.
   gives the largest separation a ring allows, half its bonds times the
   largest bond extension, $R_0 = 1.5\,\sigma_{ij}$ for the FENE bond
   (Kremer and Grest, 1990). A separation above the grid raises and names
-  the whole, since the chain cannot reach it.
+  the whole, since the chain cannot reach it. A `bin_size`, `r_max`, or
+  `n_monomers` given as a function of the whole's parser must give a finite
+  positive number, as {meth}`~polyphys.spec.ProbeSpec.resolve` checks;
+  otherwise the hook raises `ValueError` naming the quantity and the
+  whole.
 
 ## Running a space
 

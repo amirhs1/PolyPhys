@@ -157,8 +157,11 @@ the pair species needs `contact_cutoff`, and a `BinderSpec` must name a
 selected label other than the chain as its patches and eight binding
 series that the project's `tseries_properties` list. Every field after
 `unwrap` has a default, so a record that probes only the chain size is
-unchanged. {meth}`~polyphys.spec.ProbeSpec.resolve` turns a
-`PerWhole` value into the number for one whole, given its parser.
+unchanged. A finite positive number is a Python or NumPy integer or float,
+never a bool. {meth}`~polyphys.spec.ProbeSpec.resolve` turns a
+`PerWhole` value into the number for one whole, given its parser, and
+raises `ValueError` naming the whole when a callable gives anything but a
+finite positive number.
 
 The `unwrap` value is the research code's: its probes read wrapped dumps,
 and a cylinder is periodic along its axis only, so the chain was unwrapped
@@ -227,6 +230,10 @@ The class is marked parallelizable and supports the `serial`,
 analysis = ChainSize.from_spec(universe, PROBE).run(
     backend='multiprocessing', n_workers=4)
 ```
+
+With `multiprocessing`, the pool is closed and joined at the end of the run
+rather than terminated, as the MDAnalysis backend does, so each worker exits
+normally and releases the semaphore that the progress bar's lock made in it.
 
 Each worker fills the arrays of its own frames, and the aggregator
 concatenates them along the frame axis (`ResultsGroup.ndarray_hstack` for

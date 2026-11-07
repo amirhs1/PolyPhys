@@ -19,10 +19,10 @@ To install a specific archived release, append the tag:
 python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.8.0"
 ```
 
-PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy,
-pandas, and SciPy. The probe layer, `polyphys.probe`, reads LAMMPS
-trajectories with [MDAnalysis](https://www.mdanalysis.org/), which the `mda`
-extra installs:
+PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy 2.0
+or newer, pandas 3.0 or newer, and SciPy 1.14.1 or newer. The probe layer,
+`polyphys.probe`, reads LAMMPS trajectories with
+[MDAnalysis](https://www.mdanalysis.org/), which the `mda` extra installs:
 
 ```bash
 python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"

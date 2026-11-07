@@ -578,7 +578,10 @@ def test_select_plateau_sem_err_takes_first_level_within_next_two_errors(
     error bar of each of the next two levels."""
     table = make_table(sem_values, 1024, sem_err_values)
 
-    level = select_plateau(table, method="sem_err")
+    # At 1024 frames the table's block sizes fail the Lee et al. (2011)
+    # Eq. (14) check, which warns; the sem_err rule still picks a level.
+    with pytest.warns(RuntimeWarning, match="not below n_frames / 50"):
+        level = select_plateau(table, method="sem_err")
 
     assert level == expected_level
 

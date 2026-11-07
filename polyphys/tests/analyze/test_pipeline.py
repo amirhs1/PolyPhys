@@ -979,6 +979,30 @@ def test_foci_pair_distances_need_a_parser_instance_for_a_callable(
              foci_context)
 
 
+@pytest.mark.parametrize("overrides, what", [
+    pytest.param({"bin_size": lambda info: -1.0}, "bin_size",
+                 id="bin_size-negative"),
+    pytest.param({"bin_size": lambda info: 0.0}, "bin_size",
+                 id="bin_size-zero"),
+    pytest.param({"r_max": lambda info: float("nan")}, "r_max",
+                 id="r_max-nan"),
+    pytest.param({"n_monomers": lambda info: "10"}, "n_monomers",
+                 id="n_monomers-string"),
+])
+def test_foci_pair_distances_reject_a_bad_callable_result(
+        foci_context, overrides, what):
+    """A callable quantity that does not give a finite positive number
+    raises, naming the quantity and the whole."""
+    foci_context = HookContext(foci_context.prop, spec=foci_context.spec,
+                               infos={"w": object()})
+    hook = FociPairDistances(
+        **({"bin_size": 1.0, "r_max": 3.0, "n_monomers": 10} | overrides))
+    with pytest.raises(ValueError,
+                       match=f"{what} of whole 'w' must resolve to a finite"):
+        hook({"w": _distance_frames([0, 4, 8], [[1.0, 1.0, 1.0]])},
+             foci_context)
+
+
 @pytest.mark.parametrize("n_monomers, bond_max, match", [
     pytest.param(1, 1.5, "at least 2", id="one-monomer"),
     pytest.param(10, 0.0, "must be positive", id="zero-bond"),

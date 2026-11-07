@@ -12,6 +12,11 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ## [Unreleased]
 
+### Changed
+
+- Require NumPy 2.0, pandas 3.0, and, in the `viz` extra, matplotlib 3.8.4 or newer, the lowest versions the test suite passes with on Python 3.11, and test them in a CI job that installs the lowest allowed versions ([#193](https://github.com/amirhs1/PolyPhys/issues/193))
+- Hold the Codecov `codecov/project` and `codecov/patch` statuses of a commit until all five of its coverage reports have arrived, so a status no longer reports the coverage of the first report alone ([#218](https://github.com/amirhs1/PolyPhys/issues/218))
+
 ### Added
 
 - Declare the public API, the `__all__` of every public module, with each module stable or provisional, and a deprecation policy under Semantic Versioning on the "API stability" page ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
@@ -21,6 +26,11 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - **Breaking:** Remove `polyphys.manage.projects` and the table records and builders that `polyphys.analyze.pipeline` served, the import paths that 0.9.0 deprecated; import them from `polyphys.spec` ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 - **Breaking:** Remove the nine study parsers from `polyphys.manage.parser`, which now ships only `KeywordSpec`, `Species`, and `ParserBase`: `TransFociCyl`, `TransFociCub`, `HnsCub`, and `HnsCyl` move to `projects/<study>/parser.py` in the repository, which is not installed, and `SumRuleCyl`, `SumRuleCubHeteroRing`, `SumRuleCubHeteroLinear`, `SumRuleCubHeteroRingBiDisperse`, and `TwoMonDepCub` leave PolyPhys; importing any of them from `polyphys.manage.parser` raises `ImportError` that says where it went ([#197](https://github.com/amirhs1/PolyPhys/issues/197))
 - **Breaking:** Remove `whole_from_dist_mat_t` and `find_unique_properties` from `polyphys.manage.organizer`, which nothing in PolyPhys called ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
+
+### Fixed
+
+- Close and join the worker pool of a probe run on the `multiprocessing` backend instead of terminating it, so the resource tracker reports no leaked semaphores, and turn every warning in the test suite into an error ([#192](https://github.com/amirhs1/PolyPhys/issues/192))
+- Raise `ValueError` naming the quantity and the whole when a `bin_size`, `r_max`, or `n_monomers` function of `FociPairDistances` gives anything but a finite positive number, instead of failing inside NumPy or turning a string into a number, and accept a NumPy integer or float such as `numpy.float32` wherever a finite positive per-whole number is checked ([#210](https://github.com/amirhs1/PolyPhys/issues/210))
 
 ### Migrating to 1.0.0
 

@@ -48,8 +48,10 @@ Dependencies
   :data:`~polyphys.spec.RecenterT`.
 - :mod:`polyphys.manage.parser`:
   :class:`~polyphys.manage.parser.ParserBase`.
-- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
-  part of a split run on its own copy of the analysis.
+- :mod:`polyphys.probe.core`: ``_ProbeAnalysis``, the base whose ``run``
+  closes the pool of the ``multiprocessing`` backend, and
+  ``_compute_part``, which computes each part of a split run on its own
+  copy of the analysis.
 
 Notation
 ========
@@ -106,7 +108,6 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Self
 
 import numpy as np
-from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.analysis.results import ResultsGroup
 from MDAnalysis.core.groups import AtomGroup
 from MDAnalysis.core.universe import Universe
@@ -122,7 +123,7 @@ from ..manage.types import (
     GeometryT,
     Pathish,
 )
-from .core import _compute_part
+from .core import _ProbeAnalysis, _compute_part
 
 __all__ = [
     'SpatialHistograms',
@@ -328,7 +329,7 @@ def histogram_edges(
         for key, (lmin, lmax, bin_type) in ranges.items()}
 
 
-class SpatialHistograms(AnalysisBase):
+class SpatialHistograms(_ProbeAnalysis):
     """
     The positions of each species binned in every frame: one-dimensional
     histograms per frame and two-dimensional maps per block of frames.

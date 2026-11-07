@@ -37,8 +37,10 @@ Dependencies
 - :mod:`polyphys.spec`:
   :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES` and
   :class:`~polyphys.spec.ProbeSpec`.
-- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
-  part of a split run on its own copy of the analysis.
+- :mod:`polyphys.probe.core`: ``_ProbeAnalysis``, the base whose ``run``
+  closes the pool of the ``multiprocessing`` backend, and
+  ``_compute_part``, which computes each part of a split run on its own
+  copy of the analysis.
 
 Notation
 ========
@@ -76,7 +78,6 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Self, Sequence
 
 import numpy as np
-from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.analysis.results import ResultsGroup
 from MDAnalysis.core.groups import AtomGroup
 from MDAnalysis.core.universe import Universe
@@ -84,7 +85,7 @@ from MDAnalysis.core.universe import Universe
 from ..analyze import measurer
 from ..spec import CHAIN_SIZE_OBSERVABLES, ProbeSpec
 from ..manage.types import AxisT, EntityT, Pathish, PropertyT
-from .core import _compute_part
+from .core import _ProbeAnalysis, _compute_part
 
 __all__ = [
     'ChainSize',
@@ -157,7 +158,7 @@ def _chain_bonds(atomgroup: AtomGroup) -> np.ndarray:
     return local
 
 
-class ChainSize(AnalysisBase):
+class ChainSize(_ProbeAnalysis):
     """
     The size and shape of one polymer chain, measured in every frame.
 
