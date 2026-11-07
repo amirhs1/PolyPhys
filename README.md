@@ -64,16 +64,16 @@ python -m pip install -e ".[dev,viz]"
 The `viz` extra installs matplotlib, which the doctests of `polyphys/viz/`
 import; without it the documented test command stops with an `ImportError`.
 
-Requires Python 3.11+. The runtime dependencies are NumPy, pandas, and SciPy.
-The probe layer, which reads LAMMPS trajectories, needs MDAnalysis as well;
-the `mda` extra installs it:
+Requires Python 3.11+. The runtime dependencies are NumPy 2.0 or newer, pandas
+3.0 or newer, and SciPy 1.14.1 or newer. The probe layer, which reads LAMMPS
+trajectories, needs MDAnalysis as well; the `mda` extra installs it:
 
 ```bash
 python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
 ```
 
-The viz layer's figure helpers need matplotlib; the `viz` extra installs it
-(the color lists in `viz.colors` need nothing extra):
+The viz layer's figure helpers need matplotlib 3.8.4 or newer; the `viz` extra
+installs it (the color lists in `viz.colors` need nothing extra):
 
 ```bash
 python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.git"
@@ -152,7 +152,7 @@ frame:
 | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `manage.parser`    | Filename → typed physical attributes and lineage. One `ParserBase` subclass per project, declaring its own geometry, topology, and attribute schema.                                           |
 | `manage.organizer` | Walks the lineage, combining segments into wholes and reducing replicate ensembles to averaged measurements.                                                                                   |
-| `spec`             | `ProjectSpec`, what a study's analysis needs beyond its parser: the polymer group, the rounding step of the crowder volume fraction, the attributes that become columns, the species-to-size map, and the time series; and `ProbeSpec`, what its probe needs: the selection of each species, the chain-size observables, the unwrap convention, the histogram species, bin sizes, and block length, how a frame is recentered, the pair species and its contact cutoff, and, for a study with binders, a `BinderSpec` of the binding cutoff and cis threshold; and `AnalysisTable`, the artifacts of one particle group to reduce. It imports no MDAnalysis. Each study's own specs live in `projects/`, outside the package; `manage.projects` is a deprecated alias until 1.0.0. |
+| `spec`             | `ProjectSpec`, what a study's analysis needs beyond its parser: the polymer group, the rounding step of the crowder volume fraction, the attributes that become columns, the species-to-size map, and the time series; and `ProbeSpec`, what its probe needs: the selection of each species, the chain-size observables, the unwrap convention, the histogram species, bin sizes, and block length, how a frame is recentered, the pair species and its contact cutoff, and, for a study with binders, a `BinderSpec` of the binding cutoff and cis threshold; and `AnalysisTable`, the artifacts of one particle group to reduce. It imports no MDAnalysis. Each study's own specs live in `projects/`, outside the package. |
 | `manage.utils`     | Filename sorting, safe IO, and number-density / volume-fraction conversions for cubic and cylindrical geometries.                                                                              |
 | `manage.types`     | Domain type aliases (`LineageT`, `GeometryT`, `PhaseT`, …) that keep the vocabulary explicit and checkable.                                                                                    |
 | `simulate.core`    | `Box`, the LAMMPS simulation box, and `LammpsFormatError`, the base class of the errors of the log, dump, and data-file readers.                                                               |

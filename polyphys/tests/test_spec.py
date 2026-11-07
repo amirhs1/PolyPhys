@@ -1,5 +1,6 @@
 """Tests for :mod:`polyphys.spec`."""
 import dataclasses
+import importlib
 import subprocess
 import sys
 from typing import Any, Callable
@@ -116,6 +117,22 @@ def test_spec_imports_without_mdanalysis():
 def test_per_whole_is_defined_once():
     """The pipeline's PerWhole is the spec module's alias, not a copy."""
     assert pipeline.PerWhole is PerWhole
+
+
+def test_manage_projects_alias_is_removed():
+    """The 0.9.0 alias module polyphys.manage.projects is gone in 1.0.0."""
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module('polyphys.manage.projects')
+
+
+@pytest.mark.parametrize('name', [
+    'AnalysisTable', 'PropertySpec', 'PostHook', 'tseries', 'histogram',
+    'histogram_2d', 'edge', 'matrix_tseries',
+])
+def test_pipeline_no_longer_serves_names_moved_to_spec(name):
+    """A table record or builder that moved to polyphys.spec in 0.9.0 is no
+    longer an attribute of polyphys.analyze.pipeline in 1.0.0."""
+    assert not hasattr(pipeline, name)
 
 
 # ProjectSpec

@@ -1,0 +1,11 @@
+# Codecov settings: https://docs.codecov.com/docs/codecov-yaml
+codecov:
+  notify:
+    # Hold the codecov/project and codecov/patch statuses until every
+    # coverage report of a commit has been processed
+    # (https://docs.codecov.com/docs/notifications). CI uploads five per
+    # commit: one from each of the four `test` matrix jobs and one from
+    # `test-mda` (.github/workflows/ci.yaml); `test-lowest` uploads none.
+    # Change this number when a job that uploads coverage is added or
+    # removed, or when the matrix changes.
+    after_n_builds: 5

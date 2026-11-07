@@ -93,6 +93,10 @@ from ..spec import ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish
 from .core import _ProbeAnalysis, _compute_part
 
+__all__ = [
+    'PairDistances',
+]
+
 # The periodic directions of each geometry, for the minimum image: a
 # cylinder is periodic along its axis, z, a cube in every direction.
 _PERIODIC: dict[GeometryT, tuple[bool, bool, bool]] = {

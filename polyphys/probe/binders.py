@@ -106,6 +106,12 @@ from ..spec import BINDER_SERIES, ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish, TopologyT
 from .core import _ProbeAnalysis, _compute_part
 
+__all__ = [
+    'BinderStatistics',
+    'DISTANCES_KEY',
+    'LOOP_KEY',
+]
+
 #: The result key of the per-frame loop-length histogram.
 LOOP_KEY = 'loop_length_histogram'
 

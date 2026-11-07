@@ -87,6 +87,10 @@ from ..spec import CHAIN_SIZE_OBSERVABLES, ProbeSpec
 from ..manage.types import AxisT, EntityT, Pathish, PropertyT
 from .core import _ProbeAnalysis, _compute_part
 
+__all__ = [
+    'ChainSize',
+]
+
 # One frame's value of an observable: a function of the chain, the cylinder
 # axis, and whether to unwrap the chain.
 _Measure = Callable[[AtomGroup, AxisT, bool], Any]

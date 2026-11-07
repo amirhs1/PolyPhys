@@ -19,7 +19,6 @@ Manage
 
    polyphys.manage.parser
    polyphys.manage.organizer
-   polyphys.manage.projects
    polyphys.manage.utils
    polyphys.manage.types
 

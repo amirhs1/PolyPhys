@@ -72,6 +72,12 @@ from MDAnalysis.analysis.results import Results
 from ..manage.parser import ParserBase
 from ..manage.types import Pathish
 
+__all__ = [
+    'UNIVERSE_KWARGS',
+    'make_universe',
+    'write_stamps',
+]
+
 #: The fixed arguments of :func:`make_universe`: a LAMMPS data file as the
 #: topology, a LAMMPS dump as the trajectory with its coordinates read as the
 #: wrapped, unscaled ``x y z`` columns, and the ``Atoms`` lines of the data
