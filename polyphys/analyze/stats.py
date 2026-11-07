@@ -91,7 +91,7 @@ choice.
 
 Under either rule, :func:`select_plateau` warns when the series fails the
 acceptance criterion of Lee et al. (2011): the block size the ``'lee'`` rule
-selects must leave more than 50 blocks, which amounts to :math:`n / s > 500`,
+selects must be below :math:`n / 50`, which amounts to :math:`n / s > 500`,
 more than about 500 independent samples.
 
 Convenience wrappers:
@@ -160,9 +160,10 @@ PlateauMethod = Literal['lee', 'sem_err']
 """The plateau-selection rules :func:`select_plateau` accepts."""
 
 #: Lee et al. (2011) accept a blocking analysis only when their optimal block
-#: size is below ``n_frames / LEE_MIN_BLOCK_RATIO``, that is, when more than
-#: this many blocks remain at that level. :func:`select_plateau` applies the
-#: check to the level the ``'lee'`` rule selects, whichever rule is asked for.
+#: size is below ``n_frames / LEE_MIN_BLOCK_RATIO``, that is, when the ratio
+#: of the frames to that block size exceeds this value.
+#: :func:`select_plateau` applies the check to the level the ``'lee'`` rule
+#: selects, whichever rule is asked for.
 LEE_MIN_BLOCK_RATIO = 50
 
 
@@ -525,9 +526,9 @@ def select_plateau(
         is too short for its correlation time or is not stationary. Also,
         under either `method`, when an observable has a selected level but
         the block size the ``'lee'`` rule selects is not below
-        ``n_frames / 50``, so that 50 or fewer blocks remain, or that rule
-        finds no level: Lee et al. (2011) then consider the estimate
-        unreliable. The selected level is still returned.
+        ``n_frames / 50``, or that rule finds no level: Lee et al. (2011)
+        then consider the estimate unreliable. The selected level is still
+        returned.
 
     Notes
     -----

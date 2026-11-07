@@ -181,7 +181,7 @@ every frame:
 | `transSizeT`   | Twice the mean distance from the center of geometry in the plane across the axis                                  | {func}`~polyphys.analyze.measurer.transverse_size`         |
 | `gyrT`         | $R_g = \sqrt{\lambda_1 + \lambda_2 + \lambda_3}$, the mass-weighted radius of gyration                            | `AtomGroup.radius_of_gyration`                             |
 | `asphericityT` | $\tfrac{3}{2} \sum_k (\lambda_k - \bar\lambda)^2 / (\sum_k \lambda_k)^2$, from 0 (spherically symmetric) to 1 (a line) | `AtomGroup.asphericity(wrap=False, unwrap=unwrap)`        |
-| `shapeT`       | $27 \prod_k (\lambda_k - \bar\lambda) / (\sum_k \lambda_k)^3$, from 0 to 2                                        | `AtomGroup.shape_parameter(wrap=False)`                    |
+| `shapeT`       | $27 \prod_k (\lambda_k - \bar\lambda) / (\sum_k \lambda_k)^3$, from $-1/4$ to 2                                   | `AtomGroup.shape_parameter(wrap=False)`                    |
 | `principalT`   | The $3 \times 3$ matrix of principal axes of the moment of inertia, one eigenvector per row, by decreasing eigenvalue | `AtomGroup.principal_axes(wrap=False)`                 |
 
 The asphericity and shape parameter are those of Dima and Thirumalai

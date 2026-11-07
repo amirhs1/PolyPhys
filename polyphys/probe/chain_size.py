@@ -249,8 +249,10 @@ class ChainSize(AnalysisBase):
         (``AtomGroup.asphericity(wrap=False, unwrap=unwrap)``).
     ``shapeTMon``
         :math:`27 \\prod_k (\\lambda_k - \\bar\\lambda) /
-        (\\sum_k \\lambda_k)^3`, from 0 for a spherically symmetric chain
-        to 2 for a straight one (``AtomGroup.shape_parameter(wrap=False)``).
+        (\\sum_k \\lambda_k)^3`, from :math:`-1/4` for a flat chain with two
+        equal eigenvalues and a zero one, such as a planar ring, through 0
+        for a spherically symmetric one, to 2 for a straight one
+        (``AtomGroup.shape_parameter(wrap=False)``).
     ``principalTMon``
         The :math:`3 \\times 3` matrix of principal axes of the moment of
         inertia, one eigenvector per row, by decreasing eigenvalue

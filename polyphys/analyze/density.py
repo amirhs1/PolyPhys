@@ -87,8 +87,13 @@ that one identity the averaged form conserves the total bead volume,
 :math:`\\sum_i V_i \\phi_i = \\sum_j H_j v / F`, and returns
 :math:`\\phi = \\rho v` for a uniform fluid, both to round-off. The
 centered form gets the second right and misses the first by
-:math:`O(h^2)` along :math:`r`: about 2 % of a bead volume at a bin width
-:math:`h = a / 4` and 0.5 % at :math:`a / 8`.
+:math:`O(h^2)` along :math:`r`: up to 2.65 % of a bead volume for
+cylindrical shells and 7.27 % for spherical shells at a bin width
+:math:`h = a / 4`, and 0.71 % and 1.88 % at :math:`a / 8`, largest in the
+innermost bins. Both forms return :math:`\\rho v` only in the bins whose
+test bead stays inside the last edge; in the outermost radial bins the
+bead reaches past it and the row sums of the share matrix fall short of
+:math:`v`.
 
 The kernels
 ===========
@@ -101,11 +106,12 @@ sphere_sphere_intersection`). A cylindrical shell's kernel is a difference
 of ball-in-cylinder volumes, :func:`sphere_cylinder_intersection`, which
 has no closed form and is integrated numerically (``intersection='exact'``);
 the research code used the sphere-sphere volume in its place
-(``intersection='sphere'``), whose error is about :math:`0.09\\, a / R` of a
-bead volume at an edge of radius :math:`R`, first order and independent of
-the bin width. The shells' averaged kernels are integrated by Gauss-Legendre
-rules on the pieces between the kernels' breakpoints, exactly where the
-integrand is polynomial.
+(``intersection='sphere'``), whose error is about :math:`0.047\\, a / R` of
+a bead volume at an edge of radius :math:`R`, with :math:`a = 2 R_b` the
+bead diameter, first order and independent of the bin width. The shells'
+averaged kernels are integrated by Gauss-Legendre rules on the pieces
+between the kernels' breakpoints, exactly where the integrand is
+polynomial.
 
 The axial direction of a cylinder is periodic: a bead that reaches past one
 end of the domain reaches into the bins at the other end. The radial
