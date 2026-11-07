@@ -229,6 +229,10 @@ analysis = ChainSize.from_spec(universe, PROBE).run(
     backend='multiprocessing', n_workers=4)
 ```
 
+With `multiprocessing`, the pool is closed and joined at the end of the run
+rather than terminated, as the MDAnalysis backend does, so each worker exits
+normally and releases the semaphore that the progress bar's lock made in it.
+
 Each worker fills the arrays of its own frames, and the aggregator
 concatenates them along the frame axis (`ResultsGroup.ndarray_hstack` for
 a scalar series, `ResultsGroup.ndarray_vstack` for `principalT`), so a

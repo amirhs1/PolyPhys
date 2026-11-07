@@ -26,6 +26,10 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - **Breaking:** Remove `polyphys.manage.projects` and the table records and builders that `polyphys.analyze.pipeline` served, the import paths that 0.9.0 deprecated; import them from `polyphys.spec` ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 - **Breaking:** Remove `whole_from_dist_mat_t` and `find_unique_properties` from `polyphys.manage.organizer`, which nothing in PolyPhys called ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 
+### Fixed
+
+- Close and join the worker pool of a probe run on the `multiprocessing` backend instead of terminating it, so the resource tracker reports no leaked semaphores, and turn every warning in the test suite into an error ([#192](https://github.com/amirhs1/PolyPhys/issues/192))
+
 ### Migrating to 1.0.0
 
 Each breaking change since 0.4.0, oldest last, with its migration path.

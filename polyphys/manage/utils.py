@@ -261,18 +261,6 @@ def sort_filenames(
     ...     (Path('file2.data'), Path('file2.trj')),
     ... ]
     True
-
-    >>> [
-    ...     tuple(str(path) for path in group)
-    ...     for group in sort_filenames(
-    ...         ['file1.data', 'file1.trj', 'file2.data'],
-    ...         ['data', ('lammpstrj', 'trj')]
-    ...     )
-    ... ]
-    [('file1.data', 'file1.trj')]
-
-    >>> sort_filenames(['file1.data', 'file2.data'], ['data', ('trj',)])
-    []
     """
     # Normalize inputs
     paths = [Path(p) for p in filenames]

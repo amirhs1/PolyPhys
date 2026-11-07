@@ -239,6 +239,7 @@ Keep the path out of tracked files; set the variable in your shell.
 | `--doctest-modules`      | Runs the `Examples` sections of the docstrings in the modules pytest collects               |
 | `--doctest-glob=README.md` | Runs the examples of `README.md` as doctests                                              |
 | `testpaths = ["polyphys/tests"]` | The directory pytest collects when no path is given                                 |
+| `filterwarnings = ["error"]` | Every warning raised during a test is an error; a test that expects one wraps the call in `pytest.warns`, and a test module that must ignore one names it in a `filterwarnings` mark |
 
 The documented command passes `polyphys README.md projects`, so the
 modules' docstrings, the README, and the studies are collected as well as
@@ -248,4 +249,11 @@ modules' docstrings, the README, and the studies are collected as well as
 
 See [Working with custom markers](https://docs.pytest.org/en/stable/how-to/mark.html)
 and the [configuration reference](https://docs.pytest.org/en/stable/reference/reference.html)
-in the pytest documentation. Warnings are not yet turned into errors.
+in the pytest documentation.
+
+`filterwarnings` reaches only warnings that pytest's own process raises
+while a test runs. The resource tracker of `multiprocessing` reports
+leaked semaphores from a process of its own after pytest has exited, so
+`test_multiprocessing_run_leaves_no_leaked_semaphore` in
+`polyphys/tests/probe/test_core.py` runs a parallel probe in a subprocess
+and checks its standard error instead.
