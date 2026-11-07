@@ -432,7 +432,7 @@ def test_real_chain_size_agrees_between_the_polymer_dump_and_the_window(
     assert_allclose(from_polymer, from_window, rtol=RTOL, atol=ATOL)
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 def test_real_chain_size_agrees_with_the_crowded_window(
         real_crowded_whole, real_files, private_window_files, real_universe,
         study_spec, trajectory_arrays):
@@ -512,7 +512,7 @@ def test_block_average_of_a_real_gyration_series_starts_at_the_naive_error(
 # Against the research code's probe (tier C)
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 @pytest.mark.parametrize('observable', ['gyrT', 'shapeT', 'asphericityT'])
 def test_real_chain_size_matches_the_research_code(
         real_transfocicub_whole, real_files, real_universe, study_spec,
@@ -534,7 +534,7 @@ def test_real_chain_size_matches_the_research_code(
     assert_allclose(results[observable], expected, rtol=RTOL, atol=ATOL)
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 def test_real_principal_axes_match_the_research_code_up_to_sign(
         real_transfocicub_whole, real_files, real_universe, study_spec,
         research_probe_file):

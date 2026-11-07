@@ -758,7 +758,7 @@ def test_real_window_histograms_have_one_int64_row_per_frame_and_bin(
         for d in directions[probe.geometry]}
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 def test_crowded_window_histograms_conserve_every_species(
         real_crowded_whole, private_window_files, real_histograms, study_spec,
         directions):
