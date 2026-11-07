@@ -7,10 +7,15 @@ rounded down to its first non-zero digit (``0.025 -> 0.02``,
 is the input the handle or legend was built from: the labels, colors,
 styles, and titles given, read back from the artists.
 """
+import importlib
+import sys
+from pathlib import Path
+
 import pytest
 
 pytest.importorskip("matplotlib")
 
+import matplotlib  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.colors import to_rgba  # noqa: E402
 from matplotlib.lines import Line2D  # noqa: E402
@@ -238,3 +243,50 @@ def test_band_under_lines_rejects_a_band_that_does_not_fit(ax, bands,
 
     with pytest.raises(ValueError, match=message):
         band_under_lines(ax, bands)
+
+
+# On the research code's space table (tier C)
+
+
+def _plot_state_points(ax, table, colors):  # pragma: no cover - tier C
+    """One line per state point of a space table, ``gyrTMon-mean`` against
+    ``time``, in the given colors; returns the labels, the rounded crowder
+    volume fractions."""
+    labels = []
+    for (phi, rows), color in zip(table.groupby("phi_bulk_c_round"), colors):
+        ax.plot(rows["time"], rows["gyrTMon-mean"], color=color)
+        labels.append(f"{phi:g}")
+    return labels
+
+
+@pytest.mark.private_data
+def test_helpers_draw_the_research_space_table(  # pragma: no cover
+        ax, private_data_dir):
+    """A figure of the research code's TransFociCub gyration space table has
+    one line per state point, one legend handle per line in its color from
+    ``color_handles``, and x ticks from ``set_xticks`` whose first and last
+    frame the time axis. A property check: there is no research figure to
+    compare with."""
+    from polyphys.analyze.pipeline import space_tseries_from_spec
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+    spec = importlib.import_module("projects.trans_foci_cub.spec").SPEC
+    parent = private_data_dir / "TransFociCub" / "analysis"
+    folders = sorted(parent.glob("*-bug-ensAvg"))
+    if len(folders) != 1:
+        pytest.skip(f"no single *-bug-ensAvg folder under {parent}")
+    table = space_tseries_from_spec(folders[0], spec, "gyrTMon")
+    n_states = table["ensemble_long"].nunique()
+    colors = [tuple(color) for color in matplotlib.colormaps["viridis"](
+        np.linspace(0.0, 1.0, n_states))]
+    t_max = float(table["time"].max())
+
+    labels = _plot_state_points(ax, table, colors)
+    handles = color_handles(labels, colors)
+    ticks = set_xticks(ax, 0.0, t_max, t_max / 5)
+
+    assert len(ax.lines) == n_states == len(handles)
+    assert [to_rgba(handle.get_facecolor()) for handle in handles] == [
+        to_rgba(line.get_color()) for line in ax.lines]
+    assert ticks[0] <= table["time"].min() and ticks[-1] >= t_max
+    assert ax.get_xlim()[0] <= 0.0 and ax.get_xlim()[1] >= t_max

@@ -142,6 +142,24 @@ are that group; the polymer atoms carry the IDs 1 to n in every system. The
 `RealWhole` cases and the fixtures that open the files are in
 `polyphys/tests/probe/conftest.py`.
 
+The four TransFociCub wholes also have a tier C reference: the research
+code's probe of the same 50 frames of their polymer dumps, under
+`<POLYPHYS_DATA_DIR>/TransFociCub/probes/<space>-bug-probe/<whole>.ring/`,
+and its reduction of that probe, under
+`<POLYPHYS_DATA_DIR>/TransFociCub/analysis/<space>-bug-{ens,ensAvg,space}/`.
+Tier C tests compare each stage of the `bug` pipeline with it: the probe
+tests (`test_chain_size.py`, `test_pairs.py`, `test_core.py`) compare the
+chain-size observables, the principal axes up to sign, the foci bonds and
+clusters histograms, and the stamps with the research probe;
+`test_pipeline.py` reduces the research probe, and the package's own probe
+of the same dumps, to the research `ensAvg`, and builds the research space
+tables from the research `ensAvg`; and `viz/test_helpers.py` draws a space
+table with the helpers. The foci pair distances and the autocorrelation
+functions are left out on purpose: PolyPhys takes the minimum image, which
+the research code did not, and `acf` rejects lags beyond a 50-frame
+series, which the research code's `statsmodels` call clamped. The
+`research_probe_file` fixture finds the probe files.
+
 ## Tests that need LAMMPS
 
 A test that runs LAMMPS is marked `lammps` and takes the `lammps_executable`
