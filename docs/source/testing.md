@@ -31,7 +31,7 @@ suite without MDAnalysis or coverage. To run it locally, with uv installed:
 
 ```bash
 uv venv --python 3.11 .venv
-uv pip install --python .venv/bin/python --resolution lowest-direct --only-binary :all: -e ".[viz]"
+uv pip install --python .venv/bin/python --resolution lowest-direct -e ".[viz]"
 uv pip install --python .venv/bin/python pytest hypothesis
 .venv/bin/python -m pytest polyphys README.md projects --doctest-modules --doctest-glob='README.md'
 ```
