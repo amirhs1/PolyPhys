@@ -90,8 +90,13 @@ equilibrium value with a blocked error, beside the whole's stamps.
 Conventions
 ===========
 
-- A property whose files are not found raises ``FileNotFoundError``; nothing
-  is skipped in silence.
+- A property whose files are not found raises ``FileNotFoundError`` before
+  any directory is made or any property reduced; nothing is skipped in
+  silence.
+- No output overwrites another: :class:`~polyphys.spec.AnalysisTable`
+  rejects a repeated name among the outputs its hooks declare, and
+  :func:`reduce_space` raises ``ValueError`` when a hook that declares none
+  returns a name already produced.
 - The wholes of one ensemble must hold identical bin edges, or ``ValueError``
   names the ensemble and the two wholes; the organizer takes the first
   whole's edges without comparing them.
@@ -479,6 +484,21 @@ class TimeAverage:
     output: str
     drop_first_column: bool = False
 
+    def outputs(self, prop: _spec.PropertySpec) -> tuple[PropertyT, ...]:
+        """
+        The name of the average: `output` then the species of `prop`.
+
+        Examples
+        --------
+        >>> from polyphys.spec import matrix_tseries
+        >>> TimeAverage('clustersHist').outputs(
+        ...     matrix_tseries('clustersHistT', 'Foci'))
+        ('clustersHistFoci',)
+
+        .. versionadded:: 0.9.0
+        """
+        return (self.output + prop.species,)
+
     def __call__(
         self, wholes: ArrayWholes, context: HookContext
     ) -> tuple[Derived, ...]:
@@ -531,6 +551,20 @@ class Autocorrelation:
     """
 
     nlags: int
+
+    def outputs(self, prop: _spec.PropertySpec) -> tuple[PropertyT, ...]:
+        """
+        The series, passed through, and ``<property>-acf``.
+
+        Examples
+        --------
+        >>> from polyphys.spec import tseries
+        >>> Autocorrelation(nlags=2).outputs(tseries('gyrT', 'Mon'))
+        ('gyrTMon', 'gyrTMon-acf')
+
+        .. versionadded:: 0.9.0
+        """
+        return (prop.prop, f'{prop.prop}-acf')
 
     def __call__(
         self, wholes: ArrayWholes, context: HookContext
@@ -606,15 +640,43 @@ class LocalDensities:
        The profiles carry the sum rule's default normalizer.
     """
 
-    def __call__(
-        self, wholes: ArrayWholes, context: HookContext
-    ) -> tuple[Derived, ...]:
-        prop = context.prop
+    @staticmethod
+    def _direction(prop: _spec.PropertySpec) -> str:
+        """The direction of a histogram property, which must be one."""
         if not prop.name.endswith('Hist') or not prop.has_edges:
             raise ValueError(
                 f"LocalDensities needs a histogram(...) property, not "
                 f"'{prop.prop}'."
             )
+        return prop.name[: -len('Hist')]
+
+    def outputs(self, prop: _spec.PropertySpec) -> tuple[PropertyT, ...]:
+        """
+        The histogram, passed through, and its ``<direction>Rho`` and
+        ``<direction>Phi`` profiles.
+
+        Raises
+        ------
+        ValueError
+            If `prop` is not a :func:`~polyphys.spec.histogram` property.
+
+        Examples
+        --------
+        >>> from polyphys.spec import histogram
+        >>> LocalDensities().outputs(histogram('z', 'Crd'))
+        ('zHistCrd', 'zRhoCrd', 'zPhiCrd')
+
+        .. versionadded:: 0.9.0
+        """
+        direction = self._direction(prop)
+        return (prop.prop, f'{direction}Rho{prop.species}',
+                f'{direction}Phi{prop.species}')
+
+    def __call__(
+        self, wholes: ArrayWholes, context: HookContext
+    ) -> tuple[Derived, ...]:
+        prop = context.prop
+        direction = self._direction(prop)
         if context.density is None:
             raise ValueError(
                 f"'{prop.prop}': LocalDensities needs the density kernel "
@@ -632,7 +694,6 @@ class LocalDensities:
                 f"{context.spec.name}.species_sizes "
                 f"{dict(context.spec.species_sizes)}."
             )
-        direction = prop.name[: -len('Hist')]
         # The per-whole spread is defined for a bin reference only, which is
         # what every default is; a numeric or callable one would be skipped.
         default = PROFILE_NORMALIZERS.get(
@@ -800,6 +861,24 @@ class FociPairDistances:
     bin_size: PerWhole
     r_max: PerWhole
     n_monomers: int | Callable[[ParserBase], int]
+
+    def outputs(self, prop: _spec.PropertySpec) -> tuple[PropertyT, ...]:
+        """
+        The pair histograms, separation densities, and separation time
+        series of the species of `prop`.
+
+        Examples
+        --------
+        >>> from polyphys.spec import matrix_tseries
+        >>> hook = FociPairDistances(bin_size=1.0, r_max=3.0, n_monomers=10)
+        >>> hook.outputs(matrix_tseries('distMatT', 'Foci'))
+        ('pairDistHistFoci', 'pairDistRdfFoci', 'pairDistTFoci')
+
+        .. versionadded:: 0.9.0
+        """
+        species = prop.species
+        return (f'pairDistHist{species}', f'pairDistRdf{species}',
+                f'pairDistT{species}')
 
     def __call__(
         self, wholes: ArrayWholes, context: HookContext
@@ -979,11 +1058,14 @@ def reduce_space(
     Raises
     ------
     FileNotFoundError
-        If the glob matches no file, or a property matches no file.
+        If the glob matches no file, or a property or its edge property
+        matches no file; checked for every property before any directory is
+        made.
     ValueError
-        If the wholes of one ensemble hold different bin edges, or if a
-        histogram's edge files do not cover its wholes; as the organizer and
-        the hooks raise.
+        If the wholes of one ensemble hold different bin edges; if a
+        histogram's edge files do not cover its wholes; if a hook returns
+        an output name the table already produced; as the organizer and the
+        hooks raise.
 
     Notes
     -----
@@ -1040,6 +1122,13 @@ def reduce_space(
     logger.info("Reducing %d files of group '%s' under '%s'.",
                 len(observations), group, pattern)
 
+    # Select every property's files first, so that a property without
+    # files, such as a typo, raises before any directory is made.
+    for prop in table.properties:
+        _select(observations, prop.prop)
+        if prop.edge_prop is not None:
+            _select(observations, prop.edge_prop)
+
     whole_dir: str | None = None
     ens_dir: str | None = None
     ens_avg_dir: str | None = None
@@ -1076,6 +1165,11 @@ def reduce_space(
         else:
             outputs = prop.post_hook(wholes, context)
         for output in outputs:
+            if output.name in results:
+                raise ValueError(
+                    f"'{prop.prop}': the output '{output.name}' is named "
+                    f"more than once in the table; it would overwrite an "
+                    f"earlier one.")
             if whole_dir is not None and output.name != prop.prop:
                 for whole_name, data in output.wholes.items():
                     organizer.save_artifact(

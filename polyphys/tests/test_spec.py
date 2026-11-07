@@ -13,6 +13,12 @@ from polyphys.manage.parser import (
     SumRuleCyl,
 )
 from polyphys.analyze import pipeline
+from polyphys.analyze.pipeline import (
+    Autocorrelation,
+    FociPairDistances,
+    LocalDensities,
+    TimeAverage,
+)
 from polyphys.spec import (
     AnalysisTable,
     BinderSpec,
@@ -657,3 +663,49 @@ def test_analysis_table_rejects_bad_lineage_and_repeated_properties():
     with pytest.raises(ValueError, match=r"more than once: \['gyrTMon'\]"):
         AnalysisTable("bug", "whole", False,
                       (tseries("gyrT", "Mon"), tseries("gyrT", "Mon")))
+
+
+@pytest.mark.parametrize("properties, repeated", [
+    pytest.param(
+        (tseries("gyrT", "Mon", post_hook=TimeAverage("size")),
+         tseries("fsdT", "Mon", post_hook=TimeAverage("size"))),
+        "sizeMon", id="two-hooks-one-output"),
+    pytest.param(
+        (tseries("gyrT", "Mon", post_hook=TimeAverage("fsdT")),
+         tseries("fsdT", "Mon")),
+        "fsdTMon", id="hook-output-is-a-listed-property"),
+    pytest.param(
+        (histogram("r", "Crd", post_hook=LocalDensities()),
+         tseries("rRho", "Crd")),
+        "rRhoCrd", id="density-output-is-a-listed-property"),
+    pytest.param(
+        (matrix_tseries("distMatT", "Foci",
+                        post_hook=FociPairDistances(1.0, 3.0, 10)),
+         matrix_tseries("pairDistT", "Foci")),
+        "pairDistTFoci", id="foci-output-is-a-listed-property"),
+])
+def test_analysis_table_rejects_repeated_output_names(properties, repeated):
+    """A table whose declared outputs name one artifact twice is rejected,
+    so no output overwrites another at run time."""
+    match = rf"Outputs named more than once: \['{repeated}'\]"
+    with pytest.raises(ValueError, match=match):
+        AnalysisTable("bug", "whole", False, properties)
+
+
+def test_analysis_table_accepts_hooks_that_pass_their_property_through():
+    """A hook that passes its own property through under its name, beside
+    its derived outputs, is not a repeat."""
+    table = AnalysisTable("all", "segment", False, (
+        tseries("gyrT", "Mon", post_hook=Autocorrelation(nlags=2)),
+        histogram("r", "Crd", post_hook=LocalDensities()),
+    ))
+
+    assert [prop.prop for prop in table.properties] == ["gyrTMon", "rHistCrd"]
+
+
+def test_analysis_table_rejects_local_densities_on_a_non_histogram():
+    """LocalDensities on a property that is not a histogram fails when the
+    table is built, not when it runs."""
+    with pytest.raises(ValueError, match="needs a histogram"):
+        AnalysisTable("bug", "whole", False,
+                      (tseries("gyrT", "Mon", post_hook=LocalDensities()),))
