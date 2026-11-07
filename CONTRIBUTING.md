@@ -131,6 +131,10 @@ Each release is tagged on `main`; never tag an older commit to leave later
 work out. The `draft-release` skill checks this, and stops when `main`
 already holds later work.
 
+From v1.0.0, publishing the GitHub release also starts
+`.github/workflows/publish.yaml`, which uploads the release to TestPyPI and
+then to PyPI; a release marked as a pre-release goes to TestPyPI only.
+
 CI runs neither the `private_data` tests nor the `lammps` tests, so before
 each release the maintainer runs the full test command on their own machine
 with `POLYPHYS_DATA_DIR` set and LAMMPS available, and the release commit

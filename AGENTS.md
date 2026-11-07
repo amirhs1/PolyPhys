@@ -143,8 +143,10 @@ Do not reopen these or report them as findings:
   `README.md`, "The core idea: artifact lineage".
 - Versions follow semantic versioning and change only for an explicitly
   requested release — `CHANGELOG.md`.
-- Distribution is GitHub source plus a Zenodo DOI: no PyPI publishing, trusted
-  publishing, or automated version bumps unless requested.
+- Distribution is GitHub source, a Zenodo DOI per release, and, from v1.0.0,
+  PyPI through trusted publishing from `.github/workflows/publish.yaml` when a
+  release is published; no stored PyPI token and no automated version bumps
+  unless requested.
 
 ## Where you may write
 
