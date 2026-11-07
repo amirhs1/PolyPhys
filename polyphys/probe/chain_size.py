@@ -136,6 +136,23 @@ _FRAME_SHAPES: Mapping[PropertyT, tuple[int, ...]] = {'principalT': (3, 3)}
 _BACKENDS = ('serial', 'multiprocessing', 'dask')
 
 
+def _chain_bonds(atomgroup: AtomGroup) -> np.ndarray:
+    """
+    The bonds within `atomgroup`, as pairs of positions in the group, shape
+    ``(n_bonds, 2)``; empty when the topology has no bonds. Time
+    :math:`O(N + B \\log N)` and space :math:`O(N + B)` for :math:`N` beads
+    and :math:`B` bonds.
+    """
+    try:
+        bonds = atomgroup.intra_bonds.indices
+    except AttributeError:
+        return np.empty((0, 2), dtype=np.intp)
+    order = np.argsort(atomgroup.indices)
+    local: np.ndarray = order[
+        np.searchsorted(atomgroup.indices, bonds, sorter=order)]
+    return local
+
+
 class ChainSize(AnalysisBase):
     """
     The size and shape of one polymer chain, measured in every frame.
@@ -158,6 +175,8 @@ class ChainSize(AnalysisBase):
         Whether the chain is unwrapped across the periodic boundaries
         before its gyration tensor is formed, for ``asphericityT``. The
         research code unwrapped in a periodic cube and not in a cylinder.
+        Every other observable reads the positions as the dump gives them,
+        so the chain must be whole; see Notes.
     axis : :py:data:`AxisT`, default 2
         The cylinder axis, ``0``, ``1``, or ``2`` for ``x``, ``y``, or
         ``z``, along which ``fsdT`` spans and across which ``transSizeT``
@@ -198,7 +217,10 @@ class ChainSize(AnalysisBase):
         that is not in
         :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES`; if
         `chain` is empty; if `axis` is not ``0``, ``1``, or ``2``; or if
-        `atomgroup` has fewer than two beads.
+        `atomgroup` has fewer than two beads. During :meth:`run`, if a
+        chain bond spans half the frame's box or more along a direction,
+        which means the dump splits the chain across a periodic boundary;
+        the message names the frame.
 
     Notes
     -----
@@ -239,6 +261,20 @@ class ChainSize(AnalysisBase):
     positions as the dump wraps them, whatever `unwrap` is, as the research
     code did; `unwrap` reaches ``asphericityT`` only.
 
+    Whole molecules: every observable but an unwrapped ``asphericityT``
+    reads the positions as the dump gives them, so the dump must hold the
+    chain whole, as the studies' dumps do. In each frame, :meth:`run`
+    checks that no bond :math:`(i, j)` of the chain spans half the box or
+    more along any direction :math:`a`,
+    :math:`|r_{i,a} - r_{j,a}| \\ge L_a / 2` for the frame's box length
+    :math:`L_a`, and raises on the first frame that fails. A bond is far
+    shorter than half the box (the studies' FENE bound
+    :math:`R_0 = 1.5`, ``docs/source/design.md``), so a bond that long has
+    been split by the boundary. The check is skipped when the frame
+    carries no box or the topology has no bonds, and when ``asphericityT``
+    with `unwrap` is the only observable, since unwrapping makes that one
+    whole itself.
+
     No per-frame shift of the positions is applied: each observable
     recenters the chain itself, so the research code's shift of every
     position by half the box changed none of these values.
@@ -255,9 +291,11 @@ class ChainSize(AnalysisBase):
     Cost per frame: :math:`O(N)` time for every observable, since each is a
     sum over the beads followed by at most a :math:`3 \\times 3`
     eigenproblem, plus the :math:`O(N + N_\\mathrm{bonds})` unwrap of the
-    chain when `unwrap` is set; :math:`O(N)` extra space for the recentered
-    positions. Over a run, :math:`O(F)` space per scalar series and
-    :math:`O(9 F)` for ``principalT``, for :math:`F` frames. Positions come
+    chain when `unwrap` is set, and the :math:`O(N_\\mathrm{bonds})` check
+    that the chain is whole; :math:`O(N + N_\\mathrm{bonds})` extra space
+    for the recentered positions and the bond spans. Over a run,
+    :math:`O(F)` space per scalar series and :math:`O(9 F)` for
+    ``principalT``, for :math:`F` frames. Positions come
     from MDAnalysis as float32, so each value carries a relative round-off
     of about :math:`10^{-7}`.
 
@@ -332,6 +370,11 @@ class ChainSize(AnalysisBase):
         self.chain = chain
         self.unwrap = unwrap
         self.axis = axis
+        # Every observable but an unwrapped asphericity reads the positions
+        # as the dump wraps them, so the chain must be whole in each frame.
+        self._check_whole = unwrap is False or any(
+            obs != 'asphericityT' for obs in observables)
+        self._bonds = _chain_bonds(atomgroup)
 
     @classmethod
     def from_spec(
@@ -447,12 +490,38 @@ class ChainSize(AnalysisBase):
 
     def _single_frame(self) -> None:
         """
-        Measure every observable on the current frame and store it in its
-        array's row for this frame.
+        Check that the chain is whole, then measure every observable on the
+        current frame and store it in its array's row for this frame.
         """
+        if self._check_whole:
+            self._raise_if_split()
         for obs in self.observables:
             self.results[obs][self._frame_index] = _MEASURES[obs](
                 self.atomgroup, self.axis, self.unwrap)
+
+    def _raise_if_split(self) -> None:
+        """
+        Raise if a chain bond spans half the frame's box or more along a
+        direction: the dump has split the chain across a periodic boundary.
+        """
+        dimensions = self._ts.dimensions
+        if dimensions is None or not len(self._bonds):
+            return
+        lengths = np.asarray(dimensions[:3], dtype=np.float64)
+        positions = self.atomgroup.positions.astype(np.float64)
+        spans = np.abs(positions[self._bonds[:, 0]]
+                       - positions[self._bonds[:, 1]])
+        split = (lengths > 0) & (spans >= 0.5 * lengths)
+        if split.any():
+            directions = ', '.join(
+                'xyz'[axis] for axis in np.flatnonzero(split.any(axis=0)))
+            raise ValueError(
+                f"frame {self._ts.frame}: "
+                f"{int(np.count_nonzero(split.any(axis=1)))} of "
+                f"{len(self._bonds)} chain bonds span half the box or more "
+                f"along {directions}, so the dump splits the chain across a "
+                f"periodic boundary; the chain-size observables need whole "
+                f"molecules.")
 
     def save(self, save_to: Pathish, name: str) -> list[Path]:
         """

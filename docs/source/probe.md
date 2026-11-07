@@ -189,6 +189,14 @@ The asphericity and shape parameter are those of Dima and Thirumalai
 positions as the dump wraps them whatever `unwrap` is, as the research
 code did; `unwrap` reaches the asphericity only.
 
+Every observable except an unwrapped asphericity therefore needs the dump to
+hold the chain whole, as the studies' dumps do. `ChainSize` checks this in
+each frame: if a bond of the chain spans half the box or more along any
+direction, which no bond can do without being split by the periodic
+boundary, the run raises `ValueError` and names the frame. The check is
+skipped when the frame has no box or the topology has no bonds, and when an
+asphericity with `unwrap` set is the only observable.
+
 ```python
 from polyphys.manage.parser import TransFociCyl
 from polyphys.probe import ChainSize, write_stamps
