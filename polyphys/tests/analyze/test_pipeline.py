@@ -15,6 +15,7 @@ maintainer's data.
 """
 import importlib
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -260,11 +261,12 @@ def test_segment_tseries_concatenate_in_segment_order(probe_dir, cyl_spec,
 
 
 def test_segments_are_ordered_naturally(probe_dir, cyl_spec):
-    """Segments j2 and j10 join in numeric order, not in text order."""
+    """Segments j9 and j10 join in numeric order, not in text order, which
+    puts j10 first."""
     stem = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000ens1"
     folder = probe_dir / "gyrTMon" / "SumRuleCyl-bug-segment"
     folder.mkdir(parents=True)
-    for seg_id in (2, 10):
+    for seg_id in (9, 10):
         np.save(folder / f"{stem}.j{seg_id}.bug.gyrTMon.npy",
                 np.array([float(seg_id)]))
     table = AnalysisTable("bug", "segment", False,
@@ -274,7 +276,7 @@ def test_segments_are_ordered_naturally(probe_dir, cyl_spec):
 
     whole = np.load(
         _analysis(probe_dir, "wholeSim") / f"{stem}-bug-gyrTMon.npy")
-    assert_array_equal(whole, [2.0, 10.0])
+    assert_array_equal(whole, [9.0, 10.0])
 
 
 def test_segment_histograms_sum_and_ensembles_carry_bin_centers(
@@ -973,6 +975,30 @@ def test_half_contour_rejects_bad_input(n_monomers, bond_max, match):
 def test_half_contour_is_half_the_bonds_times_the_bond():
     """A ring of 11 monomers has at most 5 bonds between two monomers."""
     assert half_contour(11, 2.0) == 10.0
+
+
+def test_dataframe_wholes_of_unequal_length_raise(probe_dir, cyl_spec,
+                                                  write_tree):
+    """Two 'dataframe' wholes of one ensemble with 3 and 2 rows raise,
+    naming the ensemble and the lengths, instead of averaging over the
+    first whole's rows."""
+    tree = write_tree(SumRuleCyl, "gyrTMon", lineage="whole", n_ensembles=1,
+                      n_wholes=2)
+    names = _parsed(tree, SumRuleCyl, "whole")
+    (ens_name,) = set(_parsed(tree, SumRuleCyl, "ensemble_long").values())
+    lengths = {names[(1, 1)]: 3, names[(1, 2)]: 2}
+
+    def hook(wholes, context):
+        frames = {name: pd.DataFrame({"x": np.arange(float(lengths[name]))})
+                  for name in wholes}
+        return (Derived("gyrMon", frames, "dataframe"),)
+
+    table = AnalysisTable("bug", "whole", False,
+                          (tseries("gyrT", "Mon", post_hook=hook),))
+    with pytest.raises(ValueError, match=re.escape(
+            f"The wholes of ensemble '{ens_name}' have unequal lengths: "
+            f"{names[(1, 1)]} 3, {names[(1, 2)]} 2.")):
+        reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
 
 
 def test_dataframe_wholes_reduce_to_long_ensembles_and_row_statistics(

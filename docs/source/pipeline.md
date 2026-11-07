@@ -158,6 +158,12 @@ with a `whole` and a `row` column, so no whole is lost before the ensemble
 average; the average is taken row by row across the wholes and carries
 `<column>-mean`, `<column>-var`, and `<column>-sem` per column.
 
+The reduction stops with `ValueError` rather than reshape incomplete data:
+when the segments of a whole skip a `segment_id`, when two files give one
+whole name, when the wholes of an ensemble differ in length (a shorter
+replicate is an incomplete run, not one to average over), and when a stamps
+row has no parent name.
+
 ## The equilibrium value of each whole
 
 `reduce_space` keeps every frame of a time series. The `allInOne` tables

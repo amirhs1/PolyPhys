@@ -450,6 +450,21 @@ def _assert_equal_bin_edges(arrays: Sequence[np.ndarray]) -> np.ndarray:
     return ref.copy()
 
 
+def _assert_equal_lengths(ensemble_name: str, lengths: dict[str, int]) -> None:
+    """
+    Raise ``ValueError`` unless every whole of `ensemble_name` has the same
+    length; `lengths` maps each whole's name to its number of rows or
+    values. Replicates of one state point run the same number of steps, so
+    a shorter whole is an incomplete run, not one to average over. The cost
+    is :math:`O(n)` in the number of wholes.
+    """
+    if len(set(lengths.values())) > 1:
+        listed = ", ".join(f"{name} {n}" for name, n in lengths.items())
+        raise ValueError(
+            f"The wholes of ensemble '{ensemble_name}' have unequal "
+            f"lengths: {listed}.")
+
+
 def whole_from_segments(
     prop: PropertyT,
     segments: AnyPathIter,
@@ -472,9 +487,9 @@ def whole_from_segments(
         bare paths or 1-tuples of a path, as
         :func:`~polyphys.manage.utils.sort_filenames` returns them. Each path
         points to a single segment file. Segments of different wholes may be
-        interleaved, but the segments of each whole must come in strictly
-        increasing ``segment_id`` order (the ``j<NN>`` keyword of their
-        names).
+        interleaved, but the segments of each whole must come in
+        consecutive ``segment_id`` order (the ``j<NN>`` keyword of their
+        names), with no id skipped.
     parser : :py:class:`ParserClassT`
         A parser class from :mod:`polyphys.manage.parser` that interprets
         file paths and extracts attributes such as the `whole` name and the
@@ -514,8 +529,10 @@ def whole_from_segments(
     ValueError
         If `relation` is not one of the accepted values; if the segments of
         a whole do not arrive in strictly increasing ``segment_id`` order,
-        which includes a segment passed twice; or, for 'bin_edge', if the
-        segments of a whole hold different edges.
+        which includes a segment passed twice; if they skip a
+        ``segment_id``, such as ``j01`` then ``j03``, which would shift the
+        time of every later frame or leave a part out of a sum; or, for
+        'bin_edge', if the segments of a whole hold different edges.
     TypeError
         If an item of `segments` is neither a path nor a sequence whose first
         element is a path.
@@ -524,7 +541,8 @@ def whole_from_segments(
     -----
     The order of a whole's segments is part of the data's meaning for
     'tseries', and a duplicated segment would be counted twice by
-    'histogram'. This function only checks the order; sort the paths with
+    'histogram'. This function checks the order and that no id is skipped;
+    it does not require the first id to be 1. Sort the paths with
     :func:`~polyphys.manage.utils.sort_filenames` first, which orders the
     ``j<NN>`` keyword naturally.
 
@@ -587,6 +605,11 @@ def whole_from_segments(
                 f"increasing segment_id order: {whole_ids + [seg_id]}. Sort "
                 "them with sort_filenames first."
             )
+        if whole_ids and seg_id != whole_ids[-1] + 1:
+            raise ValueError(
+                f"The segments of whole '{whole_name}' skip a segment_id: "
+                f"{whole_ids + [seg_id]}."
+            )
         whole_ids.append(seg_id)
         grouped_segments.setdefault(whole_name, []).append(np.load(seg_path))
 
@@ -642,6 +665,8 @@ def whole_from_file(
     TypeError
         If an item of `whole_paths` is neither a path nor a sequence whose
         first element is a path.
+    ValueError
+        If two files parse to the same whole name; the message names both.
 
     Notes
     -----
@@ -667,9 +692,16 @@ def whole_from_file(
     >>> tmp.cleanup()
     """
     wholes: dict[str, np.ndarray] = {}
+    sources: dict[str, Path] = {}
     for whole_path in _normalize_paths(whole_paths):
         whole_info = parser(whole_path, "whole", group, ispath=True)
-        wholes[getattr(whole_info, "whole")] = np.load(whole_path)
+        name = getattr(whole_info, "whole")
+        if name in sources:
+            raise ValueError(
+                f"'{sources[name]}' and '{whole_path}' are both whole "
+                f"'{name}'.")
+        sources[name] = whole_path
+        wholes[name] = np.load(whole_path)
 
     return wholes
 
@@ -856,6 +888,12 @@ def ens_from_vec(
         the order of the dictionary, and rows contain corresponding vector
         values from each dataset.
 
+    Raises
+    ------
+    ValueError
+        If the vectors have unequal lengths; the message names the ensemble
+        and each whole's length.
+
     Notes
     -----
     Let n_wholes be the number of wholes and m the length of one vector.
@@ -877,6 +915,8 @@ def ens_from_vec(
     2     0.3     0.6
     """
     ensemble_name, whole_vectors = ens_data
+    _assert_equal_lengths(
+        ensemble_name, {name: len(v) for name, v in whole_vectors.items()})
     ensemble_df = pd.DataFrame.from_dict(whole_vectors, orient="columns")
     return ensemble_name, ensemble_df
 
@@ -969,6 +1009,13 @@ def ens_from_df(
         - A DataFrame with the averaged values across all 'whole'
           DataFrames.
 
+    Raises
+    ------
+    ValueError
+        If the DataFrames have unequal numbers of rows; the message names
+        the ensemble and each whole's length. A shorter whole is not
+        averaged over the rows it has.
+
     Notes
     -----
     A clear distinction exists between ensembles of 'vector' or 'matrix' types
@@ -1001,6 +1048,8 @@ def ens_from_df(
     2  3.5  6.5
     """
     ensemble_name, whole_data = ens_data
+    _assert_equal_lengths(
+        ensemble_name, {name: len(df) for name, df in whole_data.items()})
     ensemble_df = pd.concat(list(whole_data.values())).groupby(level=0).mean()
     return ensemble_name, ensemble_df
 
@@ -1579,7 +1628,9 @@ def parents_stamps(
         Lineage type of the child stamps, either 'segment' or 'whole'.
     properties : dict of str -> Callable, optional
         Dictionary specifying aggregation functions for specific columns,
-        replacing the default 'last'.
+        replacing the default 'last'. It cannot name the parent column
+        ('whole' or 'ensemble_long'), the counted column ('segment_id' or
+        'ensemble_id'), or 'n_frames', which the function aggregates itself.
     save_to : str, optional
         Directory path where the parent DataFrame is saved, if specified,
         as ``<space>-<group>-stamps-whole.csv`` for 'segment' stamps and
@@ -1604,7 +1655,10 @@ def parents_stamps(
     Raises
     ------
     ValueError
-        If `lineage` is not one of the accepted values.
+        If `lineage` is not one of the accepted values; if a row has no
+        parent name (NaN in 'whole' for 'segment' stamps, in
+        'ensemble_long' for 'whole' stamps), which the group-by would drop;
+        or if `properties` names a column the function aggregates itself.
 
     Notes
     -----
@@ -1648,16 +1702,29 @@ def parents_stamps(
     agg_funcs: dict[str, str | Callable[..., Any]] = {
         col: "last" for col in base_columns
     }
-    if properties is not None:
-        agg_funcs.update(properties)
 
     # Define grouping column and lineage-specific aggregations
     if lineage == "whole":
         parent_groupby = "ensemble_long"
-        agg_funcs.update({"ensemble_id": "count", "n_frames": "last"})
+        own_aggs: dict[str, str] = {"ensemble_id": "count",
+                                    "n_frames": "last"}
     else:
         parent_groupby = "whole"
-        agg_funcs.update({"segment_id": "count", "n_frames": "sum"})
+        own_aggs = {"segment_id": "count", "n_frames": "sum"}
+    for column in (properties or {}):
+        if column == parent_groupby or column in own_aggs:
+            raise ValueError(
+                f"properties cannot set {column!r}, which parents_stamps "
+                "aggregates itself.")
+    missing = int(stamps[parent_groupby].isna().sum())
+    if missing:
+        rows = "row has" if missing == 1 else "rows have"
+        raise ValueError(
+            f"{missing} stamps {rows} no {parent_groupby!r}; the group-by "
+            "would drop them.")
+    if properties is not None:
+        agg_funcs.update(properties)
+    agg_funcs.update(own_aggs)
 
     # Perform the groupby and aggregate
     agg_funcs.pop(parent_groupby)

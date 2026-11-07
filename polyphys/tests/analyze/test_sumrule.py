@@ -10,6 +10,7 @@ the rule normalize to one curve, and the normalized sum is one wherever the
 rule holds.
 """
 import logging
+import re
 import warnings
 
 import numpy as np
@@ -696,6 +697,37 @@ def test_sum_rule_profiles_records_and_logs_an_override(species_profiles,
     assert [r.getMessage() for r in caplog.records] == [
         "Normalizing the rPhi sum with 4.0 instead of the cubic r default "
         "'last'."]
+
+
+def test_sum_rule_profiles_rejects_a_missing_state_point_key(
+        species_profiles):
+    """A row with no 'ensemble_long' raises instead of being dropped from
+    the normalized sum."""
+    profiles = species_profiles(mon=[[0.8, 0.4, 0.0], [0.6, 0.2, 0.0]],
+                                crd=[[0.2, 0.6, 1.0], [0.4, 0.8, 2.0]])
+    for frame in profiles.values():
+        frame.loc[1, "ensemble_long"] = np.nan
+
+    with pytest.raises(ValueError, match=re.escape(
+            "1 row has no value in the 'by' columns ['ensemble_long']")):
+        sum_rule_profiles(profiles, "rPhi", "cubic", "r")
+
+
+def test_sum_rule_profiles_keeps_the_input_row_order(species_profiles):
+    """State points whose rows are not contiguous come back in the input
+    order, each normalized by its own reference: the result is invariant
+    to how the rows are grouped."""
+    profiles = species_profiles(mon=[[0.8, 0.4, 0.0], [0.6, 0.2, 0.0]],
+                                crd=[[0.2, 0.6, 1.0], [0.4, 0.8, 2.0]])
+    order = [0, 3, 1, 4, 2, 5]
+    shuffled = {label: frame.iloc[order].reset_index(drop=True)
+                for label, frame in profiles.items()}
+    expected = sum_rule_profiles(profiles, "rPhi", "cubic", "r")
+
+    total = sum_rule_profiles(shuffled, "rPhi", "cubic", "r")
+
+    pd.testing.assert_frame_equal(
+        total, expected.iloc[order].reset_index(drop=True))
 
 
 def test_sum_rule_profiles_rejects_mismatched_bins(species_profiles):

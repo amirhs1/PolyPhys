@@ -19,6 +19,7 @@ SciOps probe phase's stamp files: genealogy columns, parser attributes, and
 """
 import logging
 import os
+import re
 from pathlib import Path
 from typing import get_args
 
@@ -342,6 +343,22 @@ def test_whole_from_segments_rejects_duplicate_segment(segment_tree, relation):
         )
 
 
+@pytest.mark.parametrize("relation", ["histogram", "tseries", "bin_edge"])
+def test_whole_from_segments_rejects_a_gap_in_segment_ids(tmp_path, relation):
+    """Segments j01 and j03 of one whole raise instead of being joined as if
+    adjacent, which would shift the time of every later frame."""
+    whole = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000ens1"
+    paths = []
+    for seg_id in (1, 3):
+        path = tmp_path / f"{whole}.j{seg_id:02d}.bug.gyrTMon.npy"
+        np.save(path, np.arange(3.0))
+        paths.append(str(path))
+
+    with pytest.raises(ValueError, match=re.escape(
+            f"The segments of whole '{whole}' skip a segment_id: [1, 3]")):
+        whole_from_segments("gyrTMon", paths, SumRuleCyl, "bug", relation)
+
+
 def test_whole_from_segments_accepts_interleaved_wholes(segment_tree):
     """Wholes interleaved segment by segment give the same wholes."""
     ordered = [str(p) for p in segment_tree.paths]
@@ -387,6 +404,22 @@ def test_whole_from_file_accepts_grouped_paths(whole_tree):
     )
 
 
+def test_whole_from_file_rejects_two_files_of_one_whole(tmp_path):
+    """Two files that parse to one whole name raise, naming both, instead of
+    the second silently replacing the first."""
+    whole = "N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000ens1"
+    paths = []
+    for folder in ("a", "b"):
+        (tmp_path / folder).mkdir()
+        path = tmp_path / folder / f"{whole}-bug-gyrTMon.npy"
+        np.save(path, np.arange(3.0))
+        paths.append(path)
+
+    with pytest.raises(ValueError, match=re.escape(
+            f"'{paths[0]}' and '{paths[1]}' are both whole '{whole}'")):
+        whole_from_file(paths, SumRuleCyl, "bug")
+
+
 def test_whole_from_file_rejects_unsupported_path_item():
     """An item that is neither a path nor a sequence of one raises."""
     with pytest.raises(TypeError, match="Unsupported path item"):
@@ -427,6 +460,14 @@ def test_ens_from_vec_puts_one_whole_per_column():
     )
 
 
+def test_ens_from_vec_rejects_wholes_of_unequal_length():
+    """Wholes of 3 and 2 values raise, naming the ensemble and each length."""
+    with pytest.raises(ValueError, match=re.escape(
+            "The wholes of ensemble 'ens1' have unequal lengths: "
+            "w1 3, w2 2.")):
+        ens_from_vec(("ens1", {"w1": np.arange(3.0), "w2": np.arange(2.0)}))
+
+
 def test_ens_from_mat_t_stacks_wholes_along_axis_0():
     """Matrices stack into (n_wholes, n_rows, n_cols) in dictionary order."""
     a = np.array([[1.0, 2.0], [3.0, 4.0]])
@@ -443,6 +484,18 @@ def test_ens_from_df_averages_wholes_row_by_row():
     name, ens_df = ens_from_df(("ens1", {"w1": a, "w2": b}))
     assert name == "ens1"
     pd.testing.assert_frame_equal(ens_df, (a + b) / 2)
+
+
+def test_ens_from_df_rejects_wholes_of_unequal_length():
+    """A 3-row and a 2-row whole raise instead of averaging the last row over
+    one replicate."""
+    a = pd.DataFrame({"x": [1.0, 2.0, 3.0]})
+    b = pd.DataFrame({"x": [3.0, 6.0]})
+
+    with pytest.raises(ValueError, match=re.escape(
+            "The wholes of ensemble 'ens1' have unequal lengths: "
+            "w1 3, w2 2.")):
+        ens_from_df(("ens1", {"w1": a, "w2": b}))
 
 
 def test_ens_from_bin_edge_returns_shared_edges():
@@ -955,6 +1008,37 @@ def test_parents_stamps_without_lineage_name_prints_nothing(
     parents_stamps(stamps, "segment")
 
     assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize(
+    "stamps_fixture, lineage, key",
+    [
+        pytest.param("segment_stamps", "segment", "whole", id="segment"),
+        pytest.param("whole_stamps", "whole", "ensemble_long", id="whole"),
+    ],
+)
+def test_parents_stamps_rejects_a_missing_parent_name(
+    request, stamps_fixture, lineage, key
+):
+    """A child row with no parent name raises instead of being dropped by
+    the group-by."""
+    stamps = request.getfixturevalue(stamps_fixture)
+    stamps.loc[0, key] = np.nan
+
+    with pytest.raises(ValueError, match=re.escape(
+            f"1 stamps row has no {key!r}")):
+        parents_stamps(stamps, lineage)
+
+
+@pytest.mark.parametrize("column", ["n_frames", "segment_id", "whole"])
+def test_parents_stamps_rejects_aggregating_its_own_columns(
+    segment_stamps, column
+):
+    """A properties entry for a column the parent aggregates itself raises
+    instead of being overwritten silently."""
+    with pytest.raises(ValueError, match=re.escape(
+            f"properties cannot set {column!r}")):
+        parents_stamps(segment_stamps, "segment", properties={column: "max"})
 
 
 def test_parents_stamps_rejects_unknown_lineage(segment_stamps):
