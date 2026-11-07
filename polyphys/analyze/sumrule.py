@@ -61,6 +61,8 @@ Contents
   folding a longitudinal one about :math:`z = 0`.
 - :func:`space_profiles`: scale, normalize, and annotate every
   ensemble-averaged profile of one species across a space.
+- :func:`space_profiles_from_spec`: the same, with the study's choices read
+  from its :class:`~polyphys.spec.ProjectSpec`.
 - :func:`sum_rule_profiles`: sum the species' scaled profiles and normalize
   the sum.
 - :data:`PROFILE_NORMALIZERS` and :data:`SUM_NORMALIZERS`: the default
@@ -73,6 +75,7 @@ Dependencies
   :func:`~polyphys.manage.organizer.make_database` and
   :func:`~polyphys.manage.organizer.create_fullname`.
 - :mod:`polyphys.manage.utils` and :mod:`polyphys.manage.types`.
+- :class:`polyphys.spec.ProjectSpec`.
 
 References
 ==========
@@ -89,6 +92,7 @@ References
 """
 
 import logging
+import os
 import warnings
 from glob import glob
 from typing import Any, Callable, Literal, Mapping, Sequence, TYPE_CHECKING
@@ -104,8 +108,10 @@ from ..manage.types import (
     GroupT,
     NormalizerT,
     ParserClassT,
+    Pathish,
 )
 from ..manage.utils import invalid_keyword, round_to_multiple, sort_filenames
+from ..spec import ProjectSpec
 
 if TYPE_CHECKING:
     # Unused here, but sphinx_autodoc_typehints runs this block to resolve
@@ -816,6 +822,138 @@ def space_profiles(
         logger.info("Saved %s.", filepath)
 
     return prop_db
+
+
+def space_profiles_from_spec(
+    input_database: Pathish,
+    spec: ProjectSpec,
+    quantity: Literal["Rho", "Phi"],
+    direction: DirectionT,
+    species: EntityT,
+    *,
+    group: GroupT = "all",
+    crowders: Sequence[EntityT] = ("Crd",),
+    normalizer: (
+        Literal["first", "last", "max"] | float
+        | Callable[[pd.DataFrame, Any], float] | None
+    ) = None,
+    round_to: int = 3,
+    save: bool = False,
+) -> pd.DataFrame:
+    """
+    Scale and normalize the ensemble-averaged density profiles of one
+    species across a space for the density sum rule, with the columns, the
+    species sizes, and the rounding step the study's spec declares.
+
+    The spec supplies every study choice of :func:`space_profiles`: the
+    parser, the ``ensemble_long`` glob prefix (`spec.hierarchy`), the
+    attributes that become columns (`spec.physical_attrs`), the parser
+    attribute holding the particle diameter :math:`a_i` of each species
+    (`spec.species_sizes`), the rounding step :math:`\\Delta` of the bulk
+    volume fraction of crowders :math:`\\phi_c` (`spec.divisor`), and the
+    parser attribute that holds :math:`\\phi_c` (`spec.crowder_attr`). No
+    study default is taken from the library.
+
+    Parameters
+    ----------
+    input_database : path-like
+        The ``ensAvg`` directory of the space, which holds the files
+        ``<ensemble_long>-<group>-<direction><quantity><species>-ensAvg.csv``
+        of the raw ensemble-averaged profiles, as :func:`space_profiles`
+        requires.
+    spec : ~polyphys.spec.ProjectSpec
+        The study's spec.
+    quantity : {'Rho', 'Phi'}
+        The number density or the volume fraction.
+    direction : {'r', 'z'}
+        The coordinate of the profile; ``'z'`` exists in a cylinder only.
+    species : EntityT
+        The species label of the profile, such as ``'Mon'`` or ``'Crd'``; a
+        key of `spec.species_sizes`.
+    group : GroupT, default 'all'
+        The particle group of the profiles. A density profile covers every
+        particle of its species, so it is in the ``'all'`` group, not the
+        polymer group `spec.group`.
+    crowders : sequence of EntityT, default ('Crd',)
+        The crowder species, each a key of `spec.species_sizes`, as in
+        :func:`space_profiles`.
+    normalizer : NormalizerT or callable or None, default None
+        The reference value of the normalization, as in
+        :func:`space_profiles`; None takes the default of
+        :data:`PROFILE_NORMALIZERS` for the spec's geometry and `direction`.
+    round_to : int, default 3
+        The number of decimal places of the rounded :math:`\\phi_c`.
+    save : bool, default False
+        Also write the table to
+        ``<space>-<group>-<direction><quantity><species>-normalizedRescaled-space.csv``
+        in the ``analysis`` phase's ``space`` directory next to
+        `input_database`.
+
+    Returns
+    -------
+    pd.DataFrame
+        The table of :func:`space_profiles`, with a `spec.crowder_attr`
+        column and ``phi_bulk_c_round``, that attribute rounded to a
+        multiple of `spec.divisor`.
+
+    Raises
+    ------
+    ValueError, KeyError
+        As :func:`space_profiles` raises them.
+
+    Warns
+    -----
+    UserWarning
+        As :func:`space_profiles` warns.
+
+    Notes
+    -----
+    The cost is that of :func:`space_profiles`:
+    :math:`O(n_\\text{files} \\, n_\\text{bins} \\, n_\\text{cols} +
+    n_\\text{files} \\log n_\\text{files})` time and
+    :math:`O(n_\\text{files} \\, n_\\text{bins} \\, n_\\text{cols})` memory
+    for n_files matched files of n_bins rows and n_cols columns of the
+    result.
+
+    Examples
+    --------
+    In a cylinder of diameter :math:`D = 10` and length :math:`Z = 50`
+    with :math:`n_c = 100` crowders of diameter :math:`a_c = 2`,
+    :math:`\\phi_c = 2 n_c a_c^3 / (3 Z (D - a_c)^2) = 1/6`, which the
+    spec's step of 0.1 rounds to 0.2:
+
+    >>> import tempfile
+    >>> from pathlib import Path
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.spec import ProjectSpec
+    >>> spec = ProjectSpec(
+    ...     parser=SumRuleCyl, group='bug', divisor=0.1,
+    ...     crowder_attr='phi_bulk_c', physical_attrs=('dcyl',),
+    ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
+    ...     tseries_properties=('gyrTMon',))
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> database = Path(tmp.name) / 'analysis' / 'N20-all-ensAvg'
+    >>> database.mkdir(parents=True)
+    >>> state = 'N20epsilon5.0r5.5lz25.0sig2.0nc100dt0.005bdump1000adump5000'
+    >>> pd.DataFrame({'bin_center': [0.5, 1.5, 2.5],
+    ...               'rPhiCrd-mean': [0.2, 0.3, 0.1]}).to_csv(
+    ...     database / f'{state}-all-rPhiCrd-ensAvg.csv', index=False)
+    >>> space = space_profiles_from_spec(database, spec, 'Phi', 'r', 'Crd')
+    >>> space[['bin_center', 'rPhiCrd-norm', 'dcyl', 'phi_bulk_c_round']]
+       bin_center  rPhiCrd-norm  dcyl  phi_bulk_c_round
+    0         0.5           1.0  10.0               0.2
+    1         1.5           1.5  10.0               0.2
+    2         2.5           0.5  10.0               0.2
+    >>> tmp.cleanup()
+
+    .. versionadded:: 0.9.0
+    """
+    return space_profiles(
+        os.path.join(os.fspath(input_database), ""), quantity, direction,
+        species, spec.parser, spec.hierarchy, list(spec.physical_attrs),
+        group, spec.species_sizes, crowders=crowders, normalizer=normalizer,
+        divisor=spec.divisor, round_to=round_to, is_save=save,
+        crowder_attr=spec.crowder_attr)
 
 
 def sum_rule_profiles(
