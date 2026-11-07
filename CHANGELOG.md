@@ -29,6 +29,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 ### Fixed
 
 - Close and join the worker pool of a probe run on the `multiprocessing` backend instead of terminating it, so the resource tracker reports no leaked semaphores, and turn every warning in the test suite into an error ([#192](https://github.com/amirhs1/PolyPhys/issues/192))
+- Raise `ValueError` naming the quantity and the whole when a `bin_size`, `r_max`, or `n_monomers` function of `FociPairDistances` gives anything but a finite positive number, instead of failing inside NumPy or turning a string into a number, and accept a NumPy integer or float such as `numpy.float32` wherever a finite positive per-whole number is checked ([#210](https://github.com/amirhs1/PolyPhys/issues/210))
 
 ### Migrating to 1.0.0
 

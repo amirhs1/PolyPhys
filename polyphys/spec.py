@@ -70,7 +70,8 @@ Analysis records:
 
 Dependencies
 ============
-- Python standard library: `dataclasses`, `math`, `types`, `typing`.
+- Python standard library: `dataclasses`, `math`, `numbers`, `types`,
+  `typing`.
 - :mod:`polyphys.manage.parser`: :class:`~polyphys.manage.parser.ParserBase`.
 - :mod:`polyphys.manage.types`: domain type aliases such as
   :py:data:`~polyphys.manage.types.GroupT`.
@@ -105,9 +106,11 @@ Examples
 ['gyrTMon']
 """
 import math
+import numbers
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Callable, Literal, Mapping, get_args
+from typing import (
+    TYPE_CHECKING, Callable, Literal, Mapping, TypeGuard, get_args)
 
 from polyphys.manage.parser import ParserBase
 from polyphys.manage.types import (
@@ -339,12 +342,33 @@ class BinderSpec:
             for attr, (stem, which) in BINDER_SERIES.items()})
 
 
+def _is_positive_number(value: object) -> TypeGuard[numbers.Real]:
+    """Whether `value` is a finite positive real number: a Python or NumPy
+    integer or float, never a bool."""
+    return (isinstance(value, numbers.Real) and not isinstance(value, bool)
+            and math.isfinite(value) and float(value) > 0)
+
+
 def _is_per_whole(value: object) -> bool:
     """Whether `value` is a finite positive number or a callable."""
-    if callable(value):
-        return True
-    return (isinstance(value, (int, float)) and not isinstance(value, bool)
-            and math.isfinite(value) and value > 0)
+    return callable(value) or _is_positive_number(value)
+
+
+def _check_resolved(result: object, subject: str) -> float:
+    """
+    Return `result`, what a :py:data:`PerWhole` callable gave, as a float.
+
+    Raises
+    ------
+    ValueError
+        If `result` is not a finite positive number; the message begins
+        with `subject`, which names the quantity or the whole.
+    """
+    if _is_positive_number(result):
+        return float(result)
+    raise ValueError(
+        f"{subject} must resolve to a finite positive number, not "
+        f"{result!r}.")
 
 
 @dataclass(frozen=True, slots=True)
@@ -883,7 +907,7 @@ class ProbeSpec:
         ------
         ValueError
             If a callable `value` returns anything but a finite positive
-            number.
+            number: a Python or NumPy integer or float, not a bool.
 
         Examples
         --------
@@ -901,16 +925,15 @@ class ProbeSpec:
         :math:`O(1)` beyond the cost of the callable.
 
         .. versionadded:: 0.7.0
+
+        .. versionchanged:: 1.0.0
+           A callable may return a NumPy integer or float, such as
+           ``numpy.float32``, where only a Python number or
+           ``numpy.float64`` was accepted.
         """
         if callable(value):
-            result = value(parser)
-            if not (isinstance(result, (int, float))
-                    and not isinstance(result, bool)
-                    and math.isfinite(result) and result > 0):
-                raise ValueError(
-                    f"A per-whole quantity of {parser.name} must resolve to "
-                    f"a finite positive number, not {result!r}.")
-            return float(result)
+            return _check_resolved(
+                value(parser), f"A per-whole quantity of {parser.name}")
         return float(value)
 
     @property
