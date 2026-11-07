@@ -23,7 +23,11 @@ from typing import Any, Callable, Sequence
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import (
+    assert_allclose,
+    assert_array_equal,
+    assert_equal,
+)
 
 from polyphys.analyze.clusters import threshold_sweep
 from polyphys.manage.parser import HnsCub, HnsCyl, ParserBase
@@ -354,6 +358,32 @@ def test_parallel_run_matches_the_serial_run(make_binder_universe,
     assert parallel.keys == serial.keys
     for key in serial.keys:
         assert_array_equal(parallel.results[key], serial.results[key])
+
+
+@pytest.mark.parametrize('n_parts', [
+    pytest.param(2, id='two-parts'),
+    pytest.param(3, id='three-parts'),
+])
+def test_serial_parts_match_the_multiprocessing_run(
+        make_binder_universe, binding_frames, n_parts):
+    """The serial backend split into parts gives the frames, times, and
+    arrays of the multiprocessing backend over the same parts: the result
+    does not depend on the backend."""
+    universe = make_binder_universe(*binding_frames)
+    chain = universe.select_atoms('resid 1')
+    patches = universe.select_atoms('type 2')
+    parallel = BinderStatistics(
+        chain, patches, cutoff=0.5, topology='ring',
+        store_distances=True).run(
+            backend='multiprocessing', n_workers=2, n_parts=n_parts)
+
+    serial = BinderStatistics(
+        chain, patches, cutoff=0.5, topology='ring',
+        store_distances=True).run(backend='serial', n_parts=n_parts)
+
+    assert_array_equal(serial.frames, parallel.frames)
+    assert_array_equal(serial.times, parallel.times)
+    assert_equal(dict(serial.results), dict(parallel.results))
 
 
 def test_stored_distances_swept_at_the_spec_reproduce_the_series(

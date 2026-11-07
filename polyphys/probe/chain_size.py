@@ -37,6 +37,8 @@ Dependencies
 - :mod:`polyphys.manage.projects`:
   :data:`~polyphys.manage.projects.CHAIN_SIZE_OBSERVABLES` and
   :class:`~polyphys.manage.projects.ProbeSpec`.
+- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
+  part of a split run on its own copy of the analysis.
 
 Notation
 ========
@@ -82,6 +84,7 @@ from MDAnalysis.core.universe import Universe
 from ..analyze import measurer
 from ..manage.projects import CHAIN_SIZE_OBSERVABLES, ProbeSpec
 from ..manage.types import AxisT, EntityT, Pathish, PropertyT
+from .core import _compute_part
 
 # One frame's value of an observable: a function of the chain, the cylinder
 # axis, and whether to unwrap the chain.
@@ -411,6 +414,17 @@ class ChainSize(AnalysisBase):
         ('serial', 'multiprocessing', 'dask')
         """
         return _BACKENDS
+
+    def _compute(
+        self, indexed_frames: np.ndarray, verbose: Any = None, *,
+        progressbar_kwargs: Any = None,
+    ) -> Any:
+        """
+        Compute one part of the run on a copy of this analysis, so that
+        serial parts do not overwrite each other.
+        """
+        return _compute_part(self, indexed_frames, verbose,
+                             progressbar_kwargs=progressbar_kwargs)
 
     def _get_aggregator(self) -> ResultsGroup:
         """

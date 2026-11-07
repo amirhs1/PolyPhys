@@ -11,6 +11,11 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Compute each part of a split probe run on its own copy of the analysis, so that `ChainSize`, `BinderStatistics`, `SpatialHistograms`, and `PairDistances` with the `serial` backend and `n_parts > 1` give the results, frames, and times of the other backends instead of repeating the last part ([#182](https://github.com/amirhs1/PolyPhys/issues/182))
+- Raise `ValueError` instead of `TypeError` in `PairDistances` on a frame with no box when a direction is periodic, and accept NumPy booleans as its periodic flags, as `BinderStatistics` does ([#182](https://github.com/amirhs1/PolyPhys/issues/182))
+
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 
 ### Changed

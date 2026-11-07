@@ -48,6 +48,8 @@ Dependencies
   :data:`~polyphys.manage.projects.RecenterT`.
 - :mod:`polyphys.manage.parser`:
   :class:`~polyphys.manage.parser.ParserBase`.
+- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
+  part of a split run on its own copy of the analysis.
 
 Notation
 ========
@@ -120,6 +122,7 @@ from ..manage.types import (
     GeometryT,
     Pathish,
 )
+from .core import _compute_part
 
 # The size of the beads whose centers form the cylindrical wall, which the
 # parsers document: the LAMMPS box spans the wall-bead centers, so its
@@ -654,12 +657,14 @@ class SpatialHistograms(AnalysisBase):
         progressbar_kwargs: Any = None,
     ) -> Any:
         """
-        Record where this worker's frames start in the run, then compute.
+        Record where this part's frames start in the run, then compute the
+        part on a copy of this analysis, so that serial parts do not
+        overwrite each other.
         """
         self._run_offset = (int(indexed_frames[0, 0])
                             if len(indexed_frames) else 0)
-        return super()._compute(indexed_frames, verbose,
-                                progressbar_kwargs=progressbar_kwargs)
+        return _compute_part(self, indexed_frames, verbose,
+                             progressbar_kwargs=progressbar_kwargs)
 
     def _get_aggregator(self) -> ResultsGroup:
         """

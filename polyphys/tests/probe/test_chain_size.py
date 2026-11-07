@@ -23,7 +23,11 @@ error is the naive one of the uncorrelated estimate.
 """
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import (
+    assert_allclose,
+    assert_array_equal,
+    assert_equal,
+)
 
 from polyphys.analyze.stats import block_average
 from polyphys.manage.parser import SumRuleCyl
@@ -223,6 +227,28 @@ def test_parallel_run_matches_the_serial_run(make_chain_universe,
 
     for obs in observables:
         assert_array_equal(parallel.results[obs], serial.results[obs])
+
+
+@pytest.mark.parametrize('n_parts', [
+    pytest.param(2, id='two-parts'),
+    pytest.param(3, id='three-parts'),
+])
+def test_serial_parts_match_the_multiprocessing_run(
+        make_chain_universe, straight_chain, n_parts):
+    """The serial backend split into parts gives the frames, times, and
+    arrays of the multiprocessing backend over the same parts: the result
+    does not depend on the backend."""
+    universe = make_chain_universe(straight_chain)
+    observables = ('rfloryT', 'gyrT', 'principalT')
+    parallel = ChainSize(universe.atoms, observables).run(
+        backend='multiprocessing', n_workers=2, n_parts=n_parts)
+
+    serial = ChainSize(universe.atoms, observables).run(
+        backend='serial', n_parts=n_parts)
+
+    assert_array_equal(serial.frames, parallel.frames)
+    assert_array_equal(serial.times, parallel.times)
+    assert_equal(dict(serial.results), dict(parallel.results))
 
 
 def test_from_spec_selects_the_chain_and_carries_the_spec(
