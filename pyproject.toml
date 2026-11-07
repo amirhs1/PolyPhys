@@ -1,5 +1,5 @@
 [build-system]
-    requires = ["setuptools", "wheel"]
+    requires = ["setuptools>=77.0.3"]
     build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,6 +9,7 @@
     readme = "README.md"
     license = "MIT"
     classifiers = [
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Science/Research",
         "Topic :: Scientific/Engineering :: Physics",
         "Topic :: Scientific/Engineering :: Chemistry",
@@ -56,6 +57,7 @@
     Documentation = "https://polyphys.readthedocs.io/en/latest/"
     Source = "https://github.com/amirhs1/PolyPhys"
     Issues = "https://github.com/amirhs1/PolyPhys/issues"
+    Changelog = "https://github.com/amirhs1/PolyPhys/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
     include-package-data = true

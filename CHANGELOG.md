@@ -21,6 +21,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Added
 
+- Publish each release to PyPI, after an upload to TestPyPI, through trusted publishing from a workflow that runs when a GitHub release is published, starting with 1.0.0 ([#59](https://github.com/amirhs1/PolyPhys/issues/59))
 - Test five properties on Hypothesis-generated inputs: the parser name round trip for every synthetic and study parser, the affine equivariance of `block_average`, the conservation of a bead's volume by `share_matrix`, the normalized sum rule where it holds, and the `write_data` and `read_data` round trip of linear and ring chains ([#194](https://github.com/amirhs1/PolyPhys/issues/194))
 - Declare the public API, the `__all__` of every public module, with each module stable or provisional, and a deprecation policy under Semantic Versioning on the "API stability" page ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 
