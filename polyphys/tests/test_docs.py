@@ -7,9 +7,15 @@ per page, through :func:`doctest.testfile`. The pages compute their expected
 values by hand in the text beside each example.
 """
 import doctest
+import os
+import subprocess
+import sys
+import textwrap
 from pathlib import Path
 
 import pytest
+
+import polyphys
 
 
 @pytest.fixture
@@ -34,3 +40,43 @@ def test_docs_page_examples_run(docs_source: Path, page: str) -> None:
 
     assert result.attempted > 0, f"{page} has no examples"
     assert result.failed == 0, f"{result.failed} example(s) of {page} failed"
+
+
+def test_mocked_modules_import_with_their_annotations_evaluated():
+    """The probe and viz modules import, and every annotation in them
+    evaluates, with MDAnalysis and matplotlib replaced by the mocks of the
+    docs build."""
+    pytest.importorskip("sphinx.ext.autodoc.mock")
+    script = textwrap.dedent("""\
+        import importlib
+        import inspect
+        import pkgutil
+
+        from sphinx.ext.autodoc.mock import mock
+
+        with mock(['MDAnalysis', 'matplotlib']):
+            for package in ('polyphys.probe', 'polyphys.viz'):
+                names = [package] + [
+                    f'{package}.{info.name}' for info in pkgutil.iter_modules(
+                        importlib.import_module(package).__path__)]
+                for name in names:
+                    module = importlib.import_module(name)
+                    for obj in vars(module).values():
+                        if getattr(obj, '__module__', None) != name:
+                            continue
+                        members = [obj] + (list(vars(obj).values())
+                                           if inspect.isclass(obj) else [])
+                        for member in members:
+                            if inspect.isfunction(member) or inspect.isclass(
+                                    member):
+                                inspect.get_annotations(member)
+        """)
+    # The child imports this checkout's package.
+    env = dict(os.environ,
+               PYTHONPATH=str(Path(polyphys.__file__).parents[1]))
+
+    completed = subprocess.run(
+        [sys.executable, '-c', script], env=env, capture_output=True,
+        text=True, timeout=120, check=False)
+
+    assert completed.returncode == 0, completed.stderr

@@ -72,7 +72,12 @@
         -ra --strict-markers --strict-config --import-mode=importlib \
         -p pytester"""
     testpaths = ["polyphys/tests"]
-    filterwarnings = ["error"]
+    filterwarnings = [
+        "error",
+        # matplotlib 3.8.4, the floor of the viz extra, calls the
+        # enablePackrat that pyparsing 3.3 deprecates.
+        "ignore:'enablePackrat' deprecated",
+    ]
     xfail_strict = true
 
 [tool.coverage.run]
