@@ -17,6 +17,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Require NumPy 2.0, pandas 3.0, and, in the `viz` extra, matplotlib 3.8.4 or newer, the lowest versions the test suite passes with on Python 3.11, and test them in a CI job that installs the lowest allowed versions ([#193](https://github.com/amirhs1/PolyPhys/issues/193))
 - Hold the Codecov `codecov/project` and `codecov/patch` statuses of a commit until all five of its coverage reports have arrived, so a status no longer reports the coverage of the first report alone ([#218](https://github.com/amirhs1/PolyPhys/issues/218))
 - Add Sphinx to the `dev` extra, so the test that imports the probe and viz modules under the documentation build's mocks runs in CI instead of being skipped ([#226](https://github.com/amirhs1/PolyPhys/pull/226))
+- Build the documentation in CI on Python 3.13, the version Read the Docs builds it on, instead of 3.14, so a docs failure that only 3.13 raises fails CI before it reaches Read the Docs ([#230](https://github.com/amirhs1/PolyPhys/issues/230))
 
 ### Added
 
