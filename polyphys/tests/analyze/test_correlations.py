@@ -482,6 +482,54 @@ def test_fit_decay_marks_unestimable_covariance_as_nan(caplog):
     assert 'covariance' in caplog.text
 
 
+@pytest.mark.parametrize('method', [
+    pytest.param(None, id='lm'),
+    pytest.param('trf', id='trf'),
+])
+def test_fit_decay_reports_non_finite_start_as_failed(method, caplog):
+    """A start where the model is not finite is a failed fit under every
+    method, reported without raising; ``(x / tau) ** beta`` is NaN for
+    ``tau < 0`` and ``x > 0`` (analytic)."""
+    x = np.linspace(0.0, 50.0, 501)
+    y = np.exp(-x / 5.0)
+    kwargs = {} if method is None else {'method': method}
+    with caplog.at_level(logging.WARNING, logger='polyphys'):
+        fit = fit_decay(x, y, 'stretched', p0=[-2.0, 0.5], **kwargs)
+    assert fit.converged is False
+    assert np.all(np.isnan(fit.params))
+    assert np.all(np.isnan(fit.stderr))
+    assert np.all(np.isnan(fit.pcov))
+    assert_array_equal(fit.p0, [-2.0, 0.5])
+    assert 'not finite' in caplog.text
+
+
+def test_fit_decay_reports_unmoved_fit_without_covariance_as_failed(caplog):
+    """A fit that stays at its start with a non-finite covariance is not
+    converged: at ``tau = 1e300`` the model is exactly 1 and its gradient
+    underflows to 0, so the optimizer cannot move (analytic)."""
+    x = np.linspace(0.0, 50.0, 501)
+    y = np.exp(-x / 5.0)
+    with caplog.at_level(logging.WARNING, logger='polyphys'):
+        with pytest.warns(OptimizeWarning, match='Covariance'):
+            fit = fit_decay(x, y, 'exp', p0=[1e300])
+    assert fit.converged is False
+    assert np.all(np.isnan(fit.params))
+    assert 'did not move' in caplog.text
+
+
+def test_fit_decay_converges_from_the_exact_start():
+    """A start at the exact parameters of noise-free data is converged, with
+    a finite covariance, although the optimizer does not move: the residual
+    is zero there (A4)."""
+    x = np.linspace(0.0, 50.0, 501)
+    y = np.exp(-x / 5.0)
+    fit = fit_decay(x, y, 'exp', p0=[5.0])
+    assert fit.converged
+    # float64 round-off in exp(-x / 5.0) and the zero-residual covariance
+    assert_allclose(fit.params, [5.0], rtol=1e-12)
+    assert np.all(np.isfinite(fit.stderr))
+
+
 def test_initial_guess_never_returns_zero_tau():
     """A curve already at ``1/e`` at ``x = 0`` gets the first positive ``x``
     as its decay time, never 0 (P)."""

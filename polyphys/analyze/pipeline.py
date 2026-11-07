@@ -180,7 +180,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 
-from polyphys.analyze import clusters, stats
+from polyphys.analyze import clusters, measurer, stats
 from polyphys.analyze.correlations import acf
 from polyphys.analyze.stats import PlateauMethod
 from polyphys.analyze.sumrule import PROFILE_NORMALIZERS
@@ -826,7 +826,10 @@ class FociPairDistances:
             distances = matrix[:, first, second].T
             bin_size = _resolve(self.bin_size, info, 'bin_size')
             r_max = _resolve(self.r_max, info, 'r_max')
-            upper = np.ceil(r_max / bin_size) * bin_size
+            # The grid pair_distance_histograms builds, so the check below
+            # tolerates the same round-off.
+            upper = measurer.create_bin_edge_and_hist(
+                bin_size, 0.0, r_max)[0][-1]
             largest = float(distances.max())
             if largest > upper:
                 raise ValueError(
