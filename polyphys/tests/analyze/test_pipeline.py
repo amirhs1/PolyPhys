@@ -897,6 +897,20 @@ def test_foci_pair_distances_reject_a_separation_above_r_max(foci_context):
         hook({"w1": whole}, foci_context)
 
 
+def test_foci_pair_distances_accept_a_separation_at_r_max(foci_context):
+    """A separation exactly at an `r_max` that is a whole number of bins
+    is on the grid, although ``ceil(r_max / bin_size) * bin_size`` falls
+    an ulp below it: 15.9 is 530 bins of 0.03 in decimal arithmetic."""
+    whole = _distance_frames([0, 4, 8], [[15.9, 1.0, 1.0]])
+    hook = FociPairDistances(bin_size=0.03, r_max=15.9, n_monomers=10)
+
+    hist, _, _ = hook({"w": whole}, foci_context)
+
+    frame = hist.wholes["w"]
+    assert len(frame) == 530
+    assert frame["loc0loc4genDist4"].iloc[-1] == 1
+
+
 def test_foci_pair_distances_need_the_spec_for_the_topology():
     """Without the study's spec the hook cannot know the ring topology."""
     hook = FociPairDistances(bin_size=1.0, r_max=3.0, n_monomers=10)

@@ -702,11 +702,18 @@ def fit_decay(
     :func:`scipy.optimize.curve_fit` minimizes the sum of squared residuals
     by the Levenberg-Marquardt method from `p0`; a nonlinear model can have
     several local minima, so `p0` matters, and the one used is recorded.
-    When the optimizer stops without a solution the fit is reported with
-    ``converged=False``, NaN parameters, and a warning in the
-    :mod:`logging` log, never an exception; when it converges but the
-    covariance cannot be estimated (SciPy emits an ``OptimizeWarning``),
-    the standard errors of the affected parameters are NaN. The standard
+    A fit fails when the model is not finite at the start, when the
+    optimizer stops without a solution, or when it does not move from the
+    start and the covariance cannot be estimated, which is how the
+    ``'lm'`` method signals a Jacobian that is zero or rank-deficient (the
+    :func:`scipy.optimize.curve_fit` documentation, under ``pcov``). A
+    failed fit is reported with ``converged=False``, NaN parameters, and a
+    warning in the :mod:`logging` log, never an exception. When the fit
+    moves but the covariance cannot be estimated (SciPy emits an
+    ``OptimizeWarning``), it is converged and the standard errors of the
+    affected parameters are NaN. A start at the exact solution of
+    noise-free data does not move either, but its covariance is finite, so
+    it is converged. The standard
     error is the square root of the covariance diagonal, as in SciPy's
     documentation.
 
@@ -733,6 +740,10 @@ def fit_decay(
     array([5. , 0.8, 2. , 0.3])
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 0.9.0
+       A start where the model is not finite, and a fit that does not move
+       and has no finite covariance, are failed fits; ``method='trf'`` no
+       longer raises on a non-finite start.
     """
     spec = _get_model(model)
     x_arr, y_arr = _as_curve(x, y)
@@ -751,25 +762,45 @@ def fit_decay(
                 f"p0 must have one value per parameter of '{model}',"
                 f' {spec.names}; got shape {start.shape}.'
             )
+    nan_params = np.full(n_params, np.nan)
+    failed = DecayFit(
+        model=model,
+        names=spec.names,
+        params=nan_params,
+        stderr=nan_params.copy(),
+        pcov=np.full((n_params, n_params), np.nan),
+        p0=start,
+        converged=False,
+    )
+    # A start where the model is not finite cannot be fitted: 'lm' stays
+    # there and 'trf' raises, so it is reported as a failed fit up front.
+    with np.errstate(invalid='ignore', divide='ignore', over='ignore'):
+        at_start = spec.function(x_arr, *start)
+    if not np.all(np.isfinite(at_start)):
+        logger.warning(
+            "fit_decay: '%s' is not finite at the start %s; the fit failed.",
+            model,
+            start,
+        )
+        return failed
     try:
         params, pcov = curve_fit(
             spec.function, x_arr, y_arr, p0=start, **kwargs
         )
     except RuntimeError as error:
         logger.warning("fit_decay: '%s' did not converge: %s", model, error)
-        nan_params = np.full(n_params, np.nan)
-        return DecayFit(
-            model=model,
-            names=spec.names,
-            params=nan_params,
-            stderr=nan_params.copy(),
-            pcov=np.full((n_params, n_params), np.nan),
-            p0=start,
-            converged=False,
-        )
+        return failed
     params = np.asarray(params, dtype=np.float64)
     pcov = np.asarray(pcov, dtype=np.float64)
     diagonal = np.diag(pcov)
+    if np.array_equal(params, start) and not np.all(np.isfinite(pcov)):
+        logger.warning(
+            "fit_decay: '%s' did not move from the start %s and its"
+            ' covariance could not be estimated; the fit failed.',
+            model,
+            start,
+        )
+        return failed
     stderr = np.where(np.isfinite(diagonal), np.sqrt(np.abs(diagonal)), np.nan)
     if not np.all(np.isfinite(diagonal)):
         logger.warning(

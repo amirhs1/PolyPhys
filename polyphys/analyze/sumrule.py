@@ -114,6 +114,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Relative tolerance, in the largest |z|, for matching a bin center with its
+# mirror when :func:`normalize_z` folds: bin centers built from a symmetric
+# range carry float64 round-off of a few 1e-16 relative, and the smallest
+# intended asymmetry is a fraction of a bin, far above 1e-9 of the range,
+# as for ``_BIN_COUNT_RTOL`` in :mod:`polyphys.analyze.measurer`.
+_FOLD_RTOL = 1e-9
+
 
 # The normalizer each density profile takes by default, keyed by (geometry,
 # direction). In a cylinder, r runs from the axis to the wall, whose crowder
@@ -301,10 +308,13 @@ def normalize_z(
     fold it about :math:`z = 0`.
 
     The longitudinal coordinate :math:`z` is the axial distance from the
-    polymer's center of mass, in the monomer diameter. The bins are assumed
-    symmetric about :math:`z = 0`, so folding averages bin :math:`i` with
-    its mirror bin :math:`n - 1 - i` and keeps the center bin of an odd
-    count as it is; the folded ``bin_center`` is :math:`|z|`.
+    polymer's center of mass, in the monomer diameter. Folding needs bins
+    symmetric about :math:`z = 0`; it averages bin :math:`i` with its
+    mirror bin :math:`n - 1 - i` and keeps the center bin of an odd count
+    as it is; the folded ``bin_center`` is :math:`|z|`. The one exception
+    is ``<prop>-scale-normalized_curve``, a distribution over the bins,
+    whose mirror bins are summed, so the folded curve is the distribution
+    of :math:`|z|` and still sums to one.
 
     Parameters
     ----------
@@ -334,7 +344,9 @@ def normalize_z(
     ------
     ValueError
         If `normalizer` is none of the accepted forms, or `fold` is True
-        and `ens_avg` has no ``bin_center`` column.
+        and `ens_avg` has no ``bin_center`` column or its bin centers do
+        not increase symmetrically about :math:`z = 0`, to a tolerance of
+        ``1e-9`` times the largest :math:`|z|`.
 
     Warns
     -----
@@ -368,12 +380,26 @@ def normalize_z(
     :math:`O(n_\\text{bins} \\, n_\\text{cols})`.
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 0.9.0
+       Reject bins that are not symmetric about :math:`z = 0`, and fold
+       ``<prop>-scale-normalized_curve`` by summing mirror bins.
     """
     out = _normalize(prop, ens_avg, normalizer)
     if not fold:
         return out
     if "bin_center" not in out.columns:
         raise ValueError("Folding needs a 'bin_center' column.")
+    centers = out["bin_center"].to_numpy(dtype=np.float64)
+    # Mirror bins match to a tolerance relative to the largest |z|, far
+    # above float64 round-off in the bin centers and far below a bin width.
+    atol = _FOLD_RTOL * float(np.max(np.abs(centers), initial=0.0))
+    if np.any(np.diff(centers) <= 0) or not np.allclose(
+        centers, -centers[::-1], rtol=0.0, atol=atol
+    ):
+        raise ValueError(
+            "Folding needs bin centers that increase and are symmetric"
+            f" about z = 0; got {centers.tolist()}."
+        )
     n_bins = len(out)
     half = n_bins // 2
     # The z > 0 half in increasing |z|, and the z < 0 half reversed to match
@@ -384,6 +410,12 @@ def normalize_z(
     numeric = out.select_dtypes(include="number").columns
     folded = pos.copy()
     folded[numeric] = 0.5 * (pos[numeric] + neg[numeric])
+    # The normalized curve is a distribution over the bins: folding it onto
+    # |z| adds the two mirror probabilities, P(|z|) = P(z) + P(-z), so it
+    # still sums to one.
+    curve = f"{prop}-scale-normalized_curve"
+    if curve in folded.columns:
+        folded[curve] = pos[curve] + neg[curve]
     if n_bins % 2:
         center = out.iloc[[half]].copy()
         center["bin_center"] = center["bin_center"].abs()
@@ -519,7 +551,9 @@ def space_profiles(
         - ``<prop>-scale``: ``<prop>-mean`` divided by :math:`a` for
           ``'Phi'`` and times :math:`a^2` for ``'Rho'``.
         - ``<prop>-scale-normalized_curve``: ``<prop>-scale`` divided by
-          its sum over the bins.
+          its sum over the bins; for ``'z'``, folded by summing mirror
+          bins, so it is the distribution of :math:`|z|` and still sums
+          to one.
         - ``<prop>-normalizer`` and ``<prop>-norm``: from
           :func:`normalize_r` or, for ``'z'``, :func:`normalize_z` with
           folding, so that a ``'z'`` profile has ``ceil(n / 2)`` rows.
