@@ -25,6 +25,8 @@ version increase may introduce incompatible changes.
 - Raise `ValueError` for a cis threshold that is not a whole number in `threshold_sweep` instead of truncating it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Correct the memory note of `pair_distances` to the four `(n, n)` arrays it holds at once ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Reject bin centers that are not symmetric about `z = 0` when `normalize_z` folds, and fold `<prop>-scale-normalized_curve` by summing mirror bins, so it is the distribution of `|z|` and sums to one ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Reject an `AnalysisTable` whose hooks declare one output name twice, or an output that another entry also yields, through a new `outputs(prop)` method of `TimeAverage`, `Autocorrelation`, `LocalDensities`, and `FociPairDistances`, and raise in `reduce_space` when a hook that declares none repeats a name, instead of overwriting the earlier output ([#185](https://github.com/amirhs1/PolyPhys/issues/185))
+- Select every property's files in `reduce_space` before any analysis directory is made, so a typo in a table raises `FileNotFoundError` with nothing written ([#185](https://github.com/amirhs1/PolyPhys/issues/185))
 
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 
