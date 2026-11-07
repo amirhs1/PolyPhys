@@ -64,16 +64,16 @@ python -m pip install -e ".[dev,viz]"
 The `viz` extra installs matplotlib, which the doctests of `polyphys/viz/`
 import; without it the documented test command stops with an `ImportError`.
 
-Requires Python 3.11+. The runtime dependencies are NumPy, pandas, and SciPy.
-The probe layer, which reads LAMMPS trajectories, needs MDAnalysis as well;
-the `mda` extra installs it:
+Requires Python 3.11+. The runtime dependencies are NumPy 2.0 or newer, pandas
+3.0 or newer, and SciPy 1.14.1 or newer. The probe layer, which reads LAMMPS
+trajectories, needs MDAnalysis as well; the `mda` extra installs it:
 
 ```bash
 python -m pip install "polyphys[mda] @ git+https://github.com/amirhs1/PolyPhys.git"
 ```
 
-The viz layer's figure helpers need matplotlib; the `viz` extra installs it
-(the color lists in `viz.colors` need nothing extra):
+The viz layer's figure helpers need matplotlib 3.8.4 or newer; the `viz` extra
+installs it (the color lists in `viz.colors` need nothing extra):
 
 ```bash
 python -m pip install "polyphys[viz] @ git+https://github.com/amirhs1/PolyPhys.git"

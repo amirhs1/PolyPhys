@@ -21,8 +21,8 @@
     dynamic = ["version"]
     requires-python = ">=3.11"
     dependencies = [
-        "numpy",
-        "pandas",
+        "numpy>=2.0",
+        "pandas>=3.0",
         "scipy>=1.14.1"
     ]
 
@@ -48,7 +48,7 @@
         "MDAnalysis>=2.8"
     ]
     viz = [
-        "matplotlib>=3.7"
+        "matplotlib>=3.8.4"
     ]
 
 [project.urls]

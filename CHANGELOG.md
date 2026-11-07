@@ -11,6 +11,10 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- Require NumPy 2.0, pandas 3.0, and, in the `viz` extra, matplotlib 3.8.4 or newer, the lowest versions the test suite passes with on Python 3.11, and test them in a CI job that installs the lowest allowed versions ([#193](https://github.com/amirhs1/PolyPhys/issues/193))
+
 ## [0.9.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.9.0) - 2026-11-07
 
 ### Changed

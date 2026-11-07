@@ -24,6 +24,18 @@ layer and has no floor. coverage.py rounds the total to a whole percent
 before it compares, so 94.6 percent passes. Add
 `--cov-fail-under=95` to the command above to run the same check locally.
 
+A CI job on Python 3.11 tests the lowest versions that `pyproject.toml`
+allows of NumPy, pandas, SciPy, and the `viz` extra's matplotlib, with
+[uv](https://docs.astral.sh/uv/)'s `--resolution lowest-direct`, and runs the
+suite without MDAnalysis or coverage. To run it locally, with uv installed:
+
+```bash
+uv venv --python 3.11 .venv
+uv pip install --python .venv/bin/python --resolution lowest-direct --only-binary :all: -e ".[viz]"
+uv pip install --python .venv/bin/python pytest hypothesis
+.venv/bin/python -m pytest polyphys README.md projects --doctest-modules --doctest-glob='README.md'
+```
+
 ## Test data: three tiers
 
 Every test uses data from one of three tiers.
