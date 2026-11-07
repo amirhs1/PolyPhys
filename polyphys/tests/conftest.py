@@ -152,7 +152,7 @@ def private_data_dir() -> Path:
         def test_profiles_match_reference(private_data_dir):
             folder = private_data_dir / "TransFociCyl" / "golden" / "density"
     """
-    return Path(os.environ[DATA_DIR_ENV])
+    return Path(os.environ[DATA_DIR_ENV])  # pragma: no cover - needs data
 
 
 @pytest.fixture

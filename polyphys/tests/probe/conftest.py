@@ -223,7 +223,7 @@ def real_window_whole(request: pytest.FixtureRequest) -> RealWhole:
 def real_crowded_whole(request: pytest.FixtureRequest) -> RealWhole:
     """Each of the 8 crowded wholes whose ``all`` window and data file are
     tier C."""
-    return request.param
+    return request.param  # pragma: no cover - needs data
 
 
 @pytest.fixture(params=_params(lambda whole: whole.n_foci > 0))
@@ -303,14 +303,14 @@ def private_window_files(
     ``<project>`` the study's project name (``SPEC.name``, such as
     ``HnsCub``). Use it only in a test marked ``private_data``."""
 
-    def _files(whole: RealWhole) -> tuple[Path, Path]:
+    def _files(whole: RealWhole) -> tuple[Path, Path]:  # pragma: no cover
         project = study_spec(whole.study).SPEC.name
         folder = private_data_dir / project / 'trjs' / whole.source
         (window,) = sorted(folder.glob(f"{whole.source}.j*.ring.all.window."
                                        "lammpstrj.gz"))
         return window, folder / f"{whole.source}.ring.all.data.gz"
 
-    return _files
+    return _files  # pragma: no cover - needs data
 
 
 @pytest.fixture
@@ -377,7 +377,7 @@ def real_transfocicub_whole(request: pytest.FixtureRequest) -> RealWhole:
     """Each of the 4 TransFociCub wholes: the research code probed the same
     50 frames of their polymer dumps, and that output, tier C, is the
     reference of the pipeline tests."""
-    return request.param
+    return request.param  # pragma: no cover - needs data
 
 
 @pytest.fixture
@@ -393,7 +393,8 @@ def research_probe_file(
     topology suffix. The test is skipped when the study has no single such
     probe folder. Use it only in a test marked ``private_data``."""
 
-    def _file(whole: RealWhole, prop: str, ext: str = 'npy') -> Path:
+    def _file(whole: RealWhole, prop: str,  # pragma: no cover - needs data
+              ext: str = 'npy') -> Path:
         project = study_spec(whole.study).SPEC.name
         probes = private_data_dir / project / 'probes'
         folders = sorted(probes.glob(f"*-{whole.group}-probe"))
@@ -403,4 +404,4 @@ def research_probe_file(
         return (folders[0] / f"{whole.whole}.ring"
                 / f"{whole.whole}.ring-{whole.group}-{prop}.{ext}")
 
-    return _file
+    return _file  # pragma: no cover - needs data

@@ -453,7 +453,7 @@ def test_real_foci_bonds_and_clusters_conserve_the_foci(real_foci_whole,
 # Against the research code's probe (tier C)
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 @pytest.mark.parametrize('histogram, sizes', [
     pytest.param('bondsHistTFoci', slice(None), id='bonds'),
     pytest.param('clustersHistTFoci', slice(1, None), id='clusters'),

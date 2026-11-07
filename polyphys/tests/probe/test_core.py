@@ -256,7 +256,7 @@ def test_write_stamps_of_a_real_whole_carry_its_name(
         whole, 50)
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 def test_borrowed_topology_is_the_crowded_whole_own_polymer_topology(
         real_crowded_whole, real_files, private_window_files):
     """The polymer atoms of a crowded whole's own data file have the IDs,
@@ -282,7 +282,7 @@ def test_borrowed_topology_is_the_crowded_whole_own_polymer_topology(
                        as_set(borrowed.bonds))
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 def test_write_stamps_of_a_real_whole_match_the_research_code(
         real_transfocicub_whole, study_spec, research_probe_file, tmp_path):
     """The stamps of a TransFociCub whole hold the research code's lineage

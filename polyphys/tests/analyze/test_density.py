@@ -707,7 +707,7 @@ def test_share_matrix_returns_a_sparse_band():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.private_data
+@pytest.mark.private_data  # pragma: no cover - needs data
 @pytest.mark.parametrize(
     ('direction', 'research_scale'),
     [
