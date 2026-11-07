@@ -38,7 +38,12 @@ The [Lineage](lineage.md) page defines the lineage levels and the groups.
 
 ## The steps
 
-PolyPhys holds no study: adding one changes nothing in `polyphys/`.
+Adding a study changes nothing in `polyphys/`. The package still ships the
+parsers of nine studies in {mod}`polyphys.manage.parser`, such as `HnsCub`
+and `TransFociCub`; the maintainer decided on 2026-11-02 that they move to
+their studies' folders, with a deprecation period
+([#197](https://github.com/amirhs1/PolyPhys/issues/197)). A new study
+declares its parser in its own folder.
 
 1. Declare the study's parser class, as in "Declaring the parser" below.
 2. Make a folder for the study, `projects/<study>/`, as a Python package.
@@ -155,10 +160,17 @@ topology, and glob patterns come from the parser:
 ...     tseries_properties=('gyrTMon',))
 >>> chain.geometry, chain.directions
 ('cubic', ('r',))
->>> chain.space_pattern, chain.hierarchy
-('N*ac*', 'N*')
+>>> chain.space_pattern, chain.space_hierarchy, chain.hierarchy
+('N*ac*', 'N*', 'N*')
+>>> chain.provisional
+False
 
 ```
+
+`space_pattern` matches the study's `space` names, and `space_hierarchy`
+and `hierarchy` are the glob prefixes of its `space` and `ensemble_long`
+names, which the stage functions take. `provisional=True` marks a spec whose
+data or values are not confirmed yet; `projects/hns_cyl` is one.
 
 Each attribute a spec names is checked against the attributes the parser sets
 at `ensemble_long`, so a typo or a missing declaration raises `ValueError` when

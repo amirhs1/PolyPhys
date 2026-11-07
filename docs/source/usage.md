@@ -184,6 +184,27 @@ See the [API reference](api.rst) for the full set of modules, and the
 [README](https://github.com/amirhs1/PolyPhys#readme) for a longer introduction
 to the artifact-lineage model.
 
+## Measures of one frame
+
+{mod}`polyphys.analyze.measurer` holds the small functions the probes and
+the analysis build on, each on the positions or values it is given. The
+[API reference](api.rst) documents each one; this table says which to reach
+for:
+
+| Kind | Functions |
+| --- | --- |
+| Chain size, on one frame's positions | {func}`~polyphys.analyze.measurer.end_to_end`, {func}`~polyphys.analyze.measurer.transverse_size`, {func}`~polyphys.analyze.measurer.fsd`, {func}`~polyphys.analyze.measurer.max_distance` |
+| Distances under periodic boundaries | {func}`~polyphys.analyze.measurer.apply_pbc_orthogonal`, {func}`~polyphys.analyze.measurer.pair_distance` |
+| Bins | {func}`~polyphys.analyze.measurer.fixedsize_bins`, {func}`~polyphys.analyze.measurer.create_bin_edge_and_hist` |
+| Histograms of one frame | {func}`~polyphys.analyze.measurer.radial_histogram` (spherical $r$), {func}`~polyphys.analyze.measurer.radial_cyl_histogram` (cylindrical $r$), {func}`~polyphys.analyze.measurer.axial_histogram`, {func}`~polyphys.analyze.measurer.azimuth_cyl_histogram`, {func}`~polyphys.analyze.measurer.planar_cartesian_histogram` |
+| Volumes of a bead cut by planes or a sphere | {func}`~polyphys.analyze.measurer.spherical_segment`, {func}`~polyphys.analyze.measurer.sphere_sphere_intersection` |
+| Statistics of independent samples | {func}`~polyphys.analyze.measurer.simple_stats`, {func}`~polyphys.analyze.measurer.sem` |
+
+`simple_stats` and `sem` treat their samples as independent, as the
+replicates of a state point are; for the correlated frames of one run, use
+the blocked error of {mod}`polyphys.analyze.stats`, as the
+[Statistics](statistics.md) page explains.
+
 ## Reading LAMMPS log files
 
 `read_log` reads a LAMMPS log into a `LogFile` record of three DataFrames:

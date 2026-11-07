@@ -59,8 +59,8 @@ existing ones.
 
 Decided on 2026-10-31 and 2026-11-02 (amirhs1/PolyPhys#76).
 
-**Decision.** The package holds mechanisms and no study. `polyphys.manage.projects`
-defines `ProjectSpec`, the record of what a study's analysis needs beyond
+**Decision.** The package holds mechanisms and no study. `polyphys.spec`
+(`polyphys.manage.projects` before 0.9.0) defines `ProjectSpec`, the record of what a study's analysis needs beyond
 its parser, and checks it against the parser; PolyPhys holds no table of
 studies. Each study is one folder, `projects/<study>/`, which
 `pyproject.toml` excludes from the installed package and CI lints,
@@ -78,10 +78,11 @@ of time series, a selection string, or which attributes become columns are
 choices of one study, not facts of the library; and the research code
 carried the same study table in three copies, one per stage.
 
-**Open.** The parser classes of the studies are still part of the package.
+**Open.** The parser classes of nine studies, such as `HnsCub` and
+`TransFociCub`, still ship in `polyphys.manage.parser`.
 The maintainer decided on 2026-11-02 that they move to their studies'
-folders, with a deprecation period for the public ones; that change is a
-later pull request.
+folders, with a deprecation period for the public ones; that change is
+amirhs1/PolyPhys#197.
 
 [^adorf2018]: C. S. Adorf, P. M. Dodd, V. Ramasubramani, and S. C. Glotzer,
     "Simple data and workflow management with the signac framework,"
