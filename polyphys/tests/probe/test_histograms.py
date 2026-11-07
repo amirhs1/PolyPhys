@@ -21,7 +21,11 @@ counts to the number of frames times it.
 """
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import (
+    assert_allclose,
+    assert_array_equal,
+    assert_equal,
+)
 
 from polyphys.manage.parser import SumRuleCyl, TransFociCub
 from polyphys.spec import ProbeSpec, ProjectSpec
@@ -231,6 +235,25 @@ def test_parallel_run_matches_serial(make_analysis):
     for key in serial.results:
         assert_allclose(parallel.results[key], serial.results[key],
                         rtol=RTOL, atol=ATOL)
+
+
+@pytest.mark.parametrize('n_parts', [
+    pytest.param(2, id='two-parts'),
+    pytest.param(3, id='three-parts'),
+])
+def test_serial_parts_match_the_multiprocessing_run(make_analysis, n_parts):
+    """The serial backend split into parts gives the frames, times,
+    per-frame rows, block means, and frame counts of the multiprocessing
+    backend over the same parts: the result does not depend on the
+    backend."""
+    parallel = make_analysis().run(backend='multiprocessing', n_workers=2,
+                                   n_parts=n_parts)
+
+    serial = make_analysis().run(backend='serial', n_parts=n_parts)
+
+    assert_array_equal(serial.frames, parallel.frames)
+    assert_array_equal(serial.times, parallel.times)
+    assert_equal(dict(serial.results), dict(parallel.results))
 
 
 def test_empty_group_gives_zero_histograms(make_chain_universe, two_species,

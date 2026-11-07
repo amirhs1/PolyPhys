@@ -24,11 +24,17 @@ Contents
 
 Dependencies
 ============
-- Python standard library: `os`, `pathlib`, `types`, `typing`.
+- Python standard library: `copy`, `os`, `pathlib`, `types`, `typing`.
 - `MDAnalysis <https://docs.mdanalysis.org/>`_ 2.8 or later, through the
   ``mda`` extra.
 - `pandas <https://pandas.pydata.org/>`_.
 - :mod:`polyphys.manage.parser`: :class:`~polyphys.manage.parser.ParserBase`.
+
+Every probe analysis computes each part of a split run on its own shallow
+copy of itself (``_compute_part``), so that the ``serial`` backend, which
+hands every part the same analysis object, keeps each part's ``results``,
+``frames``, and ``times`` apart, as the ``multiprocessing`` and ``dask``
+backends do by pickling.
 
 Examples
 ========
@@ -43,13 +49,17 @@ Examples
 
 .. versionadded:: 0.7.0
 """
+import copy
 import os
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Mapping
 
 import MDAnalysis as mda
+import numpy as np
 import pandas as pd
+from MDAnalysis.analysis.base import AnalysisBase
+from MDAnalysis.analysis.results import Results
 
 from ..manage.parser import ParserBase
 from ..manage.types import Pathish
@@ -241,3 +251,72 @@ def write_stamps(
     path = Path(save_to) / f"{parser.name}-{parser.group}-stamps.csv"
     stamps.to_csv(path, index=False)
     return path
+
+
+def _compute_part(
+    analysis: AnalysisBase,
+    indexed_frames: np.ndarray,
+    verbose: bool | None = None,
+    *,
+    progressbar_kwargs: dict[str, Any] | None = None,
+) -> AnalysisBase:
+    """
+    Compute one part of a run on a shallow copy of `analysis` with empty
+    results, and return the copy.
+
+    MDAnalysis 2.8 and later split a run's frames into parts and call
+    ``_compute`` once per part, then merge the returned objects' ``results``,
+    ``frames``, and ``times`` with the analysis's ``_get_aggregator``. The
+    ``multiprocessing`` and ``dask`` backends pickle the analysis for each
+    part; the ``serial`` backend passes the analysis itself to every part,
+    so without a copy each part overwrites the one before it and the merge
+    repeats the last part ``n_parts`` times.
+
+    Parameters
+    ----------
+    analysis : MDAnalysis.analysis.base.AnalysisBase
+        The analysis whose ``_compute`` calls this, with its frames set up
+        by ``run``.
+    indexed_frames : numpy.ndarray
+        The part's frames, shape ``(n, 2)``: the run's iteration index and
+        the trajectory frame of each.
+    verbose : bool or None, default None
+        Whether to show a progress bar; ``None`` keeps the analysis's own
+        setting.
+    progressbar_kwargs : dict or None, default None
+        Arguments of :class:`MDAnalysis.lib.log.ProgressBar`.
+
+    Returns
+    -------
+    MDAnalysis.analysis.base.AnalysisBase
+        The copy, holding this part's ``results``, ``frames``, and
+        ``times``; `analysis` is unchanged.
+
+    Notes
+    -----
+    The copy shares the analysis's atom groups, trajectory, and settings;
+    only ``results`` is new, and ``_compute`` rebinds the part's frames,
+    times, and sliced trajectory on the copy. The copy costs :math:`O(a)`
+    time and space for :math:`a` attributes, independent of the frames and
+    atoms.
+
+    Examples
+    --------
+    Two parts of a four-frame run, computed serially, stay apart:
+
+    >>> import MDAnalysis as mda
+    >>> from polyphys.probe.chain_size import ChainSize
+    >>> frames = np.zeros((4, 2, 3))
+    >>> frames[:, 1, 2] = [1.0, 2.0, 3.0, 4.0]
+    >>> universe = mda.Universe.empty(2, trajectory=True)
+    >>> universe.add_TopologyAttr('masses', np.ones(2))
+    >>> universe.load_new(frames, format='MEMORY')
+    <Universe with 2 atoms>
+    >>> analysis = ChainSize(universe.atoms, ('rfloryT',))
+    >>> analysis.run(backend='serial', n_parts=2).results['rfloryT']
+    array([1., 2., 3., 4.])
+    """
+    part = copy.copy(analysis)
+    part.results = Results()
+    return AnalysisBase._compute(part, indexed_frames, verbose,
+                                 progressbar_kwargs=progressbar_kwargs)

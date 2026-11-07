@@ -17,7 +17,11 @@ and the conservation of the foci among the bonds and the clusters.
 """
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import (
+    assert_allclose,
+    assert_array_equal,
+    assert_equal,
+)
 
 from polyphys.manage.parser import TransFociCyl
 from polyphys.spec import ProbeSpec, ProjectSpec
@@ -164,6 +168,32 @@ def test_minimum_image_along_the_periodic_axis(make_chain_universe, types,
         contact)
 
 
+def test_numpy_boolean_periodic_flags_act_as_booleans(make_analysis):
+    """Periodic flags given as numpy booleans give the run of the same
+    flags given as Python booleans."""
+    expected = make_analysis(periodic=(False, False, True)).run()
+
+    analysis = make_analysis(
+        periodic=(np.bool_(False), np.bool_(False), np.bool_(True))).run()
+
+    assert analysis.periodic == (False, False, True)
+    assert_equal(dict(analysis.results), dict(expected.results))
+
+
+def test_periodic_direction_needs_a_box():
+    """A frame without box dimensions cannot take the minimum image, and
+    the run raises ValueError, as the other probes do."""
+    import MDAnalysis as mda
+
+    universe = mda.Universe.empty(2, trajectory=True)
+    universe.atoms.positions = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    analysis = PairDistances(universe.atoms, 1.5, [0, 1],
+                             periodic=(False, False, True))
+
+    with pytest.raises(ValueError, match="carries no box"):
+        analysis.run()
+
+
 # Parallel
 
 
@@ -175,6 +205,20 @@ def test_parallel_run_matches_serial(make_analysis):
 
     for key in serial.results:
         assert_array_equal(parallel.results[key], serial.results[key])
+
+
+def test_serial_parts_match_the_multiprocessing_run(make_analysis):
+    """The serial backend split into two parts, one frame each, gives the
+    frames, times, and arrays of the multiprocessing backend over the same
+    parts: the result does not depend on the backend."""
+    parallel = make_analysis().run(backend='multiprocessing', n_workers=2,
+                                   n_parts=2)
+
+    serial = make_analysis().run(backend='serial', n_parts=2)
+
+    assert_array_equal(serial.frames, parallel.frames)
+    assert_array_equal(serial.times, parallel.times)
+    assert_equal(dict(serial.results), dict(parallel.results))
 
 
 # from_spec

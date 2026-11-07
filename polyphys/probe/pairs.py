@@ -40,6 +40,8 @@ Dependencies
   :class:`~polyphys.spec.ProbeSpec`.
 - :mod:`polyphys.manage.parser`:
   :class:`~polyphys.manage.parser.ParserBase`.
+- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
+  part of a split run on its own copy of the analysis.
 
 Notation
 ========
@@ -88,6 +90,7 @@ from ..analyze import clusters
 from ..manage.parser import ParserBase
 from ..spec import ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish
+from .core import _compute_part
 
 # The periodic directions of each geometry, for the minimum image: a
 # cylinder is periodic along its axis, z, a cube in every direction.
@@ -178,7 +181,9 @@ class PairDistances(AnalysisBase):
         If `atomgroup` has fewer than two particles; if `cutoff` is not a
         finite positive number; if `genomic_positions` has not one
         non-negative integer per particle or repeats one; if `species` is
-        empty; or if `periodic` is neither ``None`` nor three booleans.
+        empty; or if `periodic` is neither ``None`` nor three booleans,
+        Python or NumPy. During :meth:`run`, if a periodic direction is
+        asked for and the frame carries no box.
 
     Notes
     -----
@@ -287,7 +292,8 @@ class PairDistances(AnalysisBase):
                 f"'species' must be a non-empty label, not {species!r}.")
         if periodic is not None and not (
                 isinstance(periodic, (tuple, list)) and len(periodic) == 3
-                and all(isinstance(flag, bool) for flag in periodic)):
+                and all(isinstance(flag, (bool, np.bool_))
+                        for flag in periodic)):
             raise ValueError(
                 f"'periodic' must be None or three booleans, not "
                 f"{periodic!r}.")
@@ -422,6 +428,17 @@ class PairDistances(AnalysisBase):
     def _key(self, quantity: str) -> str:
         return f"{quantity}{self.species}"
 
+    def _compute(
+        self, indexed_frames: np.ndarray, verbose: Any = None, *,
+        progressbar_kwargs: Any = None,
+    ) -> Any:
+        """
+        Compute one part of the run on a copy of this analysis, so that
+        serial parts do not overwrite each other.
+        """
+        return _compute_part(self, indexed_frames, verbose,
+                             progressbar_kwargs=progressbar_kwargs)
+
     def _get_aggregator(self) -> ResultsGroup:
         """
         Concatenate each worker's arrays along the frame axis.
@@ -449,7 +466,12 @@ class PairDistances(AnalysisBase):
         """The box lengths of the periodic directions, 0 elsewhere."""
         if self.periodic is None:
             return None
-        lengths = np.asarray(self._ts.dimensions[:3], dtype=np.float64)
+        dimensions = self._ts.dimensions
+        if dimensions is None:
+            raise ValueError(
+                f"frame {self._ts.frame} carries no box, which the "
+                f"periodic directions {self.periodic} need.")
+        lengths = np.asarray(dimensions[:3], dtype=np.float64)
         return np.where(self.periodic, lengths, 0.0)
 
     def _single_frame(self) -> None:

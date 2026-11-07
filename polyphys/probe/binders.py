@@ -40,6 +40,8 @@ Dependencies
 - :mod:`polyphys.spec`:
   :data:`~polyphys.spec.BINDER_SERIES` and
   :class:`~polyphys.spec.ProbeSpec`.
+- :mod:`polyphys.probe.core`: ``_compute_part``, which computes each
+  part of a split run on its own copy of the analysis.
 
 Notation
 ========
@@ -84,7 +86,7 @@ array([[0, 0, 1, 0]])
 """
 import math
 from pathlib import Path
-from typing import Mapping, Self, cast, get_args
+from typing import Any, Mapping, Self, cast, get_args
 
 import numpy as np
 import numpy.typing as npt
@@ -101,6 +103,7 @@ from ..analyze.clusters import (
 )
 from ..spec import BINDER_SERIES, ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish, TopologyT
+from .core import _compute_part
 
 #: The result key of the per-frame loop-length histogram.
 LOOP_KEY = 'loop_length_histogram'
@@ -546,6 +549,17 @@ class BinderStatistics(AnalysisBase):
         if self.store_distances:
             keys = (*keys, DISTANCES_KEY)
         return keys
+
+    def _compute(
+        self, indexed_frames: np.ndarray, verbose: Any = None, *,
+        progressbar_kwargs: Any = None,
+    ) -> Any:
+        """
+        Compute one part of the run on a copy of this analysis, so that
+        serial parts do not overwrite each other.
+        """
+        return _compute_part(self, indexed_frames, verbose,
+                             progressbar_kwargs=progressbar_kwargs)
 
     def _get_aggregator(self) -> ResultsGroup:
         """

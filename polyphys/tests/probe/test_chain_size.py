@@ -23,7 +23,11 @@ error is the naive one of the uncorrelated estimate.
 """
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import (
+    assert_allclose,
+    assert_array_equal,
+    assert_equal,
+)
 
 from polyphys.analyze.stats import block_average
 from polyphys.manage.parser import SumRuleCyl
@@ -166,8 +170,8 @@ def test_principal_axes_are_orthonormal_with_the_line_last(
 
 def test_unwrap_reaches_the_asphericity(make_chain_universe):
     """A straight diagonal chain wrapped across a periodic face is straight
-    again only when unwrapped: asphericity 1 with unwrap, below 1
-    without, since the wrapped beads lie on two parallel segments."""
+    again when unwrapped, asphericity 1, and the whole-chain check leaves
+    an unwrapped asphericity alone."""
     first = np.full((10, 3), 10.0)
     first[:, 0] = np.arange(16.0, 26.0) % 20.0
     first[:, 1] = np.arange(5.0, 15.0)
@@ -175,11 +179,74 @@ def test_unwrap_reaches_the_asphericity(make_chain_universe):
 
     unwrapped = ChainSize(universe.atoms, ('asphericityT',),
                           unwrap=True).run()
-    wrapped = ChainSize(universe.atoms, ('asphericityT',),
-                        unwrap=False).run()
 
     assert_allclose(unwrapped.results['asphericityT'], [1.0], rtol=RTOL)
-    assert wrapped.results['asphericityT'][0] < 0.99
+
+
+@pytest.fixture
+def split_chain() -> np.ndarray:
+    """Two frames of a four-bead chain with unit bonds along x in a box of
+    10: whole at x = 1.5 to 4.5, then wrapped at x = 8.5, 9.5, 0.5, 1.5,
+    its third bond split by the boundary."""
+    frames = np.full((2, 4, 3), 5.0)
+    frames[0, :, 0] = [1.5, 2.5, 3.5, 4.5]
+    frames[1, :, 0] = [8.5, 9.5, 0.5, 1.5]
+    return frames
+
+
+@pytest.mark.parametrize('observables, unwrap', [
+    pytest.param(('gyrT',), True, id='gyration-with-unwrap'),
+    pytest.param(('asphericityT',), False, id='asphericity-without-unwrap'),
+    pytest.param(('asphericityT', 'shapeT'), True,
+                 id='shape-beside-unwrapped-asphericity'),
+])
+def test_chain_split_by_the_boundary_raises(make_chain_universe,
+                                            split_chain, observables,
+                                            unwrap):
+    """A frame whose chain bond spans half the box or more stops the run,
+    naming the frame, for every observable that reads the wrapped
+    positions."""
+    universe = make_chain_universe(split_chain, box=((0.0, 10.0),) * 3,
+                                   boundary='pp pp pp')
+    analysis = ChainSize(universe.atoms, observables, unwrap=unwrap)
+
+    with pytest.raises(ValueError,
+                       match="frame 1: 1 of 3 chain bonds span half the "
+                             "box or more along x"):
+        analysis.run()
+
+
+def test_whole_chain_past_the_box_edge_gives_its_radius_of_gyration(
+        make_chain_universe):
+    """A whole chain that reaches past the box edge passes the check and
+    gives the analytic radius of gyration of four unit-spaced beads,
+    sqrt(5) / 2."""
+    frames = np.full((1, 4, 3), 5.0)
+    frames[0, :, 0] = [8.5, 9.5, 10.5, 11.5]
+    universe = make_chain_universe(frames, box=((0.0, 10.0),) * 3,
+                                   boundary='pp pp pp')
+
+    analysis = ChainSize(universe.atoms, ('gyrT',)).run()
+
+    assert_allclose(analysis.results['gyrT'], [np.sqrt(5.0) / 2.0],
+                    rtol=RTOL)
+
+
+def test_chain_without_bonds_is_not_checked():
+    """Without bonds in the topology the check cannot run, and the wrapped
+    end-to-end distance is measured as it stands, 7 for beads at
+    x = 8.5 and 1.5."""
+    import MDAnalysis as mda
+
+    universe = mda.Universe.empty(4, trajectory=True)
+    universe.add_TopologyAttr('masses', np.ones(4))
+    universe.dimensions = [10.0, 10.0, 10.0, 90.0, 90.0, 90.0]
+    universe.atoms.positions = np.array(
+        [[8.5, 5.0, 5.0], [9.5, 5.0, 5.0], [0.5, 5.0, 5.0], [1.5, 5.0, 5.0]])
+
+    analysis = ChainSize(universe.atoms, ('rfloryT',)).run()
+
+    assert_allclose(analysis.results['rfloryT'], [7.0], rtol=RTOL)
 
 
 # The analysis contract
@@ -223,6 +290,28 @@ def test_parallel_run_matches_the_serial_run(make_chain_universe,
 
     for obs in observables:
         assert_array_equal(parallel.results[obs], serial.results[obs])
+
+
+@pytest.mark.parametrize('n_parts', [
+    pytest.param(2, id='two-parts'),
+    pytest.param(3, id='three-parts'),
+])
+def test_serial_parts_match_the_multiprocessing_run(
+        make_chain_universe, straight_chain, n_parts):
+    """The serial backend split into parts gives the frames, times, and
+    arrays of the multiprocessing backend over the same parts: the result
+    does not depend on the backend."""
+    universe = make_chain_universe(straight_chain)
+    observables = ('rfloryT', 'gyrT', 'principalT')
+    parallel = ChainSize(universe.atoms, observables).run(
+        backend='multiprocessing', n_workers=2, n_parts=n_parts)
+
+    serial = ChainSize(universe.atoms, observables).run(
+        backend='serial', n_parts=n_parts)
+
+    assert_array_equal(serial.frames, parallel.frames)
+    assert_array_equal(serial.times, parallel.times)
+    assert_equal(dict(serial.results), dict(parallel.results))
 
 
 def test_from_spec_selects_the_chain_and_carries_the_spec(
