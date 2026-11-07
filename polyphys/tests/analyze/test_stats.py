@@ -38,6 +38,9 @@ import warnings
 
 import numpy as np
 import pytest
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
+from hypothesis.extra.numpy import arrays
 from numpy.testing import assert_allclose, assert_array_equal
 
 from polyphys.analyze.measurer import sem
@@ -672,3 +675,37 @@ def test_sem_blocked_rejects_unknown_method():
 
     with pytest.raises(ValueError, match="Unknown plateau method"):
         sem_blocked(x, method="bogus")
+
+
+# Generated series
+
+
+@settings(max_examples=50, deadline=None)
+@given(
+    x=arrays(np.float64, st.integers(min_value=8, max_value=512),
+             elements=st.floats(min_value=-1.0, max_value=1.0)),
+    scale=st.one_of(st.floats(min_value=-10.0, max_value=-0.1),
+                    st.floats(min_value=0.1, max_value=10.0)),
+    offset=st.floats(min_value=-10.0, max_value=10.0),
+)
+def test_block_average_is_affine_equivariant_on_generated_series(
+        x, scale, offset):
+    """For a x + b, every blocking level keeps its blocks, its mean becomes
+    a mean + b, its variance a**2 var, its standard error |a| sem, and its
+    inefficiency is unchanged: the linearity of the mean and the variance,
+    with no reference value."""
+    assume(np.ptp(x) > 0.1)
+
+    plain = block_average(x)
+    mapped = block_average(scale * x + offset)
+
+    assert_array_equal(mapped.block_size, plain.block_size)
+    assert_array_equal(mapped.n_blocks, plain.n_blocks)
+    # float64 round-off of a sum of at most 512 values of size about 20,
+    # whose spread is at least 0.01 times the offset: 1e-8 holds with room.
+    assert_allclose(mapped.mean, scale * plain.mean + offset,
+                    rtol=1e-8, atol=1e-10)
+    assert_allclose(mapped.var, scale**2 * plain.var, rtol=1e-8)
+    assert_allclose(mapped.sem, abs(scale) * plain.sem, rtol=1e-8)
+    assert_allclose(mapped.statistical_inefficiency,
+                    plain.statistical_inefficiency, rtol=1e-8)

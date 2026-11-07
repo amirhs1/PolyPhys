@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import Any, NamedTuple, cast
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from polyphys.manage.parser import ParserBase
 from polyphys.manage.types import LineageT
+from polyphys.tests.strategies import lineage_names, stored_values
 from polyphys.manage.utils import number_density_cube, volume_fraction_cube
 from trans_foci_cub.parser import TransFociCub
 
@@ -511,3 +514,31 @@ def test_attributes_at_matches_parsed_instance(
     names = parse_case.parser_class.attributes_at(parse_case.lineage)
 
     assert names == public
+
+
+# Generated names
+
+
+@pytest.mark.parametrize('lineage', [
+    pytest.param('segment', id='segment'),
+    pytest.param('whole', id='whole'),
+    pytest.param('ensemble_long', id='ensemble_long'),
+    pytest.param('ensemble', id='ensemble'),
+    pytest.param('space', id='space'),
+])
+@settings(max_examples=50, deadline=None)
+@given(data=st.data())
+def test_generated_name_parses_to_its_values_and_back(
+        lineage: LineageT, data: st.DataObject) -> None:
+    """A name built from TransFociCub's own pattern parses to its values and
+    rebuilds to itself: a round-trip property, with no reference value."""
+    name, values = data.draw(lineage_names(TransFociCub, lineage))
+
+    parsed = TransFociCub(name, lineage, TransFociCub._groups[0])
+
+    assert getattr(parsed, lineage) == name
+    # The parser converts in exact decimal arithmetic, the expectation in
+    # float64: a few ulp apart; atol covers a value converted to zero.
+    expected = stored_values(TransFociCub, values)
+    assert {attr: getattr(parsed, attr) for attr in expected} == \
+        pytest.approx(expected, rel=1e-12, abs=1e-12)

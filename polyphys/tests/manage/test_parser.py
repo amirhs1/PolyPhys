@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any, NamedTuple
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from polyphys.manage.parser import KeywordSpec, ParserBase, Species
 from polyphys.manage.utils import (
@@ -20,6 +22,8 @@ from polyphys.manage.utils import (
     volume_fraction_cube,
     volume_fraction_cylinder,
 )
+from polyphys.tests import synthetic
+from polyphys.tests.strategies import lineage_names, stored_values
 from polyphys.tests.synthetic import (
     ChainCyl,
     RingCub,
@@ -1184,3 +1188,35 @@ def test_unknown_name_raises_attribute_error():
 
     with pytest.raises(AttributeError, match="has no attribute 'NoSuchName'"):
         getattr(module, 'NoSuchName')
+
+
+# Generated names
+
+
+@pytest.mark.parametrize('lineage', [
+    pytest.param('segment', id='segment'),
+    pytest.param('whole', id='whole'),
+    pytest.param('ensemble_long', id='ensemble_long'),
+    pytest.param('ensemble', id='ensemble'),
+    pytest.param('space', id='space'),
+])
+@pytest.mark.parametrize('parser_class', [
+    pytest.param(getattr(synthetic, name), id=name)
+    for name in synthetic.__all__
+])
+@settings(max_examples=50, deadline=None)
+@given(data=st.data())
+def test_generated_name_parses_to_its_values_and_back(parser_class, lineage,
+                                                      data):
+    """A name built from a parser's own pattern parses to its values and
+    rebuilds to itself: a round-trip property, with no reference value."""
+    name, values = data.draw(lineage_names(parser_class, lineage))
+
+    parsed = parser_class(name, lineage, parser_class._groups[0])
+
+    assert getattr(parsed, lineage) == name
+    # The parser converts in exact decimal arithmetic, the expectation in
+    # float64: a few ulp apart; atol covers a value converted to zero.
+    assert {attr: getattr(parsed, attr)
+            for attr in stored_values(parser_class, values)} == pytest.approx(
+        stored_values(parser_class, values), rel=1e-12, abs=1e-12)
