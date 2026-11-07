@@ -320,6 +320,7 @@ def test_from_spec_selects_the_chain_and_carries_the_spec(
     chain label, and unwrap."""
     project = ProjectSpec(
         parser=SumRuleCyl, group='bug', divisor=0.025,
+        crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon'),
         species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
         tseries_properties=('fsdTMon', 'gyrTMon'))

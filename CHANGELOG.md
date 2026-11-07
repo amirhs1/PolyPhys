@@ -13,6 +13,7 @@ version increase may introduce incompatible changes.
 
 ### Changed
 
+- **Breaking:** Require `ProjectSpec` to name `crowder_attr`, the parser attribute of the bulk volume fraction of crowders, as a keyword-only field with no default, where it was always `phi_bulk_c` before ([#195](https://github.com/amirhs1/PolyPhys/issues/195))
 - **Breaking:** Remove `polyphys.manage.utils.sort_filenames_str`, which nothing called and which zipped separately sorted lists, so one missing file shifted every later pair, and the unused private alias `_normalize_exts`; use `sort_filenames` ([#177](https://github.com/amirhs1/PolyPhys/issues/177))
 - **Breaking:** Name every stamps table `<space>-<group>-stamps-<level>.csv`, with `<level>` the lineage of its rows: `children_stamps` and `parents_stamps` write `-stamps-segment.csv`, `-stamps-whole.csv`, and `-stamps-ensemble_long.csv` instead of `-segment-stamps.csv`, `-whole-stamps.csv` or `-stamps-whole.csv` for the same `ens` table, and `-stamps-ensAvg.csv`; existing analysis directories keep their old names ([#92](https://github.com/amirhs1/PolyPhys/issues/92))
 - **Breaking:** Rename the `lineage` argument of `children_stamps` and `parents_stamps` to `child_lineage`, with no alias, since it is the level of the child stamps ([#92](https://github.com/amirhs1/PolyPhys/issues/92))
@@ -28,6 +29,7 @@ version increase may introduce incompatible changes.
 
 ### Added
 
+- Add `space_tseries_from_spec` and `space_hists_from_spec` to `polyphys.analyze.pipeline`, which build the `space` tables of `organizer.space_tseries` and `organizer.space_hists` with the parser, the glob prefix, the columns, the rounding step, and the crowder attribute of a `ProjectSpec`, so no study choice comes from the organizer's defaults ([#195](https://github.com/amirhs1/PolyPhys/issues/195))
 - Add a release step: the maintainer runs the full test command with `POLYPHYS_DATA_DIR` set and LAMMPS available, since CI runs neither the `private_data` nor the `lammps` tests, and the release commit records the result in a `Checks-run:` line; in `CONTRIBUTING.md`, "Releases", and the `draft-release` skill ([#190](https://github.com/amirhs1/PolyPhys/issues/190))
 
 ### Fixed

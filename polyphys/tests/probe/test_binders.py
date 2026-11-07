@@ -164,6 +164,7 @@ def hns_project() -> Callable[[type[ParserBase]], ProjectSpec]:
     def _make(parser: type[ParserBase]) -> ProjectSpec:
         return ProjectSpec(
             parser=parser, group='nucleoid', divisor=0.01,
+            crowder_attr='phi_bulk_c',
             physical_attrs=('space', 'nmon', 'nhns'),
             species_sizes={'Mon': 'dmon', 'Hns': 'dhns'},
             tseries_properties=(
