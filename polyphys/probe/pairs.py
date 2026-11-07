@@ -359,6 +359,7 @@ class PairDistances(AnalysisBase):
         >>> from polyphys.spec import ProbeSpec, ProjectSpec
         >>> project = ProjectSpec(
         ...     parser=TransFociCyl, group='bug', divisor=0.025,
+        ...     crowder_attr='phi_bulk_c',
         ...     physical_attrs=('space', 'nmon_small', 'nmon_large'),
         ...     species_sizes={'Mon': 'dmon_small', 'Foci': 'dmon_large',
         ...                    'Crd': 'dcrowd'},

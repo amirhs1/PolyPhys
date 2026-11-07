@@ -80,6 +80,9 @@ into their pair histograms, separation densities, and separation time series.
 
 Drivers:
 :func:`reduce_space` runs every property of a table over one space;
+:func:`space_tseries_from_spec` and :func:`space_hists_from_spec` stack the
+ensemble averages of one property into the ``space`` table with the spec's
+columns and rounding step;
 :func:`reduce_stamps` combines the stamps of a space;
 :func:`equilibrium_wholes` reduces each whole's time series to its
 equilibrium value with a blocked error, beside the whole's stamps.
@@ -214,6 +217,8 @@ __all__ = [
     'half_contour',
     'reduce_space',
     'reduce_stamps',
+    'space_hists_from_spec',
+    'space_tseries_from_spec',
 ]
 
 logger = logging.getLogger(__name__)
@@ -611,6 +616,7 @@ class LocalDensities:
     >>> from polyphys.spec import ProjectSpec, histogram
     >>> spec = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space',), species_sizes={'Crd': 'dcrowd'},
     ...     tseries_properties=())
     >>> whole = ('N20epsilon5.0r5.5lz25.0sig1.0nc100'
@@ -833,6 +839,7 @@ class FociPairDistances:
     >>> from polyphys.spec import ProjectSpec, matrix_tseries
     >>> spec = ProjectSpec(
     ...     parser=SumRuleCubHeteroRing, group='bug', divisor=0.025,
+    ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space',), species_sizes={},
     ...     tseries_properties=())
     >>> frame0 = np.array([[0.0, 1.5, 2.5], [1.5, 4.0, 0.5], [2.5, 0.5, 8.0]])
@@ -1088,6 +1095,7 @@ def reduce_space(
     >>> from polyphys.spec import AnalysisTable, ProjectSpec, tseries
     >>> spec = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space',), species_sizes={'Mon': 'dmon'},
     ...     tseries_properties=('gyrTMon',))
     >>> stem = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
@@ -1171,6 +1179,193 @@ def reduce_space(
             results[output.name] = _reduce_output(
                 output, parser, group, ens_dir, ens_avg_dir)
     return results
+
+
+def space_tseries_from_spec(
+    input_database: Pathish,
+    spec: ProjectSpec,
+    prop: PropertyT,
+    *,
+    group: GroupT | None = None,
+    round_to: int = 3,
+    save: bool = False,
+) -> pd.DataFrame:
+    """
+    Stack the ensemble-averaged time series of one property over a space,
+    with the columns and the rounding step the study's spec declares.
+
+    The spec supplies every study choice of
+    :func:`~polyphys.manage.organizer.space_tseries`: the parser, the
+    ``ensemble_long`` glob prefix (`spec.hierarchy`), the attributes that
+    become columns (`spec.physical_attrs`), the rounding step
+    :math:`\\Delta` of the bulk volume fraction of crowders
+    :math:`\\phi_c` (`spec.divisor`), and the parser attribute that holds
+    :math:`\\phi_c` (`spec.crowder_attr`). No study default is taken from
+    the library.
+
+    Parameters
+    ----------
+    input_database : path-like
+        The ``ensAvg`` directory of the space, which holds the files
+        ``<ensemble_long>-<group>-<prop>-ensAvg.csv``.
+    spec : ~polyphys.spec.ProjectSpec
+        The study's spec.
+    prop : str
+        The property, such as ``'gyrTMon'``.
+    group : str, optional
+        The particle group of the files; the default is the polymer group,
+        `spec.group`.
+    round_to : int, default 3
+        The number of decimal places of the rounded :math:`\\phi_c`.
+    save : bool, default False
+        Also write the table to ``<space>-<group>-<prop>-space.csv`` in the
+        ``analysis`` phase's ``space`` directory next to `input_database`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The table of
+        :func:`~polyphys.manage.organizer.space_tseries`: each file's
+        columns, ``t_index``, ``time``, one column per physical attribute,
+        a `spec.crowder_attr` column, and ``phi_bulk_c_round``.
+
+    Notes
+    -----
+    The cost is that of
+    :func:`~polyphys.manage.organizer.space_tseries`:
+    :math:`O(n_\\mathrm{rows}\\, n_\\mathrm{cols})` time and memory for the
+    rows and columns of the result.
+
+    Examples
+    --------
+    The spec's step of 0.1 rounds :math:`\\phi_c \\approx 0.0123` of this
+    state point to 0.0:
+
+    >>> import tempfile
+    >>> import pandas as pd
+    >>> from pathlib import Path
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.spec import ProjectSpec
+    >>> spec = ProjectSpec(
+    ...     parser=SumRuleCyl, group='bug', divisor=0.1,
+    ...     crowder_attr='phi_bulk_c', physical_attrs=('nmon',),
+    ...     species_sizes={'Mon': 'dmon'}, tseries_properties=('gyrTMon',))
+    >>> database = Path(tempfile.mkdtemp()) / 'analysis' / 'N20-bug-ensAvg'
+    >>> database.mkdir(parents=True)
+    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> pd.DataFrame({'gyrTMon-mean': [1.0, 2.0]}).to_csv(
+    ...     database / f'{state}-bug-gyrTMon-ensAvg.csv', index=False)
+    >>> space = space_tseries_from_spec(database, spec, 'gyrTMon')
+    >>> space[['time', 'gyrTMon-mean', 'nmon', 'phi_bulk_c_round']]
+       time  gyrTMon-mean  nmon  phi_bulk_c_round
+    0   0.0           1.0    20               0.0
+    1   5.0           2.0    20               0.0
+
+    .. versionadded:: 0.9.0
+    """
+    return organizer.space_tseries(
+        os.path.join(os.fspath(input_database), ''), prop, spec.parser,
+        spec.hierarchy, list(spec.physical_attrs),
+        spec.group if group is None else group,
+        divisor=spec.divisor, round_to=round_to, is_save=save,
+        crowder_attr=spec.crowder_attr)
+
+
+def space_hists_from_spec(
+    input_database: Pathish,
+    spec: ProjectSpec,
+    prop: PropertyT,
+    *,
+    group: GroupT | None = None,
+    bin_center: np.ndarray | None = None,
+    normalize: bool = False,
+    round_to: int = 3,
+    save: bool = False,
+) -> pd.DataFrame:
+    """
+    Stack the ensemble-averaged histograms of one property over a space,
+    with the columns and the rounding step the study's spec declares.
+
+    The spec supplies every study choice of
+    :func:`~polyphys.manage.organizer.space_hists`, as
+    :func:`space_tseries_from_spec` describes; no study default is taken
+    from the library.
+
+    Parameters
+    ----------
+    input_database : path-like
+        The ``ensAvg`` directory of the space, which holds the files
+        ``<ensemble_long>-<group>-<prop>-ensAvg.csv``.
+    spec : ~polyphys.spec.ProjectSpec
+        The study's spec.
+    prop : str
+        The property, such as ``'rHistCrd'``.
+    group : str, optional
+        The particle group of the files; the default is the polymer group,
+        `spec.group`. A histogram of the crowders is in the ``'all'``
+        group.
+    bin_center : numpy.ndarray, optional
+        The bin centers, shape ``(n_bins,)``; otherwise each file must hold
+        a ``bin_center`` column.
+    normalize : bool, default False
+        Add ``<prop>-norm``, each file's ``<prop>-mean`` divided by its sum.
+    round_to : int, default 3
+        The number of decimal places of the rounded :math:`\\phi_c`.
+    save : bool, default False
+        Also write the table to ``<space>-<group>-<prop>-space.csv`` in the
+        ``analysis`` phase's ``space`` directory next to `input_database`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The table of :func:`~polyphys.manage.organizer.space_hists`: each
+        file's columns, one column per physical attribute, a
+        `spec.crowder_attr` column, and ``phi_bulk_c_round``.
+
+    Warns
+    -----
+    UserWarning
+        If `normalize` is true and a histogram sums to zero, as
+        :func:`~polyphys.manage.organizer.space_hists` warns.
+
+    Notes
+    -----
+    The cost is that of :func:`~polyphys.manage.organizer.space_hists`:
+    :math:`O(n_\\mathrm{rows}\\, n_\\mathrm{cols})` time and memory.
+
+    Examples
+    --------
+    >>> import tempfile
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from pathlib import Path
+    >>> from polyphys.manage.parser import SumRuleCyl
+    >>> from polyphys.spec import ProjectSpec
+    >>> spec = ProjectSpec(
+    ...     parser=SumRuleCyl, group='bug', divisor=0.1,
+    ...     crowder_attr='phi_bulk_c', physical_attrs=('nmon',),
+    ...     species_sizes={'Mon': 'dmon'}, tseries_properties=())
+    >>> database = Path(tempfile.mkdtemp()) / 'analysis' / 'N20-all-ensAvg'
+    >>> database.mkdir(parents=True)
+    >>> state = 'N20epsilon5.0r5.5lz25.0sig1.0nc100dt0.005bdump1000adump5000'
+    >>> pd.DataFrame({'rHistMon-mean': [1.0, 3.0]}).to_csv(
+    ...     database / f'{state}-all-rHistMon-ensAvg.csv', index=False)
+    >>> space = space_hists_from_spec(
+    ...     database, spec, 'rHistMon', group='all',
+    ...     bin_center=np.array([0.5, 1.5]), normalize=True)
+    >>> space[['bin_center', 'rHistMon-norm', 'phi_bulk_c_round']]
+       bin_center  rHistMon-norm  phi_bulk_c_round
+    0         0.5           0.25               0.0
+    1         1.5           0.75               0.0
+
+    .. versionadded:: 0.9.0
+    """
+    return organizer.space_hists(
+        os.path.join(os.fspath(input_database), ''), prop, spec.parser,
+        spec.hierarchy, list(spec.physical_attrs),
+        spec.group if group is None else group,
+        bin_center=bin_center, normalize=normalize, divisor=spec.divisor,
+        round_to=round_to, is_save=save, crowder_attr=spec.crowder_attr)
 
 
 def equilibrium_wholes(
