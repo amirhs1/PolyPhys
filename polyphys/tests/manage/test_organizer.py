@@ -250,6 +250,29 @@ def test_make_database_rejects_unknown_stage(tmp_path):
                                 "space", "galaxy")
 
 
+def test_make_database_rejects_group_with_hyphen(tmp_path):
+    """A group holding the field separator '-' raises ValueError before any
+    directory is made, since it would shift every hyphen-split field."""
+    old = tmp_path / "probes" / "N20-bug-segment"
+
+    with pytest.raises(ValueError, match="'bug-x'.*'-'"):
+        make_database(old, "analysis", "ens", "bug-x")
+
+    assert not (tmp_path / "analysis").exists()
+
+
+def test_make_database_rejects_old_directory_outside_a_phase(tmp_path):
+    """An old directory whose parent is not a phase directory raises
+    ValueError before any directory is made, instead of placing the new one
+    at the wrong depth."""
+    old = tmp_path / "root" / "N20-bug-segment"
+
+    with pytest.raises(ValueError, match="'root' is not a phase"):
+        make_database(old, "analysis", "ens", "bug")
+
+    assert not (tmp_path / "analysis").exists()
+
+
 # Building wholes
 
 
@@ -857,15 +880,37 @@ def test_children_stamps_whole_without_segment_columns_is_unchanged(
     assert capsys.readouterr().out == ""
 
 
-def test_children_stamps_saves_combined_stamps(
-    tmp_path, write_stamps, segment_stamps
+@pytest.mark.parametrize(
+    "stamps_fixture, child_lineage, filename",
+    [
+        pytest.param("segment_stamps", "segment",
+                     "N20-bug-stamps-segment.csv", id="segment"),
+        pytest.param("whole_stamps", "whole", "N20-bug-stamps-whole.csv",
+                     id="whole", marks=pytest.mark.filterwarnings(
+                         "ignore:'segment' and 'segment_id':UserWarning")),
+    ],
+)
+def test_children_stamps_saves_under_rows_lineage(
+    request, tmp_path, write_stamps, stamps_fixture, child_lineage, filename
 ):
-    """save_to writes the result as <space>-<group>-<lineage>-stamps.csv."""
+    """save_to writes the result as <space>-<group>-stamps-<level>.csv, with
+    the lineage level of its rows."""
+    paths = write_stamps(request.getfixturevalue(stamps_fixture))
+
+    combined = children_stamps(paths, child_lineage, save_to=tmp_path)
+
+    pd.testing.assert_frame_equal(pd.read_csv(tmp_path / filename), combined)
+
+
+def test_children_stamps_takes_child_lineage_by_keyword(
+    write_stamps, segment_stamps
+):
+    """The level of the stamps is the keyword argument child_lineage."""
     paths = write_stamps(segment_stamps)
-    combined = children_stamps(paths, "segment", save_to=tmp_path)
-    pd.testing.assert_frame_equal(
-        pd.read_csv(tmp_path / "N20-bug-segment-stamps.csv"), combined
-    )
+
+    combined = children_stamps(paths, child_lineage="segment")
+
+    assert combined["segment_id"].tolist() == [1, 2, 3, 1, 2, 3]
 
 
 def test_children_stamps_rejects_unknown_lineage():
@@ -914,14 +959,16 @@ def test_parents_stamps_applies_given_aggregation(segment_stamps):
     [
         pytest.param("segment_stamps", "segment", "N20-bug-stamps-whole.csv",
                      id="segment-to-whole"),
-        pytest.param("whole_stamps", "whole", "N20-bug-stamps-ensAvg.csv",
-                     id="whole-to-ensAvg"),
+        pytest.param("whole_stamps", "whole",
+                     "N20-bug-stamps-ensemble_long.csv",
+                     id="whole-to-ensemble_long"),
     ],
 )
-def test_parents_stamps_saves_under_parent_stage(
+def test_parents_stamps_saves_under_parents_lineage(
     request, tmp_path, stamps_fixture, lineage, filename
 ):
-    """save_to names the parent stamps after the parents' stage."""
+    """save_to writes the parent stamps as <space>-<group>-stamps-<level>.csv,
+    with the lineage level of the parent rows."""
     stamps = request.getfixturevalue(stamps_fixture)
     parents = parents_stamps(stamps, lineage, save_to=tmp_path)
     pd.testing.assert_frame_equal(pd.read_csv(tmp_path / filename), parents)
@@ -955,6 +1002,13 @@ def test_parents_stamps_without_lineage_name_prints_nothing(
     parents_stamps(stamps, "segment")
 
     assert capsys.readouterr().out == ""
+
+
+def test_parents_stamps_takes_child_lineage_by_keyword(segment_stamps):
+    """The level of the child stamps is the keyword argument child_lineage."""
+    parents = parents_stamps(segment_stamps, child_lineage="segment")
+
+    assert parents["n_segments"].tolist() == [3, 3]
 
 
 def test_parents_stamps_rejects_unknown_lineage(segment_stamps):

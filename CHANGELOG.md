@@ -13,10 +13,14 @@ version increase may introduce incompatible changes.
 
 ### Changed
 
+- **Breaking:** Name every stamps table `<space>-<group>-stamps-<level>.csv`, with `<level>` the lineage of its rows: `children_stamps` and `parents_stamps` write `-stamps-segment.csv`, `-stamps-whole.csv`, and `-stamps-ensemble_long.csv` instead of `-segment-stamps.csv`, `-whole-stamps.csv` or `-stamps-whole.csv` for the same `ens` table, and `-stamps-ensAvg.csv`; existing analysis directories keep their old names ([#92](https://github.com/amirhs1/PolyPhys/issues/92))
+- **Breaking:** Rename the `lineage` argument of `children_stamps` and `parents_stamps` to `child_lineage`, with no alias, since it is the level of the child stamps ([#92](https://github.com/amirhs1/PolyPhys/issues/92))
+- **Breaking:** Raise `ValueError` in `make_database` for a `group` that contains `-` and for an old directory whose parent is not a phase directory, before any directory is made ([#92](https://github.com/amirhs1/PolyPhys/issues/92))
 - Move `ProjectSpec`, `ProbeSpec`, `BinderSpec`, `PerWhole`, `RecenterT`, `CHAIN_SIZE_OBSERVABLES`, and `BINDER_SERIES` from `polyphys.manage.projects`, and `AnalysisTable`, `PropertySpec`, `PostHook`, `tseries`, `histogram`, `histogram_2d`, `edge`, and `matrix_tseries` from `polyphys.analyze.pipeline`, to the new module `polyphys.spec`, which imports no MDAnalysis, and define `PerWhole` once; the old import paths warn with `DeprecationWarning` until 1.0.0 ([#196](https://github.com/amirhs1/PolyPhys/issues/196))
 
 ### Fixed
 
+- Describe the lineage, phases, stages, and naming patterns of the `organizer` module docstring and of `make_database` as the code builds them, and state in `lineage.md` which vocabulary a shared word belongs to, the grammar of a name, and the stamps tables ([#92](https://github.com/amirhs1/PolyPhys/issues/92))
 - Report a `fit_decay` fit as failed, with `converged=False` and NaN parameters, when the model is not finite at the start or the fit does not move from its start and has no finite covariance, instead of reporting it converged under the default method and raising `ValueError` under `method='trf'` ([#178](https://github.com/amirhs1/PolyPhys/issues/178))
 - Count the bins of `pair_distance_histograms` and `FociPairDistances` with the round-off tolerance of `create_bin_edge_and_hist`, so a range of a whole number of bins, such as `r_max=2.1` with `bin_size=0.3`, ends at `r_max` instead of one bin past it or an ulp below it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Treat an `inf` box length as non-periodic and accept integer positions in `measurer.pair_distance`, as `clusters.pair_distances` does ([#184](https://github.com/amirhs1/PolyPhys/issues/184))

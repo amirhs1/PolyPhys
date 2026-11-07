@@ -5,8 +5,7 @@
 The :mod:`polyphys.manage.organizer` module provides tools for organizing and
 aggregating simulation data based on filename patterns, file structures, and
 processing stages. It facilitates handling segmented data, grouping experiments
-into ensembles, consolidating ensembles into spaces, and organizing spaces into
-galaxies for high-level analysis.
+into ensembles, and consolidating ensembles into spaces.
 
 The module is tailored for use with LAMMPS and similar simulation tools, where
 it automates data consolidation across hierarchical levels. It is particularly
@@ -22,18 +21,17 @@ simulation output data:
 - **Experiment**: A complete simulation run, typically using tools like LAMMPS,
   representing a specific set of conditions.
 
-- **Lineage**: A hierarchical structure for organizing data across different
-  levels of aggregation:
+- **Lineage**: The level of an artifact in the hierarchy
+  ``segment → whole → ensemble_long → ensemble → space``, the values of
+  :py:data:`~polyphys.manage.types.LineageT`; each level aggregates the one
+  before it:
 
-    - **Segment**: A portion of data from a long simulation.
-    - **Whole** (Instance): A complete dataset made by combining multiple
-      segments.
-    - **Ensemble**: A set of wholes with identical macroscopic properties but
-      varied initial conditions (e.g., different random seeds).
-    - **Space**: A group of ensembles with identical attributes except for one,
-      which systematically varies across the space.
-    - **Galaxy**: The highest level of aggregation, representing a collection
-      of spaces with differing attributes.
+    - **segment**: a chunk of one simulation run.
+    - **whole**: one run, its segments joined.
+    - **ensemble_long**: one state point, every input parameter in the name.
+    - **ensemble**: one state point, its replicates (wholes with different
+      random seeds) collapsed into a short name.
+    - **space**: the parameter sweep, the state points of one study.
 
 - **Attributes**: Macroscopic characteristics such as box size or polymer
   topology that remain constant within a space.
@@ -51,18 +49,32 @@ simulation output data:
   data), `galaxy`, and `allInOne`; the values of
   :py:data:`~polyphys.manage.types.PhaseT`.
 
-- **Stages**: Aggregation levels within each phase, e.g., `wholeSim`, `ens`,
-  or `ensAvg`.
+- **Stages**: Directories inside a phase, each holding the artifacts of one
+  lineage level or one step of the reduction: `segment`, `wholeSim`, `ens`,
+  `ensAvg`, `space`, and `galaxy`, the values of
+  :py:data:`~polyphys.manage.types.StageT`. The organizer writes them in the
+  `analysis` phase.
+
+The words `segment` and `space` are both lineage levels and stages, and
+`galaxy` is both a phase and a stage; which one a word is follows from where
+it appears: a lineage argument, a phase directory, or the last field of a
+stage directory's name. `galaxy` is not a lineage level.
 
 Naming Conventions
 ==================
-File and directory naming conventions in the `organizer` module provide
-structure to data organization across phases and lineage levels. Each name
-pattern encodes metadata about lineage, phase, group, property, and processing
-stage. Example patterns include:
+The :doc:`/lineage` page is the reference; in short:
 
-- `whole|segment.group.run.lammpstrj` for trajectory files.
-- `lineage-phase-group-prop_stage.extension` for processed files.
+- A stage directory is ``<root>/<phase>/<prefix>-<group>-<stage>``, as
+  :func:`make_database` builds it.
+- A file is ``<lineage name>-<group>-<property>``, as
+  :func:`create_fullname` builds it, with ``-ensAvg`` or ``-space`` added
+  where two stages hold files of one level (``ens`` and ``ensAvg``) or the
+  level is ``space``, and then the extension. A stamps table is
+  ``<space>-<group>-stamps-<level>.csv``, with ``<level>`` the lineage of
+  its rows.
+- Fields are joined by ``-``. A lineage name never contains ``-``, and a
+  group cannot; a property may, to join a measure (``gyrTMon-acf``), so it
+  is everything between the group and the stage suffix or the extension.
 
 Dependencies
 ============
@@ -301,23 +313,23 @@ def make_database(
     group: GroupT | None,
 ) -> str:
     """
-    Create a new directory path based on the provided `old_database` path and
-    specified parameters (`phase`, `group`, and `stage`). If the directory does
-    not already exist, it will be created.
+    Create, if needed, the stage directory
+    ``<root>/<phase>/<prefix>-<group>-<stage>/`` of the sweep that
+    `old_database` belongs to.
 
-    The `old_database` is expected to follow a structured naming convention:
-    `prefix-old_phase-old_group-old_stage`, where each part represents an
-    aspect of the directory's content. This base structure helps generate the
-    new path.
-
-    The newly constructed directory name follows:
-        `prefix-phase-group-stage`
+    `old_database` is a directory of the same sweep that sits directly in a
+    phase directory, ``<root>/<old_phase>/<old_dir>``. The new directory
+    keeps ``<root>``, goes into `phase`, and is named
+    ``<prefix>-<group>-<stage>``, with ``<prefix>`` the part of
+    ``<old_dir>`` before its first hyphen (or ``*``) and ``<group>`` left
+    out when `group` is None. The :doc:`/lineage` page defines phases and
+    stages.
 
     Parameters
     ----------
     old_database : Pathish
-        Path to the reference directory whose structure will be used as a
-        base. It need not exist.
+        Path to a directory of the sweep, directly inside a phase directory;
+        it need not exist.
     phase : :py:data:`~polyphys.manage.types.PhaseT`
         The new phase name for the directory, specifying its role in the
         workflow: one of ``'simsAll'``, ``'simsCont'``, ``'logs'``,
@@ -329,7 +341,8 @@ def make_database(
         ``'ensAvg'``, ``'space'``, or ``'galaxy'``.
     group : GroupT or None
         Particle group related to the data in the directory; left out of the
-        name when None.
+        name when None. It cannot contain ``-``, the field separator of the
+        name.
 
     Returns
     -------
@@ -341,8 +354,9 @@ def make_database(
     Raises
     ------
     ValueError
-        If `phase` is not a value of `PhaseT`, or `stage` not a value of
-        `StageT`.
+        If `phase` is not a value of `PhaseT`, `stage` not a value of
+        `StageT`, `group` contains ``-``, or the parent of `old_database` is
+        not named for a value of `PhaseT`; no directory is made.
 
     Examples
     --------
@@ -372,8 +386,18 @@ simsAll, simsCont, logs, trjs, probes, analysis, viz, galaxy, allInOne.
     # The type aliases are the one declaration of both vocabularies.
     invalid_keyword(phase, get_args(PhaseT))
     invalid_keyword(stage, get_args(StageT))
+    if group is not None and "-" in group:
+        raise ValueError(
+            f"group {group!r} contains '-', the field separator of a "
+            "directory name.")
 
     old_path = pathlib.Path(old_database)
+    old_phase = old_path.parent.name
+    if old_phase not in get_args(PhaseT):
+        raise ValueError(
+            f"{old_phase!r} is not a phase: the parent of {str(old_path)!r} "
+            "must be a phase directory, one of "
+            f"{', '.join(get_args(PhaseT))}.")
 
     # Common prefix derived from old_database to create new directory name
     prefix = old_path.parts[-1].split("*")[0].split("-")[0]
@@ -1455,13 +1479,13 @@ def ensemble_avg(
 
 def children_stamps(
     stamps: list[tuple[str]],
-    lineage: PrimitiveLineageT,
+    child_lineage: PrimitiveLineageT,
     save_to: Pathish | None = None,
 ) -> pd.DataFrame:
     """
-    Combine individual 'stamp' CSV files into a single DataFrame for a given
-    `lineage` in a *space*. Optionally, saves the resulting
-    DataFrame to a specified directory.
+    Combine individual 'stamp' CSV files, each of one artifact of the
+    lineage `child_lineage`, into a single DataFrame for a *space*.
+    Optionally, saves the resulting DataFrame to a specified directory.
 
     Parameters
     ----------
@@ -1469,11 +1493,11 @@ def children_stamps(
         List of 1-tuples, as :func:`~polyphys.manage.utils.sort_filenames`
         returns them, each holding the path to a 'stamp' CSV file. Rows are
         concatenated in this order.
-    lineage : {'segment', 'whole'}
-        Lineage type, either 'segment' or 'whole'.
+    child_lineage : {'segment', 'whole'}
+        Lineage of the stamp files, and so of the rows of the result.
     save_to : str, optional
         Directory path where the combined DataFrame is saved, if specified,
-        as ``<space>-<group>-<lineage>-stamps.csv``, with ``space`` and
+        as ``<space>-<group>-stamps-<child_lineage>.csv``, with ``space`` and
         ``group`` read from the first row.
 
     Returns
@@ -1485,20 +1509,21 @@ def children_stamps(
     Raises
     ------
     ValueError
-        If `lineage` is not one of the accepted values.
+        If `child_lineage` is not one of the accepted values.
 
     Warns
     -----
     UserWarning
-        If `lineage` is 'whole' and the 'segment' and 'segment_id' columns
-        are dropped.
+        If `child_lineage` is 'whole' and the 'segment' and 'segment_id'
+        columns are dropped.
 
     Notes
     -----
     - It is assumed that all the stamp files have belong to the same *group* in
       a given *space*.
-    - If `lineage` is 'whole', columns 'segment' and 'segment_id' are removed,
-      as they are redundant for whole-lineage data, with a `UserWarning`.
+    - If `child_lineage` is 'whole', columns 'segment' and 'segment_id' are
+      removed, as they are redundant for whole-lineage data, with a
+      `UserWarning`.
       Either may be absent, as in stamps the probe phase writes for a whole;
       if neither is present, nothing is dropped and a DEBUG record is
       logged.
@@ -1524,7 +1549,7 @@ def children_stamps(
     1  w1.j02    w1           2        10
     >>> tmp.cleanup()
     """
-    invalid_keyword(lineage, ["segment", "whole"])
+    invalid_keyword(child_lineage, ["segment", "whole"])
 
     # Load and concatenate all stamps
     space_stamps = pd.concat(
@@ -1533,7 +1558,7 @@ def children_stamps(
 
     # Drop specific columns for 'whole' lineage
     cols_to_drop = ["segment", "segment_id"]
-    if lineage == "whole":
+    if child_lineage == "whole":
         dropped = [col for col in cols_to_drop if col in space_stamps.columns]
         if dropped:
             space_stamps = space_stamps.drop(columns=dropped)
@@ -1551,7 +1576,7 @@ def children_stamps(
     if save_to is not None:
         space_name = str(space_stamps.loc[0, "space"])
         group = str(space_stamps.loc[0, "group"])
-        filename = f"{space_name}-{group}-{lineage}-stamps.csv"
+        filename = f"{space_name}-{group}-stamps-{child_lineage}.csv"
         space_stamps.to_csv(os.path.join(save_to, filename), index=False)
 
     return space_stamps
@@ -1559,7 +1584,7 @@ def children_stamps(
 
 def parents_stamps(
     stamps: pd.DataFrame,
-    lineage: PrimitiveLineageT,
+    child_lineage: PrimitiveLineageT,
     properties: dict[str, Callable[..., Any]] | None = None,
     save_to: Pathish | None = None,
 ) -> pd.DataFrame:
@@ -1572,19 +1597,21 @@ def parents_stamps(
     ----------
     stamps : pd.DataFrame
         DataFrame containing child stamp data, the lineage of whose rows is
-        `lineage`. It must have a 'whole' and a 'segment_id' column for
+        `child_lineage`. It must have a 'whole' and a 'segment_id' column for
         'segment' stamps, and an 'ensemble_long' and an 'ensemble_id' column
         for 'whole' stamps, and an 'n_frames' column for both.
-    lineage : {'segment', 'whole'}
-        Lineage type of the child stamps, either 'segment' or 'whole'.
+    child_lineage : {'segment', 'whole'}
+        Lineage of the child stamps, the rows of `stamps`; the parents are
+        one level up, 'whole' or 'ensemble_long'.
     properties : dict of str -> Callable, optional
         Dictionary specifying aggregation functions for specific columns,
         replacing the default 'last'.
     save_to : str, optional
         Directory path where the parent DataFrame is saved, if specified,
-        as ``<space>-<group>-stamps-whole.csv`` for 'segment' stamps and
-        ``<space>-<group>-stamps-ensAvg.csv`` for 'whole' stamps, with
-        ``space`` and ``group`` read from the first row.
+        as ``<space>-<group>-stamps-<level>.csv``, with ``<level>`` the
+        lineage of the parent rows, ``whole`` for 'segment' stamps and
+        ``ensemble_long`` for 'whole' stamps, and with ``space`` and
+        ``group`` read from the first row.
 
     Returns
     -------
@@ -1598,26 +1625,26 @@ def parents_stamps(
           'segment_id', and 'n_segments' are dropped if present.
 
         Every other column takes its last value in each group unless
-        `properties` says otherwise; 'lineage_name' and the `lineage` column
-        are dropped.
+        `properties` says otherwise; 'lineage_name' and the `child_lineage`
+        column are dropped.
 
     Raises
     ------
     ValueError
-        If `lineage` is not one of the accepted values.
+        If `child_lineage` is not one of the accepted values.
 
     Notes
     -----
     - It is assumed that all the stamp files have belong to the same *group* in
       a given *space*.
-    - If `lineage` is 'segment', stamps correspond to individual segments,
-      each with a unique `segment_id`.
-    - If `lineage` is 'whole', stamps correspond to whole simulations, each
-      identified by an `ensemble_id`.
-    - The 'lineage_name' column and the `lineage` column are not carried
-      into the parent stamps. Either may be absent, as 'lineage_name' is
-      from the stamps the probe phase writes; an absent one is skipped with
-      a DEBUG record.
+    - If `child_lineage` is 'segment', stamps correspond to individual
+      segments, each with a unique `segment_id`.
+    - If `child_lineage` is 'whole', stamps correspond to whole simulations,
+      each identified by an `ensemble_id`.
+    - The 'lineage_name' column and the `child_lineage` column are not
+      carried into the parent stamps. Either may be absent, as
+      'lineage_name' is from the stamps the probe phase writes; an absent
+      one is skipped with a DEBUG record.
     - Let n_rows be the number of child stamps and n_cols the number of
       columns. The group-by is hash-based, so expected time is
       O(n_rows * n_cols); memory is one copy of the parent stamps.
@@ -1636,11 +1663,11 @@ def parents_stamps(
     0    w1           2        30
     1    w2           1        30
     """
-    invalid_keyword(lineage, ["segment", "whole"])
+    invalid_keyword(child_lineage, ["segment", "whole"])
 
     # Base aggregation functions for columns
     base_columns = list(stamps.columns)
-    for column in ("lineage_name", lineage):
+    for column in ("lineage_name", child_lineage):
         if column in base_columns:
             base_columns.remove(column)
         else:
@@ -1652,7 +1679,7 @@ def parents_stamps(
         agg_funcs.update(properties)
 
     # Define grouping column and lineage-specific aggregations
-    if lineage == "whole":
+    if child_lineage == "whole":
         parent_groupby = "ensemble_long"
         agg_funcs.update({"ensemble_id": "count", "n_frames": "last"})
     else:
@@ -1664,7 +1691,7 @@ def parents_stamps(
     parent_stamps = stamps.groupby(parent_groupby).agg(agg_funcs).reset_index()
 
     # Rename and drop columns based on lineage
-    if lineage == "whole":
+    if child_lineage == "whole":
         parent_stamps = parent_stamps.rename(
             columns={"ensemble_id": "n_ensembles"}
         )
@@ -1689,8 +1716,8 @@ def parents_stamps(
     if save_to is not None:
         space_name = str(parent_stamps.loc[0, "space"])
         group = str(parent_stamps.loc[0, "group"])
-        file_suffix = "ensAvg" if lineage == "whole" else "whole"
-        filename = f"{space_name}-{group}-stamps-{file_suffix}.csv"
+        level = parent_groupby
+        filename = f"{space_name}-{group}-stamps-{level}.csv"
         parent_stamps.to_csv(os.path.join(save_to, filename), index=False)
 
     return parent_stamps

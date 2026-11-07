@@ -131,6 +131,12 @@ reads only their prefix.
 | `space`    | one table per property for the whole sweep                     | {func}`~polyphys.manage.organizer.space_tseries`, {func}`~polyphys.manage.organizer.space_hists`, {func}`~polyphys.analyze.sumrule.space_profiles` |
 | `galaxy`   | tables that combine spaces                                     | —                                            |
 
+Three words belong to two vocabularies: `segment` and `space` are lineage
+levels and stages, and `galaxy` is a phase and a stage, not a lineage level.
+Where a word appears says which it is: as a `lineage` argument or the
+lineage of a name it is a level; as a directory directly under the sweep's
+root, a phase; as the last field of a directory inside a phase, a stage.
+
 {func}`~polyphys.manage.organizer.make_database` builds a stage directory
 from another directory of the same sweep: it keeps the parent of the old
 phase directory, puts the new directory in the phase it is given, and takes
@@ -149,8 +155,11 @@ the prefix from the old directory's name, up to its first hyphen:
 
 ```
 
-A phase or stage outside the two vocabularies raises `ValueError`, so a
-misspelled directory name fails before anything is written.
+The old directory must sit directly in a phase directory, so that the new
+one lands at the same depth. A phase or stage outside the two vocabularies,
+a group that contains `-`, or an old directory whose parent is not a phase
+raises `ValueError`, so a misspelled or misplaced name fails before
+anything is written.
 
 ## File names inside a stage
 
@@ -168,3 +177,33 @@ its property, joined by hyphens, as
 A property is one observable of one species, such as `gyrTMon`, the radius
 of gyration (`gyrT`, a time series) of the monomers (`Mon`). The
 [Quickstart](quickstart.md) writes one file of each kind.
+
+A file name carries the lineage name of its own level. It ends in a stage
+word only where two stages hold files of one level, as `ens` and `ensAvg`
+both hold `ensemble_long` files, or where the level is `space`.
+
+{func}`~polyphys.analyze.pipeline.reduce_stamps` writes one stamps table
+into each of the three reduction stages, named
+`<space>-<group>-stamps-<level>.csv` for the lineage level of its rows:
+
+| Stage      | Stamps table                                  | One row per    |
+| ---------- | --------------------------------------------- | -------------- |
+| `wholeSim` | `<space>-<group>-stamps-segment.csv`          | segment        |
+| `ens`      | `<space>-<group>-stamps-whole.csv`            | whole          |
+| `ensAvg`   | `<space>-<group>-stamps-ensemble_long.csv`    | state point    |
+
+The `wholeSim` table exists only when the probe ran on segments.
+
+### The grammar of a name
+
+- Fields are joined by `-`: `<lineage name>-<group>-<property>`, then the
+  stage word, if any, then the extension.
+- A lineage name never contains `-`: a parser cuts a name at its first
+  hyphen. A group cannot contain one either, which
+  {func}`~polyphys.manage.organizer.make_database` checks.
+- A property may contain `-`, which joins an observable to a measure of it,
+  as in `gyrTMon-acf`. A property is therefore everything between the group
+  and the stage word or the extension, not one hyphen-separated field.
+- Inside a lineage name, a segment joins its `j<NN>` keyword with a dot, as
+  in `...ens1.j03`, as the simulation writes it, and so do a topology suffix
+  such as `.ring` and the file extension.
