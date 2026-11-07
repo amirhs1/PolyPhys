@@ -21,6 +21,17 @@ version increase may introduce incompatible changes.
 - Convert a `KeywordSpec` value with a scale or an offset in exact decimal arithmetic, so `r4.1` gives the cylinder size `7.2` and the short name `D7.2` instead of `D7.199999999999999` ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
 - Strip an extension with `ispath=True` only when the suffix holds a letter, so a name ending with a value, such as `ac1.5`, or with a dot keeps it ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
 
+### Fixed
+
+- Report a `fit_decay` fit as failed, with `converged=False` and NaN parameters, when the model is not finite at the start or the fit does not move from its start and has no finite covariance, instead of reporting it converged under the default method and raising `ValueError` under `method='trf'` ([#178](https://github.com/amirhs1/PolyPhys/issues/178))
+- Count the bins of `pair_distance_histograms` and `FociPairDistances` with the round-off tolerance of `create_bin_edge_and_hist`, so a range of a whole number of bins, such as `r_max=2.1` with `bin_size=0.3`, ends at `r_max` instead of one bin past it or an ulp below it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Treat an `inf` box length as non-periodic and accept integer positions in `measurer.pair_distance`, as `clusters.pair_distances` does ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Format the axis and shape in the `IndexError` of `transverse_size` and `fsd` ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Raise `ValueError` for a single sample in `simple_stats` and `sem` instead of returning NaN ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Raise `ValueError` for a cis threshold that is not a whole number in `threshold_sweep` instead of truncating it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Correct the memory note of `pair_distances` to the four `(n, n)` arrays it holds at once ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Reject bin centers that are not symmetric about `z = 0` when `normalize_z` folds, and fold `<prop>-scale-normalized_curve` by summing mirror bins, so it is the distribution of `|z|` and sums to one ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 
 ### Changed
