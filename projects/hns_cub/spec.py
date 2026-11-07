@@ -1,9 +1,9 @@
 """
 The *HnsCub* study: a ring polymer with H-NS proteins among crowders in a
 periodic cube. ``SPEC`` is its
-:class:`~polyphys.manage.projects.ProjectSpec`, ``PROBE`` its
-:class:`~polyphys.manage.projects.ProbeSpec`, and ``ANALYSIS`` its
-:class:`~polyphys.analyze.pipeline.AnalysisTable` per particle group.
+:class:`~polyphys.spec.ProjectSpec`, ``PROBE`` its
+:class:`~polyphys.spec.ProbeSpec`, and ``ANALYSIS`` its
+:class:`~polyphys.spec.AnalysisTable` per particle group.
 
 Values from the research code's registry (SciOps ``sciops/api.py``,
 ``PROJECTS_DETAILS``), with the PolyPhys attribute names ``phi_bulk_c`` for
@@ -13,18 +13,22 @@ analysis tables (SciOps ``sciops/analyze/analyzer.py``,
 ``'HnsCubWhole'``), with each artifact listed once.
 """
 from polyphys.analyze.pipeline import (
-    AnalysisTable,
     Autocorrelation,
     LocalDensities,
     TimeAverage,
+)
+from polyphys.manage.parser import HnsCub, ParserBase
+from polyphys.spec import (
+    AnalysisTable,
+    BinderSpec,
+    ProbeSpec,
+    ProjectSpec,
     edge,
     histogram,
     histogram_2d,
     matrix_tseries,
     tseries,
 )
-from polyphys.manage.parser import HnsCub, ParserBase
-from polyphys.manage.projects import BinderSpec, ProbeSpec, ProjectSpec
 
 SPEC = ProjectSpec(
     parser=HnsCub,

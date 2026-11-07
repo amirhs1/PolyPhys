@@ -51,6 +51,7 @@ deleted branches.
 
 ```text
 PolyPhys/
+  polyphys/spec.py     ProjectSpec, ProbeSpec, AnalysisTable: a study's records, without MDAnalysis
   polyphys/manage/     parser, organizer, projects, utils, types: filenames → lineage → reduced ensembles
   polyphys/analyze/    measurer, stats, clusters, correlations, sumrule, density, pipeline: per-frame observables, their statistics, density profiles, the sum rule on reduced profiles, and the reduction of probe artifacts
   polyphys/simulate/   core, log, dump, data, build: LAMMPS logs, dumps, data files, and start configurations

@@ -18,7 +18,7 @@ study: the distances between every monomer and every patch, with no
 minimum image, the contacts below a cutoff, and the counts of its
 ``hns_binding``. Here the distances take the minimum image along the
 directions the study's geometry makes periodic, the cutoff and the
-comparison are the study's :class:`~polyphys.manage.projects.BinderSpec`,
+comparison are the study's :class:`~polyphys.spec.BinderSpec`,
 and the counting is :func:`~polyphys.analyze.clusters.binding_statistics`.
 
 Contents
@@ -37,9 +37,9 @@ Dependencies
   :func:`~polyphys.analyze.clusters.find_direct_contacts`,
   :func:`~polyphys.analyze.clusters.binding_statistics`, and
   :class:`~polyphys.analyze.clusters.BindingStats`.
-- :mod:`polyphys.manage.projects`:
-  :data:`~polyphys.manage.projects.BINDER_SERIES` and
-  :class:`~polyphys.manage.projects.ProbeSpec`.
+- :mod:`polyphys.spec`:
+  :data:`~polyphys.spec.BINDER_SERIES` and
+  :class:`~polyphys.spec.ProbeSpec`.
 
 Notation
 ========
@@ -99,7 +99,7 @@ from ..analyze.clusters import (
     binding_statistics,
     find_direct_contacts,
 )
-from ..manage.projects import BINDER_SERIES, ProbeSpec
+from ..spec import BINDER_SERIES, ProbeSpec
 from ..manage.types import EntityT, GeometryT, Pathish, TopologyT
 
 #: The result key of the per-frame loop-length histogram.
@@ -217,7 +217,7 @@ class BinderStatistics(AnalysisBase):
     results : :class:`~MDAnalysis.analysis.results.Results`
         After :meth:`run`: one int64 array of shape ``(n_frames,)`` per
         attribute of :class:`~polyphys.analyze.clusters.FrameBinding` in
-        :data:`~polyphys.manage.projects.BINDER_SERIES`, keyed by that
+        :data:`~polyphys.spec.BINDER_SERIES`, keyed by that
         name; ``'loop_length_histogram'``, int64 of shape
         ``(n_frames, n_lengths)``, whose row ``[t, d]`` is the number of
         distinct bridged pairs at :math:`d` bonds in frame ``t``, with
@@ -327,7 +327,7 @@ class BinderStatistics(AnalysisBase):
     array([[0, 0, 1, 0]])
 
     The eight values are, in the order of
-    :data:`~polyphys.manage.projects.BINDER_SERIES`: three patch-monomer
+    :data:`~polyphys.spec.BINDER_SERIES`: three patch-monomer
     contacts, one free and three engaged patches, no free binder, one
     bridging and one dangling binder, one cis pair and no trans pair.
 
@@ -439,7 +439,7 @@ class BinderStatistics(AnalysisBase):
         ``universe.select_atoms(spec.selections[spec.binders.patches])``;
         the cutoff, the comparison, the cis threshold, the patches per
         binder, whether the distances are stored, and the labels are the
-        spec's :class:`~polyphys.manage.projects.BinderSpec`; the topology
+        spec's :class:`~polyphys.spec.BinderSpec`; the topology
         is the project's; and the minimum image is taken along every
         direction in a cube and along ``z`` only in a cylinder.
 
@@ -450,7 +450,7 @@ class BinderStatistics(AnalysisBase):
         universe : :class:`~MDAnalysis.core.universe.Universe`
             The trajectory, as :func:`~polyphys.probe.core.make_universe`
             opens it.
-        spec : :class:`~polyphys.manage.projects.ProbeSpec`
+        spec : :class:`~polyphys.spec.ProbeSpec`
             The study's probe spec, with `binders` set.
         verbose : bool, default False
             Whether to show a progress bar during :meth:`run`.
@@ -472,7 +472,7 @@ class BinderStatistics(AnalysisBase):
         >>> import MDAnalysis as mda
         >>> import numpy as np
         >>> from polyphys.manage.parser import HnsCub
-        >>> from polyphys.manage.projects import (
+        >>> from polyphys.spec import (
         ...     BinderSpec, ProbeSpec, ProjectSpec)
         >>> project = ProjectSpec(
         ...     parser=HnsCub, group='nucleoid', divisor=0.01,
@@ -528,7 +528,7 @@ class BinderStatistics(AnalysisBase):
         """
         The keys of ``results``, in the order :meth:`save` writes them:
         the eight series of
-        :data:`~polyphys.manage.projects.BINDER_SERIES`, the loop-length
+        :data:`~polyphys.spec.BINDER_SERIES`, the loop-length
         histogram, and, with `store_distances`, the distances.
 
         Examples
