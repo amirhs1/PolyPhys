@@ -1526,6 +1526,42 @@ def ensemble_avg(
     return ens_avgs
 
 
+def _group_from_stamp_names(stamps: list[tuple[str]]) -> str:
+    """
+    The particle group in the names of stamp files,
+    ``<lineage name>-<group>-stamps.csv``, which must agree.
+
+    Parameters
+    ----------
+    stamps : list[tuple[str]]
+        List of 1-tuples, each holding the path to a 'stamp' CSV file.
+
+    Returns
+    -------
+    str
+        The group the file names share.
+
+    Raises
+    ------
+    ValueError
+        If a file name is not ``<name>-<group>-stamps.csv``, or the names
+        give more than one group.
+    """
+    groups: set[str] = set()
+    for (path,) in stamps:
+        name = Path(path).name
+        parts = name.removesuffix(".csv").rsplit("-", 2)
+        if len(parts) != 3 or parts[2] != "stamps":
+            raise ValueError(
+                f"'{name}' is not a '<name>-<group>-stamps.csv' stamp file, "
+                "and the stamps have no 'group' column.")
+        groups.add(parts[1])
+    if len(groups) != 1:
+        raise ValueError(
+            f"The stamp file names give {sorted(groups)}, not one group.")
+    return groups.pop()
+
+
 def children_stamps(
     stamps: list[tuple[str]],
     child_lineage: PrimitiveLineageT,
@@ -1553,12 +1589,15 @@ def children_stamps(
     -------
     pd.DataFrame
         Combined DataFrame containing data from all the 'stamp' files, with
-        a fresh ``0..n-1`` index.
+        a fresh ``0..n-1`` index, and a ``group`` column (see Notes).
 
     Raises
     ------
     ValueError
-        If `child_lineage` is not one of the accepted values.
+        If `child_lineage` is not one of the accepted values; or if the
+        stamps have no ``group`` column and a file name is not
+        ``<name>-<group>-stamps.csv``, or the names give more than one
+        group.
 
     Warns
     -----
@@ -1576,6 +1615,13 @@ def children_stamps(
       Either may be absent, as in stamps the probe phase writes for a whole;
       if neither is present, nothing is dropped and a DEBUG record is
       logged.
+    - The stamps :func:`~polyphys.probe.write_stamps` writes carry a
+      ``group`` column; the research code's stamps did not, and held the
+      group in the file name, ``<lineage name>-<group>-stamps.csv``. When
+      the column is missing it is added from the file names, after
+      ``space`` when that column is present and last otherwise, so the
+      result and the parent stamps built from it carry the group either
+      way.
     - Let n_files be the number of stamp files, n_rows the total number of
       rows, and n_cols the number of columns. Time is O(n_rows * n_cols).
       Every file is read before the frames are concatenated, so peak memory
@@ -1587,16 +1633,19 @@ def children_stamps(
     >>> tmp = tempfile.TemporaryDirectory()
     >>> paths = []
     >>> for seg_id in (1, 2):
-    ...     path = Path(tmp.name) / f'w1.j0{seg_id}-stamps.csv'
+    ...     path = Path(tmp.name) / f'w1.j0{seg_id}-bug-stamps.csv'
     ...     pd.DataFrame({'segment': [f'w1.j0{seg_id}'], 'whole': ['w1'],
     ...                   'segment_id': [seg_id], 'n_frames': [10]}
     ...                  ).to_csv(path, index=False)
     ...     paths.append((str(path),))
     >>> children_stamps(paths, 'segment')
-      segment whole  segment_id  n_frames
-    0  w1.j01    w1           1        10
-    1  w1.j02    w1           2        10
+      segment whole  segment_id  n_frames group
+    0  w1.j01    w1           1        10   bug
+    1  w1.j02    w1           2        10   bug
     >>> tmp.cleanup()
+
+    The stamps have no ``group`` column, so it comes from the file names
+    and, with no ``space`` column either, goes last.
     """
     invalid_keyword(child_lineage, ["segment", "whole"])
 
@@ -1604,6 +1653,14 @@ def children_stamps(
     space_stamps = pd.concat(
         [pd.read_csv(stamp[0]) for stamp in stamps], ignore_index=True
     )
+
+    # The research code's stamps hold the group in the file name only.
+    if "group" not in space_stamps.columns:
+        group = _group_from_stamp_names(stamps)
+        columns = list(space_stamps.columns)
+        position = (columns.index("space") + 1 if "space" in columns
+                    else len(columns))
+        space_stamps.insert(position, "group", group)
 
     # Drop specific columns for 'whole' lineage
     cols_to_drop = ["segment", "segment_id"]
@@ -1685,7 +1742,9 @@ def parents_stamps(
         If `child_lineage` is not one of the accepted values; if a row has no
         parent name (NaN in 'whole' for 'segment' stamps, in
         'ensemble_long' for 'whole' stamps), which the group-by would drop;
-        or if `properties` names a column the function aggregates itself.
+        if `properties` names a column the function aggregates itself; or
+        if `save_to` is given and the stamps lack a 'space' or a 'group'
+        column, which the file name needs.
 
     Notes
     -----
@@ -1781,6 +1840,11 @@ def parents_stamps(
         )
 
     if save_to is not None:
+        for column in ("space", "group"):
+            if column not in parent_stamps.columns:
+                raise ValueError(
+                    f"Saving the parent stamps needs a {column!r} column "
+                    "for the file name.")
         space_name = str(parent_stamps.loc[0, "space"])
         group = str(parent_stamps.loc[0, "group"])
         level = parent_groupby

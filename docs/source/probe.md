@@ -597,9 +597,9 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
   collectors are preallocated per run or per worker rather than per
   function.
 - `asphericity(wrap=False, unwrap=...)` takes `unwrap` from the spec.
-- The stamps carry a `group` column, which
-  {func}`~polyphys.manage.organizer.children_stamps` reads when it saves;
-  the research stamps did not.
+- The stamps carry a `group` column; the research stamps did not, and
+  {func}`~polyphys.manage.organizer.children_stamps` adds it from their
+  file names, `<name>-<group>-stamps.csv`, so either kind reduces.
 - Frames are not converted to simulation time (see "Reading a
   trajectory").
 - The binder distances take the minimum image along the geometry's

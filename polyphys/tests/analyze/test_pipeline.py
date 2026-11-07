@@ -1551,7 +1551,11 @@ def test_ens_avg_matches_the_research_code(  # pragma: no cover - needs data
     code's ensemble averages). The probe folder is linked into
     a temporary tree so that nothing is written under the data directory.
     The pair-distance artifacts and the ACF band are left out: they changed
-    on purpose (criteria section 4).
+    on purpose (criteria section 4). The spec's autocorrelation lags are
+    capped at the wholes' ``n_frames - 1``: the research code's statsmodels
+    ``acf`` clamped lags beyond the series silently, and PolyPhys's rejects
+    them, so a fixture of short wholes needs the cap; the ACFs are not
+    compared anyway.
     """
     # The study folders are not an installed package: import them from the
     # repository root, as projects/conftest.py does for their own tests.
@@ -1569,6 +1573,14 @@ def test_ens_avg_matches_the_research_code(  # pragma: no cover - needs data
     linked.parent.mkdir()
     linked.symlink_to(probe, target_is_directory=True)
     (table,) = [t for t in tables if t.group == "bug"]
+    # The frame count from one whole's gyrTMon header, not its values.
+    n_frames = np.load(next(probe.rglob("*-gyrTMon.npy")),
+                       mmap_mode="r").shape[0]
+    table = dataclasses.replace(table, properties=tuple(
+        dataclasses.replace(prop, post_hook=Autocorrelation(
+            min(prop.post_hook.nlags, n_frames - 1)))
+        if isinstance(prop.post_hook, Autocorrelation) else prop
+        for prop in table.properties))
 
     reduce_space(linked, spec, table)
 

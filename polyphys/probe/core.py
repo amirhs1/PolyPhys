@@ -217,9 +217,8 @@ def write_stamps(
     :attr:`~polyphys.manage.parser.ParserBase.attributes`, and
     ``n_frames``; the row holds the parser's values. The research code's
     ``stamps_report`` wrote the same columns without ``group``, which
-    :func:`~polyphys.manage.organizer.children_stamps` reads from the first
-    row when it saves. Time and space are :math:`O(a)` for :math:`a`
-    attributes.
+    :func:`~polyphys.manage.organizer.children_stamps` then takes from the
+    file name. Time and space are :math:`O(a)` for :math:`a` attributes.
 
     Examples
     --------
