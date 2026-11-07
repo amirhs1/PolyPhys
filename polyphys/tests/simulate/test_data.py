@@ -804,3 +804,22 @@ def test_with_frame_rejects_a_frame_of_another_system(
 
     with pytest.raises(ValueError, match=match):
         with_frame(make_record("bond"), frame)
+
+
+@pytest.mark.parametrize(
+    "columns",
+    [
+        pytest.param(("id", "xu", "yu", "zu"), id="unwrapped"),
+        pytest.param(("id", "xsu", "ysu", "zsu"), id="scaled-unwrapped"),
+    ],
+)
+def test_with_frame_rejects_a_frame_with_only_unwrapped_coordinates(
+        make_record, columns):
+    """A frame without wrapped coordinates raises KeyError saying so."""
+    box = Box(lo=np.zeros(3), hi=np.full(3, 10.0))
+    frame = DumpFrame(timestep=0, box=box, columns=columns,
+                      data=np.array([[1, 0.1, 0.1, 0.1], [2, 0.2, 0.2, 0.2],
+                                     [3, 0.3, 0.3, 0.3]]))
+
+    with pytest.raises(KeyError, match="unwrapped coordinates only"):
+        with_frame(make_record("bond"), frame)

@@ -396,6 +396,9 @@ def test_iter_dump_raises_when_a_header_is_cut_off(frame_text, write_dump):
         pytest.param({"atoms": ("1 1 1.0 5.0 5.0", "2 1 2.0 5.0 abc")},
                      r"line 11: an atom line needs 5 numbers",
                      id="atom-value-not-number"),
+        pytest.param({"atoms": ("1 1 1.0 5.0", "2 1 2.0 5.0 5.0 5.0")},
+                     r"line 10: an atom line needs 5 numbers, got '1 1 1.0 "
+                     r"5.0'", id="short-and-long-lines-with-the-right-total"),
     ],
 )
 def test_iter_dump_raises_on_a_malformed_frame(
