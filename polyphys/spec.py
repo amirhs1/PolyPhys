@@ -356,7 +356,8 @@ def _is_per_whole(value: object) -> bool:
 
 def _check_resolved(result: object, subject: str) -> float:
     """
-    Return `result`, what a :py:data:`PerWhole` callable gave, as a float.
+    Return `result`, a :py:data:`PerWhole` constant or what a callable
+    gave, as a float.
 
     Raises
     ------
@@ -906,8 +907,9 @@ class ProbeSpec:
         Raises
         ------
         ValueError
-            If a callable `value` returns anything but a finite positive
-            number: a Python or NumPy integer or float, not a bool.
+            If `value`, or what a callable `value` returns, is anything but
+            a finite positive number: a Python or NumPy integer or float,
+            not a bool.
 
         Examples
         --------
@@ -919,6 +921,10 @@ class ProbeSpec:
         0.5
         >>> ProbeSpec.resolve(lambda info: info.dmon + info.dcrowd, whole)
         1.5
+        >>> ProbeSpec.resolve(-1.0, whole)
+        Traceback (most recent call last):
+        ...
+        ValueError: A per-whole quantity of N200r10.5lz50ac0.5nc100dt0.005b...
 
         Notes
         -----
@@ -929,12 +935,12 @@ class ProbeSpec:
         .. versionchanged:: 1.0.0
            A callable may return a NumPy integer or float, such as
            ``numpy.float32``, where only a Python number or
-           ``numpy.float64`` was accepted.
+           ``numpy.float64`` was accepted. A constant `value` is checked
+           with the same rule, where it was returned as ``float(value)``.
         """
-        if callable(value):
-            return _check_resolved(
-                value(parser), f"A per-whole quantity of {parser.name}")
-        return float(value)
+        result = value(parser) if callable(value) else value
+        return _check_resolved(
+            result, f"A per-whole quantity of {parser.name}")
 
     @property
     def name(self) -> str:

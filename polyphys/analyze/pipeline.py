@@ -181,12 +181,13 @@ profiles, and the planar histograms with their edges:
 """
 import glob
 import logging
+import numbers
 import os
 import re
 import warnings
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Literal, Protocol, cast
+from typing import Literal, Protocol, TypeGuard, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -697,24 +698,61 @@ class LocalDensities:
         )
 
 
+def _value_for(
+    value: PerWhole, info: ParserBase | None, what: str, whole: str
+) -> object:
+    """
+    Return `value`, or what it gives on `info` when it is a function.
+
+    `what` names the quantity and `whole` the whole in an error.
+    """
+    if not callable(value):
+        return value
+    if info is None:
+        raise ValueError(
+            f"{what} is a function of the whole, but the context has no "
+            f"parser instance for whole '{whole}'."
+        )
+    return value(info)
+
+
 def _resolve(
     value: PerWhole, info: ParserBase | None, what: str, whole: str
 ) -> float:
     """
     Return `value`, calling it on `info` when it is a function.
 
-    `what` names the quantity and `whole` the whole in an error. A callable
-    must give a finite positive number, the check of
-    :meth:`~polyphys.spec.ProbeSpec.resolve`.
+    `what` names the quantity and `whole` the whole in an error. The
+    constant or what the callable gives must be a finite positive number,
+    the check of :meth:`~polyphys.spec.ProbeSpec.resolve`.
     """
-    if callable(value):
-        if info is None:
-            raise ValueError(
-                f"{what} is a function of the whole, but the context has no "
-                f"parser instance for whole '{whole}'."
-            )
-        return _check_resolved(value(info), f"{what} of whole '{whole}'")
-    return float(value)
+    return _check_resolved(_value_for(value, info, what, whole),
+                           f"{what} of whole '{whole}'")
+
+
+def _is_positive_integer(value: object) -> TypeGuard[numbers.Integral]:
+    """Whether `value` is a positive Python or NumPy integer, never a bool
+    and never a float, even one equal to a whole number."""
+    return (isinstance(value, numbers.Integral)
+            and not isinstance(value, bool) and int(value) > 0)
+
+
+def _resolve_count(
+    value: PerWhole, info: ParserBase | None, what: str, whole: str
+) -> int:
+    """
+    Return `value`, calling it on `info` when it is a function, as an int.
+
+    `what` names the quantity and `whole` the whole in an error. The
+    constant or what the callable gives must be a positive integer
+    (:func:`_is_positive_integer`); it is never truncated.
+    """
+    result = _value_for(value, info, what, whole)
+    if _is_positive_integer(result):
+        return int(result)
+    raise ValueError(
+        f"{what} of whole '{whole}' must resolve to a positive integer, not "
+        f"{result!r}.")
 
 
 def half_contour(n_monomers: int, bond_max: float) -> float:
@@ -801,10 +839,16 @@ class FociPairDistances:
     Raises
     ------
     ValueError
-        When called: if the context has no spec (the topology comes from
-        it); if a whole is not a ``(n_frames, n_foci, n_foci)`` array; or if
-        a separation lies above the grid, which names the whole and the
-        separation, since a dropped frame would break the normalization.
+        When built: if a constant `bin_size` or `r_max` is not a finite
+        positive number, or a constant `n_monomers` is not a positive
+        integer; a Python or NumPy number, never a bool, and for
+        `n_monomers` never a float, even ``10.0``. When called: if the
+        context has no spec (the topology comes from it); if a whole is not
+        a ``(n_frames, n_foci, n_foci)`` array; if a callable quantity gives
+        a value that breaks the same rule, which names the quantity and the
+        whole; or if a separation lies above the grid, which names the whole
+        and the separation, since a dropped frame would break the
+        normalization.
 
     Notes
     -----
@@ -842,12 +886,37 @@ class FociPairDistances:
     >>> series.wholes['w1']['loc4loc8genDist4'].to_list()
     [0.5, 2.5]
 
+    A constant that breaks the rule raises when the hook is built:
+
+    >>> FociPairDistances(bin_size=1.0, r_max=3.0, n_monomers=10.5)
+    Traceback (most recent call last):
+    ...
+    ValueError: FociPairDistances: 'n_monomers' must be a positive integer ...
+
     .. versionadded:: 0.6.0
+
+    .. versionchanged:: 1.0.0
+       The constants are checked when the hook is built, and `n_monomers`,
+       a constant or what a callable gives, must be a positive integer,
+       where a float such as 10.5 was truncated to 10.
     """
 
     bin_size: PerWhole
     r_max: PerWhole
     n_monomers: int | Callable[[ParserBase], int]
+
+    def __post_init__(self) -> None:
+        for name in ('bin_size', 'r_max'):
+            value = getattr(self, name)
+            if not _spec._is_per_whole(value):
+                raise ValueError(
+                    f"FociPairDistances: '{name}' must be a finite positive "
+                    f"number or a callable, not {value!r}.")
+        if not (callable(self.n_monomers)
+                or _is_positive_integer(self.n_monomers)):
+            raise ValueError(
+                "FociPairDistances: 'n_monomers' must be a positive integer "
+                f"or a callable, not {self.n_monomers!r}.")
 
     def outputs(self, prop: _spec.PropertySpec) -> tuple[PropertyT, ...]:
         """
@@ -892,8 +961,8 @@ class FociPairDistances:
             info = context.infos.get(whole_name)
             n_foci = matrix.shape[1]
             genomic_pos = np.rint(np.diagonal(matrix[0])).astype(np.int64)
-            n_monomers = int(_resolve(self.n_monomers, info, 'n_monomers',
-                                      whole_name))
+            n_monomers = _resolve_count(self.n_monomers, info, 'n_monomers',
+                                        whole_name)
             pairs = clusters.foci_pair_info(genomic_pos, n_monomers, topology)
             tags = [f'loc{i}loc{j}genDist{d}' for i, j, d in pairs]
             first, second = np.triu_indices(n_foci, 1)

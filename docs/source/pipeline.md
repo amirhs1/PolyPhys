@@ -137,11 +137,13 @@ through under the property's own name.
   gives the largest separation a ring allows, half its bonds times the
   largest bond extension, $R_0 = 1.5\,\sigma_{ij}$ for the FENE bond
   (Kremer and Grest, 1990). A separation above the grid raises and names
-  the whole, since the chain cannot reach it. A `bin_size`, `r_max`, or
-  `n_monomers` given as a function of the whole's parser must give a finite
-  positive number, as {meth}`~polyphys.spec.ProbeSpec.resolve` checks;
-  otherwise the hook raises `ValueError` naming the quantity and the
-  whole.
+  the whole, since the chain cannot reach it. A `bin_size` or `r_max` must
+  be a finite positive number, as {meth}`~polyphys.spec.ProbeSpec.resolve`
+  checks, and `n_monomers` a positive integer, a Python or NumPy integer
+  but never a float, even `10.0`, so it is never truncated. A constant is
+  checked when the hook is built, and the hook raises `ValueError` naming
+  the quantity; a function of the whole's parser is checked on what it
+  gives for each whole, and the error names the quantity and the whole.
 
 ## Running a space
 

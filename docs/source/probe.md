@@ -160,8 +160,8 @@ series that the project's `tseries_properties` list. Every field after
 unchanged. A finite positive number is a Python or NumPy integer or float,
 never a bool. {meth}`~polyphys.spec.ProbeSpec.resolve` turns a
 `PerWhole` value into the number for one whole, given its parser, and
-raises `ValueError` naming the whole when a callable gives anything but a
-finite positive number.
+raises `ValueError` naming the whole when the value, or what a callable
+gives, is anything but a finite positive number.
 
 The `unwrap` value is the research code's: its probes read wrapped dumps,
 and a cylinder is periodic along its axis only, so the chain was unwrapped
