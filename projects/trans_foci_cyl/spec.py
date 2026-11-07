@@ -37,6 +37,7 @@ SPEC = ProjectSpec(
     parser=TransFociCyl,
     group='bug',
     divisor=0.025,
+    crowder_attr='phi_bulk_c',
     physical_attrs=('space', 'ensemble_long', 'ensemble', 'nmon_small',
                     'nmon_large', 'dmon_large', 'dcyl', 'dcrowd',
                     'phi_bulk_c'),

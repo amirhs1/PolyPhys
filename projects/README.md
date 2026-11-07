@@ -30,10 +30,9 @@ this repository:
 import sys
 sys.path.insert(0, "<path to PolyPhys>/projects")
 from hns_cub import SPEC
+from polyphys.analyze.pipeline import space_tseries_from_spec
 
-space = space_tseries(database, "gyrTMon", SPEC.parser, SPEC.hierarchy,
-                      list(SPEC.physical_attrs), SPEC.group,
-                      divisor=SPEC.divisor)
+space = space_tseries_from_spec(database, SPEC, "gyrTMon")
 ```
 
 `test_studies.py` checks every spec against its parser and against the values

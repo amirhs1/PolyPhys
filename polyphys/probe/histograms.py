@@ -264,6 +264,7 @@ def histogram_edges(
     >>> from polyphys.spec import ProbeSpec, ProjectSpec
     >>> project = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
     ...     tseries_properties=('gyrTMon',))
@@ -590,6 +591,7 @@ class SpatialHistograms(AnalysisBase):
         >>> from polyphys.spec import ProbeSpec, ProjectSpec
         >>> project = ProjectSpec(
         ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+        ...     crowder_attr='phi_bulk_c',
         ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
         ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
         ...     tseries_properties=('gyrTMon',))

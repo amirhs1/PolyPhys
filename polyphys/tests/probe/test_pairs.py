@@ -186,6 +186,7 @@ def foci_spec():
     research code's cutoff, the large-monomer and crowder diameters summed."""
     project = ProjectSpec(
         parser=TransFociCyl, group='bug', divisor=0.025,
+        crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon_small', 'nmon_large', 'dcyl'),
         species_sizes={'Mon': 'dmon_small', 'Foci': 'dmon_large',
                        'Crd': 'dcrowd'},
