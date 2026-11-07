@@ -124,6 +124,11 @@ from ..manage.types import (
 )
 from .core import _compute_part
 
+__all__ = [
+    'SpatialHistograms',
+    'histogram_edges',
+]
+
 # The size of the beads whose centers form the cylindrical wall, which the
 # parsers document: the LAMMPS box spans the wall-bead centers, so its
 # transverse length is dcyl + _WALL_BEAD.

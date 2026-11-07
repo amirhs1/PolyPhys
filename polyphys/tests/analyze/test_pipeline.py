@@ -29,8 +29,6 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
-from polyphys import spec
-from polyphys.analyze import pipeline
 from polyphys.analyze.clusters import foci_pair_info
 from polyphys.analyze.correlations import acf
 from polyphys.analyze.stats import sem_blocked
@@ -156,32 +154,6 @@ def _analysis(probe_dir, stage):
 
 
 # Records
-
-
-@pytest.mark.parametrize("name", [
-    pytest.param("AnalysisTable", id="AnalysisTable"),
-    pytest.param("PropertySpec", id="PropertySpec"),
-    pytest.param("PostHook", id="PostHook"),
-    pytest.param("tseries", id="tseries"),
-    pytest.param("histogram", id="histogram"),
-    pytest.param("histogram_2d", id="histogram_2d"),
-    pytest.param("edge", id="edge"),
-    pytest.param("matrix_tseries", id="matrix_tseries"),
-])
-def test_pipeline_serves_names_moved_to_spec_with_a_warning(name):
-    """A table record or builder that moved to polyphys.spec is the same
-    object from the pipeline, with a DeprecationWarning."""
-    with pytest.warns(DeprecationWarning,
-                      match=f"pipeline.{name} moved to polyphys\\.spec"):
-        served = getattr(pipeline, name)
-
-    assert served is getattr(spec, name)
-
-
-def test_pipeline_rejects_an_unknown_name():
-    """A name the pipeline neither defines nor serves raises AttributeError."""
-    with pytest.raises(AttributeError, match="no attribute 'Table'"):
-        getattr(pipeline, "Table")
 
 
 def test_derived_rejects_edges_on_non_vector():

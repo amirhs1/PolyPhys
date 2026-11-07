@@ -6,14 +6,56 @@ All notable changes to PolyPhys are documented here. The format is
 adds the commit references its entries lack. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-While the major version is `0`, the public API is not yet stable and a minor
-version increase may introduce incompatible changes.
+From 1.0.0, the public API and its deprecation policy are those of the
+"API stability" page of the documentation (`docs/source/stability.md`). A
+deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ## [Unreleased]
 
 ### Changed
 
 - Require NumPy 2.0, pandas 3.0, and, in the `viz` extra, matplotlib 3.8.4 or newer, the lowest versions the test suite passes with on Python 3.11, and test them in a CI job that installs the lowest allowed versions ([#193](https://github.com/amirhs1/PolyPhys/issues/193))
+
+### Added
+
+- Declare the public API, the `__all__` of every public module, with each module stable or provisional, and a deprecation policy under Semantic Versioning on the "API stability" page ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
+
+### Removed
+
+- **Breaking:** Remove `polyphys.manage.projects` and the table records and builders that `polyphys.analyze.pipeline` served, the import paths that 0.9.0 deprecated; import them from `polyphys.spec` ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
+- **Breaking:** Remove `whole_from_dist_mat_t` and `find_unique_properties` from `polyphys.manage.organizer`, which nothing in PolyPhys called ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
+
+### Migrating to 1.0.0
+
+Each breaking change since 0.4.0, oldest last, with its migration path.
+
+| Release | Change | Migration |
+| ------- | ------ | --------- |
+| 1.0.0 | `polyphys.manage.projects` and the table names of `polyphys.analyze.pipeline` removed | Import them from `polyphys.spec`. |
+| 1.0.0 | `whole_from_dist_mat_t` and `find_unique_properties` removed | None; nothing in PolyPhys called them. |
+| 0.9.0 | `ProjectSpec` requires `crowder_attr`, keyword-only, with no default | Pass `crowder_attr='phi_bulk_c'` to keep the old behavior. |
+| 0.9.0 | `polyphys.manage.utils.sort_filenames_str` removed | Use `sort_filenames`. |
+| 0.9.0 | Stamps tables are named `<space>-<group>-stamps-<level>.csv` | New runs write the new names; tables already on disk keep their old names, so code that finds them by name matches both. |
+| 0.9.0 | The `lineage` argument of `children_stamps` and `parents_stamps` is `child_lineage` | Rename the keyword. |
+| 0.9.0 | `make_database` raises `ValueError` for a `group` with `-` and for an old directory outside a phase directory | Use a group name without `-`, and pass an old directory whose parent is a phase directory. |
+| 0.9.0 | `whole_from_segments` raises `ValueError` when a whole skips a `segment_id` | Supply the missing segment, or leave the incomplete whole out. |
+| 0.9.0 | `ens_from_vec`, `ens_from_df`, and `reduce_space` raise `ValueError` for wholes of unequal lengths | Trim the wholes to a common length, or leave the short ones out, before reducing. |
+| 0.9.0 | `parents_stamps` and `sum_rule_profiles` raise `ValueError` for NaN in a group key, and `parents_stamps` for a `properties` entry it aggregates itself | Fill or drop the NaN rows before the call, and leave those columns out of `properties`. |
+| 0.9.0 | `whole_from_file` raises `ValueError` when two files parse to one whole | Pass one file per whole. |
+| 0.9.0 | `volume_fraction_cube` and `volume_fraction_cylinder` return a fraction above one instead of raising; `number_density_cube` and `number_density_cylinder` raise `ValueError` when a particle leaves its center no room | Check `phi > 1` where the old error was relied on, and catch the new `ValueError` of the number densities. |
+| 0.8.0 | `RecentreT`, `recentre`, and `'centre'` are `RecenterT`, `recenter`, and `'center'` | Rename them; no file on disk stores these names. |
+| 0.7.0 | The rounded crowder volume fraction column is `phi_bulk_c_round` | Rename the column; `rename_bulk_columns` maps the research-code bulk names, with `BULK_NAME_MAP`. |
+| 0.6.0 | A parser raises `ValueError` for a name that lacks a keyword or has a non-numeric value | Catch `ValueError` instead of `AttributeError`. |
+| 0.6.0 | A parser raises `ValueError` for a non-integral integer keyword, such as `nc1.5` | Fix the name; the value is no longer truncated. |
+| 0.6.0 | A parser built from a name has `filepath` and `ext` of `None`, not `'N/A'`; `filepath` is a `pathlib.Path` | Test for `None`, and call `str()` where a string path is needed. |
+| 0.6.0 | Rebuilt `ensemble` and `space` names print a whole-number float as an integer, such as `ac2` for `ac2.0` | Map an old short key by parsing it at its lineage and reading the rebuilt name. |
+| 0.6.0 | Every concrete parser needs `_dump_keywords` | Add one entry per group, such as `{'bug': 'bdump', 'all': 'adump'}`. |
+| 0.6.0 | `PhaseT` holds the phase vocabulary; `make_database` checks `phase` against `PhaseT` and `stage` against `StageT` | Pass a phase and a stage from those vocabularies. |
+| 0.6.0 | `space_tseries` has no `dump_key`, and its arguments after `group` are keyword-only | Drop the dump keyword and pass `divisor`, `round_to`, `is_save`, and `crowder_attr` by name. |
+| 0.5.0 | `round_up_nearest` is `round_to_multiple` | Rename the call; values are unchanged. |
+| 0.5.0 | The `measurer` histogram functions have no `bin_range` or `bin_ranges` | Drop the argument; counts are unchanged. |
+| 0.5.0 | The `measurer` histogram functions raise `ValueError` for positions outside the edges | Widen the edges, or filter the positions, before binning. |
+| 0.5.0 | `fixedsize_bins` raises `ValueError` in its `periodic` branch when the period is not a whole number of bins | Choose a bin size that divides the period. |
 
 ## [0.9.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.9.0) - 2026-11-07
 
