@@ -11,6 +11,15 @@ version increase may introduce incompatible changes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking:** Return a bulk volume fraction above one from `volume_fraction_cube` and `volume_fraction_cylinder`, and so from the parsers, as the nominal fraction it is, instead of raising `ValueError`; `number_density_cube` and `number_density_cylinder` raise `ValueError` when a particle leaves its center no room, and a parser names the species, the artifact, and the lineage in it, instead of dividing by zero ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
+
+### Fixed
+
+- Convert a `KeywordSpec` value with a scale or an offset in exact decimal arithmetic, so `r4.1` gives the cylinder size `7.2` and the short name `D7.2` instead of `D7.199999999999999` ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
+- Strip an extension with `ispath=True` only when the suffix holds a letter, so a name ending with a value, such as `ac1.5`, or with a dot keeps it ([#181](https://github.com/amirhs1/PolyPhys/issues/181))
+
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 
 ### Changed
