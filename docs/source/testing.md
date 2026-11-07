@@ -128,7 +128,8 @@ of size 1 as well as 2. The maintainer trimmed them from the studies' runs.
   crowders and the HnsCyl wholes at `ac2 nc386`, the `all` frames of the
   same time window, `<whole>.j<NN>.ring.all.window.lammpstrj.gz`, and the
   whole's data file, `<whole>.ring.all.data.gz`.
-- Tier C, in `<POLYPHYS_DATA_DIR>/polyphys_test_files/probe_real_frames/<whole>/`: the `all` windows
+- Tier C, in `<POLYPHYS_DATA_DIR>/<project>/trjs/<whole>/`, with
+  `<project>` the study's project name, such as `HnsCub`: the `all` windows
   and data files of the other crowded wholes, under the runs' own names.
 
 The HnsCyl runs name their wholes without `epshc`, which the `HnsCyl` parser
@@ -174,10 +175,16 @@ import pytest
 
 
 @pytest.mark.private_data
-def test_space_matches_processed_data(private_data_dir):
-    space_dir = private_data_dir / "SumRuleCyl-allInOne"
+def test_profiles_match_the_research_code(private_data_dir):
+    folder = private_data_dir / "TransFociCyl" / "golden" / "density" / "r"
     ...
 ```
+
+`POLYPHYS_DATA_DIR` names the maintainer's tier C folder, which holds one
+folder per study, named by its project (`HnsCub`, `HnsCyl`, `TransFociCub`,
+`TransFociCyl`). Each study folder holds the phase folders of
+`make_database`, such as `trjs/`, `probes/`, and `analysis/`, and `golden/`
+for test inputs derived from them by the maintainer.
 
 - When `POLYPHYS_DATA_DIR` is unset, the test is skipped. CI never sets it.
 - When it names a directory, the test runs and `private_data_dir` is that

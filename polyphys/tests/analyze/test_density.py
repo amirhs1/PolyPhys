@@ -723,7 +723,8 @@ def test_center_sphere_profiles_match_the_research_code(
     """The research code's ``rho`` and ``phi`` of one SciOps whole equal the
     center-sphere ones times its known axial slab factor (R1, R3).
 
-    Expected layout under ``POLYPHYS_DATA_DIR/density/<direction>/``,
+    Expected layout under
+    ``POLYPHYS_DATA_DIR/TransFociCyl/golden/density/<direction>/``,
     prepared by the maintainer from one whole: ``edges.npy`` and
     ``counts.npy`` (the whole's bin edges and summed histogram),
     ``rho_sciops.npy`` and ``phi_sciops.npy`` (its ``distributions_generator``
@@ -732,7 +733,8 @@ def test_center_sphere_profiles_match_the_research_code(
     the quadrature of a polynomial, never by the number of frames, and used
     the sphere-sphere kernel, which is how the kernels are called here.
     """
-    folder = private_data_dir / 'density' / direction
+    folder = (private_data_dir / 'TransFociCyl' / 'golden' / 'density'
+              / direction)
     meta = json.loads((folder / 'meta.json').read_text())
     edges = np.load(folder / 'edges.npy')
     counts = np.load(folder / 'counts.npy')
