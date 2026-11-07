@@ -192,7 +192,7 @@ jobs:
         run: |
           uv venv --python python .venv
           uv pip install --python .venv/bin/python \
-            --resolution lowest-direct --only-binary :all: -e .[viz]
+            --resolution lowest-direct -e .[viz]
           uv pip install --python .venv/bin/python pytest hypothesis
           uv pip list --python .venv/bin/python
 
