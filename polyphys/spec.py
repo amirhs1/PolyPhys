@@ -921,9 +921,16 @@ class ProbeSpec:
 
 
 #: A post-hook ``(wholes, context) -> tuple[Derived, ...]``: see
-#: :mod:`polyphys.analyze.pipeline`, "Notation", and its hooks.
+#: :mod:`polyphys.analyze.pipeline`, "Notation", and its hooks. A hook may
+#: also declare the names of the artifacts it returns with a method
+#: ``outputs(prop) -> tuple[str, ...]``, which :class:`AnalysisTable` reads
+#: to reject a repeated name when the table is built; every hook of
+#: :mod:`polyphys.analyze.pipeline` declares them.
 #:
 #: .. versionadded:: 0.6.0
+#:
+#: .. versionchanged:: 0.9.0
+#:    The optional ``outputs`` method.
 PostHook = Callable[['ArrayWholes', 'HookContext'], tuple['Derived', ...]]
 
 
@@ -1055,7 +1062,14 @@ class AnalysisTable:
     Raises
     ------
     ValueError
-        If `lineage` is unknown, or two properties name the same artifact.
+        If `lineage` is unknown; if two properties name the same artifact;
+        or if two outputs share a name, among the property of each entry
+        without a hook and the names each hook declares with its
+        ``outputs`` method, so that no output overwrites another when
+        :func:`~polyphys.analyze.pipeline.reduce_space` runs. A hook that
+        declares nothing is checked when it runs. As a hook's
+        ``outputs`` raises, such as for a hook given a property it cannot
+        reduce.
 
     Examples
     --------
@@ -1072,7 +1086,25 @@ class AnalysisTable:
     ...
     ValueError: Properties listed more than once: ['gyrTMon'].
 
+    So is a hook output that another entry also produces:
+
+    >>> from polyphys.analyze.pipeline import TimeAverage
+    >>> AnalysisTable('bug', 'whole', True, (
+    ...     tseries('gyrT', 'Mon', post_hook=TimeAverage('fsdT')),
+    ...     tseries('fsdT', 'Mon')))
+    Traceback (most recent call last):
+    ...
+    ValueError: Outputs named more than once: ['fsdTMon'].
+
+    Notes
+    -----
+    Construction is :math:`O(p + o)` for :math:`p` properties and the
+    :math:`o` outputs their hooks declare.
+
     .. versionadded:: 0.6.0
+
+    .. versionchanged:: 0.9.0
+       Repeated output names are rejected.
     """
 
     group: GroupT
@@ -1095,6 +1127,29 @@ class AnalysisTable:
             seen.add(prop.prop)
         if repeated:
             raise ValueError(f"Properties listed more than once: {repeated}.")
+        outputs: set[PropertyT] = set()
+        repeated_outputs: list[PropertyT] = []
+        for prop in self.properties:
+            for name in _declared_outputs(prop):
+                if name in outputs and name not in repeated_outputs:
+                    repeated_outputs.append(name)
+                outputs.add(name)
+        if repeated_outputs:
+            raise ValueError(
+                f"Outputs named more than once: {repeated_outputs}.")
+
+
+def _declared_outputs(prop: PropertySpec) -> tuple[PropertyT, ...]:
+    """
+    The names of the artifacts that `prop` yields: its own without a hook,
+    the hook's declared ``outputs``, or none for a hook that declares none.
+    """
+    if prop.post_hook is None:
+        return (prop.prop,)
+    declare = getattr(prop.post_hook, 'outputs', None)
+    if declare is None:
+        return ()
+    return tuple(declare(prop))
 
 
 def tseries(
