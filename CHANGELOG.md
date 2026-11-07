@@ -14,6 +14,7 @@ version increase may introduce incompatible changes.
 ### Fixed
 
 - Raise `BrokenLogError` from `parse_log` for a `Loop time of` line of another form than LAMMPS writes and for a thermo header that repeats a keyword, and `BrokenDumpError` from the dump reader for an atom line of the wrong length even when the frame's total is right; `with_frame` documents that it needs wrapped coordinates and says so when a frame has unwrapped ones only ([#179](https://github.com/amirhs1/PolyPhys/issues/179))
+- Take one color, a name or an RGB(A) tuple, for every label in `color_handles`, and one NumPy integer or dash tuple for every label in `line_handles`, instead of reading it as one entry per label ([#186](https://github.com/amirhs1/PolyPhys/issues/186))
 
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 
