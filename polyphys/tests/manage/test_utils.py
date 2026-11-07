@@ -406,11 +406,26 @@ def test_volume_fraction_cube_is_density_times_bead_volume(pbc, expected):
     assert result == pytest.approx(expected, rel=1e-12)
 
 
-def test_volume_fraction_cube_rejects_phi_above_one():
-    """1000 unit beads in a cube of side 5 would fill more than the box, so
-    the volume fraction is rejected."""
-    with pytest.raises(ValueError, match="Volume fraction exceeds 1.0"):
-        volume_fraction_cube(n_atom=1000, d_atom=1.0, l_cube=5.0)
+def test_volume_fraction_cube_allows_nominal_phi_above_one():
+    """1000 unit beads in a cube of side 5 with walls give the nominal
+    fraction 1000 / 4^3 * pi / 6, above one, instead of raising."""
+    result = volume_fraction_cube(n_atom=1000, d_atom=1.0, l_cube=5.0)
+    # float64 round-off of a few products and divisions:
+    assert result == pytest.approx(1000 / 4**3 * np.pi / 6, rel=1e-12)
+
+
+@pytest.mark.parametrize(
+    "d_atom,l_cube,pbc",
+    [
+        pytest.param(5.0, 5.0, False, id="as-wide-as-box"),
+        pytest.param(6.0, 5.0, False, id="wider-than-box"),
+    ],
+)
+def test_number_density_cube_rejects_box_without_room(d_atom, l_cube, pbc):
+    """A particle that leaves its center no room in a walled cube raises
+    ValueError instead of returning a meaningless density."""
+    with pytest.raises(ValueError, match="no room for particle centers"):
+        number_density_cube(10, d_atom, l_cube, pbc=pbc)
 
 
 @pytest.mark.parametrize(
@@ -445,8 +460,29 @@ def test_volume_fraction_cylinder_is_density_times_bead_volume(pbc, expected):
     assert result == pytest.approx(expected, rel=1e-12)
 
 
-def test_volume_fraction_cylinder_rejects_phi_above_one():
-    """500 unit beads in a cylinder of length 5 and diameter 3 would fill
-    more than the cylinder, so the volume fraction is rejected."""
-    with pytest.raises(ValueError, match="Volume fraction exceeds 1.0"):
-        volume_fraction_cylinder(n_atom=500, d_atom=1.0, l_cyl=5.0, d_cyl=3.0)
+def test_volume_fraction_cylinder_allows_nominal_phi_above_one():
+    """500 unit beads in a cylinder of length 5 and diameter 3 with end walls
+    give the nominal fraction 500 / (4 * 2^2 * 6 / 4) = 500 / 24, above one,
+    instead of raising."""
+    result = volume_fraction_cylinder(
+        n_atom=500, d_atom=1.0, l_cyl=5.0, d_cyl=3.0)
+    # float64 round-off of a few products and divisions:
+    assert result == pytest.approx(500 / 24, rel=1e-12)
+
+
+@pytest.mark.parametrize(
+    "d_atom,l_cyl,d_cyl,pbc",
+    [
+        pytest.param(5.0, 20.0, 5.0, True, id="as-wide-as-cylinder"),
+        pytest.param(6.0, 20.0, 5.0, True, id="wider-than-cylinder"),
+        pytest.param(5.0, 20.0, 5.0, False, id="as-wide-with-end-walls"),
+        pytest.param(1.0, 1.0, 5.0, False, id="as-long-as-cylinder"),
+    ],
+)
+def test_number_density_cylinder_rejects_cylinder_without_room(
+        d_atom, l_cyl, d_cyl, pbc):
+    """A particle that leaves its center no room across or along the
+    cylinder raises ValueError instead of dividing by zero or returning a
+    density from a squared negative diameter."""
+    with pytest.raises(ValueError, match="no room for particle centers"):
+        number_density_cylinder(10, d_atom, l_cyl, d_cyl, pbc=pbc)
