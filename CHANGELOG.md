@@ -19,6 +19,7 @@ version increase may introduce incompatible changes.
 ### Added
 
 - Add `space_tseries_from_spec` and `space_hists_from_spec` to `polyphys.analyze.pipeline`, which build the `space` tables of `organizer.space_tseries` and `organizer.space_hists` with the parser, the glob prefix, the columns, the rounding step, and the crowder attribute of a `ProjectSpec`, so no study choice comes from the organizer's defaults ([#195](https://github.com/amirhs1/PolyPhys/issues/195))
+- Add a release step: the maintainer runs the full test command with `POLYPHYS_DATA_DIR` set and LAMMPS available, since CI runs neither the `private_data` nor the `lammps` tests, and the release commit records the result in a `Checks-run:` line; in `CONTRIBUTING.md`, "Releases", and the `draft-release` skill ([#190](https://github.com/amirhs1/PolyPhys/issues/190))
 
 ### Fixed
 
@@ -30,6 +31,8 @@ version increase may introduce incompatible changes.
 - Raise `ValueError` for a cis threshold that is not a whole number in `threshold_sweep` instead of truncating it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Correct the memory note of `pair_distances` to the four `(n, n)` arrays it holds at once ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Reject bin centers that are not symmetric about `z = 0` when `normalize_z` folds, and fold `<prop>-scale-normalized_curve` by summing mirror bins, so it is the distribution of `|z|` and sums to one ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Raise `BrokenLogError` from `parse_log` for a `Loop time of` line of another form than LAMMPS writes and for a thermo header that repeats a keyword, and `BrokenDumpError` from the dump reader for an atom line of the wrong length even when the frame's total is right; `with_frame` documents that it needs wrapped coordinates and says so when a frame has unwrapped ones only ([#179](https://github.com/amirhs1/PolyPhys/issues/179))
+- Take one color, a name or an RGB(A) tuple, for every label in `color_handles`, and one NumPy integer or dash tuple for every label in `line_handles`, instead of reading it as one entry per label ([#186](https://github.com/amirhs1/PolyPhys/issues/186))
 
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 

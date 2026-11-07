@@ -60,6 +60,7 @@ array([0.  , 0.25, 0.5 , 0.75, 1.  ])
 ['bug', 'crowder']
 >>> plt.close(fig)
 """
+import numbers
 from typing import Any, Literal, Optional, Sequence, Union
 
 import numpy as np
@@ -248,8 +249,14 @@ def _per_label(
     values: Union[None, str, float, Sequence[Any]],
     n_labels: int,
 ) -> list[Any]:
-    """Return one value per label: a scalar repeated, or a matching list."""
-    if values is None or isinstance(values, (str, int, float)):
+    """Return one value per label: one value repeated, or a matching list.
+
+    One value is None, a string, a real number (NumPy scalars included), a
+    tuple of real numbers such as an RGB or RGBA color, or a dash tuple
+    ``(offset, (on, off, ...))``. Anything else is a sequence with one entry
+    per label.
+    """
+    if _is_one_value(values):
         return [values] * n_labels
     values = list(values)
     if len(values) != n_labels:
@@ -258,9 +265,22 @@ def _per_label(
     return values
 
 
+def _is_one_value(value: Any) -> bool:
+    """Return True if `value` is one style, not one per label."""
+    if value is None or isinstance(value, (str, numbers.Real)):
+        return True
+    if not isinstance(value, tuple):
+        return False
+    if all(isinstance(item, numbers.Real) for item in value):
+        return True
+    return (len(value) == 2 and isinstance(value[0], numbers.Real)
+            and isinstance(value[1], (tuple, list))
+            and all(isinstance(item, numbers.Real) for item in value[1]))
+
+
 def color_handles(
     labels: Sequence[str],
-    colors: Sequence[Any],
+    colors: Any,
     **patch_kwargs: Any,
 ) -> list[Patch]:
     """
@@ -273,8 +293,10 @@ def color_handles(
     ----------
     labels : sequence of str
         The legend entries.
-    colors : sequence of matplotlib colors
-        One color per label, in the same order.
+    colors : matplotlib color or sequence of matplotlib colors
+        One color for every label, a name or a tuple of numbers such as the
+        RGB triple ``(0.1, 0.2, 0.3)``; or a list, or another sequence, with
+        one color per label, in the same order.
     **patch_kwargs
         Passed to every :class:`~matplotlib.patches.Patch`, such as
         ``alpha``.
@@ -288,7 +310,8 @@ def color_handles(
     Raises
     ------
     ValueError
-        If `colors` and `labels` differ in length.
+        If `colors` is a sequence of colors whose length differs from that
+        of `labels`.
 
     Examples
     --------
@@ -298,8 +321,14 @@ def color_handles(
     ['low', 'high']
     >>> patches[0].get_alpha()
     0.5
+
+    One RGB tuple colors every label:
+
+    >>> patches = color_handles(["a", "b"], (0.0, 0.5, 1.0))
+    >>> [patch.get_facecolor()[:3] for patch in patches]
+    [(0.0, 0.5, 1.0), (0.0, 0.5, 1.0)]
     """
-    colors = _per_label("colors", list(colors), len(labels))
+    colors = _per_label("colors", colors, len(labels))
     return [Patch(label=label, color=color, **patch_kwargs)
             for label, color in zip(labels, colors)]
 
@@ -319,7 +348,9 @@ def line_handles(
     The lines are proxy handles for a legend keyed by line style, width,
     or marker. Each of `linestyles`, `linewidths`, and `markers` is either
     one value, used for every label, a sequence with one entry per label,
-    or ``None``, which leaves that attribute at matplotlib's default. Time
+    or ``None``, which leaves that attribute at matplotlib's default. One
+    value is a string, a number, or a dash tuple such as ``(0, (5, 2))``;
+    a list, or a tuple of other items, is one entry per label. Time
     and space are :math:`O(n)` in the number of labels.
 
     Parameters
