@@ -15,6 +15,10 @@ version increase may introduce incompatible changes.
 
 - Move `ProjectSpec`, `ProbeSpec`, `BinderSpec`, `PerWhole`, `RecenterT`, `CHAIN_SIZE_OBSERVABLES`, and `BINDER_SERIES` from `polyphys.manage.projects`, and `AnalysisTable`, `PropertySpec`, `PostHook`, `tseries`, `histogram`, `histogram_2d`, `edge`, and `matrix_tseries` from `polyphys.analyze.pipeline`, to the new module `polyphys.spec`, which imports no MDAnalysis, and define `PerWhole` once; the old import paths warn with `DeprecationWarning` until 1.0.0 ([#196](https://github.com/amirhs1/PolyPhys/issues/196))
 
+### Added
+
+- Add a release step: the maintainer runs the full test command with `POLYPHYS_DATA_DIR` set and LAMMPS available, since CI runs neither the `private_data` nor the `lammps` tests, and the release commit records the result in a `Checks-run:` line; in `CONTRIBUTING.md`, "Releases", and the `draft-release` skill ([#190](https://github.com/amirhs1/PolyPhys/issues/190))
+
 ### Fixed
 
 - Report a `fit_decay` fit as failed, with `converged=False` and NaN parameters, when the model is not finite at the start or the fit does not move from its start and has no finite covariance, instead of reporting it converged under the default method and raising `ValueError` under `method='trf'` ([#178](https://github.com/amirhs1/PolyPhys/issues/178))
@@ -25,6 +29,8 @@ version increase may introduce incompatible changes.
 - Raise `ValueError` for a cis threshold that is not a whole number in `threshold_sweep` instead of truncating it ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Correct the memory note of `pair_distances` to the four `(n, n)` arrays it holds at once ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
 - Reject bin centers that are not symmetric about `z = 0` when `normalize_z` folds, and fold `<prop>-scale-normalized_curve` by summing mirror bins, so it is the distribution of `|z|` and sums to one ([#184](https://github.com/amirhs1/PolyPhys/issues/184))
+- Raise `BrokenLogError` from `parse_log` for a `Loop time of` line of another form than LAMMPS writes and for a thermo header that repeats a keyword, and `BrokenDumpError` from the dump reader for an atom line of the wrong length even when the frame's total is right; `with_frame` documents that it needs wrapped coordinates and says so when a frame has unwrapped ones only ([#179](https://github.com/amirhs1/PolyPhys/issues/179))
+- Take one color, a name or an RGB(A) tuple, for every label in `color_handles`, and one NumPy integer or dash tuple for every label in `line_handles`, instead of reading it as one entry per label ([#186](https://github.com/amirhs1/PolyPhys/issues/186))
 - Compute each part of a split probe run on its own copy of the analysis, so that `ChainSize`, `BinderStatistics`, `SpatialHistograms`, and `PairDistances` with the `serial` backend and `n_parts > 1` give the results, frames, and times of the other backends instead of repeating the last part ([#182](https://github.com/amirhs1/PolyPhys/issues/182))
 - Raise `ValueError` instead of `TypeError` in `PairDistances` on a frame with no box when a direction is periodic, and accept NumPy booleans as its periodic flags, as `BinderStatistics` does ([#182](https://github.com/amirhs1/PolyPhys/issues/182))
 
