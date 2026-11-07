@@ -13,6 +13,7 @@ from ensemble CSV files written by hand. The golden comparison with the
 research code's output is written blind and runs only with the
 maintainer's data.
 """
+import dataclasses
 import importlib
 import logging
 import sys
@@ -39,7 +40,10 @@ from polyphys.analyze.pipeline import (
     half_contour,
     reduce_space,
     reduce_stamps,
+    space_hists_from_spec,
+    space_tseries_from_spec,
 )
+from polyphys.manage import organizer
 from polyphys.manage.parser import SumRuleCyl, TransFociCub
 from polyphys.spec import (
     AnalysisTable,
@@ -68,6 +72,7 @@ def cyl_spec():
     """A SumRuleCyl spec whose crowder size is ``dcrowd``."""
     return ProjectSpec(
         parser=SumRuleCyl, group="bug", divisor=0.025,
+        crowder_attr="phi_bulk_c",
         physical_attrs=("space",),
         species_sizes={"Mon": "dmon", "Crd": "dcrowd"},
         tseries_properties=(),
@@ -79,6 +84,7 @@ def foci_spec():
     """A TransFociCub spec: a ring of 20 small and 2 large monomers."""
     return ProjectSpec(
         parser=TransFociCub, group="bug", divisor=0.025,
+        crowder_attr="phi_bulk_c",
         physical_attrs=("space",),
         species_sizes={"Mon": "dmon_small", "Foci": "dmon_large"},
         tseries_properties=(),
@@ -1409,3 +1415,71 @@ def test_ens_avg_matches_the_research_code(  # pragma: no cover - needs data
             atol=1e-12, check_like=True)
         compared += 1
     assert compared > 0, f"no ensAvg file of {produced} has a counterpart"
+
+
+# The space stage from the spec
+
+
+@pytest.fixture
+def ens_avg_db(tmp_path):
+    """An ``ensAvg`` directory with the gyrTMon time series and the rHistMon
+    histogram of one SumRuleCyl state point with n = 1000 crowders of
+    a = 2 in a cylinder of r = 10.5 and lz = 25."""
+    database = tmp_path / "analysis" / "N200-bug-ensAvg"
+    database.mkdir(parents=True)
+    state = "N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000adump5000"
+    pd.DataFrame({"gyrTMon-mean": [1.0, 2.0]}).to_csv(
+        database / f"{state}-bug-gyrTMon-ensAvg.csv", index=False)
+    pd.DataFrame({"rHistMon-mean": [1.0, 3.0]}).to_csv(
+        database / f"{state}-bug-rHistMon-ensAvg.csv", index=False)
+    return database
+
+
+@pytest.mark.parametrize("divisor, rounded", [
+    pytest.param(0.001, 0.329, id="step-0.001"),
+    pytest.param(0.025, 0.325, id="step-0.025"),
+])
+def test_space_tseries_from_spec_rounds_with_the_spec_divisor(
+        ens_avg_db, cyl_spec, divisor, rounded):
+    """The space table rounds phi_bulk_c to the spec's divisor."""
+    spec = dataclasses.replace(cyl_spec, divisor=divisor)
+
+    space = space_tseries_from_spec(ens_avg_db, spec, "gyrTMon")
+
+    # phi_c = n pi a^3 / 6 / (pi Z (D - a)^2 / 4) = 2 n a^3 / (3 Z (D - a)^2)
+    # with n = 1000, a = 2, Z = 2 lz = 50, D = 2 r - 1 = 20:
+    # 16000 / 48600 = 0.32922, which rounds to 0.329 on a grid of 0.001 and
+    # to 0.325 on a grid of 0.025.
+    assert space["phi_bulk_c_round"].tolist() == [rounded, rounded]
+
+
+def test_space_tseries_from_spec_matches_the_organizer_with_spec_fields(
+        ens_avg_db, cyl_spec):
+    """The spec-taking time-series table equals the organizer's table built
+    from the spec's fields one by one."""
+    expected = organizer.space_tseries(
+        f"{ens_avg_db}/", "gyrTMon", cyl_spec.parser, cyl_spec.hierarchy,
+        list(cyl_spec.physical_attrs), cyl_spec.group,
+        divisor=cyl_spec.divisor, crowder_attr=cyl_spec.crowder_attr)
+
+    space = space_tseries_from_spec(ens_avg_db, cyl_spec, "gyrTMon")
+
+    pd.testing.assert_frame_equal(space, expected)
+
+
+def test_space_hists_from_spec_matches_the_organizer_with_spec_fields(
+        ens_avg_db, cyl_spec):
+    """The spec-taking histogram table equals the organizer's table built
+    from the spec's fields one by one, with the bin centers and the
+    normalization passed through."""
+    centers = np.array([0.5, 1.5])
+    expected = organizer.space_hists(
+        f"{ens_avg_db}/", "rHistMon", cyl_spec.parser, cyl_spec.hierarchy,
+        list(cyl_spec.physical_attrs), cyl_spec.group, bin_center=centers,
+        normalize=True, divisor=cyl_spec.divisor,
+        crowder_attr=cyl_spec.crowder_attr)
+
+    space = space_hists_from_spec(ens_avg_db, cyl_spec, "rHistMon",
+                                  bin_center=centers, normalize=True)
+
+    pd.testing.assert_frame_equal(space, expected)

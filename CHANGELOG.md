@@ -13,7 +13,12 @@ version increase may introduce incompatible changes.
 
 ### Changed
 
+- **Breaking:** Require `ProjectSpec` to name `crowder_attr`, the parser attribute of the bulk volume fraction of crowders, as a keyword-only field with no default, where it was always `phi_bulk_c` before ([#195](https://github.com/amirhs1/PolyPhys/issues/195))
 - Move `ProjectSpec`, `ProbeSpec`, `BinderSpec`, `PerWhole`, `RecenterT`, `CHAIN_SIZE_OBSERVABLES`, and `BINDER_SERIES` from `polyphys.manage.projects`, and `AnalysisTable`, `PropertySpec`, `PostHook`, `tseries`, `histogram`, `histogram_2d`, `edge`, and `matrix_tseries` from `polyphys.analyze.pipeline`, to the new module `polyphys.spec`, which imports no MDAnalysis, and define `PerWhole` once; the old import paths warn with `DeprecationWarning` until 1.0.0 ([#196](https://github.com/amirhs1/PolyPhys/issues/196))
+
+### Added
+
+- Add `space_tseries_from_spec` and `space_hists_from_spec` to `polyphys.analyze.pipeline`, which build the `space` tables of `organizer.space_tseries` and `organizer.space_hists` with the parser, the glob prefix, the columns, the rounding step, and the crowder attribute of a `ProjectSpec`, so no study choice comes from the organizer's defaults ([#195](https://github.com/amirhs1/PolyPhys/issues/195))
 
 ## [0.8.0](https://github.com/amirhs1/PolyPhys/releases/tag/v0.8.0) - 2026-11-06
 

@@ -474,6 +474,7 @@ def cylinder_spec():
     theta."""
     project = ProjectSpec(
         parser=SumRuleCyl, group='bug', divisor=0.025,
+        crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
         species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
         tseries_properties=('gyrTMon',))
@@ -530,6 +531,7 @@ def test_histogram_edges_of_a_cube():
     [-45, 45]."""
     project = ProjectSpec(
         parser=TransFociCub, group='bug', divisor=0.025,
+        crowder_attr='phi_bulk_c',
         physical_attrs=('space', 'nmon_small', 'lcube'),
         species_sizes={'Mon': 'dmon_small', 'Foci': 'dmon_large',
                        'Crd': 'dcrowd'},

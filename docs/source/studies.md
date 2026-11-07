@@ -132,8 +132,10 @@ such as the complementary percentage `pct_two = 100 - pct_one` of
 A parser says how a study's names read; a `ProjectSpec` from
 `polyphys.spec` says how its analysis reads them. It holds what the
 parser does not: the polymer's particle group; the step `divisor` to which the
-bulk volume fraction of crowders, `phi_bulk_c`, is rounded in the
-`phi_bulk_c_round` column; the parser attributes that become columns of the
+bulk volume fraction of crowders is rounded in the `phi_bulk_c_round`
+column, and `crowder_attr`, the parser attribute that holds that fraction,
+such as `phi_bulk_c`, both study choices with no default; the parser
+attributes that become columns of the
 `space` tables; each density-profile species label mapped to the attribute
 holding that species' diameter; and the study's time series. The geometry,
 topology, and glob patterns come from the parser:
@@ -142,6 +144,7 @@ topology, and glob patterns come from the parser:
 >>> from polyphys.spec import ProjectSpec
 >>> chain = ProjectSpec(
 ...     parser=ChainCub, group='bug', divisor=0.025,
+...     crowder_attr='phi_bulk_c',
 ...     physical_attrs=('space', 'ensemble_long', 'nmon', 'dcrowd'),
 ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
 ...     tseries_properties=('gyrTMon',))
@@ -154,9 +157,9 @@ topology, and glob patterns come from the parser:
 
 Each attribute a spec names is checked against the attributes the parser sets
 at `ensemble_long`, so a typo or a missing declaration raises `ValueError` when
-the spec is built. Pass the fields to the organizer, as in
-`space_tseries(database, 'gyrTMon', chain.parser, chain.hierarchy,
-list(chain.physical_attrs), chain.group, divisor=chain.divisor)`.
+the spec is built. The space stage reads its fields from the spec, as in
+`space_tseries_from_spec(database, chain, 'gyrTMon')` from
+`polyphys.analyze.pipeline`.
 
 A study that probes its trajectories with `polyphys.probe` builds a
 `ProbeSpec` beside its `ProjectSpec`: the MDAnalysis selection of each

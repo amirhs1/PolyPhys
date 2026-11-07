@@ -34,6 +34,7 @@ SPEC = ProjectSpec(
     parser=HnsCub,
     group='nucleoid',
     divisor=0.01,
+    crowder_attr='phi_bulk_c',
     physical_attrs=('space', 'ensemble_long', 'ensemble', 'bend_mm',
                     'eps_hc', 'nmon', 'nhns', 'dcrowd', 'phi_bulk_c',
                     'rho_bulk_hns'),

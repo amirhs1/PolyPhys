@@ -89,6 +89,7 @@ Examples
 >>> from polyphys.manage.parser import SumRuleCyl
 >>> spec = ProjectSpec(
 ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+...     crowder_attr='phi_bulk_c',
 ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
 ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
 ...     tseries_properties=('gyrTMon',))
@@ -159,10 +160,6 @@ PerWhole = float | Callable[[ParserBase], float]
 #:
 #: .. versionadded:: 0.7.0
 RecenterT = Literal['none', 'half'] | tuple[float, float, float]
-
-# The parser attribute that holds the bulk volume fraction of crowders, which
-# the organizer adds and rounds into 'phi_bulk_c_round'.
-_CROWDER_ATTR = 'phi_bulk_c'
 
 # The directions of the density profiles in each geometry.
 _DIRECTIONS: dict[GeometryT, tuple[DirectionT, ...]] = {
@@ -364,8 +361,8 @@ class ProjectSpec:
         ``'nucleoid'``; one of the parser's groups, and not ``'all'``.
     divisor : float
         The step :math:`\\Delta > 0` to which the bulk volume fraction of
-        crowders :math:`\\phi_c` (``phi_bulk_c``, dimensionless) is rounded
-        in the ``phi_bulk_c_round`` column.
+        crowders :math:`\\phi_c` (`crowder_attr`, dimensionless) is rounded
+        in the ``phi_bulk_c_round`` column of the ``space`` tables.
     physical_attrs : tuple of str
         The parser attributes added as columns to the ``space`` tables, in
         column order.
@@ -380,6 +377,13 @@ class ProjectSpec:
     provisional : bool, default False
         Whether the entry is provisional: its data or values are not
         confirmed.
+    crowder_attr : str
+        Keyword-only. The parser attribute that holds :math:`\\phi_c`, such
+        as ``'phi_bulk_c'``, which the ``space`` tables add as a column and
+        round into ``phi_bulk_c_round``. A study choice, so it has no
+        default.
+
+        .. versionadded:: 0.9.0
 
     Attributes
     ----------
@@ -408,15 +412,17 @@ class ProjectSpec:
         :class:`~polyphys.manage.parser.ParserBase`.
     ValueError
         If `group` is ``'all'`` or not one of the parser's groups; if
-        `divisor` is not a finite positive number; or if `physical_attrs`
-        or `species_sizes` names an attribute, or the parser lacks
-        ``phi_bulk_c``, at ``ensemble_long``.
+        `divisor` is not a finite positive number; if `crowder_attr` is not
+        a non-empty string; or if `physical_attrs`, `species_sizes`, or
+        `crowder_attr` names an attribute the parser does not set at
+        ``ensemble_long``.
 
     Examples
     --------
     >>> from polyphys.manage.parser import HnsCub, SumRuleCyl
     >>> spec = ProjectSpec(
     ...     parser=HnsCub, group='nucleoid', divisor=0.01,
+    ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space', 'nmon', 'nhns', 'dcrowd'),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd', 'Hns': 'dhns'},
     ...     tseries_properties=('gyrTMon',))
@@ -429,7 +435,8 @@ class ProjectSpec:
 
     A spec that names an attribute the parser does not set fails at once:
 
-    >>> ProjectSpec(SumRuleCyl, 'bug', 0.025, ('nhns',), {}, ())
+    >>> ProjectSpec(SumRuleCyl, 'bug', 0.025, ('nhns',), {}, (),
+    ...             crowder_attr='phi_bulk_c')
     Traceback (most recent call last):
     ...
     ValueError: SumRuleCyl does not set ['nhns'] at 'ensemble_long'.
@@ -448,6 +455,7 @@ class ProjectSpec:
     species_sizes: Mapping[EntityT, str] = field(hash=False)
     tseries_properties: tuple[PropertyT, ...]
     provisional: bool = False
+    crowder_attr: str = field(kw_only=True)
 
     def __post_init__(self) -> None:
         # Copy the containers so that a caller's list or dict cannot change
@@ -473,9 +481,13 @@ class ProjectSpec:
             raise ValueError(
                 f"{name}: 'divisor' must be a finite positive number, not "
                 f"{self.divisor!r}.")
+        if not (isinstance(self.crowder_attr, str) and self.crowder_attr):
+            raise ValueError(
+                f"{name}: 'crowder_attr' must be a non-empty attribute name, "
+                f"not {self.crowder_attr!r}.")
         available = parser.attributes_at('ensemble_long')
         named = [*self.physical_attrs, *self.species_sizes.values(),
-                 _CROWDER_ATTR]
+                 self.crowder_attr]
         missing = sorted({attr for attr in named if attr not in available})
         if missing:
             raise ValueError(
@@ -647,6 +659,7 @@ class ProbeSpec:
     >>> from polyphys.manage.parser import SumRuleCyl
     >>> project = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
     ...     tseries_properties=('fsdTMon', 'gyrTMon', 'rfloryTMon'))
@@ -683,6 +696,7 @@ class ProbeSpec:
 
     >>> hns = ProjectSpec(
     ...     parser=SumRuleCyl, group='bug', divisor=0.025,
+    ...     crowder_attr='phi_bulk_c',
     ...     physical_attrs=('space', 'nmon', 'dcyl', 'dcrowd'),
     ...     species_sizes={'Mon': 'dmon', 'Crd': 'dcrowd'},
     ...     tseries_properties=(
