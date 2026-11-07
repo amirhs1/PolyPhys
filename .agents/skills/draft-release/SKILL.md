@@ -58,3 +58,9 @@ tag an older commit to leave later work out; stop and report instead.
    concept record in `CITATION.cff`, `doi`, through the Zenodo API, not the
    webhook's response:
    `curl -s 'https://zenodo.org/api/records?q=conceptrecid:15858407&all_versions=true&sort=mostrecent&size=1'`.
+11. After the maintainer publishes, confirm the PyPI upload: the latest run of
+   `.github/workflows/publish.yaml` passed
+   (`gh run list --workflow publish.yaml --limit 1`), and PyPI serves the
+   version:
+   `curl -s -o /dev/null -w '%{http_code}' https://pypi.org/pypi/polyphys/<version>/json`
+   prints `200`.
