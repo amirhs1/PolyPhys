@@ -584,6 +584,12 @@ def number_density_cube(
     float
         Bulk number density of the species in the cubic box.
 
+    Raises
+    ------
+    ValueError
+        If the side available to particle centers, :math:`l_{cube}`, or
+        :math:`l_{cube} - d_{atom}` without `pbc`, is not positive.
+
     Notes
     -----
     The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
@@ -597,7 +603,13 @@ def number_density_cube(
     >>> number_density_cube(1000, 1.0, 10.0, pbc=True)
     1.0
     """
-    v_avail = (l_cube - int(not pbc) * d_atom) ** 3
+    l_avail = l_cube - int(not pbc) * d_atom
+    if l_avail <= 0:
+        raise ValueError(
+            f"no room for particle centers: a particle of diameter {d_atom} "
+            f"in a cube of side {l_cube} (pbc={pbc}) leaves its center the "
+            f"side {l_avail}, which must be positive.")
+    v_avail = l_avail ** 3
     return n_atom / v_avail
 
 
@@ -628,8 +640,8 @@ def volume_fraction_cube(
     Raises
     ------
     ValueError
-        If the computed volume fraction exceeds 1.0, which is physically
-        invalid for spherical particles.
+        If the side available to particle centers is not positive, as
+        :func:`number_density_cube` raises.
 
     Notes
     -----
@@ -637,6 +649,10 @@ def volume_fraction_cube(
     `pbc=False`, meaning particles cannot cross the box boundary. If
     `pbc=True`, particles are assumed to wrap around, and the full box volume
     is used.
+
+    The fraction is nominal: the particle volume over the volume available
+    to particle centers. It can exceed one, such as for a species nearly as
+    wide as the box, and is returned as it is.
 
     Examples
     --------
@@ -647,12 +663,7 @@ def volume_fraction_cube(
     0.5235987755982988
     """
     rho = number_density_cube(n_atom, d_atom, l_cube, pbc)
-    phi = rho * np.pi * d_atom**3 / 6
-    if phi > 1.0:
-        raise ValueError(
-            "Volume fraction exceeds 1.0, which is physically invalid."
-        )
-    return phi
+    return rho * np.pi * d_atom**3 / 6
 
 
 def number_density_cylinder(
@@ -682,6 +693,13 @@ def number_density_cylinder(
     float
         Bulk number density of the species in the cylindrical confinement.
 
+    Raises
+    ------
+    ValueError
+        If the effective diameter :math:`d_{cyl} - d_{atom}`, or the length
+        available to particle centers, :math:`l_{cyl}`, or
+        :math:`l_{cyl} - d_{atom}` without `pbc`, is not positive.
+
     Notes
     -----
     The bulk number density is calculated as :math:`n_{atom} / v_{avail}`,
@@ -695,9 +713,15 @@ def number_density_cylinder(
     >>> number_density_cylinder(100, 1.0, 10.0, 5.0, pbc=True)
     0.7957747154594768
     """
-    v_avail = (
-        np.pi * (l_cyl - int(not pbc) * d_atom) * (d_cyl - d_atom) ** 2 / 4
-    )
+    l_avail = l_cyl - int(not pbc) * d_atom
+    d_avail = d_cyl - d_atom
+    if l_avail <= 0 or d_avail <= 0:
+        raise ValueError(
+            f"no room for particle centers: a particle of diameter {d_atom} "
+            f"in a cylinder of length {l_cyl} and diameter {d_cyl} "
+            f"(pbc={pbc}) leaves its center the length {l_avail} and the "
+            f"diameter {d_avail}, which must both be positive.")
+    v_avail = np.pi * l_avail * d_avail ** 2 / 4
     return n_atom / v_avail
 
 
@@ -747,14 +771,19 @@ def volume_fraction_cylinder(
     Raises
     ------
     ValueError
-        If the computed volume fraction exceeds 1.0, which is physically
-        invalid.
+        If the effective diameter or the available length is not positive,
+        as :func:`number_density_cylinder` raises.
 
     Notes
     -----
     The available volume excludes regions where the particle centers cannot
     access due to finite size. When `pbc=False`, particles are excluded from
     the cylinder ends; when `pbc=True`, they are not.
+
+    The fraction is nominal: the particle volume over the volume available
+    to particle centers. It can exceed one, such as for large monomers in
+    single file in a cylinder barely wider than they are, and is returned as
+    it is.
 
     Examples
     --------
@@ -765,9 +794,4 @@ def volume_fraction_cylinder(
     0.4166666666666667
     """
     rho = number_density_cylinder(n_atom, d_atom, l_cyl, d_cyl, pbc)
-    phi = rho * np.pi * d_atom**3 / 6
-    if phi > 1.0:
-        raise ValueError(
-            "Volume fraction exceeds 1.0, which is physically invalid."
-        )
-    return phi
+    return rho * np.pi * d_atom**3 / 6

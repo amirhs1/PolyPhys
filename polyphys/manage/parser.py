@@ -32,7 +32,7 @@ Contents
 Dependencies
 ============
 - Python standard library: `os`, `re`, `collections`, `dataclasses`,
-  `pathlib`, `typing`.
+  `decimal`, `pathlib`, `typing`.
 - :mod:`polyphys.manage.utils`: :func:`~polyphys.manage.utils.invalid_keyword`
   and the number-density and volume-fraction functions.
 - :mod:`polyphys.manage.types`: domain type aliases such as
@@ -59,6 +59,7 @@ import os
 import re
 from collections import OrderedDict
 from dataclasses import dataclass
+from decimal import Context, Decimal
 from pathlib import Path
 from typing import ClassVar, Optional, Self
 from .utils import (
@@ -73,6 +74,16 @@ from .types import LineageT, TopologyT, GroupT, GeometryT, Pathish
 # A keyword is a run of letters (or hyphens); its value is the text up to the
 # next keyword.
 _TOKEN_RE = re.compile(r"([a-zA-Z\-]+)")
+
+# A file extension, as ``ispath=True`` strips it: a dot and a run of letters
+# and digits with at least one letter, such as ``.csv`` or ``.h5``, so that the
+# fractional part of a trailing value, such as ``.5`` in ``ac1.5``, stays in
+# the name.
+_EXTENSION_RE = re.compile(r"\.[a-zA-Z0-9]*[a-zA-Z][a-zA-Z0-9]*")
+
+# The exact decimal arithmetic of a keyword conversion; 50 digits hold the
+# product of any filename value with a scale and an offset without rounding.
+_DECIMAL_CONTEXT = Context(prec=50)
 
 # The lineages whose names carry the box size, and so the bulk values.
 _BULK_LINEAGES: tuple[LineageT, ...] = ('segment', 'whole', 'ensemble_long')
@@ -194,7 +205,12 @@ class KeywordSpec:
         -------
         int or float
             The value as an `int` for an `int` keyword, else
-            ``scale * float(token) + offset``.
+            :math:`s x + c`. A conversion that is not the identity is done in
+            exact decimal arithmetic on the text of `token` and of
+            :func:`repr` of :math:`s` and :math:`c`, then rounded once to the
+            nearest float, so ``'4.1'`` with :math:`s = 2`, :math:`c = -1`
+            gives ``7.2`` rather than the binary result
+            ``7.199999999999999``. The cost is :math:`O(1)` per value.
 
         Raises
         ------
@@ -208,6 +224,8 @@ class KeywordSpec:
         1000
         >>> KeywordSpec('lcube', float, scale=2.0).parse('25.0')
         50.0
+        >>> KeywordSpec('dcyl', float, scale=2.0, offset=-1.0).parse('4.1')
+        7.2
         """
         try:
             value = float(token)
@@ -219,7 +237,11 @@ class KeywordSpec:
             return int(value)
         if self.is_identity:
             return value
-        return self.scale * value + self.offset
+        context = _DECIMAL_CONTEXT
+        exact = context.add(
+            context.multiply(Decimal(token), Decimal(repr(self.scale))),
+            Decimal(repr(self.offset)))
+        return float(exact)
 
 
 @dataclass(frozen=True)
@@ -612,8 +634,9 @@ class ParserBase:
             ).resolve()
             self._filepath: Optional[Path] = p.parent
             self._filename: str = p.name
-            self._name: str = p.stem
-            self._ext: Optional[str] = p.suffix
+            ext = p.suffix if _EXTENSION_RE.fullmatch(p.suffix) else ''
+            self._name: str = p.name[:len(p.name) - len(ext)]
+            self._ext: Optional[str] = ext
         else:
             self._filepath = None
             self._filename = artifact_str
@@ -905,8 +928,11 @@ class ParserBase:
         Return the file extension, including the leading dot, or ``None`` if
         the parser was built from a name.
 
-        The extension is :attr:`pathlib.PurePath.suffix`: only the part after
-        the last dot, and ``''`` for a file with no extension.
+        The extension is :attr:`pathlib.PurePath.suffix`, the part from the
+        last dot, when that part holds a letter, such as ``.csv`` or ``.h5``;
+        otherwise it is ``''`` and the part stays in :attr:`name`. A name
+        that ends with a value, such as ``ac1.5``, or with a dot, such as
+        ``ac1.``, so keeps its last value whatever the Python version.
 
         Examples
         --------
@@ -916,6 +942,12 @@ class ParserBase:
         ...     path.touch()
         ...     SumRuleCyl(path, 'space', 'bug', ispath=True).ext
         ''
+        >>> with tempfile.TemporaryDirectory() as folder:
+        ...     path = Path(folder, 'N200D10ac1.5')
+        ...     path.touch()
+        ...     parser = SumRuleCyl(path, 'space', 'bug', ispath=True)
+        ...     parser.ext, parser.dcrowd
+        ('', 1.5)
         >>> SumRuleCyl('N200D10.0ac2.0', 'space', 'bug').ext is None
         True
         """
@@ -1132,10 +1164,22 @@ class ParserBase:
         """
         Compute the bulk values of each species, their declared totals, and
         the declared masses.
+
+        Raises
+        ------
+        ValueError
+            If a species leaves its centers no room in the box, such as a
+            species as wide as the cylinder; the message names the species,
+            `name`, and the lineage.
         """
         for species in self._species:
-            rho, phi = self._bulk_values(getattr(self, species.number),
-                                         getattr(self, species.size))
+            try:
+                rho, phi = self._bulk_values(getattr(self, species.number),
+                                             getattr(self, species.size))
+            except ValueError as err:
+                raise ValueError(
+                    f"species {species.suffix!r} of {self.name!r} "
+                    f"(lineage {self.lineage!r}): {err}") from err
             setattr(self, f"rho_bulk_{species.suffix}", rho)
             setattr(self, f"phi_bulk_{species.suffix}", phi)
         for total, parts in self._totals.items():
