@@ -1,6 +1,7 @@
 # Study specs
 
-This folder holds the specs of each of the maintainer's studies: its
+This folder holds the parser and the specs of each of the maintainer's
+published studies: its `ParserBase` subclass, in `parser.py`, and its
 `ProjectSpec` (`SPEC`), `ProbeSpec` (`PROBE`), and `AnalysisTable` records
 (`ANALYSIS`). The `ProjectSpec` holds the facts the study's analysis needs
 beyond the parser class, such as the polymer group, the rounding step of the
@@ -20,9 +21,10 @@ A study elsewhere builds its own `ProjectSpec` in the same way.
 | `hns_cyl/`        | `HnsCyl`       | provisional |
 
 A provisional spec belongs to a study whose molecular dynamics data is not yet
-confirmed. The specs of unpublished studies are kept out of this public
-repository. Each folder is a package whose `spec.py` builds the study's
-specs and whose `__init__.py` exports the three; the study's drivers and
+confirmed. The parsers and specs of unpublished studies are kept out of this public
+repository. Each folder is a package whose `parser.py` declares the study's
+parser, whose `spec.py` builds its specs, and whose `__init__.py` exports
+the parser class and the three specs; the study's drivers and
 figure code will join them there. From an analysis script in a checkout of
 this repository:
 

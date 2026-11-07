@@ -30,7 +30,8 @@ from numpy.testing import (
 )
 
 from polyphys.analyze.clusters import threshold_sweep
-from polyphys.manage.parser import HnsCub, HnsCyl, ParserBase
+from polyphys.manage.parser import ParserBase
+from polyphys.tests.synthetic import RingCubBinders, RingCylBinders
 from polyphys.spec import (
     BINDER_SERIES,
     BinderSpec,
@@ -429,8 +430,8 @@ def test_keys_list_the_series_then_the_histogram_then_the_distances(
 
 
 @pytest.mark.parametrize('parser, periodic', [
-    pytest.param(HnsCub, (True, True, True), id='HnsCub'),
-    pytest.param(HnsCyl, (False, False, True), id='HnsCyl'),
+    pytest.param(RingCubBinders, (True, True, True), id='cube'),
+    pytest.param(RingCylBinders, (False, False, True), id='cylinder'),
 ])
 def test_from_spec_selects_the_groups_and_carries_the_spec(
         make_binder_universe, binding_frames, hns_project, parser,
@@ -459,7 +460,7 @@ def test_from_spec_selects_the_groups_and_carries_the_spec(
 def test_from_spec_needs_a_binder_spec(make_binder_universe, binding_frames,
                                        hns_project):
     """A probe spec without binders cannot build the analysis."""
-    spec = ProbeSpec(hns_project(HnsCub),
+    spec = ProbeSpec(hns_project(RingCubBinders),
                      {'Mon': 'resid 1', 'HnsPatch': 'type 2'}, 'Mon',
                      ('gyrT',), unwrap=True)
     universe = make_binder_universe(*binding_frames)

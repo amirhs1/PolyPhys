@@ -17,7 +17,7 @@ from polyphys.analyze.pipeline import (
     LocalDensities,
     TimeAverage,
 )
-from polyphys.manage.parser import HnsCub, ParserBase
+from polyphys.manage.parser import ParserBase
 from polyphys.spec import (
     AnalysisTable,
     BinderSpec,
@@ -29,6 +29,8 @@ from polyphys.spec import (
     matrix_tseries,
     tseries,
 )
+
+from .parser import HnsCub
 
 SPEC = ProjectSpec(
     parser=HnsCub,

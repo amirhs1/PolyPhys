@@ -1,4 +1,9 @@
-"""Tests for :mod:`polyphys.manage.parser`."""
+"""Tests for :mod:`polyphys.manage.parser`.
+
+The parsers here are the synthetic ones of :mod:`polyphys.tests.synthetic`;
+each published study tests its own parser in ``projects/<study>/``.
+"""
+import importlib
 import os
 import re
 from collections import OrderedDict
@@ -6,28 +11,20 @@ from operator import attrgetter
 from pathlib import Path
 from typing import Any, NamedTuple
 
-import pandas as pd
 import pytest
 
-from polyphys.manage.parser import (
-    HnsCub,
-    HnsCyl,
-    KeywordSpec,
-    ParserBase,
-    Species,
-    SumRuleCubHeteroLinear,
-    SumRuleCubHeteroRing,
-    SumRuleCubHeteroRingBiDisperse,
-    SumRuleCyl,
-    TransFociCub,
-    TransFociCyl,
-    TwoMonDepCub,
-)
+from polyphys.manage.parser import KeywordSpec, ParserBase, Species
 from polyphys.manage.utils import (
     number_density_cube,
     number_density_cylinder,
     volume_fraction_cube,
     volume_fraction_cylinder,
+)
+from polyphys.tests.synthetic import (
+    ChainCyl,
+    RingCub,
+    RingCubBinders,
+    RingCubTwoCrowders,
 )
 
 
@@ -53,113 +50,61 @@ class ValidCase(NamedTuple):
 @pytest.fixture(params=[
     pytest.param(
         ParseCase(
-            TwoMonDepCub, 'segment', 'bug',
-            artifact='am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
-                     'tdump500ens3.j01.bug',
-            name='am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100tdump500'
-                 'ens3.j01',
-            values=dict(dmon=5.0, nmon=2, dcrowd=1.0, ncrowd=100, lcube=20.0,
-                        d_sur=2.0, dt=0.01, bdump=50, adump=100, tdump=500,
-                        ensemble_id=3, segment_id=1),
-            physical=['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']),
-        id='TwoMonDepCub-segment'),
-    pytest.param(
-        ParseCase(
-            TwoMonDepCub, 'whole', 'bug',
-            artifact='am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
-                     'tdump500ens3.bug',
-            name='am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100tdump500'
-                 'ens3',
-            values=dict(dmon=5.0, nmon=2, dcrowd=1.0, ncrowd=100, lcube=20.0,
-                        d_sur=2.0, dt=0.01, bdump=50, adump=100, tdump=500,
-                        ensemble_id=3),
-            physical=['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']),
-        id='TwoMonDepCub-whole'),
-    pytest.param(
-        ParseCase(
-            TwoMonDepCub, 'ensemble_long', 'bug',
-            artifact='am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
-                     'tdump500',
-            name='am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100tdump500',
-            values=dict(dmon=5.0, nmon=2, dcrowd=1.0, ncrowd=100, lcube=20.0,
-                        d_sur=2.0, dt=0.01, bdump=50, adump=100, tdump=500),
-            physical=['phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']),
-        id='TwoMonDepCub-ensemble_long'),
-    pytest.param(
-        ParseCase(
-            TwoMonDepCub, 'ensemble', 'bug',
-            artifact='nm2am5.0ac1.0nc100sd2.0',
-            name='nm2am5.0ac1.0nc100sd2.0',
-            values=dict(dmon=5.0, nmon=2, dcrowd=1.0, ncrowd=100, d_sur=2.0),
-            physical=[]),
-        id='TwoMonDepCub-ensemble'),
-    pytest.param(
-        ParseCase(
-            TwoMonDepCub, 'space', 'bug',
-            artifact='nm2am5.0ac1.0nc100',
-            name='nm2am5.0ac1.0nc100',
-            values=dict(dmon=5.0, nmon=2, dcrowd=1.0, ncrowd=100),
-            physical=[]),
-        id='TwoMonDepCub-space'),
-    pytest.param(
-        ParseCase(
-            SumRuleCyl, 'segment', 'bug',
-            artifact='N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                     'bdump5000adump10000ens2.j02.bug',
-            name='N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000'
-                 'adump10000ens2.j02',
-            values=dict(nmon=2000, epsilon=5.0, dcyl=20, lcyl=600.0,
-                        dcrowd=1.0, ncrowd=117000, dt=0.005, bdump=5000,
-                        adump=10000, ensemble_id=2, segment_id=2),
+            ChainCyl, 'segment', 'bug',
+            artifact='N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000'
+                     'adump10000ens2.j02.bug',
+            name='N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000'
+                 'ens2.j02',
+            values=dict(nmon=2000, dcyl=20, lcyl=600.0, dcrowd=1.0,
+                        ncrowd=117000, dt=0.005, bdump=5000, adump=10000,
+                        ensemble_id=2, segment_id=2),
             physical=['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                       'rho_bulk_c']),
-        id='SumRuleCyl-segment'),
+        id='ChainCyl-segment'),
     pytest.param(
         ParseCase(
-            SumRuleCyl, 'whole', 'bug',
-            artifact='N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                     'bdump5000adump10000ens2.bug',
-            name='N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000'
-                 'adump10000ens2',
-            values=dict(nmon=2000, epsilon=5.0, dcyl=20, lcyl=600.0,
-                        dcrowd=1.0, ncrowd=117000, dt=0.005, bdump=5000,
-                        adump=10000, ensemble_id=2),
+            ChainCyl, 'whole', 'bug',
+            artifact='N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000'
+                     'adump10000ens2.bug',
+            name='N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000'
+                 'ens2',
+            values=dict(nmon=2000, dcyl=20, lcyl=600.0, dcrowd=1.0,
+                        ncrowd=117000, dt=0.005, bdump=5000, adump=10000,
+                        ensemble_id=2),
             physical=['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                       'rho_bulk_c']),
-        id='SumRuleCyl-whole'),
+        id='ChainCyl-whole'),
     pytest.param(
         ParseCase(
-            SumRuleCyl, 'ensemble_long', 'bug',
-            artifact='N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                     'bdump5000adump10000',
-            name='N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005bdump5000'
-                 'adump10000',
-            values=dict(nmon=2000, epsilon=5.0, dcyl=20, lcyl=600.0,
-                        dcrowd=1.0, ncrowd=117000, dt=0.005, bdump=5000,
-                        adump=10000),
+            ChainCyl, 'ensemble_long', 'bug',
+            artifact='N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000'
+                     'adump10000',
+            name='N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
+            values=dict(nmon=2000, dcyl=20, lcyl=600.0, dcrowd=1.0,
+                        ncrowd=117000, dt=0.005, bdump=5000, adump=10000),
             physical=['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
                       'rho_bulk_c']),
-        id='SumRuleCyl-ensemble_long'),
+        id='ChainCyl-ensemble_long'),
     pytest.param(
         ParseCase(
-            SumRuleCyl, 'ensemble', 'bug',
+            ChainCyl, 'ensemble', 'bug',
             artifact='N2000D20.0ac1.0nc117000',
             name='N2000D20.0ac1.0nc117000',
             values=dict(dmon=1.0, nmon=2000, dcrowd=1.0, ncrowd=117000,
                         dcyl=20),
             physical=['dmon']),
-        id='SumRuleCyl-ensemble'),
+        id='ChainCyl-ensemble'),
     pytest.param(
         ParseCase(
-            SumRuleCyl, 'space', 'bug',
+            ChainCyl, 'space', 'bug',
             artifact='N2000D20.0ac1.0',
             name='N2000D20.0ac1.0',
             values=dict(dmon=1.0, nmon=2000, dcrowd=1.0, dcyl=20),
             physical=['dmon']),
-        id='SumRuleCyl-space'),
+        id='ChainCyl-space'),
     pytest.param(
         ParseCase(
-            SumRuleCubHeteroRing, 'segment', 'all',
+            RingCub, 'segment', 'all',
             artifact='al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000'
                      'ens4.j10.ring.all',
             name='al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000ens4.'
@@ -172,10 +117,10 @@ class ValidCase(NamedTuple):
                       'rho_bulk_m_small', 'phi_bulk_m_large',
                       'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
                       'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroRing-segment'),
+        id='RingCub-segment'),
     pytest.param(
         ParseCase(
-            SumRuleCubHeteroRing, 'whole', 'all',
+            RingCub, 'whole', 'all',
             artifact='al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000'
                      'ens4.ring.all',
             name='al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000ens4.'
@@ -187,10 +132,10 @@ class ValidCase(NamedTuple):
                       'rho_bulk_m_small', 'phi_bulk_m_large',
                       'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
                       'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroRing-whole'),
+        id='RingCub-whole'),
     pytest.param(
         ParseCase(
-            SumRuleCubHeteroRing, 'ensemble_long', 'all',
+            RingCub, 'ensemble_long', 'all',
             artifact='al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
             name='al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
             values=dict(dmon_large=5.0, nmon_large=5, mmon_large=125.0,
@@ -200,398 +145,31 @@ class ValidCase(NamedTuple):
                       'rho_bulk_m_small', 'phi_bulk_m_large',
                       'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
                       'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroRing-ensemble_long'),
+        id='RingCub-ensemble_long'),
     pytest.param(
         ParseCase(
-            SumRuleCubHeteroRing, 'ensemble', 'all',
+            RingCub, 'ensemble', 'all',
             artifact='ns400nl5al5ac3nc7735',
             name='ns400nl5al5ac3nc7735',
             values=dict(dmon_large=5.0, nmon_large=5, nmon_small=400,
                         dcrowd=3.0, ncrowd=7735),
             physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='SumRuleCubHeteroRing-ensemble'),
+        id='RingCub-ensemble'),
     pytest.param(
         ParseCase(
-            SumRuleCubHeteroRing, 'space', 'all',
+            RingCub, 'space', 'all',
             artifact='ns400nl5al5ac3',
             name='ns400nl5al5ac3',
             values=dict(dmon_large=5.0, nmon_large=5, nmon_small=400,
                         dcrowd=3.0),
             physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='SumRuleCubHeteroRing-space'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroLinear, 'segment', 'all',
-            artifact='al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
-                     'ens1.j11.linear.all',
-            name='al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000ens1.'
-                 'j11.linear',
-            values=dict(dmon_large=6.0, nmon_large=5, mmon_large=216.0,
-                        nmon_small=400, dcrowd=3.0, ncrowd=7735, lcube=90.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=1,
-                        segment_id=11),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroLinear-segment'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroLinear, 'whole', 'all',
-            artifact='al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
-                     'ens1.linear.all',
-            name='al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000ens1.'
-                 'linear',
-            values=dict(dmon_large=6.0, nmon_large=5, mmon_large=216.0,
-                        nmon_small=400, dcrowd=3.0, ncrowd=7735, lcube=90.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=1),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroLinear-whole'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroLinear, 'ensemble_long', 'all',
-            artifact='al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-            name='al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-            values=dict(dmon_large=6.0, nmon_large=5, mmon_large=216.0,
-                        nmon_small=400, dcrowd=3.0, ncrowd=7735, lcube=90.0,
-                        dt=0.005, bdump=2000, adump=5000),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroLinear-ensemble_long'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroLinear, 'ensemble', 'all',
-            artifact='ns400nl5al6ac3nc7735',
-            name='ns400nl5al6ac3nc7735',
-            values=dict(dmon_large=6.0, nmon_large=5, nmon_small=400,
-                        dcrowd=3.0, ncrowd=7735),
-            physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='SumRuleCubHeteroLinear-ensemble'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroLinear, 'space', 'all',
-            artifact='ns400nl5al6ac3',
-            name='ns400nl5al6ac3',
-            values=dict(dmon_large=6.0, nmon_large=5, nmon_small=400,
-                        dcrowd=3.0),
-            physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='SumRuleCubHeteroLinear-space'),
-    pytest.param(
-        ParseCase(
-            TransFociCyl, 'segment', 'bug',
-            artifact='epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000ens8.j05.ring.bug',
-            name='epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000ens8.j05.ring',
-            values=dict(epsilon_small=5.0, epsilon_large=5.0, dcyl=20.0,
-                        dmon_large=3.0, nmon_large=5, mmon_large=27.0,
-                        nmon_small=400, dcrowd=1.0, ncrowd=8340, lcyl=139.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=8,
-                        segment_id=5),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='TransFociCyl-segment'),
-    pytest.param(
-        ParseCase(
-            TransFociCyl, 'whole', 'bug',
-            artifact='epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000ens8.ring.bug',
-            name='epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000ens8.ring',
-            values=dict(epsilon_small=5.0, epsilon_large=5.0, dcyl=20.0,
-                        dmon_large=3.0, nmon_large=5, mmon_large=27.0,
-                        nmon_small=400, dcrowd=1.0, ncrowd=8340, lcyl=139.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=8),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='TransFociCyl-whole'),
-    pytest.param(
-        ParseCase(
-            TransFociCyl, 'ensemble_long', 'bug',
-            artifact='epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000',
-            name='epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-            values=dict(epsilon_small=5.0, epsilon_large=5.0, dcyl=20.0,
-                        dmon_large=3.0, nmon_large=5, mmon_large=27.0,
-                        nmon_small=400, dcrowd=1.0, ncrowd=8340, lcyl=139.0,
-                        dt=0.005, bdump=2000, adump=5000),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='TransFociCyl-ensemble_long'),
-    pytest.param(
-        ParseCase(
-            TransFociCyl, 'ensemble', 'bug',
-            artifact='ns400nl5al3D20.0ac1nc8340',
-            name='ns400nl5al3D20.0ac1nc8340',
-            values=dict(dcyl=20.0, dmon_large=3.0, nmon_large=5,
-                        nmon_small=400, dcrowd=1.0, ncrowd=8340),
-            physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='TransFociCyl-ensemble'),
-    pytest.param(
-        ParseCase(
-            TransFociCyl, 'space', 'bug',
-            artifact='ns400nl5al3D20.0ac1',
-            name='ns400nl5al3D20.0ac1',
-            values=dict(dcyl=20.0, dmon_large=3.0, nmon_large=5,
-                        nmon_small=400, dcrowd=1.0),
-            physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='TransFociCyl-space'),
-    pytest.param(
-        ParseCase(
-            TransFociCub, 'segment', 'all',
-            artifact='al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000'
-                     'ens5.j13.ring.all',
-            name='al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000'
-                 'ens5.j13.ring',
-            values=dict(dmon_large=5.0, nmon_large=5, mmon_large=125.0,
-                        nmon_small=400, dcrowd=1.0, ncrowd=154699, lcube=60.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=5,
-                        segment_id=13),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='TransFociCub-segment'),
-    pytest.param(
-        ParseCase(
-            TransFociCub, 'whole', 'all',
-            artifact='al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000'
-                     'ens5.ring.all',
-            name='al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000'
-                 'ens5.ring',
-            values=dict(dmon_large=5.0, nmon_large=5, mmon_large=125.0,
-                        nmon_small=400, dcrowd=1.0, ncrowd=154699, lcube=60.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=5),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='TransFociCub-whole'),
-    pytest.param(
-        ParseCase(
-            TransFociCub, 'ensemble_long', 'all',
-            artifact='al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-            name='al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-            values=dict(dmon_large=5.0, nmon_large=5, mmon_large=125.0,
-                        nmon_small=400, dcrowd=1.0, ncrowd=154699, lcube=60.0,
-                        dt=0.005, bdump=2000, adump=5000),
-            physical=['dmon_small', 'mmon_small', 'mcrowd', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c', 'rho_bulk_c']),
-        id='TransFociCub-ensemble_long'),
-    pytest.param(
-        ParseCase(
-            TransFociCub, 'ensemble', 'all',
-            artifact='ns400nl5al5ac1nc154699',
-            name='ns400nl5al5ac1nc154699',
-            values=dict(dmon_large=5.0, nmon_large=5, nmon_small=400,
-                        dcrowd=1.0, ncrowd=154699),
-            physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='TransFociCub-ensemble'),
-    pytest.param(
-        ParseCase(
-            TransFociCub, 'space', 'all',
-            artifact='ns400nl5al5ac1',
-            name='ns400nl5al5ac1',
-            values=dict(dmon_large=5.0, nmon_large=5, nmon_small=400,
-                        dcrowd=1.0),
-            physical=['dmon_small', 'mmon_small', 'mcrowd']),
-        id='TransFociCub-space'),
-    pytest.param(
-        ParseCase(
-            HnsCub, 'segment', 'nucleoid',
-            artifact='N200kbmm2nh12ac2l25epshc1nc11937ens2.j5.ring.nucleoid',
-            name='N200kbmm2nh12ac2l25epshc1nc11937ens2.j5.ring',
-            values=dict(nmon=200, bend_mm=2.0, nhns=12, dcrowd=2.0, lcube=50,
-                        eps_hc=1.0, ncrowd=11937, ensemble_id=2, segment_id=5),
-            physical=['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                      'ndump', 'adump', 'eps_hm']),
-        id='HnsCub-segment'),
-    pytest.param(
-        ParseCase(
-            HnsCub, 'whole', 'nucleoid',
-            artifact='N200kbmm2nh12ac2l25epshc1nc11937ens2.ring.nucleoid',
-            name='N200kbmm2nh12ac2l25epshc1nc11937ens2.ring',
-            values=dict(nmon=200, bend_mm=2.0, nhns=12, dcrowd=2.0, lcube=50,
-                        eps_hc=1.0, ncrowd=11937, ensemble_id=2),
-            physical=['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                      'ndump', 'adump', 'eps_hm']),
-        id='HnsCub-whole'),
-    pytest.param(
-        ParseCase(
-            HnsCub, 'ensemble_long', 'nucleoid',
-            artifact='N200kbmm2nh12ac2l25epshc1nc11937',
-            name='N200kbmm2nh12ac2l25epshc1nc11937',
-            values=dict(nmon=200, bend_mm=2.0, nhns=12, dcrowd=2.0, lcube=50,
-                        eps_hc=1.0, ncrowd=11937),
-            physical=['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                      'ndump', 'adump', 'eps_hm']),
-        id='HnsCub-ensemble_long'),
-    pytest.param(
-        ParseCase(
-            HnsCub, 'ensemble', 'nucleoid',
-            artifact='N200kbmm2nh12ac2.0epshc1nc11937',
-            name='N200kbmm2nh12ac2.0epshc1nc11937',
-            values=dict(nmon=200, bend_mm=2.0, nhns=12, dcrowd=2.0, eps_hc=1.0,
-                        ncrowd=11937),
-            physical=['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']),
-        id='HnsCub-ensemble'),
-    pytest.param(
-        ParseCase(
-            HnsCub, 'space', 'nucleoid',
-            artifact='N200kbmm2nh12ac2.0epshc1',
-            name='N200kbmm2nh12ac2.0epshc1',
-            values=dict(nmon=200, bend_mm=2.0, nhns=12, dcrowd=2.0,
-                        eps_hc=1.0),
-            physical=['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']),
-        id='HnsCub-space'),
-    pytest.param(
-        ParseCase(
-            HnsCyl, 'segment', 'all',
-            artifact='N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.j01.ring.all',
-            name='N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.j01.ring',
-            values=dict(nmon=200, bend_mm=2.0, dcyl=8, nhns=4, dcrowd=1.0,
-                        lcyl=150, eps_hc=1.0, ncrowd=1152, ensemble_id=1,
-                        segment_id=1),
-            physical=['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                      'ndump', 'adump', 'eps_hm']),
-        id='HnsCyl-segment'),
-    pytest.param(
-        ParseCase(
-            HnsCyl, 'whole', 'all',
-            artifact='N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.ring.all',
-            name='N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.ring',
-            values=dict(nmon=200, bend_mm=2.0, dcyl=8, nhns=4, dcrowd=1.0,
-                        lcyl=150, eps_hc=1.0, ncrowd=1152, ensemble_id=1),
-            physical=['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                      'ndump', 'adump', 'eps_hm']),
-        id='HnsCyl-whole'),
-    pytest.param(
-        ParseCase(
-            HnsCyl, 'ensemble_long', 'all',
-            artifact='N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152',
-            name='N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152',
-            values=dict(nmon=200, bend_mm=2.0, dcyl=8, nhns=4, dcrowd=1.0,
-                        lcyl=150, eps_hc=1.0, ncrowd=1152),
-            physical=['dmon', 'dhns', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c',
-                      'rho_bulk_c', 'phi_bulk_hns', 'rho_bulk_hns', 'dt',
-                      'ndump', 'adump', 'eps_hm']),
-        id='HnsCyl-ensemble_long'),
-    pytest.param(
-        ParseCase(
-            HnsCyl, 'ensemble', 'all',
-            artifact='N200D8nh4ac1epshc1.0nc1152',
-            name='N200D8nh4ac1epshc1.0nc1152',
-            values=dict(nmon=200, dcyl=8, nhns=4, dcrowd=1.0, eps_hc=1.0,
-                        ncrowd=1152),
-            physical=['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']),
-        id='HnsCyl-ensemble'),
-    pytest.param(
-        ParseCase(
-            HnsCyl, 'space', 'all',
-            artifact='N200D8nh4ac1epshc1.0',
-            name='N200D8nh4ac1epshc1.0',
-            values=dict(nmon=200, dcyl=8, nhns=4, dcrowd=1.0, eps_hc=1.0),
-            physical=['dmon', 'dhns', 'dt', 'ndump', 'adump', 'eps_hm']),
-        id='HnsCyl-space'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroRingBiDisperse, 'segment', 'all',
-            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                     'bdump2000adump5000ens1.j20.ring.all',
-            name='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000ens1.j20.ring',
-            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
-                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
-                        ncrowd_one=139229, ncrowd_two=1671, lcube=90.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=1,
-                        segment_id=20),
-            physical=['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
-                      'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c_one', 'rho_bulk_c_one', 'phi_bulk_c_two',
-                      'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroRingBiDisperse-segment'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroRingBiDisperse, 'whole', 'bug',
-            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                     'bdump2000adump5000ens1.ring.bug',
-            name='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000ens1.ring',
-            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
-                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
-                        ncrowd_one=139229, ncrowd_two=1671, lcube=90.0,
-                        dt=0.005, bdump=2000, adump=5000, ensemble_id=1),
-            physical=['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
-                      'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c_one', 'rho_bulk_c_one', 'phi_bulk_c_two',
-                      'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroRingBiDisperse-whole'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroRingBiDisperse, 'ensemble_long', 'bug',
-            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                     'bdump2000adump5000',
-            name='al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000',
-            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
-                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
-                        ncrowd_one=139229, ncrowd_two=1671, lcube=90.0,
-                        dt=0.005, bdump=2000, adump=5000),
-            physical=['dmon_small', 'mmon_small', 'mmon_large', 'mcrowd_one',
-                      'mcrowd_two', 'pct_two', 'phi_bulk_m_small',
-                      'rho_bulk_m_small', 'phi_bulk_m_large',
-                      'rho_bulk_m_large', 'phi_bulk_m', 'rho_bulk_m',
-                      'phi_bulk_c_one', 'rho_bulk_c_one', 'phi_bulk_c_two',
-                      'rho_bulk_c_two', 'phi_bulk_c', 'rho_bulk_c']),
-        id='SumRuleCubHeteroRingBiDisperse-ensemble_long'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroRingBiDisperse, 'ensemble', 'all',
-            artifact='al4nl5ns400ac1ab5pctc40nc139229nb1671',
-            name='al4nl5ns400ac1ab5pctc40nc139229nb1671',
-            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
-                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0,
-                        ncrowd_one=139229, ncrowd_two=1671),
-            physical=['dmon_small', 'mmon_small', 'pct_two']),
-        id='SumRuleCubHeteroRingBiDisperse-ensemble'),
-    pytest.param(
-        ParseCase(
-            SumRuleCubHeteroRingBiDisperse, 'space', 'all',
-            artifact='al4nl5ns400ac1ab5pctc40',
-            name='al4nl5ns400ac1ab5pctc40',
-            values=dict(dmon_large=4.0, nmon_large=5, nmon_small=400,
-                        dcrowd_one=1.0, dcrowd_two=5.0, pct_one=40.0),
-            physical=['dmon_small', 'mmon_small', 'pct_two']),
-        id='SumRuleCubHeteroRingBiDisperse-space'),
+        id='RingCub-space'),
 ])
 def parse_case(request: pytest.FixtureRequest) -> ParseCase:
     """
     One hand-written name per parser class and lineage, with the values its
-    parser must give: the digits in the name, converted as the class Notes
-    state (``lcube = 2 l`` or ``2 hl``, ``lcyl = 2 lz``, ``dcyl = 2 r - 1``).
+    parser must give: the digits in the name, converted as the class
+    docstring states (``lcube = 2 l``, ``lcyl = 2 lz``, ``dcyl = 2 r - 1``).
     """
     case: ParseCase = request.param
     return case
@@ -606,48 +184,15 @@ def parsed(parse_case: ParseCase) -> ParserBase:
 
 @pytest.fixture(params=[
     pytest.param(
-        ValidCase(TwoMonDepCub,
-                  'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
-                  'tdump500', 'ensemble_long', 'bug'),
-        id='TwoMonDepCub'),
+        ValidCase(ChainCyl,
+                  'N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
+                  'ensemble_long', 'bug'),
+        id='ChainCyl'),
     pytest.param(
-        ValidCase(SumRuleCyl,
-                  'N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                  'bdump5000adump10000', 'ensemble_long', 'bug'),
-        id='SumRuleCyl'),
-    pytest.param(
-        ValidCase(SumRuleCubHeteroRing,
+        ValidCase(RingCub,
                   'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
                   'ensemble_long', 'bug'),
-        id='SumRuleCubHeteroRing'),
-    pytest.param(
-        ValidCase(SumRuleCubHeteroLinear,
-                  'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                  'ensemble_long', 'bug'),
-        id='SumRuleCubHeteroLinear'),
-    pytest.param(
-        ValidCase(TransFociCyl,
-                  'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                  'bdump2000adump5000', 'ensemble_long', 'bug'),
-        id='TransFociCyl'),
-    pytest.param(
-        ValidCase(TransFociCub,
-                  'al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000'
-                  'adump5000', 'ensemble_long', 'bug'),
-        id='TransFociCub'),
-    pytest.param(
-        ValidCase(HnsCub, 'N200kbmm2nh12ac2l25epshc1nc11937',
-                  'ensemble_long', 'nucleoid'),
-        id='HnsCub'),
-    pytest.param(
-        ValidCase(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152',
-                  'ensemble_long', 'nucleoid'),
-        id='HnsCyl'),
-    pytest.param(
-        ValidCase(SumRuleCubHeteroRingBiDisperse,
-                  'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                  'bdump2000adump5000', 'ensemble_long', 'bug'),
-        id='SumRuleCubHeteroRingBiDisperse'),
+        id='RingCub'),
 ])
 def valid_case(request: pytest.FixtureRequest) -> ValidCase:
     """A valid ``ensemble_long`` name for each parser class."""
@@ -658,9 +203,8 @@ def valid_case(request: pytest.FixtureRequest) -> ValidCase:
 @pytest.fixture(params=[
     pytest.param((parser_class, lineage),
                  id=f"{parser_class.__name__}-{lineage}")
-    for parser_class in (TwoMonDepCub, SumRuleCyl, SumRuleCubHeteroRing,
-                         SumRuleCubHeteroLinear, TransFociCyl, TransFociCub,
-                         HnsCub, HnsCyl, SumRuleCubHeteroRingBiDisperse)
+    for parser_class in (ChainCyl, RingCub, RingCubTwoCrowders,
+                         RingCubBinders)
     for lineage in ('segment', 'whole', 'ensemble_long', 'ensemble', 'space')
 ])
 def declared_case(
@@ -755,7 +299,7 @@ def test_parser_without_path_reports_no_path(parse_case, parsed):
 
 def test_from_name_reports_no_path():
     """A parser built with from_name has no filepath or ext."""
-    parser = SumRuleCyl.from_name('N200D10.0ac2.0', 'space', 'bug')
+    parser = ChainCyl.from_name('N200D10.0ac2.0', 'space', 'bug')
 
     assert (parser.filepath, parser.ext, parser.ispath) == (None, None, False)
 
@@ -777,7 +321,7 @@ def test_parser_reports_empty_ext_for_file_without_suffix(make_temp_file):
     """A file path with no suffix gives an empty ext, not None."""
     full_path = make_temp_file('N200D10ac2')
 
-    parser = SumRuleCyl(full_path, 'space', 'bug', ispath=True)
+    parser = ChainCyl(full_path, 'space', 'bug', ispath=True)
 
     assert (parser.ext, parser.filepath, parser.name) == (
         '', Path(os.path.dirname(full_path)), 'N200D10ac2')
@@ -795,18 +339,15 @@ def test_parser_strips_only_an_extension_with_a_letter(
     name instead of being dropped as an extension."""
     full_path = make_temp_file(filename)
 
-    parser = SumRuleCyl(full_path, 'space', 'bug', ispath=True)
+    parser = ChainCyl(full_path, 'space', 'bug', ispath=True)
 
     assert (parser.name, parser.ext, parser.dcrowd) == (name, ext, dcrowd)
 
 
 @pytest.mark.parametrize('parser_class, lineage, group, artifact, expected', [
-    pytest.param(SumRuleCyl, 'ensemble', 'bug', 'N2000D20.0ac1.0nc117000',
+    pytest.param(ChainCyl, 'ensemble', 'bug', 'N2000D20.0ac1.0nc117000',
                  ['nmon', 'dcyl', 'dcrowd', 'ncrowd'],
-                 id='SumRuleCyl-ensemble'),
-    pytest.param(HnsCub, 'space', 'nucleoid', 'N200kbmm2nh12ac2.0epshc1',
-                 ['nmon', 'bend_mm', 'nhns', 'dcrowd', 'eps_hc'],
-                 id='HnsCub-space'),
+                 id='ChainCyl-ensemble'),
 ])
 def test_parser_lists_lineage_attributes_in_pattern_order(
         parser_class, lineage, group, artifact, expected):
@@ -818,7 +359,7 @@ def test_parser_lists_lineage_attributes_in_pattern_order(
 
 def test_name_through_unknown_keyword_raises_value_error():
     """Cutting a name at a keyword it lacks raises ValueError naming it."""
-    parser = SumRuleCyl('N2000D20.0ac1.0', 'space', 'bug')
+    parser = ChainCyl('N2000D20.0ac1.0', 'space', 'bug')
 
     with pytest.raises(ValueError,
                        match="'zz' keyword not found in 'N2000D20.0ac1.0'"):
@@ -837,18 +378,17 @@ def test_parser_sets_every_listed_attribute(parsed):
 
 @pytest.mark.parametrize('lineage, artifact, expected', [
     pytest.param('segment',
-                 'N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000ens2.j02.bug',
+                 'N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000'
+                 'ens2.j02.bug',
                  ['segment', 'whole', 'ensemble_long', 'ensemble', 'space'],
                  id='segment'),
     pytest.param('whole',
-                 'N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000ens2.bug',
+                 'N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000'
+                 'ens2.bug',
                  ['whole', 'ensemble_long', 'ensemble', 'space'],
                  id='whole'),
     pytest.param('ensemble_long',
-                 'N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000',
+                 'N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
                  ['ensemble_long', 'ensemble', 'space'], id='ensemble_long'),
     pytest.param('ensemble', 'N2000D20.0ac1.0nc117000',
                  ['ensemble', 'space'], id='ensemble'),
@@ -857,34 +397,17 @@ def test_parser_sets_every_listed_attribute(parsed):
 def test_lineage_genealogy_lists_lineage_and_parents(lineage, artifact,
                                                      expected):
     """A lineage's genealogy is itself followed by its parent lineages."""
-    parser = SumRuleCyl(artifact, lineage, 'bug')
+    parser = ChainCyl(artifact, lineage, 'bug')
 
     assert parser.lineage_genealogy == expected
 
 
 @pytest.mark.parametrize(
     'parser_class, artifact, group, geometry, topology, groups', [
-        pytest.param(TwoMonDepCub, 'nm2am5.0ac1.0nc100', 'bug', 'cubic',
-                     'atomic', ['bug', 'all'], id='TwoMonDepCub'),
-        pytest.param(SumRuleCyl, 'N2000D20.0ac1.0', 'bug', 'cylindrical',
-                     'linear', ['bug', 'all'], id='SumRuleCyl'),
-        pytest.param(SumRuleCubHeteroRing, 'ns400nl5al5ac3', 'all', 'cubic',
-                     'ring', ['bug', 'all'], id='SumRuleCubHeteroRing'),
-        pytest.param(SumRuleCubHeteroLinear, 'ns400nl5al6ac3', 'all',
-                     'cubic', 'linear', ['bug', 'all'],
-                     id='SumRuleCubHeteroLinear'),
-        pytest.param(TransFociCyl, 'ns400nl5al3D20.0ac1', 'bug',
-                     'cylindrical', 'ring', ['bug', 'all'],
-                     id='TransFociCyl'),
-        pytest.param(TransFociCub, 'ns400nl5al5ac1', 'all', 'cubic', 'ring',
-                     ['bug', 'all'], id='TransFociCub'),
-        pytest.param(HnsCub, 'N200kbmm2nh12ac2.0epshc1', 'nucleoid', 'cubic',
-                     'ring', ['nucleoid', 'all'], id='HnsCub'),
-        pytest.param(HnsCyl, 'N200D8nh4ac1epshc1.0', 'all', 'cylindrical',
-                     'ring', ['nucleoid', 'all'], id='HnsCyl'),
-        pytest.param(SumRuleCubHeteroRingBiDisperse,
-                     'al4nl5ns400ac1ab5pctc40', 'bug', 'cubic', 'ring',
-                     ['bug', 'all'], id='SumRuleCubHeteroRingBiDisperse'),
+        pytest.param(ChainCyl, 'N2000D20.0ac1.0', 'bug', 'cylindrical',
+                     'linear', ['bug', 'all'], id='ChainCyl'),
+        pytest.param(RingCub, 'ns400nl5al5ac3', 'all', 'cubic', 'ring',
+                     ['bug', 'all'], id='RingCub'),
     ])
 def test_parser_reports_geometry_topology_and_groups(
         parser_class, artifact, group, geometry, topology, groups):
@@ -896,27 +419,10 @@ def test_parser_reports_geometry_topology_and_groups(
 
 
 @pytest.mark.parametrize('parser_class, artifact, group, dump_keywords', [
-    pytest.param(TwoMonDepCub, 'nm2am5.0ac1.0nc100', 'bug',
-                 {'bug': 'bdump', 'all': 'adump'}, id='TwoMonDepCub'),
-    pytest.param(SumRuleCyl, 'N2000D20.0ac1.0', 'bug',
-                 {'bug': 'bdump', 'all': 'adump'}, id='SumRuleCyl'),
-    pytest.param(SumRuleCubHeteroRing, 'ns400nl5al5ac3', 'all',
-                 {'bug': 'bdump', 'all': 'adump'},
-                 id='SumRuleCubHeteroRing'),
-    pytest.param(SumRuleCubHeteroLinear, 'ns400nl5al6ac3', 'all',
-                 {'bug': 'bdump', 'all': 'adump'},
-                 id='SumRuleCubHeteroLinear'),
-    pytest.param(TransFociCyl, 'ns400nl5al3D20.0ac1', 'bug',
-                 {'bug': 'bdump', 'all': 'adump'}, id='TransFociCyl'),
-    pytest.param(TransFociCub, 'ns400nl5al5ac1', 'all',
-                 {'bug': 'bdump', 'all': 'adump'}, id='TransFociCub'),
-    pytest.param(HnsCub, 'N200kbmm2nh12ac2.0epshc1', 'nucleoid',
-                 {'nucleoid': 'ndump', 'all': 'adump'}, id='HnsCub'),
-    pytest.param(HnsCyl, 'N200D8nh4ac1epshc1.0', 'all',
-                 {'nucleoid': 'ndump', 'all': 'adump'}, id='HnsCyl'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse, 'al4nl5ns400ac1ab5pctc40',
-                 'bug', {'bug': 'bdump', 'all': 'adump'},
-                 id='SumRuleCubHeteroRingBiDisperse'),
+    pytest.param(ChainCyl, 'N2000D20.0ac1.0', 'bug',
+                 {'bug': 'bdump', 'all': 'adump'}, id='ChainCyl'),
+    pytest.param(RingCub, 'ns400nl5al5ac3', 'all',
+                 {'bug': 'bdump', 'all': 'adump'}, id='RingCub'),
 ])
 def test_parser_maps_each_group_to_its_dump_keyword(
         parser_class, artifact, group, dump_keywords):
@@ -927,17 +433,12 @@ def test_parser_maps_each_group_to_its_dump_keyword(
 
 
 @pytest.mark.parametrize('parser_class, artifact, group, keyword, period', [
-    pytest.param(SumRuleCyl,
-                 'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                 'adump5000ens1', 'bug', 'bdump', 2000, id='SumRuleCyl-bug'),
-    pytest.param(SumRuleCyl,
-                 'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                 'adump5000ens1', 'all', 'adump', 5000, id='SumRuleCyl-all'),
-    # HnsCub names carry no dump periods; they are fixed in _defaults.
-    pytest.param(HnsCub, 'N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring',
-                 'nucleoid', 'ndump', 5000, id='HnsCub-nucleoid'),
-    pytest.param(HnsCub, 'N200kbmm2.0nh8ac1.0l25.0epshc1.0nc0ens1.ring',
-                 'all', 'adump', 10000, id='HnsCub-all'),
+    pytest.param(ChainCyl,
+                 'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1',
+                 'bug', 'bdump', 2000, id='ChainCyl-bug'),
+    pytest.param(ChainCyl,
+                 'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1',
+                 'all', 'adump', 5000, id='ChainCyl-all'),
 ])
 def test_dump_keyword_reads_the_group_dump_period(
         parser_class, artifact, group, keyword, period):
@@ -949,39 +450,10 @@ def test_dump_keyword_reads_the_group_dump_period(
 
 
 @pytest.mark.parametrize('parser_class, artifact, group, attrs, expected', [
-    pytest.param(TwoMonDepCub,
-                 'am5.0nm2ac1.nc100hl10.0sd2.0dt0.01bdump50adump100tdump500',
-                 'bug', ('dcrowd', 'ncrowd'), (1.0, 100), id='TwoMonDepCub'),
-    pytest.param(SumRuleCyl,
-                 'N2000epsilon5.r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000',
-                 'bug', ('epsilon', 'dcyl'), (5.0, 20.0), id='SumRuleCyl'),
-    pytest.param(SumRuleCubHeteroRing,
+    pytest.param(RingCub,
                  'al5nl5ml125.ns400ac3nc7735l45dt0.005bdump2000adump5000',
                  'bug', ('mmon_large', 'nmon_small'), (125.0, 400),
-                 id='SumRuleCubHeteroRing'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al6nl5ml216.ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'bug', ('mmon_large', 'nmon_small'), (216.0, 400),
-                 id='SumRuleCubHeteroLinear'),
-    pytest.param(TransFociCyl,
-                 'epss5epsl5r10.5al3.nl5ml27.ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'bug', ('dmon_large', 'mmon_large', 'nmon_small'),
-                 (3.0, 27.0, 400), id='TransFociCyl'),
-    pytest.param(TransFociCub,
-                 'al5nl5ml125.ns400ac1nc154699l30dt0.005bdump2000adump5000',
-                 'bug', ('mmon_large', 'nmon_small'), (125.0, 400),
-                 id='TransFociCub'),
-    pytest.param(HnsCub, 'N200kbmm2nh12ac2l25epshc1.nc11937', 'nucleoid',
-                 ('eps_hc', 'ncrowd'), (1.0, 11937), id='HnsCub'),
-    pytest.param(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75epshc1.nc1152', 'nucleoid',
-                 ('eps_hc', 'ncrowd'), (1.0, 1152), id='HnsCyl'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5.pctc40.nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000',
-                 'bug', ('dcrowd_two', 'pct_one'), (5.0, 40.0),
-                 id='SumRuleCubHeteroRingBiDisperse'),
+                 id='RingCub'),
 ])
 def test_parser_reads_value_with_trailing_dot(parser_class, artifact, group,
                                               attrs, expected):
@@ -1011,63 +483,22 @@ def test_declared_pattern_round_trips(declared_case):
 
 
 @pytest.mark.parametrize('parser_class, artifact, group, keyword, attr', [
-    pytest.param(TwoMonDepCub,
-                 'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100xx500',
-                 'bug', 'tdump', 'tdump', id='TwoMonDepCub-replaced'),
-    pytest.param(SumRuleCyl,
-                 'N2000epsilon5.0r10.5lz300.0sig1.0nc117000XX0.005'
-                 'bdump5000adump10000',
-                 'bug', 'dt', 'dt', id='SumRuleCyl-replaced'),
-    pytest.param(SumRuleCubHeteroRing,
+    pytest.param(ChainCyl,
+                 'N2000r10.5lz300.0ac1.0nc117000XX0.005bdump5000adump10000',
+                 'bug', 'dt', 'dt', id='ChainCyl-replaced'),
+    pytest.param(RingCub,
                  'al5nl5ml125ns400ac3XX7735l45dt0.005bdump2000adump5000',
-                 'bug', 'nc', 'ncrowd', id='SumRuleCubHeteroRing-replaced'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al6nl5ml216XX400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'bug', 'ns', 'nmon_small',
-                 id='SumRuleCubHeteroLinear-replaced'),
-    pytest.param(TransFociCyl,
-                 'epss5epsl5r10.5al3nl5xx27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'bug', 'ml', 'mmon_large', id='TransFociCyl-replaced'),
-    pytest.param(TransFociCub,
-                 'al5nl5ml125ns400ac1nc154699XX30dt0.005bdump2000adump5000',
-                 'bug', 'l', 'lcube', id='TransFociCub-replaced'),
-    pytest.param(HnsCub, 'N200kbmm2XX12ac2l25epshc1nc11937', 'nucleoid',
-                 'nh', 'nhns', id='HnsCub-replaced'),
-    pytest.param(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75XX1.0nc1152', 'nucleoid',
-                 'epshc', 'eps_hc', id='HnsCyl-replaced'),
-    pytest.param(TwoMonDepCub,
-                 '5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100tdump500',
-                 'bug', 'am', 'dmon', id='TwoMonDepCub-heading-digit'),
-    pytest.param(SumRuleCyl,
-                 '2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000',
-                 'bug', 'N', 'nmon', id='SumRuleCyl-heading-digit'),
-    pytest.param(SumRuleCubHeteroRing,
+                 'bug', 'nc', 'ncrowd', id='RingCub-replaced'),
+    pytest.param(ChainCyl,
+                 '2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
+                 'bug', 'N', 'nmon', id='ChainCyl-heading-digit'),
+    pytest.param(RingCub,
                  '5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'bug', 'al', 'dmon_large',
-                 id='SumRuleCubHeteroRing-heading-digit'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 '6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'bug', 'al', 'dmon_large',
-                 id='SumRuleCubHeteroLinear-heading-digit'),
-    pytest.param(TransFociCyl,
-                 '5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'bug', 'epss', 'epsilon_small',
-                 id='TransFociCyl-heading-digit'),
-    pytest.param(TransFociCub,
-                 '5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-                 'bug', 'al', 'dmon_large', id='TransFociCub-heading-digit'),
-    pytest.param(HnsCub, '200kbmm2nh12ac2l25epshc1nc11937', 'nucleoid',
-                 'N', 'nmon', id='HnsCub-heading-digit'),
-    pytest.param(HnsCyl, '200kbmm2r4.5nh4ac1lz75epshc1.0nc1152', 'nucleoid',
-                 'N', 'nmon', id='HnsCyl-heading-digit'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5pctc40nc139229XX1671l45dt0.005'
-                 'bdump2000adump5000',
-                 'bug', 'nb', 'ncrowd_two',
-                 id='SumRuleCubHeteroRingBiDisperse-replaced'),
+                 'bug', 'al', 'dmon_large', id='RingCub-heading-digit'),
+    pytest.param(RingCubTwoCrowders,
+                 'al4nl5ns400ac1ab5nc139229XX1671l45dt0.005bdump2000'
+                 'adump5000',
+                 'bug', 'nb', 'ncrowd_two', id='RingCubTwoCrowders-replaced'),
 ])
 def test_missing_keyword_raises_value_error(parser_class, artifact, group,
                                             keyword, attr):
@@ -1080,34 +511,12 @@ def test_missing_keyword_raises_value_error(parser_class, artifact, group,
 
 
 @pytest.mark.parametrize('parser_class, artifact, group, keyword', [
-    pytest.param(TwoMonDepCub,
-                 'am.nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100tdump500',
-                 'bug', 'am', id='TwoMonDepCub'),
-    pytest.param(SumRuleCyl,
-                 'N.epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000',
-                 'bug', 'N', id='SumRuleCyl'),
-    pytest.param(SumRuleCubHeteroRing,
+    pytest.param(ChainCyl,
+                 'N.r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
+                 'bug', 'N', id='ChainCyl'),
+    pytest.param(RingCub,
                  'al.nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'bug', 'al', id='SumRuleCubHeteroRing'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al.nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'bug', 'al', id='SumRuleCubHeteroLinear'),
-    pytest.param(TransFociCyl,
-                 'epss.epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'bug', 'epss', id='TransFociCyl'),
-    pytest.param(TransFociCub,
-                 'al5nl.ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-                 'bug', 'nl', id='TransFociCub'),
-    pytest.param(HnsCub, 'N.kbmm2nh12ac2l25epshc1nc11937', 'nucleoid', 'N',
-                 id='HnsCub'),
-    pytest.param(HnsCyl, 'N.kbmm2r4.5nh4ac1lz75epshc1.0nc1152', 'nucleoid',
-                 'N', id='HnsCyl'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5pctc.nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000',
-                 'bug', 'pctc', id='SumRuleCubHeteroRingBiDisperse'),
+                 'bug', 'al', id='RingCub'),
 ])
 def test_non_numeric_value_raises_value_error(parser_class, artifact, group,
                                               keyword):
@@ -1120,12 +529,9 @@ def test_non_numeric_value_raises_value_error(parser_class, artifact, group,
 
 
 @pytest.mark.parametrize('parser_class, artifact, group, keyword, token', [
-    pytest.param(HnsCub, 'N200kbmm2nh12ac2l25epshc1nc1.5', 'nucleoid', 'nc',
-                 '1.5', id='HnsCub-nc'),
-    pytest.param(SumRuleCyl,
-                 'N2.5epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000',
-                 'bug', 'N', '2.5', id='SumRuleCyl-N'),
+    pytest.param(ChainCyl,
+                 'N2.5r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
+                 'bug', 'N', '2.5', id='ChainCyl-N'),
 ])
 def test_non_integral_integer_raises_value_error(parser_class, artifact,
                                                  group, keyword, token):
@@ -1192,71 +598,35 @@ def test_repr_names_artifact(valid_case):
 
 
 @pytest.mark.parametrize('parser_class, artifact, suffix, number, size', [
-    pytest.param(TwoMonDepCub,
-                 'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100tdump500',
-                 'm', 'nmon', 'dmon', id='TwoMonDepCub-m'),
-    pytest.param(TwoMonDepCub,
-                 'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100tdump500',
-                 'c', 'ncrowd', 'dcrowd', id='TwoMonDepCub-c'),
-    pytest.param(SumRuleCubHeteroRing,
+    pytest.param(RingCub,
                  'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'm_small', 'nmon_small', 'dmon_small',
-                 id='SumRuleCubHeteroRing-m_small'),
-    pytest.param(SumRuleCubHeteroRing,
+                 'm_small', 'nmon_small', 'dmon_small', id='RingCub-m_small'),
+    pytest.param(RingCub,
                  'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'm_large', 'nmon_large', 'dmon_large',
-                 id='SumRuleCubHeteroRing-m_large'),
-    pytest.param(SumRuleCubHeteroRing,
+                 'm_large', 'nmon_large', 'dmon_large', id='RingCub-m_large'),
+    pytest.param(RingCub,
                  'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'c', 'ncrowd', 'dcrowd', id='SumRuleCubHeteroRing-c'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
+                 'c', 'ncrowd', 'dcrowd', id='RingCub-c'),
+    pytest.param(RingCubTwoCrowders,
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000',
                  'm_small', 'nmon_small', 'dmon_small',
-                 id='SumRuleCubHeteroLinear-m_small'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
+                 id='RingCubTwoCrowders-m_small'),
+    pytest.param(RingCubTwoCrowders,
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000',
                  'm_large', 'nmon_large', 'dmon_large',
-                 id='SumRuleCubHeteroLinear-m_large'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 'c', 'ncrowd', 'dcrowd', id='SumRuleCubHeteroLinear-c'),
-    pytest.param(TransFociCub,
-                 'al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-                 'm_small', 'nmon_small', 'dmon_small',
-                 id='TransFociCub-m_small'),
-    pytest.param(TransFociCub,
-                 'al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-                 'm_large', 'nmon_large', 'dmon_large',
-                 id='TransFociCub-m_large'),
-    pytest.param(TransFociCub,
-                 'al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-                 'c', 'ncrowd', 'dcrowd', id='TransFociCub-c'),
-    pytest.param(HnsCub, 'N200kbmm2nh12ac2l25epshc1nc11937', 'm', 'nmon',
-                 'dmon', id='HnsCub-m'),
-    pytest.param(HnsCub, 'N200kbmm2nh12ac2l25epshc1nc11937', 'hns', 'nhns',
-                 'dhns', id='HnsCub-hns'),
-    pytest.param(HnsCub, 'N200kbmm2nh12ac2l25epshc1nc11937', 'c', 'ncrowd',
-                 'dcrowd', id='HnsCub-c'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000',
-                 'm_small', 'nmon_small', 'dmon_small',
-                 id='SumRuleCubHeteroRingBiDisperse-m_small'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000',
-                 'm_large', 'nmon_large', 'dmon_large',
-                 id='SumRuleCubHeteroRingBiDisperse-m_large'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000',
+                 id='RingCubTwoCrowders-m_large'),
+    pytest.param(RingCubTwoCrowders,
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000',
                  'c_one', 'ncrowd_one', 'dcrowd_one',
-                 id='SumRuleCubHeteroRingBiDisperse-c_one'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000',
+                 id='RingCubTwoCrowders-c_one'),
+    pytest.param(RingCubTwoCrowders,
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000',
                  'c_two', 'ncrowd_two', 'dcrowd_two',
-                 id='SumRuleCubHeteroRingBiDisperse-c_two'),
+                 id='RingCubTwoCrowders-c_two'),
 ])
 def test_cube_bulk_values_match_utils(parser_class, artifact, suffix, number,
                                       size):
@@ -1273,34 +643,12 @@ def test_cube_bulk_values_match_utils(parser_class, artifact, suffix, number,
 
 
 @pytest.mark.parametrize('parser_class, artifact, suffix, number, size', [
-    pytest.param(SumRuleCyl,
-                 'N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000',
-                 'm', 'nmon', 'dmon', id='SumRuleCyl-m'),
-    pytest.param(SumRuleCyl,
-                 'N2000epsilon5.0r10.5lz300.0sig1.0nc117000dt0.005'
-                 'bdump5000adump10000',
-                 'c', 'ncrowd', 'dcrowd', id='SumRuleCyl-c'),
-    pytest.param(TransFociCyl,
-                 'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'm_small', 'nmon_small', 'dmon_small',
-                 id='TransFociCyl-m_small'),
-    pytest.param(TransFociCyl,
-                 'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'm_large', 'nmon_large', 'dmon_large',
-                 id='TransFociCyl-m_large'),
-    pytest.param(TransFociCyl,
-                 'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'c', 'ncrowd', 'dcrowd', id='TransFociCyl-c'),
-    pytest.param(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152', 'm',
-                 'nmon', 'dmon', id='HnsCyl-m'),
-    pytest.param(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152', 'hns',
-                 'nhns', 'dhns', id='HnsCyl-hns'),
-    pytest.param(HnsCyl, 'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152', 'c',
-                 'ncrowd', 'dcrowd', id='HnsCyl-c'),
+    pytest.param(ChainCyl,
+                 'N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
+                 'm', 'nmon', 'dmon', id='ChainCyl-m'),
+    pytest.param(ChainCyl,
+                 'N2000r10.5lz300.0ac1.0nc117000dt0.005bdump5000adump10000',
+                 'c', 'ncrowd', 'dcrowd', id='ChainCyl-c'),
 ])
 def test_cylinder_bulk_values_match_utils(parser_class, artifact, suffix,
                                           number, size):
@@ -1316,50 +664,14 @@ def test_cylinder_bulk_values_match_utils(parser_class, artifact, suffix,
          volume_fraction_cylinder(n, d, lcyl, dcyl, pbc=True)), rel=1e-12)
 
 
-def test_cylinder_bulk_fraction_above_one_is_nominal():
-    """Five large monomers of size 5 in a cylinder of size 6 and length 20
-    parse, with the nominal fraction 5 (pi 5^3 / 6) / (pi 20 1^2 / 4) =
-    125 / 6, above one."""
-    parser = TransFociCyl(
-        'epss1epsl5r3.5al5nl5ml125ns400ac1nc0lz10dt0.005bdump1000adump5000'
-        'ens1.ring', 'whole', 'bug')
-
-    actual = parser.phi_bulk_m_large
-
-    # float64 round-off of a few products and divisions:
-    assert actual == pytest.approx(125 / 6, rel=1e-12)
-
-
-def test_cylinder_species_that_does_not_fit_raises_value_error():
-    """A large monomer as wide as the cylinder, D - a = 0, raises ValueError
-    naming the state point and the species instead of dividing by zero."""
-    artifact = ('epss1epsl5r3al5nl5ml125ns400ac1nc0lz10dt0.005bdump1000'
-                'adump5000ens1.ring')
-
-    with pytest.raises(ValueError, match=re.escape(
-            "species 'm_large' of 'epss1epsl5r3al5nl5ml125ns400ac1nc0lz10"
-            "dt0.005bdump1000adump5000ens1.ring' (lineage 'whole')")):
-        TransFociCyl(artifact, 'whole', 'bug')
-
-
 @pytest.mark.parametrize('parser_class, artifact', [
-    pytest.param(SumRuleCubHeteroRing,
+    pytest.param(RingCub,
                  'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 id='SumRuleCubHeteroRing'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 id='SumRuleCubHeteroLinear'),
-    pytest.param(TransFociCyl,
-                 'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 id='TransFociCyl'),
-    pytest.param(TransFociCub,
-                 'al5nl5ml125ns400ac1nc154699l30dt0.005bdump2000adump5000',
-                 id='TransFociCub'),
-    pytest.param(SumRuleCubHeteroRingBiDisperse,
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000',
-                 id='SumRuleCubHeteroRingBiDisperse'),
+                 id='RingCub'),
+    pytest.param(RingCubTwoCrowders,
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000',
+                 id='RingCubTwoCrowders'),
 ])
 def test_monomer_bulk_values_are_sums_over_sizes(parser_class, artifact):
     """All-monomer bulk values are the sums of the small and large ones."""
@@ -1374,20 +686,25 @@ def test_monomer_bulk_values_are_sums_over_sizes(parser_class, artifact):
         (small[0] + large[0], small[1] + large[1]), rel=1e-12)
 
 
+def test_crowder_bulk_values_are_sums_over_species():
+    """All-crowder bulk values are the sums of the two species' values."""
+    parser = RingCubTwoCrowders(
+        'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000adump5000',
+        'ensemble_long', 'bug')
+    one = attrgetter('rho_bulk_c_one', 'phi_bulk_c_one')(parser)
+    two = attrgetter('rho_bulk_c_two', 'phi_bulk_c_two')(parser)
+
+    actual = attrgetter('rho_bulk_c', 'phi_bulk_c')(parser)
+
+    # One float64 addition each.
+    assert actual == pytest.approx((one[0] + two[0], one[1] + two[1]),
+                                   rel=1e-12)
+
+
 @pytest.mark.parametrize('parser_class, artifact', [
-    pytest.param(SumRuleCubHeteroRing,
+    pytest.param(RingCub,
                  'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 id='SumRuleCubHeteroRing'),
-    pytest.param(SumRuleCubHeteroLinear,
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000',
-                 id='SumRuleCubHeteroLinear'),
-    pytest.param(TransFociCyl,
-                 'epss5epsl5r10.5al3nl5ml27ns400ac2nc1000lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 id='TransFociCyl'),
-    pytest.param(TransFociCub,
-                 'al5nl5ml125ns400ac2nc1000l30dt0.005bdump2000adump5000',
-                 id='TransFociCub'),
+                 id='RingCub'),
 ])
 def test_crowder_mass_is_size_cubed(parser_class, artifact):
     """At a long lineage the crowder mass is its size cubed, m = d^3."""
@@ -1398,13 +715,7 @@ def test_crowder_mass_is_size_cubed(parser_class, artifact):
 
 
 @pytest.mark.parametrize('parser_class, artifact', [
-    pytest.param(SumRuleCubHeteroRing, 'ns400nl5al5ac3nc7735',
-                 id='SumRuleCubHeteroRing'),
-    pytest.param(SumRuleCubHeteroLinear, 'ns400nl5al6ac3nc7735',
-                 id='SumRuleCubHeteroLinear'),
-    pytest.param(TransFociCyl, 'ns400nl5al3D20.0ac1nc8340',
-                 id='TransFociCyl'),
-    pytest.param(TransFociCub, 'ns400nl5al5ac1nc154699', id='TransFociCub'),
+    pytest.param(RingCub, 'ns400nl5al5ac3nc7735', id='RingCub'),
 ])
 def test_crowder_mass_is_placeholder_at_ensemble(parser_class, artifact):
     """At the ensemble lineage the crowder mass keeps the placeholder -1."""
@@ -1413,70 +724,17 @@ def test_crowder_mass_is_placeholder_at_ensemble(parser_class, artifact):
     assert parser.mcrowd == -1
 
 
-# HnsCub float keywords
-
-
-def test_hnscub_keeps_fractional_kbmm_and_epshc():
-    """Fractional kbmm and epshc stay floats in every lineage name."""
-    parser = HnsCub('N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1.ring', 'whole',
-                    'nucleoid')
-
-    assert (parser.bend_mm, parser.eps_hc, parser.whole,
-            parser.ensemble_long, parser.ensemble, parser.space) == (
-        2.5, 1.5, 'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0ens1',
-        'N200kbmm2.5nh8ac1.0l25.0epshc1.5nc0',
-        'N200kbmm2.5nh8ac1epshc1.5nc0', 'N200kbmm2.5nh8ac1epshc1.5')
-
-
-@pytest.mark.parametrize('lineage', [
-    pytest.param('whole', id='whole'),
-    pytest.param('ensemble_long', id='ensemble_long'),
-    pytest.param('ensemble', id='ensemble'),
-    pytest.param('space', id='space'),
-])
-@pytest.mark.parametrize('epshc, other_epshc', [
-    pytest.param('1.5', '1.0', id='half-step'),
-    # Six significant digits, as the '%g' format prints, would merge these.
-    pytest.param('1.000001', '1', id='seventh-digit'),
-])
-def test_hnscub_names_differing_in_epshc_stay_distinct(lineage, epshc,
-                                                       other_epshc):
-    """Names that differ only in epshc keep distinct lineage names."""
-    parser = HnsCub(f'N200kbmm2.5nh8ac1.0l25.0epshc{epshc}nc0ens1.ring',
-                    'whole', 'nucleoid')
-    other = HnsCub(f'N200kbmm2.5nh8ac1.0l25.0epshc{other_epshc}nc0ens1.ring',
-                   'whole', 'nucleoid')
-
-    assert getattr(parser, lineage) != getattr(other, lineage)
-
-
 # Lineage-name rules
 
 
 @pytest.mark.parametrize(
     'parser_class, group, lineage, artifact, ensemble, space',
     [
-        pytest.param(HnsCub, 'nucleoid', 'whole',
-                     'N200kbmm2nh12ac2l25epshc1nc0ens1.ring',
-                     'N200kbmm2nh12ac2epshc1nc0', 'N200kbmm2nh12ac2epshc1',
-                     id='HnsCub-integer-text'),
-        pytest.param(HnsCub, 'nucleoid', 'whole',
-                     'N200kbmm2.0nh12ac2.0l25.0epshc1.0nc0ens1.ring',
-                     'N200kbmm2nh12ac2epshc1nc0', 'N200kbmm2nh12ac2epshc1',
-                     id='HnsCub-float-text'),
-        pytest.param(HnsCub, 'all', 'whole',
-                     'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
-                     'N200kbmm2nh12ac2epshc0nc7162', 'N200kbmm2nh12ac2epshc0',
-                     id='HnsCub-zero'),
-        pytest.param(HnsCub, 'all', 'whole',
-                     'N200kbmm2nh12ac2l25epshc0.0nc7162ens1.ring',
-                     'N200kbmm2nh12ac2epshc0nc7162', 'N200kbmm2nh12ac2epshc0',
-                     id='HnsCub-zero-float-text'),
-        pytest.param(SumRuleCyl, 'all', 'segment',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1.j03',
+        pytest.param(ChainCyl, 'all', 'segment',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1.j03',
                      'N200D20ac2nc1000', 'N200D20ac2',
-                     id='SumRuleCyl-converted-dcyl'),
+                     id='ChainCyl-converted-dcyl'),
     ],
 )
 def test_short_name_prints_whole_number_float_as_integer(
@@ -1490,15 +748,11 @@ def test_short_name_prints_whole_number_float_as_integer(
 @pytest.mark.parametrize(
     'parser_class, group, lineage, artifact, ensemble, space',
     [
-        pytest.param(HnsCub, 'nucleoid', 'whole',
-                     'N200kbmm2.5nh8ac1.5l25epshc0.25nc0ens1.ring',
-                     'N200kbmm2.5nh8ac1.5epshc0.25nc0',
-                     'N200kbmm2.5nh8ac1.5epshc0.25', id='HnsCub'),
-        pytest.param(SumRuleCyl, 'all', 'segment',
-                     'N200epsilon5.0r10.75lz25.0sig1.000001nc1000dt0.005'
-                     'bdump2000adump5000ens1.j03',
+        pytest.param(ChainCyl, 'all', 'segment',
+                     'N200r10.75lz25.0ac1.000001nc1000dt0.005bdump2000'
+                     'adump5000ens1.j03',
                      'N200D20.5ac1.000001nc1000', 'N200D20.5ac1.000001',
-                     id='SumRuleCyl-converted-dcyl'),
+                     id='ChainCyl-converted-dcyl'),
     ],
 )
 def test_short_name_prints_fractional_float_as_repr(
@@ -1525,18 +779,12 @@ def test_keyword_spec_converts_decimal_token_exactly(token, expected):
 
 
 @pytest.mark.parametrize('parser_class, group, artifact, ensemble', [
-    pytest.param(SumRuleCyl, 'bug',
-                 'N20epsilon5r4.1lz10sig1nc100dt0.005bdump1000adump5000',
-                 'N20D7.2ac1nc100', id='SumRuleCyl-r4.1'),
-    pytest.param(TransFociCyl, 'bug',
-                 'epss5epsl5r4.1al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                 'bdump2000adump5000',
-                 'ns400nl5al3D7.2ac1nc8340', id='TransFociCyl-r4.1'),
-    pytest.param(HnsCyl, 'nucleoid', 'N200kbmm2r4.1nh4ac1lz75epshc1.0nc1152',
-                 'N200D7.2nh4ac1epshc1nc1152', id='HnsCyl-r4.1'),
-    pytest.param(SumRuleCyl, 'bug',
-                 'N20epsilon5r5.5lz10sig1nc100dt0.005bdump1000adump5000',
-                 'N20D10ac1nc100', id='SumRuleCyl-r5.5'),
+    pytest.param(ChainCyl, 'bug',
+                 'N20r4.1lz10ac1nc100dt0.005bdump1000adump5000',
+                 'N20D7.2ac1nc100', id='ChainCyl-r4.1'),
+    pytest.param(ChainCyl, 'bug',
+                 'N20r5.5lz10ac1nc100dt0.005bdump1000adump5000',
+                 'N20D10ac1nc100', id='ChainCyl-r5.5'),
 ])
 def test_short_name_prints_cylinder_size_from_r_as_decimal(
         parser_class, group, artifact, ensemble):
@@ -1562,326 +810,69 @@ def test_short_name_reparses_to_itself(valid_case, short_lineage):
     assert getattr(reparsed, short_lineage) == name
 
 
-@pytest.mark.parametrize('parser_class, group, segment, whole, expected', [
-    pytest.param(HnsCub, 'all',
-                 'N200kbmm2nh12ac2l25epshc0nc7162ens1.j07.ring.all',
-                 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring.all',
-                 'N200kbmm2nh12ac2l25epshc0nc7162ens1', id='HnsCub-ring'),
-    pytest.param(SumRuleCubHeteroLinear, 'all',
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
-                 'ens1.j02.linear.all',
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
-                 'ens1.linear.all',
-                 'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000ens1',
-                 id='SumRuleCubHeteroLinear-linear'),
-])
-def test_whole_name_drops_topology_suffix_from_segment_and_whole(
-        parser_class, group, segment, whole, expected):
-    """A simulation's segment and whole files give one suffix-free whole."""
-    from_segment = parser_class(segment, 'segment', group)
-    from_whole = parser_class(whole, 'whole', group)
-
-    assert (from_segment.whole, from_whole.whole) == (expected, expected)
-
-
-def _stamp_mismatches(path: Path) -> list[tuple[str, ...]]:
-    """
-    Compare the names in one SciOps ``HnsCub`` stamp file with the rebuilt
-    names, under the mapping that the Usage page, "Lineage names", documents.
-
-    A stamp file is ``<lineage_name>-<group>-stamps.csv``; its columns start
-    with ``lineage_name`` and the lineage names, with a ``segment`` column
-    only for a segment. The expected rebuilt name is the stamp's ``segment``
-    or ``whole`` without ``.ring``, its ``ensemble_long`` unchanged, and its
-    ``ensemble`` or ``space`` parsed at that lineage and rebuilt; a short
-    key must also parse to the artifact's own values. Returns one
-    ``(file, column, stamp, expected, rebuilt)`` tuple per mismatch.
-    """
-    group = path.name.removesuffix('-stamps.csv').rsplit('-', 1)[1]
-    frame = pd.read_csv(path, dtype=str)
-    lineage = 'segment' if 'segment' in frame.columns else 'whole'
-    mismatches = []
-    for row in frame.to_dict('records'):
-        parser = HnsCub(row['lineage_name'], lineage, group)
-        expected = {column: row[column].removesuffix('.ring')
-                    for column in ('segment', 'whole') if column in row}
-        expected['ensemble_long'] = row['ensemble_long']
-        for column in ('ensemble', 'space'):
-            old = HnsCub(row[column], column, group)
-            expected[column] = getattr(old, column)
-            values = attrgetter(*HnsCub._genealogy_attributes[column])
-            if values(old) != values(parser):
-                mismatches.append((path.name, f'{column} values',
-                                   row[column], str(values(parser)),
-                                   str(values(old))))
-        mismatches.extend(
-            (path.name, column, row[column], name, getattr(parser, column))
-            for column, name in expected.items()
-            if getattr(parser, column) != name)
-    return mismatches
-
-
-@pytest.fixture
-def write_stamp(tmp_path: Path):
-    """
-    Return a factory that writes a one-row stamp file in the SciOps format,
-    ``<lineage_name>-<group>-stamps.csv``, from a mapping of column to value,
-    and returns its path.
-    """
-    def _write(group: str, columns: dict[str, str]) -> Path:
-        path = tmp_path / f"{columns['lineage_name']}-{group}-stamps.csv"
-        path.write_text(','.join(columns) + '\n'
-                        + ','.join(columns.values()) + '\n')
-        return path
-    return _write
-
-
-@pytest.mark.parametrize('group, columns, flagged', [
-    pytest.param(
-        'nucleoid',
-        {'lineage_name': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
-         'whole': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
-         'ensemble_long': 'N200kbmm2nh12ac2l25epshc0nc7162',
-         'ensemble': 'N200kbmm2nh12ac2.0epshc0nc7162',
-         'space': 'N200kbmm2nh12ac2.0epshc0', 'nmon': '200', 'n_frames': '10'},
-        [], id='whole-matches'),
-    pytest.param(
-        'all',
-        {'lineage_name': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.j07.ring',
-         'segment': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.j07.ring',
-         'whole': 'N200kbmm2nh12ac2l25epshc0nc7162ens1',
-         'ensemble_long': 'N200kbmm2nh12ac2l25epshc0nc7162',
-         'ensemble': 'N200kbmm2nh12ac2.0epshc0nc7162',
-         'space': 'N200kbmm2nh12ac2.0epshc0', 'nmon': '200', 'n_frames': '10'},
-        [], id='segment-matches'),
-    pytest.param(
-        'nucleoid',
-        {'lineage_name': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
-         'whole': 'N200kbmm2nh12ac2l25epshc0nc7162ens1.ring',
-         'ensemble_long': 'N200kbmm2nh12ac2l25epshc0nc7162',
-         'ensemble': 'N200kbmm2nh12ac2.0epshc0nc7162',
-         'space': 'N200kbmm2nh12ac2.0epshc1', 'nmon': '200', 'n_frames': '10'},
-        ['space values', 'space'], id='space-value-differs'),
-])
-def test_stamp_mismatches_flags_only_departures_from_mapping(
-        write_stamp, group, columns, flagged):
-    """A stamp differing from the rebuilt names only by the mapping passes."""
-    path = write_stamp(group, columns)
-
-    mismatches = _stamp_mismatches(path)
-
-    assert [mismatch[1] for mismatch in mismatches] == flagged
-
-
-@pytest.mark.private_data
-def test_hnscub_names_match_existing_stamps_under_mapping(  # pragma: no cover
-        private_data_dir):
-    """Rebuilt HnsCub names equal the SciOps stamp names under the mapping."""
-    stamps = sorted(
-        path for path in private_data_dir.rglob('*-stamps.csv')
-        if any(part.startswith('HnsCub')
-               for part in path.relative_to(private_data_dir).parts[:-1]))
-
-    mismatches = [mismatch for path in stamps
-                  for mismatch in _stamp_mismatches(path)]
-
-    assert stamps, 'no stamp file under a directory named HnsCub*'
-    assert mismatches == []
-
-
-# SumRuleCubHeteroRingBiDisperse
-
-
 @pytest.mark.parametrize('artifact, lineage, group, expected', [
-    pytest.param('runs/al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000ens1.j20.ring.all.lammpstrj',
+    pytest.param('runs/al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.j20.ring.all.lammpstrj',
                  'segment', 'all',
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
                  'adump5000ens1.j20.ring', id='segment-trajectory'),
-    pytest.param('runs/al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000ens1.ring.bug.data',
+    pytest.param('runs/al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.ring.bug.data',
                  'whole', 'bug',
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
                  'adump5000ens1.ring', id='whole-data'),
-    pytest.param('runs/al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                 'bdump2000adump5000ens1.ring.bug.restart.lammpstrj',
+    pytest.param('runs/al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                 'adump5000ens1.ring.bug.restart.lammpstrj',
                  'whole', 'bug',
-                 'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
+                 'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
                  'adump5000ens1.ring', id='whole-restart'),
 ])
-def test_bidisperse_reduces_file_path_to_lineage_name(artifact, lineage,
-                                                      group, expected):
+def test_parser_reduces_file_path_to_lineage_name(artifact, lineage, group,
+                                                  expected):
     """A project file path reduces to its name before the group keyword."""
-    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, group,
-                                            ispath=True)
+    parser = RingCubTwoCrowders(artifact, lineage, group, ispath=True)
 
     assert parser.name == expected
 
 
-def test_bidisperse_segment_names_its_parents():
+def test_segment_names_its_parents():
     """A segment gives every parent name, short ones without a trailing .0."""
-    parser = SumRuleCubHeteroRingBiDisperse(
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
+    parser = RingCubTwoCrowders(
+        'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000adump5000'
         'ens1.j20.ring.all', 'segment', 'all')
 
     assert (parser.segment, parser.whole, parser.ensemble_long,
             parser.ensemble, parser.space) == (
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
-        'ens1.j20',
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
-        'ens1',
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000',
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671',
-        'al4nl5ns400ac1ab5pctc40')
-
-
-def test_bidisperse_crowder_bulk_values_are_sums_over_species():
-    """All-crowder bulk values are the sums of the two species' values."""
-    parser = SumRuleCubHeteroRingBiDisperse(
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000',
-        'ensemble_long', 'bug')
-    one = attrgetter('rho_bulk_c_one', 'phi_bulk_c_one')(parser)
-    two = attrgetter('rho_bulk_c_two', 'phi_bulk_c_two')(parser)
-
-    actual = attrgetter('rho_bulk_c', 'phi_bulk_c')(parser)
-
-    # One float64 addition each.
-    assert actual == pytest.approx((one[0] + two[0], one[1] + two[1]),
-                                   rel=1e-12)
-
-
-def test_bidisperse_crowder_fractions_match_generator_design():
-    """
-    Generator counts for phi_c 0.25 at pctc 40 give phi_c_one 0.10,
-    phi_c_two 0.15, and a type-one share of 40 percent.
-    """
-    parser = SumRuleCubHeteroRingBiDisperse(
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000',
-        'ensemble_long', 'bug')
-
-    fractions = (parser.phi_bulk_c_one, parser.phi_bulk_c_two)
-    share = 100 * parser.phi_bulk_c_one / parser.phi_bulk_c
-
-    # phi_i = n_i pi d_i^3 / (6 L^3) with L = 90; the generator rounded each
-    # count to an integer, a relative error of at most 0.5/1671 = 3e-4, so
-    # at most 4.5e-5 in phi_c_two and 0.012 in the percentage.
-    assert fractions == pytest.approx((0.10, 0.15), abs=1e-4)
-    assert share == pytest.approx(40.0, abs=0.02)
-
-
-@pytest.mark.parametrize('artifact, lineage', [
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000ens1.j20.ring.all', 'segment', id='segment'),
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000ens1.ring.all', 'whole', id='whole'),
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000', 'ensemble_long', id='ensemble_long'),
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671', 'ensemble',
-                 id='ensemble'),
-    pytest.param('al4nl5ns400ac1ab5pctc40', 'space', id='space'),
-])
-def test_bidisperse_pct_two_complements_pct_one(artifact, lineage):
-    """Every lineage sets pct_two = 100 - pct_one, here 60 for pctc 40."""
-    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, 'all')
-
-    # 100 - 40.0 is exact in float64.
-    assert parser.pct_two == 60.0
-
-
-@pytest.mark.parametrize('artifact, lineage', [
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000ens1.j20.ring.all', 'segment', id='segment'),
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000ens1.ring.all', 'whole', id='whole'),
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000'
-                 'adump5000', 'ensemble_long', id='ensemble_long'),
-])
-def test_bidisperse_masses_are_size_cubed(artifact, lineage):
-    """At a long lineage each computed mass is its size cubed: 4^3, 1, 5^3."""
-    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, 'all')
-
-    actual = (parser.mmon_large, parser.mcrowd_one, parser.mcrowd_two)
-
-    # Cubes of small whole numbers are exact in float64.
-    assert actual == (64.0, 1.0, 125.0)
-
-
-@pytest.mark.parametrize('artifact, lineage', [
-    pytest.param('al4nl5ns400ac1ab5pctc40nc139229nb1671', 'ensemble',
-                 id='ensemble'),
-    pytest.param('al4nl5ns400ac1ab5pctc40', 'space', id='space'),
-])
-def test_bidisperse_short_lineages_set_no_masses(artifact, lineage):
-    """Ensemble and space set no computed masses, not even a placeholder."""
-    parser = SumRuleCubHeteroRingBiDisperse(artifact, lineage, 'all')
-
-    actual = (hasattr(parser, 'mmon_large'), hasattr(parser, 'mcrowd_one'),
-              hasattr(parser, 'mcrowd_two'))
-
-    assert actual == (False, False, False)
-
-
-def test_bidisperse_sets_no_eps_others():
-    """The LJ energy unit is documented, not stored as an attribute."""
-    parser = SumRuleCubHeteroRingBiDisperse(
-        'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005bdump2000adump5000'
-        'ens1.j20.ring.all', 'segment', 'all')
-
-    assert not hasattr(parser, 'eps_others')
+        'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000adump5000ens1.j20',
+        'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000adump5000ens1',
+        'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000adump5000',
+        'al4nl5ns400ac1ab5nc139229nb1671',
+        'al4nl5ns400ac1ab5')
 
 
 @pytest.mark.parametrize(
     'parser_class, group, child_lineage, child_name, parent_lineage',
     [
-        pytest.param(TwoMonDepCub, 'bug', 'segment',
-                     'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
-                     'tdump500ens3.j01.bug', 'whole',
-                     id='TwoMonDepCub-segment-whole'),
-        pytest.param(TwoMonDepCub, 'bug', 'whole',
-                     'am5.0nm2ac1.0nc100hl10.0sd2.0dt0.01bdump50adump100'
-                     'tdump500ens3.bug', 'ensemble_long',
-                     id='TwoMonDepCub-whole-ensemble_long'),
-        pytest.param(SumRuleCyl, 'all', 'segment',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1.j01', 'whole',
-                     id='SumRuleCyl-segment-whole'),
-        pytest.param(SumRuleCyl, 'all', 'whole',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1', 'ensemble_long',
-                     id='SumRuleCyl-whole-ensemble_long'),
-        pytest.param(SumRuleCubHeteroRing, 'all', 'whole',
+        pytest.param(ChainCyl, 'all', 'segment',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1.j01', 'whole',
+                     id='ChainCyl-segment-whole'),
+        pytest.param(ChainCyl, 'all', 'whole',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1', 'ensemble_long',
+                     id='ChainCyl-whole-ensemble_long'),
+        pytest.param(RingCub, 'all', 'whole',
                      'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000'
                      'ens4.ring.all', 'ensemble_long',
-                     id='SumRuleCubHeteroRing-whole-ensemble_long'),
-        pytest.param(SumRuleCubHeteroLinear, 'all', 'whole',
-                     'al6nl5ml216ns400ac3nc7735l45dt0.005bdump2000adump5000'
-                     'ens1.linear.all', 'ensemble_long',
-                     id='SumRuleCubHeteroLinear-whole-ensemble_long'),
-        pytest.param(TransFociCyl, 'bug', 'segment',
-                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000ens8.j05.ring.bug', 'whole',
-                     id='TransFociCyl-segment-whole'),
-        pytest.param(TransFociCub, 'bug', 'whole',
-                     'al5.0nl5ml1.0ns400ac1.0nc100l15.0dt0.005bdump2000'
-                     'adump5000ens1', 'ensemble_long',
-                     id='TransFociCub-whole-ensemble_long'),
-        pytest.param(HnsCub, 'nucleoid', 'segment',
-                     'N200kbmm2nh12ac2l25epshc1nc11937ens2.j5.ring.nucleoid',
-                     'whole', id='HnsCub-segment-whole'),
-        pytest.param(HnsCyl, 'all', 'segment',
-                     'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.j01.ring.all',
-                     'whole', id='HnsCyl-segment-whole'),
-        pytest.param(HnsCyl, 'all', 'whole',
-                     'N200kbmm2r4.5nh4ac1lz75epshc1.0nc1152ens1.ring.all',
-                     'ensemble_long', id='HnsCyl-whole-ensemble_long'),
-        pytest.param(SumRuleCubHeteroRingBiDisperse, 'all', 'segment',
-                     'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                     'bdump2000adump5000ens1.j20.ring.all', 'whole',
-                     id='SumRuleCubHeteroRingBiDisperse-segment-whole'),
-        pytest.param(SumRuleCubHeteroRingBiDisperse, 'bug', 'whole',
-                     'al4nl5ns400ac1ab5pctc40nc139229nb1671l45dt0.005'
-                     'bdump2000adump5000ens1.ring.bug', 'ensemble_long',
-                     id='SumRuleCubHeteroRingBiDisperse-whole-ensemble_long'),
+                     id='RingCub-whole-ensemble_long'),
+        pytest.param(RingCubTwoCrowders, 'all', 'segment',
+                     'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                     'adump5000ens1.j20.ring.all', 'whole',
+                     id='RingCubTwoCrowders-segment-whole'),
+        pytest.param(RingCubTwoCrowders, 'bug', 'whole',
+                     'al4nl5ns400ac1ab5nc139229nb1671l45dt0.005bdump2000'
+                     'adump5000ens1.ring.bug', 'ensemble_long',
+                     id='RingCubTwoCrowders-whole-ensemble_long'),
     ],
 )
 def test_parser_rebuilt_parent_name_keeps_attributes(
@@ -1900,35 +891,21 @@ def test_parser_rebuilt_parent_name_keeps_attributes(
 @pytest.mark.parametrize(
     'parser_class, group, lineage, artifact, parent_lineage, expected',
     [
-        pytest.param(SumRuleCyl, 'all', 'segment',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1.j01', 'segment',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1.j01', id='SumRuleCyl-segment'),
-        pytest.param(SumRuleCyl, 'all', 'segment',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1.j01', 'whole',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1', id='SumRuleCyl-whole'),
-        pytest.param(SumRuleCyl, 'all', 'segment',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000ens1.j01', 'ensemble_long',
-                     'N200epsilon5.0r10.5lz25.0sig2.0nc1000dt0.005bdump2000'
-                     'adump5000', id='SumRuleCyl-ensemble_long'),
-        pytest.param(TransFociCyl, 'bug', 'segment',
-                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000ens8.j05.ring.bug', 'segment',
-                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000ens8.j05', id='TransFociCyl-segment'),
-        pytest.param(TransFociCyl, 'bug', 'whole',
-                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000ens8.ring.bug', 'whole',
-                     'epss5epsl5r10.5al3nl5ml27ns400ac1nc8340lz69.5dt0.005'
-                     'bdump2000adump5000ens8', id='TransFociCyl-whole'),
-        pytest.param(HnsCub, 'nucleoid', 'segment',
-                     'N200kbmm2nh12ac2l25epshc1nc11937ens2.j5.ring.nucleoid',
-                     'ensemble_long', 'N200kbmm2nh12ac2l25epshc1nc11937',
-                     id='HnsCub-ensemble_long'),
+        pytest.param(ChainCyl, 'all', 'segment',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1.j01', 'segment',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1.j01', id='ChainCyl-segment'),
+        pytest.param(ChainCyl, 'all', 'segment',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1.j01', 'whole',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1', id='ChainCyl-whole'),
+        pytest.param(ChainCyl, 'all', 'segment',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000'
+                     'ens1.j01', 'ensemble_long',
+                     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000',
+                     id='ChainCyl-ensemble_long'),
     ],
 )
 def test_parser_rebuilt_parent_name_is_name_prefix(
@@ -1943,22 +920,16 @@ def test_parser_rebuilt_parent_name_is_name_prefix(
 
 
 @pytest.mark.parametrize('parser_class, lineage, expected', [
-    pytest.param(SumRuleCyl, 'whole',
-                 OrderedDict([('nmon', 'N'), ('epsilon', 'epsilon'),
-                              ('dcyl', 'r'), ('lcyl', 'lz'),
-                              ('dcrowd', 'sig'), ('ncrowd', 'nc'),
+    pytest.param(ChainCyl, 'whole',
+                 OrderedDict([('nmon', 'N'), ('dcyl', 'r'), ('lcyl', 'lz'),
+                              ('dcrowd', 'ac'), ('ncrowd', 'nc'),
                               ('dt', 'dt'), ('bdump', 'bdump'),
                               ('adump', 'adump'), ('ensemble_id', 'ens')]),
-                 id='SumRuleCyl-whole'),
-    pytest.param(SumRuleCyl, 'ensemble',
+                 id='ChainCyl-whole'),
+    pytest.param(ChainCyl, 'ensemble',
                  OrderedDict([('nmon', 'N'), ('dcyl', 'D'),
                               ('dcrowd', 'ac'), ('ncrowd', 'nc')]),
-                 id='SumRuleCyl-ensemble'),
-    pytest.param(HnsCub, 'space',
-                 OrderedDict([('nmon', 'N'), ('bend_mm', 'kbmm'),
-                              ('nhns', 'nh'), ('dcrowd', 'ac'),
-                              ('eps_hc', 'epshc')]),
-                 id='HnsCub-space'),
+                 id='ChainCyl-ensemble'),
 ])
 def test_genealogy_attributes_follow_pattern_order(parser_class, lineage,
                                                    expected):
@@ -1985,19 +956,18 @@ def test_parser_without_patterns_cannot_be_instantiated(parser_class):
 
 def test_pattern_returns_declared_keywords():
     """pattern gives a lineage's keywords in the order its name writes them."""
-    keywords = SumRuleCyl.pattern('space')
+    keywords = ChainCyl.pattern('space')
 
-    # The SumRuleCyl declaration: 'space': ('N', 'D', 'ac').
+    # The ChainCyl declaration: 'space': ('N', 'D', 'ac').
     assert keywords == ('N', 'D', 'ac')
 
 
 @pytest.mark.parametrize('lineage, expected', [
     pytest.param(
         'ensemble_long',
-        {'nmon', 'epsilon', 'dcyl', 'lcyl', 'dcrowd', 'ncrowd', 'dt',
-         'bdump', 'adump', 'dmon', 'segment', 'whole', 'ensemble_long',
-         'ensemble', 'space', 'rho_bulk_m', 'phi_bulk_m', 'rho_bulk_c',
-         'phi_bulk_c'},
+        {'nmon', 'dcyl', 'lcyl', 'dcrowd', 'ncrowd', 'dt', 'bdump', 'adump',
+         'dmon', 'segment', 'whole', 'ensemble_long', 'ensemble', 'space',
+         'rho_bulk_m', 'phi_bulk_m', 'rho_bulk_c', 'phi_bulk_c'},
         id='ensemble_long-with-bulk-values'),
     pytest.param(
         'space',
@@ -2007,9 +977,9 @@ def test_pattern_returns_declared_keywords():
 ])
 def test_attributes_at_lists_declared_attributes(lineage, expected):
     """attributes_at gives the parsed, default, lineage, and bulk names."""
-    names = SumRuleCyl.attributes_at(lineage)
+    names = ChainCyl.attributes_at(lineage)
 
-    # From the SumRuleCyl declaration: pattern attributes, 'dmon' in
+    # From the ChainCyl declaration: pattern attributes, 'dmon' in
     # _defaults, the five lineage names, and at ensemble_long the bulk
     # values of the species 'm' and 'c'.
     assert names == frozenset(expected)
@@ -2052,7 +1022,7 @@ def test_class_reads_need_patterns(method):
 def test_class_reads_reject_unknown_lineage(method):
     """pattern and attributes_at raise ValueError on an unknown lineage."""
     with pytest.raises(ValueError, match='invalid option'):
-        getattr(SumRuleCyl, method)('galaxy')
+        getattr(ChainCyl, method)('galaxy')
 
 
 def test_declared_parser_parses_its_names(chain_declaration):
@@ -2176,3 +1146,41 @@ def test_keyword_spec_rejects_bad_declaration(kwargs, match):
     """A KeywordSpec of another type, or an int with a conversion, fails."""
     with pytest.raises(TypeError, match=match):
         KeywordSpec(**kwargs)
+
+
+# Study parsers that left the module
+
+
+@pytest.mark.parametrize('name, message', [
+    pytest.param('HnsCub', 'projects/hns_cub/parser.py', id='HnsCub'),
+    pytest.param('HnsCyl', 'projects/hns_cyl/parser.py', id='HnsCyl'),
+    pytest.param('TransFociCub', 'projects/trans_foci_cub/parser.py',
+                 id='TransFociCub'),
+    pytest.param('TransFociCyl', 'projects/trans_foci_cyl/parser.py',
+                 id='TransFociCyl'),
+    pytest.param('SumRuleCyl', 'removed from PolyPhys in 1.0.0',
+                 id='SumRuleCyl'),
+    pytest.param('SumRuleCubHeteroRing', 'removed from PolyPhys in 1.0.0',
+                 id='SumRuleCubHeteroRing'),
+    pytest.param('SumRuleCubHeteroLinear', 'removed from PolyPhys in 1.0.0',
+                 id='SumRuleCubHeteroLinear'),
+    pytest.param('SumRuleCubHeteroRingBiDisperse',
+                 'removed from PolyPhys in 1.0.0',
+                 id='SumRuleCubHeteroRingBiDisperse'),
+    pytest.param('TwoMonDepCub', 'removed from PolyPhys in 1.0.0',
+                 id='TwoMonDepCub'),
+])
+def test_moved_study_parser_import_raises_import_error(name, message):
+    """Importing a study parser that left the module says where it went."""
+    module = importlib.import_module('polyphys.manage.parser')
+
+    with pytest.raises(ImportError, match=re.escape(message)):
+        getattr(module, name)
+
+
+def test_unknown_name_raises_attribute_error():
+    """A name the module never defined raises AttributeError, as usual."""
+    module = importlib.import_module('polyphys.manage.parser')
+
+    with pytest.raises(AttributeError, match="has no attribute 'NoSuchName'"):
+        getattr(module, 'NoSuchName')

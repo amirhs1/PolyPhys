@@ -23,7 +23,7 @@ is $k_B T = \epsilon$.
 $a_m = 1$, $a_l$, $a_c$, $a_b$
 : The diameters of a monomer (the small monomer of a two-size chain), a
   large monomer (keyword `al`), a crowder (keyword `ac`, or `sig` in
-  {class}`~polyphys.manage.parser.SumRuleCyl`), and a second crowder
+  `SumRuleCyl`), and a second crowder
   species (keyword `ab`).
 
 $\epsilon_{ij}$, $\sigma_{ij}$, $r_{c,ij}$
@@ -100,7 +100,7 @@ Preparing the start configuration
 
 ## SumRuleCyl
 
-{class}`~polyphys.manage.parser.SumRuleCyl`: a linear chain of $N$
+`SumRuleCyl`: a linear chain of $N$
 monomers and crowders of size $a_c$ in a cylinder that is periodic along its
 axis.
 
@@ -120,7 +120,7 @@ one generator of the $N = 2000$, $D = 60$, $a_c = 4$ set, whose names say
 
 ## TransFociCyl
 
-{class}`~polyphys.manage.parser.TransFociCyl`: a ring of $n_s$ small and
+`TransFociCyl`: a ring of $n_s$ small and
 $n_l$ large monomers, with crowders, in a cylinder that is periodic along
 its axis.
 
@@ -136,7 +136,7 @@ its axis.
 
 ## TransFociCub
 
-{class}`~polyphys.manage.parser.TransFociCub`: the TransFociCyl chain and
+`TransFociCub`: the TransFociCyl chain and
 crowders in a periodic cube, so there is no wall. The other values are those
 of TransFociCyl, with one exception: in the set of simulations with
 $a_l \in \{5, 6\}$ from May 2024, every pair is cut at
@@ -146,9 +146,9 @@ only the part of the repulsion with $r < \sigma_{ij}$ is kept.
 
 ## SumRuleCubHeteroRing, SumRuleCubHeteroLinear, SumRuleCubHeteroRingBiDisperse
 
-{class}`~polyphys.manage.parser.SumRuleCubHeteroRing`,
-{class}`~polyphys.manage.parser.SumRuleCubHeteroLinear`, and
-{class}`~polyphys.manage.parser.SumRuleCubHeteroRingBiDisperse`: a ring or a
+`SumRuleCubHeteroRing`,
+`SumRuleCubHeteroLinear`, and
+`SumRuleCubHeteroRingBiDisperse`: a ring or a
 linear chain of small and large monomers among crowders of one or two sizes,
 in a periodic cube. They follow the shared choices: six pairs of species
 (ten with two crowder species), all with $\epsilon_{ij} = 1$ and cut at
@@ -162,7 +162,7 @@ same production input; the topology comes from the start configuration.
 
 ## TwoMonDepCub
 
-{class}`~polyphys.manage.parser.TwoMonDepCub`: two unbonded monomers of size
+`TwoMonDepCub`: two unbonded monomers of size
 $a_m$ (keyword `am`) among crowders of size $a_c = 1$ in a periodic cube.
 
 | Value | Setting |
@@ -178,8 +178,8 @@ $a_m$ (keyword `am`) among crowders of size $a_c = 1$ in a periodic cube.
 
 ## HnsCub and HnsCyl
 
-{class}`~polyphys.manage.parser.HnsCub` and
-{class}`~polyphys.manage.parser.HnsCyl`: a ring of $N$ monomers, $n_h$ H-NS
+`HnsCub` and
+`HnsCyl`: a ring of $N$ monomers, $n_h$ H-NS
 proteins, and crowders, in a periodic cube or in a cylinder that is periodic
 along its axis. Each protein is a core of size 1 bonded to two poles. The
 particle types are the monomer (1), the H-NS pole (2), the H-NS core (3),

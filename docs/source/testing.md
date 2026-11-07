@@ -86,7 +86,8 @@ in the Hypothesis documentation.
 
 `make_lineage_tree(parser, ...)`
 : Writes a lineage tree of tiny `.npy` or `.csv` files, named for a parser
-  class from {mod}`polyphys.manage.parser`, under the test's `tmp_path`. The
+  class such as those of `polyphys.tests.synthetic`, under the test's
+  `tmp_path`. The
   tree has `n_ensembles` state points that differ in one filename keyword,
   `n_wholes` replicates per state point, and, at the `segment` level,
   `n_segments` segments per replicate. Each file's values encode its indices

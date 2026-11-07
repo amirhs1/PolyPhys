@@ -198,9 +198,8 @@ skipped when the frame has no box or the topology has no bonds, and when an
 asphericity with `unwrap` set is the only observable.
 
 ```python
-from polyphys.manage.parser import TransFociCyl
 from polyphys.probe import ChainSize, write_stamps
-from trans_foci_cyl import PROBE
+from trans_foci_cyl import PROBE, TransFociCyl
 
 parser = TransFociCyl(trajectory, 'whole', 'bug', ispath=True)
 analysis = ChainSize.from_spec(universe, PROBE).run()
@@ -445,9 +444,8 @@ PROBE = ProbeSpec(
 | `store_distances`    | Whether the monomer-to-patch distance matrices are kept and saved; `True` in the H-NS studies, which post-process them             |
 
 ```python
-from polyphys.manage.parser import HnsCub
 from polyphys.probe import BinderStatistics, write_stamps
-from hns_cub import PROBE
+from hns_cub import PROBE, HnsCub
 
 parser = HnsCub(trajectory, 'whole', 'nucleoid', ispath=True)
 analysis = BinderStatistics.from_spec(universe, PROBE).run()

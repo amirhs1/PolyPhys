@@ -212,10 +212,9 @@ frame:
 | `viz.colors`       | The qualitative color lists of the studies' figures as `#RRGGBB` tuples (Paul Tol's bright, vibrant, and muted schemes, the Dutch Field palette, and the maintainer's own list), which need no plotting library, and `truncate_colormap`, a matplotlib color map cut down to a sub-range of its domain. |
 | `viz.helpers`      | `set_xticks` and `set_yticks`, which place an axis's major ticks every `step` from `lower` to `upper` inside a small frame; proxy legend handles keyed by color or by line style and marker; a legend moved from a figure into chosen panels; and a band shaded under each line in its own color. Needs the `viz` extra. |
 
-Nine parser subclasses ship with the package, covering cylindrical and cubic
-confinement: linear and ring chains, some with two monomer sizes, among
-crowders of one or two sizes, and a pair of monomers held at a fixed distance
-(`TwoMonDepCub`).
+The package ships no study's parser: each study declares its own
+`ParserBase` subclass in its own folder. The parsers of the maintainer's
+published studies are in `projects/`, outside the installed package.
 
 ## Documentation
 
@@ -241,10 +240,8 @@ pull request and every push to `main`; the probe layer's tests run on Python
 The examples above are executed as part of the test suite, so anything shown in
 this README is guaranteed to run against the current code.
 
-Current focus: move the study parsers out of `manage.parser` into their
-study folders, so a new study _uses_ PolyPhys from outside the package rather
-than extending it; the study specs have already moved to `projects/`
-([#197](https://github.com/amirhs1/PolyPhys/issues/197)).
+A study _uses_ PolyPhys from outside the package rather than extending it:
+its parser and its specs live in its own folder, as `projects/` shows.
 
 ## Citation
 

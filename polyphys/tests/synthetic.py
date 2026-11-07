@@ -16,6 +16,10 @@ any study's naming scheme.
   crowders of two sizes in a periodic cube.
 - :class:`RingCubBinders`: a ring of monomers with binders and crowders in
   a periodic cube.
+- :class:`RingCyl`: a ring of small and large monomers among crowders in a
+  cylinder that is periodic along its axis.
+- :class:`RingCylBinders`: a ring of monomers with binders and crowders in
+  a cylinder that is periodic along its axis.
 
 In each name, ``#`` stands for a value. The cylinder size is
 :math:`D = 2r - 1` from the radius :math:`r` (keyword ``r``) of a wall of
@@ -32,7 +36,10 @@ Examples
 """
 from polyphys.manage.parser import KeywordSpec, ParserBase, Species
 
-__all__ = ['ChainCyl', 'RingCub', 'RingCubBinders', 'RingCubTwoCrowders']
+__all__ = [
+    'ChainCyl', 'RingCub', 'RingCubBinders', 'RingCubTwoCrowders', 'RingCyl',
+    'RingCylBinders',
+]
 
 _MONOMER_BULK = ['phi_bulk_m', 'rho_bulk_m']
 _RING_BULK = ['phi_bulk_m_small', 'rho_bulk_m_small', 'phi_bulk_m_large',
@@ -299,3 +306,105 @@ class RingCubBinders(ParserBase):
         'ensemble': ['dmon', 'dhns', 'dt', 'ndump', 'adump'],
         'space': ['dmon', 'dhns', 'dt', 'ndump', 'adump'],
     }
+
+
+class RingCyl(ParserBase):
+    """
+    Parse a name of the synthetic *RingCyl* study: a ring of small and large
+    monomers among crowders in a cylinder that is periodic along its axis.
+
+    - ``segment``: r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#.j#
+    - ``whole``: r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#ens#
+    - ``ensemble_long``: r#al#nl#ml#ns#ac#nc#lz#dt#bdump#adump#
+    - ``ensemble``: ns#nl#al#D#ac#nc#
+    - ``space``: ns#nl#al#D#ac#
+
+    Examples
+    --------
+    >>> artifact = RingCyl(
+    ...     'r5al2nl3ml8ns7ac1.5nc0lz10dt0.005bdump1adump1ens1', 'whole',
+    ...     'bug')
+    >>> artifact.dcyl, artifact.dmon_large, artifact.space
+    (9.0, 2.0, 'ns7nl3al2D9ac1.5')
+    """
+    _geometry = 'cylindrical'
+    _topology = 'ring'
+    _groups = ['bug', 'all']
+    _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
+    _keywords = {
+        'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+        'D': KeywordSpec('dcyl', float),
+        'al': KeywordSpec('dmon_large', float),
+        'nl': KeywordSpec('nmon_large', int),
+        'ml': KeywordSpec('mmon_large', float),
+        'ns': KeywordSpec('nmon_small', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'lz': KeywordSpec('lcyl', float, scale=2.0),
+        'dt': KeywordSpec('dt', float),
+        'bdump': KeywordSpec('bdump', int),
+        'adump': KeywordSpec('adump', int),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
+    }
+    _patterns = {
+        'segment': ('r', 'al', 'nl', 'ml', 'ns', 'ac', 'nc', 'lz', 'dt',
+                    'bdump', 'adump', 'ens', 'j'),
+        'whole': ('r', 'al', 'nl', 'ml', 'ns', 'ac', 'nc', 'lz', 'dt',
+                  'bdump', 'adump', 'ens'),
+        'ensemble_long': ('r', 'al', 'nl', 'ml', 'ns', 'ac', 'nc', 'lz',
+                          'dt', 'bdump', 'adump'),
+        'ensemble': ('ns', 'nl', 'al', 'D', 'ac', 'nc'),
+        'space': ('ns', 'nl', 'al', 'D', 'ac'),
+    }
+    _defaults = {'dmon_small': 1, 'mmon_small': 1, 'mcrowd': -1}
+    _species = RingCub._species
+    _totals = {'m': ('m_small', 'm_large')}
+    _masses = {'mcrowd': 'dcrowd'}
+    _project_attributes = RingCub._project_attributes
+
+
+class RingCylBinders(ParserBase):
+    """
+    Parse a name of the synthetic *RingCylBinders* study: a ring of
+    monomers with binders and crowders in a cylinder that is periodic along
+    its axis, with the groups ``nucleoid`` and ``all``.
+
+    - ``segment``: N#r#nh#ac#nc#lz#ens#.j#
+    - ``whole``: N#r#nh#ac#nc#lz#ens#
+    - ``ensemble_long``: N#r#nh#ac#nc#lz#
+    - ``ensemble``: N#D#nh#ac#nc#
+    - ``space``: N#D#nh#ac#
+
+    Examples
+    --------
+    >>> artifact = RingCylBinders('N200r4.5nh30ac2.0nc0lz75.0ens1', 'whole',
+    ...                           'nucleoid')
+    >>> artifact.dcyl, artifact.lcyl, artifact.space
+    (8.0, 150.0, 'N200D8nh30ac2')
+    """
+    _geometry = 'cylindrical'
+    _topology = 'ring'
+    _groups = ['nucleoid', 'all']
+    _dump_keywords = {'nucleoid': 'ndump', 'all': 'adump'}
+    _keywords = {
+        'N': KeywordSpec('nmon', int),
+        'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
+        'D': KeywordSpec('dcyl', float),
+        'nh': KeywordSpec('nhns', int),
+        'ac': KeywordSpec('dcrowd', float),
+        'nc': KeywordSpec('ncrowd', int),
+        'lz': KeywordSpec('lcyl', float, scale=2.0),
+        'ens': KeywordSpec('ensemble_id', int),
+        'j': KeywordSpec('segment_id', int),
+    }
+    _patterns = {
+        'segment': ('N', 'r', 'nh', 'ac', 'nc', 'lz', 'ens', 'j'),
+        'whole': ('N', 'r', 'nh', 'ac', 'nc', 'lz', 'ens'),
+        'ensemble_long': ('N', 'r', 'nh', 'ac', 'nc', 'lz'),
+        'ensemble': ('N', 'D', 'nh', 'ac', 'nc'),
+        'space': ('N', 'D', 'nh', 'ac'),
+    }
+    _defaults = RingCubBinders._defaults
+    _species = RingCubBinders._species
+    _project_attributes = RingCubBinders._project_attributes

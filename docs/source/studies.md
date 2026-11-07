@@ -38,12 +38,10 @@ The [Lineage](lineage.md) page defines the lineage levels and the groups.
 
 ## The steps
 
-Adding a study changes nothing in `polyphys/`. The package still ships the
-parsers of nine studies in {mod}`polyphys.manage.parser`, such as `HnsCub`
-and `TransFociCub`; the maintainer decided on 2026-11-02 that they move to
-their studies' folders, with a deprecation period
-([#197](https://github.com/amirhs1/PolyPhys/issues/197)). A new study
-declares its parser in its own folder.
+Adding a study changes nothing in `polyphys/`, which ships no study's
+parser: a study declares its parser in its own folder, as
+`projects/<study>/parser.py` does for each of the maintainer's published
+studies.
 
 1. Declare the study's parser class, as in "Declaring the parser" below.
 2. Make a folder for the study, `projects/<study>/`, as a Python package.
@@ -133,8 +131,8 @@ name that lacks a keyword of its lineage's pattern, or whose value is not a
 number, raises `ValueError` naming the keyword, the lineage, and the name.
 
 A value that is a function of parsed values but fits none of the tables,
-such as the complementary percentage `pct_two = 100 - pct_one` of
-`SumRuleCubHeteroRingBiDisperse`, goes in an override of
+such as a complementary percentage `pct_two = 100 - pct_one` of two
+crowder species, goes in an override of
 `_derived_attributes`, which runs at every lineage after the bulk values.
 
 ## Declaring the ProjectSpec
