@@ -1747,6 +1747,8 @@ def _probe_tier_b_wholes(module, wholes, probe_dir):  # pragma: no cover
 
 
 @pytest.mark.private_data
+@pytest.mark.filterwarnings(
+    "ignore:Reader has no dt information:UserWarning")
 def test_probe_and_reduce_match_the_research_ens_avg(  # pragma: no cover
         private_data_dir, tmp_path):
     """Probing the TransFociCub polymer dumps with the study's ``ProbeSpec``,

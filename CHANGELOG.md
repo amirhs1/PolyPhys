@@ -49,6 +49,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Raise `ValueError` naming the quantity and the whole when a `bin_size`, `r_max`, or `n_monomers` function of `FociPairDistances` gives anything but a finite positive number, instead of failing inside NumPy or turning a string into a number, and accept a NumPy integer or float such as `numpy.float32` wherever a finite positive per-whole number is checked ([#210](https://github.com/amirhs1/PolyPhys/issues/210))
 - Keep the annotations of `polyphys.probe.core` unevaluated, so the documentation builds where MDAnalysis is mocked, as on Read the Docs with Python 3.13, and ignore pyparsing 3.3's deprecation of `enablePackrat`, which matplotlib 3.8.4 calls, so the lowest-versions tests run under warnings as errors ([#224](https://github.com/amirhs1/PolyPhys/pull/224))
 - Give the affine-equivariance property test of `block_average` an absolute tolerance derived from float64 round-off, so it no longer fails by seed on a series whose block means are all equal ([#237](https://github.com/amirhs1/PolyPhys/issues/237))
+- Ignore MDAnalysis's `Reader has no dt information` warning for the whole private-data test that probes and reduces the TransFociCub dumps against the research ensemble averages, so it runs under warnings as errors instead of failing on its first frame read ([#259](https://github.com/amirhs1/PolyPhys/issues/259))
 
 ### Migrating to 1.0.0
 
