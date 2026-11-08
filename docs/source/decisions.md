@@ -9,7 +9,7 @@ Decided on 2026-10-31 (amirhs1/PolyPhys#19).
 
 **Decision.** `polyphys.manage` stays a small internal layer that turns the
 names of existing simulation artifacts into lineage and feeds
-`polyphys.analyze`. It does not build on [signac](https://signac.io/) or
+`polyphys.analyze`. It does not build on [signac](https://github.com/glotzerlab/signac) or
 another data-space framework, and it is not developed as a standalone data
 manager. A study is added by declaring a parser class and a `ProjectSpec`
 (see [Studies](studies.md)).

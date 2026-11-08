@@ -395,23 +395,23 @@ class HookContext:
     """
     What a post-hook may read besides the wholes.
 
+    .. versionadded:: 0.6.0
+
     Attributes
     ----------
     prop : ~polyphys.spec.PropertySpec
         The property the wholes belong to.
-    spec : ProjectSpec, optional
+    spec : ~polyphys.spec.ProjectSpec, optional
         The study's spec: its parser, topology, and species sizes.
     group : str
         The particle group.
-    infos : mapping of str to ParserBase
+    infos : mapping of str to ~polyphys.manage.parser.ParserBase
         The parser instance of each whole, by whole name, which holds the
         whole's attributes such as sizes and counts.
     edges : mapping of str to numpy.ndarray, optional
         The bin edges of each whole, for a property with an edge file.
     density : DensityKernel, optional
         The injected volume-fraction kernel.
-
-    .. versionadded:: 0.6.0
     """
 
     prop: _spec.PropertySpec
@@ -575,9 +575,9 @@ class LocalDensities:
     Raises
     ------
     ValueError
-        When called: if the property is not a :func:`histogram`, if the
-        context has no kernel, no spec, or no edges, or if the species is not
-        in the spec's `species_sizes`.
+        When called: if the property is not a :func:`~polyphys.spec.histogram`,
+        if the context has no kernel, no spec, or no edges, or if the species
+        is not in the spec's `species_sizes`.
 
     Notes
     -----
@@ -748,7 +748,7 @@ def _resolve_count(
 
     `what` names the quantity and `whole` the whole in an error. The
     constant or what the callable gives must be a positive integer
-    (:func:`_is_positive_integer`); it is never truncated.
+    (``_is_positive_integer``); it is never truncated.
     """
     result = _value_for(value, info, what, whole)
     if _is_positive_integer(result):
@@ -1777,7 +1777,7 @@ def _frame_ensembles(
     ``<ensemble_long>-<group>-<prop>.csv``. Raises ``ValueError`` if the
     wholes of an ensemble have unequal numbers of rows, as
     :func:`~polyphys.manage.organizer.ens_from_df` does, before anything is
-    saved; :func:`_frame_ensemble_avg` would otherwise take its rows from
+    saved; ``_frame_ensemble_avg`` would otherwise take its rows from
     the first whole.
     """
     members: dict[str, dict[str, pd.DataFrame]] = {}

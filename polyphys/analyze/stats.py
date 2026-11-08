@@ -236,7 +236,7 @@ class BlockingResult:
 
     @property
     def observable_shape(self) -> tuple[int, ...]:
-        """Shape of one frame of the input: ``()`` for a scalar series."""
+        """Shape of one frame of the input, ``()`` for a scalar series."""
         return tuple(self.mean.shape[1:])
 
 

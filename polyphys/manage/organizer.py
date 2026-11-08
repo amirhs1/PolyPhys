@@ -23,7 +23,7 @@ simulation output data:
 
 - **Lineage**: The level of an artifact in the hierarchy
   ``segment → whole → ensemble_long → ensemble → space``, the values of
-  :py:data:`~polyphys.manage.types.LineageT`; each level aggregates the one
+  :py:obj:`~.LineageT`; each level aggregates the one
   before it:
 
     - **segment**: a chunk of one simulation run.
@@ -47,12 +47,12 @@ simulation output data:
   `simsCont` (simulation inputs), `logs`, `trjs` (trajectories), `probes`
   (probing data), `analysis` (post-processing), `viz` (visualization-ready
   data), `galaxy`, and `allInOne`; the values of
-  :py:data:`~polyphys.manage.types.PhaseT`.
+  :py:obj:`~.PhaseT`.
 
 - **Stages**: Directories inside a phase, each holding the artifacts of one
   lineage level or one step of the reduction: `segment`, `wholeSim`, `ens`,
   `ensAvg`, `space`, and `galaxy`, the values of
-  :py:data:`~polyphys.manage.types.StageT`. The organizer writes them in the
+  :py:obj:`~.StageT`. The organizer writes them in the
   `analysis` phase.
 
 The words `segment` and `space` are both lineage levels and stages, and
@@ -109,13 +109,11 @@ Reading tables the research code wrote:
 The density sum rule on the ``ensAvg`` profiles these reducers build is in
 :mod:`polyphys.analyze.sumrule`.
 
-Usage
-=====
-The :mod:`organizer` module streamlines organization and aggregation of
-simulation data. Users can assemble segmented data, organize data into
-ensembles, and generate ensemble-averaged data at various aggregation stages.
-Its multi-level organization supports comparative analysis across varied
-conditions within spaces and galaxies.
+Usage ===== The :mod:`~polyphys.manage.organizer` module streamlines
+organization and aggregation of simulation data. Users can assemble segmented
+data, organize data into ensembles, and generate ensemble-averaged data at
+various aggregation stages. Its multi-level organization supports comparative
+analysis across varied conditions within spaces and galaxies.
 
 Examples
 ========
@@ -229,9 +227,9 @@ def create_fullname(name: str, group: GroupT, prop: PropertyT) -> str:
     ----------
     name : str
         The base name.
-    group : :py:data:`GroupT`
+    group : :py:obj:`~.GroupT`
         Particle group (e.g., 'bug' or 'nucleoid').
-    prop : :py:data:`PropertyT`
+    prop : :py:obj:`~.PropertyT`
         Physical property name (e.g., 'density').
 
     Returns
@@ -350,12 +348,12 @@ def make_database(
     old_database : Pathish
         Path to a directory of the sweep, directly inside a phase directory;
         it need not exist.
-    phase : :py:data:`~polyphys.manage.types.PhaseT`
+    phase : :py:obj:`~.PhaseT`
         The new phase name for the directory, specifying its role in the
         workflow: one of ``'simsAll'``, ``'simsCont'``, ``'logs'``,
         ``'trjs'``, ``'probes'``, ``'analysis'``, ``'viz'``, ``'galaxy'``,
         or ``'allInOne'``.
-    stage : :py:data:`~polyphys.manage.types.StageT`
+    stage : :py:obj:`~.StageT`
         The stage of processing or data type represented in the new
         directory: one of ``'segment'``, ``'wholeSim'``, ``'ens'``,
         ``'ensAvg'``, ``'space'``, or ``'galaxy'``.
@@ -524,9 +522,9 @@ def whole_from_segments(
 
     Parameters
     ----------
-    prop: :py:data:`PropertyT`
+    prop: :py:obj:`~.PropertyT`
         The physical property to process (e.g., 'density').
-    segments : :py:data:`AnyPathIter`
+    segments : :py:obj:`~.AnyPathIter`
         An iterable of paths to segment ``.npy`` files for `prop`, either
         bare paths or 1-tuples of a path, as
         :func:`~polyphys.manage.utils.sort_filenames` returns them. Each path
@@ -538,9 +536,9 @@ def whole_from_segments(
         A parser class from :mod:`polyphys.manage.parser` that interprets
         file paths and extracts attributes such as the `whole` name and the
         ``segment_id``.
-    group : :py:data:`GroupT`
+    group : :py:obj:`~.GroupT`
         Type of the particle group.
-    relation : :py:data:`WholeRelationT`
+    relation : :py:obj:`~.WholeRelationT`
         Specifies how to combine segments into a whole. Accepted values:
 
         - 'histogram'
@@ -759,7 +757,7 @@ def ens_from_bin_edge(
 
     Every 'whole' in an ensemble must be binned identically, so that the
     histograms paired with these edges stay aligned bin by bin. The edges are
-    checked for equality with :func:`_assert_equal_bin_edges`, the check
+    checked for equality with ``_assert_equal_bin_edges``, the check
     :func:`whole_from_segments` applies to segments, rather than merged.
 
     Parameters
@@ -1167,7 +1165,7 @@ def ens_avg_from_bin_edge(
     them. A single 1D array, the form :func:`ens_from_bin_edge` produces and
     :func:`ensemble_avg` passes here, is returned as a copy. A sequence of
     arrays, one per 'whole', is checked for equality with
-    :func:`_assert_equal_bin_edges`, and a copy of the shared array is
+    ``_assert_equal_bin_edges``, and a copy of the shared array is
     returned.
 
     Parameters
@@ -1543,7 +1541,7 @@ def children_stamps(
       Either may be absent, as in stamps the probe phase writes for a whole;
       if neither is present, nothing is dropped and a DEBUG record is
       logged.
-    - The stamps :func:`~polyphys.probe.write_stamps` writes carry a
+    - The stamps :func:`~polyphys.probe.core.write_stamps` writes carry a
       ``group`` column; the research code's stamps did not, and held the
       group in the file name, ``<lineage name>-<group>-stamps.csv``. When
       the column is missing it is added from the file names, after

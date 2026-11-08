@@ -169,11 +169,11 @@ class ChainSize(_ProbeAnalysis):
     atomgroup : :class:`~MDAnalysis.core.groups.AtomGroup`
         The chain, at least two beads, in atom-ID order: the order along
         the backbone, which ``Universe.select_atoms`` gives.
-    observables : sequence of :py:data:`PropertyT`
+    observables : sequence of :py:obj:`~.PropertyT`
         The observables to measure, each a name in
         :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES`, in the
         order ``results`` and :meth:`save` list them.
-    chain : :py:data:`EntityT`, default 'Mon'
+    chain : :py:obj:`~.EntityT`, default 'Mon'
         The species label of the chain, which names the files
         :meth:`save` writes, ``<name>-<observable><chain>.npy``.
     unwrap : bool, default False
@@ -182,50 +182,52 @@ class ChainSize(_ProbeAnalysis):
         research code unwrapped in a periodic cube and not in a cylinder.
         Every other observable reads the positions as the dump gives them,
         so the chain must be whole; see Notes.
-    axis : :py:data:`AxisT`, default 2
+    axis : :py:obj:`~.AxisT`, default 2
         The cylinder axis, ``0``, ``1``, or ``2`` for ``x``, ``y``, or
         ``z``, along which ``fsdT`` spans and across which ``transSizeT``
         spreads.
     verbose : bool, default False
-        Whether to show a progress bar during :meth:`run`.
+        Whether to show a progress bar during
+        :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
     Attributes
     ----------
     atomgroup : :class:`~MDAnalysis.core.groups.AtomGroup`
         The chain.
-    observables : tuple of :py:data:`PropertyT`
+    observables : tuple of :py:obj:`~.PropertyT`
         The observables, in order.
-    chain : :py:data:`EntityT`
+    chain : :py:obj:`~.EntityT`
         The species label of the chain.
     unwrap : bool
         Whether the chain is unwrapped for ``asphericityT``.
-    axis : :py:data:`AxisT`
+    axis : :py:obj:`~.AxisT`
         The cylinder axis.
     results : :class:`~MDAnalysis.analysis.results.Results`
-        After :meth:`run`, one float64 array per observable, keyed by its
-        name: shape ``(n_frames,)`` for every scalar, ``(n_frames, 3, 3)``
-        for ``principalT``.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, one float64
+        array per observable, keyed by its name: shape ``(n_frames,)`` for
+        every scalar, ``(n_frames, 3, 3)`` for ``principalT``.
     n_frames : int
-        After :meth:`run`, the number of frames analyzed, from
-        :class:`~MDAnalysis.analysis.base.AnalysisBase`.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the number of
+        frames analyzed, from :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames : numpy.ndarray
-        After :meth:`run`, the indices of the frames analyzed, shape
-        ``(n_frames,)``.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the indices
+        of the frames analyzed, shape ``(n_frames,)``.
     times : numpy.ndarray
-        After :meth:`run`, the times of the frames analyzed, shape
-        ``(n_frames,)``, in the trajectory's time unit.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the times of
+        the frames analyzed, shape ``(n_frames,)``, in the trajectory's time
+        unit.
 
     Raises
     ------
     ValueError
-        If `observables` is empty, repeats a name, or names an observable
-        that is not in
-        :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES`; if
-        `chain` is empty; if `axis` is not ``0``, ``1``, or ``2``; or if
-        `atomgroup` has fewer than two beads. During :meth:`run`, if a
-        chain bond spans half the frame's box or more along a direction,
-        which means the dump splits the chain across a periodic boundary;
-        the message names the frame.
+        If `observables` is empty, repeats a name, or names an observable that
+        is not in :data:`~polyphys.spec.CHAIN_SIZE_OBSERVABLES`; if `chain` is
+        empty; if `axis` is not ``0``, ``1``, or ``2``; or if `atomgroup` has
+        fewer than two beads. During
+        :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, if a chain bond
+        spans half the frame's box or more along a direction, which means the
+        dump splits the chain across a periodic boundary; the message names the
+        frame.
 
     Notes
     -----
@@ -268,30 +270,29 @@ class ChainSize(_ProbeAnalysis):
     positions as the dump wraps them, whatever `unwrap` is, as the research
     code did; `unwrap` reaches ``asphericityT`` only.
 
-    Whole molecules: every observable but an unwrapped ``asphericityT``
-    reads the positions as the dump gives them, so the dump must hold the
-    chain whole, as the studies' dumps do. In each frame, :meth:`run`
-    checks that no bond :math:`(i, j)` of the chain spans half the box or
-    more along any direction :math:`a`,
-    :math:`|r_{i,a} - r_{j,a}| \\ge L_a / 2` for the frame's box length
-    :math:`L_a`, and raises on the first frame that fails. A bond is far
-    shorter than half the box (the studies' FENE bound
-    :math:`R_0 = 1.5`, ``docs/source/design.md``), so a bond that long has
-    been split by the boundary. The check is skipped when the frame
-    carries no box or the topology has no bonds, and when ``asphericityT``
-    with `unwrap` is the only observable, since unwrapping makes that one
-    whole itself.
+    Whole molecules: every observable but an unwrapped ``asphericityT`` reads
+    the positions as the dump gives them, so the dump must hold the chain
+    whole, as the studies' dumps do. In each frame,
+    :meth:`~MDAnalysis.analysis.base.AnalysisBase.run` checks that no bond
+    :math:`(i, j)` of the chain spans half the box or more along any direction
+    :math:`a`, :math:`|r_{i,a} - r_{j,a}| \\ge L_a / 2` for the frame's box
+    length :math:`L_a`, and raises on the first frame that fails. A bond is far
+    shorter than half the box (the studies' FENE bound :math:`R_0 = 1.5`,
+    ``docs/source/design.md``), so a bond that long has been split by the
+    boundary. The check is skipped when the frame carries no box or the
+    topology has no bonds, and when ``asphericityT`` with `unwrap` is the only
+    observable, since unwrapping makes that one whole itself.
 
     No per-frame shift of the positions is applied: each observable
     recenters the chain itself, so the research code's shift of every
     position by half the box changed none of these values.
 
-    The MDAnalysis contract: :meth:`_prepare` allocates one float64 array
-    per observable for the frames of the run, :meth:`_single_frame` writes
-    the current frame's row, and :meth:`_conclude` does nothing. The class
+    The MDAnalysis contract: ``_prepare`` allocates one float64 array
+    per observable for the frames of the run, ``_single_frame`` writes
+    the current frame's row, and ``_conclude`` does nothing. The class
     is marked parallelizable, with ``serial``, ``multiprocessing``, and
     ``dask`` backends; each worker fills the arrays of its own frames,
-    which :meth:`_get_aggregator` concatenates along the frame axis
+    which ``_get_aggregator`` concatenates along the frame axis
     (``ResultsGroup.ndarray_hstack`` for a scalar series,
     ``ResultsGroup.ndarray_vstack`` for ``principalT``).
 
@@ -407,10 +408,11 @@ class ChainSize(_ProbeAnalysis):
             opens it.
         spec : :class:`~polyphys.spec.ProbeSpec`
             The study's probe spec.
-        axis : :py:data:`AxisT`, default 2
+        axis : :py:obj:`~.AxisT`, default 2
             The cylinder axis.
         verbose : bool, default False
-            Whether to show a progress bar during :meth:`run`.
+            Whether to show a progress bar during
+            :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
         Returns
         -------
@@ -456,8 +458,8 @@ class ChainSize(_ProbeAnalysis):
     @classmethod
     def get_supported_backends(cls) -> tuple[str, ...]:
         """
-        The backends :meth:`run` accepts: ``'serial'``,
-        ``'multiprocessing'``, and ``'dask'``.
+        The backends :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`
+        accepts: ``'serial'``, ``'multiprocessing'``, and ``'dask'``.
 
         Examples
         --------
@@ -553,7 +555,8 @@ class ChainSize(_ProbeAnalysis):
         Raises
         ------
         RuntimeError
-            If :meth:`run` has not been called.
+            If :meth:`~MDAnalysis.analysis.base.AnalysisBase.run` has not been
+            called.
 
         Examples
         --------

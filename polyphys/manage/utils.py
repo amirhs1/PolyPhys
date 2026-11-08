@@ -33,7 +33,7 @@ Dependencies
 - Third-party: `numpy`
 
 See also: :mod:`~polyphys.manage.types` for the definition of
-:data:`InputType`.
+:py:obj:`~polyphys.manage.types.InputType`.
 """
 
 import re
@@ -346,7 +346,7 @@ def openany(filepath: str, mode: str = "rt") -> InputType:
 
     Returns
     -------
-    :py:data:`~polyphys.manage.types.InputType`
+    :py:obj:`~.InputType`
         The open file object, a :class:`gzip.GzipFile` or a regular file.
         The caller must close it; :func:`openany_context` does that.
 
@@ -384,7 +384,7 @@ def openany_context(
 
     Yields
     ------
-    :py:data:`~polyphys.manage.types.InputType`
+    :py:obj:`~.InputType`
         The open file object, a :class:`gzip.GzipFile` or a regular file.
         The context manager closes it on exit, also after an exception.
 
@@ -479,7 +479,7 @@ def round_to_multiple(dividend: float, divider: float, round_to: int) -> float:
     References
     ----------
     Python documentation, built-in function :func:`round`:
-    https://docs.python.org/3/library/functions.html#round
+    https://docs.python.org/3/builtins/functions.html#round
 
     Examples
     --------

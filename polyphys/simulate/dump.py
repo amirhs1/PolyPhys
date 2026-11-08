@@ -182,7 +182,7 @@ class DumpFrame:
     ----------
     timestep : int
         The ``ITEM: TIMESTEP`` value.
-    box : Box
+    box : :class:`~polyphys.simulate.core.Box`
         The simulation box, with the boundary flags of the frame; for a
         triclinic box, its own bounds, not those the dump writes.
     columns : tuple of str

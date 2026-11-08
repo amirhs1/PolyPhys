@@ -184,6 +184,8 @@ class AcfResult:
     """
     The sample autocorrelation of one or more time series.
 
+    .. versionadded:: 0.6.0
+
     Attributes
     ----------
     values : numpy.ndarray
@@ -196,8 +198,6 @@ class AcfResult:
         is 0. ``None`` when no band was asked for.
     alpha : float or None
         The significance level of the band, or ``None``.
-
-    .. versionadded:: 0.6.0
     """
 
     values: FloatArray
@@ -426,6 +426,8 @@ class DecayModel:
     """
     A decay model: its function, parameter names, and formula.
 
+    .. versionadded:: 0.6.0
+
     Attributes
     ----------
     function : callable
@@ -435,8 +437,6 @@ class DecayModel:
         ``'tau'``, ``'beta'``, ``'amp'``, and ``'offset'``.
     formula : str
         The model as a formula, for labels.
-
-    .. versionadded:: 0.6.0
     """
 
     function: ModelFunction
@@ -510,6 +510,8 @@ class DecayFit:
     """
     The result of fitting a decay model to a curve.
 
+    .. versionadded:: 0.6.0
+
     Attributes
     ----------
     model : str
@@ -531,8 +533,6 @@ class DecayFit:
         The starting point the fit used, shape ``(n_params,)``.
     converged : bool
         Whether :func:`scipy.optimize.curve_fit` returned a solution.
-
-    .. versionadded:: 0.6.0
     """
 
     model: str
