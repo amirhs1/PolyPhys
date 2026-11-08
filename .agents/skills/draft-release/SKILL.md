@@ -63,4 +63,15 @@ tag an older commit to leave later work out; stop and report instead.
    (`gh run list --workflow publish.yaml --limit 1`), and PyPI serves the
    version:
    `curl -s -o /dev/null -w '%{http_code}' https://pypi.org/pypi/polyphys/<version>/json`
-   prints `200`.
+   prints `200`. Then install it from PyPI into a fresh environment in a
+   temporary directory outside any checkout, where `import polyphys` cannot
+   load a source tree instead:
+   `cd "$(mktemp -d)" && python3 -m venv .venv && .venv/bin/python -m pip install -q polyphys==<version> && .venv/bin/python -c "import polyphys; print(polyphys.__version__, polyphys.__file__)"`
+   prints `<version>` and a path under `site-packages`.
+12. After the PyPI upload, check conda-forge. If
+   `curl -s -o /dev/null -w '%{http_code}' https://api.anaconda.org/package/conda-forge/polyphys`
+   prints `404`, there is no feedstock yet; say so and stop. Otherwise find
+   the bot's version-update pull request for `<version>`:
+   `gh pr list --repo conda-forge/polyphys-feedstock --search <version>`.
+   Report it to the maintainer, who reviews and merges it; never merge or
+   comment on it yourself.
