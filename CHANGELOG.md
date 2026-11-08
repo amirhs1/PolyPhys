@@ -21,6 +21,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Add Sphinx to the `dev` extra, so the test that imports the probe and viz modules under the documentation build's mocks runs in CI instead of being skipped ([#226](https://github.com/amirhs1/PolyPhys/pull/226))
 - Build the documentation in CI on Python 3.13, the version Read the Docs builds it on, instead of 3.14, so a docs failure that only 3.13 raises fails CI before it reaches Read the Docs ([#230](https://github.com/amirhs1/PolyPhys/issues/230))
 - Reorder `CONTRIBUTING.md` so a contributor reads how to report a problem, set up a checkout, run the checks, and submit a pull request before the AI policy, the names, and the release procedure, and let the pull request template's science checklist accept a measurement or statistics change that is explained and validated ([#243](https://github.com/amirhs1/PolyPhys/issues/243))
+- State in the AI policy, `CONTRIBUTING.md`, and the pull request template which AI disclosure applies to everyone, to maintainers, to outside contributors, and to an AI agent, and put the private reporting route first in `SECURITY.md` ([#244](https://github.com/amirhs1/PolyPhys/issues/244))
 
 ### Added
 
@@ -31,6 +32,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Removed
 
+- **Breaking:** Remove `ProjectSpec.provisional`, which nothing read, and mark the `HnsCyl` spec in `projects/` published instead of provisional ([#251](https://github.com/amirhs1/PolyPhys/issues/251))
 - **Breaking:** Remove `polyphys.manage.projects` and the table records and builders that `polyphys.analyze.pipeline` served, the import paths that 0.9.0 deprecated; import them from `polyphys.spec` ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 - **Breaking:** Remove the nine study parsers from `polyphys.manage.parser`, which now ships only `KeywordSpec`, `Species`, and `ParserBase`: `TransFociCyl`, `TransFociCub`, `HnsCub`, and `HnsCyl` move to `projects/<study>/parser.py` in the repository, which is not installed, and `SumRuleCyl`, `SumRuleCubHeteroRing`, `SumRuleCubHeteroLinear`, `SumRuleCubHeteroRingBiDisperse`, and `TwoMonDepCub` leave PolyPhys; importing any of them from `polyphys.manage.parser` raises `ImportError` that says where it went ([#197](https://github.com/amirhs1/PolyPhys/issues/197))
 - **Breaking:** Remove `whole_from_dist_mat_t` and `find_unique_properties` from `polyphys.manage.organizer`, which nothing in PolyPhys called ([#81](https://github.com/amirhs1/PolyPhys/issues/81))

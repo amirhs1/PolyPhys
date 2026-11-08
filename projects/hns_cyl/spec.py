@@ -11,9 +11,6 @@ Values from the research code's registry (SciOps ``sciops/api.py``,
 analysis tables (SciOps ``sciops/analyze/analyzer.py``,
 ``ANALYSIS_DETAILS_NUCLEOID`` and ``ANALYSIS_DETAILS_ALL``,
 ``'HnsCylWhole'``), with each artifact listed once.
-
-Provisional: whether the study has molecular dynamics data is not yet
-known.
 """
 from polyphys.analyze.pipeline import Autocorrelation, LocalDensities
 import numpy as np
@@ -47,7 +44,6 @@ SPEC = ProjectSpec(
                         'nEngagedTHnsPatch', 'nFreeTHnsCore',
                         'nBridgeTHnsCore', 'nDangleTHnsCore',
                         'nCisTHnsCore', 'nTransTHnsCore'),
-    provisional=True,
 )
 
 

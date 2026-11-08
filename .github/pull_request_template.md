@@ -60,11 +60,14 @@ Where the reviewer should look: what needs line-by-line review, and any
 uncertainty, limitation, or follow-up.
 
 <!--
-AI assistance: end the body with one trailer block, after a blank line. Write
-one `Assisted-by: <tool>, <model id or not recorded> (<role>)` line for each
-AI tool used, then `Checks-run: <check actually run> — <observed result>` for
-each check it ran. Do not guess a model; write `not recorded`. With no AI
-tool, leave the block out. Do not include prompts, secrets, or personal data.
+AI assistance: say in this pull request which AI tools you used and for what;
+do not guess a model, write `not recorded`. If you wrote this body yourself,
+that statement is enough. If an AI agent wrote it, end it with one trailer
+block, after a blank line: one
+`Assisted-by: <tool>, <model id or not recorded> (<role>)` line for each AI
+tool used, then `Checks-run: <check actually run> — <observed result>` for
+each check it ran. With no AI tool, leave the block out. Do not include
+prompts, secrets, or personal data.
 Responsibility for the contribution remains with the contributor; see
 `AI-POLICY.md`.
 -->

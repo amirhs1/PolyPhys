@@ -39,17 +39,6 @@ def test_study_spec_uses_its_parser(module: str, name: str) -> None:
     assert _spec(module).name == name
 
 
-@pytest.mark.parametrize('module, expected', [
-    pytest.param('trans_foci_cyl', False, id='TransFociCyl'),
-    pytest.param('trans_foci_cub', False, id='TransFociCub'),
-    pytest.param('hns_cub', False, id='HnsCub'),
-    pytest.param('hns_cyl', True, id='HnsCyl'),
-])
-def test_study_marks_provisional(module: str, expected: bool) -> None:
-    """Only HnsCyl is provisional."""
-    assert _spec(module).provisional is expected
-
-
 @pytest.mark.parametrize('module', [
     pytest.param('trans_foci_cyl', id='TransFociCyl'),
     pytest.param('trans_foci_cub', id='TransFociCub'),

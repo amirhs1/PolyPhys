@@ -404,9 +404,6 @@ class ProjectSpec:
     tseries_properties : tuple of :py:data:`PropertyT`
         The per-frame time series of the study, named
         ``<property>T<Species>``, such as ``'gyrTMon'``.
-    provisional : bool, default False
-        Whether the entry is provisional: its data or values are not
-        confirmed.
     crowder_attr : str
         Keyword-only. The parser attribute that holds :math:`\\phi_c`, such
         as ``'phi_bulk_c'``, which the ``space`` tables add as a column and
@@ -484,7 +481,6 @@ class ProjectSpec:
     physical_attrs: tuple[str, ...]
     species_sizes: Mapping[EntityT, str] = field(hash=False)
     tseries_properties: tuple[PropertyT, ...]
-    provisional: bool = False
     crowder_attr: str = field(kw_only=True)
 
     def __post_init__(self) -> None:
