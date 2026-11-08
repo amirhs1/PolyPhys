@@ -105,7 +105,7 @@ differ in what a row is:
 
 {func}`~polyphys.analyze.sumrule.space_profiles`
 : A bin of a density profile, scaled and normalized for the density sum
-  rule, as the [Usage](usage.md) page, "The density sum rule", describes.
+  rule, as the [Density](density.md) page, "The density sum rule", describes.
 
 All three take the study's parser, its `hierarchy` glob, its
 `physical_attrs`, its `divisor`, and its crowder attribute.
@@ -160,4 +160,4 @@ averaging within the whole, not from the per-frame standard error; the
 | ---------------- | ---------------------------- | ---------------------------------------- |
 | one whole        | its frames, correlated       | blocked standard error, {func}`~polyphys.analyze.stats.sem_blocked` |
 | one ensemble     | its replicates, independent  | plain standard error, the `-sem` columns |
-| a normalized profile | its replicates, each normalized | `<property>-norm-sem`, the SEM of the separately normalized replicates, see [Usage](usage.md) |
+| a normalized profile | its replicates, each normalized | `<property>-norm-sem`, the SEM of the separately normalized replicates, see [Density](density.md) |

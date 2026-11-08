@@ -1,0 +1,171 @@
+# Simulate: LAMMPS logs, dumps, data files, and start configurations
+
+{mod}`polyphys.simulate` reads the files LAMMPS writes and writes the files a
+run starts from, without MDAnalysis: a log into DataFrames, a text dump one
+frame at a time, a data file of atoms, bonds, and angles, and a bead-spring
+start configuration. The [API reference](api.rst) documents each function.
+
+## Reading LAMMPS log files
+
+`read_log` reads a LAMMPS log into a `LogFile` record of three DataFrames:
+`thermo` holds one row per thermo output step of every run, `run_stats` one
+row per run from the summary LAMMPS prints after it, and `wall_time` the total
+wall time. A log holds one run per `run` or `minimize` command, so a
+production loop of `run` commands gives one run per iteration; the `run`
+column, counted from 0 in log order, picks runs:
+
+```python
+from polyphys.simulate.log import read_log
+
+log = read_log("log.lammps")
+production = log.thermo[log.thermo["run"] >= 2]
+timing = log.run_stats[["run", "loop_time", "timesteps_per_s"]]
+```
+
+The thermo styles `one`, `custom`, `multi`, and `yaml` are all read.
+`WARNING` and `fix halt` lines inside a table are skipped and logged at level
+INFO, which `logging.basicConfig(level=logging.INFO)` shows. A log cut off
+before a run's `Loop time of` line, as after a walltime kill, or one that
+stopped with an `ERROR` raises `BrokenLogError`, so a loop over many logs can
+skip it:
+
+```python
+from polyphys.simulate.log import BrokenLogError, read_log
+
+for path in paths:
+    try:
+        log = read_log(path)
+    except BrokenLogError as err:
+        print(f"skipped {path}: {err}")
+```
+
+`parse_log` does the same for text already in memory, such as a member of a
+tarball.
+
+## Reading LAMMPS dumps and writing data files
+
+`iter_dump` reads a text dump of `dump atom` or `dump custom`, plain or
+gzipped, one frame at a time, so a long trajectory is never in memory whole.
+Each `DumpFrame` holds its `timestep`, its `box`, the column names, and the
+per-atom `data`, with rows sorted by atom ID unless `sort_by_id=False` is
+passed. `positions()` returns Cartesian coordinates from whichever columns
+the dump has: `x y z`, or the scaled `xs ys zs` that `dump atom` writes by
+default; with `unwrapped=True`, `xu yu zu`, `xsu ysu zsu`, or the wrapped
+coordinates moved by the image flags `ix iy iz`. Orthogonal and restricted
+triclinic boxes are both handled:
+
+```python
+from polyphys.simulate.dump import iter_dump
+
+for frame in iter_dump("whole.bug.lammpstrj.gz"):
+    unwrapped = frame.positions(unwrapped=True)
+```
+
+A frame cut off by a killed run raises `BrokenDumpError` once the complete
+frames before it have been yielded. `read_dump_frame(path, index)` returns a
+single frame.
+
+`read_data` and `write_data` read and write LAMMPS data files in the
+`atomic`, `bond`, `angle`, `molecular`, and `full` atom styles, as
+`DataFile` records of numpy arrays with a `Box`. `with_frame` gives a dump the topology
+it lacks: the atom types, masses, bonds, and angles come from a template, and
+the positions, box, and image flags from a dump frame, matched by atom ID:
+
+```python
+from polyphys.simulate.data import read_data, with_frame, write_data
+from polyphys.simulate.dump import read_dump_frame
+
+template = read_data("initial.bug.data")
+frame = read_dump_frame("whole.bug.lammpstrj", 0)
+write_data(with_frame(template, frame), "whole.bug.data")
+```
+
+`write_data` also writes start configurations for LAMMPS. Build a
+`DataFile` from arrays, leave `masses` and `velocities` as `None` for the
+input script to set, and close a ring with one more bond. Sections of
+force-field coefficients are skipped when read and never written, so the
+input script sets the force field.
+
+A dump frame and a data file carry the same `Box` from
+`polyphys.simulate.core`, which converts scaled coordinates and applies image
+flags; `DataFile.unwrapped_positions()` uses it too. The log, dump, and
+data-file readers each read a `.gz` file through gzip, and each raises a
+subclass of `LammpsFormatError`, itself a `ValueError`, for a broken file, so
+one `except LammpsFormatError` skips a broken file of any kind.
+
+## Building start configurations
+
+`polyphys.simulate.build` writes the data file a run starts from: a
+bead-spring polymer in a predictable, unphysical shape that the run then
+equilibrates. It follows moltemplate's confined-DNA example in four steps: a
+curve, beads placed along it, the topology, then the file. The notation is
+that of the module documentation: $N$ beads a bond length $b$ apart on a
+helix of radius $R$ and pitch $p$, in the Lennard-Jones units of the run,
+with $\sigma$ the bead diameter and $\theta_A$ the helical angle,
+$\tan\theta_A = 2\pi R / p$.
+
+`helix` places beads on a helix and `plectoneme_ring` on the closed plectoneme
+of Neukirch and Starostin: two coaxial helices, half a turn apart, joined by
+smooth end loops. Both place each bead at the first point of the curve a
+distance $b$ from the one before, so every bond has exactly the length $b$;
+the ring also solves its height so that the $N$ chords close, with $R$, $p$,
+$b$, and $N$ exactly as given. `resample_curve` does the same along any
+curve given as points. `chain_data` adds the IDs, the molecule, the bonds,
+and, if asked, the angles, and `check_conformation` tests the file against
+the conditions under which LAMMPS warns or stops before `write_data` writes
+it:
+
+```python
+from polyphys.simulate import Box, write_data
+from polyphys.simulate.build import (
+    chain_data, check_conformation, helix, plectoneme_ring,
+)
+
+positions = helix(200, radius=2.0, pitch=2.5)
+box = Box(lo=[-5.0, -5.0, -21.0], hi=[5.0, 5.0, 21.0])
+data = chain_data(positions, box)
+check_conformation(data, r0=1.5, ghost_cutoff=1.122462 + 0.3,
+                   periodic=(False, False, True), dcyl=6.0, dmon=1.0)
+write_data(data, "N200D6.data")
+
+ring = chain_data(plectoneme_ring(200, radius=2.0, pitch=2.5),
+                  Box(lo=[-5.0, -5.0, -13.0], hi=[5.0, 5.0, 13.0]),
+                  ring=True, angles=True)
+```
+
+The default bond length is $0.97\,\sigma$, the start bond length Kremer and
+Grest used in 1990 and the mean bond length they measured in the
+equilibrated melt; the force of the FENE bond with its WCA term is zero at
+$0.961\,\sigma$, so a bond of $0.97$ stores $0.04\,\epsilon$. The old
+research default, $0.95\,R_0 = 1.425\,\sigma$, is above the length at which
+LAMMPS warns `FENE bond too long`, $\sqrt{0.9}\,R_0 = 1.423$, and above the
+default ghost-atom cutoff of a WCA run with a skin of $0.3$, $1.42$. In
+runs of this model ($K = 30$, $R_0 = 1.5$, $k_B T = \epsilon$, 10 000 steps)
+the start bond length decided which integrator survived:
+
+| Start bond length | plain `nve`, dt 0.005 | `nve` + Langevin, dt 0.01 | `nve/limit 0.01` + Langevin |
+| ----------------- | --------------------- | ------------------------- | --------------------------- |
+| 0.97 to 1.10      | runs, no warning      | runs                      | runs                        |
+| 1.15 to 1.35      | runs, warns           | stops from 1.30           | runs                        |
+| 1.40 to 1.49      | stops                 | stops                     | runs, warns                 |
+| 3.0 and above     | stops at step 0       | stops at step 0           | stops at step 0             |
+
+The radius and the pitch are the user's choice, with no default. Adjacent
+turns of a helix are $p\sin\theta_A$ apart and the two strands of a
+plectoneme $(p/2)\sin\theta_A$, so a helix needs $p \ge d_{\min} /
+\sin\theta_A$ and a ring $p \ge 2 d_{\min} / \sin\theta_A$, about $2.0$ to
+$2.1\,\sigma$ for $R \ge 2\sigma$, to keep every pair of beads the minimum
+distance $d_{\min}$ apart; `check_conformation` enforces it, with
+$d_{\min} = \sigma$ by default, where the WCA energy of a pair is
+$\epsilon$. Its other rules are the FENE warning length, the ghost cutoff,
+coincident atoms, the box on non-periodic axes, and, in a cylinder of
+diameter $D$ built from beads of diameter $a$, the effective radius
+$(D - a)/2$. Equilibration stays in the input script: `fix nve/limit` with a
+Langevin thermostat, as the research runs do, or the soft pair potential
+Kremer and Grest raised slowly to remove overlaps.
+
+`polyphys/tests/data/lammps_build/` holds `in.kg`, a Kremer-Grest input
+script that runs a built start under a chosen integrator, and
+`check_starts.sh`, which builds the three example starts and runs each
+under all of them; the same matrix runs as the `lammps`-marked tests when a
+LAMMPS executable is available (see the Testing page).

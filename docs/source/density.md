@@ -331,8 +331,92 @@ own value in the normalizer's bin and writes the standard error over the
 wholes as `<prop>-norm-sem` in the `ensAvg` file, which `space_profiles`
 carries through. `<prop>-norm-sem` is the SEM across profiles normalized
 separately for each whole. It is not generally an uncertainty estimate for
-the normalized ensemble mean (see the [user guide](usage.md), "The density
-sum rule").
+the normalized ensemble mean (see "The density sum rule" below).
+
+## The density sum rule
+
+The density sum rule of Jeon et al. (2016, eqns 5 to 7) says that in a
+crowded polymer solution the volume fractions of the species, each divided by
+its particle diameter, sum to the far-field crowder term:
+`sum_i phi_i(x) / a_i ~ phi_c(inf) / a_c`, or equivalently
+`sum_i a_i**2 rho_i(x) ~ a_c**2 rho_c(inf)` for the number densities. Here
+`x` is `r`, the distance from the cylinder axis in a cylinder and from the
+polymer's center of mass in a periodic cube, or `z`, the axial distance from
+the center of mass.
+
+`space_profiles` in `polyphys.analyze.sumrule` builds one term of the sum from a space of
+ensemble-averaged profiles: it scales each `Phi` profile by `1 / a_i` and each
+`Rho` profile by `a_i**2`, with `a_i` read from the parser attribute that the
+study's `species_sizes` names, normalizes the scaled profile by a reference
+value, folds a `z` profile about `z = 0`, and adds the state point's
+attributes. The profiles must be the raw ensemble averages, in their
+physical units: the rule relates the species through their scales, so a
+profile normalized beforehand, by its sum, its integral, or its maximum
+(the `normalize` option of `polyphys.analyze.density`, or by hand), enters
+the sum with an arbitrary weight and its `-scale` column loses its unit.
+`space_profiles` warns, naming the file, when a profile's `-mean` sums to
+one, the signature of a profile normalized by its sum; it cannot tell the
+other normalizations from one profile.
+
+`space_profiles_from_spec` reads the parser, the `hierarchy` glob, the
+`physical_attrs`, the `species_sizes`, the `divisor`, and the `crowder_attr`
+from the study's spec, and takes the profiles from the `'all'` group unless
+`group` says otherwise. In this recipe, not a doctest, `database` is the
+directory of the space's `ensAvg` profile files and `chain` the study's
+`ProjectSpec`, built as on the [Studies](studies.md) page:
+
+```python
+monomers = space_profiles_from_spec(database, chain, 'Phi', 'r', 'Mon')
+crowders = space_profiles_from_spec(database, chain, 'Phi', 'r', 'Crd')
+```
+
+`space_profiles` takes the same values one by one.
+
+The reference value follows the research code unless `normalizer` says
+otherwise: the value at `r = 0` for `r` in a cylinder, where the outermost
+bins are the crowder layers on the wall and no far field exists, and the
+maximum otherwise (`PROFILE_NORMALIZERS`). `normalizer` also takes `'last'`,
+a number, or a function of the scaled frame and the file's parser instance,
+such as `lambda df, info: info.phi_bulk_c / info.dcrowd` for the nominal bulk
+value of a `Phi` profile. `normalize_r` and `normalize_z` are the two steps on
+their own. For `r` in a cylinder, `space_profiles` also adds the bin center in
+crowder radii, recentered so that the wall sits at an integer number of crowder
+diameters and the layers of different state points overlay.
+
+`sum_rule_profiles` adds the species' scaled profiles state point by state
+point and normalizes the sum by its own reference value, so that the sum is
+one at the reference and its departure from one measures the rule's failure:
+
+```python
+total = sum_rule_profiles({'Mon': monomers, 'Crd': crowders}, 'rPhi',
+                          chain.geometry, 'r')
+```
+
+The default (`SUM_NORMALIZERS`) is the value at `r = 0` for `r` in a cylinder
+and the far-field value otherwise, where the monomer term vanishes and the sum
+is the crowder term, which for several crowders is eqn (7) of Jeon et al.
+Under cylindrical confinement the radial rule holds only where the wall
+layering is weak, which the ratio `kappa = (D - a_c) / a_c` controls (Sadeghi
+Isfahani, 2024, chapter 3).
+
+The ensAvg file's `-sem` is the error of the mean profile, not of the ratio
+of a bin to its normalizer. The pipeline (`reduce_space` with
+`LocalDensities`) also writes `<prop>-norm-sem` beside the ensAvg columns:
+each whole's profile is divided by its own value in the bin the default
+normalizer names, the first, the last, or the bin where the ensemble average
+peaks, and the standard error is taken over the wholes, which are
+independent runs. `<prop>-norm-sem` is the SEM across profiles normalized
+separately for each whole. It is not generally an uncertainty estimate for
+the normalized ensemble mean: normalization is nonlinear, so the mean of the
+normalized wholes and the normalized mean differ. The curve itself stays the
+normalized ensemble average, the published estimator.
+`space_profiles` carries the column through under the default normalizer,
+folding it along `z`, and drops it with a warning under an explicit one.
+`sum_rule_profiles` adds the species' columns in quadrature as
+`<prop>Sum-norm-sem`. The quadrature sum assumes that the species' errors
+are independent, although excluded volume correlates the species within a
+whole; it refers to the sum of the separately normalized species, and to
+`Sum-norm` only when the species share one normalizer value.
 
 ## References
 

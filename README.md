@@ -109,136 +109,100 @@ python -m pip install "polyphys[viz]"
 
 ## Quickstart
 
-Decode a simulation filename into physics, and read off where it sits in the
-hierarchy. A study declares its parser, a subclass of `ParserBase` that lists
-the keywords of its names; this one reads a linear chain among crowders in a
-cylinder, and the [Studies](https://polyphys.readthedocs.io/en/latest/studies.html) page shows how to declare
-one:
+A study declares a parser, a subclass of `ParserBase` that lists the
+keywords of its file names. This short one reads a linear chain among
+crowders in a cylinder; the
+[Studies](https://polyphys.readthedocs.io/en/latest/studies.html) page shows
+the full declaration:
 
 ```python
->>> from polyphys.manage.parser import KeywordSpec, ParserBase, Species
->>> long_keys = ('N', 'r', 'lz', 'ac', 'nc', 'dt', 'bdump', 'adump')
->>> bulk = ['dmon', 'phi_bulk_m', 'rho_bulk_m', 'phi_bulk_c', 'rho_bulk_c']
+>>> from polyphys.manage.parser import KeywordSpec, ParserBase
+>>> keys = ('N', 'D', 'ac', 'nc', 'bdump')
 >>> class ChainCyl(ParserBase):
-...     """A linear chain among crowders in a cylinder, periodic along z."""
+...     """A linear chain among crowders in a cylinder."""
 ...     _geometry = 'cylindrical'
 ...     _topology = 'linear'
-...     _groups = ['bug', 'all']
-...     _dump_keywords = {'bug': 'bdump', 'all': 'adump'}
+...     _groups = ['bug']
+...     _dump_keywords = {'bug': 'bdump'}
 ...     _keywords = {
 ...         'N': KeywordSpec('nmon', int),
-...         'r': KeywordSpec('dcyl', float, scale=2.0, offset=-1.0),
 ...         'D': KeywordSpec('dcyl', float),
-...         'lz': KeywordSpec('lcyl', float, scale=2.0),
 ...         'ac': KeywordSpec('dcrowd', float),
 ...         'nc': KeywordSpec('ncrowd', int),
-...         'dt': KeywordSpec('dt', float),
 ...         'bdump': KeywordSpec('bdump', int),
-...         'adump': KeywordSpec('adump', int),
 ...         'ens': KeywordSpec('ensemble_id', int),
 ...         'j': KeywordSpec('segment_id', int),
 ...     }
 ...     _patterns = {
-...         'segment': (*long_keys, 'ens', 'j'),
-...         'whole': (*long_keys, 'ens'),
-...         'ensemble_long': long_keys,
-...         'ensemble': ('N', 'D', 'ac', 'nc'),
+...         'segment': (*keys, 'ens', 'j'), 'whole': (*keys, 'ens'),
+...         'ensemble_long': keys, 'ensemble': ('N', 'D', 'ac', 'nc'),
 ...         'space': ('N', 'D', 'ac'),
 ...     }
-...     _defaults = {'dmon': 1}
-...     _species = (Species('m', 'nmon', 'dmon'),
-...                 Species('c', 'ncrowd', 'dcrowd'))
-...     _project_attributes = {
-...         'segment': bulk, 'whole': bulk, 'ensemble_long': bulk,
-...         'ensemble': ['dmon'], 'space': ['dmon']}
->>> artifact = ChainCyl(
-...     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1.j03',
-...     lineage='segment',
-...     group='all',
-... )
-
->>> artifact.nmon                     # monomers in the chain
-200
->>> artifact.ncrowd                   # crowder particles
-1000
->>> float(artifact.dcrowd)            # crowder diameter
-2.0
+...     _project_attributes = dict.fromkeys(
+...         ('segment', 'whole', 'ensemble_long', 'ensemble', 'space'), [])
 
 ```
 
-Geometry is derived, not just read. The cylindrical wall is a layer of beads
-of size `a_w = 1` whose centers lie on the cylinder of radius `r` set in
-LAMMPS, so the cylinder size is `D = 2r - a_w`, stored as `dcyl`; `lz` is the
-half-length, so the cylinder length is `Z = 2 lz`, stored as `lcyl`. For a
-species `α` of size `a_α`, particle centers are confined to
-`D_eff,α = D - a_α`, and its bulk number density and volume fraction both use
-the effective volume `V_eff,α = π Z D_eff,α² / 4`:
+A file name then decodes into typed physical attributes, and into the name of
+the artifact at every level of the lineage above it, without touching the
+file system:
 
 ```python
->>> float(artifact.dcyl)              # from 'r10.5': 2 * 10.5 - 1.0
-20.0
->>> round(float(artifact.phi_bulk_c), 4)
-0.3292
+>>> artifact = ChainCyl('N200D20ac2nc1000bdump2000ens1.j03',
+...                     lineage='segment', group='bug')
+>>> artifact.nmon, artifact.ncrowd, float(artifact.dcrowd)
+(200, 1000, 2.0)
+>>> for level in artifact.lineage_genealogy:
+...     print(f'{level:13} {getattr(artifact, level)}')
+segment       N200D20ac2nc1000bdump2000ens1.j03
+whole         N200D20ac2nc1000bdump2000ens1
+ensemble_long N200D20ac2nc1000bdump2000
+ensemble      N200D20ac2nc1000
+space         N200D20ac2
 
 ```
 
-Each artifact also knows its ancestors, so a segment can be grouped with its
-replicates and its sweep without touching the filesystem:
-
-```python
->>> artifact.lineage_genealogy
-['segment', 'whole', 'ensemble_long', 'ensemble', 'space']
->>> artifact.whole
-'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1'
->>> artifact.ensemble
-'N200D20ac2nc1000'
->>> artifact.space
-'N200D20ac2'
-
-```
-
-`polyphys.analyze.measurer` provides the structural observables computed per
-frame:
-
-```python
->>> import numpy as np
->>> from polyphys.analyze import measurer
->>> positions = np.array([[0.0, 0.0, 0.0], [3.0, 4.0, 0.0], [3.0, 4.0, 12.0]])
->>> float(measurer.end_to_end(positions))
-13.0
->>> float(measurer.fsd(positions, 2))   # span along z
-12.0
-
-```
+The segments of one run share their `whole` name, the replicates of one
+state point their `ensemble_long` name, and the state points of one sweep
+their `space` name, so the organizer groups and averages them by name. The
+[quickstart](https://polyphys.readthedocs.io/en/latest/quickstart.html) of
+the documentation runs a small synthetic sweep from its segments to its
+`space` table, and the
+[Lineage](https://polyphys.readthedocs.io/en/latest/lineage.html) page shows
+what else a parser derives, such as the cylinder size and the bulk volume
+fractions.
 
 ## What's in the package
 
-| Module             | Purpose                                                                                                                                                                                        |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `manage.parser`    | Filename → typed physical attributes and lineage. One `ParserBase` subclass per project, declaring its own geometry, topology, and attribute schema.                                           |
-| `manage.organizer` | Walks the lineage, combining segments into wholes and reducing replicate ensembles to averaged measurements.                                                                                   |
-| `spec`             | `ProjectSpec`, what a study's analysis needs beyond its parser: the polymer group, the rounding step of the crowder volume fraction, the attributes that become columns, the species-to-size map, and the time series; and `ProbeSpec`, what its probe needs: the selection of each species, the chain-size observables, the unwrap convention, the histogram species, bin sizes, and block length, how a frame is recentered, the pair species and its contact cutoff, and, for a study with binders, a `BinderSpec` of the binding cutoff and cis threshold; and `AnalysisTable`, the artifacts of one particle group to reduce. It imports no MDAnalysis. Each study's own specs live in `projects/`, outside the package. |
-| `manage.utils`     | Filename sorting, safe IO, and number-density / volume-fraction conversions for cubic and cylindrical geometries.                                                                              |
-| `manage.types`     | Domain type aliases (`LineageT`, `GeometryT`, `PhaseT`, …) that keep the vocabulary explicit and checkable.                                                                                    |
-| `simulate.core`    | `Box`, the LAMMPS simulation box, and `LammpsFormatError`, the base class of the errors of the log, dump, and data-file readers.                                                               |
-| `simulate.log`     | Reads a LAMMPS log file into pandas DataFrames: the thermodynamic output of every run, each run's summary, and the total wall time.                                                            |
-| `simulate.dump`    | Reads the text dumps of the LAMMPS `dump atom` and `dump custom` commands into numpy arrays, one frame at a time, without MDAnalysis.                                                           |
-| `simulate.data`    | Reads and writes LAMMPS data files of atoms, bonds, and angles, both as start configurations and as topologies for analysis tools such as MDAnalysis.                                          |
-| `simulate.build`   | Builds LAMMPS start configurations of a bead-spring polymer, a helix or a closed plectoneme, and checks that LAMMPS can start from them.                                                        |
-| `probe.core`       | Opens a study's LAMMPS data file and dump as one MDAnalysis universe, and writes the stamps of a probed artifact. Needs the `mda` extra.                                                      |
-| `probe.chain_size` | `ChainSize`, an MDAnalysis analysis that measures a chain's end-to-end distance, span, transverse size, radius of gyration, asphericity, shape parameter, and principal axes in every frame, driven by a study's `ProbeSpec`. |
-| `probe.binders`    | `BinderStatistics`, an MDAnalysis analysis that counts, in every frame, the patches of two-patch binders in contact with the chain, the free, dangling, and bridging binders, the cis and trans bridged pairs, and the loop-length histogram, with the minimum image along the geometry's periodic directions, driven by a study's `BinderSpec`. |
-| `probe.histograms` | `SpatialHistograms`, an MDAnalysis analysis that bins every species of a whole along the directions of its geometry per frame and in the three Cartesian planes per block of frames, after recentering each frame, and `histogram_edges`, the whole's bin edges from its `ProbeSpec` and parser. |
-| `probe.pairs`      | `PairDistances`, an MDAnalysis analysis that measures the pair distances, direct contacts, bonds, and clusters of one species, such as the foci, in every frame, with the minimum image along the periodic directions. |
-| `analyze.measurer` | Per-frame structural observables — end-to-end distance, span along an axis (`fsd`), transverse size, maximum extent — plus fixed-size binning and radial, axial, azimuthal, and planar histograms. |
-| `analyze.stats`    | The uncertainty of a time average over correlated frames by the blocking method of Flyvbjerg and Petersen: the blocked standard error, its plateau, and the statistical inefficiency.          |
-| `analyze.clusters` | Contact and cluster statistics of a particle group (direct contacts under a cutoff, connected-component clusters, size and bond histograms), genomic distances, the probability density of a pair's separation, the free, dangling, bridging, cis, and trans statistics of two-patch binders, and the binding-threshold sweep on saved distance matrices. |
-| `analyze.correlations` | The autocorrelation function of a time series by the FFT with Bartlett's confidence band, exponential and stretched-exponential decay fits with a recorded starting point, and the bond cosine correlation of a linear or ring chain, from which a persistence length follows. |
-| `analyze.sumrule`  | The density sum rule of Jeon et al. (2016) on a space's ensemble-averaged density profiles: each species' profile scaled by its size, normalized, folded, and summed per state point.          |
-| `analyze.density`  | Local number density and volume fraction profiles from a histogram of bead centers along one coordinate, with the share of each finite-size bead in the bins it reaches.                       |
-| `analyze.pipeline` | Reduces one space's probe artifacts down the lineage for every property of a study's `AnalysisTable`, with post-hooks that derive time averages, autocorrelations, density profiles through an injected kernel, and the pair distances of the foci; and reduces each whole's time series to its equilibrium value with a blocked error. |
-| `viz.colors`       | The qualitative color lists of the studies' figures as `#RRGGBB` tuples (Paul Tol's bright, vibrant, and muted schemes, the Dutch Field palette, and the maintainer's own list), which need no plotting library, and `truncate_colormap`, a matplotlib color map cut down to a sub-range of its domain. |
-| `viz.helpers`      | `set_xticks` and `set_yticks`, which place an axis's major ticks every `step` from `lower` to `upper` inside a small frame; proxy legend handles keyed by color or by line style and marker; a legend moved from a figure into chosen panels; and a band shaded under each line in its own color. Needs the `viz` extra. |
+One short purpose per module; each guide page and the API reference give the
+details. `probe` needs the `mda` extra and `viz.helpers` the `viz` extra.
+
+| Module | Purpose | Guide |
+| --- | --- | --- |
+| `spec` | Study, probe, and analysis records shared across the workflow; no MDAnalysis. | [Studies](https://polyphys.readthedocs.io/en/latest/studies.html) |
+| `manage.parser` | File name to typed physical attributes and lineage names. | [Lineage](https://polyphys.readthedocs.io/en/latest/lineage.html) |
+| `manage.organizer` | Join segments into wholes and reduce replicates to ensemble averages. | [Workflow](https://polyphys.readthedocs.io/en/latest/workflow.html) |
+| `manage.utils` | File sorting, file opening, and number-density and volume-fraction conversions. | [API](https://polyphys.readthedocs.io/en/latest/api.html) |
+| `manage.types` | Type aliases of the vocabulary, such as `LineageT` and `PhaseT`. | [API](https://polyphys.readthedocs.io/en/latest/api.html) |
+| `simulate.core` | The LAMMPS box and the readers' base error. | [Simulate](https://polyphys.readthedocs.io/en/latest/simulate.html) |
+| `simulate.log` | Read LAMMPS log files into DataFrames. | [Simulate](https://polyphys.readthedocs.io/en/latest/simulate.html) |
+| `simulate.dump` | Read LAMMPS text dumps, one frame at a time. | [Simulate](https://polyphys.readthedocs.io/en/latest/simulate.html) |
+| `simulate.data` | Read and write LAMMPS data files. | [Simulate](https://polyphys.readthedocs.io/en/latest/simulate.html) |
+| `simulate.build` | Build bead-spring start configurations for LAMMPS. | [Simulate](https://polyphys.readthedocs.io/en/latest/simulate.html) |
+| `probe.core` | Open a whole's data file and dump as an MDAnalysis universe. | [Probe](https://polyphys.readthedocs.io/en/latest/probe.html) |
+| `probe.chain_size` | Chain size and shape in every frame. | [Probe](https://polyphys.readthedocs.io/en/latest/probe.html) |
+| `probe.binders` | Binding of two-patch binders to the chain in every frame. | [Probe](https://polyphys.readthedocs.io/en/latest/probe.html) |
+| `probe.histograms` | Spatial histograms of every species. | [Probe](https://polyphys.readthedocs.io/en/latest/probe.html) |
+| `probe.pairs` | Pair distances, contacts, and clusters of one species. | [Probe](https://polyphys.readthedocs.io/en/latest/probe.html) |
+| `analyze.measurer` | Per-frame structural measures and histograms of one frame. | [Usage](https://polyphys.readthedocs.io/en/latest/usage.html) |
+| `analyze.stats` | Errors of time averages over correlated frames, by blocking. | [Statistics](https://polyphys.readthedocs.io/en/latest/statistics.html) |
+| `analyze.clusters` | Contacts, clusters, and binding statistics of one frame. | [Clusters](https://polyphys.readthedocs.io/en/latest/clusters.html) |
+| `analyze.correlations` | Autocorrelations, decay fits, and bond correlations. | [Correlations](https://polyphys.readthedocs.io/en/latest/correlations.html) |
+| `analyze.sumrule` | The density sum rule on a space's density profiles. | [Density](https://polyphys.readthedocs.io/en/latest/density.html) |
+| `analyze.density` | Local number-density and volume-fraction profiles. | [Density](https://polyphys.readthedocs.io/en/latest/density.html) |
+| `analyze.pipeline` | Reduce a space's probe artifacts down the lineage. | [Pipeline](https://polyphys.readthedocs.io/en/latest/pipeline.html) |
+| `viz.colors` | The color lists of the studies' figures. | [Viz](https://polyphys.readthedocs.io/en/latest/viz.html) |
+| `viz.helpers` | Matplotlib helpers for ticks, legends, and bands. | [Viz](https://polyphys.readthedocs.io/en/latest/viz.html) |
 
 The package ships no study's parser: each study declares its own
 `ParserBase` subclass in its own folder. The parsers of the maintainer's

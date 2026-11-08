@@ -138,15 +138,34 @@ crowder species, goes in an override of
 ## Declaring the ProjectSpec
 
 A parser says how a study's names read; a `ProjectSpec` from
-`polyphys.spec` says how its analysis reads them. It holds what the
-parser does not: the polymer's particle group; the step `divisor` to which the
-bulk volume fraction of crowders is rounded in the `phi_bulk_c_round`
-column, and `crowder_attr`, the parser attribute that holds that fraction,
-such as `phi_bulk_c`, both study choices with no default; the parser
-attributes that become columns of the
-`space` tables; each density-profile species label mapped to the attribute
-holding that species' diameter; and the study's time series. The geometry,
-topology, and glob patterns come from the parser:
+`polyphys.spec` says how its analysis reads them. It holds what the parser
+does not; the geometry, topology, and glob patterns come from the parser.
+
+`parser`
+: The study's `ParserBase` subclass.
+
+`group`
+: The particle group of the polymer, such as `'bug'`.
+
+`divisor`
+: The step to which the bulk volume fraction of crowders is rounded in the
+  `phi_bulk_c_round` column; a study choice with no default.
+
+`crowder_attr`
+: The parser attribute that holds that volume fraction, such as
+  `phi_bulk_c`; a study choice with no default, keyword-only.
+
+`physical_attrs`
+: The parser attributes that become columns of the `space` tables.
+
+`species_sizes`
+: Each density-profile species label mapped to the parser attribute that
+  holds that species' diameter.
+
+`tseries_properties`
+: The study's time series, such as `'gyrTMon'`.
+
+The spec for the cubic parser `ChainCub` declared above:
 
 ```python
 >>> from polyphys.spec import ProjectSpec
