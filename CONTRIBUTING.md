@@ -70,11 +70,13 @@ AI tools are welcome. Read the [AI policy](AI-POLICY.md) before opening a pull
 request. The rules most often missed:
 
 - Understand, and be able to explain, everything you submit.
-- Say in the pull request which AI tools you used and for what.
-- Write issues, pull request descriptions, and replies in your own words. If
-  an AI agent writes them for you, you answer for every word, and its text
-  ends with its `Assisted-by:` trailer, with `not recorded` for an unknown
-  model.
+- Say in the pull request which AI tools you used and for what, with
+  `not recorded` for a model you cannot name.
+- Write issues, pull request descriptions, and replies in your own words, or
+  let an AI agent write them. Then you answer for every word, and its text
+  ends with its `Assisted-by:` trailer.
+- For text you write yourself, the pull-request statement is enough; the
+  commit trailers are the maintainers' record, and optional for you.
 
 Pull requests that don't follow the policy may be closed without review.
 

@@ -48,14 +48,12 @@ one verified. These rules close that gap.
 
 ## Disclosure
 
-- Say in the pull request which AI tools you used and for what. If you don't
-  know which model was used, write `not recorded`; don't guess.
-- Maintainers record substantial AI help in commits with an `Assisted-by:`
+- Everyone: say in the pull request which AI tools you used and for what. If
+  you don't know which model was used, write `not recorded`; don't guess.
+- Maintainers: record substantial AI help in commits with an `Assisted-by:`
   trailer. Add `Checks-run:` only for a check actually run, with its observed
   result. Add `Ground-truth-source:` only when a commit adds or changes a
-  reference value, naming its independent source. Outside contributors may use
-  these trailers too, but their pull-request statement is enough for what they
-  write themselves.
+  reference value, naming its independent source.
 
   ```text
   Assisted-by: <tool>, <model identifier or not recorded> (<role>)
@@ -66,6 +64,11 @@ one verified. These rules close that gap.
   Omit trailers that do not apply. A property test without a reference value
   does not need `Ground-truth-source:`.
 
+- Outside contributors: for text you write yourself, the pull-request
+  statement is enough; you may add the trailers too.
+- AI agents: every text an agent writes ends with its trailers, as
+  "Communication" says.
+
 - No AI tool is an author or co-author of PolyPhys: none is listed in
   [`CITATION.cff`](CITATION.cff) or [`AUTHORS.rst`](AUTHORS.rst), or named in a
   `Co-authored-by:` trailer.
@@ -73,10 +76,11 @@ one verified. These rules close that gap.
 ## Communication
 
 People write issues, pull request descriptions, and replies in their own words;
-AI may fix grammar or translate. Meanwhile, an AI agent may open issues and
-pull requests, write commits, and post comments. The person running it is
-responsible for what it submits, and every text it writes ends with its
-`Assisted-by:` trailer, with `not recorded` for a model it cannot name.
+AI may fix grammar or translate. Alternatively, an AI agent may write them,
+and may also open issues and pull requests, write commits, and post comments,
+on two conditions: the person running it is responsible for what it submits,
+and every text it writes ends with its `Assisted-by:` trailer, with
+`not recorded` for a model it cannot name.
 The reason a change exists comes from a person, or
 from an outside report such as a bug report, a security alert, or a CI failure.
 It is recorded where it lasts: the linked issue, the pull request description,
