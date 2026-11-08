@@ -105,7 +105,7 @@ def _count_bins(length: float, bin_size: float) -> Tuple[int, float]:
     the excess length they add.
 
     When ``length / bin_size`` is a whole number up to the relative tolerance
-    :data:`_BIN_COUNT_RTOL`, the count is that whole number and the excess is
+    ``_BIN_COUNT_RTOL``, the count is that whole number and the excess is
     exactly ``0.0``; otherwise the count is the ceiling of the ratio and the
     excess ``n_bins * bin_size - length`` is strictly positive, by a margin
     far above float64 round-off.
@@ -205,7 +205,7 @@ def apply_pbc_orthogonal(
         Array of box lengths along each axis (typically shape (3,)).
     pbc_lengths_inverse : numpy.ndarray
         Array of inverse box lengths along each axis (shape (3,)).
-    pbc : Dict[:py:data:`AxisT`, float]
+    pbc : Dict[:py:obj:`~.AxisT`, float]
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths
         as values. See :mod:`polyphys.manage.types`.
 
@@ -258,7 +258,7 @@ def pair_distance(
         Array of shape (2, n_dim) containing atom positions, and sorted
         by atom number from 1 to N; integer positions are converted to
         ``float64``.
-    pbc : Optional[Dict[:py:data:`AxisT`, float]], default None
+    pbc : Optional[Dict[:py:obj:`~.AxisT`, float]], default None
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths as
         values. If provided, periodic boundary conditions (PBC) are applied
         along each axis with a finite length; an ``inf`` length leaves its
@@ -377,7 +377,7 @@ def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
     positions : np.ndarray
         Array of shape (n_atoms, n_dim) containing atomic positions, in any
         order.
-    axis: :py:data:`AxisT`
+    axis: :py:obj:`~.AxisT`
         The axis (0 for x, 1 for y, and 2 for z) in the plane perpendicular to
         which the transverse size is calculated. See
         :mod:`polyphys.manage.types`.
@@ -474,7 +474,7 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
     positions : np.ndarray
         Array of shape ``(n_atoms, n_dim)`` of atom positions, in any order;
         the span does not depend on it.
-    axis : :py:data:`AxisT`
+    axis : :py:obj:`~.AxisT`
         Axis index (0=x, 1=y, 2=z) along which to compute the span; see
         :mod:`polyphys.manage.types`.
 
@@ -745,7 +745,7 @@ def create_bin_edge_and_hist(
     The edges start at `lmin` and step by `bin_size` up to the first edge at
     or beyond `lmax`, so there are ``n_bins = ceil((lmax - lmin) / bin_size)``
     bins of width `bin_size`. When the range is a whole number of bins up to
-    the relative tolerance :data:`_BIN_COUNT_RTOL` (1e-9), the last edge is
+    the relative tolerance ``_BIN_COUNT_RTOL`` (1e-9), the last edge is
     exactly `lmax`; otherwise it exceeds `lmax` by less than one bin.
 
     Parameters
@@ -784,7 +784,7 @@ def create_bin_edge_and_hist(
     ``n_bins + 1``; a float-step `np.arange` can return one edge too many
     when `bin_size` is not exactly representable (for example 0.3). The bin
     count treats a ratio within 1e-9 of a whole number as that whole number;
-    see :data:`_BIN_COUNT_RTOL` for why.
+    see ``_BIN_COUNT_RTOL`` for why.
 
     Time and space are O(`n_bins`).
 
@@ -845,7 +845,7 @@ def fixedsize_bins(
         Start of the range
     lmax : float
         End of the range
-    bin_type : :py:data:`BinT`, default 'ordinary'
+    bin_type : :py:obj:`~.BinT`, default 'ordinary'
         Type of binning. With ``n_bins = ceil((lmax - lmin) / bin_size)``
         bins, the excess length ``n_bins * bin_size - (lmax - lmin)`` is
         zero when the range is a whole number of bins and is otherwise
@@ -924,7 +924,7 @@ def fixedsize_bins(
     a bin; comparing it directly can leave the end edges a few 1e-15 inside
     the range, where a position at exactly `lmin` or `lmax` is lost. The ratio
     is therefore compared with the nearest integer at the relative tolerance
-    :data:`_BIN_COUNT_RTOL` = 1e-9. That tolerance sits between the two
+    ``_BIN_COUNT_RTOL`` = 1e-9. That tolerance sits between the two
     scales that matter: the accumulated round-off in the ratio, a few times
     the float64 epsilon (about 1e-15), and the smallest deviation a user can
     intend, which the seven significant digits of the box sizes and bead
@@ -1091,7 +1091,7 @@ def radial_cyl_histogram(
         edge. The last bin includes its right edge. Every position must lie
         within the outermost edges: a coordinate along a periodic axis must
         already be wrapped into the box, since this function does not wrap.
-    dim : :py:data:`AxisT`
+    dim : :py:obj:`~.AxisT`
         Axis direction (0=x, 1=y, 2=z); see :mod:`polyphys.manage.types`.
 
     Returns
@@ -1148,7 +1148,7 @@ def axial_histogram(
         edge. The last bin includes its right edge. Every position must lie
         within the outermost edges: a coordinate along a periodic axis must
         already be wrapped into the box, since this function does not wrap.
-    dim : :py:data:`AxisT`
+    dim : :py:obj:`~.AxisT`
         The longitudinal axis (0=x, 1=y, 2=z); see
         :mod:`polyphys.manage.types`.
 
@@ -1204,7 +1204,7 @@ def azimuth_cyl_histogram(
         edge. The last bin includes its right edge. Every position must lie
         within the outermost edges: a coordinate along a periodic axis must
         already be wrapped into the box, since this function does not wrap.
-    dim : :py:data:`AxisT`
+    dim : :py:obj:`~.AxisT`
         The longitudinal axis (0=x, 1=y, 2=z); see
         :mod:`polyphys.manage.types`.
 
@@ -1265,7 +1265,7 @@ def planar_cartesian_histogram(
         includes its right edge. Every position must lie within the outermost
         edges along both axes: a coordinate along a periodic axis must already
         be wrapped into the box, since this function does not wrap.
-    dim : :py:data:`AxisT`
+    dim : :py:obj:`~.AxisT`
         Cartesian axis (0=x, 1=y, 2=z). The right-hand rule is used to pass the
         planar axes to the `np.histogram2d`: When `dim=0` (x), `dim=1` (y) and
         `dim=2` (z) values are passed respectively. When `dim=1` (y), `dim=2`

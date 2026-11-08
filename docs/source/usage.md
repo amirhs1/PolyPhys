@@ -24,7 +24,7 @@ then runs one complete synthetic sweep, from the files of its segments to its
 | Color a figure the way the studies' figures are colored | [Viz](viz.md) |
 
 The [API reference](api.rst) documents every public name; the
-[README](https://github.com/amirhs1/PolyPhys#readme) introduces the
+[README](https://github.com/amirhs1/PolyPhys) introduces the
 artifact-lineage model.
 
 ## Measures of one frame

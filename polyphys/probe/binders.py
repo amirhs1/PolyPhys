@@ -171,7 +171,7 @@ class BinderStatistics(_ProbeAnalysis):
     cutoff : float
         The binding threshold :math:`r_\\mathrm{thres}`, in the dump's
         length unit; finite and positive.
-    topology : :py:data:`TopologyT`
+    topology : :py:obj:`~.TopologyT`
         ``'linear'`` or ``'ring'``, whether the chain is open or closed,
         which sets the genomic distance of a bridged pair and the length of
         the loop-length histogram.
@@ -185,7 +185,7 @@ class BinderStatistics(_ProbeAnalysis):
     patches_per_binder : int, default 2
         The number of patches per binder; only ``2`` is accepted, which
         :func:`~polyphys.analyze.clusters.binding_statistics` counts.
-    periodic : tuple of three bool, default (False, False, False)
+    periodic : tuple of bool, default (False, False, False)
         Whether the minimum image is taken along ``x``, ``y``, and ``z``,
         with the box lengths of each frame. The research probe took none;
         :meth:`from_spec` sets every direction in a cube and ``z`` only in
@@ -193,20 +193,23 @@ class BinderStatistics(_ProbeAnalysis):
     store_distances : bool, default False
         Whether the monomer-to-patch distance matrix of every frame is
         kept in ``results`` and written by :meth:`save`.
-    chain_label, patch_label, binder_label : :py:data:`EntityT`
+    chain_label, patch_label, binder_label : :py:obj:`~.EntityT`
         The species labels that name the files :meth:`save` writes;
         ``'Mon'``, ``'HnsPatch'``, and ``'HnsCore'`` by default, the H-NS
         studies' names.
     verbose : bool, default False
-        Whether to show a progress bar during :meth:`run`.
+        Whether to show a progress bar during
+        :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
     Attributes
     ----------
-    chain, patches : :class:`~MDAnalysis.core.groups.AtomGroup`
-        The chain and the patches.
+    chain : :class:`~MDAnalysis.core.groups.AtomGroup`
+        The chain.
+    patches : :class:`~MDAnalysis.core.groups.AtomGroup`
+        The patches.
     cutoff : float
         The binding threshold.
-    topology : :py:data:`TopologyT`
+    topology : :py:obj:`~.TopologyT`
         The chain's topology.
     inclusive : bool
         Whether a pair at exactly `cutoff` is a contact.
@@ -214,43 +217,48 @@ class BinderStatistics(_ProbeAnalysis):
         The largest genomic distance of a cis bridge, in bonds.
     patches_per_binder : int
         The number of patches per binder, ``2``.
-    periodic : tuple of three bool
+    periodic : tuple of bool
         The directions along which the minimum image is taken.
     store_distances : bool
         Whether the distance matrices are kept.
-    chain_label, patch_label, binder_label : :py:data:`EntityT`
-        The species labels of the saved files.
+    chain_label : :py:obj:`~.EntityT`
+        The species label of the chain in the saved files.
+    patch_label : :py:obj:`~.EntityT`
+        The species label of the patches in the saved files.
+    binder_label : :py:obj:`~.EntityT`
+        The species label of the binders in the saved files.
     n_lengths : int
         The length of a loop-length histogram row: ``n_monomers // 2 + 1``
         on a ring, ``n_monomers`` on a linear chain, as
         :class:`~polyphys.analyze.clusters.BindingStats` sizes it.
     results : :class:`~MDAnalysis.analysis.results.Results`
-        After :meth:`run`: one int64 array of shape ``(n_frames,)`` per
-        attribute of :class:`~polyphys.analyze.clusters.FrameBinding` in
-        :data:`~polyphys.spec.BINDER_SERIES`, keyed by that
-        name; ``'loop_length_histogram'``, int64 of shape
-        ``(n_frames, n_lengths)``, whose row ``[t, d]`` is the number of
-        distinct bridged pairs at :math:`d` bonds in frame ``t``, with
-        column 0 always 0; and, with `store_distances`, ``'distances'``,
-        float64 of shape ``(n_frames, n_monomers, n_patches)``.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`: one int64
+        array of shape ``(n_frames,)`` per attribute of
+        :class:`~polyphys.analyze.clusters.FrameBinding` in
+        :data:`~polyphys.spec.BINDER_SERIES`, keyed by that name;
+        ``'loop_length_histogram'``, int64 of shape ``(n_frames, n_lengths)``,
+        whose row ``[t, d]`` is the number of distinct bridged pairs at
+        :math:`d` bonds in frame ``t``, with column 0 always 0; and, with
+        `store_distances`, ``'distances'``, float64 of shape ``(n_frames,
+        n_monomers, n_patches)``.
     n_frames : int
-        After :meth:`run`, the number of frames analyzed, from
-        :class:`~MDAnalysis.analysis.base.AnalysisBase`.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the number of
+        frames analyzed, from :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames, times : numpy.ndarray
-        After :meth:`run`, the indices and times of the frames analyzed,
-        shape ``(n_frames,)``.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the indices
+        and times of the frames analyzed, shape ``(n_frames,)``.
 
     Raises
     ------
     ValueError
-        If `chain` has fewer than two atoms; if `patches` is empty, is not
-        from the universe of `chain`, or has a number of atoms that is not
-        a multiple of `patches_per_binder`; if `cutoff` is not a finite
-        positive number; if `topology` is not ``'linear'`` or ``'ring'``;
-        if `cis_threshold` is negative; if `patches_per_binder` is not
-        ``2``; if `periodic` is not three booleans; or if a label is empty.
-        During :meth:`run`, if a periodic direction is asked for and the
-        frame carries no box.
+        If `chain` has fewer than two atoms; if `patches` is empty, is not from
+        the universe of `chain`, or has a number of atoms that is not a
+        multiple of `patches_per_binder`; if `cutoff` is not a finite positive
+        number; if `topology` is not ``'linear'`` or ``'ring'``; if
+        `cis_threshold` is negative; if `patches_per_binder` is not ``2``; if
+        `periodic` is not three booleans; or if a label is empty. During
+        :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, if a periodic
+        direction is asked for and the frame carries no box.
 
     Notes
     -----
@@ -277,12 +285,12 @@ class BinderStatistics(_ProbeAnalysis):
     one way a single patch reaches two beads; the single-patch rule
     resolves it.
 
-    The MDAnalysis contract: :meth:`_prepare` allocates the arrays for the
-    frames of the run, :meth:`_single_frame` writes the current frame's
-    row, and :meth:`_conclude` does nothing. The class is marked
+    The MDAnalysis contract: ``_prepare`` allocates the arrays for the
+    frames of the run, ``_single_frame`` writes the current frame's
+    row, and ``_conclude`` does nothing. The class is marked
     parallelizable, with ``serial``, ``multiprocessing``, and ``dask``
     backends; each worker fills the arrays of its own frames, which
-    :meth:`_get_aggregator` concatenates along the frame axis
+    ``_get_aggregator`` concatenates along the frame axis
     (``ResultsGroup.ndarray_hstack`` for the eight series,
     ``ResultsGroup.ndarray_vstack`` for the histogram and the distances).
 
@@ -463,7 +471,8 @@ class BinderStatistics(_ProbeAnalysis):
         spec : :class:`~polyphys.spec.ProbeSpec`
             The study's probe spec, with `binders` set.
         verbose : bool, default False
-            Whether to show a progress bar during :meth:`run`.
+            Whether to show a progress bar during
+            :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
         Returns
         -------
@@ -524,8 +533,8 @@ class BinderStatistics(_ProbeAnalysis):
     @classmethod
     def get_supported_backends(cls) -> tuple[str, ...]:
         """
-        The backends :meth:`run` accepts: ``'serial'``,
-        ``'multiprocessing'``, and ``'dask'``.
+        The backends :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`
+        accepts: ``'serial'``, ``'multiprocessing'``, and ``'dask'``.
 
         Examples
         --------
@@ -651,7 +660,8 @@ class BinderStatistics(_ProbeAnalysis):
         Raises
         ------
         RuntimeError
-            If :meth:`run` has not been called.
+            If :meth:`~MDAnalysis.analysis.base.AnalysisBase.run` has not been
+            called.
 
         Notes
         -----

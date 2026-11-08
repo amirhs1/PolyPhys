@@ -338,14 +338,15 @@ class SpatialHistograms(_ProbeAnalysis):
 
     Parameters
     ----------
-    groups : mapping of (:py:data:`EntityT` -> AtomGroup)
+    groups : mapping of :py:obj:`~.EntityT` to
+    ~MDAnalysis.core.groups.AtomGroup
         Each species label mapped to its atoms, all in one universe, in the
         order ``results`` and :meth:`save` list the species. A group may be
         empty, for a species a whole lacks; its histograms are then zero.
-    edges : mapping of (str -> numpy.ndarray)
+    edges : mapping of str to numpy.ndarray
         The bin edges, increasing, keyed as :func:`histogram_edges` returns
         them: the directions of `geometry` and ``'x'``, ``'y'``, ``'z'``.
-    geometry : :py:data:`GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         ``'cylindrical'``, with the histograms along ``'r'``, ``'z'``, and
         ``'theta'`` about the ``z`` axis, or ``'cubic'``, with the
         histogram along ``'r'`` from the box center.
@@ -357,51 +358,54 @@ class SpatialHistograms(_ProbeAnalysis):
         subtracts half the frame's box lengths, ``'none'`` nothing, a
         triple its values. The positions in the trajectory are untouched.
     verbose : bool, default False
-        Whether to show a progress bar during :meth:`run`.
+        Whether to show a progress bar during
+        :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
     Attributes
     ----------
-    groups : mapping of (:py:data:`EntityT` -> AtomGroup)
+    groups : mapping of :py:obj:`~.EntityT` to
+    ~MDAnalysis.core.groups.AtomGroup
         The species, a copy of the mapping given.
-    edges : mapping of (str -> numpy.ndarray)
+    edges : mapping of str to numpy.ndarray
         The edges, a copy of the mapping given, each float64.
-    geometry : :py:data:`GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         The geometry.
     block_frames : int
         The block length.
     recenter : :py:data:`~polyphys.spec.RecenterT`
         The recentering, a triple as floats.
     results : :class:`~MDAnalysis.analysis.results.Results`
-        After :meth:`run`, for each species ``S`` and direction ``d`` of
-        the geometry, ``dHistTS``, int64 ``(n_frames, n_bins)``, the counts
-        of frame ``i`` in row ``i``, and ``dHistS``, int64 ``(n_bins,)``,
-        their sum over the frames; for each plane ``p`` in ``xy``, ``xz``,
-        ``yz``, ``pHistBlockS``, float64 ``(n_blocks, n_a, n_b)``, the mean
-        map of each block, rows along the plane's first axis, and
-        ``pHistS``, float64 ``(n_a, n_b)``, the counts summed over the
-        frames; and ``blockFrames``, int64 ``(n_blocks,)``, the frames in
-        each block.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, for each
+        species ``S`` and direction ``d`` of the geometry, ``dHistTS``, int64
+        ``(n_frames, n_bins)``, the counts of frame ``i`` in row ``i``, and
+        ``dHistS``, int64 ``(n_bins,)``, their sum over the frames; for each
+        plane ``p`` in ``xy``, ``xz``, ``yz``, ``pHistBlockS``, float64
+        ``(n_blocks, n_a, n_b)``, the mean map of each block, rows along the
+        plane's first axis, and ``pHistS``, float64 ``(n_a, n_b)``, the counts
+        summed over the frames; and ``blockFrames``, int64 ``(n_blocks,)``, the
+        frames in each block.
     n_frames : int
-        After :meth:`run`, the number of frames analyzed, from
-        :class:`~MDAnalysis.analysis.base.AnalysisBase`.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the number of
+        frames analyzed, from :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames : numpy.ndarray
-        After :meth:`run`, the indices of the frames analyzed, shape
-        ``(n_frames,)``.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the indices
+        of the frames analyzed, shape ``(n_frames,)``.
     times : numpy.ndarray
-        After :meth:`run`, the times of the frames analyzed, shape
-        ``(n_frames,)``, in the trajectory's time unit.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the times of
+        the frames analyzed, shape ``(n_frames,)``, in the trajectory's time
+        unit.
 
     Raises
     ------
     ValueError
-        If `groups` is empty, has an empty label, or spans two universes;
-        if `edges` lacks a key the geometry needs or has edges that are
-        not a one-dimensional increasing array of at least two values; if
-        `geometry` is unknown; if `block_frames` is not a positive integer;
-        if `recenter` is neither ``'none'``, ``'half'``, nor a triple of
-        finite numbers; or, during :meth:`run`, if a frame carries no box,
-        or if a wrapped and recentered position falls outside the edges of
-        a direction or a Cartesian axis.
+        If `groups` is empty, has an empty label, or spans two universes; if
+        `edges` lacks a key the geometry needs or has edges that are not a
+        one-dimensional increasing array of at least two values; if `geometry`
+        is unknown; if `block_frames` is not a positive integer; if `recenter`
+        is neither ``'none'``, ``'half'``, nor a triple of finite numbers; or,
+        during :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, if a frame
+        carries no box, or if a wrapped and recentered position falls outside
+        the edges of a direction or a Cartesian axis.
 
     Notes
     -----
@@ -428,16 +432,15 @@ class SpatialHistograms(_ProbeAnalysis):
     and did not wrap.
 
     Blocks are numbered over the frames of the whole run in the order
-    :meth:`run` visits them, whatever ``start``, ``stop``, ``step``, or
-    ``frames`` select, so that a run split across workers gives the same
-    blocks as a serial one: :meth:`_setup_frames` records the run's frame
-    count before the split and :meth:`_compute` each worker's offset into
-    it. Each worker accumulates the block sums and frame counts of its own
-    frames, which :meth:`_get_aggregator` adds
+    :meth:`~MDAnalysis.analysis.base.AnalysisBase.run` visits them, whatever
+    ``start``, ``stop``, ``step``, or ``frames`` select, so that a run split
+    across workers gives the same blocks as a serial one: ``_setup_frames``
+    records the run's frame count before the split and ``_compute`` each
+    worker's offset into it. Each worker accumulates the block sums and frame
+    counts of its own frames, which ``_get_aggregator`` adds
     (``ResultsGroup.ndarray_sum``), and its per-frame rows, which it
-    concatenates (``ResultsGroup.ndarray_vstack``); :meth:`_conclude` then
-    divides each block's sum by its frame count and sums the counts over
-    the frames.
+    concatenates (``ResultsGroup.ndarray_vstack``); ``_conclude`` then divides
+    each block's sum by its frame count and sums the counts over the frames.
 
     Cost per frame: :math:`O(S N \\log B)` time for :math:`S` species of
     :math:`N` particles and :math:`B` bins along a direction, from the
@@ -579,7 +582,8 @@ class SpatialHistograms(_ProbeAnalysis):
         parser : :class:`~polyphys.manage.parser.ParserBase`
             The whole's parser, for the edges.
         verbose : bool, default False
-            Whether to show a progress bar during :meth:`run`.
+            Whether to show a progress bar during
+            :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
         Returns
         -------
@@ -637,8 +641,8 @@ class SpatialHistograms(_ProbeAnalysis):
     @classmethod
     def get_supported_backends(cls) -> tuple[str, ...]:
         """
-        The backends :meth:`run` accepts: ``'serial'``,
-        ``'multiprocessing'``, and ``'dask'``.
+        The backends :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`
+        accepts: ``'serial'``, ``'multiprocessing'``, and ``'dask'``.
 
         Examples
         --------
@@ -807,7 +811,8 @@ class SpatialHistograms(_ProbeAnalysis):
         Raises
         ------
         RuntimeError
-            If :meth:`run` has not been called.
+            If :meth:`~MDAnalysis.analysis.base.AnalysisBase.run` has not been
+            called.
 
         Examples
         --------

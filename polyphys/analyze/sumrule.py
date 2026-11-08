@@ -48,7 +48,7 @@ Notation
     a number density.
 *normalizer*
     The reference value a scaled profile, or the species sum, is divided by:
-    see :py:data:`~polyphys.manage.types.NormalizerT`.
+    see :py:obj:`~.NormalizerT`.
 :math:`D`, :math:`a_c`
     The cylinder diameter and a crowder diameter; the ratio
     :math:`\\kappa = (D - a_c) / a_c` sets how far the crowder layering on
@@ -260,7 +260,7 @@ def normalize_r(
     ens_avg : pd.DataFrame
         The ensemble-averaged distribution, one row per bin. It is not
         modified.
-    normalizer : :py:data:`~polyphys.manage.types.NormalizerT`, \
+    normalizer : :py:obj:`~.NormalizerT`, \
 default 'first'
         The reference value: ``'first'`` is the value at :math:`r = 0`,
         ``'last'`` the value of the outermost bin, ``'max'`` the maximum;
@@ -340,7 +340,7 @@ def normalize_z(
     ens_avg : pd.DataFrame
         The ensemble-averaged distribution, one row per bin, with a
         ``bin_center`` column when `fold` is True. It is not modified.
-    normalizer : :py:data:`~polyphys.manage.types.NormalizerT`, default 'max'
+    normalizer : :py:obj:`~.NormalizerT`, default 'max'
         The reference value, as in :func:`normalize_r`; ``'max'`` is the
         far-field value of a crowder profile and the center value of a
         monomer profile when each is monotone in :math:`|z|`.
@@ -521,7 +521,7 @@ def space_profiles(
         The parser attributes added as columns to the result.
     group : GroupT
         The particle group of the profiles, usually ``'all'``.
-    species_sizes : mapping of (EntityT -> str)
+    species_sizes : mapping of EntityT to str
         Each species label mapped to the parser attribute holding its
         particle diameter, in the monomer diameter: the ``species_sizes`` of
         the study's :class:`~polyphys.spec.ProjectSpec`.
@@ -547,8 +547,8 @@ def space_profiles(
         If True, save the result as
         ``<space>-<group>-<direction><quantity><species>-normalizedRescaled-space.csv``
         in the ``analysis`` phase's ``space`` directory, which
-        :func:`make_database` creates next to `input_database`, and log the
-        path at INFO.
+        :func:`~polyphys.manage.organizer.make_database` creates next to
+        `input_database`, and log the path at INFO.
     crowder_attr : str, default 'phi_bulk_c'
         The parser attribute holding the bulk volume fraction of crowders,
         added as a column of that name and rounded into
@@ -998,7 +998,7 @@ def sum_rule_profiles(
 
     Parameters
     ----------
-    profiles : mapping of (EntityT -> pd.DataFrame)
+    profiles : mapping of EntityT to pd.DataFrame
         Each species label mapped to its :func:`space_profiles` result for
         the same `prop`; each has the columns of `by`, ``bin_center``, and
         ``<prop><species>-scale``, in the same row order, with ``-scale``
@@ -1013,7 +1013,7 @@ def sum_rule_profiles(
     by : sequence of str, default ('ensemble_long',)
         The columns that identify a state point; the sum is normalized
         within each. An empty sequence treats the whole input as one.
-    normalizer : :py:data:`~polyphys.manage.types.NormalizerT` or None, \
+    normalizer : :py:obj:`~.NormalizerT` or None, \
 default None
         The reference value of each state point's sum. None takes the
         default of :data:`SUM_NORMALIZERS`: the value at :math:`r = 0` for

@@ -131,19 +131,21 @@ class PairDistances(_ProbeAnalysis):
         The backbone index :math:`g_i` of each particle, 0-based,
         non-negative, and distinct, one per particle in the group's order;
         written on the diagonal of every frame's distance matrix.
-    species : :py:data:`EntityT`, default 'Foci'
+    species : :py:obj:`~.EntityT`, default 'Foci'
         The species label, which names ``results`` and the files
         :meth:`save` writes, ``<name>-<quantity><species>.npy``.
-    periodic : tuple of three bool or None, default None
+    periodic : tuple of bool or None, default None
         The directions along which the distances use the minimum image,
-        with the frame's box lengths; ``None`` for none, as the research
+        one flag each for ``x``, ``y``, and ``z``, with the frame's box
+        lengths; ``None`` for none, as the research
         code measured.
     inclusive : bool, default True
         Whether a pair at exactly the cutoff is in contact,
         :math:`d_{ij} \\le r_c`, as the research code counted, rather than
         :math:`d_{ij} < r_c`.
     verbose : bool, default False
-        Whether to show a progress bar during :meth:`run`.
+        Whether to show a progress bar during
+        :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
     Attributes
     ----------
@@ -153,42 +155,43 @@ class PairDistances(_ProbeAnalysis):
         The contact cutoff.
     genomic_positions : numpy.ndarray
         The backbone indices, int64, shape ``(n,)``.
-    species : :py:data:`EntityT`
+    species : :py:obj:`~.EntityT`
         The species label.
-    periodic : tuple of three bool or None
+    periodic : tuple of bool or None
         The minimum-image directions.
     inclusive : bool
         Whether the cutoff itself counts as contact.
     results : :class:`~MDAnalysis.analysis.results.Results`
-        After :meth:`run`, with ``S`` the species label: ``distMatTS``,
-        float64 ``(n_frames, n, n)``, each frame's :math:`d_{ij}` for
-        :math:`i < j` above the diagonal, :math:`g_i` on it, and zeros
-        below; ``directContactsMatTS``, bool ``(n_frames, n, n)``, the
-        symmetric contact matrix with ``True`` on the diagonal, as
-        :func:`~polyphys.analyze.clusters.find_direct_contacts` returns it;
-        ``bondsHistTS``, int64 ``(n_frames, n)``, ``[t, d]`` the number of
-        particles with ``d`` contacts in frame ``t``; ``clustersHistTS``,
-        int64 ``(n_frames, n + 1)``, ``[t, s]`` the number of clusters of
-        size ``s`` in frame ``t``, with ``[t, 0]`` always 0.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, with ``S``
+        the species label: ``distMatTS``, float64 ``(n_frames, n, n)``, each
+        frame's :math:`d_{ij}` for :math:`i < j` above the diagonal,
+        :math:`g_i` on it, and zeros below; ``directContactsMatTS``, bool
+        ``(n_frames, n, n)``, the symmetric contact matrix with ``True`` on the
+        diagonal, as :func:`~polyphys.analyze.clusters.find_direct_contacts`
+        returns it; ``bondsHistTS``, int64 ``(n_frames, n)``, ``[t, d]`` the
+        number of particles with ``d`` contacts in frame ``t``;
+        ``clustersHistTS``, int64 ``(n_frames, n + 1)``, ``[t, s]`` the number
+        of clusters of size ``s`` in frame ``t``, with ``[t, 0]`` always 0.
     n_frames : int
-        After :meth:`run`, the number of frames analyzed, from
-        :class:`~MDAnalysis.analysis.base.AnalysisBase`.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the number of
+        frames analyzed, from :class:`~MDAnalysis.analysis.base.AnalysisBase`.
     frames : numpy.ndarray
-        After :meth:`run`, the indices of the frames analyzed, shape
-        ``(n_frames,)``.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the indices
+        of the frames analyzed, shape ``(n_frames,)``.
     times : numpy.ndarray
-        After :meth:`run`, the times of the frames analyzed, shape
-        ``(n_frames,)``, in the trajectory's time unit.
+        After :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, the times of
+        the frames analyzed, shape ``(n_frames,)``, in the trajectory's time
+        unit.
 
     Raises
     ------
     ValueError
         If `atomgroup` has fewer than two particles; if `cutoff` is not a
-        finite positive number; if `genomic_positions` has not one
-        non-negative integer per particle or repeats one; if `species` is
-        empty; or if `periodic` is neither ``None`` nor three booleans,
-        Python or NumPy. During :meth:`run`, if a periodic direction is
-        asked for and the frame carries no box.
+        finite positive number; if `genomic_positions` has not one non-negative
+        integer per particle or repeats one; if `species` is empty; or if
+        `periodic` is neither ``None`` nor three booleans, Python or NumPy.
+        During :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`, if a
+        periodic direction is asked for and the frame carries no box.
 
     Notes
     -----
@@ -214,12 +217,12 @@ class PairDistances(_ProbeAnalysis):
     less than the research tag of the same pair. The genomic distance
     itself is the same under either convention.
 
-    The MDAnalysis contract: :meth:`_prepare` allocates one array per
-    quantity for the frames of the run, :meth:`_single_frame` writes the
-    current frame's entry, and :meth:`_conclude` does nothing. The class is
+    The MDAnalysis contract: ``_prepare`` allocates one array per
+    quantity for the frames of the run, ``_single_frame`` writes the
+    current frame's entry, and ``_conclude`` does nothing. The class is
     marked parallelizable, with ``serial``, ``multiprocessing``, and
     ``dask`` backends; each worker fills the arrays of its own frames,
-    which :meth:`_get_aggregator` concatenates along the frame axis
+    which ``_get_aggregator`` concatenates along the frame axis
     (``ResultsGroup.ndarray_vstack``).
 
     Cost per frame: :math:`O(n^2)` time and space for the distance and
@@ -347,7 +350,8 @@ class PairDistances(_ProbeAnalysis):
         parser : :class:`~polyphys.manage.parser.ParserBase`
             The whole's parser, for the cutoff.
         verbose : bool, default False
-            Whether to show a progress bar during :meth:`run`.
+            Whether to show a progress bar during
+            :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`.
 
         Returns
         -------
@@ -421,8 +425,8 @@ class PairDistances(_ProbeAnalysis):
     @classmethod
     def get_supported_backends(cls) -> tuple[str, ...]:
         """
-        The backends :meth:`run` accepts: ``'serial'``,
-        ``'multiprocessing'``, and ``'dask'``.
+        The backends :meth:`~MDAnalysis.analysis.base.AnalysisBase.run`
+        accepts: ``'serial'``, ``'multiprocessing'``, and ``'dask'``.
 
         Examples
         --------
@@ -523,7 +527,8 @@ class PairDistances(_ProbeAnalysis):
         Raises
         ------
         RuntimeError
-            If :meth:`run` has not been called.
+            If :meth:`~MDAnalysis.analysis.base.AnalysisBase.run` has not been
+            called.
 
         Examples
         --------

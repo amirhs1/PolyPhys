@@ -74,7 +74,7 @@ Dependencies
   `typing`.
 - :mod:`polyphys.manage.parser`: :class:`~polyphys.manage.parser.ParserBase`.
 - :mod:`polyphys.manage.types`: domain type aliases such as
-  :py:data:`~polyphys.manage.types.GroupT`.
+  :py:obj:`~.GroupT`.
 
 Notation
 ========
@@ -175,10 +175,11 @@ _DIRECTIONS: dict[GeometryT, tuple[DirectionT, ...]] = {
     'cylindrical': ('r', 'z'),
 }
 
-#: The chain-size observables that :class:`polyphys.probe.ChainSize`
-#: measures per frame, in the research code's order: each is the name of a
-#: time series without its species label, so ``'gyrT'`` with the chain label
-#: ``'Mon'`` is the ``gyrTMon`` artifact. ``'principalT'`` is a per-frame
+#: The chain-size observables that
+#: :class:`~polyphys.probe.chain_size.ChainSize` measures per frame, in the
+#: research code's order: each is the name of a time series without its
+#: species label, so ``'gyrT'`` with the chain label ``'Mon'`` is the
+#: ``gyrTMon`` artifact. ``'principalT'`` is a per-frame
 #: :math:`3 \\times 3` matrix; the others are scalars.
 #:
 #: .. versionadded:: 0.7.0
@@ -191,8 +192,8 @@ CHAIN_SIZE_OBSERVABLES: tuple[PropertyT, ...] = (
 _MATRIX_OBSERVABLES: frozenset[PropertyT] = frozenset({'principalT'})
 
 #: The eight per-frame binding counts that
-#: :class:`polyphys.probe.BinderStatistics` measures, in the research code's
-#: order: each attribute of
+#: :class:`~polyphys.probe.binders.BinderStatistics` measures, in the
+#: research code's order: each attribute of
 #: :class:`~polyphys.analyze.clusters.FrameBinding` mapped to the stem of its
 #: time series and to which label completes the name, ``'patches'`` for the
 #: three patch counts and ``'binders'`` for the five binder counts. With the
@@ -218,21 +219,21 @@ _TWO_PATCHES = 2
 @dataclass(frozen=True, slots=True)
 class BinderSpec:
     """
-    How the binding of a study's two-patch binders to its chain is counted:
-    the facts :class:`polyphys.probe.BinderStatistics` needs beyond the
+    How the binding of a study's two-patch binders to its chain is counted: the
+    facts :class:`~polyphys.probe.binders.BinderStatistics` needs beyond the
     selections of the :class:`ProbeSpec` that holds this record.
 
     .. versionadded:: 0.7.0
 
     Parameters
     ----------
-    patches : :py:data:`EntityT`
+    patches : :py:obj:`~.EntityT`
         The label in the probe spec's `selections` of the binders' patches,
         such as ``'HnsPatch'``, which names the three patch series
         ``nBoundT``, ``nFreeT``, and ``nEngagedT``. The patches of binder
         :math:`k` are the ones at positions :math:`2k` and :math:`2k + 1`
         of the selection, in atom-ID order.
-    binders : :py:data:`EntityT`
+    binders : :py:obj:`~.EntityT`
         The label of the binders, such as ``'HnsCore'``, which names the
         five binder series ``nFreeT``, ``nBridgeT``, ``nDangleT``,
         ``nCisT``, and ``nTransT``. A label only: the binder cores are not
@@ -262,7 +263,7 @@ class BinderSpec:
 
     Attributes
     ----------
-    series : mapping of (str -> :py:data:`PropertyT`)
+    series : mapping of str to :py:obj:`~.PropertyT`
         Each attribute name of
         :class:`~polyphys.analyze.clusters.FrameBinding` in
         :data:`BINDER_SERIES` mapped to the full name of its time series,
@@ -386,7 +387,7 @@ class ProjectSpec:
     ----------
     parser : type of :class:`~polyphys.manage.parser.ParserBase`
         The study's concrete parser class.
-    group : :py:data:`GroupT`
+    group : :py:obj:`~.GroupT`
         The particle group of the polymer, such as ``'bug'`` or
         ``'nucleoid'``; one of the parser's groups, and not ``'all'``.
     divisor : float
@@ -396,12 +397,12 @@ class ProjectSpec:
     physical_attrs : tuple of str
         The parser attributes added as columns to the ``space`` tables, in
         column order.
-    species_sizes : mapping of (:py:data:`EntityT` -> str)
+    species_sizes : mapping of :py:obj:`~.EntityT` to str
         Each species label of a density profile, such as ``'Mon'`` or
         ``'Crd'``, mapped to the parser attribute that holds its particle
         diameter, in units of the monomer diameter. Stored read-only, in the
         given order.
-    tseries_properties : tuple of :py:data:`PropertyT`
+    tseries_properties : tuple of :py:obj:`~.PropertyT`
         The per-frame time series of the study, named
         ``<property>T<Species>``, such as ``'gyrTMon'``.
     crowder_attr : str
@@ -416,11 +417,11 @@ class ProjectSpec:
     ----------
     name : str
         The parser class name, which is the project name.
-    geometry : :py:data:`GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         The parser's geometry.
-    topology : :py:data:`TopologyT`
+    topology : :py:obj:`~.TopologyT`
         The parser's polymer topology.
-    directions : tuple of :py:data:`DirectionT`
+    directions : tuple of :py:obj:`~.DirectionT`
         The directions of the density profiles: ``('r',)`` in a cube and
         ``('r', 'z')`` in a cylinder.
     space_pattern : str
@@ -589,14 +590,14 @@ class ProbeSpec:
     ----------
     project : ProjectSpec
         The study's project spec.
-    selections : mapping of (:py:data:`EntityT` -> str)
+    selections : mapping of :py:obj:`~.EntityT` to str
         Each species label, such as ``'Mon'`` or ``'Foci'``, mapped to the
         MDAnalysis selection string that picks its atoms, such as
         ``'resid 1'`` or ``'type 2'``. Stored read-only, in the given order.
-    chain : :py:data:`EntityT`
+    chain : :py:obj:`~.EntityT`
         The label in `selections` of the polymer chain, whose chain-size
         time series are named ``<observable><chain>``.
-    observables : tuple of :py:data:`PropertyT`
+    observables : tuple of :py:obj:`~.PropertyT`
         The chain-size observables measured per frame, each a name in
         :data:`CHAIN_SIZE_OBSERVABLES`, in the order the probe stores them.
     unwrap : bool
@@ -607,7 +608,7 @@ class ProbeSpec:
         cube. Every other observable, ``shapeT`` included, reads the
         positions as the dump gives them; see
         :class:`polyphys.probe.chain_size.ChainSize`.
-    bin_sizes : mapping of (:py:data:`DirectionT` -> :py:data:`PerWhole`), \
+    bin_sizes : mapping of :py:obj:`~.DirectionT` to :py:data:`PerWhole`, \
             default {}
         The bin size of the histogram along each direction: in units of the
         monomer diameter for a spatial direction, such as ``'r'`` or
@@ -615,10 +616,10 @@ class ProbeSpec:
         positive number, or a function of a whole's parser returning one,
         for a size that scales with a whole's particle diameters. Stored
         read-only. Left empty by a study whose histograms are not probed.
-    histogram_species : tuple of :py:data:`EntityT`, default ()
+    histogram_species : tuple of :py:obj:`~.EntityT`, default ()
         The labels in `selections` of the species whose spatial histograms
-        :class:`polyphys.probe.SpatialHistograms` collects, each once. Left
-        empty by a study whose histograms are not probed; otherwise
+        :class:`~polyphys.probe.histograms.SpatialHistograms` collects, each
+        once. Left empty by a study whose histograms are not probed; otherwise
         `bin_sizes` and `block_frames` are required.
     block_frames : int or None, default None
         The block length :math:`b` of the two-dimensional maps: the number of
@@ -630,9 +631,9 @@ class ProbeSpec:
         LAMMPS frame the dump reader translated; ``'none'`` keeps the reader's
         frame; a triple ``(dx, dy, dz)`` is subtracted as given. Stored as a
         tuple of floats when given as a triple.
-    pair_species : :py:data:`EntityT` or None, default None
+    pair_species : :py:obj:`~.EntityT` or None, default None
         The label in `selections` of the species whose pair distances and
-        contacts :class:`polyphys.probe.PairDistances` collects, such as
+        contacts :class:`~polyphys.probe.pairs.PairDistances` collects, such as
         ``'Foci'``; ``None`` when the study has no such species. Requires
         `contact_cutoff`.
     contact_cutoff : :py:data:`PerWhole` or None, default None
@@ -657,7 +658,7 @@ class ProbeSpec:
         The project name, from the project spec.
     parser : type of :class:`~polyphys.manage.parser.ParserBase`
         The study's parser class, from the project spec.
-    geometry : :py:data:`GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         The study's geometry, from the project spec.
 
     Raises
@@ -1076,7 +1077,7 @@ class PropertySpec:
     @property
     def prop(self) -> PropertyT:
         """
-        The property as it appears in file names: `name` then `species`.
+        The property as it appears in file names, `name` then `species`.
         """
         return self.name + self.species
 

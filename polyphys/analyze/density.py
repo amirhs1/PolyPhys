@@ -98,19 +98,19 @@ bead reaches past it and the row sums of the share matrix fall short of
 The kernels
 ===========
 
-A slab's kernel is a spherical segment (:func:`~polyphys.analyze.measurer.
-spherical_segment`), and the averaged slab kernel is its second
-antiderivative in closed form. A spherical shell's kernel is a difference
-of sphere-sphere intersection volumes (:func:`~polyphys.analyze.measurer.
-sphere_sphere_intersection`). A cylindrical shell's kernel is a difference
-of ball-in-cylinder volumes, :func:`sphere_cylinder_intersection`, which
-has no closed form and is integrated numerically (``intersection='exact'``);
-the research code used the sphere-sphere volume in its place
-(``intersection='sphere'``), whose error is about :math:`0.047\\, a / R` of
-a bead volume at an edge of radius :math:`R`, with :math:`a = 2 R_b` the
-bead diameter, first order and independent of the bin width. The shells'
-averaged kernels are integrated by Gauss-Legendre rules on the pieces
-between the kernels' breakpoints, exactly where the integrand is
+A slab's kernel is a spherical segment
+(:func:`~polyphys.analyze.measurer.spherical_segment`), and the averaged slab
+kernel is its second antiderivative in closed form. A spherical shell's kernel
+is a difference of sphere-sphere intersection volumes
+(:func:`~polyphys.analyze.measurer.sphere_sphere_intersection`). A cylindrical
+shell's kernel is a difference of ball-in-cylinder volumes,
+:func:`sphere_cylinder_intersection`, which has no closed form and is
+integrated numerically (``intersection='exact'``); the research code used the
+sphere-sphere volume in its place (``intersection='sphere'``), whose error is
+about :math:`0.047\\, a / R` of a bead volume at an edge of radius :math:`R`,
+with :math:`a = 2 R_b` the bead diameter, first order and independent of the
+bin width. The shells' averaged kernels are integrated by Gauss-Legendre rules
+on the pieces between the kernels' breakpoints, exactly where the integrand is
 polynomial.
 
 The axial direction of a cylinder is periodic: a bead that reaches past one
@@ -187,14 +187,14 @@ __all__ = [
 FloatArray = npt.NDArray[np.float64]
 
 ShareMode = Literal['average', 'center']
-"""How the test bead sits in its bin: averaged over the bin, or at its
+"""How the test bead sits in its bin, averaged over the bin or at its
 center as in the research code.
 
 .. versionadded:: 0.6.0
 """
 
 IntersectionMode = Literal['exact', 'sphere']
-"""The kernel of a cylindrical shell: the ball-in-cylinder volume, or the
+"""The kernel of a cylindrical shell, the ball-in-cylinder volume or the
 sphere-sphere volume the research code used in its place.
 
 .. versionadded:: 0.6.0
@@ -301,9 +301,9 @@ def bin_volumes(
     edges : array_like
         The bin edges, shape ``(n_bins + 1,)``, finite and strictly
         increasing; non-negative for a radial direction.
-    geometry : :py:data:`~polyphys.manage.types.GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         ``'cylindrical'`` or ``'cubic'``.
-    direction : :py:data:`~polyphys.manage.types.DirectionT`
+    direction : :py:obj:`~.DirectionT`
         ``'r'`` for shells, or ``'z'`` for the slabs of a cylinder.
     lcyl : float, optional
         The cylinder length, needed for ``('cylindrical', 'r')``.
@@ -672,9 +672,9 @@ def share_matrix(
     bead_diameter : float
         The bead diameter :math:`a`, positive; along the periodic ``'z'`` it
         must be smaller than the domain length.
-    geometry : :py:data:`~polyphys.manage.types.GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         ``'cylindrical'`` or ``'cubic'``.
-    direction : :py:data:`~polyphys.manage.types.DirectionT`
+    direction : :py:obj:`~.DirectionT`
         ``'r'`` for shells, or ``'z'`` for the periodic slabs of a cylinder.
     shares : :py:data:`ShareMode`, default ``'average'``
         ``'average'`` averages the test bead over its bin with the bin's
@@ -1002,6 +1002,8 @@ class Profiles:
     The local number density and volume fraction of one species along one
     coordinate.
 
+    .. versionadded:: 0.6.0
+
     Attributes
     ----------
     rho : numpy.ndarray
@@ -1012,8 +1014,6 @@ class Profiles:
         normalized as asked.
     volumes : numpy.ndarray
         The bin volumes, shape ``(n_bins,)``.
-
-    .. versionadded:: 0.6.0
     """
 
     rho: FloatArray
@@ -1050,9 +1050,9 @@ def density_profiles(
         The bin edges, shape ``(n_bins + 1,)``.
     bead_diameter : float
         The bead diameter :math:`a` of the species.
-    geometry : :py:data:`~polyphys.manage.types.GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         ``'cylindrical'`` or ``'cubic'``.
-    direction : :py:data:`~polyphys.manage.types.DirectionT`
+    direction : :py:obj:`~.DirectionT`
         ``'r'`` or ``'z'``.
     n_frames : int, default 1
         The number of frames summed into `counts`.

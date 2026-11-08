@@ -73,3 +73,19 @@ Needs matplotlib, which the ``viz`` extra installs; the color lists in
 
    polyphys.viz.colors
    polyphys.viz.helpers
+
+Packages
+--------
+
+The ``simulate`` and ``probe`` packages re-export the public names of their
+modules; ``viz`` imports neither of its modules on its own. A re-export is the
+name documented in its module above.
+
+.. automodule:: polyphys.simulate
+   :no-members:
+
+.. automodule:: polyphys.probe
+   :no-members:
+
+.. automodule:: polyphys.viz
+   :no-members:

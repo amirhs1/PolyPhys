@@ -43,7 +43,7 @@ Dependencies
 - :mod:`polyphys.manage.utils`: :func:`~polyphys.manage.utils.invalid_keyword`
   and the number-density and volume-fraction functions.
 - :mod:`polyphys.manage.types`: domain type aliases such as
-  :py:data:`~polyphys.manage.types.LineageT`.
+  :py:obj:`~.LineageT`.
 
 Examples
 ========
@@ -315,32 +315,26 @@ class ParserBase:
     A subclass declares a project's filename grammar and physics through the
     class attributes listed under "Declaration"; this class parses the name,
     builds the names of the parent lineages, and computes the bulk number
-    densities and volume fractions.
+    densities and volume fractions. A declaration is checked when the
+    subclass is created; a class whose `_patterns` is ``None`` is abstract and
+    cannot be instantiated. :meth:`from_name` constructs a parser from a name
+    token instead of a path, with ``filepath`` and ``ext`` set to ``None``.
 
     Parameters
     ----------
     artifact : Pathish
         The artifact to be parsed: a name, or, with ``ispath=True``, a
         relative or absolute file path (string or Path).
-    lineage : :py:data:`LineageT`
+    lineage : :py:obj:`~.LineageT`
         The lineage of the artifact, specifying the hierarchical level within
         the project. Must be one of: ``'segment'``, ``'whole'``,
         ``'ensemble_long'``, ``'ensemble'``, or ``'space'``.
-    group : :py:data:`GroupT`
+    group : :py:obj:`~.GroupT`
         The particle group the artifact describes; one of the subclass's
         `groups`.
     ispath : bool, default False
         Whether `artifact` is a file path. A path is expanded (``~`` and
         environment variables) and resolved, and its stem is parsed.
-
-    Alternative Constructors
-    ------------------------
-    .. method:: from_name(name, lineage, group)
-       Construct a parser directly from a *name token* (not a path).
-       This bypasses filesystem resolution. In this mode, ``filepath`` and
-       ``ext`` are ``None``, and the given token is treated as both
-       the ``filename`` and ``name`` prior to :meth:`_find_name`
-       normalization.
 
     Attributes
     ----------
@@ -357,16 +351,16 @@ class ParserBase:
         The lineage name: `filename` without its extension, cut before
         ``.<group>`` (``segment`` and ``whole``) and before the first
         hyphen.
-    group : :py:data:`GroupT`
+    group : :py:obj:`~.GroupT`
         Particle group type in the project.
     dump_keyword : str
         The attribute that holds the dump period, in time steps, of the
         `group` trajectory: ``dump_keywords[group]``.
-    lineage : :py:data:`LineageT`
+    lineage : :py:obj:`~.LineageT`
         The lineage of the artifact.
     project_name : str
         The name of the parser subclass.
-    lineage_genealogy : list of :py:data:`LineageT`
+    lineage_genealogy : list of :py:obj:`~.LineageT`
         The artifact's `lineage` and its parent lineages.
     lineage_attributes : list of str
         The attributes parsed from `name`, in pattern order.
@@ -375,73 +369,75 @@ class ParserBase:
         `lineage`.
     attributes : list of str
         `lineage_attributes` followed by `physical_attributes`.
-    segment, whole, ensemble_long, ensemble, space : str
-        The artifact's name at each lineage of `lineage_genealogy`, and
-        ``'N/A'`` at the others. ``segment``, ``whole``, and
-        ``ensemble_long`` are cut from `name` and carry no topology suffix;
-        ``ensemble`` and ``space`` print a whole-number float without
-        ``.0``. :meth:`_set_parents` gives both rules.
+    segment : str
+        The artifact's name at the ``segment`` lineage if it is in
+        `lineage_genealogy`, else ``'N/A'``; cut from `name`, with no
+        topology suffix.
+    whole : str
+        As `segment`, at the ``whole`` lineage.
+    ensemble_long : str
+        As `segment`, at the ``ensemble_long`` lineage.
+    ensemble : str
+        The artifact's name at the ``ensemble`` lineage if it is in
+        `lineage_genealogy`, else ``'N/A'``; built from the parsed values,
+        so a whole-number float prints without ``.0``.
+    space : str
+        As `ensemble`, at the ``space`` lineage.
 
     Class Attributes
     ----------------
-    lineages : list of :py:data:`LineageT`
+    lineages : list of :py:obj:`~.LineageT`
         List of valid lineage types.
-    genealogy : dict of (:py:data:`LineageT` -> list of :py:data:`LineageT`)
+    genealogy : dict of :py:obj:`~.LineageT` to list of :py:obj:`~.LineageT`
         Each lineage mapped to itself and its parent lineages.
-    geometry : :py:data:`GeometryT`
+    geometry : :py:obj:`~.GeometryT`
         Specifies the geometry of the system.
-    topology : :py:data:`TopologyT`
+    topology : :py:obj:`~.TopologyT`
         Specifies how particles are connected (or not) in the system.
-    groups : list of :py:data:`GroupT`
+    groups : list of :py:obj:`~.GroupT`
         Allowed particle groups in the system.
-    dump_keywords : dict of (:py:data:`GroupT` -> str)
+    dump_keywords : dict of :py:obj:`~.GroupT` to str
         Each group mapped to the attribute that holds the dump period, in
         time steps, of its trajectory.
-    genealogy_attributes : dict of (\
-:py:data:`LineageT` -> OrderedDict[str, str])
+    genealogy_attributes : dict of :py:obj:`~.LineageT` to OrderedDict
         Each lineage mapped to an OrderedDict of attribute names and their
         filename keywords, in pattern order; built from `_keywords` and
         `_patterns`.
-    project_attributes : dict of (:py:data:`LineageT` -> list of str)
+    project_attributes : dict of :py:obj:`~.LineageT` to list of str
         Each lineage mapped to the attributes that are fixed or computed
         rather than parsed.
 
     Declaration
     -----------
-    A subclass sets these class attributes:
-
-    _geometry : :py:data:`GeometryT`
+    _geometry : :py:obj:`~.GeometryT`
         ``'cubic'`` or ``'cylindrical'``. A cubic project with species
         declares the attribute ``lcube``; a cylindrical one ``lcyl`` and
         ``dcyl``.
-    _topology : :py:data:`TopologyT`
+    _topology : :py:obj:`~.TopologyT`
         The polymer topology.
-    _groups : list of :py:data:`GroupT`
+    _groups : list of :py:obj:`~.GroupT`
         The particle groups.
-    _dump_keywords : dict of (:py:data:`GroupT` -> str)
+    _dump_keywords : dict of :py:obj:`~.GroupT` to str
         As `dump_keywords` above, one entry per group. Each attribute is set
         at ``segment``, ``whole``, and ``ensemble_long``, by the pattern or
         by `_defaults`.
-    _keywords : dict of (str -> :class:`KeywordSpec`)
+    _keywords : dict of str to :class:`KeywordSpec`
         Each filename keyword mapped to how its value is read.
-    _patterns : dict of (:py:data:`LineageT` -> tuple of str)
+    _patterns : dict of :py:obj:`~.LineageT` to tuple of str
         Each lineage mapped to its keywords in name order.
-    _project_attributes : dict of (:py:data:`LineageT` -> list of str)
+    _project_attributes : dict of :py:obj:`~.LineageT` to list of str
         As `project_attributes` above.
-    _defaults : dict of (str -> float), optional
+    _defaults : dict of str to float, optional
         Attributes set at every lineage before parsing, such as a fixed
         monomer size.
     _species : tuple of :class:`Species`, optional
         The species whose bulk values are computed.
-    _totals : dict of (str -> tuple of str), optional
+    _totals : dict of str to tuple of str, optional
         A suffix mapped to species suffixes; ``rho_bulk_<suffix>`` and
         ``phi_bulk_<suffix>`` are the sums of theirs.
-    _masses : dict of (str -> str), optional
+    _masses : dict of str to str, optional
         A mass attribute mapped to a size attribute; the mass is the size
         cubed, :math:`m = d^3`, for a uniform mass density.
-
-    A declaration is checked when the subclass is created; a class whose
-    `_patterns` is ``None`` is abstract and cannot be instantiated.
 
     Raises
     ------
@@ -466,7 +462,7 @@ class ParserBase:
 
     A value that is a function of parsed values but fits none of the tables
     above, such as a complementary percentage, is set by overriding
-    :meth:`_derived_attributes`, which runs at every lineage after the bulk
+    ``_derived_attributes``, which runs at every lineage after the bulk
     values.
 
     Examples
@@ -747,7 +743,7 @@ class ParserBase:
 
         Parameters
         ----------
-        lineage : :py:data:`LineageT`
+        lineage : :py:obj:`~.LineageT`
             One of ``'segment'``, ``'whole'``, ``'ensemble_long'``,
             ``'ensemble'``, or ``'space'``.
 
@@ -785,7 +781,7 @@ class ParserBase:
         ``ensemble_long`` it also holds the bulk number density
         ``rho_bulk_<suffix>`` and volume fraction ``phi_bulk_<suffix>`` of
         each species and each total, and the declared masses. An attribute
-        that an override of :meth:`_derived_attributes` sets counts only if
+        that an override of ``_derived_attributes`` sets counts only if
         `_project_attributes` lists it.
 
         The set is built from the declaration, without parsing a name; the
@@ -795,7 +791,7 @@ class ParserBase:
 
         Parameters
         ----------
-        lineage : :py:data:`LineageT`
+        lineage : :py:obj:`~.LineageT`
             One of ``'segment'``, ``'whole'``, ``'ensemble_long'``,
             ``'ensemble'``, or ``'space'``.
 

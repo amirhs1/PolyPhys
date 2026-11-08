@@ -178,7 +178,7 @@ class DataFile:
         z`` for ``bond``, ``angle``, and ``molecular``; and ``atom-ID
         molecule-ID atom-type q x y z`` for ``full``. ``atomic`` has no bonds,
         ``bond`` no angles.
-    box : Box
+    box : :class:`~polyphys.simulate.core.Box`
         The simulation box. A triclinic box writes its ``xy xz yz`` line;
         the boundary flags are not part of a data file.
     ids : numpy.ndarray
