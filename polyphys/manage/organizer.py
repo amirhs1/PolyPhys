@@ -220,8 +220,8 @@ logger = logging.getLogger(__name__)
 
 def create_fullname(name: str, group: GroupT, prop: PropertyT) -> str:
     """
-    Create a structured filename based on a base name, particle group,
-    and property.
+    Join a base name, a particle group, and a property into an artifact's
+    full name.
 
     Parameters
     ----------
@@ -252,8 +252,10 @@ def save_artifact(
     save_to: Pathish,
 ) -> None:
     """
-    Save the `data` to a specified file format, allowing structured file
-    naming.
+    Save `data` as ``<save_to>/<filename>``, a ``.npy`` or ``.csv`` file by
+    its type.
+
+    An existing file of the same name is overwritten.
 
     Parameters
     ----------
@@ -271,6 +273,11 @@ def save_artifact(
     save_to : Pathish
         Path to an existing directory where the file is saved.
 
+    Notes
+    -----
+    :func:`numpy.save` and :meth:`pandas.DataFrame.to_csv` overwrite an
+    existing file of the same name.
+
     Raises
     ------
     TypeError
@@ -284,7 +291,7 @@ def save_artifact(
     >>> import tempfile
     >>> tmp = tempfile.TemporaryDirectory()
 
-    Save a numpy array to a ``.npy`` file:
+    Save a NumPy array to a ``.npy`` file:
 
     >>> save_artifact('w-bug-rhoMon', np.array([1.0, 2.0]), tmp.name)
     >>> np.load(Path(tmp.name) / 'w-bug-rhoMon.npy')
@@ -516,14 +523,14 @@ def whole_from_segments(
     save_to: Pathish | None = None,
 ) -> dict[str, np.ndarray]:
     """
-    Generate 'whole' arrays by combining data segments for a specified
-    property of a particle `group`. The combination method is determined by
-    the `relation` parameter.
+    Combine the segment files of one property into one array per whole.
+
+    How the segments of a whole combine is set by `relation`.
 
     Parameters
     ----------
-    prop: :py:obj:`~.PropertyT`
-        The physical property to process (e.g., 'density').
+    prop : :py:obj:`~.PropertyT`
+        The property as it appears in file names, such as ``'gyrTMon'``.
     segments : :py:obj:`~.AnyPathIter`
         An iterable of paths to segment ``.npy`` files for `prop`, either
         bare paths or 1-tuples of a path, as
@@ -532,7 +539,7 @@ def whole_from_segments(
         interleaved, but the segments of each whole must come in
         consecutive ``segment_id`` order (the ``j<NN>`` keyword of their
         names), with no id skipped.
-    parser : :py:class:`ParserClassT`
+    parser : :py:obj:`~.ParserClassT`
         A parser class from :mod:`polyphys.manage.parser` that interprets
         file paths and extracts attributes such as the `whole` name and the
         ``segment_id``.
@@ -555,15 +562,16 @@ def whole_from_segments(
             hold identical edges, and one copy of them is the whole's
             bin-edge array.
 
-    save_to : str, optional
+    save_to : Pathish, optional
         Directory path where the output files are saved, if specified. Each
-        whole is saved as ``<whole>-<group>-<prop>.npy``.
+        whole is saved as ``<whole>-<group>-<prop>.npy``, overwriting a file
+        of the same name.
 
     Returns
     -------
     dict[str, np.ndarray]
         Dictionary with whole names as keys and the combined whole data as
-        numpy arrays, in the order in which the wholes first appear in
+        NumPy arrays, in the order in which the wholes first appear in
         `segments`.
 
     Raises
@@ -681,8 +689,9 @@ def whole_from_file(
     group: GroupT,
 ) -> dict[str, np.ndarray]:
     """
-    Load data from 'whole' ``.npy`` files of a particle `group`. Each file
-    path in `whole_paths` points to a single whole file.
+    Load the whole ``.npy`` files of one property of a particle `group`.
+
+    Each path in `whole_paths` points to one whole file.
 
     Parameters
     ----------
@@ -700,7 +709,7 @@ def whole_from_file(
     -------
     dict[str, np.ndarray]
         Dictionary where keys are the `whole` names (derived from each file
-        path) and values are numpy arrays containing the loaded data.
+        path) and values are NumPy arrays containing the loaded data.
 
     Raises
     ------
@@ -813,16 +822,16 @@ def ens_from_vec(
     ens_data: tuple[str, dict[str, np.ndarray]],
 ) -> tuple[str, pd.DataFrame]:
     """
-    Convert a dictionary of 1D arrays (representing different 'whole'
-    datasets) into a single ensemble-level DataFrame. This is useful when each
-    'whole' dataset in the ensemble contains a vector (1D array) of
-    measurements.
+    Merge the 1D arrays of the wholes of one ensemble into a DataFrame.
+
+    Each whole becomes one column, such as a time series or a histogram of
+    the whole.
 
     Parameters
     ----------
     ens_data : tuple[str, dict[str, np.ndarray]]
         A tuple where the first element is the ensemble name, and the second
-        is a dictionary mapping each 'whole' dataset name to a 1D numpy array
+        is a dictionary mapping each 'whole' dataset name to a 1D NumPy array
         of measurements.
 
     Returns
@@ -870,22 +879,22 @@ def ens_from_mat_t(
     ens_data: tuple[str, dict[str, np.ndarray]],
 ) -> tuple[str, np.ndarray]:
     """
-    Combine multiple 2D arrays into a single 3D array for a specified
-    'ensemble', where each 2D array corresponds to a 'whole' dataset in the
-    ensemble.
+    Stack the 2D arrays of the wholes of one ensemble into a 3D array.
+
+    Each whole becomes one slice along the first axis.
 
     Parameters
     ----------
     ens_data : tuple[str, dict[str, np.ndarray]]
         A tuple where the first element is the ensemble name (str) and the
-        second element is a dictionary with 'whole' names as keys and 2D numpy
+        second element is a dictionary with 'whole' names as keys and 2D NumPy
         arrays as values.
 
     Returns
     -------
     tuple[str, np.ndarray]
         A tuple where the first element is the ensemble name and the second
-        is a 3D numpy array of shape ``(n_wholes, n_rows, n_cols)``, formed
+        is a 3D NumPy array of shape ``(n_wholes, n_rows, n_cols)``, formed
         by stacking the 2D arrays along the first axis in the order of the
         dictionary.
 
@@ -916,9 +925,10 @@ def ens_from_df(
     ens_data: tuple[str, dict[str, pd.DataFrame]],
 ) -> tuple[str, pd.DataFrame]:
     """
-    Average multiple DataFrames in an ensemble by grouping them into a single
-    averaged DataFrame. Each DataFrame corresponds to a 'whole' dataset in the
-    ensemble.
+    Average the DataFrames of the wholes of one ensemble into one
+    DataFrame.
+
+    Each DataFrame is one whole of the ensemble.
 
     In a 'whole' DataFrame, headers are 'elements' of a 'matrix' or 2D
     quantity and columns are the values of a given property.
@@ -1009,19 +1019,18 @@ def ensemble(
     save_to: Pathish | None = None,
 ) -> dict[str, np.ndarray | pd.DataFrame]:
     """
-    Generate an ensemble by  merging 'whole' data arrays or DataFrames
-    representing a specified `prop_` of a particle `group` within a
-    defined `geometry`. The `whole_type` determines the structure of each
-    'whole' and the merging approach.
+    Merge the wholes of one property into one ensemble per state point.
+
+    `whole_type` sets the structure of each whole and how the wholes of one
+    ensemble merge.
 
     Parameters
     ----------
-    prop: PropertyT
-        The physical property for which the ensemble is generated (e.g.,
-        'density').
+    prop : :py:obj:`~.PropertyT`
+        The property as it appears in file names, such as ``'rhoMon'``.
     wholes : dict[str, np.ndarray] | dict[str, pd.DataFrame]
         Dictionary containing 'whole' names as keys and their corresponding
-        data as values, represented as numpy arrays or DataFrames.
+        data as values, represented as NumPy arrays or DataFrames.
     parser : ParserClassT
         Parser class used to interpret whole filenames, such as the ensemble
         name of each 'whole'.
@@ -1030,8 +1039,8 @@ def ensemble(
     whole_type : {'vector', 'matrix', 'dataframe', 'bin_edge'}
         Specifies the type of each 'whole' and defines the merging method:
 
-        - 'vector': A 1D numpy array, such as a time series or histogram.
-        - 'matrix': A 2D numpy array, such as a gyration tensor.
+        - 'vector': A 1D NumPy array, such as a time series or histogram.
+        - 'matrix': A 2D NumPy array, such as a gyration tensor.
         - 'dataframe': A DataFrame representing either a time series (with
           headers as matrix elements and rows as values over time) or a
           histogram (headers as elements, rows as counts or frequencies,
@@ -1047,14 +1056,15 @@ def ensemble(
         others are not compared. Each merged ensemble gets a 'bin_center'
         column of length ``n_bins`` holding the midpoints of those edges.
         Must contain every key of `wholes`.
-    save_to : str, optional
-        Directory path where output files are saved, if specified.
+    save_to : Pathish, optional
+        Directory path where output files are saved, if specified; see
+        Notes.
 
     Returns
     -------
     dict[str, np.ndarray | pd.DataFrame]
-        Dictionary where keys are ensemble names and values are ensemble data
-        as numpy arrays or DataFrames.
+        The ensembles, keyed by their ``ensemble_long`` names, as NumPy
+        arrays or DataFrames.
 
     Raises
     ------
@@ -1086,7 +1096,7 @@ def ensemble(
 
     With `save_to`, each ensemble is saved by :func:`save_artifact` under
     ``<ensemble_long>-<group>-<prop>``, as ``.csv`` for a DataFrame and
-    ``.npy`` for an array.
+    ``.npy`` for an array, overwriting a file of the same name.
 
     Examples
     --------
@@ -1217,10 +1227,11 @@ def ens_avg_from_ndarray(
     ens_prop: PropertyT, ens_data: np.ndarray
 ) -> dict[str, np.ndarray]:
     """
-    Compute ensemble statistics (mean, variance, and standard error of the
-    mean) across an 'ensemble' 3D array where each slice along the first axis
-    (axis=0) represents a 'whole' data matrix. The statistics are calculated
-    along this axis.
+    Compute the mean, variance, and standard error of the mean (SEM)
+    across the wholes of an ensemble 3D array.
+
+    Each slice along the first axis (axis=0) is one whole's matrix, and the
+    statistics are taken along that axis.
 
     Parameters
     ----------
@@ -1228,14 +1239,14 @@ def ens_avg_from_ndarray(
         The name of the property to which this 'ensemble' data belongs. Used
         as a prefix for the computed statistics.
     ens_data : np.ndarray
-        A 3D numpy array where each matrix slice along axis=0 represents a
+        A 3D NumPy array where each matrix slice along axis=0 represents a
         'whole' dataset.
 
     Returns
     -------
     dict[str, np.ndarray]
         A dictionary where keys are statistical measures (mean, variance, SEM)
-        with `ens_prop` as a prefix while values are numpy arrays of the
+        with `ens_prop` as a prefix while values are NumPy arrays of the
         computed statistics across 'whole' matrices.
 
     Notes
@@ -1281,10 +1292,11 @@ def ens_avg_from_df(
     ens_prop: PropertyT, ens_data: pd.DataFrame, exclude: list[str]
 ) -> pd.DataFrame:
     """
-    Calculate the mean, variance, and standard error of the mean (SEM) for
-    columns representing 'whole' data within an 'ensemble' DataFrame. The
-    resulting DataFrame retains excluded columns (e.g., bin_center), while
-    replacing 'whole' columns with computed statistics.
+    Compute the mean, variance, and standard error of the mean (SEM) across
+    the whole columns of an ensemble DataFrame.
+
+    The result keeps the excluded columns, such as ``bin_center``, and
+    replaces the whole columns with the statistics.
 
     Parameters
     ----------
@@ -1355,14 +1367,14 @@ def ensemble_avg(
     save_to: Pathish | None = None,
 ) -> dict[str, np.ndarray] | dict[str, pd.DataFrame]:
     """
-    Generate ensemble-averaged data for a specified `prop_` by averaging
-    'whole' data in each 'ensemble' DataFrame or array within `ensembles`.
-    Columns listed in `exclude` are omitted from averaging.
+    Average the wholes of each ensemble of one property.
+
+    Columns listed in `exclude` are left out of the averages.
 
     Parameters
     ----------
-    prop: PropertyT
-        The physical property for which ensemble averages are calculated.
+    prop : :py:obj:`~.PropertyT`
+        The property as it appears in file names, such as ``'rhoMon'``.
     ensembles : dict[str, np.ndarray | pd.DataFrame]
         A dictionary where each key is an ensemble name and each value is
         either a DataFrame or ndarray representing 'whole' data.
@@ -1381,8 +1393,9 @@ def ensemble_avg(
     exclude : list[str], default None
         List of column names or items not included in ensemble averaging,
         such as 'bin_center' for histograms.
-    save_to : str, optional
-        Path to the directory where the averaged ensemble data will be saved.
+    save_to : Pathish, optional
+        Path to the directory where the averaged ensemble data is saved, if
+        specified; see Notes.
 
     Returns
     -------
@@ -1400,7 +1413,8 @@ def ensemble_avg(
     With `save_to`, each result is saved by :func:`save_artifact` under
     ``<ensemble>-<group>-<prop>-ensAvg``: a DataFrame as ``.csv``, bin edges
     as ``.npy``, and the dictionary of an 'ndarray' ensemble as one
-    ``...-ensAvg-<measure>.npy`` file per statistic.
+    ``...-ensAvg-<measure>.npy`` file per statistic, each overwriting a file
+    of the same name.
 
     Let n_ensembles be the number of ensembles. Ensembles are averaged one
     after another, with the time and peak extra memory of
@@ -1494,9 +1508,10 @@ def children_stamps(
     save_to: Pathish | None = None,
 ) -> pd.DataFrame:
     """
-    Combine individual 'stamp' CSV files, each of one artifact of the
-    lineage `child_lineage`, into a single DataFrame for a *space*.
-    Optionally, saves the resulting DataFrame to a specified directory.
+    Combine the stamp files of the artifacts of one lineage, `child_lineage`,
+    into one DataFrame for a *space*.
+
+    With `save_to`, the DataFrame is also saved as a CSV file.
 
     Parameters
     ----------
@@ -1506,10 +1521,11 @@ def children_stamps(
         concatenated in this order.
     child_lineage : {'segment', 'whole'}
         Lineage of the stamp files, and so of the rows of the result.
-    save_to : str, optional
+    save_to : Pathish, optional
         Directory path where the combined DataFrame is saved, if specified,
         as ``<space>-<group>-stamps-<child_lineage>.csv``, with ``space`` and
-        ``group`` read from the first row.
+        ``group`` read from the first row; a file of the same name is
+        overwritten.
 
     Returns
     -------
@@ -1621,9 +1637,10 @@ def parents_stamps(
     save_to: Pathish | None = None,
 ) -> pd.DataFrame:
     """
-    Aggregate data from child 'stamps' into a parent stamp by applying
-    specified aggregation functions in a *space*. Optionally, saves the
-    resulting DataFrame to a CSV file.
+    Aggregate the child stamps of a *space* into parent stamps.
+
+    The aggregation functions are given by `properties`; with `save_to`, the
+    result is also saved as a CSV file.
 
     Parameters
     ----------
@@ -1640,12 +1657,13 @@ def parents_stamps(
         replacing the default 'last'. It cannot name the parent column
         ('whole' or 'ensemble_long'), the counted column ('segment_id' or
         'ensemble_id'), or 'n_frames', which the function aggregates itself.
-    save_to : str, optional
+    save_to : Pathish, optional
         Directory path where the parent DataFrame is saved, if specified,
         as ``<space>-<group>-stamps-<level>.csv``, with ``<level>`` the
         lineage of the parent rows, ``whole`` for 'segment' stamps and
         ``ensemble_long`` for 'whole' stamps, and with ``space`` and
-        ``group`` read from the first row.
+        ``group`` read from the first row; a file of the same name is
+        overwritten.
 
     Returns
     -------
@@ -1794,9 +1812,10 @@ def space_tseries(
     crowder_attr: str = "phi_bulk_c",
 ) -> pd.DataFrame:
     """
-    Aggregate ensemble-averaged time-series data for a specified physical
-    property across multiple files, add specified physical attributes as
-    columns, and concatenate into a single DataFrame.
+    Stack the ensemble-averaged time series of one property across the
+    state points of a space into one DataFrame.
+
+    The physical attributes in `physical_attrs` are added as columns.
 
     Parameters
     ----------
@@ -1826,7 +1845,7 @@ def space_tseries(
         If True, saves the concatenated DataFrame to a CSV file named
         ``<space>-<group>-<prop>-space.csv`` in the ``analysis`` phase's
         ``space`` directory, which :func:`make_database` creates next to
-        `input_database`.
+        `input_database`; a file of the same name is overwritten.
     crowder_attr : str, default 'phi_bulk_c'
         Name of the `parser` attribute that holds the bulk volume fraction
         of crowders. Its value is added as a column of that name, whether or
@@ -1941,9 +1960,10 @@ def space_hists(
     crowder_attr: str = "phi_bulk_c",
 ) -> pd.DataFrame:
     """
-    Aggregate ensemble-averaged histogram data for a specified physical
-    property across multiple files, normalizes data if specified, and
-    concatenates into a single DataFrame.
+    Stack the ensemble-averaged histograms of one property across the state
+    points of a space into one DataFrame.
+
+    The histograms are normalized if `normalize` asks for it.
 
     Parameters
     ----------
@@ -1951,7 +1971,7 @@ def space_hists(
         Path to the directory containing the ensemble-averaged histogram
         files, named ``<ensemble_long>-<group>-<prop>-ensAvg.csv``, with or
         without a trailing path separator.
-    prop: str
+    prop : :py:obj:`~.PropertyT`
         Name of the physical property of interest.
     parser : ParserClassT
         Parser class to infer file-specific information from filenames or
@@ -1977,7 +1997,7 @@ def space_hists(
         If True, saves the concatenated DataFrame to a CSV file named
         ``<space>-<group>-<prop>-space.csv`` in the ``analysis`` phase's
         ``space`` directory, which :func:`make_database` creates next to
-        `input_database`.
+        `input_database`; a file of the same name is overwritten.
     crowder_attr : str, default 'phi_bulk_c'
         Name of the `parser` attribute that holds the bulk volume fraction
         of crowders. Its value is added as a column of that name, whether or

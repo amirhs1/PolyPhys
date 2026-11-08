@@ -9,7 +9,7 @@ along one coordinate into two profiles: the local number density, which
 counts centers per bin volume, and the local volume fraction, which counts
 the volume the beads occupy. The second is the harder one, because a bead of
 finite size reaches into the bins next to the one that holds its center.
-Every routine is a numpy or scipy kernel on arrays: reading frames, binning
+Every routine is a NumPy or SciPy kernel on arrays: reading frames, binning
 positions, and averaging over frames are the caller's work, and the only
 geometric inputs are the bin edges, the bead diameter, and the box lengths.
 

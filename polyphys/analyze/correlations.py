@@ -8,7 +8,7 @@ The :mod:`polyphys.analyze.correlations` module measures how a signal is
 correlated with itself: the autocorrelation function of a time series with
 its confidence band, the decay model fitted to such a curve, and the cosine
 correlation between the bond vectors of a polymer chain, from which a
-persistence length follows. Every routine is a pure numpy or scipy kernel on
+persistence length follows. Every routine is a pure NumPy or SciPy kernel on
 arrays; reading time series or frames, choosing the lags to fit, and
 averaging over frames are the caller's work.
 

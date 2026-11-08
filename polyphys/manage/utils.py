@@ -89,8 +89,8 @@ def read_camel_case(string: str) -> List[Union[str, Tuple[str]]]:
 
 def to_float_if_possible(string: str) -> Union[float, str]:
     """
-    Attempt to convert a `string` to a float. If conversion fails,
-    returns the original `string`.
+    Convert `string` to a float, or return it unchanged if it is not a
+    number.
 
     Parameters
     ----------
@@ -419,7 +419,7 @@ def round_down_first_non_zero(num: float) -> float:
 
     Returns
     -------
-    float:
+    float
         The number `num` rounded down to its first non-zero digit.
 
     Examples
@@ -452,17 +452,17 @@ def round_to_multiple(dividend: float, divider: float, round_to: int) -> float:
 
     Parameters
     ----------
-    dividend: float
+    dividend : float
         The number to round.
-    divider: float
+    divider : float
         The step of the grid of multiples, ``k * divider`` for integer ``k``.
-    round_to: int
+    round_to : int
         The number of decimal places of the result; it removes the float
         round-off of ``k * divider``.
 
     Returns
     -------
-    float:
+    float
         The multiple of `divider` closest to `dividend`, rounded to
         `round_to` decimal places. When `dividend` lies exactly halfway
         between two multiples, the even multiple is chosen, as Python's
@@ -510,11 +510,11 @@ def invalid_keyword(
 
     Parameters
     ----------
-    keyword: str
-        Name of the `keyword`
-    valid_keywords: List[Union[str,None]]
-        Array of valid keywords
-    message: str
+    keyword : str
+        The keyword to check.
+    valid_keywords : sequence of str or None
+        The accepted keywords.
+    message : str, optional
         The text that follows the quoted `keyword` in the
         :exc:`ValueError` message; by default, a list of `valid_keywords`.
 

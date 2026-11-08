@@ -4,8 +4,8 @@ LAMMPS dump files --- :mod:`polyphys.simulate.dump`
 =====================================================================
 
 The :mod:`~polyphys.simulate.dump` module reads the text dump files
-written by the LAMMPS ``dump atom`` and ``dump custom`` commands into numpy
-arrays, one frame at a time. It needs numpy and the standard library only, so
+written by the LAMMPS ``dump atom`` and ``dump custom`` commands into NumPy
+arrays, one frame at a time. It needs NumPy and the standard library only, so
 an install without MDAnalysis can read dumps.
 
 .. versionadded:: 0.6.0

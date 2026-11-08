@@ -7,7 +7,7 @@
 The :mod:`polyphys.analyze.clusters` module turns the positions of a group of
 particles in one frame into contact and cluster statistics, and the contacts
 between a polymer and two-patch binding proteins into binding statistics.
-Every routine is a pure numpy or scipy kernel on one frame, except
+Every routine is a pure NumPy or SciPy kernel on one frame, except
 :func:`threshold_sweep`, which recounts saved frames over a grid of cutoffs;
 reading frames, choosing the particles, and accumulating over frames are
 otherwise the caller's work.
