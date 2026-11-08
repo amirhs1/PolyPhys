@@ -160,15 +160,12 @@ topology, and glob patterns come from the parser:
 ('cubic', ('r',))
 >>> chain.space_pattern, chain.space_hierarchy, chain.hierarchy
 ('N*ac*', 'N*', 'N*')
->>> chain.provisional
-False
 
 ```
 
 `space_pattern` matches the study's `space` names, and `space_hierarchy`
 and `hierarchy` are the glob prefixes of its `space` and `ensemble_long`
-names, which the stage functions take. `provisional=True` marks a spec whose
-data or values are not confirmed yet; `projects/hns_cyl` is one.
+names, which the stage functions take.
 
 Each attribute a spec names is checked against the attributes the parser sets
 at `ensemble_long`, so a typo or a missing declaration raises `ValueError` when
