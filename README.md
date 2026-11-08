@@ -78,7 +78,7 @@ python -m pip install polyphys
 Releases before v1.0.0 are not on PyPI; install one from its tag:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.9.0"
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v1.0.0"
 ```
 
 For a development checkout:
@@ -223,11 +223,14 @@ python -m sphinx -W -b html docs/source docs/_build
 
 ## Project status
 
-PolyPhys is under active development toward a stable 1.0 API. It is used to
-produce published research results, and the parsing and measurement layers are
-covered by tests that run against Python 3.11, 3.12, 3.13, and 3.14 on every
-pull request and every push to `main`; the probe layer's tests run on Python
-3.14 with MDAnalysis.
+From 1.0.0, PolyPhys follows semantic versioning: a backward-incompatible
+change to a stable module comes only in a major release, while `polyphys.probe`
+and `polyphys.viz` stay provisional, as the
+[API stability](https://polyphys.readthedocs.io/en/latest/stability.html) page
+sets out. It is used to produce published research results, and the parsing
+and measurement layers are covered by tests that run against Python 3.11,
+3.12, 3.13, and 3.14 on every pull request and every push to `main`; the probe
+layer's tests run on Python 3.14 with MDAnalysis.
 
 The Python examples above run as doctests in the test suite.
 
