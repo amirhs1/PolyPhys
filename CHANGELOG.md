@@ -31,6 +31,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Removed
 
+- **Breaking:** Remove `ProjectSpec.provisional`, which nothing read, and mark the `HnsCyl` spec in `projects/` published instead of provisional ([#251](https://github.com/amirhs1/PolyPhys/issues/251))
 - **Breaking:** Remove `polyphys.manage.projects` and the table records and builders that `polyphys.analyze.pipeline` served, the import paths that 0.9.0 deprecated; import them from `polyphys.spec` ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
 - **Breaking:** Remove the nine study parsers from `polyphys.manage.parser`, which now ships only `KeywordSpec`, `Species`, and `ParserBase`: `TransFociCyl`, `TransFociCub`, `HnsCub`, and `HnsCyl` move to `projects/<study>/parser.py` in the repository, which is not installed, and `SumRuleCyl`, `SumRuleCubHeteroRing`, `SumRuleCubHeteroLinear`, `SumRuleCubHeteroRingBiDisperse`, and `TwoMonDepCub` leave PolyPhys; importing any of them from `polyphys.manage.parser` raises `ImportError` that says where it went ([#197](https://github.com/amirhs1/PolyPhys/issues/197))
 - **Breaking:** Remove `whole_from_dist_mat_t` and `find_unique_properties` from `polyphys.manage.organizer`, which nothing in PolyPhys called ([#81](https://github.com/amirhs1/PolyPhys/issues/81))
