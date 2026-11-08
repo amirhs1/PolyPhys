@@ -1,10 +1,70 @@
 # Contributing to PolyPhys
 
-Bug reports and questions are welcome via
-[issues](https://github.com/amirhs1/PolyPhys/issues). Please see
-[`SECURITY.md`](SECURITY.md) for reporting suspected vulnerabilities privately.
+## Reporting a problem
 
-## AI-assisted contributions
+Bug reports, feature requests, and questions are welcome via
+[issues](https://github.com/amirhs1/PolyPhys/issues); each has a template.
+Report a suspected vulnerability privately instead, as
+[`SECURITY.md`](SECURITY.md) describes; do not open a public issue for it.
+
+## Development setup
+
+```bash
+git clone https://github.com/amirhs1/PolyPhys.git
+cd PolyPhys
+python -m pip install -e ".[dev,viz]"
+```
+
+The `viz` extra installs matplotlib, which the doctests of `polyphys/viz/`
+need. Add the `mda` extra to run the probe tests, which are skipped without
+MDAnalysis, and the `docs` extra to build the documentation.
+
+### Checklist for each clone
+
+- [ ] `git config core.hooksPath .githooks` has been run, which turns on the
+      `commit-msg` hook.
+- [ ] `git config fetch.prune true` has been run.
+- [ ] `git config commit.template .gitmessage` has been run, for commits
+      written in an editor.
+
+## Tests and documentation checks
+
+Run these from the repository root before opening a pull request:
+
+| Check                | Command                                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lint                 | `python -m flake8 polyphys projects`                                                                                                                  |
+| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate projects`                                                           |
+| All tests            | `python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
+| One test             | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                                  |
+| Package build        | `python -m build`, after a packaging change                                                                                                           |
+| Documentation build  | `python -m sphinx -W -b html docs/source docs/_build`, when `docs/source/` changed                                                                    |
+
+CI runs lint, type-check, and the tests on Python 3.11 to 3.14, and builds
+the package and the documentation, on every pull request.
+
+## Submitting a pull request
+
+- Branch from `main`, and name the branch and the pull request title as
+  "Names" below sets them.
+- Pull requests merge with a merge commit, so each commit lands on `main`
+  unchanged; keep every commit coherent.
+- Fill in every section of the pull request template; it is the pull
+  request's full report.
+
+### Changelog
+
+A pull request adds one line per change under `## [Unreleased]` in
+`CHANGELOG.md`, in the form the file's header names, unless its only area is
+`agents`. A pull request that only edits the changelog, and a release pull
+request, add none.
+
+Write the entry in the commit that makes the change, citing the issue the
+pull request closes. A pull request that closes no issue cites itself in a
+second commit, pushed once it is open. The release adds the commit
+references.
+
+## AI assistance
 
 AI tools are welcome. Read the [AI policy](AI-POLICY.md) before opening a pull
 request. The rules most often missed:
@@ -18,17 +78,16 @@ request. The rules most often missed:
 
 Pull requests that don't follow the policy may be closed without review.
 
-### Setup
+### Checking an AI tool's commits
 
-- [ ] `.claude/settings.json` is committed with the attribution block.
-- [ ] `git config core.hooksPath .githooks` has been run in this clone.
-- [ ] `git config fetch.prune true` has been run in this clone.
-- [ ] `.gitmessage` is committed.
-- [ ] `git config commit.template .gitmessage` has been run, for commits
-      written in an editor.
 - [ ] A test commit made by each tool in use ends with one trailer block that
       includes `Assisted-by:` and no AI `Co-authored-by:`
       (`git log -1 --format=%B`).
+
+### Repository checks for the maintainer
+
+- [ ] `.claude/settings.json` is committed with the attribution block.
+- [ ] `.gitmessage` is committed.
 - [ ] `.gitignore` has the agent-files block:
 
   ```gitignore
@@ -42,11 +101,9 @@ Pull requests that don't follow the policy may be closed without review.
 
 ## Names
 
-Two axes name every change. _Type_, the kind of change, is one word list, used
-unchanged as the branch prefix, the commit type, the pull request title's
-type, and the label `type:<word>`. _Area_, the part of the repository, is one
-list, used unchanged as the commit scope, the issue title's bracket, and the
-label `area:<word>`. Scope and area are one list.
+Use a type to describe the kind of change and an area to identify the affected
+part of the repository. A commit's scope is its area, and the labels are
+`type:<type>` and `area:<area>`.
 
 ```text
 types: feat fix docs test refactor chore release question
@@ -111,19 +168,9 @@ for a feature request, and `type:question` for a question.
 
 Each of these cites this section.
 
-## Changelog
-
-A pull request adds one line per change under `## [Unreleased]` in
-`CHANGELOG.md`, in the form the file's header names, unless its only area is
-`agents`. A pull request that only edits the changelog, and a release pull
-request, add none.
-
-Write the entry in the commit that makes the change, citing the issue the
-pull request closes. A pull request that closes no issue cites itself in a
-second commit, pushed once it is open. The release adds the commit
-references.
-
 ## Releases
+
+This section is the maintainer's release procedure.
 
 A milestone is released from `main` as soon as its last issue closes, and
 before any pull request that closes an issue of a later milestone merges.
