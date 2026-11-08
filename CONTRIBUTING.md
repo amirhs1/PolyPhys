@@ -134,6 +134,14 @@ already holds later work.
 From v1.0.0, publishing the GitHub release also starts
 `.github/workflows/publish.yaml`, which uploads the release to TestPyPI and
 then to PyPI; a release marked as a pre-release goes to TestPyPI only.
+After the upload, the `draft-release` skill installs the released version
+from PyPI into a fresh environment outside any checkout and checks that
+`import polyphys` gives that version from `site-packages`.
+
+Once PolyPhys has a conda-forge feedstock, conda-forge's bot opens a
+version-update pull request on it for each release; the maintainer, as the
+feedstock's maintainer, reviews and merges it. The `draft-release` skill
+checks that the pull request was opened.
 
 CI runs neither the `private_data` tests nor the `lammps` tests, so before
 each release the maintainer runs the full test command on their own machine

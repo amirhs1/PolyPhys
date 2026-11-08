@@ -16,7 +16,9 @@ python -m pip install "polyphys[mda]"
 ```
 
 Without MDAnalysis, `import polyphys.probe` raises `ImportError` with that
-hint. The parsing and reduction layers work as before.
+hint. The parsing and reduction layers work as before. In a conda
+environment, install `mdanalysis` from conda-forge before PolyPhys, as
+{ref}`Installation <installation_target>` shows.
 
 ## Notation
 
