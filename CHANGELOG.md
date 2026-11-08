@@ -18,6 +18,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Hold the Codecov `codecov/project` and `codecov/patch` statuses of a commit until all five of its coverage reports have arrived, so a status no longer reports the coverage of the first report alone ([#218](https://github.com/amirhs1/PolyPhys/issues/218))
 - Add Sphinx to the `dev` extra, so the test that imports the probe and viz modules under the documentation build's mocks runs in CI instead of being skipped ([#226](https://github.com/amirhs1/PolyPhys/pull/226))
 - Build the documentation in CI on Python 3.13, the version Read the Docs builds it on, instead of 3.14, so a docs failure that only 3.13 raises fails CI before it reaches Read the Docs ([#230](https://github.com/amirhs1/PolyPhys/issues/230))
+- Reorder `CONTRIBUTING.md` so a contributor reads how to report a problem, set up a checkout, run the checks, and submit a pull request before the AI policy, the names, and the release procedure, and let the pull request template's science checklist accept a measurement or statistics change that is explained and validated ([#243](https://github.com/amirhs1/PolyPhys/issues/243))
 
 ### Added
 
@@ -38,6 +39,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Close and join the worker pool of a probe run on the `multiprocessing` backend instead of terminating it, so the resource tracker reports no leaked semaphores, and turn every warning in the test suite into an error ([#192](https://github.com/amirhs1/PolyPhys/issues/192))
 - Raise `ValueError` naming the quantity and the whole when a `bin_size`, `r_max`, or `n_monomers` function of `FociPairDistances` gives anything but a finite positive number, instead of failing inside NumPy or turning a string into a number, and accept a NumPy integer or float such as `numpy.float32` wherever a finite positive per-whole number is checked ([#210](https://github.com/amirhs1/PolyPhys/issues/210))
 - Keep the annotations of `polyphys.probe.core` unevaluated, so the documentation builds where MDAnalysis is mocked, as on Read the Docs with Python 3.13, and ignore pyparsing 3.3's deprecation of `enablePackrat`, which matplotlib 3.8.4 calls, so the lowest-versions tests run under warnings as errors ([#224](https://github.com/amirhs1/PolyPhys/pull/224))
+- Give the affine-equivariance property test of `block_average` an absolute tolerance derived from float64 round-off, so it no longer fails by seed on a series whose block means are all equal ([#237](https://github.com/amirhs1/PolyPhys/issues/237))
 
 ### Migrating to 1.0.0
 
