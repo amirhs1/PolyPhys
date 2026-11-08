@@ -113,14 +113,65 @@ space         N200D20ac2
 The long names, `segment`, `whole`, and `ensemble_long`, are cut from the
 parsed name; the short names, `ensemble` and `space`, are built from the
 parsed values, so `r10.5` becomes the cylinder diameter `D20` and `ac2.0`
-the crowder size `ac2`. The [Usage](usage.md) page, "Lineage names", gives
-the rules that fix their text, and the [Studies](studies.md) page shows how a
-study declares which keywords each level's name holds.
+the crowder size `ac2`. "Lineage names" below gives the rules that fix their
+text, and the [Studies](studies.md) page shows how a study declares which
+keywords each level's name holds.
 
 The organizer and the pipeline use these names as join keys: the segments of
 one whole share its `whole` name, the replicates of one state point share
 their `ensemble_long` name, and the state points of one sweep share their
 `space` name.
+
+### Lineage names
+
+A parser sets the artifact's name at its own lineage and at each parent
+lineage, as the attributes `segment`, `whole`, `ensemble_long`, `ensemble`,
+and `space`; the organizer uses them as join keys. Two rules fix their text.
+
+- The long names, `segment`, `whole`, and `ensemble_long`, are cut from the
+  parsed name, so they keep its text, and they carry no topology suffix. A
+  segment `…ens1.j03.linear` and a whole `…ens1.linear` of one simulation
+  both give the `whole` name `…ens1`.
+- The short names, `ensemble` and `space`, are built from the parsed values.
+  A float that is a whole number prints as an integer, and any other float
+  prints as Python's `repr`, the shortest text that reads back as the same
+  float. The `space` above is `N200D20ac2` although the name wrote `ac2.0`
+  and `r10.5`, while a crowder size of `1.5` stays `ac1.5`.
+
+```python
+>>> artifact = ChainCyl(
+...     'N200r10.5lz25ac1.5nc0dt0.005bdump2000adump5000ens1.linear', 'whole',
+...     'bug')
+>>> artifact.whole, artifact.space
+('N200r10.5lz25ac1.5nc0dt0.005bdump2000adump5000ens1', 'N200D20ac1.5')
+
+```
+
+Names written by the research code that preceded PolyPhys can differ from
+these in two ways: a `whole` it parsed from a whole file keeps `.ring` or
+`.linear`, and a short name can print `ac2.0`. Parsing such a short name at
+its lineage and reading the rebuilt name gives the current form.
+
+### Values a parser derives
+
+Geometry is derived, not just read. The cylindrical wall is a layer of beads
+of size `a_w = 1` whose centers lie on the cylinder of radius `r` set in
+LAMMPS, so the cylinder size is `D = 2r - a_w`, stored as `dcyl`; `lz` is the
+half-length, so the cylinder length is `Z = 2 lz`, stored as `lcyl`. For a
+species `α` of size `a_α`, particle centers are confined to
+`D_eff,α = D - a_α`, and its bulk number density and volume fraction both use
+the effective volume `V_eff,α = π Z D_eff,α² / 4`:
+
+```python
+>>> artifact = ChainCyl(
+...     'N200r10.5lz25.0ac2.0nc1000dt0.005bdump2000adump5000ens1.j03',
+...     lineage='segment', group='all')
+>>> float(artifact.dcyl)              # from 'r10.5': 2 * 10.5 - 1.0
+20.0
+>>> round(float(artifact.phi_bulk_c), 4)
+0.3292
+
+```
 
 ## Phases
 

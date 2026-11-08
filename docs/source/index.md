@@ -8,9 +8,9 @@ It decodes physics-encoding simulation filenames into typed attributes, organize
 artifacts along a five-level lineage — `segment`, `whole`, `ensemble_long`,
 `ensemble`, `space` — and reduces replicate ensembles into averaged measurements.
 
-Check out the [usage](usage.md) section for further information, including how to
-[install](#installation_target) the project, and the [quickstart](quickstart.md),
-which runs a small synthetic sweep from its segments to its `space` table.
+Start with [Installation](installation.md), then the [quickstart](quickstart.md),
+which runs a small synthetic sweep from its segments to its `space` table; the
+[usage](usage.md) page says where each task is explained.
 
 ```{note}
 This project is under active development.
@@ -22,6 +22,7 @@ maxdepth: 2
 caption: Contents:
 ---
 
+installation
 usage
 quickstart
 lineage
@@ -33,6 +34,7 @@ correlations
 density
 pipeline
 probe
+simulate
 viz
 testing
 design

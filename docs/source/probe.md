@@ -4,8 +4,7 @@ This page explains what {mod}`polyphys.probe` does with a study's LAMMPS
 trajectories, how a study describes its probe as data, what the chain-size,
 spatial-histogram, and pair-distance analyses measure, what the binder
 analysis counts and how its cutoff was chosen, how the analyses run in
-serial or in parallel, where their outputs go, and what changed from the
-research code they replace.
+serial or in parallel, and where their outputs go.
 
 The probe phase is the one step of PolyPhys that reads trajectories. It is
 built on [MDAnalysis](https://www.mdanalysis.org/), which the rest of the
@@ -19,6 +18,26 @@ Without MDAnalysis, `import polyphys.probe` raises `ImportError` with that
 hint. The parsing and reduction layers work as before. In a conda
 environment, install `mdanalysis` from conda-forge before PolyPhys, as
 {ref}`Installation <installation_target>` shows.
+
+Tasks on this page:
+
+- Open a whole's data file and dump as one universe: "Reading a
+  trajectory".
+- Describe a study's probe once, as data: "A study's probe as data".
+- Measure the chain's size and shape in every frame: "The chain-size
+  analysis".
+- Bin every species along the geometry's directions: "The spatial
+  histograms", after "Recentering a frame".
+- Measure the distances and contacts of one species, such as the foci:
+  "The pair distances".
+- Count how two-patch binders bind the chain: "The binder analysis", with
+  "Choosing the cutoff".
+- Run an analysis over many frames in parallel: "Parallel runs" under
+  the chain-size analysis, and "Parallel runs and cost" under the binder
+  analysis.
+
+How the probe differs from the research code it replaces is gathered at the
+end, in "What changed from the research code".
 
 ## Notation
 
@@ -101,9 +120,7 @@ Two facts about the files matter:
 
 The probe does not convert frames to simulation time: the universe
 is opened without `dt`, the dump reader warns that it has no time step, and
-the `times` of an analysis are the dump's time steps. The research code
-passed `dt` as the dump interval times the time step times the
-Lennard-Jones time unit, which issue #56 lists as still to confirm.
+the `times` of an analysis are the dump's time steps.
 
 ## A study's probe as data
 
@@ -280,8 +297,8 @@ shift but not the research histograms:
 {func}`~polyphys.probe.histograms.histogram_edges` gives the extended
 ranges of the next section, centered on the origin, and
 {class}`~polyphys.probe.histograms.SpatialHistograms` raises on a position
-outside them, where the research code dropped it. The pair distances are translation invariant and
-ignore `recenter`.
+outside them. The pair distances are translation invariant and ignore
+`recenter`.
 
 ## The spatial histograms
 
@@ -330,12 +347,10 @@ inside the box is the same particle. A position past a wall is not wrapped.
 
 After wrapping, a position outside the edges of a direction, or outside the
 Cartesian edges of the maps, raises and aborts the run, so every frame's
-counts sum to the species' particle number. The research code's `np.histogram`
-dropped such a position silently, and its ranges stopped at $D / 2$ in a
-cylinder and $L / 2$ in a cube; the maintainer extended them to the wall
-surface and the corner on 2026-11-04, since a repulsive wall lets a small
-particle's center approach the surface closer than half a monomer and a
-cube's corners lie beyond $L / 2$. The shells of a cube beyond $L / 2$ are
+counts sum to the species' particle number. The ranges reach the wall
+surface in a cylinder and the corner in a cube, since a repulsive wall lets
+a small particle's center approach the surface closer than half a monomer
+and a cube's corners lie beyond $L / 2$. The shells of a cube beyond $L / 2$ are
 only partly inside the box, which the density normalization downstream has
 to account for.
 
@@ -383,9 +398,8 @@ The cutoff is `contact_cutoff` resolved for the whole, `dmon_large +
 dcrowd` in the *TransFoci* studies: two foci touch when a crowder no longer
 fits between them. With `minimum_image`, the distances use the minimum
 image along the periodic directions of the geometry with the frame's box
-lengths; the research code used none. `save` writes the four arrays as
-`<name>-<quantity><Species>.npy`, the research names; the contact matrix
-is bool here and was int64 there.
+lengths. `save` writes the four arrays as
+`<name>-<quantity><Species>.npy`, with the contact matrix as bool.
 
 **Indexing.** LAMMPS numbers atoms from 1 (`read_data`: "a unique value
 from 1 to Natoms for each atom"), and MDAnalysis keeps those numbers as
@@ -607,10 +621,14 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
   both over the frames; the summed arrays are still written. Their ranges
   reach the wall surface and the cube's corner, a position a little past a
   periodic face is wrapped into the box, and a position outside the edges
-  after that raises instead of being dropped.
+  after that raises instead of being dropped. The research ranges stopped
+  at $D / 2$ in a cylinder and $L / 2$ in a cube; the maintainer extended
+  them on 2026-11-04.
 - The pair distances write 0-based backbone indices on the diagonal of the
   distance matrix, use the minimum image along the periodic directions,
-  and store the contact matrix as bool (see "The pair distances").
+  and store the contact matrix as bool, where the research code wrote
+  1-based atom IDs, used no minimum image, and stored int64 (see "The pair
+  distances").
 - The HnsCyl radial bin size includes the H-NS core diameter in its
   minimum, as HnsCub's did; the maintainer confirmed the research code's
   omission as a mistake on 2026-11-04.
@@ -622,7 +640,9 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
   {func}`~polyphys.manage.organizer.children_stamps` adds it from their
   file names, `<name>-<group>-stamps.csv`, so either kind reduces.
 - Frames are not converted to simulation time (see "Reading a
-  trajectory").
+  trajectory"). The research code passed `dt` as the dump interval times
+  the time step times the Lennard-Jones time unit, which issue #56 lists
+  as still to confirm.
 - The binder distances take the minimum image along the geometry's
   periodic directions; the research probe took none.
 - The binding cutoff and its comparison are the spec's. The H-NS studies

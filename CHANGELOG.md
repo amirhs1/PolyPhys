@@ -16,6 +16,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Changed
 
+- Shorten the first-use path of the documentation: a short parser and its lineage names in the README, one purpose per module in its table, a task index on the Usage page, installation and the LAMMPS file readers and builders on pages of their own, the density sum rule on the Density page, a task list on the Probe page with its research-code differences gathered at the end, and a field list for `ProjectSpec` ([#240](https://github.com/amirhs1/PolyPhys/issues/240))
 - Require NumPy 2.0, pandas 3.0, and, in the `viz` extra, matplotlib 3.8.4 or newer, the lowest versions the test suite passes with on Python 3.11, and test them in a CI job that installs the lowest allowed versions ([#193](https://github.com/amirhs1/PolyPhys/issues/193))
 - Hold the Codecov `codecov/project` and `codecov/patch` statuses of a commit until all five of its coverage reports have arrived, so a status no longer reports the coverage of the first report alone ([#218](https://github.com/amirhs1/PolyPhys/issues/218))
 - Add Sphinx to the `dev` extra, so the test that imports the probe and viz modules under the documentation build's mocks runs in CI instead of being skipped ([#226](https://github.com/amirhs1/PolyPhys/pull/226))
