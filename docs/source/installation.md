@@ -19,7 +19,7 @@ uv add polyphys
 Releases before v1.0.0 are not on PyPI. To install one, give its tag:
 
 ```bash
-python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v0.9.0"
+python -m pip install "git+https://github.com/amirhs1/PolyPhys.git@v1.0.0"
 ```
 
 PolyPhys requires Python 3.11 or newer. Its runtime dependencies are NumPy 2.0

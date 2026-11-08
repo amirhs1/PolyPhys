@@ -19,4 +19,4 @@ Data
 # keep __version__ in separate file to avoid circular imports
 
 #: Release of PolyPhys as a string, using `semantic versioning`_.
-__version__ = "0.9.0"
+__version__ = "1.0.0"
