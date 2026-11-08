@@ -296,10 +296,13 @@ same files concurrently; use separate branches or worktrees.
 
 ## Provenance
 
-Every text you write into the repository or its tracker (commit message, pull
-request body, issue body, comment, release notes) ends with one trailer block
-that includes `Assisted-by:`, after a blank line. The `write-commit` skill
-gives a commit message's subject and body.
+Every message you write into the repository's history or its tracker (commit
+message, pull request body, issue body, comment, release notes) ends with one
+trailer block that includes `Assisted-by:`, after a blank line. Files you
+write into the repository, such as source, documentation, and a release's
+changelog section, carry no trailer; the message of the commit that adds them
+records their provenance. The `write-commit` skill gives a commit message's
+subject and body.
 
 - All trailers sit in one final paragraph, one per line, with no blank line
   between them and nothing after them. `Why:` stays in the body above it.
