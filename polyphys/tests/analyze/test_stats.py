@@ -38,7 +38,7 @@ import warnings
 
 import numpy as np
 import pytest
-from hypothesis import assume, given, settings
+from hypothesis import assume, example, given, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 from numpy.testing import assert_allclose, assert_array_equal
@@ -688,6 +688,13 @@ def test_sem_blocked_rejects_unknown_method():
                     st.floats(min_value=0.1, max_value=10.0)),
     offset=st.floats(min_value=-10.0, max_value=10.0),
 )
+# Every level-1 block mean is exactly 0, so the plain variance there is
+# exactly 0 while the mapped one is round-off of about 4e-33.
+@example(
+    x=np.array([0.1, -0.1, 0.3, -0.3, 0.7, -0.7, 0.9, -0.9]),
+    scale=3.0,
+    offset=0.1,
+)
 def test_block_average_is_affine_equivariant_on_generated_series(
         x, scale, offset):
     """For a x + b, every blocking level keeps its blocks, its mean becomes
@@ -705,7 +712,21 @@ def test_block_average_is_affine_equivariant_on_generated_series(
     # whose spread is at least 0.01 times the offset: 1e-8 holds with room.
     assert_allclose(mapped.mean, scale * plain.mean + offset,
                     rtol=1e-8, atol=1e-10)
-    assert_allclose(mapped.var, scale**2 * plain.var, rtol=1e-8)
-    assert_allclose(mapped.sem, abs(scale) * plain.sem, rtol=1e-8)
+    # A level whose block means are all equal has a variance of exactly 0 in
+    # one series and of round-off in the other, which no rtol accepts. With
+    # eps = 2.2e-16 and |values| <= 20, a block mean carries at most one
+    # rounding per halving (at most 9 for 512 frames) and two from the map,
+    # so the error of each block mean, both series counted, is
+    # delta <= 1e-13. Over m blocks the variance then moves by at most
+    # 2 sqrt(2 var) delta + 2 delta**2 <= (rtol / 2) var + 4 delta**2 / rtol
+    # (AM-GM), with 4 delta**2 / rtol = 4e-18: atol 1e-17 for var.
+    # sem = sqrt(var / m) with m >= 4 moves by at most sqrt(1e-17 / 4),
+    # about 1.6e-9: atol 2e-9. The inefficiency B var / var_0 has B <= 256
+    # and, since the range exceeds 0.1 over at most 512 frames and
+    # |scale| >= 0.1, var_0 >= 0.1**2 / (2 * 511) * 0.1**2, about 1e-7, so
+    # it moves by at most 256 * 1e-17 / 9.8e-8, about 3e-8: atol 1e-7.
+    assert_allclose(mapped.var, scale**2 * plain.var, rtol=1e-8, atol=1e-17)
+    assert_allclose(mapped.sem, abs(scale) * plain.sem,
+                    rtol=1e-8, atol=2e-9)
     assert_allclose(mapped.statistical_inefficiency,
-                    plain.statistical_inefficiency, rtol=1e-8)
+                    plain.statistical_inefficiency, rtol=1e-8, atol=1e-7)
