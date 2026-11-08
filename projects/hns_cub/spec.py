@@ -77,6 +77,10 @@ def _l_bin(info: ParserBase) -> float:
 # which the maintainer chose on 2026-11-04 over the research probe's
 # ``round(2**(1/6) * (dmon + dhns_patch) / 2, 3) = 0.661`` with a strict
 # comparison; the probe guide, "Choosing the cutoff", gives both.
+# The cis threshold is 3, the maintainer's definition (thesis, chapter 5: a
+# bridge with at most two monomers between its sites, at most 3 bonds, is
+# cis), which the maintainer chose on 2026-11-08 over the research probe's 4;
+# the probe guide, "Choosing the cis threshold", gives both and why.
 PROBE = ProbeSpec(
     project=SPEC,
     selections={'Mon': 'resid 1', 'HnsPatch': 'type 2', 'Crd': 'resid 0',
@@ -89,7 +93,7 @@ PROBE = ProbeSpec(
     block_frames=100,
     recenter='half',
     binders=BinderSpec(patches='HnsPatch', binders='HnsCore', cutoff=0.685,
-                       inclusive=True, cis_threshold=4,
+                       inclusive=True, cis_threshold=3,
                        store_distances=True),
 )
 

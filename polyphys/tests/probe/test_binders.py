@@ -244,8 +244,8 @@ def test_inclusive_decides_a_pair_at_the_cutoff(make_binder_universe,
 
     analysis = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
-        cutoff=0.5, topology='ring', inclusive=inclusive).run(start=1,
-                                                              stop=2)
+        cutoff=0.5, topology='ring', inclusive=inclusive,
+        cis_threshold=4).run(start=1, stop=2)
 
     assert {key: int(analysis.results[key][0]) for key in expected} \
         == expected
@@ -293,7 +293,7 @@ def test_minimum_image_follows_the_periodic_directions(
 
     analysis = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
-        cutoff=0.5, topology='ring', periodic=periodic).run()
+        cutoff=0.5, topology='ring', periodic=periodic, cis_threshold=4).run()
 
     assert int(analysis.results['n_patch_monomer_contacts'][0]) == contacts
 
@@ -315,7 +315,7 @@ def test_distances_match_mdanalysis(make_binder_universe, ring, far,
 
     analysis = BinderStatistics(
         monomers, patch_atoms, cutoff=0.5, topology='ring',
-        periodic=periodic, store_distances=True).run()
+        periodic=periodic, store_distances=True, cis_threshold=4).run()
 
     expected = distance_array(
         monomers.positions, patch_atoms.positions,
@@ -335,7 +335,8 @@ def test_run_slices_the_frames(make_binder_universe, binding_frames):
 
     analysis = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
-        cutoff=0.5, topology='ring').run(start=1, stop=5, step=2)
+        cutoff=0.5, topology='ring',
+        cis_threshold=4).run(start=1, stop=5, step=2)
 
     assert_array_equal(analysis.frames, [1, 3])
     assert_array_equal(analysis.results['n_binders_bridging'], [2, 2])
@@ -350,12 +351,14 @@ def test_parallel_run_matches_the_serial_run(make_binder_universe,
     universe = make_binder_universe(*binding_frames)
     serial = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
-        cutoff=0.5, topology='ring', store_distances=True).run()
+        cutoff=0.5, topology='ring', store_distances=True,
+        cis_threshold=4).run()
 
     parallel = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
-        cutoff=0.5, topology='ring', store_distances=True).run(
-            backend='multiprocessing', n_workers=2, n_parts=2)
+        cutoff=0.5, topology='ring', store_distances=True,
+        cis_threshold=4).run(backend='multiprocessing', n_workers=2,
+                             n_parts=2)
 
     assert parallel.keys == serial.keys
     for key in serial.keys:
@@ -376,12 +379,13 @@ def test_serial_parts_match_the_multiprocessing_run(
     patches = universe.select_atoms('type 2')
     parallel = BinderStatistics(
         chain, patches, cutoff=0.5, topology='ring',
-        store_distances=True).run(
+        store_distances=True, cis_threshold=4).run(
             backend='multiprocessing', n_workers=2, n_parts=n_parts)
 
     serial = BinderStatistics(
         chain, patches, cutoff=0.5, topology='ring',
-        store_distances=True).run(backend='serial', n_parts=n_parts)
+        store_distances=True,
+        cis_threshold=4).run(backend='serial', n_parts=n_parts)
 
     assert_array_equal(serial.frames, parallel.frames)
     assert_array_equal(serial.times, parallel.times)
@@ -420,9 +424,11 @@ def test_keys_list_the_series_then_the_histogram_then_the_distances(
     chain, patches = (universe.select_atoms('resid 1'),
                       universe.select_atoms('type 2'))
 
-    without = BinderStatistics(chain, patches, cutoff=0.5, topology='ring')
+    without = BinderStatistics(chain, patches, cutoff=0.5, topology='ring',
+                               cis_threshold=4)
     with_distances = BinderStatistics(chain, patches, cutoff=0.5,
-                                      topology='ring', store_distances=True)
+                                      topology='ring', store_distances=True,
+                                      cis_threshold=4)
 
     assert without.keys == (*BINDER_SERIES, 'loop_length_histogram')
     assert with_distances.keys == (*BINDER_SERIES, 'loop_length_histogram',
@@ -493,7 +499,8 @@ def test_rejects_invalid_arguments(make_binder_universe, binding_frames,
     unknown topology, a negative cis threshold, malformed periodic flags,
     or an empty label raises at construction."""
     universe = make_binder_universe(*binding_frames)
-    fields = {'cutoff': 0.5, 'topology': 'ring', **kwargs}
+    fields = {'cutoff': 0.5, 'topology': 'ring', 'cis_threshold': 4,
+              **kwargs}
 
     with pytest.raises(ValueError, match=match):
         BinderStatistics(universe.select_atoms('resid 1'),
@@ -517,7 +524,7 @@ def test_rejects_malformed_groups(make_binder_universe, binding_frames,
     with pytest.raises(ValueError, match=match):
         BinderStatistics(universe.select_atoms(chain),
                          universe.select_atoms(patches), cutoff=0.5,
-                         topology='ring')
+                         topology='ring', cis_threshold=4)
 
 
 def test_rejects_patches_from_another_universe(make_binder_universe,
@@ -529,7 +536,7 @@ def test_rejects_patches_from_another_universe(make_binder_universe,
     with pytest.raises(ValueError, match="universe of 'chain'"):
         BinderStatistics(universe.select_atoms('resid 1'),
                          other.select_atoms('type 2'), cutoff=0.5,
-                         topology='ring')
+                         topology='ring', cis_threshold=4)
 
 
 def test_periodic_direction_needs_a_box():
@@ -539,7 +546,7 @@ def test_periodic_direction_needs_a_box():
         [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.3, 0.0], [5.0, 5.0, 5.0]])
     analysis = BinderStatistics(universe.atoms[:2], universe.atoms[2:],
                                 cutoff=0.5, topology='linear',
-                                periodic=(True, True, True))
+                                periodic=(True, True, True), cis_threshold=4)
 
     with pytest.raises(ValueError, match="carries no box"):
         analysis.run()
@@ -568,7 +575,8 @@ def test_save_writes_the_research_names(make_binder_universe,
     universe = make_binder_universe(*binding_frames)
     analysis = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
-        cutoff=0.5, topology='ring', store_distances=store_distances).run()
+        cutoff=0.5, topology='ring', store_distances=store_distances,
+        cis_threshold=4).run()
 
     paths = analysis.save(tmp_path, 'N10ens1-nucleoid')
 
@@ -585,7 +593,7 @@ def test_save_uses_the_labels(make_binder_universe, binding_frames,
     analysis = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
         cutoff=0.5, topology='ring', store_distances=True, chain_label='Dna',
-        patch_label='Site', binder_label='Prot').run()
+        patch_label='Site', binder_label='Prot', cis_threshold=4).run()
 
     paths = analysis.save(tmp_path, 'N10ens1-nucleoid')
 
@@ -604,7 +612,7 @@ def test_save_before_run_raises(make_binder_universe, binding_frames,
     universe = make_binder_universe(*binding_frames)
     analysis = BinderStatistics(
         universe.select_atoms('resid 1'), universe.select_atoms('type 2'),
-        cutoff=0.5, topology='ring')
+        cutoff=0.5, topology='ring', cis_threshold=4)
 
     with pytest.raises(RuntimeError, match=r"Call run\(\) before save"):
         analysis.save(tmp_path, 'N10ens1-nucleoid')

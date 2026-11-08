@@ -16,6 +16,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Changed
 
+- **Breaking:** Require `cis_threshold`, with no default: `BinderSpec` takes it keyword-only and `BinderStatistics` as a keyword; the H-NS study specs state 3, a bridge with at most two monomers between its sites, where the research probe used 4 ([#252](https://github.com/amirhs1/PolyPhys/issues/252))
 - Shorten the first-use path of the documentation: a short parser and its lineage names in the README, one purpose per module in its table, a task index on the Usage page, installation and the LAMMPS file readers and builders on pages of their own, the density sum rule on the Density page, a task list on the Probe page with its research-code differences gathered at the end, and a field list for `ProjectSpec` ([#240](https://github.com/amirhs1/PolyPhys/issues/240))
 - Require NumPy 2.0, pandas 3.0, and, in the `viz` extra, matplotlib 3.8.4 or newer, the lowest versions the test suite passes with on Python 3.11, and test them in a CI job that installs the lowest allowed versions ([#193](https://github.com/amirhs1/PolyPhys/issues/193))
 - Hold the Codecov `codecov/project` and `codecov/patch` statuses of a commit until all five of its coverage reports have arrived, so a status no longer reports the coverage of the first report alone ([#218](https://github.com/amirhs1/PolyPhys/issues/218))
@@ -55,6 +56,7 @@ Each breaking change since 0.4.0, oldest last, with its migration path.
 
 | Release | Change | Migration |
 | ------- | ------ | --------- |
+| 1.0.0 | `BinderSpec` and `BinderStatistics` require `cis_threshold`, keyword-only in `BinderSpec` | Pass `cis_threshold=` explicitly: `4` keeps the old default, `3` is the H-NS studies' definition. |
 | 1.0.0 | `ProbeSpec.resolve` and `FociPairDistances` reject a constant that is not a finite positive number, and `FociPairDistances` rejects an `n_monomers` that is not a positive integer | Pass a positive number; give `n_monomers` as an `int`, or have its function return `int(...)` of a whole number. |
 | 1.0.0 | `polyphys.manage.projects` and the table names of `polyphys.analyze.pipeline` removed | Import them from `polyphys.spec`. |
 | 1.0.0 | The nine study parsers removed from `polyphys.manage.parser` | Copy the parser of a published study from `projects/<study>/parser.py` into your study's code; pin `polyphys` 0.9.0 to keep the others. |

@@ -507,14 +507,15 @@ def test_probe_resolve_rejects_a_bad_constant(whole, bad):
 
 @pytest.fixture
 def make_binders() -> Callable[..., BinderSpec]:
-    """Factory: a valid binder spec with the H-NS labels and the published
-    cutoff, with any field overridden."""
+    """Factory: a valid binder spec with the H-NS labels, the published
+    cutoff, and the studies' cis threshold, with any field overridden."""
 
     def _make(**overrides: Any) -> BinderSpec:
         fields: dict[str, Any] = {
             'patches': 'HnsPatch',
             'binders': 'HnsCore',
             'cutoff': 0.685,
+            'cis_threshold': 3,
         }
         fields.update(overrides)
         return BinderSpec(**fields)
@@ -562,13 +563,24 @@ def test_binders_series_take_the_patch_and_binder_labels(make_binders):
 
 
 def test_binders_defaults(make_binders):
-    """A binder spec defaults to an inclusive comparison, a cis threshold
-    of 4, two patches per binder, and no stored distances."""
+    """A binder spec defaults to an inclusive comparison, two patches per
+    binder, and no stored distances."""
     binders = make_binders()
 
-    assert (binders.inclusive, binders.cis_threshold,
-            binders.patches_per_binder, binders.store_distances) == (
-        True, 4, 2, False)
+    assert (binders.inclusive, binders.patches_per_binder,
+            binders.store_distances) == (True, 2, False)
+
+
+def test_binders_requires_cis_threshold():
+    """A binder spec has no default cis threshold: a study must state it."""
+    with pytest.raises(TypeError, match="cis_threshold"):
+        BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685)
+
+
+def test_binders_cis_threshold_is_keyword_only():
+    """A cis threshold given by position is not accepted as one."""
+    with pytest.raises(TypeError, match="positional"):
+        BinderSpec('HnsPatch', 'HnsCore', 0.685, True, 2, False, 3)
 
 
 def test_binders_is_frozen(make_binders):
@@ -625,7 +637,8 @@ def test_probe_carries_its_binder_spec(make_hns_probe, make_binders):
     pytest.param({'selections': {'Mon': 'resid 1'}},
                  "patches of 'binders' must be a label in",
                  id='patches-not-selected'),
-    pytest.param({'binders': BinderSpec('Mon', 'HnsCore', cutoff=0.685)},
+    pytest.param({'binders': BinderSpec('Mon', 'HnsCore', cutoff=0.685,
+                                        cis_threshold=3)},
                  "patches of 'binders' must be a label in",
                  id='patches-are-the-chain'),
 ])

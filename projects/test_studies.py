@@ -550,19 +550,21 @@ def test_study_probe_pair_fields(module: str, pair: str | None,
 @pytest.mark.parametrize('module, binders', [
     pytest.param('trans_foci_cyl', None, id='TransFociCyl'),
     pytest.param('trans_foci_cub', None, id='TransFociCub'),
-    # SciOps prober.py, the H-NS binding blocks: cis_threshold = 4 and the
-    # distance matrices saved per frame. The cutoff and the inclusive
-    # comparison are the thesis's binding criterion, r <= r_cut,mp = 0.685
-    # (Section 5.3, Table 5.1), chosen by the maintainer on 2026-11-04 over
-    # the research probe's 0.661 with a strict comparison.
+    # SciOps prober.py, the H-NS binding blocks: the distance matrices saved
+    # per frame. The cis threshold is 3, the maintainer's definition (thesis,
+    # chapter 5), chosen on 2026-11-08 over the research probe's 4. The
+    # cutoff and the inclusive comparison are the thesis's binding criterion,
+    # r <= r_cut,mp = 0.685 (Section 5.3, Table 5.1), chosen by the
+    # maintainer on 2026-11-04 over the research probe's 0.661 with a strict
+    # comparison.
     pytest.param('hns_cub',
                  BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685,
-                            inclusive=True, cis_threshold=4,
+                            inclusive=True, cis_threshold=3,
                             patches_per_binder=2, store_distances=True),
                  id='HnsCub'),
     pytest.param('hns_cyl',
                  BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685,
-                            inclusive=True, cis_threshold=4,
+                            inclusive=True, cis_threshold=3,
                             patches_per_binder=2, store_distances=True),
                  id='HnsCyl'),
 ])

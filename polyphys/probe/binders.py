@@ -157,6 +157,8 @@ class BinderStatistics(_ProbeAnalysis):
     frame.
 
     .. versionadded:: 0.7.0
+    .. versionchanged:: 1.0.0
+       `cis_threshold` has no default.
 
     Parameters
     ----------
@@ -175,13 +177,13 @@ class BinderStatistics(_ProbeAnalysis):
         ``'linear'`` or ``'ring'``, whether the chain is open or closed,
         which sets the genomic distance of a bridged pair and the length of
         the loop-length histogram.
+    cis_threshold : int
+        The largest genomic distance, in bonds, of a cis bridge;
+        non-negative, with no default.
     inclusive : bool, default True
         Whether a pair at exactly `cutoff` is a contact
         (:math:`r \\le r_\\mathrm{thres}`) or not
         (:math:`r < r_\\mathrm{thres}`).
-    cis_threshold : int, default 4
-        The largest genomic distance, in bonds, of a cis bridge;
-        non-negative.
     patches_per_binder : int, default 2
         The number of patches per binder; only ``2`` is accepted, which
         :func:`~polyphys.analyze.clusters.binding_statistics` counts.
@@ -279,8 +281,8 @@ class BinderStatistics(_ProbeAnalysis):
     studies follow [2]_; the dangling, cis, and trans modes and the cis
     threshold of two intervening monomers are those of Joyeux and Vreede
     [3]_, whose cis bridge joins sites "separated by at most two DNA
-    beads", a genomic distance of at most 3 bonds, which `cis_threshold`
-    of 4 reproduces on the studies' chains. A patch that sits between two
+    beads", a genomic distance of at most 3 bonds: `cis_threshold` of 3,
+    which the H-NS studies state. A patch that sits between two
     consecutive monomers can touch both, which Brackley [4]_ notes as the
     one way a single patch reaches two beads; the single-patch rule
     resolves it.
@@ -356,7 +358,8 @@ class BinderStatistics(_ProbeAnalysis):
     >>> universe.atoms[9].position = [9.8, 0.0, 0.0]
     >>> wrapped = BinderStatistics(
     ...     universe.atoms[:6], universe.atoms[6:], cutoff=0.5,
-    ...     topology='ring', periodic=(True, False, False)).run()
+    ...     topology='ring', cis_threshold=4,
+    ...     periodic=(True, False, False)).run()
     >>> int(wrapped.results['n_binders_bridging'][0])
     2
     """
@@ -370,8 +373,8 @@ class BinderStatistics(_ProbeAnalysis):
         *,
         cutoff: float,
         topology: TopologyT,
+        cis_threshold: int,
         inclusive: bool = True,
-        cis_threshold: int = 4,
         patches_per_binder: int = _TWO_PATCHES,
         periodic: tuple[bool, bool, bool] = (False, False, False),
         store_distances: bool = False,
@@ -505,7 +508,8 @@ class BinderStatistics(_ProbeAnalysis):
         >>> spec = ProbeSpec(
         ...     project, {'Mon': 'type 1', 'HnsPatch': 'type 2'}, 'Mon',
         ...     ('gyrT',), unwrap=True,
-        ...     binders=BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685))
+        ...     binders=BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685,
+        ...                        cis_threshold=3))
         >>> universe = mda.Universe.empty(6, trajectory=True)
         >>> universe.add_TopologyAttr('types', ['1'] * 4 + ['2'] * 2)
         >>> analysis = BinderStatistics.from_spec(universe, spec)
@@ -557,7 +561,7 @@ class BinderStatistics(_ProbeAnalysis):
         >>> universe = mda.Universe.empty(4, trajectory=True)
         >>> analysis = BinderStatistics(
         ...     universe.atoms[:2], universe.atoms[2:], cutoff=0.5,
-        ...     topology='linear')
+        ...     topology='linear', cis_threshold=3)
         >>> analysis.keys[-2:]
         ('n_pairs_trans', 'loop_length_histogram')
         """
@@ -680,7 +684,7 @@ class BinderStatistics(_ProbeAnalysis):
         ...      [0.0, 0.3, 0.0], [5.0, 5.0, 5.0]])
         >>> analysis = BinderStatistics(
         ...     universe.atoms[:2], universe.atoms[2:], cutoff=0.5,
-        ...     topology='linear').run()
+        ...     topology='linear', cis_threshold=3).run()
         >>> with tempfile.TemporaryDirectory() as tmp:
         ...     paths = analysis.save(tmp, 'N2ens1-nucleoid')
         ...     names = [path.name for path in paths]

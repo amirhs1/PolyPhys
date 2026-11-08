@@ -169,7 +169,7 @@ shape `(n_monomers, n_patches)`, come from the caller's own frame reader.
 from polyphys.analyze import clusters
 
 stats = clusters.BindingStats(n_monomers=n_mon, topology='ring',
-                              cis_threshold=4)
+                              cis_threshold=3)
 for frame in trajectory:
     stats.update(clusters.find_direct_contacts(dist_monomer_patch, cutoff))
 series = stats.as_dict()                    # eight (n_frames,) arrays
