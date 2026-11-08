@@ -13,14 +13,16 @@ description: Write or change a test in polyphys/tests/. Use when writing a modul
    criteria: for each case the behavior, the input, and the source of the
    expected value. Write the file in one pass against the finished API. Use
    one fixture set for the module. Do not add cases the list lacks without
-   saying so.
-2. When the module already has a test file, carry forward every test that
-   still states a valid contract, rewritten to the rules below. Delete a test
-   only with its reason given in the pull request; the module's coverage must
-   not fall.
-3. For a bug fix, write the regression test first and watch it fail against
-   the unfixed code, then fix the code. For any other behavior change, the
-   claim comes from the change.
+   saying so. A bug fix is the exception to this order: step 3.
+2. When an approved whole-module revision rewrites a test file that exists,
+   carry forward every test that still states a valid contract, rewritten to
+   the rules below. Outside such a revision, add or change only the tests
+   the change needs and leave the others as they are. Delete a test only
+   with its reason given in the pull request; the module's coverage must not
+   fall.
+3. The exception to step 1: for a bug fix, write the regression test first
+   and watch it fail against the unfixed code, then fix the code. For any
+   other behavior change, the claim comes from the change.
 
 ## Each test
 

@@ -33,11 +33,13 @@ description: Open a draft GitHub pull request whose body is the full report. Use
    goes in the body, never in the title, and the title has no agent or tool
    prefix. If the branch prefix and the intended type label disagree, stop
    and ask.
-5. Push the branch, open a draft, then read it back with `gh pr view`:
+5. Before any push, check whether the branch has a pull request:
+   `gh pr list --head <branch> --state all --json number,state`. If one has
+   merged, stop and tell the person running you. Run this check and the push
+   in one command, so the push runs only when the check passes.
+6. If the branch has no pull request, push the branch, open a draft, then
+   read it back with `gh pr view`:
    `gh pr create --draft --base main --title "<title>" --label <labels> --body-file <file>`.
    Never mark it ready or merge it.
-6. Before pushing to a branch that has a pull request, run
-   `gh pr view <n> --json state`; if it has merged, stop and tell the person
-   running you.
-7. If the branch already has an open pull request, push, then replace its
-   body and read it back: `gh pr edit <n> --body-file <file>`.
+7. If the branch has an open pull request `<n>`, push, then replace its body
+   and read it back: `gh pr edit <n> --body-file <file>`.

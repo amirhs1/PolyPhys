@@ -40,8 +40,11 @@ tag an older commit to leave later work out; stop and report instead.
 7. CHANGELOG.md: rename `## [Unreleased]` to a version heading whose version
    links to the release,
    `## [<MAJOR>.<MINOR>.<PATCH>](<release URL>) - <YYYY-MM-DD>`, and add an
-   empty `## [Unreleased]` above it. The section has no trailer; its commit
-   carries one. Check its entries against step 4 in Common Changelog form:
+   empty `## [Unreleased]` above it. In the same edit, make the
+   `[Unreleased]` reference at the end of the file compare from the new tag:
+   `[Unreleased]: https://github.com/amirhs1/PolyPhys/compare/v<version>...HEAD`.
+   The section has no trailer; its commit carries one. Check its entries
+   against step 4 in Common Changelog form:
    `### Changed`, `### Added`, `### Removed`, `### Fixed`, in that order,
    each only when it has a change; one imperative line per change,
    `**Breaking:**` lines first, citing its commit, and its pull request when
@@ -58,17 +61,28 @@ tag an older commit to leave later work out; stop and report instead.
    concept record in `CITATION.cff`, `doi`, through the Zenodo API, not the
    webhook's response:
    `curl -s 'https://zenodo.org/api/records?q=conceptrecid:15858407&all_versions=true&sort=mostrecent&size=1'`.
-11. After the maintainer publishes, confirm the PyPI upload: the latest run of
-   `.github/workflows/publish.yaml` passed
-   (`gh run list --workflow publish.yaml --limit 1`), and PyPI serves the
-   version:
-   `curl -s -o /dev/null -w '%{http_code}' https://pypi.org/pypi/polyphys/<version>/json`
-   prints `200`. Then install it from PyPI into a fresh environment in a
-   temporary directory outside any checkout, where `import polyphys` cannot
-   load a source tree instead:
-   `cd "$(mktemp -d)" && python3 -m venv .venv && .venv/bin/python -m pip install -q polyphys==<version> && .venv/bin/python -c "import polyphys; print(polyphys.__version__, polyphys.__file__)"`
-   prints `<version>` and a path under `site-packages`.
-12. After the PyPI upload, check conda-forge. If
+11. After the maintainer publishes, confirm the upload. A release marked as a
+   pre-release goes to TestPyPI only, and any other release to TestPyPI and
+   then PyPI (CONTRIBUTING.md, "Releases"); see which it is with
+   `gh release view v<version> --json isPrerelease`. The
+   `.github/workflows/publish.yaml` run for this release, not merely the
+   latest run, passed:
+   `gh run list --workflow publish.yaml --event release --commit <full SHA>`,
+   with the SHA of step 8, shows `success` for it. The registry serves the
+   version: for a pre-release,
+   `curl -s -o /dev/null -w '%{http_code}' https://test.pypi.org/pypi/polyphys/<version>/json`,
+   and for a release,
+   `curl -s -o /dev/null -w '%{http_code}' https://pypi.org/pypi/polyphys/<version>/json`,
+   prints `200`. Then install it from that registry into a fresh environment
+   in a temporary directory outside any checkout, where `import polyphys`
+   cannot load a source tree instead. For a release:
+   `cd "$(mktemp -d)" && python3 -m venv .venv && .venv/bin/python -m pip install -q polyphys==<version> && .venv/bin/python -c "import polyphys; print(polyphys.__version__, polyphys.__file__)"`;
+   for a pre-release, which takes its dependencies from PyPI, add
+   `--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/`
+   to the `pip install`. Either prints `<version>` and a path under
+   `site-packages`.
+12. After the PyPI upload of a release, not a pre-release, check
+   conda-forge. If
    `curl -s -o /dev/null -w '%{http_code}' https://api.anaconda.org/package/conda-forge/polyphys`
    prints `404`, there is no feedstock yet; say so and stop. Otherwise find
    the bot's version-update pull request for `<version>`:

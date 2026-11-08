@@ -9,17 +9,22 @@ description: Clean up the clone after a pull request merges and its remote branc
    `state` must be `MERGED`. An open pull request, or one closed without a
    merge, is not closed out: stop and say so.
 2. Find where you are: `git branch --show-current` and `git worktree list`.
-   - In the main checkout: `git switch main`. Stop if `git status --short`
-     prints anything; never stash or discard changes.
+   - In the main checkout: stop if `git status --short` prints anything;
+     never stash or discard changes. Then `git switch main`.
    - In a worktree that has the merged branch checked out: the branch cannot
      be deleted from here, and `main` is checked out elsewhere. Do steps 3
-     and 5, skip step 4, and say in the report that archiving the session
-     removes the worktree and a later close-out from the main checkout
-     deletes the branch; the session-start listing will name it.
-3. Refresh and prune: `git fetch --prune origin main` drops the stale
-   remote-tracking ref. In the main checkout, `git merge --ff-only
-   origin/main` then brings `main` to the merge; if that refuses, report it
-   and stop.
+     and 5, skip step 4, and say in the report that a later close-out from
+     the main checkout deletes the branch once no worktree has it checked
+     out; the session-start listing will name it. Report the worktree from
+     `git worktree list`. In the Claude desktop app, archiving the session
+     can remove a worktree the app made for it, under `.claude/worktrees/`;
+     any other worktree stays until the person removes it.
+3. Refresh and prune: `git fetch --prune origin` fetches the branches of
+   `origin` and drops the remote-tracking refs of deleted ones, the merged
+   branch's among them. Pruning follows the refspecs fetched, so
+   `git fetch --prune origin main` would leave that ref. In the main
+   checkout, `git merge --ff-only origin/main` then brings `main` to the
+   merge; if that refuses, report it and stop.
 4. Delete the local branch with `git branch -d <branch>`, never `-D`. Git
    refuses a branch whose commits are not all in `main`, and a branch checked
    out in another worktree; report the refusal with its reason instead of
