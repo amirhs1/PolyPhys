@@ -209,8 +209,8 @@ def apply_pbc_orthogonal(
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths
         as values. See :mod:`polyphys.manage.types`.
 
-    Return
-    ------
+    Returns
+    -------
     pbc_lengths : numpy.ndarray
         The updated array of lengths in each direction.
     pbc_lengths_inverse : numpy.ndarray
@@ -256,7 +256,7 @@ def pair_distance(
     ----------
     positions : numpy.ndarray
         Array of shape (2, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N; integer positions are converted to
+        by atom number from 1 to N; integer positions are converted to
         ``float64``.
     pbc : Optional[Dict[:py:data:`AxisT`, float]], default None
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths as
@@ -323,8 +323,8 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atomic positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atomic positions, in
+        backbone order from the first monomer to the last.
 
     Returns
     -------
@@ -375,8 +375,8 @@ def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atomic positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atomic positions, in any
+        order.
     axis: :py:data:`AxisT`
         The axis (0 for x, 1 for y, and 2 for z) in the plane perpendicular to
         which the transverse size is calculated. See
@@ -430,8 +430,8 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atom positions, in any
+        order.
 
     Returns
     -------
@@ -462,26 +462,26 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
 
 def fsd(positions: np.ndarray, axis: AxisT) -> float:
     """
-    Computes the mean Feret's statistical diameter (FSD) along a specified
-    axis.
+    Compute the span of the positions along the selected axis.
 
-    fsd stands for Feret's statistical diameter: other names are the mean
-    span dimension, the farthermost distance, or the mean caliper diameter.
+    The span is the largest coordinate minus the smallest along `axis`, for
+    one configuration; nothing is averaged over frames or orientations. The
+    name ``fsd`` is kept from Feret's statistical diameter, the caliper
+    distance along a fixed direction.
 
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
-
-    axis: :py:data:`AxisT`
-        Axis index (0=x, 1=y, 2=z) along which to compute FSD; see
+        Array of shape ``(n_atoms, n_dim)`` of atom positions, in any order;
+        the span does not depend on it.
+    axis : :py:data:`AxisT`
+        Axis index (0=x, 1=y, 2=z) along which to compute the span; see
         :mod:`polyphys.manage.types`.
 
     Returns
     -------
     float
-        Mean Feret's diameter along the specified axis.
+        The span along `axis`, in the units of `positions`.
 
     Raises
     ------
@@ -519,7 +519,7 @@ def simple_stats(
         data: np.ndarray
 ) -> Dict[PropertyT, float | np.floating]:
     """
-    Compute basic statistics (mean, variance, SEM) for for a physical `entity`.
+    Compute basic statistics (mean, variance, SEM) for a physical `entity`.
 
     Parameters
     ----------
@@ -831,7 +831,8 @@ def fixedsize_bins(
     save_bin_edges: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Generate bin edges and an empty collectors with consistent bin width.
+    Generate bin edges and zero-filled histogram arrays with consistent
+    bin width.
 
     Every bin type returns ``n_bins + 1`` equally spaced edges of width
     `bin_size` that cover [`lmin`, `lmax`].
@@ -1033,8 +1034,8 @@ def radial_histogram(
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atom positions, in any
+        order.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
         edge. The last bin includes its right edge. Every position must lie
@@ -1083,8 +1084,8 @@ def radial_cyl_histogram(
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atom positions, in any
+        order.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
         edge. The last bin includes its right edge. Every position must lie
@@ -1135,14 +1136,13 @@ def axial_histogram(
     dim: AxisT,
 ) -> np.ndarray:
     """
-    Compute the histogram of distances from the origin an axis in direction
-    `dim`.
+    Bin signed coordinates along the selected axis `dim`.
 
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atom positions, in any
+        order.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
         edge. The last bin includes its right edge. Every position must lie
@@ -1197,8 +1197,8 @@ def azimuth_cyl_histogram(
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atom positions, in any
+        order.
     edges : np.ndarray
         A monotonically increasing array of bin edges, including the rightmost
         edge. The last bin includes its right edge. Every position must lie
@@ -1251,14 +1251,14 @@ def planar_cartesian_histogram(
     dim: AxisT,
 ) -> np.ndarray:
     """
-    Compute the bi-dimensional histogram in the plan perpendicular to the axis
-    along `dim` in the Cartesian coordinate system.
+    Compute a two-dimensional histogram in the plane perpendicular to `dim`,
+    in Cartesian coordinates.
 
     Parameters
     ----------
     positions : np.ndarray
-        Array of shape (n_atoms, n_dim) containing atom positions, and sorted
-        by atom number form 1 to N.
+        Array of shape (n_atoms, n_dim) containing atom positions, in any
+        order.
     edges : List[np.ndarray]
         Two monotonically increasing arrays of bin edges, one per planar axis,
         each including its rightmost edge. The last bin along each axis

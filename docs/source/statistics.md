@@ -182,8 +182,9 @@ When no level qualifies, the selectors return `-1` and the wrappers `NaN`,
 with a `RuntimeWarning`. That is the honest answer for a run that is too
 short for its correlation time, or that drifts or switches between metastable
 states too rarely to sample them: the error bar of such a run cannot be
-estimated from the run itself, and only more independent replicates make it
-smaller.
+estimated from the run as it stands. More effective samples are what help:
+a longer run, which adds blocks past the correlation time, or more
+independent replicates.
 
 A run can also be too short without failing outright: the table flattens
 because it runs out of blocks, not because it has reached the plateau. Lee et

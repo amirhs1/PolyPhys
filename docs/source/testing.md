@@ -62,7 +62,7 @@ numbers.
 | Integration test           | lineage levels that pass alone but disagree at a seam | runs a lineage tree from `segment` up through the organizer                                                             |
 | Regression test            | a fixed bug returning                                 | written before the fix and seen to fail against the unfixed code                                                        |
 | Comparison against old code | a port that changed a number                         | tier C; the old and new implementations run on the same data, and any number that changes is explained in the pull request |
-| Doctest                    | examples drifting from behavior                      | every public name has an `Examples` section                                                                             |
+| Doctest                    | examples drifting from behavior                      | every new or materially changed public function, method, and class has an `Examples` section; older names are being brought up to that rule |
 | Static check               | type and style errors                                 | `flake8` and `mypy`                                                                                                     |
 
 Expected values never come from the code under test. Floating-point results are

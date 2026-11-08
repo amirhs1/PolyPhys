@@ -164,5 +164,5 @@ nothing called, and seven helpers and seven palettes with no callers. None
 of that is in PolyPhys: the tables and figures are study code, for
 `projects/<study>/` when a study's figures are ported, and the rest had no
 use. The one bug the ported helpers carried, a legend attribute that
-matplotlib 3.9 removed, is fixed, which is why the extra requires
-`matplotlib>=3.7`, the version that introduced its replacement.
+matplotlib 3.9 removed, is fixed with its replacement, which matplotlib 3.7
+introduced. The extra requires `matplotlib>=3.8.4`.

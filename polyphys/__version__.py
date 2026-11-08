@@ -1,27 +1,13 @@
 """
-Version information for PolyPhys - :mod:`PolyPhys.version`
-=============================================
+Version information for PolyPhys, :mod:`polyphys.__version__`.
 
-The version information in :mod:`PolyPhys.version` indicates the
-release of PolyPhys. PolyPhys uses a `semantic versioning`.
+:data:`__version__` is the release of PolyPhys, a `semantic versioning`_
+string, ``MAJOR.MINOR.PATCH`` with optional pre-release and build labels.
+Which names the versioning promise covers, which modules are stable or
+provisional, and how a name is deprecated are stated once, on the
+documentation's "API stability" page (``docs/source/stability.md``).
 
-Given a version number MAJOR.MINOR.PATCH, we increment the
-
-1. **MAJOR** version when we make **incompatible API changes**,
-2. **MINOR** version when we **add functionality** in a
-   **backwards-compatible** manner, and
-3. **PATCH** version when we make backwards-compatible **bug fixes**.
-
-However, as long as the **MAJOR** number is **0** (i.e. the API has
-not stabilized), even **MINOR** increases *may* introduce incompatible
-API changes. As soon as we have a 1.0.0 release, the public API can
-only be changed in a backward-incompatible manner with an increase in
-MAJOR version.
-
-Additional labels for pre-release and build metadata are available as
-extensions to the MAJOR.MINOR.PATCH format.
-
-.. _`semantic versioning`: http://semver.org/
+.. _`semantic versioning`: https://semver.org/spec/v2.0.0.html
 
 Data
 ----
