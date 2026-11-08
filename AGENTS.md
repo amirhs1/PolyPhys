@@ -17,12 +17,12 @@ commit it, and never copy its contents into a tracked file.
 
 | Purpose              | Command                                                                                                                                               |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Install              | `python -m pip install -e '.[dev]'`                                                                                                                   |
+| Install              | `python -m pip install -e '.[dev,viz]'`; add the `mda` extra for the probe tests and `docs` for the docs build                                        |
 | Build                | `python -m build`                                                                                                                                     |
 | Run all tests        | `python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
 | Run one test         | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                                  |
-| Lint / format        | `python -m flake8 polyphys projects`                                                                                                                  |
-| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate projects`                                                                          |
+| Lint                 | `python -m flake8 polyphys projects`                                                                                                                  |
+| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate projects`                                                           |
 | Docs                 | `python -m sphinx -W -b html docs/source docs/_build`                                                                                                 |
 | Full pre-commit gate | Lint, type-check, and all tests; add the build after a packaging change and the docs build when `docs/source/` changed                                |
 
