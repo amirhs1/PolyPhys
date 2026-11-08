@@ -4,9 +4,10 @@
 ==========================================================
 
 
-The :mod:`polyphys.analyze.measurer` module provides a suite of functions /
-helper functions for computing geometric, structural, statistical, and
-thermodynamic properties of a particle or a group of particles.
+The :mod:`polyphys.analyze.measurer` module measures one frame of positions:
+distances, sizes, and spans of a group of particles, the statistics of
+independent samples, the volumes of a bead cut by planes or by a sphere, and
+fixed-width bins and histograms of one frame.
 
 Contents
 ========
@@ -34,7 +35,7 @@ References
 ==========
 For Feret's statistical diameter:
 
-- Wang Y, Teraoka I, Hansen FY, Peters GH, Ole H. "A Theoretical Study of
+- Wang Y, Teraoka I, Hansen FY, Peters GH, Hassager O. "A Theoretical Study of
   the Separation Principle in Size Exclusion Chromatography." Macromolecules
   2010, 43, 3, 1651-1659. https://doi.org/10.1021/ma902377g
 
@@ -196,25 +197,29 @@ def apply_pbc_orthogonal(
     pbc: Dict[AxisT, float],
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Updates the periodic boundary condition (PBC) lengths and their inverses
-    based on specified axes in `pbc`.
+    Write the box length and its inverse of each axis in `pbc` into the
+    given arrays.
+
+    The arrays are modified in place and also returned; an axis not in
+    `pbc` keeps its value.
 
     Parameters
     ----------
     pbc_lengths : numpy.ndarray
-        Array of box lengths along each axis (typically shape (3,)).
+        The box length along each axis, shape ``(n_dim,)``, typically
+        ``(3,)``, in the length unit of the positions; modified in place.
     pbc_lengths_inverse : numpy.ndarray
-        Array of inverse box lengths along each axis (shape (3,)).
+        The inverse box length along each axis, the same shape; modified in
+        place.
     pbc : Dict[:py:obj:`~.AxisT`, float]
-        Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths
-        as values. See :mod:`polyphys.manage.types`.
+        Axis indices (0=x, 1=y, 2=z) mapped to their box lengths, positive.
 
     Returns
     -------
     pbc_lengths : numpy.ndarray
-        The updated array of lengths in each direction.
+        `pbc_lengths`, updated.
     pbc_lengths_inverse : numpy.ndarray
-        The updated array of the inverse lengths in each direction.
+        `pbc_lengths_inverse`, updated.
 
     Raises
     ------
@@ -249,15 +254,15 @@ def pair_distance(
     positions: np.ndarray, pbc: Optional[Dict[AxisT, float]] = None
 ) -> np.ndarray:
     """
-    Compute the pairwise distance vector between two particles in Cartesian
-    coordinates, optionally applying the minimum image convention (PBC).
+    Compute the displacement vector from the first particle to the second,
+    optionally under the minimum image convention.
 
     Parameters
     ----------
     positions : numpy.ndarray
-        Array of shape (2, n_dim) containing atom positions, and sorted
-        by atom number from 1 to N; integer positions are converted to
-        ``float64``.
+        The positions of the two particles, shape ``(2, n_dim)``; the
+        order sets the sign of the result. Integer positions are converted
+        to ``float64``.
     pbc : Optional[Dict[:py:obj:`~.AxisT`, float]], default None
         Dictionary with axis indices (0=x, 1=y, 2=z) as keys and box lengths as
         values. If provided, periodic boundary conditions (PBC) are applied
@@ -269,7 +274,10 @@ def pair_distance(
     Returns
     -------
     np.ndarray
-        A 1D ``float64`` array with pair distances along each axis.
+        The signed displacement ``positions[1] - positions[0]`` along each
+        axis, shape ``(n_dim,)``, ``float64``, in the length unit of
+        `positions`; with `pbc`, each periodic component is folded into
+        ``[-L/2, L/2]``.
 
     Raises
     ------
@@ -278,8 +286,7 @@ def pair_distance(
 
     Notes
     -----
-    This function returns the component-wise distance vector, not the scalar
-    Euclidean norm.
+    The result is the component-wise displacement, not its Euclidean norm.
 
     Examples
     --------
@@ -317,8 +324,8 @@ def pair_distance(
 
 def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
     """
-    Computes the end-to-end distance of a linear polymer, in the frame of
-    reference located at the polymer's center of geometry.
+    Compute the end-to-end distance of a chain, the distance between its
+    first and its last bead.
 
     Parameters
     ----------
@@ -328,8 +335,8 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
 
     Returns
     -------
-    float
-        End-to-end distance of the polymer.
+    numpy.floating
+        The end-to-end distance, in the length unit of `positions`.
 
     Raises
     ------
@@ -338,8 +345,8 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
 
     Notes
     -----
-    The distance is calculated in a reference frame centered at the center of
-    geometry of atoms.
+    The positions are centered on their center of geometry first; the
+    distance does not depend on that translation.
 
     Examples
     --------
@@ -369,24 +376,24 @@ def end_to_end(positions: np.ndarray) -> Union[np.floating, np.ndarray]:
 
 def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
     """
-    Computes the mean transverse size of a group of atoms in the plane
-    perpendicular to `axis`.
+    Compute the transverse size of a group of atoms, twice their mean
+    distance from their center in the plane perpendicular to `axis`.
 
     Parameters
     ----------
     positions : np.ndarray
         Array of shape (n_atoms, n_dim) containing atomic positions, in any
         order.
-    axis: :py:obj:`~.AxisT`
-        The axis (0 for x, 1 for y, and 2 for z) in the plane perpendicular to
-        which the transverse size is calculated. See
-        :mod:`polyphys.manage.types`.
+    axis : :py:obj:`~.AxisT`
+        The axis (0 for x, 1 for y, and 2 for z) perpendicular to the plane
+        in which the size is measured.
 
     Returns
     -------
     float
-        Twice the mean transverse distance (a.k.a., diameter) in the plane
-        perpendicular to `axis`.
+        Twice the mean distance of the atoms from their center of geometry
+        in the plane perpendicular to `axis`, a diameter, in the length unit
+        of `positions`.
 
     Raises
     ------
@@ -425,7 +432,7 @@ def transverse_size(positions: np.ndarray, axis: AxisT) -> float:
 
 def max_distance(positions: np.ndarray) -> np.ndarray:
     """
-    Computes the maximum extent in each Cartesian axis.
+    Compute the extent of the positions along each Cartesian axis.
 
     Parameters
     ----------
@@ -436,7 +443,8 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        Maximum extent in each dimension.
+        The largest coordinate minus the smallest along each axis, shape
+        ``(n_dim,)``, in the length unit of `positions`.
 
     Raises
     ------
@@ -445,8 +453,8 @@ def max_distance(positions: np.ndarray) -> np.ndarray:
 
     Notes
     -----
-    The distance is calculated in a reference frame centered at the center of
-    geometry of atoms.
+    The positions are centered on their center of geometry first; the
+    extent does not depend on that translation.
 
     Examples
     --------
@@ -490,9 +498,9 @@ def fsd(positions: np.ndarray, axis: AxisT) -> float:
 
     References
     ----------
-    "A Theoretical Study of the Separation Principle in Size Exclusion
-    Chromatography", Wang Y Teraoka
-    I Hansen FY Peters GH Ole H. Macromolecules 2010, 43, 3, 1651-1659
+    Wang Y, Teraoka I, Hansen FY, Peters GH, Hassager O. "A Theoretical
+    Study of the Separation Principle in Size Exclusion Chromatography."
+    Macromolecules 2010, 43, 3, 1651-1659.
     https://doi.org/10.1021/ma902377g
 
     Examples
@@ -524,16 +532,17 @@ def simple_stats(
     Parameters
     ----------
     entity : EntityT
-        Name of the physical entity.
-
-    data: np.ndarray
-        Array of entity values.
+        The name that prefixes the keys of the result.
+    data : np.ndarray
+        One-dimensional array of independent samples.
 
     Returns
     -------
-    Dict[PropertyT, float]
-        Dictionary with keys '<entity>_mean', '<entity>_var', and
-        '<entity>_sem'.
+    Dict[PropertyT, float | numpy.floating]
+        The mean, the sample variance with ``ddof=1``, and the SEM, the
+        sample standard deviation with ``ddof=1`` over the square root of
+        the number of samples, keyed ``'<entity>_mean'``,
+        ``'<entity>_var'``, and ``'<entity>_sem'``.
 
     Raises
     ------
@@ -565,23 +574,23 @@ def simple_stats(
 
 def sem(data: np.ndarray) -> float:
     """
-    Calculates the standard error of the mean (SEM).
+    Compute the standard error of the mean (SEM) of independent samples.
 
     Parameters
     ----------
-    data: np.ndarray
-        1D array of sample data.
+    data : np.ndarray
+        One-dimensional array of sample data.
 
     Returns
     -------
     float
-        Standard error of the mean.
+        The standard error of the mean, in the unit of `data`.
 
     Raises
     ------
     ValueError
-        If `data` is empty or holds one sample, whose unbiased standard
-        deviation divides by ``n - 1 = 0``.
+        If `data` is empty or holds one sample, whose sample standard
+        deviation with ``ddof=1`` divides by ``n - 1 = 0``.
 
     Notes
     -----
@@ -740,7 +749,7 @@ def create_bin_edge_and_hist(
     bin_size: float, lmin: float, lmax: float, output: Optional[str] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Create bin edges and an empty histogram for data processing.
+    Create bin edges of a fixed width and a zero-filled histogram.
 
     The edges start at `lmin` and step by `bin_size` up to the first edge at
     or beyond `lmax`, so there are ``n_bins = ceil((lmax - lmin) / bin_size)``
@@ -1028,8 +1037,8 @@ def radial_histogram(
     edges: np.ndarray,
 ) -> np.ndarray:
     """
-    Compute the histogram of radial distances from the origin in the spherical
-    coordinate system.
+    Bin the distances of the positions from the origin, the spherical
+    radial coordinate.
 
     Parameters
     ----------
@@ -1044,8 +1053,8 @@ def radial_histogram(
 
     Returns
     -------
-    hist: np.ndarray
-        Histogram data
+    hist : np.ndarray
+        The counts per bin, shape ``(len(edges) - 1,)``, integer.
 
     Raises
     ------
@@ -1078,8 +1087,8 @@ def radial_cyl_histogram(
     dim: AxisT,
 ) -> np.ndarray:
     """
-    Compute the histogram of radial distances from the longitudinal axis along
-    `dim` in the cylindrical coordinate system.
+    Bin the distances of the positions from the axis along `dim`, the
+    cylindrical radial coordinate.
 
     Parameters
     ----------
@@ -1096,8 +1105,8 @@ def radial_cyl_histogram(
 
     Returns
     -------
-    hist: np.ndarray
-        Histogram data
+    hist : np.ndarray
+        The counts per bin, shape ``(len(edges) - 1,)``, integer.
 
     Raises
     ------
@@ -1154,8 +1163,8 @@ def axial_histogram(
 
     Returns
     -------
-    hist: np.ndarray
-        Histogram data
+    hist : np.ndarray
+        The counts per bin, shape ``(len(edges) - 1,)``, integer.
 
     Raises
     ------
@@ -1191,8 +1200,8 @@ def azimuth_cyl_histogram(
     dim: AxisT,
 ) -> np.ndarray:
     """
-    Compute the histogram of azimuth angles in the cylindrical coordinate
-    system with the longitudinal axis along `dim`.
+    Bin the azimuthal angles of the positions about the axis along `dim`,
+    in radians.
 
     Parameters
     ----------
@@ -1200,18 +1209,20 @@ def azimuth_cyl_histogram(
         Array of shape (n_atoms, n_dim) containing atom positions, in any
         order.
     edges : np.ndarray
-        A monotonically increasing array of bin edges, including the rightmost
-        edge. The last bin includes its right edge. Every position must lie
-        within the outermost edges: a coordinate along a periodic axis must
-        already be wrapped into the box, since this function does not wrap.
+        A monotonically increasing array of bin edges, in radians, including
+        the rightmost edge; the angles lie in ``[-pi, pi]``, as
+        :obj:`numpy.arctan2` returns them. The last bin includes its right
+        edge. Every position must lie within the outermost edges: a
+        coordinate along a periodic axis must already be wrapped into the
+        box, since this function does not wrap.
     dim : :py:obj:`~.AxisT`
         The longitudinal axis (0=x, 1=y, 2=z); see
         :mod:`polyphys.manage.types`.
 
     Returns
     -------
-    hist: np.ndarray
-        Histogram data
+    hist : np.ndarray
+        The counts per bin, shape ``(len(edges) - 1,)``, integer.
 
     Raises
     ------
@@ -1275,8 +1286,10 @@ def planar_cartesian_histogram(
 
     Returns
     -------
-    hist: np.ndarray
-        2D histogram data
+    hist : np.ndarray
+        The counts per cell, shape ``(len(edges[0]) - 1, len(edges[1]) - 1)``,
+        ``float64``, as :func:`numpy.histogram2d` returns them, with rows
+        along the first planar axis.
 
     Raises
     ------

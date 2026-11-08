@@ -14,7 +14,7 @@ such as MDAnalysis read with a dump.
 Contents
 ========
 
-:class:`DataFile` holds the contents of one data file as numpy arrays, its
+:class:`DataFile` holds the contents of one data file as NumPy arrays, its
 box as a :class:`~polyphys.simulate.core.Box`, and checks them.
 :func:`read_data` reads a file into it, raising :class:`BrokenDataError`, a
 :class:`~polyphys.simulate.core.LammpsFormatError`, for a file that does not

@@ -741,7 +741,8 @@ def statistical_inefficiency(
     min_blocks: int = 4,
 ) -> float | npt.NDArray[np.float64]:
     """
-    Frames per independent sample of a time series, from its blocking table.
+    Estimate the frames per independent sample of a time series, its
+    statistical inefficiency, from its blocking table.
 
     Runs :func:`block_average` and :func:`select_plateau` and returns the
     statistical inefficiency at the selected level: the ratio of the plateau
