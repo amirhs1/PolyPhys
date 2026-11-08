@@ -438,13 +438,10 @@ dangling, cis, and trans modes are those of Joyeux and Vreede (2013, p.
 beads", and of Sadeghi Isfahani (2024, chapter 5), whose trans bridge
 joins sites more than two monomers apart. Both read as: at most two monomers
 between the bridged sites, a genomic distance of at most 3 bonds, is cis;
-more, 4 bonds or longer, is trans. That definition is `cis_threshold=3`.
-The H-NS study specs keep `cis_threshold=4`, the research probe's value, so
-they also count a bridge of 4 bonds as cis; the research code compared 2
-and 4 (see "Choosing the cutoff" below). The genomic distance is counted
-between the lowest-index monomers of the two patches, so a bridge whose
-lower-index patch touches two adjacent monomers is counted one bond longer
-than its closest contact.
+more, 4 bonds or longer, is trans. That definition is `cis_threshold=3`,
+which the H-NS study specs state; the research probe used 4. The threshold
+has no default: every `BinderSpec` and `BinderStatistics` states it.
+"Choosing the cis threshold" below gives both values and their rationale.
 
 A study declares the facts the analysis needs in a
 {class}`~polyphys.spec.BinderSpec` inside its `ProbeSpec`:
@@ -459,7 +456,7 @@ PROBE = ProbeSpec(
     observables=('asphericityT', 'gyrT', 'shapeT', 'principalT'),
     unwrap=True,
     binders=BinderSpec(patches='HnsPatch', binders='HnsCore', cutoff=0.685,
-                       inclusive=True, cis_threshold=4,
+                       inclusive=True, cis_threshold=3,
                        store_distances=True),
 )
 ```
@@ -470,7 +467,7 @@ PROBE = ProbeSpec(
 | `binders`            | The label of the binders, a name only, since the cores are not selected; names the five binder series                              |
 | `cutoff`             | The binding threshold $r_\mathrm{thres}$, in monomer diameters; a study constant, never computed from the particle sizes          |
 | `inclusive`          | Whether a pair at exactly the cutoff is a contact: `True` by default, the thesis criterion; the research probe compared strictly   |
-| `cis_threshold`      | The largest genomic distance, in bonds, of a cis bridge; 4 in the H-NS studies                                                     |
+| `cis_threshold`      | The largest genomic distance, in bonds, of a cis bridge; keyword-only, no default; 3 in the H-NS studies                           |
 | `patches_per_binder` | 2, the only valence `binding_statistics` counts; kept as a field so that binders of another valence can be declared later          |
 | `store_distances`    | Whether the monomer-to-patch distance matrices are kept and saved; `True` in the H-NS studies, which post-process them             |
 
@@ -565,21 +562,16 @@ against $-8.7\,k_B T$ at the minimum, so a strict cut there drops the pairs
 in the outer third of the well that the published criterion counts.
 
 The research code also measured how much the counts depend on the
-threshold. The sweep in SciOps `bash_pipeline/choice_of_threshold` and the
-HnsCyl project notebook reloaded the saved distance matrices of the HnsCyl
-wholes and recounted for every cutoff from $\sigma_{mp} = 0.535$ to
-$r_{\mathrm{cut},mp} = 0.685$ in steps of $0.01$ and for a cis threshold of
-2 and of 4. Its conclusions, recorded in the notebook: below a cutoff of
-$0.575$ no loops of size 2 or more form; the loop-size distribution peaks
+threshold. Its threshold sweep, which
+{func}`~polyphys.analyze.clusters.threshold_sweep` now reproduces, reloaded
+the saved distance matrices of the HnsCyl wholes and recounted for every
+cutoff from $\sigma_{mp} = 0.535$ to $r_{\mathrm{cut},mp} = 0.685$ in steps
+of $0.01$ and for a cis threshold of 2 and of 4. Its conclusions: below a
+cutoff of $0.575$ no loops of size 2 or more form; the loop-size distribution peaks
 at a genomic distance of 4 for every cutoff; the normalized loop-size
 distributions collapse for cutoffs of $0.645$ and above; and the cis
-threshold of 2 against 4 changes nothing visible. That comparison did not
-include 3, the threshold of the cis definition above. Since the loop sizes
-peak at 4 bonds, the boundary between 3 and 4 sits at their mode, so a
-threshold of 3 may move many bridged pairs from cis to trans; recounting a
-whole's saved distance matrices with
-{func}`~polyphys.analyze.clusters.threshold_sweep` at 3 and 4 measures how
-many. Both $0.661$ and $0.685$
+threshold of 2 against 4 changes nothing visible; "Choosing the cis
+threshold" below compares 3 and 4. Both $0.661$ and $0.685$
 lie in that insensitive region, so the switch moves the ensemble averages
 little while the per-frame counts differ by the pairs in the outer band of
 the well.
@@ -594,6 +586,39 @@ which takes the stored `distMatT<chain><patches>` array of a whole and a
 grid of cutoffs and cis thresholds; the clusters guide, "The threshold
 sweep", describes its tables and why its `inclusive` keyword has no
 default.
+
+### Choosing the cis threshold
+
+`cis_threshold` is the largest genomic distance, in bonds, of a bridge
+counted as cis: a bridge between monomers $i$ and $j$ is cis when
+$d(i, j) \le$ `cis_threshold`. Two values have been used.
+
+- **3, the H-NS studies' value.** Joyeux and Vreede (2013, p. 1616) call a
+  dimer cis when its two terminal beads bind DNA beads "separated by at
+  most two DNA beads", and trans when they are strictly more than two
+  apart; the maintainer's thesis (Sadeghi Isfahani, 2024, chapter 5) calls
+  a bridge trans when its sites are more than two monomers apart. Read as
+  at most two monomers between the bridged sites, both give a cis bridge of
+  at most 3 bonds, and a trans one of 4 bonds or more.
+- **4, the research probe's value.** The research code that PolyPhys
+  replaces counted both H-NS probes with a cis threshold of 4, a genomic
+  distance in bonds, not monomers, compared inclusively. It took 4 because
+  the loop-size distribution of the bridged pairs peaks there, at a genomic
+  distance of 4 bonds for every cutoff (see "Choosing the cutoff"). Its
+  threshold sweep compared 2 and 4 only and found no visible difference
+  between them.
+
+The two differ by the bridges of exactly 4 bonds, three monomers between
+the sites, which 4 counts as cis and 3 as trans. The genomic distance is
+taken between the lowest-index monomers of the two patches, so a bridge
+whose lower-index patch touches two adjacent monomers is counted one bond
+longer than its closest contact; at 3, such a bridge with its closest
+contact 3 bonds apart is trans. Since the loop sizes peak at 4 bonds, the
+counts at 3 and at 4 can differ much more than those at 2 and 4;
+{func}`~polyphys.analyze.clusters.threshold_sweep` recounts a whole's saved
+distance matrices at both. The threshold has no default, so a study that
+must reproduce the research probe's cis and trans counts states
+`cis_threshold=4` instead; the change is one spec edit.
 
 ### Parallel runs and cost
 
@@ -648,6 +673,8 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
 - The binding cutoff and its comparison are the spec's. The H-NS studies
   state the published criterion, $0.685$ inclusive, where the research
   probe used $0.661$ strict (see "Choosing the cutoff").
+- The H-NS studies count a bridge as cis up to 3 bonds, where the research
+  probe counted up to 4 (see "The binder analysis").
 - The loop-length histogram is saved per frame as `loopLengthHistTMon`;
   the research probe summed it over the frames as `loopLengthHistMon`,
   which the H-NS analysis tables still read.

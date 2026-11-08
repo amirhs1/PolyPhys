@@ -224,6 +224,8 @@ class BinderSpec:
     selections of the :class:`ProbeSpec` that holds this record.
 
     .. versionadded:: 0.7.0
+    .. versionchanged:: 1.0.0
+       `cis_threshold` is keyword-only and has no default.
 
     Parameters
     ----------
@@ -248,9 +250,12 @@ class BinderSpec:
         Whether a pair at exactly `cutoff` is a contact
         (:math:`r \\le r_\\mathrm{thres}`, the thesis criterion) or not
         (:math:`r < r_\\mathrm{thres}`, the research probe's).
-    cis_threshold : int, default 4
-        The largest genomic distance, in bonds, of a cis bridge;
-        non-negative.
+    cis_threshold : int
+        Keyword-only, with no default. The largest genomic distance, in
+        bonds, of a cis bridge; non-negative. A study choice: the H-NS
+        studies state 3, a bridge with at most two monomers between its
+        sites, where the research probe used 4; the probe guide,
+        "Choosing the cis threshold", gives both values and why.
     patches_per_binder : int, default 2
         The number of patches per binder. Only ``2`` is accepted, which
         :func:`~polyphys.analyze.clusters.binding_statistics` counts; the
@@ -285,10 +290,11 @@ class BinderSpec:
     Examples
     --------
     >>> spec = BinderSpec(patches='HnsPatch', binders='HnsCore',
-    ...                   cutoff=0.685)
+    ...                   cutoff=0.685, cis_threshold=3)
     >>> spec.series['n_binders_bridging'], spec.series['n_patches_free']
     ('nBridgeTHnsCore', 'nFreeTHnsPatch')
-    >>> BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685, patches_per_binder=3)
+    >>> BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685, cis_threshold=3,
+    ...            patches_per_binder=3)
     Traceback (most recent call last):
     ...
     ValueError: 'patches_per_binder' must be 2, not 3: ...
@@ -297,9 +303,9 @@ class BinderSpec:
     binders: EntityT
     cutoff: float
     inclusive: bool = True
-    cis_threshold: int = 4
     patches_per_binder: int = _TWO_PATCHES
     store_distances: bool = False
+    cis_threshold: int = field(kw_only=True)
 
     def __post_init__(self) -> None:
         for name, label in (('patches', self.patches),
@@ -736,7 +742,8 @@ class ProbeSpec:
     >>> probe = ProbeSpec(
     ...     project=hns, selections={'Mon': 'resid 1', 'HnsPatch': 'type 2'},
     ...     chain='Mon', observables=('gyrT',), unwrap=False,
-    ...     binders=BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685))
+    ...     binders=BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685,
+    ...                        cis_threshold=3))
     >>> probe.binders.series['n_pairs_cis']
     'nCisTHnsCore'
 
