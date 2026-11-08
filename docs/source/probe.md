@@ -419,10 +419,18 @@ with {func}`~polyphys.analyze.clusters.binding_statistics`, whose rules the
 clusters guide states: a patch within the cutoff of two adjacent monomers
 is one engaged patch, each bridging binder joins the lowest-index monomer
 of each of its patches, and cis and trans count distinct monomer pairs. The
-dangling, cis, and trans modes are those of Joyeux and Vreede (2013), whose
-cis bridge joins sites "separated by at most two DNA beads", a genomic
-distance of at most 3 bonds; `cis_threshold` of 4 reproduces that on the
-studies' chains.
+dangling, cis, and trans modes are those of Joyeux and Vreede (2013, p.
+1616), whose cis bridge joins DNA beads "separated by at most two DNA
+beads", and of Sadeghi Isfahani (2024, chapter 5), whose trans bridge
+joins sites more than two monomers apart. Both read as: at most two monomers
+between the bridged sites, a genomic distance of at most 3 bonds, is cis;
+more, 4 bonds or longer, is trans. That definition is `cis_threshold=3`.
+The H-NS study specs keep `cis_threshold=4`, the research probe's value, so
+they also count a bridge of 4 bonds as cis; the research code compared 2
+and 4 (see "Choosing the cutoff" below). The genomic distance is counted
+between the lowest-index monomers of the two patches, so a bridge whose
+lower-index patch touches two adjacent monomers is counted one bond longer
+than its closest contact.
 
 A study declares the facts the analysis needs in a
 {class}`~polyphys.spec.BinderSpec` inside its `ProbeSpec`:
@@ -551,7 +559,13 @@ $r_{\mathrm{cut},mp} = 0.685$ in steps of $0.01$ and for a cis threshold of
 $0.575$ no loops of size 2 or more form; the loop-size distribution peaks
 at a genomic distance of 4 for every cutoff; the normalized loop-size
 distributions collapse for cutoffs of $0.645$ and above; and the cis
-threshold of 2 against 4 changes nothing visible. Both $0.661$ and $0.685$
+threshold of 2 against 4 changes nothing visible. That comparison did not
+include 3, the threshold of the cis definition above. Since the loop sizes
+peak at 4 bonds, the boundary between 3 and 4 sits at their mode, so a
+threshold of 3 may move many bridged pairs from cis to trans; recounting a
+whole's saved distance matrices with
+{func}`~polyphys.analyze.clusters.threshold_sweep` at 3 and 4 measures how
+many. Both $0.661$ and $0.685$
 lie in that insensitive region, so the switch moves the ensemble averages
 little while the per-frame counts differ by the pairs in the outer band of
 the well.
@@ -649,6 +663,7 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
 - Y. Jung, A. Sadeghi, and B.-Y. Ha, "Modeling the compaction of bacterial
   chromosomes by biomolecular crowding and the cross-linking protein H-NS",
   Sci. Rep. 14, 139 (2024). <https://doi.org/10.1038/s41598-023-50355-2>
-- The maintainer's PhD thesis, "Computational modeling of bacterial
-  chromosome organization: macromolecular crowding, chain heterogeneity,
-  and chain cross-linking", University of Waterloo (2024), chapter 5.
+- A. H. Sadeghi Isfahani, "Computational modeling of bacterial chromosome
+  organization: macromolecular crowding, chain heterogeneity, and chain
+  cross-linking", PhD thesis, University of Waterloo (2024), chapter 5.
+  <https://hdl.handle.net/10012/20527>
