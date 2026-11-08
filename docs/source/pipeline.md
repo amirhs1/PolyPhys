@@ -61,8 +61,9 @@ build the kinds the studies use:
 The density profiles that {class}`~polyphys.analyze.pipeline.LocalDensities`
 adds to a histogram, `<direction>Rho<species>` and
 `<direction>Phi<species>`, also carry `<property>-norm-sem` in their
-ensemble average: the standard error over the wholes of the profile
-normalized per whole, which {func}`~polyphys.analyze.sumrule.space_profiles`
+ensemble average: the SEM across profiles normalized separately for each
+whole, not generally an uncertainty estimate for the normalized ensemble
+mean, which {func}`~polyphys.analyze.sumrule.space_profiles`
 carries into the `space` table.
 
 A table lists each artifact once; listing one twice is an error, and so is

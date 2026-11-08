@@ -1025,8 +1025,8 @@ def ensemble(
         Dictionary containing 'whole' names as keys and their corresponding
         data as values, represented as numpy arrays or DataFrames.
     parser : ParserClassT
-        An instance of the parser class to infer attributes like ensemble name
-        from each 'whole'.
+        Parser class used to interpret whole filenames, such as the ensemble
+        name of each 'whole'.
     group : GroupT
         Type of the particle group being processed.
     whole_type : {'vector', 'matrix', 'dataframe', 'bin_edge'}
@@ -1220,7 +1220,7 @@ def ens_avg_from_ndarray(
 ) -> dict[str, np.ndarray]:
     """
     Compute ensemble statistics (mean, variance, and standard error of the
-    mean)across an 'ensemble' 3D array where each slice along the first axis
+    mean) across an 'ensemble' 3D array where each slice along the first axis
     (axis=0) represents a 'whole' data matrix. The statistics are calculated
     along this axis.
 
@@ -1242,9 +1242,11 @@ def ens_avg_from_ndarray(
 
     Notes
     -----
-    - The SEM is calculated with a degrees-of-freedom adjustment (`ddof=1`) for
-      an unbiased estimate and is scaled by the square root of the number of
-      wholes.
+    - The SEM is the sample standard deviation with ``ddof=1`` divided by
+      the square root of the number of wholes, which are assumed
+      independent. Bessel's correction makes the variance unbiased; the
+      standard deviation is still biased, though less (the
+      :func:`numpy.std` documentation, Notes), and so is the SEM.
     - This function performs averaging along axis=0 for each element across
       the 'whole' data matrices.
     - Let n_wholes be the length of axis 0 and m the number of elements of
@@ -1312,8 +1314,11 @@ def ens_avg_from_df(
       DataFrame.
     - The function averages only the 'whole' columns, excluding any specified
       in `exclude`.
-    - The standard error of the mean (SEM) is computed with a
-      degrees-of-freedom adjustment (ddof=1) for an unbiased estimate.
+    - The standard error of the mean (SEM) is computed from the sample
+      standard deviation with ``ddof=1``, the wholes assumed independent.
+      Bessel's correction makes the variance unbiased; the standard
+      deviation is still biased, though less (the :func:`numpy.std`
+      documentation, Notes), and so is the SEM.
     - Let n_rows be the number of rows of `ens_data` and n_wholes the number
       of 'whole' columns. Time is O(n_rows * n_wholes). Each statistic
       selects the 'whole' columns as a new DataFrame, so peak extra memory
@@ -1792,8 +1797,8 @@ def space_tseries(
 ) -> pd.DataFrame:
     """
     Aggregate ensemble-averaged time-series data for a specified physical
-    property across multiple files, adds specified physical attributes as
-    columns, and concatenates into a single DataFrame.
+    property across multiple files, add specified physical attributes as
+    columns, and concatenate into a single DataFrame.
 
     Parameters
     ----------

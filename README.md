@@ -206,7 +206,7 @@ frame:
 >>> positions = np.array([[0.0, 0.0, 0.0], [3.0, 4.0, 0.0], [3.0, 4.0, 12.0]])
 >>> float(measurer.end_to_end(positions))
 13.0
->>> float(measurer.fsd(positions, 2))   # farthest-site distance along z
+>>> float(measurer.fsd(positions, 2))   # span along z
 12.0
 
 ```
@@ -230,7 +230,7 @@ frame:
 | `probe.binders`    | `BinderStatistics`, an MDAnalysis analysis that counts, in every frame, the patches of two-patch binders in contact with the chain, the free, dangling, and bridging binders, the cis and trans bridged pairs, and the loop-length histogram, with the minimum image along the geometry's periodic directions, driven by a study's `BinderSpec`. |
 | `probe.histograms` | `SpatialHistograms`, an MDAnalysis analysis that bins every species of a whole along the directions of its geometry per frame and in the three Cartesian planes per block of frames, after recentering each frame, and `histogram_edges`, the whole's bin edges from its `ProbeSpec` and parser. |
 | `probe.pairs`      | `PairDistances`, an MDAnalysis analysis that measures the pair distances, direct contacts, bonds, and clusters of one species, such as the foci, in every frame, with the minimum image along the periodic directions. |
-| `analyze.measurer` | Per-frame structural observables — end-to-end distance, farthest-site distance, transverse size, maximum extent — plus fixed-size binning and radial, axial, azimuthal, and planar histograms. |
+| `analyze.measurer` | Per-frame structural observables — end-to-end distance, span along an axis (`fsd`), transverse size, maximum extent — plus fixed-size binning and radial, axial, azimuthal, and planar histograms. |
 | `analyze.stats`    | The uncertainty of a time average over correlated frames by the blocking method of Flyvbjerg and Petersen: the blocked standard error, its plateau, and the statistical inefficiency.          |
 | `analyze.clusters` | Contact and cluster statistics of a particle group (direct contacts under a cutoff, connected-component clusters, size and bond histograms), genomic distances, the probability density of a pair's separation, the free, dangling, bridging, cis, and trans statistics of two-patch binders, and the binding-threshold sweep on saved distance matrices. |
 | `analyze.correlations` | The autocorrelation function of a time series by the FFT with Bartlett's confidence band, exponential and stretched-exponential decay fits with a recorded starting point, and the bond cosine correlation of a linear or ring chain, from which a persistence length follows. |
@@ -265,8 +265,7 @@ covered by tests that run against Python 3.11, 3.12, 3.13, and 3.14 on every
 pull request and every push to `main`; the probe layer's tests run on Python
 3.14 with MDAnalysis.
 
-The examples above are executed as part of the test suite, so anything shown in
-this README is guaranteed to run against the current code.
+The Python examples above run as doctests in the test suite.
 
 A study _uses_ PolyPhys from outside the package rather than extending it:
 its parser and its specs live in its own folder, as `projects/` shows.

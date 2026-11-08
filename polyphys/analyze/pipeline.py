@@ -114,10 +114,11 @@ Conventions
 - A density profile's ensemble average also carries ``<property>-norm-sem``,
   the standard error over the wholes of each whole's profile divided by its
   own value in the bin that the sum rule's default normalizer names
-  (:data:`~polyphys.analyze.sumrule.PROFILE_NORMALIZERS`): the error of the
-  normalized profile, which the ensemble average's ``-sem`` is not, since
-  a ratio's error needs the covariance between a bin and its normalizer.
-  See :class:`Derived`.
+  (:data:`~polyphys.analyze.sumrule.PROFILE_NORMALIZERS`): the SEM across
+  profiles normalized separately for each whole. Normalization is
+  nonlinear, so it is not generally an uncertainty estimate for the
+  normalized ensemble mean, and neither is the ensemble average's
+  ``-sem``. See :class:`Derived`.
 - Progress is logged at INFO level; no warning is raised for a renamed
   artifact, because every output name is declared.
 - Complexities are stated in ``n_files`` (the files of one property),
@@ -324,9 +325,11 @@ class Derived:
         For a ``'vector'`` profile, the reference bin of a per-whole
         normalization: the first bin, the last bin, or the bin where the
         ensemble average is largest. Each whole is divided by its own value
-        in that bin, and the standard error over the wholes of the
-        normalized profile is written beside the ensemble average as
-        ``<name>-norm-sem``. The ensemble average itself is not normalized;
+        in that bin, and the standard error over the wholes of these
+        separately normalized profiles is written beside the ensemble
+        average as ``<name>-norm-sem``; it is not generally an uncertainty
+        estimate for the normalized ensemble mean. The ensemble average
+        itself is not normalized;
         :func:`polyphys.analyze.sumrule.space_profiles` does that and
         carries the column through.
 
@@ -582,9 +585,9 @@ class LocalDensities:
     the same ``bin_center`` column. The two profiles get the normalizer of
     :data:`~polyphys.analyze.sumrule.PROFILE_NORMALIZERS` for the parser's
     geometry and the histogram's direction, when the pair has one, so their
-    ensemble averages carry ``<property>-norm-sem``, the error over wholes
-    of the normalized profile (see :class:`Derived`). Time is one kernel
-    call per whole.
+    ensemble averages carry ``<property>-norm-sem``, the SEM across
+    profiles normalized separately for each whole (see :class:`Derived`).
+    Time is one kernel call per whole.
 
     Examples
     --------

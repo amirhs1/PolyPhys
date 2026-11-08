@@ -605,17 +605,20 @@ class ProbeSpec:
         :data:`CHAIN_SIZE_OBSERVABLES`, in the order the probe stores them.
     unwrap : bool
         Whether the chain is unwrapped across the periodic boundaries before
-        its gyration tensor is formed, the `unwrap` argument of
-        ``AtomGroup.asphericity`` and ``AtomGroup.shape_parameter``:
-        ``False`` for a cylinder, which is periodic along its axis only, and
-        ``True`` for a periodic cube.
+        its gyration tensor is formed for ``asphericityT``, the `unwrap`
+        argument of ``AtomGroup.asphericity``: ``False`` for a cylinder,
+        which is periodic along its axis only, and ``True`` for a periodic
+        cube. Every other observable, ``shapeT`` included, reads the
+        positions as the dump gives them; see
+        :class:`polyphys.probe.chain_size.ChainSize`.
     bin_sizes : mapping of (:py:data:`DirectionT` -> :py:data:`PerWhole`), \
             default {}
-        The bin size of the histogram along each direction, in units of the
-        monomer diameter: a finite positive number, or a function of a
-        whole's parser returning one, for a size that scales with a whole's
-        particle diameters. Stored read-only. Left empty by a study whose
-        histograms are not probed.
+        The bin size of the histogram along each direction: in units of the
+        monomer diameter for a spatial direction, such as ``'r'`` or
+        ``'z'``, and in radians for the angle ``'theta'``. Each is a finite
+        positive number, or a function of a whole's parser returning one,
+        for a size that scales with a whole's particle diameters. Stored
+        read-only. Left empty by a study whose histograms are not probed.
     histogram_species : tuple of :py:data:`EntityT`, default ()
         The labels in `selections` of the species whose spatial histograms
         :class:`polyphys.probe.SpatialHistograms` collects, each once. Left

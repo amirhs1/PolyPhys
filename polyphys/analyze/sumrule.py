@@ -574,14 +574,16 @@ def space_profiles(
           :func:`normalize_r` or, for ``'z'``, :func:`normalize_z` with
           folding, so that a ``'z'`` profile has ``ceil(n / 2)`` rows.
         - ``<prop>-norm-sem``, when the file has it and `normalizer` is
-          None: the error of ``<prop>-norm``, carried through from the
-          file and, for ``'z'``, folded like every other numeric column.
+          None: carried through from the file and, for ``'z'``, folded
+          like every other numeric column.
           :mod:`polyphys.analyze.pipeline` writes it as the standard error
           over the wholes of each whole's profile divided by its own value
-          in the bin the default normalizer names, since the file's
-          ``-sem`` is the error of the mean, not of the ratio. With an
-          explicit `normalizer` the column no longer describes
-          ``<prop>-norm``, so it is dropped with a warning.
+          in the bin the default normalizer names: the SEM across profiles
+          normalized separately for each whole. Normalization is
+          nonlinear, so it is not generally an uncertainty estimate for
+          ``<prop>-norm``, the normalized ensemble mean. With an explicit
+          `normalizer` the column no longer matches ``<prop>-norm``'s
+          reference bin, so it is dropped with a warning.
         - ``bin_center-norm``: ``bin_center`` divided by its maximum.
         - ``ensemble_long``, the file's state-point name; one column per
           entry of `physical_attrs`; `crowder_attr`; and
@@ -668,9 +670,10 @@ def space_profiles(
     - ``<prop>-norm`` is the normalized ensemble average, the published
       estimator (Jeon et al., 2016, p. 9788: a time average within each
       run, then over runs, then normalized by the far-field value), not the
-      average of per-whole normalized profiles. Its error is the
-      ``<prop>-norm-sem`` of the file, from the spread of the independent
-      wholes, each normalized at the same bin.
+      average of per-whole normalized profiles. The file's
+      ``<prop>-norm-sem`` is the SEM across profiles normalized separately
+      for each whole at the same bin. It is not generally an uncertainty
+      estimate for the normalized ensemble mean.
 
     References
     ----------
@@ -1028,13 +1031,16 @@ default None
         ``<prop>Sum-normalizer`` (the reference value of the state point),
         and ``<prop>Sum-norm``. When every species carries
         ``<prop><species>-norm-sem``, also ``<prop>Sum-norm-sem``, the
-        species' errors added in quadrature,
-        :math:`\\sqrt{\\sum_i s_i^2}`, under the assumption that the
-        species' errors are independent. It is the error of the sum of the
-        normalized species, :math:`\\sum_i \\phi_i / (a_i N_i)` for each
-        species' own normalizer :math:`N_i`; it equals the error of
-        ``<prop>Sum-norm``, :math:`\\sum_i \\phi_i / a_i` over the sum's
-        normalizer, only when every species shares one normalizer value.
+        species' ``-norm-sem`` values :math:`s_i` added in quadrature,
+        :math:`\\sqrt{\\sum_i s_i^2}`, which assumes that the species'
+        errors are independent. Each :math:`s_i` is the SEM across profiles
+        normalized separately for each whole, not generally an uncertainty
+        estimate for a normalized ensemble mean, so neither is the sum. It
+        refers to the sum of the separately normalized species,
+        :math:`\\sum_i \\phi_i / (a_i N_i)` for each species' own normalizer
+        :math:`N_i`, and to ``<prop>Sum-norm``, :math:`\\sum_i \\phi_i /
+        a_i` over the sum's normalizer, only when every species shares one
+        normalizer value.
 
     Raises
     ------
