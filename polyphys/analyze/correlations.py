@@ -695,20 +695,26 @@ def fit_decay(
     ValueError
         If `model` is unknown; `x` and `y` are not finite one-dimensional
         arrays of one length; there are fewer points than parameters; or
-        `p0` has the wrong length.
+        `p0` has the wrong length. :func:`scipy.optimize.curve_fit` also
+        raises :exc:`ValueError` for an invalid option in `kwargs`, such as
+        an unknown ``method`` or a `p0` outside ``bounds``.
 
     Notes
     -----
     :func:`scipy.optimize.curve_fit` minimizes the sum of squared residuals
-    by the Levenberg-Marquardt method from `p0`; a nonlinear model can have
-    several local minima, so `p0` matters, and the one used is recorded.
+    from `p0`, by default with the Levenberg-Marquardt method (``'lm'``),
+    or with ``'trf'`` when ``bounds`` are given, as its documentation
+    states; ``method`` in `kwargs` chooses another. A nonlinear model can
+    have several local minima, so `p0` matters, and the one used is
+    recorded.
     A fit fails when the model is not finite at the start, when the
     optimizer stops without a solution, or when it does not move from the
     start and the covariance cannot be estimated, which is how the
     ``'lm'`` method signals a Jacobian that is zero or rank-deficient (the
     :func:`scipy.optimize.curve_fit` documentation, under ``pcov``). A
     failed fit is reported with ``converged=False``, NaN parameters, and a
-    warning in the :mod:`logging` log, never an exception. When the fit
+    warning in the :mod:`logging` log, not an exception; invalid inputs or
+    options still raise (see Raises). When the fit
     moves but the covariance cannot be estimated (SciPy emits an
     ``OptimizeWarning``), it is converged and the standard errors of the
     affected parameters are NaN. A start at the exact solution of

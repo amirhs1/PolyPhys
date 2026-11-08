@@ -264,6 +264,17 @@ class DumpFrame:
         ------
         KeyError
             If the frame has no column `name`.
+
+        Examples
+        --------
+        >>> box = Box(lo=np.zeros(3), hi=np.full(3, 10.0))
+        >>> frame = DumpFrame(timestep=0, box=box,
+        ...                   columns=("id", "type", "x"),
+        ...                   data=np.array([[1, 2, 0.5], [2, 1, 1.5]]))
+        >>> frame.column("type")
+        array([2, 1])
+        >>> frame.column("x")
+        array([0.5, 1.5])
         """
         try:
             index = self.columns.index(name)

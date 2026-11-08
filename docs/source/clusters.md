@@ -3,8 +3,11 @@
 This page explains what {mod}`polyphys.analyze.clusters` computes from one
 frame of positions or contacts, how the cluster sizes are found, what the
 pair-separation density is, and how the binding statistics of two-patch
-binders are defined. Every routine works on one frame; reading frames and
-accumulating over them is the caller's job.
+binders are defined. The kernels work on one frame; reading frames is the
+caller's job. {class}`~polyphys.analyze.clusters.BindingStats` accumulates
+per-frame binding counts, and {func}`~polyphys.analyze.clusters.threshold_sweep`
+recounts the saved distance matrices of a whole over a grid of cutoffs and cis
+thresholds.
 
 ## Notation
 
@@ -158,11 +161,17 @@ returns a {class}`~polyphys.analyze.clusters.FrameBinding` with eight
 counts and the bridged pairs; {class}`~polyphys.analyze.clusters.BindingStats`
 accumulates frames and the loop-length histogram:
 
+A recipe, not a doctest: `trajectory`, `n_mon`, `cutoff`, and
+`dist_monomer_patch`, the monomer-patch distances of the current frame,
+shape `(n_monomers, n_patches)`, come from the caller's own frame reader.
+
 ```python
+from polyphys.analyze import clusters
+
 stats = clusters.BindingStats(n_monomers=n_mon, topology='ring',
                               cis_threshold=4)
 for frame in trajectory:
-    stats.update(find_direct_contacts(dist_monomer_patch, cutoff))
+    stats.update(clusters.find_direct_contacts(dist_monomer_patch, cutoff))
 series = stats.as_dict()                    # eight (n_frames,) arrays
 loops = stats.loop_length_histogram         # [d]: bridged pairs at d bonds
 ```

@@ -160,4 +160,4 @@ averaging within the whole, not from the per-frame standard error; the
 | ---------------- | ---------------------------- | ---------------------------------------- |
 | one whole        | its frames, correlated       | blocked standard error, {func}`~polyphys.analyze.stats.sem_blocked` |
 | one ensemble     | its replicates, independent  | plain standard error, the `-sem` columns |
-| a normalized profile | its replicates, each normalized | `<property>-norm-sem`, see [Usage](usage.md) |
+| a normalized profile | its replicates, each normalized | `<property>-norm-sem`, the SEM of the separately normalized replicates, see [Usage](usage.md) |

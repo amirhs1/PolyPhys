@@ -211,9 +211,9 @@ each piece integrates it exactly.
 
 ### Cylindrical shells
 
-The kernel is the volume $C(R_b, R, d)$ of a bead whose center is at axial
-distance $d$ inside the coaxial cylinder of radius $R$,
-{func}`~polyphys.analyze.density.sphere_cylinder_intersection`. Slicing the
+The kernel is the volume $C(R_b, R, d)$ of a bead whose center is at
+perpendicular distance $d$ from the axis of the coaxial cylinder of radius
+$R$, {func}`~polyphys.analyze.density.sphere_cylinder_intersection`. Slicing the
 bead by planes normal to the axis, the slice at height $z$ is a disc of
 radius $\sqrt{R_b^2 - z^2}$ whose center is $d$ from the axis, the
 cylinder cuts the plane in a disc of radius $R$ about the axis, and the
@@ -242,8 +242,8 @@ $\tfrac{4\pi}{3}[R_b^3 - (R_b^2 - R^2)^{3/2}]$.
 The research code used the sphere-sphere volume $W(R_b, R, d)$ in place of
 $C$ "for the sake of simplicity". That is `intersection='sphere'`, kept for
 reproducing its numbers. Its error, as a fraction of the bead volume and at
-the worst axial distance, is about $0.047\,a / R$, with $R$ the edge radius
-and $a = 2 R_b$ the bead diameter:
+the worst perpendicular distance from the axis, is about $0.047\,a / R$,
+with $R$ the edge radius and $a = 2 R_b$ the bead diameter:
 
 | $R / a$ | 1 | 2 | 5 | 10 | 20 | 40 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -326,11 +326,13 @@ averages them over replicates into the `ensAvg` profiles that
 {func}`~polyphys.analyze.sumrule.space_profiles` reads. The sum rule is
 linear in the profiles, so averaging over wholes and summing over species
 commute; its normalization is not, and the published estimator normalizes
-the ensemble average. The error of that normalized curve comes from the
-wholes: the pipeline divides each whole's profile by its own value in the
-normalizer's bin and writes the standard error over the wholes as
-`<prop>-norm-sem` in the `ensAvg` file, which `space_profiles` carries
-through (see the [user guide](usage.md), "The density sum rule").
+the ensemble average. The pipeline also divides each whole's profile by its
+own value in the normalizer's bin and writes the standard error over the
+wholes as `<prop>-norm-sem` in the `ensAvg` file, which `space_profiles`
+carries through. `<prop>-norm-sem` is the SEM across profiles normalized
+separately for each whole. It is not generally an uncertainty estimate for
+the normalized ensemble mean (see the [user guide](usage.md), "The density
+sum rule").
 
 ## References
 

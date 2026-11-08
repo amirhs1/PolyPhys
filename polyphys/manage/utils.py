@@ -227,10 +227,9 @@ def sort_filenames(
     - **Compound extensions:** ``".tar.gz"`` is **different** from ``".gz"``.
       They are only treated as equivalent if you explicitly group them in
       the same slot, e.g. ``('tar.gz', 'gz')``.
-    - If any format group matches no files, the returned list may be empty.
-      This is because Python's built-in `zip()` truncates to the
-      shortest input sequence. It is the caller's responsibility to ensure
-      that each format group matches at least one file.
+    - Only basenames that have a file in every slot are returned, so if
+      any format group matches no files, no basename is complete and the
+      returned list is empty.
     - Incomplete basenames are **ignored** and a warning is emitted for each
       present file mentioning its missing counterpart(s).
     - Grouping is by **basename**: the full file name without the matched
@@ -341,13 +340,28 @@ def openany(filepath: str, mode: str = "rt") -> InputType:
     ----------
     filepath : str
         Path to the file.
-    mode : str, optional
-        The mode by the file is opened, by default 'r'.
+    mode : str, default 'rt'
+        File-opening mode, passed to :func:`gzip.open` for a path ending in
+        ``.gz`` and to :func:`open` otherwise.
 
     Returns
     -------
-    InputType
-        A file-like object (e.g., regular file or GzipFile).
+    :py:data:`~polyphys.manage.types.InputType`
+        The open file object, a :class:`gzip.GzipFile` or a regular file.
+        The caller must close it; :func:`openany_context` does that.
+
+    Examples
+    --------
+    >>> import gzip, os, tempfile
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     path = os.path.join(tmp, 'log.txt.gz')
+    ...     with gzip.open(path, 'wt') as out:
+    ...         _ = out.write('step 0\\n')
+    ...     handle = openany(path)
+    ...     line = handle.readline()
+    ...     handle.close()
+    >>> line
+    'step 0\\n'
     """
     open_func = gzip.open if filepath.endswith(".gz") else open
     return open_func(filepath, mode=mode)
@@ -364,14 +378,27 @@ def openany_context(
     ----------
     filepath : str
         Path to the file.
-    mode : str, optional
-        The mode by the file is opened, by default 'r'
+    mode : str, default 'rt'
+        File-opening mode, passed to :func:`gzip.open` for a path ending in
+        ``.gz`` and to :func:`open` otherwise.
 
     Yields
     ------
-    Generator[InputT, None, None]
-        A file-like object (e.g., regular file or GzipFile) opened in the
-        specified mode.
+    :py:data:`~polyphys.manage.types.InputType`
+        The open file object, a :class:`gzip.GzipFile` or a regular file.
+        The context manager closes it on exit, also after an exception.
+
+    Examples
+    --------
+    >>> import os, tempfile
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     path = os.path.join(tmp, 'log.txt')
+    ...     with open(path, 'w') as out:
+    ...         _ = out.write('step 0\\n')
+    ...     with openany_context(path) as handle:
+    ...         line = handle.readline()
+    >>> line, handle.closed
+    ('step 0\\n', True)
     """
     open_func = gzip.open if filepath.endswith(".gz") else open
     file = open_func(filepath, mode=mode)
@@ -394,6 +421,13 @@ def round_down_first_non_zero(num: float) -> float:
     -------
     float:
         The number `num` rounded down to its first non-zero digit.
+
+    Examples
+    --------
+    >>> float(round_down_first_non_zero(0.0372))
+    0.03
+    >>> float(round_down_first_non_zero(472.0))
+    400.0
     """
     if num == 0:
         return num
@@ -481,12 +515,21 @@ def invalid_keyword(
     valid_keywords: List[Union[str,None]]
         Array of valid keywords
     message: str
-        Message to be printed.
+        The text that follows the quoted `keyword` in the
+        :exc:`ValueError` message; by default, a list of `valid_keywords`.
 
     Raises
     ------
     ValueError
         If `keyword` is not in `valid_keywords`.
+
+    Examples
+    --------
+    >>> invalid_keyword('ring', ['ring', 'cube'])
+    >>> invalid_keyword('loop', ['ring', 'cube'])
+    Traceback (most recent call last):
+    ...
+    ValueError: 'loop' is an invalid option. Please select one of: ring, cube.
     """
     if message is None:
         message = (

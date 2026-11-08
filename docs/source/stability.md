@@ -7,7 +7,12 @@ removed.
 ## What is public
 
 A name is public when it is listed in the `__all__` of a module on the
-[API](api.rst) page. Every other name is private, even if it has no leading
+[API](api.rst) page. The methods and attributes of a public class that its
+API page documents, those without a leading underscore, are public with the
+class. Some packages, such as `polyphys.probe` and `polyphys.simulate`,
+re-export public names of their modules; a re-export is the same object and
+has the same status, and the module on the API page is its canonical
+location. Every other name is private, even if it has no leading
 underscore: a private name may change or disappear in any release, without a
 deprecation period.
 
