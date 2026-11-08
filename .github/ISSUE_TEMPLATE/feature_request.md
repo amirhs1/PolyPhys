@@ -12,12 +12,12 @@ assignees: ""
 
 What problem would this solve?
 
-## Proposed Behavior
+## Proposed behavior
 
 What should PolyPhys do?
 
-## Scientific or Data Assumptions
+## Scientific or data assumptions
 
 If this involves a physical model, statistical method, parser lineage, or simulation artifact type, describe the assumptions and cite the source when relevant.
 
-## Alternatives Considered
+## Alternatives considered

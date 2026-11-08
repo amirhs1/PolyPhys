@@ -18,6 +18,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Hold the Codecov `codecov/project` and `codecov/patch` statuses of a commit until all five of its coverage reports have arrived, so a status no longer reports the coverage of the first report alone ([#218](https://github.com/amirhs1/PolyPhys/issues/218))
 - Add Sphinx to the `dev` extra, so the test that imports the probe and viz modules under the documentation build's mocks runs in CI instead of being skipped ([#226](https://github.com/amirhs1/PolyPhys/pull/226))
 - Build the documentation in CI on Python 3.13, the version Read the Docs builds it on, instead of 3.14, so a docs failure that only 3.13 raises fails CI before it reaches Read the Docs ([#230](https://github.com/amirhs1/PolyPhys/issues/230))
+- Reorder `CONTRIBUTING.md` so a contributor reads how to report a problem, set up a checkout, run the checks, and submit a pull request before the AI policy, the names, and the release procedure, and let the pull request template's science checklist accept a measurement or statistics change that is explained and validated ([#243](https://github.com/amirhs1/PolyPhys/issues/243))
 
 ### Added
 

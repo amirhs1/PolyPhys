@@ -7,8 +7,9 @@ then the trailer block; a section that does not apply says `None`.
 
 ## Summary
 
-What changed and why. The reason comes from a person or an outside report, not
-from an AI tool; an agent gives it only as supplied.
+The outcome, in one or two sentences: what changed and why. The reason comes
+from a person or an outside report, not from an AI tool; an agent gives it
+only as supplied.
 
 ## Related issues
 
@@ -17,11 +18,13 @@ covers in part, or `None`.
 
 ## Problem
 
-What was wrong or missing, with evidence.
+What was wrong or missing, with evidence: an issue, a failing check, or an
+observed output.
 
 ## What changed
 
-Files as `path:line`, plus reasoning the diff does not show.
+How the change was made: files as `path:line`, plus reasoning the diff does
+not show. Leave the outcome to the summary.
 
 ## Checks run
 
@@ -38,18 +41,23 @@ for anything not checked, and why.
 
 ## Scientific correctness
 
-- [ ] No measurement/statistics behavior changed
+- [ ] Measurement and statistics behavior is unchanged, or the change is explained above with how it was validated
 - [ ] Units, numerical fixtures, and domain assumptions are preserved or explained
 - [ ] Parser lineage and organizer vocabulary are unchanged, or matching parser tests/docs were updated
 
 ## Decisions and risks
 
-Choices made, the alternatives rejected, and what could break. Is the change a
-one-way door, hard to undo, or a two-way door, and what is its blast radius?
+Trade-offs: the choices made and the alternatives rejected. Then answer:
+
+- How would the change be undone, and what would undoing it cost?
+- Which users or callers does it affect, and how?
+- Does it change any numerical result, and which?
+- Does it change any stored artifact, file name, or file format?
 
 ## Notes for review
 
-What needs line-by-line review, and any uncertainty, limitation, or follow-up.
+Where the reviewer should look: what needs line-by-line review, and any
+uncertainty, limitation, or follow-up.
 
 <!--
 AI assistance: end the body with one trailer block, after a blank line. Write
