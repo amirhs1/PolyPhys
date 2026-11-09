@@ -262,16 +262,16 @@ records the checks or human review applied to each part:
 - **Delegated** — AI generates; I can't fully evaluate it. It is covered by
   tests, kept isolated and low-risk, and not presented as my work.
 
-| Part                                                      | Tier         | Checks or human review                                                                                                                 |
-| --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `polyphys/analyze/`                                       | Supervised   | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; maintainer review of every line                                            |
-| `polyphys/manage/`                                        | Supervised   | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; parser tests for filename-parsing changes; maintainer review of every line |
-| `polyphys/simulate/`                                      | Supervised   | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; tests against LAMMPS-written files; maintainer review of every line        |
-| `polyphys/probe/`                                         | Supervised   | CI: flake8, mypy; pytest with doctests on Python 3.14 with MDAnalysis installed; maintainer review of every line                       |
-| `polyphys/viz/`                                           | Instrumented | CI: flake8, pytest with doctests on Python 3.11–3.14 with matplotlib installed; maintainer review                                      |
-| `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review                                        |
-| `projects/`                                               | Supervised   | CI: flake8, mypy, pytest of each spec against its parser and the research code's values; maintainer review of every line               |
-| `docs/`                                                   | Instrumented | CI: Sphinx build with warnings as errors for `docs/source/`; maintainer review                                                         |
+| Part                                                      | Tier       | Checks or human review                                                                                                                 |
+| --------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `polyphys/analyze/`                                       | Supervised | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; maintainer review of every line                                            |
+| `polyphys/manage/`                                        | Supervised | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; parser tests for filename-parsing changes; maintainer review of every line |
+| `polyphys/simulate/`                                      | Supervised | CI: flake8, mypy, pytest with doctests on Python 3.11–3.14; tests against LAMMPS-written files; maintainer review of every line        |
+| `polyphys/probe/`                                         | Supervised | CI: flake8, mypy; pytest with doctests on Python 3.14 with MDAnalysis installed; maintainer review of every line                       |
+| `polyphys/viz/`                                           | Supervised | CI: flake8, pytest with doctests on Python 3.11–3.14 with matplotlib installed; maintainer review of every line                        |
+| `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Supervised | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review of every line                          |
+| `projects/`                                               | Supervised | CI: flake8, mypy, pytest of each spec against its parser and the research code's values; maintainer review of every line               |
+| `docs/`                                                   | Supervised | CI: Sphinx build with warnings as errors for `docs/source/`; maintainer review of every line                                           |
 
 Nothing that handles security, credentials, private data, or published results,
 or that can block a merge, is Delegated. Where a tier is unclear, I treat the

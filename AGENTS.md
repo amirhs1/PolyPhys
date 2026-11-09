@@ -159,10 +159,10 @@ your role in each tier. Change both in the same commit.
 | `polyphys/manage/`                                        | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
 | `polyphys/simulate/`                                      | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
 | `polyphys/probe/`                                         | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
-| `polyphys/viz/`                                           | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
-| `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/viz/`                                           | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
+| `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
 | `projects/`                                               | Supervised   | Draft a study's spec from the research code's values; every line is read.        |
-| `docs/`                                                   | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `docs/`                                                   | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
 
 - A path not listed is Supervised: draft against acceptance criteria the
   maintainer set, and expect every line to be read. Work that touches
