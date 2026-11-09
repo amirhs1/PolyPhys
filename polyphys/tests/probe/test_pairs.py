@@ -463,7 +463,7 @@ def test_real_foci_histograms_match_the_research_code(
         sizes):
     """On the 50 frames of a TransFociCub polymer dump, the foci bonds
     histogram and the clusters histogram from size 1 up equal the research
-    code's probe of the same frames (SciOps ``trans_foci_cub_bug``), whose
+    code's probe of the same frames (``trans_foci_cub_bug``), whose
     contacts took no minimum image: the ring is whole in these dumps, so
     the image changes no contact. The research clusters histogram counted
     the zero eigenvalues of the contact matrix in its size-0 column, which

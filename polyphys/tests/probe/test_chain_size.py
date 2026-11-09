@@ -519,7 +519,7 @@ def test_real_chain_size_matches_the_research_code(
         research_probe_file, observable):
     """On the 50 frames of a TransFociCub polymer dump, each scalar
     chain-size observable of the spec equals the research code's probe of
-    the same frames (SciOps ``trans_foci_cub_bug``)."""
+    the same frames (``trans_foci_cub_bug``)."""
     whole = real_transfocicub_whole
     probe = study_spec(whole.study).PROBE
     files = real_files(whole)

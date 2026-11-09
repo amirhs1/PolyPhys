@@ -584,8 +584,9 @@ def test_whole_name_drops_topology_suffix_from_segment_and_whole(
 
 def _stamp_mismatches(path: Path) -> list[tuple[str, ...]]:
     """
-    Compare the names in one SciOps ``HnsCub`` stamp file with the rebuilt
-    names, under the mapping that the Usage page, "Lineage names", documents.
+    Compare the names in one research-code ``HnsCub`` stamp file with the
+    rebuilt names, under the mapping that the Usage page, "Lineage names",
+    documents.
 
     A stamp file is ``<lineage_name>-<group>-stamps.csv``; its columns start
     with ``lineage_name`` and the lineage names, with a ``segment`` column
@@ -624,9 +625,9 @@ def _stamp_mismatches(path: Path) -> list[tuple[str, ...]]:
 @pytest.fixture
 def write_stamp(tmp_path: Path) -> Callable[[str, dict[str, str]], Path]:
     """
-    Return a factory that writes a one-row stamp file in the SciOps format,
-    ``<lineage_name>-<group>-stamps.csv``, from a mapping of column to value,
-    and returns its path.
+    Return a factory that writes a one-row stamp file in the research code's
+    format, ``<lineage_name>-<group>-stamps.csv``, from a mapping of column
+    to value, and returns its path.
     """
     def _write(group: str, columns: dict[str, str]) -> Path:
         path = tmp_path / f"{columns['lineage_name']}-{group}-stamps.csv"
@@ -676,7 +677,7 @@ def test_stamp_mismatches_flags_only_departures_from_mapping(
 
 def test_hnscub_names_match_existing_stamps_under_mapping(  # pragma: no cover
         private_data_dir: Path) -> None:
-    """Rebuilt HnsCub names equal the SciOps stamp names under the mapping."""
+    """Rebuilt HnsCub names equal research-code stamps under the mapping."""
     stamps = sorted(
         path for path in private_data_dir.rglob('*-stamps.csv')
         if any(part.startswith('HnsCub')

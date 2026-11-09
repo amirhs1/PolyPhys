@@ -1,8 +1,7 @@
 """Tests for the study specs in this folder.
 
-The expected values come from the research code's registry, SciOps
-``sciops/api.py``, ``PROJECTS_DETAILS``, with the PolyPhys names
-``phi_bulk_c`` for ``phi_c_bulk`` and ``rho_bulk_hns`` for
+The expected values come from the research code's registry, with the
+PolyPhys names ``phi_bulk_c`` for ``phi_c_bulk`` and ``rho_bulk_hns`` for
 ``rho_hns_bulk``.
 """
 import importlib
@@ -56,7 +55,7 @@ def test_study_names_only_attributes_its_parser_sets(module: str) -> None:
 
 
 @pytest.mark.parametrize('module, group, divisor', [
-    # SciOps api.py, 'group' and 'divisor' of each entry.
+    # The research code's registry, 'group' and 'divisor' of each entry.
     pytest.param('trans_foci_cyl', 'bug', 0.025, id='TransFociCyl'),
     pytest.param('trans_foci_cub', 'bug', 0.025, id='TransFociCub'),
     pytest.param('hns_cub', 'nucleoid', 0.01, id='HnsCub'),
@@ -72,7 +71,7 @@ def test_study_group_and_divisor(module: str, group: str,
 
 
 @pytest.mark.parametrize('module, geometry, topology, directions', [
-    # SciOps api.py, 'geometry', 'topology', and 'directions'.
+    # The research code's registry, 'geometry', 'topology', and 'directions'.
     pytest.param('trans_foci_cyl', 'cylindrical', 'ring', ('r', 'z'),
                  id='TransFociCyl'),
     pytest.param('trans_foci_cub', 'cubic', 'ring', ('r',),
@@ -91,7 +90,7 @@ def test_study_geometry_follows_parser(module: str, geometry: str,
 
 
 @pytest.mark.parametrize('module, space_pattern, space_hierarchy', [
-    # SciOps api.py, 'space_pat' and 'space_hierarchy'.
+    # The research code's registry, 'space_pat' and 'space_hierarchy'.
     pytest.param('trans_foci_cyl', 'ns*nl*al*D*ac*', 'ns*',
                  id='TransFociCyl'),
     pytest.param('trans_foci_cub', 'ns*nl*al*ac*', 'ns*', id='TransFociCub'),
@@ -108,7 +107,8 @@ def test_study_space_patterns(module: str, space_pattern: str,
 
 
 @pytest.mark.parametrize('module, hierarchy', [
-    # SciOps api.py, 'hierarchy'; TransFociCyl differs (see the next test).
+    # The research code's registry, 'hierarchy'; TransFociCyl differs (see the
+    # next test).
     pytest.param('trans_foci_cub', 'al*', id='TransFociCub'),
     pytest.param('hns_cub', 'N*', id='HnsCub'),
     pytest.param('hns_cyl', 'N*', id='HnsCyl'),
@@ -133,7 +133,7 @@ def test_trans_foci_cyl_hierarchy_matches_its_names() -> None:
 
 
 @pytest.mark.parametrize('module, expected', [
-    # SciOps api.py, 'attributes', with PolyPhys names.
+    # The research code's registry, 'attributes', with PolyPhys names.
     pytest.param('trans_foci_cyl',
                  ('space', 'ensemble_long', 'ensemble', 'nmon_small',
                   'nmon_large', 'dmon_large', 'dcyl', 'dcrowd', 'phi_bulk_c'),
@@ -157,7 +157,7 @@ def test_study_physical_attrs(module: str, expected: tuple[str, ...]) -> None:
 
 
 @pytest.mark.parametrize('module, expected', [
-    # SciOps api.py, 'rhosPhisNormalizedScaled', in its order.
+    # The research code's registry, 'rhosPhisNormalizedScaled', in its order.
     pytest.param('trans_foci_cyl',
                  [('Mon', 'dmon_small'), ('Crd', 'dcrowd'),
                   ('Foci', 'dmon_large')],
@@ -180,9 +180,9 @@ def test_study_species_sizes(module: str,
 
 
 @pytest.mark.parametrize('module, expected', [
-    # SciOps api.py, 'time_varying_props', in its order. TransFociCyl adds
-    # 'transSizeTMon', which the registry omitted although the research
-    # probe writes it and the analysis table reads it (maintainer,
+    # The research code's registry, 'time_varying_props', in its order.
+    # TransFociCyl adds 'transSizeTMon', which the registry omitted although
+    # the research probe writes it and the analysis table reads it (maintainer,
     # 2026-11-03).
     pytest.param('trans_foci_cyl',
                  ('asphericityTMon', 'fsdTMon', 'gyrTMon', 'shapeTMon',
@@ -238,8 +238,8 @@ def _properties(module: str, group: str) -> set[str]:
 @pytest.mark.parametrize('module', STUDIES)
 def test_study_has_one_table_per_group(module: str) -> None:
     """Each study has a table for its polymer group, as wholes with stamps,
-    and one for 'all', as segments without stamps (SciOps ``is_segment``
-    and ``has_stamp``)."""
+    and one for 'all', as segments without stamps (the research code's
+    ``is_segment`` and ``has_stamp``)."""
     spec = _spec(module)
     polymer, everything = _analysis(module)
 
@@ -268,8 +268,7 @@ def _planar(species: tuple[str, ...]) -> set[str]:
 
 
 @pytest.mark.parametrize('module, group, expected', [
-    # SciOps analyzer.py, ANALYSIS_DETAILS_NUCLEOID and ANALYSIS_DETAILS_ALL,
-    # the '<Study>Whole' entries, with each artifact listed once.
+    # The research code's analysis tables, with each artifact listed once.
     pytest.param('trans_foci_cub', 'bug',
                  {'bondsHistTFoci', 'clustersHistTFoci', 'distMatTFoci',
                   'principalTMon', 'gyrTMon', 'shapeTMon',
@@ -364,9 +363,9 @@ def test_study_probe_is_built_on_its_spec(module: str) -> None:
 
 
 @pytest.mark.parametrize('module, selections', [
-    # SciOps prober.py: the select_atoms calls of each study's polymer-group
-    # probe, 'resid 1' for the chain and 'type 2' for the foci or the H-NS
-    # patches, then those of its all-group probe, 'resid 0' for the
+    # The research probe: the select_atoms calls of each study's
+    # polymer-group probe, 'resid 1' for the chain and 'type 2' for the foci or
+    # the H-NS patches, then those of its all-group probe, 'resid 0' for the
     # crowders, 'type 1' for the small monomers, and 'type 3' for the H-NS
     # cores.
     pytest.param('trans_foci_cyl', [('Mon', 'resid 1'), ('Foci', 'type 2'),
@@ -394,9 +393,9 @@ def test_study_probe_selections(module: str,
 
 
 @pytest.mark.parametrize('module, observables', [
-    # SciOps prober.py: the chain-size measures of each study's per-frame
-    # loop, in the order of the study's time series, with the principal
-    # axes last.
+    # The research probe: the chain-size measures of each study's
+    # per-frame loop, in the order of the study's time series, with the
+    # principal axes last.
     pytest.param('trans_foci_cyl',
                  ('asphericityT', 'fsdT', 'gyrT', 'shapeT', 'transSizeT',
                   'principalT'),
@@ -419,8 +418,8 @@ def test_study_probe_observables(module: str,
 
 
 @pytest.mark.parametrize('module, unwrap', [
-    # SciOps prober.py: the unwrap argument of bug.asphericity in each
-    # study's probe; the cylinders are periodic along z only.
+    # The research probe: the unwrap argument of bug.asphericity in
+    # each study's probe; the cylinders are periodic along z only.
     pytest.param('trans_foci_cyl', False, id='TransFociCyl'),
     pytest.param('trans_foci_cub', True, id='TransFociCub'),
     pytest.param('hns_cub', True, id='HnsCub'),
@@ -434,8 +433,9 @@ def test_study_probe_unwraps_in_a_cube_only(module: str,
 
 
 @pytest.mark.parametrize('module, species, keys', [
-    # SciOps prober.py: the species each study's all-group probe binned, as
-    # its analysis table reads them, and the directions of its geometry.
+    # The research probe: the species each study's all-group probe
+    # binned, as its analysis table reads them, and the directions of its
+    # geometry.
     pytest.param('trans_foci_cyl', ('Crd', 'Mon', 'Dna', 'Foci'),
                  ['r', 'z', 'theta', 'x', 'y'], id='TransFociCyl'),
     pytest.param('trans_foci_cub', ('Crd', 'Mon', 'Dna', 'Foci'),
@@ -458,13 +458,13 @@ def test_study_probe_histogram_fields(module: str, species: tuple[str, ...],
 
 
 @pytest.mark.parametrize('module, info, r, cartesian, theta', [
-    # SciOps prober.py, the bin_edges of each study's all-group probe: a tenth
-    # of the smallest diameter along r, half of it along the Cartesian axes of
-    # a cube or along z of a cylinder, pi/36 along theta; for the Hns studies
-    # the radial minimum includes the H-NS core, as the maintainer settled on
-    # 2026-11-04. The wholes: small monomers of 1 with crowders of 1.5 or 3
-    # (the minimum is the monomer), and a crowder of 0.5 (the minimum is
-    # the crowder).
+    # The research probe, the bin_edges of each study's all-group
+    # probe: a tenth of the smallest diameter along r, half of it along the
+    # Cartesian axes of a cube or along z of a cylinder, pi/36 along theta; for
+    # the Hns studies the radial minimum includes the H-NS core, as the
+    # maintainer settled on 2026-11-04. The wholes: small monomers of 1 with
+    # crowders of 1.5 or 3 (the minimum is the monomer), and a crowder of 0.5
+    # (the minimum is the crowder).
     pytest.param('trans_foci_cyl', TransFociCyl(
         'epss5epsl5r5al2nl3ml8ns7ac1.5nc0lz10dt0.005bdump1adump1ens1',
         'whole', 'all'), 0.1, 0.5, np.pi / 36, id='TransFociCyl'),
@@ -520,7 +520,7 @@ def test_hns_radial_bin_includes_the_core_diameter(module: str) -> None:
 
 
 @pytest.mark.parametrize('module, pair, cutoff', [
-    # SciOps prober.py: the foci of the TransFoci studies, with
+    # The research probe: the foci of the TransFoci studies, with
     # cluster_cutoff = dmon_large + dcrowd; the Hns studies measure no pairs.
     pytest.param('trans_foci_cyl', 'Foci', 3.5, id='TransFociCyl'),
     pytest.param('trans_foci_cub', 'Foci', 3.5, id='TransFociCub'),
@@ -550,13 +550,13 @@ def test_study_probe_pair_fields(module: str, pair: str | None,
 @pytest.mark.parametrize('module, binders', [
     pytest.param('trans_foci_cyl', None, id='TransFociCyl'),
     pytest.param('trans_foci_cub', None, id='TransFociCub'),
-    # SciOps prober.py, the H-NS binding blocks: the distance matrices saved
-    # per frame. The cis threshold is 3, the maintainer's definition (thesis,
-    # chapter 5), chosen on 2026-11-08 over the research probe's 4. The
-    # cutoff and the inclusive comparison are the thesis's binding criterion,
-    # r <= r_cut,mp = 0.685 (Section 5.3, Table 5.1), chosen by the
-    # maintainer on 2026-11-04 over the research probe's 0.661 with a strict
-    # comparison.
+    # The research probe, the H-NS binding blocks: the distance
+    # matrices saved per frame. The cis threshold is 3, the maintainer's
+    # definition (thesis, chapter 5), chosen on 2026-11-08 over the research
+    # probe's 4. The cutoff and the inclusive comparison are the thesis's
+    # binding criterion, r <= r_cut,mp = 0.685 (Section 5.3, Table 5.1), chosen
+    # by the maintainer on 2026-11-04 over the research probe's 0.661 with a
+    # strict comparison.
     pytest.param('hns_cub',
                  BinderSpec('HnsPatch', 'HnsCore', cutoff=0.685,
                             inclusive=True, cis_threshold=3,
