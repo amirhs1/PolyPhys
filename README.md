@@ -237,6 +237,12 @@ The Python examples above run as doctests in the test suite.
 A study _uses_ PolyPhys from outside the package rather than extending it:
 its parser and its specs live in its own folder, as `projects/` shows.
 
+PolyPhys was migrated from the maintainer's private research code, which the
+documentation, docstrings, and tests call _the research code_; the
+documentation's
+[Where PolyPhys comes from](https://polyphys.readthedocs.io/en/latest/#where-polyphys-comes-from)
+says what that means for a reader.
+
 ## Citation
 
 If you use PolyPhys in published work, please cite the archived release. The

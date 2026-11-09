@@ -331,7 +331,7 @@ def test_share_matrix_keeps_a_small_bead_in_its_first_shell(geometry, kwargs):
      pytest.param('cylindrical', id='cylindrical-r')],
 )
 def test_share_matrix_center_sphere_reproduces_the_research_code(geometry):
-    """The center mode with the sphere kernel equals the SciOps loop (R1)."""
+    """The center mode with the sphere kernel equals the research loop (R1)."""
     edges = np.arange(0.0, 6.01, 0.25)
     share = share_matrix(edges, 1.0, geometry, 'r', shares='center',
                          intersection='sphere').toarray()
@@ -722,7 +722,7 @@ def test_share_matrix_returns_a_sparse_band():
 def test_center_sphere_profiles_match_the_research_code(
     private_data_dir, direction, research_scale
 ):
-    """The research code's ``rho`` and ``phi`` of one SciOps whole equal the
+    """The research code's ``rho`` and ``phi`` of one of its wholes equal the
     center-sphere ones times its known axial slab factor (R1, R3).
 
     Expected layout under

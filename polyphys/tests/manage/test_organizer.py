@@ -14,8 +14,8 @@ The space tests build a small ``analysis`` phase on disk; their expected
 ``t_index`` and ``time`` values come from the ``dt`` field and the dump
 period of the group's trajectory (``adump`` for ``all``, ``bdump`` for
 ``bug``) encoded in the filenames. The stamp tests use the column layout of the
-SciOps probe phase's stamp files: genealogy columns, parser attributes, and
-``n_frames``.
+research code's probe-phase stamp files: genealogy columns, parser attributes,
+and ``n_frames``.
 """
 import logging
 import os

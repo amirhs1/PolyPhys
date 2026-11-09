@@ -12,6 +12,18 @@ Start with [Installation](installation.md), then the [quickstart](quickstart.md)
 which runs a small synthetic sweep from its segments to its `space` table; the
 [usage](usage.md) page says where each task is explained.
 
+## Where PolyPhys comes from
+
+PolyPhys was migrated from the maintainer's private research repository,
+SciOps. These pages, the docstrings, and the tests call it *the research
+code*, and its probe functions *the research probe*. It is not public, and
+nothing in PolyPhys needs it: where a page says how PolyPhys differs from
+the research code, the difference is written out on that page. Some tests
+take their expected values from it, written into the test files; the tests
+that compare results with its output files need the maintainer's data and
+are skipped without it, as the [Testing](testing.md) page explains. The
+parsers and specs of the unpublished studies stay in the research code.
+
 ```{note}
 This project is under active development.
 ```

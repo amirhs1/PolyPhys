@@ -70,7 +70,8 @@ beside one another; its drivers and figure code follow. A correction to one
 study's data, such as merging two neighboring crowder volume fractions, is code in
 that study's folder with its reason, never an option of the library. The
 published studies' folders are in this repository; unpublished studies use
-the same layout in the research repository.
+the same layout in the research code (see "Where PolyPhys comes from" on
+the [front page](index.md)).
 
 **Why.** A study should run from its own repository without editing a table
 inside the installed package (amirhs1/PolyPhys#18). A rounding step, a list
@@ -83,7 +84,7 @@ carried the same study table in three copies, one per stage.
 maintainer decided on 2026-11-02 that they move to their studies' folders,
 and on 2026-11-07 how (amirhs1/PolyPhys#197): the parsers of the four
 published studies are in `projects/<study>/parser.py`, those of the
-unpublished studies are in the research repository, and importing any of
+unpublished studies are in the research code, and importing any of
 the nine from `polyphys.manage.parser` raises `ImportError` that says where
 it went, since a module in the installed package cannot import from
 `projects/`. The package's own tests and examples use made-up parsers in

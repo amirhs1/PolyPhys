@@ -5,12 +5,9 @@ cylinder that is periodic along its axis. ``SPEC`` is its
 :class:`~polyphys.spec.ProbeSpec`, and ``ANALYSIS`` its
 :class:`~polyphys.spec.AnalysisTable` per particle group.
 
-Values from the research code's registry (SciOps ``sciops/api.py``,
-``PROJECTS_DETAILS``), with the PolyPhys attribute names ``phi_bulk_c`` for
-``phi_c_bulk`` and ``rho_bulk_hns`` for ``rho_hns_bulk``, and from its
-analysis tables (SciOps ``sciops/analyze/analyzer.py``,
-``ANALYSIS_DETAILS_NUCLEOID`` and ``ANALYSIS_DETAILS_ALL``,
-``'HnsCylWhole'``), with each artifact listed once.
+Values from the research code's registry, with the PolyPhys attribute names
+``phi_bulk_c`` for ``phi_c_bulk`` and ``rho_bulk_hns`` for ``rho_hns_bulk``,
+and from its analysis tables, with each artifact listed once.
 """
 from polyphys.analyze.pipeline import Autocorrelation, LocalDensities
 import numpy as np
@@ -59,30 +56,31 @@ def _r_bin(info: ParserBase) -> float:
 
 def _l_bin(info: ParserBase) -> float:
     """A tenth of the smaller of the monomer and crowder diameters: the bin
-    size along x and y (SciOps ``hns_cyl_all``, ``bin_edges``, ``lEdge``)."""
+    size along x and y (the research code's ``hns_cyl_all``, ``bin_edges``,
+    ``lEdge``)."""
     return 0.1 * min(float(getattr(info, 'dmon')),
                      float(getattr(info, 'dcrowd')))
 
 
 def _z_bin(info: ParserBase) -> float:
     """Half the smaller of the monomer and crowder diameters: the bin size
-    along z (SciOps ``hns_cyl_all``, ``bin_edges``)."""
+    along z (the research code's ``hns_cyl_all``, ``bin_edges``)."""
     return 0.5 * min(float(getattr(info, 'dmon')),
                      float(getattr(info, 'dcrowd')))
 
 
 # The probe of the polymer group: the selections, the chain-size observables
-# of its per-frame loop, and the unwrap convention of its asphericity (SciOps
-# ``sciops/probe/prober.py``, lines 4268-4319); the histograms of the all
-# group (``hns_cyl_all``, lines 4444-4500): its selections, bin sizes, and
-# species, the H-NS cores as 'Hns', with the block length and the recentering
-# the maintainer's decisions of 2026-11-04;
-# patches (lines 4283-4383, ``cis_threshold = 4`` and the distance matrices
-# saved as ``distMatTMonHnsPatch``). The cutoff is the published binding
-# criterion, r <= r_cut,mp = 0.685 (thesis, Section 5.3 and Table 5.1),
-# which the maintainer chose on 2026-11-04 over the research probe's
-# ``round(2**(1/6) * (dmon + dhns_patch) / 2, 3) = 0.661`` with a strict
-# comparison; the probe guide, "Choosing the cutoff", gives both.
+# of its per-frame loop, and the unwrap convention of its asphericity (the
+# research code's ``hns_cyl_nucleoid``); the histograms of the all group
+# (``hns_cyl_all``): its selections, bin sizes, and species, the H-NS cores
+# as 'Hns', with the block length and the recentering of the probe guide
+# ("The spatial histograms" and "Recentering a frame"); and the binding of
+# the H-NS patches (``hns_cyl_nucleoid``, ``cis_threshold = 4`` and the
+# distance matrices saved as ``distMatTMonHnsPatch``). The cutoff is the
+# published binding criterion, r <= r_cut,mp = 0.685 (thesis, Section 5.3
+# and Table 5.1), which the maintainer chose on 2026-11-04 over the research
+# probe's ``round(2**(1/6) * (dmon + dhns_patch) / 2, 3) = 0.661`` with a
+# strict comparison; the probe guide, "Choosing the cutoff", gives both.
 # The cis threshold is 3, the maintainer's definition (thesis, chapter 5: a
 # bridge with at most two monomers between its sites, at most 3 bonds, is
 # cis), which the maintainer chose on 2026-11-08 over the research probe's 4;
@@ -105,8 +103,8 @@ PROBE = ProbeSpec(
                        store_distances=True),
 )
 
-# The largest lag of the autocorrelation functions, in frames (SciOps
-# ``analyze_measures``, ``nlags``).
+# The largest lag of the autocorrelation functions, in frames (the research
+# code's ``analyze_measures``, ``nlags``).
 NLAGS = 7000
 
 ANALYSIS = (
