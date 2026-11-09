@@ -1162,20 +1162,10 @@ def test_keyword_spec_rejects_bad_declaration(kwargs, match):
                  id='TransFociCub'),
     pytest.param('TransFociCyl', 'projects/trans_foci_cyl/parser.py',
                  id='TransFociCyl'),
-    pytest.param('SumRuleCyl', 'removed from PolyPhys in 1.0.0',
-                 id='SumRuleCyl'),
-    pytest.param('SumRuleCubHeteroRing', 'removed from PolyPhys in 1.0.0',
-                 id='SumRuleCubHeteroRing'),
-    pytest.param('SumRuleCubHeteroLinear', 'removed from PolyPhys in 1.0.0',
-                 id='SumRuleCubHeteroLinear'),
-    pytest.param('SumRuleCubHeteroRingBiDisperse',
-                 'removed from PolyPhys in 1.0.0',
-                 id='SumRuleCubHeteroRingBiDisperse'),
-    pytest.param('TwoMonDepCub', 'removed from PolyPhys in 1.0.0',
-                 id='TwoMonDepCub'),
 ])
 def test_moved_study_parser_import_raises_import_error(name, message):
-    """Importing a study parser that left the module says where it went."""
+    """Importing a published study's parser that left the module says where
+    it went."""
     module = importlib.import_module('polyphys.manage.parser')
 
     with pytest.raises(ImportError, match=re.escape(message)):

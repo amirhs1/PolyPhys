@@ -1,4 +1,4 @@
-# SumRuleCyl-like: a FENE chain and crowders in a cylinder; thermo_style one.
+# A FENE chain and crowders in a cylinder; thermo_style one.
 # Runs: 0 minimize; 1 equilibration (nve/limit); 2-4 production, one
 # trajectory file per run (loop, as in the projects);
 # 5 the crowders' wall is removed, so crowders leave through the fixed

@@ -1,5 +1,5 @@
 # Two unbonded beads of types 1 and 2 in a periodic cube (atom style
-# atomic), shaped like the two-monomer depletion systems.
+# atomic).
 # Writes atomic.lammpstrj (dump style atom with its defaults: scaled
 # coordinates, %g format; steps 0, 500, 1000) and atomic.data (write_data at
 # step 1000).

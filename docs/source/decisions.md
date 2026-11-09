@@ -87,7 +87,10 @@ published studies are in `projects/<study>/parser.py`, those of the
 unpublished studies are in the research code, and importing any of
 the nine from `polyphys.manage.parser` raises `ImportError` that says where
 it went, since a module in the installed package cannot import from
-`projects/`. The package's own tests and examples use made-up parsers in
+`projects/`. On 2026-11-09 the maintainer took the five unpublished
+studies off that list and off the documentation, so their names are not
+public; importing one now fails as for any name the module never
+defined. The package's own tests and examples use made-up parsers in
 `polyphys.tests.synthetic`.
 
 [^adorf2018]: C. S. Adorf, P. M. Dodd, V. Ramasubramani, and S. C. Glotzer,
