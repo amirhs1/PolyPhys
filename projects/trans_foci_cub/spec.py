@@ -5,12 +5,9 @@ a periodic cube. ``SPEC`` is its
 :class:`~polyphys.spec.ProbeSpec`, and ``ANALYSIS`` its
 :class:`~polyphys.spec.AnalysisTable` per particle group.
 
-Values from the research code's registry (SciOps ``sciops/api.py``,
-``PROJECTS_DETAILS``), with the PolyPhys attribute names ``phi_bulk_c`` for
-``phi_c_bulk``, and from its analysis tables (SciOps
-``sciops/analyze/analyzer.py``, ``ANALYSIS_DETAILS_NUCLEOID`` and
-``ANALYSIS_DETAILS_ALL``, ``'TransFociCubWhole'``), with each artifact
-listed once.
+Values from the research code's registry, with the PolyPhys attribute names
+``phi_bulk_c`` for ``phi_c_bulk``, and from its analysis tables, with each
+artifact listed once.
 """
 from polyphys.analyze.pipeline import (
     Autocorrelation,
@@ -48,34 +45,36 @@ SPEC = ProjectSpec(
 
 def _r_bin(info: ParserBase) -> float:
     """A tenth of the smaller of the small-monomer and crowder diameters:
-    the bin size along r (SciOps ``trans_foci_cub_all``, ``bin_edges``)."""
+    the bin size along r (the research code's ``trans_foci_cub_all``,
+    ``bin_edges``)."""
     return 0.1 * min(float(getattr(info, 'dmon_small')),
                      float(getattr(info, 'dcrowd')))
 
 
 def _l_bin(info: ParserBase) -> float:
     """Half the smaller of the small-monomer and crowder diameters: the bin
-    size along x, y, and z (SciOps ``trans_foci_cub_all``, ``bin_edges``)."""
+    size along x, y, and z (the research code's ``trans_foci_cub_all``,
+    ``bin_edges``)."""
     return 0.5 * min(float(getattr(info, 'dmon_small')),
                      float(getattr(info, 'dcrowd')))
 
 
 def _contact_cutoff(info: ParserBase) -> float:
     """The large-monomer diameter plus the crowder diameter: two foci are in
-    direct contact when a crowder no longer fits between them (SciOps
-    ``trans_foci_cub_bug``, ``cluster_cutoff``)."""
+    direct contact when a crowder no longer fits between them (the research
+    code's ``trans_foci_cub_bug``, ``cluster_cutoff``)."""
     return float(getattr(info, 'dmon_large')) + float(getattr(info, 'dcrowd'))
 
 
 # The probe of the polymer group: the selections, the chain-size observables
-# of its per-frame loop, and the unwrap convention of its asphericity (SciOps
-# ``sciops/probe/prober.py``, lines 1708-1734); the foci pair distances of
-# the same loop; and the histograms of the all group (``trans_foci_cub_all``,
-# lines 1818-1860): its selections, bin sizes, and species. The research
-# all-group probe selected the crowders, the small monomers, and the foci;
-# 'Mon', the whole ring, is added because the analysis table below reads
-# its histograms. The block length and the recentering are the maintainer's
-# decisions of 2026-11-04.
+# of its per-frame loop, and the unwrap convention of its asphericity (the
+# research code's ``trans_foci_cub_bug``); the foci pair distances of the
+# same loop; and the histograms of the all group (``trans_foci_cub_all``):
+# its selections, bin sizes, and species. The research all-group probe
+# selected the crowders, the small monomers, and the foci; 'Mon', the whole
+# ring, is added because the analysis table below reads its histograms. The
+# block length and the recentering are the probe guide's ("The spatial
+# histograms" and "Recentering a frame").
 PROBE = ProbeSpec(
     project=SPEC,
     selections={'Mon': 'resid 1', 'Foci': 'type 2', 'Crd': 'resid 0',
@@ -92,8 +91,8 @@ PROBE = ProbeSpec(
     minimum_image=True,
 )
 
-# The largest lag of the autocorrelation functions, in frames (SciOps
-# ``analyze_measures``, ``nlags``).
+# The largest lag of the autocorrelation functions, in frames (the research
+# code's ``analyze_measures``, ``nlags``).
 NLAGS = 7000
 
 
@@ -103,7 +102,8 @@ def _n_monomers(info: ParserBase) -> int:
 
 
 def _bin_size(info: ParserBase) -> float:
-    """Half the small-monomer diameter (SciOps ``whole_dist_mat_foci``)."""
+    """Half the small-monomer diameter (the research code's
+    ``whole_dist_mat_foci``)."""
     return 0.5 * float(getattr(info, 'dmon_small'))
 
 
