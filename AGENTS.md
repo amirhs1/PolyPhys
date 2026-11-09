@@ -155,10 +155,10 @@ your role in each tier. Change both in the same commit.
 
 | Path                                                      | Tier         | Your role                                                                        |
 | --------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------- |
-| `polyphys/analyze/`                                       | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
-| `polyphys/manage/`                                        | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
-| `polyphys/simulate/`                                      | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
-| `polyphys/probe/`                                         | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
+| `polyphys/analyze/`                                       | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/manage/`                                        | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/simulate/`                                      | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
+| `polyphys/probe/`                                         | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/viz/`                                           | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Instrumented | Review, refactor, propose alternatives. Do not write first drafts of core logic. |
 | `projects/`                                               | Supervised   | Draft a study's spec from the research code's values; every line is read.        |

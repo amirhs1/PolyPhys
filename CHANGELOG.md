@@ -14,10 +14,6 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ## [Unreleased]
 
-### Changed
-
-- Rate `polyphys/analyze/`, `manage/`, `simulate/`, and `probe/` as Supervised in the AI tier tables of `README.md` and `AGENTS.md`: AI drafts and the maintainer reads every line, as the 1.0 modules were made ([#269](https://github.com/amirhs1/PolyPhys/issues/269))
-
 ## [1.0.0](https://github.com/amirhs1/PolyPhys/releases/tag/v1.0.0) - 2026-11-07
 
 ### Changed
