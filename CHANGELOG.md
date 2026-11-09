@@ -16,6 +16,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Changed
 
+- Name no unpublished study in `polyphys.manage.parser`, the "Simulation design" page, or the tests: importing the parser of one of the five unpublished studies now fails with Python's own "cannot import name" instead of an `ImportError` that says it was removed in 1.0.0
 - Rate every part of the repository as Supervised in the AI tier tables of `README.md` and `AGENTS.md`: AI drafts and the maintainer reads every line, as the 1.0 code, tests, workflows, and documentation were made ([#269](https://github.com/amirhs1/PolyPhys/issues/269), [#271](https://github.com/amirhs1/PolyPhys/pull/271))
 
 ## [1.0.0](https://github.com/amirhs1/PolyPhys/releases/tag/v1.0.0) - 2026-11-07

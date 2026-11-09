@@ -8,7 +8,7 @@ hand from its recentered coordinates; the conservation of each species'
 particle number per frame; the per-block means from the block sums
 divided by the frame counts; and the edges of ``histogram_edges`` from the
 research code's bin sizes over the ranges the maintainer set on
-2026-11-04 (SciOps ``sciops/probe/prober.py``, ``sum_rule_cyl_all`` and
+2026-11-04 (the research probe's ``trans_foci_cyl_all`` and
 ``trans_foci_cub_all``, extended to the wall surface and the cube's
 corner).
 

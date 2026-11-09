@@ -30,11 +30,9 @@ The module ships no study's parser: a study declares its own, as the
 .. versionchanged:: 1.0.0
    The parsers of nine studies left this module. ``TransFociCyl``,
    ``TransFociCub``, ``HnsCub``, and ``HnsCyl`` are in the ``projects/``
-   folder of the PolyPhys repository, which is not installed;
-   ``SumRuleCyl``, ``SumRuleCubHeteroRing``, ``SumRuleCubHeteroLinear``,
-   ``SumRuleCubHeteroRingBiDisperse``, and ``TwoMonDepCub`` were removed.
-   Importing any of the nine from here raises :exc:`ImportError` that says
-   where it went.
+   folder of the PolyPhys repository, which is not installed; those of
+   five unpublished studies were removed. Importing any of the four from
+   here raises :exc:`ImportError` that says where it went.
 
 Dependencies
 ============
@@ -87,19 +85,13 @@ __all__ = [
     'Species',
 ]
 
-# The study parsers that left this module in 1.0.0: each published one,
-# with its folder under projects/ in the PolyPhys repository, and each
-# unpublished one, with None.
-_MOVED_STUDIES: dict[str, str | None] = {
+# The parsers of the published studies that left this module in 1.0.0,
+# each with its folder under projects/ in the PolyPhys repository.
+_MOVED_STUDIES: dict[str, str] = {
     'HnsCub': 'hns_cub',
     'HnsCyl': 'hns_cyl',
     'TransFociCub': 'trans_foci_cub',
     'TransFociCyl': 'trans_foci_cyl',
-    'SumRuleCubHeteroLinear': None,
-    'SumRuleCubHeteroRing': None,
-    'SumRuleCubHeteroRingBiDisperse': None,
-    'SumRuleCyl': None,
-    'TwoMonDepCub': None,
 }
 
 # A keyword is a run of letters (or hyphens); its value is the text up to the
@@ -1246,19 +1238,16 @@ def __getattr__(name: str) -> object:
     Raises
     ------
     ImportError
-        If `name` is a study parser that left the module.
+        If `name` is the parser of a published study that left the
+        module.
     AttributeError
         For any other name.
     """
     if name in _MOVED_STUDIES:
-        folder = _MOVED_STUDIES[name]
-        if folder is None:
-            raise ImportError(
-                f"{name} was removed from PolyPhys in 1.0.0; pin polyphys "
-                f"0.9.0 to keep using it, or copy it into your study's code.")
         raise ImportError(
             f"{name} moved out of PolyPhys in 1.0.0, to "
-            f"projects/{folder}/parser.py in the PolyPhys repository, which "
-            f"is not installed; copy it into your study's code.")
+            f"projects/{_MOVED_STUDIES[name]}/parser.py in the PolyPhys "
+            f"repository, which is not installed; copy it into your study's "
+            f"code.")
     raise AttributeError(
         f"module 'polyphys.manage.parser' has no attribute {name!r}")
