@@ -13,6 +13,7 @@ type: software
 authors:
   - given-names: Amir
     family-names: Sadeghi
+    orcid: "https://orcid.org/0009-0008-3073-866X"
 version: 1.0.0
 date-released: 2026-11-07
 license: MIT

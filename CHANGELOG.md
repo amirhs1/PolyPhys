@@ -21,6 +21,10 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Say on the front page of the documentation, and in the README, what the research code is: the maintainer's private repository PolyPhys was migrated from, which nothing in PolyPhys needs; call it the research code, not SciOps or the research repository, in the study specs, the tests, and the design decisions; and name its functions instead of its files and their line ranges in the study specs and their tests ([#272](https://github.com/amirhs1/PolyPhys/pull/272))
 - Install PolyPhys from conda-forge, where it is published from 1.0.0, on the installation pages, with `mdanalysis` and `matplotlib-base` alongside it for the probe and viz layers, instead of installing it with pip into a conda environment ([#236](https://github.com/amirhs1/PolyPhys/issues/236))
 
+### Added
+
+- Give the author's ORCID iD in `CITATION.cff` ([#276](https://github.com/amirhs1/PolyPhys/pull/276))
+
 ## [1.0.0](https://github.com/amirhs1/PolyPhys/releases/tag/v1.0.0) - 2026-11-07
 
 ### Changed
