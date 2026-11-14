@@ -10,7 +10,7 @@ installed; `--doctest-modules` imports `polyphys/viz/`, which needs
 matplotlib, the `viz` extra:
 
 ```bash
-python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob='README.md'
+python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --doctest-modules --doctest-glob='README.md'
 ```
 
 The README's examples run as doctests, and so do the `Examples` sections of the
@@ -33,7 +33,7 @@ suite without MDAnalysis or coverage. To run it locally, with uv installed:
 uv venv --python 3.11 .venv
 uv pip install --python .venv/bin/python --resolution lowest-direct -e ".[viz]"
 uv pip install --python .venv/bin/python pytest hypothesis
-.venv/bin/python -m pytest polyphys README.md projects --doctest-modules --doctest-glob='README.md'
+.venv/bin/python -m pytest polyphys README.md --doctest-modules --doctest-glob='README.md'
 ```
 
 ## Test data: three tiers
@@ -87,7 +87,7 @@ reference value:
 
 - a parser name built from the parser's own pattern parses to its values
   and rebuilds to itself, for every synthetic parser in
-  `polyphys/tests/synthetic.py` and every study parser in `projects/`;
+  `polyphys/tests/synthetic.py`;
   `polyphys.tests.strategies.lineage_names` draws the names;
 - `block_average` of `a x + b` keeps every blocking level, with the mean
   `a mean + b`, the variance `a² var`, the standard error `|a| sem`, and the
@@ -259,9 +259,8 @@ Keep the path out of tracked files; set the variable in your shell.
 | `testpaths = ["polyphys/tests"]` | The directory pytest collects when no path is given                                 |
 | `filterwarnings = ["error", ...]` | Every warning raised during a test is an error; a test that expects one wraps the call in `pytest.warns`, and a test module that must ignore one names it in a `filterwarnings` mark. One warning is ignored everywhere: pyparsing 3.3's deprecation of `enablePackrat`, which matplotlib 3.8.4, the floor of the `viz` extra, calls on import |
 
-The documented command passes `polyphys README.md projects`, so the
-modules' docstrings, the README, and the studies are collected as well as
-`polyphys/tests`. The examples of five pages, `quickstart.md`,
+The documented command passes `polyphys README.md`, so the modules'
+docstrings and the README are collected as well as `polyphys/tests`. The examples of five pages, `quickstart.md`,
 `lineage.md`, `studies.md`, `usage.md`, and `viz.md`, run through
 `polyphys/tests/test_docs.py`.
 

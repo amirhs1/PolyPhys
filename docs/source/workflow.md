@@ -60,17 +60,12 @@ its number of frames, with {func}`~polyphys.probe.core.write_stamps`.
 one space, the study's `SPEC`, and one `AnalysisTable` of its `ANALYSIS`. For
 each property of the table, it joins the segments of each whole, groups the
 wholes of each state point into an ensemble, and averages each ensemble over
-its replicates, writing each level to its stage. A study's folder is not an
-installed package, so its driver puts `projects/` on the import path, as
-[`projects/README.md`](https://github.com/amirhs1/PolyPhys/tree/main/projects)
-shows. Each table reads the probe directory of its own group:
+its replicates, writing each level to its stage. Each table reads the probe
+directory of its own group:
 
 ```python
-import sys
-sys.path.insert(0, "<path to PolyPhys>/projects")
-
 from polyphys.analyze.pipeline import reduce_space
-from trans_foci_cub import ANALYSIS, SPEC
+from polyphys_lab.trans_foci_cub import ANALYSIS, SPEC
 
 for table in ANALYSIS:
     reduce_space(f'probes/ns400nl5al5ac1-{table.group}-probe', SPEC, table,

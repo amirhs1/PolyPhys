@@ -11,31 +11,17 @@ Fixtures
 make_chain_universe
     The files of ``make_chain_files``, in ``polyphys/tests/conftest.py``,
     opened with :func:`polyphys.probe.make_universe`.
-study_spec
-    The spec module, ``projects/<study>/spec.py``, of a study.
-real_polymer_whole, real_window_whole, real_crowded_whole, \
-real_foci_whole, real_hns_whole, real_nh0_whole
-    The real wholes of the tier B and tier C tests, one test per whole (see
-    "Real frames" below).
+real_polymer_whole, real_window_whole
+    The real wholes of the tier B tests, one test per whole (see "Real
+    frames" below).
 real_files
     The files of a real whole: its polymer dump and the topology it is
     opened with, and its ``all`` window and data file when they are tier B.
-private_window_files
-    The ``all`` window and data file of a crowded whole, tier C.
-real_transfocicub_whole
-    The 4 TransFociCub wholes, whose research-code probe output is the
-    tier C reference of the pipeline tests.
-research_probe_file
-    One property file of the research code's probe output of a whole,
-    tier C.
 real_universe
     A real dump opened with :func:`polyphys.probe.make_universe`.
 trajectory_arrays
     The positions, box lengths, and time steps of every frame of a
     universe, in one pass.
-reference_distances
-    Minimum-image distances between two sets of positions, frame by frame,
-    from :func:`MDAnalysis.lib.distances.distance_array`.
 
 Real frames
 -----------
@@ -49,10 +35,10 @@ trimmed them from the studies' runs. The HnsCyl runs name their wholes
 without ``epshc``; their copies here insert ``epshc1``, the value of their
 H-NS core-crowder pair coefficients, so that the parser reads them.
 
-The tier C files, the ``all`` windows and data files of the other crowded
-wholes, stay in the maintainer's folder
-``<POLYPHYS_DATA_DIR>/<project>/trjs/`` under the runs' own names, with
-``<project>`` the study's project name, such as ``HnsCub``.
+The tests here open these files with the library alone. The tests that
+probe them with a study's specs, and those that compare them with the
+research code's output, are in the polyphys-lab repository
+(https://github.com/amirhs1/polyphys-lab), with the studies' parsers.
 
 A polymer dump holds only the polymer group, so it cannot be opened with
 its whole's full data file. It is opened with the data file of the whole
@@ -61,12 +47,9 @@ whose atoms are the polymer group: the ring for TransFoci, the ring and the
 H-NS proteins for Hns. The research code did the same. The polymer atoms
 carry the IDs 1 to n in every system, with the crowders after them.
 """
-import importlib
-import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from types import ModuleType
 from typing import Any, Callable, Mapping, Optional
 
 import numpy as np
@@ -94,14 +77,14 @@ def make_chain_universe(
 
 @dataclass(frozen=True)
 class RealWhole:
-    """One real whole of the tier B and tier C tests.
+    """One real whole of the tier B tests.
 
     Attributes
     ----------
     id : str
         The test id, such as ``'HnsCub-nh30-nc10743-ens1'``.
     study : str
-        Its study's folder in ``projects/``, such as ``'hns_cub'``.
+        Its study's package name in polyphys-lab, such as ``'hns_cub'``.
     whole : str
         The whole's name without ``.ring``, as its parser reads it.
     topology : str
@@ -142,22 +125,6 @@ class RealWhole:
     n_window_frames: int
     n_shared_frames: int
     source: str
-
-    def polymer_counts(self) -> dict[str, int]:
-        """The atoms of each species of the study's spec in the polymer
-        dump: two patches per H-NS core (Jung, Sadeghi, and Ha, Sci. Rep.
-        14, 139 (2024)), the small monomers and the foci of a TransFoci
-        ring, and no crowders."""
-        if self.group == 'nucleoid':
-            return {'Mon': self.n_mon, 'HnsPatch': 2 * self.n_hns,
-                    'Hns': self.n_hns, 'Crd': 0}
-        return {'Mon': self.n_mon, 'Foci': self.n_foci,
-                'Dna': self.n_mon - self.n_foci, 'Crd': 0}
-
-    def window_counts(self) -> dict[str, int]:
-        """The atoms of each species of the study's spec in the ``all``
-        window: the polymer group plus the crowders."""
-        return {**self.polymer_counts(), 'Crd': self.n_crowd}
 
 
 def _real_wholes() -> list[RealWhole]:
@@ -219,48 +186,6 @@ def real_window_whole(request: pytest.FixtureRequest) -> RealWhole:
     return request.param
 
 
-@pytest.fixture(params=_params(lambda whole: whole.window_tier == 'C'))
-def real_crowded_whole(request: pytest.FixtureRequest) -> RealWhole:
-    """Each of the 8 crowded wholes whose ``all`` window and data file are
-    tier C."""
-    return request.param  # pragma: no cover - needs data
-
-
-@pytest.fixture(params=_params(lambda whole: whole.n_foci > 0))
-def real_foci_whole(request: pytest.FixtureRequest) -> RealWhole:
-    """Each of the 8 TransFoci wholes."""
-    return request.param
-
-
-@pytest.fixture(params=_params(lambda whole: whole.n_hns > 0))
-def real_hns_whole(request: pytest.FixtureRequest) -> RealWhole:
-    """Each of the 10 Hns wholes with H-NS proteins."""
-    return request.param
-
-
-@pytest.fixture(params=_params(
-    lambda whole: whole.group == 'nucleoid' and whole.n_hns == 0))
-def real_nh0_whole(request: pytest.FixtureRequest) -> RealWhole:
-    """Each of the 4 Hns wholes without H-NS proteins."""
-    return request.param
-
-
-@pytest.fixture(scope='session')
-def study_spec() -> Callable[[str], ModuleType]:
-    """Factory: the spec module ``projects/<study>/spec.py`` of a study,
-    with its ``SPEC`` and ``PROBE``. The study folders are not an installed
-    package, so the repository root is put on the import path, as the
-    pipeline's tier C test does."""
-    root = str(Path(__file__).resolve().parents[3])
-    if root not in sys.path:
-        sys.path.insert(0, root)
-
-    def _load(study: str) -> ModuleType:
-        return importlib.import_module(f"projects.{study}.spec")
-
-    return _load
-
-
 @dataclass(frozen=True)
 class RealFiles:
     """The files of a real whole; `window` and `data` are None when they
@@ -291,26 +216,6 @@ def real_files() -> Callable[[RealWhole], RealFiles]:
             data=data if data.exists() else None)
 
     return _files
-
-
-@pytest.fixture
-def private_window_files(
-    private_data_dir: Path,
-    study_spec: Callable[[str], ModuleType],
-) -> Callable[[RealWhole], tuple[Path, Path]]:
-    """Factory: the tier C ``all`` window and data file of a crowded whole,
-    under ``<POLYPHYS_DATA_DIR>/<project>/trjs/<source>/``, with
-    ``<project>`` the study's project name (``SPEC.name``, such as
-    ``HnsCub``). Use it only in a test marked ``private_data``."""
-
-    def _files(whole: RealWhole) -> tuple[Path, Path]:  # pragma: no cover
-        project = study_spec(whole.study).SPEC.name
-        folder = private_data_dir / project / 'trjs' / whole.source
-        (window,) = sorted(folder.glob(f"{whole.source}.j*.ring.all.window."
-                                       "lammpstrj.gz"))
-        return window, folder / f"{whole.source}.ring.all.data.gz"
-
-    return _files  # pragma: no cover - needs data
 
 
 @pytest.fixture
@@ -346,62 +251,3 @@ def trajectory_arrays() -> Callable[[Any], Mapping[str, np.ndarray]]:
                 'steps': np.array([frame[2] for frame in frames])}
 
     return _arrays
-
-
-@pytest.fixture
-def reference_distances() -> Callable[..., np.ndarray]:
-    """Factory: the distances between the rows of `first` and `second`,
-    shapes ``(n_frames, n, 3)`` and ``(n_frames, m, 3)``, frame by frame
-    with :func:`MDAnalysis.lib.distances.distance_array` and the minimum
-    image along the geometry's periodic directions: all three in a cube;
-    only z in a cylinder, whose box lengths across the axis are replaced by
-    1e4, far beyond any separation in it, so that only z is imaged.
-    Returns shape ``(n_frames, n, m)``."""
-
-    def _distances(first: np.ndarray, second: np.ndarray, boxes: np.ndarray,
-                   geometry: str) -> np.ndarray:
-        from MDAnalysis.lib.distances import distance_array
-
-        lengths = np.array(boxes, dtype=np.float64)
-        if geometry == 'cylindrical':
-            lengths[:, :2] = 1e4
-        return np.stack([
-            distance_array(a, b, box=np.concatenate([box, [90.0] * 3]))
-            for a, b, box in zip(first, second, lengths)])
-
-    return _distances
-
-
-@pytest.fixture(params=_params(lambda whole: whole.study == 'trans_foci_cub'))
-def real_transfocicub_whole(request: pytest.FixtureRequest) -> RealWhole:
-    """Each of the 4 TransFociCub wholes: the research code probed the same
-    50 frames of their polymer dumps, and that output, tier C, is the
-    reference of the pipeline tests."""
-    return request.param  # pragma: no cover - needs data
-
-
-@pytest.fixture
-def research_probe_file(
-    private_data_dir: Path,
-    study_spec: Callable[[str], ModuleType],
-) -> Callable[..., Path]:
-    """Factory: the file of one property in the research code's probe output
-    of a real whole,
-    ``<POLYPHYS_DATA_DIR>/<project>/probes/<space>-<group>-probe/<whole>.ring/``
-    ``<whole>.ring-<group>-<property>.<ext>``, with ``<project>`` the
-    study's ``SPEC.name``; the research probe named a whole with its
-    topology suffix. The test is skipped when the study has no single such
-    probe folder. Use it only in a test marked ``private_data``."""
-
-    def _file(whole: RealWhole, prop: str,  # pragma: no cover - needs data
-              ext: str = 'npy') -> Path:
-        project = study_spec(whole.study).SPEC.name
-        probes = private_data_dir / project / 'probes'
-        folders = sorted(probes.glob(f"*-{whole.group}-probe"))
-        if len(folders) != 1:
-            pytest.skip(f"no single research {whole.group} probe folder "
-                        f"under {probes}")
-        return (folders[0] / f"{whole.whole}.ring"
-                / f"{whole.whole}.ring-{whole.group}-{prop}.{ext}")
-
-    return _file  # pragma: no cover - needs data

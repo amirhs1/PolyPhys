@@ -39,12 +39,12 @@ The [Lineage](lineage.md) page defines the lineage levels and the groups.
 ## The steps
 
 Adding a study changes nothing in `polyphys/`, which ships no study's
-parser: a study declares its parser in its own folder, as
-`projects/<study>/parser.py` does for each of the maintainer's published
-studies.
+parser: a study declares its parser in its own folder, as each of the
+maintainer's published studies does in
+[polyphys-lab](https://github.com/amirhs1/polyphys-lab).
 
 1. Declare the study's parser class, as in "Declaring the parser" below.
-2. Make a folder for the study, `projects/<study>/`, as a Python package.
+2. Make a folder for the study as a Python package.
    Its `spec.py` builds the study's `ProjectSpec` (as `SPEC`), its
    `ProbeSpec` (as `PROBE`), and a tuple of its `AnalysisTable` records,
    one per particle group (as `ANALYSIS`); its `__init__.py` exports the
@@ -54,17 +54,19 @@ studies.
 3. Build the specs. Each attribute a `ProjectSpec` names is checked
    against the parser when the spec is built, so a typo raises when
    `spec.py` is imported, not when the analysis runs.
-4. Test the study. In this repository, `projects/test_studies.py` checks
-   each study's specs against its parser and against the values of the
-   research code; add the new study to its parametrizations. CI lints,
-   type-checks, and tests `projects/` with the package.
+4. Test the study: check its specs against its parser and against the
+   values its analysis used before, as polyphys-lab's `tests/test_studies.py`
+   does for the maintainer's studies.
 5. Run the study's data through the phases, as the [Workflow](workflow.md)
    page describes.
 
-The maintainer's published studies are in the repository's top-level
-[`projects/`](https://github.com/amirhs1/PolyPhys/tree/main/projects)
-folder, which is not installed with the package. A study elsewhere uses the
-same layout in its own repository. The [Design decisions](decisions.md)
+The maintainer's published studies are in the companion repository
+[polyphys-lab](https://github.com/amirhs1/polyphys-lab), one folder per study, each installed as
+`polyphys_lab.<study>`. PolyPhys does not depend on it; a study elsewhere
+uses the same layout in its own repository. In PolyPhys 1.0.0, importing
+one of these parsers from `polyphys.manage.parser` raises an `ImportError`
+that names `projects/<study>/parser.py` in the PolyPhys repository; that
+folder is now `projects/<study>/python/` in polyphys-lab. The [Design decisions](decisions.md)
 page records why each study is a folder outside the package.
 
 ## Declaring the parser

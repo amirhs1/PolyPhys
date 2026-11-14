@@ -33,9 +33,9 @@ Run these from the repository root before opening a pull request:
 
 | Check                | Command                                                                                                                                               |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Lint                 | `python -m flake8 polyphys projects`                                                                                                                  |
-| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate projects`                                                           |
-| All tests            | `python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
+| Lint                 | `python -m flake8 polyphys`                                                                                                                           |
+| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate`                                                                    |
+| All tests            | `python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'`          |
 | One test             | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                                  |
 | Package build        | `python -m build`, after a packaging change                                                                                                           |
 | Documentation build  | `python -m sphinx -W -b html docs/source docs/_build`, when `docs/source/` changed                                                                    |
@@ -109,7 +109,7 @@ part of the repository. A commit's scope is its area, and the labels are
 
 ```text
 types: feat fix docs test refactor chore release question
-areas: analyze manage simulate probe viz projects packaging guide ci agents deps
+areas: analyze manage simulate probe viz packaging guide ci agents deps
 ```
 
 | Type       | Means                                                                                              |
@@ -130,7 +130,6 @@ areas: analyze manage simulate probe viz projects packaging guide ci agents deps
 | `simulate`  | `polyphys/simulate/`, `polyphys/tests/simulate/`                                                                                  |
 | `probe`     | `polyphys/probe/`, `polyphys/tests/probe/`                                                                                        |
 | `viz`       | `polyphys/viz/`, `polyphys/tests/viz/`                                                                                            |
-| `projects`  | `projects/`: the studies' specs, drivers, and tests, outside the package                                                          |
 | `packaging` | `pyproject.toml`, `polyphys/__version__.py`, `polyphys/tests/test_packaging.py`, `CITATION.cff`, `AUTHORS.rst`                    |
 | `guide`     | `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`, `docs/`, `.github/ISSUE_TEMPLATE/`                                 |
 | `ci`        | `.github/workflows/`, `.github/dependabot.yml`                                                                                    |
