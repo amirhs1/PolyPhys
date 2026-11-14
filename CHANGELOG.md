@@ -23,7 +23,7 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ### Added
 
-- Give the author's ORCID iD in `CITATION.cff`
+- Give the author's ORCID iD in `CITATION.cff` ([#276](https://github.com/amirhs1/PolyPhys/pull/276))
 
 ## [1.0.0](https://github.com/amirhs1/PolyPhys/releases/tag/v1.0.0) - 2026-11-07
 
