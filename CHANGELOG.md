@@ -24,6 +24,10 @@ deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 - Take the parser of `benchmarks/organizer_timing.py` as `--parser <module>:<class>`, such as `polyphys_lab.trans_foci_cub.parser:TransFociCub`, instead of a study folder in `projects/` ([#275](https://github.com/amirhs1/PolyPhys/issues/275))
 - Retire the `projects` area from `CONTRIBUTING.md`, "Names", and the `projects/` rows of the tier tables in `README.md` and `AGENTS.md` ([#275](https://github.com/amirhs1/PolyPhys/issues/275))
 
+### Added
+
+- Give the author's ORCID iD in `CITATION.cff` ([#276](https://github.com/amirhs1/PolyPhys/pull/276))
+
 ## [1.0.0](https://github.com/amirhs1/PolyPhys/releases/tag/v1.0.0) - 2026-11-07
 
 ### Changed
