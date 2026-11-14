@@ -71,9 +71,9 @@ naming one output twice, among the outputs the hooks declare with their
 `outputs` method: a hook output that another entry also yields would
 overwrite it. A property whose files are not found, such as a typo, raises
 `FileNotFoundError` before any directory is made. The tables of the maintainer's
-studies live beside each study's spec in the repository's `projects/`
-folder, so a data correction or a special case is code in the study's
-folder, never an option of the module.
+studies live beside each study's spec in the companion repository
+[polyphys-lab](https://github.com/amirhs1/polyphys-lab), so a data correction or a special case is code in
+the study's folder, never an option of the module.
 
 ```python
 from polyphys.analyze.pipeline import Autocorrelation, LocalDensities
@@ -149,11 +149,8 @@ through under the property's own name.
 ## Running a space
 
 ```python
-import sys
-sys.path.insert(0, "<path to PolyPhys>/projects")
-
 from polyphys.analyze.pipeline import reduce_space
-from trans_foci_cub.spec import ANALYSIS, SPEC
+from polyphys_lab.trans_foci_cub.spec import ANALYSIS, SPEC
 
 for table in ANALYSIS:
     reduce_space(f'probes/ns400nl5al5ac1-{table.group}-probe', SPEC, table,
@@ -165,10 +162,9 @@ for table in ANALYSIS:
 
 Each table reads the probe directory of its own group, here
 `ns400nl5al5ac1-bug-probe` and `ns400nl5al5ac1-all-probe`, whose prefix is
-the space name the parser gives. The study's folder is not an installed
-package, so the driver puts `projects/` on the import path, as
-[`projects/README.md`](https://github.com/amirhs1/PolyPhys/tree/main/projects)
-shows.
+the space name the parser gives. The study's specs are the
+`polyphys_lab.trans_foci_cub` package of
+[polyphys-lab](https://github.com/amirhs1/polyphys-lab), installed beside PolyPhys.
 
 `reduce_space` lists the files under `<input_database>/<hierarchy>` (the
 default hierarchy is the spec's `dir/file` layout), combines the stamps if
@@ -199,7 +195,7 @@ row has no parent name.
 ## Building the density kernel
 
 A table with a {class}`~polyphys.analyze.pipeline.LocalDensities` hook,
-such as the `all` table of every study in `projects/`, needs the `density`
+such as the `all` table of every study in polyphys-lab, needs the `density`
 argument of `reduce_space`; without it the hook raises. The argument is any
 callable of the {class}`~polyphys.analyze.pipeline.DensityKernel` protocol:
 it takes one whole's histogram, summed over its frames, with its edges, the

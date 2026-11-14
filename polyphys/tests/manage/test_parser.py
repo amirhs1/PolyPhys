@@ -1,7 +1,7 @@
 """Tests for :mod:`polyphys.manage.parser`.
 
 The parsers here are the synthetic ones of :mod:`polyphys.tests.synthetic`;
-each published study tests its own parser in ``projects/<study>/``.
+each published study tests its own parser in the polyphys-lab repository.
 """
 import importlib
 import os
@@ -705,6 +705,22 @@ def test_crowder_bulk_values_are_sums_over_species():
                                    rel=1e-12)
 
 
+@pytest.mark.parametrize('dcrowd', [
+    pytest.param('10', id='as-wide-as-the-cylinder'),
+    pytest.param('11', id='wider-than-the-cylinder'),
+])
+def test_species_without_room_names_itself_and_the_lineage(dcrowd):
+    """A species too wide for the cylinder raises, naming it and the name."""
+    # r5.5 gives dcyl = 2 * 5.5 - 1 = 10, so a crowder of size 10 or more
+    # leaves its centers no room across the cylinder.
+    artifact = f'N200r5.5lz10ac{dcrowd}nc5dt0.005bdump1adump1'
+
+    with pytest.raises(ValueError, match=re.escape(
+            f"species 'c' of {artifact!r} (lineage 'ensemble_long'): "
+            "no room for particle centers")):
+        ChainCyl(artifact, 'ensemble_long', 'all')
+
+
 @pytest.mark.parametrize('parser_class, artifact', [
     pytest.param(RingCub,
                  'al5nl5ml125ns400ac3nc7735l45dt0.005bdump2000adump5000',
@@ -1156,11 +1172,11 @@ def test_keyword_spec_rejects_bad_declaration(kwargs, match):
 
 
 @pytest.mark.parametrize('name, message', [
-    pytest.param('HnsCub', 'projects/hns_cub/parser.py', id='HnsCub'),
-    pytest.param('HnsCyl', 'projects/hns_cyl/parser.py', id='HnsCyl'),
-    pytest.param('TransFociCub', 'projects/trans_foci_cub/parser.py',
+    pytest.param('HnsCub', 'polyphys_lab.hns_cub.parser', id='HnsCub'),
+    pytest.param('HnsCyl', 'polyphys_lab.hns_cyl.parser', id='HnsCyl'),
+    pytest.param('TransFociCub', 'polyphys_lab.trans_foci_cub.parser',
                  id='TransFociCub'),
-    pytest.param('TransFociCyl', 'projects/trans_foci_cyl/parser.py',
+    pytest.param('TransFociCyl', 'polyphys_lab.trans_foci_cyl.parser',
                  id='TransFociCyl'),
 ])
 def test_moved_study_parser_import_raises_import_error(name, message):

@@ -55,11 +55,12 @@ Peak memory is measured in a separate, untimed run of each stage, because
 
 Usage
 =====
-Run from a checkout or an environment where ``polyphys`` imports::
+Run from a checkout or an environment where ``polyphys`` and the study's
+parser import::
 
     python benchmarks/organizer_timing.py <probe_dir> \\
-        --parser trans_foci_cub --group bug --prop gyrTMon \\
-        --relation tseries --repeats 5
+        --parser polyphys_lab.trans_foci_cub.parser:TransFociCub \\
+        --group bug --prop gyrTMon --relation tseries --repeats 5
 
 ``<probe_dir>`` is the probe directory of one space, as
 :func:`~polyphys.analyze.pipeline.reduce_space` takes it; ``--hierarchy``
@@ -89,7 +90,6 @@ import sys
 import time
 import tracemalloc
 from collections import Counter
-from pathlib import Path
 from typing import Any, Callable, Sequence
 
 import numpy as np
@@ -274,16 +274,16 @@ def residual(end_to_end: dict[str, float],
     return end_to_end['median_s'] - sum(p['median_s'] for p in parts)
 
 
-def _study_parser(study: str) -> type:
-    """Return the parser class that ``projects/<study>/parser.py``
-    exports, the only class in its ``__all__``; ``projects/`` is not an
-    installed package, so its folder is put on the import path."""
-    projects = Path(__file__).resolve().parents[1] / 'projects'
-    if str(projects) not in sys.path:
-        sys.path.insert(0, str(projects))
-    module = importlib.import_module(f'{study}.parser')
-    (name,) = module.__all__
-    parser: type = getattr(module, name)
+def _study_parser(target: str) -> type:
+    """Return the parser class that `target`, ``<module>:<class>``, names,
+    such as ``polyphys_lab.trans_foci_cub.parser:TransFociCub``; the module
+    must be importable."""
+    module_name, sep, class_name = target.partition(':')
+    if not sep or not module_name or not class_name:
+        raise SystemExit(
+            f"--parser takes '<module>:<class>', not {target!r}")
+    module = importlib.import_module(module_name)
+    parser: type = getattr(module, class_name)
     return parser
 
 
@@ -504,8 +504,9 @@ def main(argv: Sequence[str] | None = None) -> None:
                     'Prints timings and counts only; writes nothing.')
     cli.add_argument('probe_dir', help='the probe directory of one space')
     cli.add_argument('--parser', required=True,
-                     help="study folder in projects/ whose parser.py "
-                          "reads the names, such as 'trans_foci_cub'")
+                     help="the parser class that reads the names, as "
+                          "'<module>:<class>', such as "
+                          "'polyphys_lab.trans_foci_cub.parser:TransFociCub'")
     cli.add_argument('--group', required=True, help="particle group, 'bug'")
     cli.add_argument('--prop', required=True,
                      help="property in the file names, such as 'gyrTMon'")

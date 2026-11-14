@@ -67,7 +67,7 @@
 
 [tool.setuptools.packages.find]
     include = ["polyphys*"]
-    exclude = ["projects*", "under_review*"]
+    exclude = ["under_review*"]
 
 [tool.pytest.ini_options]
     addopts = """\
@@ -95,7 +95,6 @@
         "polyphys/probe",
         "polyphys/simulate",
         "polyphys/viz",
-        "projects",
     ]
     strict = true
 

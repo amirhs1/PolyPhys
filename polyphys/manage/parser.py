@@ -29,10 +29,16 @@ The module ships no study's parser: a study declares its own, as the
 
 .. versionchanged:: 1.0.0
    The parsers of nine studies left this module. ``TransFociCyl``,
-   ``TransFociCub``, ``HnsCub``, and ``HnsCyl`` are in the ``projects/``
+   ``TransFociCub``, ``HnsCub``, and ``HnsCyl`` went to the ``projects/``
    folder of the PolyPhys repository, which is not installed; those of
    five unpublished studies were removed. Importing any of the four from
    here raises :exc:`ImportError` that says where it went.
+
+.. versionchanged:: 1.1.0
+   The four parsers are now in the companion repository
+   `polyphys-lab <https://github.com/amirhs1/polyphys-lab>`_, as
+   ``polyphys_lab.<study>.parser``, and the :exc:`ImportError` points
+   there.
 
 Dependencies
 ============
@@ -54,7 +60,7 @@ Examples
 >>> parser.HnsCub  # doctest: +ELLIPSIS
 Traceback (most recent call last):
 ...
-ImportError: HnsCub moved out of PolyPhys in 1.0.0, to projects/hns_cub/...
+ImportError: HnsCub moved out of PolyPhys in 1.0.0, to polyphys_lab.hns_cub...
 
 Notes
 =====
@@ -86,7 +92,8 @@ __all__ = [
 ]
 
 # The parsers of the published studies that left this module in 1.0.0,
-# each with its folder under projects/ in the PolyPhys repository.
+# each with its package in polyphys-lab, polyphys_lab.<folder>.
+_LAB_URL = 'https://github.com/amirhs1/polyphys-lab'
 _MOVED_STUDIES: dict[str, str] = {
     'HnsCub': 'hns_cub',
     'HnsCyl': 'hns_cyl',
@@ -1246,8 +1253,8 @@ def __getattr__(name: str) -> object:
     if name in _MOVED_STUDIES:
         raise ImportError(
             f"{name} moved out of PolyPhys in 1.0.0, to "
-            f"projects/{_MOVED_STUDIES[name]}/parser.py in the PolyPhys "
-            f"repository, which is not installed; copy it into your study's "
-            f"code.")
+            f"polyphys_lab.{_MOVED_STUDIES[name]}.parser in the "
+            f"polyphys-lab repository, {_LAB_URL}; copy it into your "
+            f"study's code.")
     raise AttributeError(
         f"module 'polyphys.manage.parser' has no attribute {name!r}")

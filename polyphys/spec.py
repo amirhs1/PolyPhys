@@ -28,8 +28,8 @@ the glob patterns of the ``space`` and ``ensemble_long`` names, are read from
 the parser rather than stored twice.
 
 PolyPhys holds no table of studies: a study builds its own spec where its
-analysis lives. The specs of the maintainer's studies are in the repository's
-top-level ``projects/`` folder, which is not part of the installed package.
+analysis lives. The specs of the maintainer's studies are in the companion
+repository polyphys-lab, which PolyPhys does not depend on.
 
 .. versionadded:: 0.9.0
    The records of ``polyphys.manage.projects`` and the table records and

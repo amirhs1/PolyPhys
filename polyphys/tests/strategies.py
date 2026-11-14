@@ -4,7 +4,7 @@
 ==========================================================
 
 Hypothesis strategies shared by the package's tests and the study tests in
-``projects/``.
+the polyphys-lab repository.
 
 :func:`lineage_names` draws an artifact name of one lineage of a parser
 class from the parser's own declaration: one value per keyword of the

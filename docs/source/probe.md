@@ -508,7 +508,7 @@ completes the name. The loop-length rows are the maintainer's 2026-11-03
 convention for a per-frame histogram, as the 1-D histogram probes keep
 their int64 counts; the research probe saved their sum over the frames as
 `loopLengthHistMon`, which is `rows.sum(axis=0)`. The H-NS analysis tables
-in `projects/` still read that research artifact through
+in polyphys-lab still read that research artifact through
 `tseries('loopLengthHist', 'Mon')`; reading the per-frame rows is an
 analysis-side change not made yet.
 

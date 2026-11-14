@@ -209,7 +209,8 @@ details. `probe` needs the `mda` extra and `viz.helpers` the `viz` extra.
 
 The package ships no study's parser: each study declares its own
 `ParserBase` subclass in its own folder. The parsers of the maintainer's
-published studies are in `projects/`, outside the installed package.
+published studies are in the companion repository
+[polyphys-lab](https://github.com/amirhs1/polyphys-lab).
 
 ## Documentation
 
@@ -238,7 +239,8 @@ layer's tests run on Python 3.14 with MDAnalysis.
 The Python examples above run as doctests in the test suite.
 
 A study _uses_ PolyPhys from outside the package rather than extending it:
-its parser and its specs live in its own folder, as `projects/` shows.
+its parser and its specs live in its own folder, as
+[polyphys-lab](https://github.com/amirhs1/polyphys-lab) shows.
 
 PolyPhys was migrated from the maintainer's private research code, which the
 documentation, docstrings, and tests call _the research code_; the
@@ -279,7 +281,6 @@ records the checks or human review applied to each part:
 | `polyphys/probe/`                                         | Supervised | CI: flake8, mypy; pytest with doctests on Python 3.14 with MDAnalysis installed; maintainer review of every line                       |
 | `polyphys/viz/`                                           | Supervised | CI: flake8, pytest with doctests on Python 3.11–3.14 with matplotlib installed; maintainer review of every line                        |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Supervised | CI on every pull request: lint, type-check, tests, docs build, package build; maintainer review of every line                          |
-| `projects/`                                               | Supervised | CI: flake8, mypy, pytest of each spec against its parser and the research code's values; maintainer review of every line               |
 | `docs/`                                                   | Supervised | CI: Sphinx build with warnings as errors for `docs/source/`; maintainer review of every line                                           |
 
 Nothing that handles security, credentials, private data, or published results,

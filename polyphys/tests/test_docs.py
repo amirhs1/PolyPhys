@@ -1,10 +1,10 @@
 """
 Tests for the examples of the documentation pages in ``docs/source/``.
 
-pytest collects doctests from ``polyphys``, ``README.md``, and ``projects``
-only, so the ``>>>`` examples of a documentation page run here, one test
-per page, through :func:`doctest.testfile`. The pages compute their expected
-values by hand in the text beside each example.
+pytest collects doctests from ``polyphys`` and ``README.md`` only, so the
+``>>>`` examples of a documentation page run here, one test per page,
+through :func:`doctest.testfile`. The pages compute their expected values
+by hand in the text beside each example.
 """
 import doctest
 import os

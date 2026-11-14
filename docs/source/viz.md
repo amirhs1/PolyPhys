@@ -5,8 +5,7 @@ color lists the studies' figures use, a way to cut a color map down to part
 of its range, a rule for placing an axis's ticks, two legend-handle makers,
 a legend mover, and a band shader. Everything here is a thin layer over
 matplotlib; the figures themselves, with their study-specific labels,
-filters, and layouts, belong to each study under `projects/<study>/`, not to
-the package.
+filters, and layouts, belong to each study, not to the package.
 
 The layer is an optional extra, since the rest of PolyPhys never draws:
 
@@ -162,7 +161,7 @@ titles, and per-project settings), fifteen figure scripts tied to the
 research code's column names, four end-to-end-distribution plotters that
 nothing called, and seven helpers and seven palettes with no callers. None
 of that is in PolyPhys: the tables and figures are study code, for
-`projects/<study>/` when a study's figures are ported, and the rest had no
+each study's folder when its figures are ported, and the rest had no
 use. The one bug the ported helpers carried, a legend attribute that
 matplotlib 3.9 removed, is fixed with its replacement, which matplotlib 3.7
 introduced. The extra requires `matplotlib>=3.8.4`.

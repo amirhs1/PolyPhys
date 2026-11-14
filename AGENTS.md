@@ -19,10 +19,10 @@ commit it, and never copy its contents into a tracked file.
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Install              | `python -m pip install -e '.[dev,viz]'`; add the `mda` extra for the probe tests and `docs` for the docs build                                        |
 | Build                | `python -m build`                                                                                                                                     |
-| Run all tests        | `python -m pytest polyphys README.md projects --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'` |
+| Run all tests        | `python -m pytest polyphys README.md --cov=polyphys --cov-report=term-missing --cov-report=xml --doctest-modules --doctest-glob='README.md'`          |
 | Run one test         | `python -m pytest polyphys/tests/manage/test_parser.py::<test name>`                                                                                  |
-| Lint                 | `python -m flake8 polyphys projects`                                                                                                                  |
-| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate projects`                                                           |
+| Lint                 | `python -m flake8 polyphys`                                                                                                                           |
+| Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate`                                                                    |
 | Docs                 | `python -m sphinx -W -b html docs/source docs/_build`                                                                                                 |
 | Full pre-commit gate | Lint, type-check, and all tests; add the build after a packaging change and the docs build when `docs/source/` changed                                |
 
@@ -58,7 +58,6 @@ PolyPhys/
   polyphys/probe/      core, chain_size, binders, histograms, pairs: per-frame observables read from LAMMPS trajectories with MDAnalysis (the mda extra)
   polyphys/viz/        colors, helpers: color lists and matplotlib helpers for the studies' figures (the viz extra)
   polyphys/tests/      tests for analyze/, manage/, probe/, simulate/, viz/, packaging, the docs pages, and the shared fixtures
-  projects/            one folder per study: its ProjectSpec, ProbeSpec, and analysis tables; not installed
   docs/source/         Sphinx sources
   README.md            user guide; its examples run as doctests
   AI-POLICY.md         AI policy, for contributors
@@ -161,7 +160,6 @@ your role in each tier. Change both in the same commit.
 | `polyphys/probe/`                                         | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
 | `polyphys/viz/`                                           | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
 | `polyphys/tests/`, `.github/workflows/`, `pyproject.toml` | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
-| `projects/`                                               | Supervised   | Draft a study's spec from the research code's values; every line is read.        |
 | `docs/`                                                   | Supervised   | Draft against acceptance criteria the maintainer set; every line is read.        |
 
 - A path not listed is Supervised: draft against acceptance criteria the

@@ -93,6 +93,14 @@ public; importing one now fails as for any name the module never
 defined. The package's own tests and examples use made-up parsers in
 `polyphys.tests.synthetic`.
 
+**The companion repository.** On 2026-11-08 the maintainer decided that
+PolyPhys stands alone: the package and its tests do not refer to the
+studies. In 1.1.0 the `projects/` folder moved to the companion repository
+[polyphys-lab](https://github.com/amirhs1/polyphys-lab) (amirhs1/PolyPhys#275), where each study is a
+folder installed as `polyphys_lab.<study>`, with the tests that run its
+specs on real frames. The lab depends on a released PolyPhys, never the
+reverse.
+
 [^adorf2018]: C. S. Adorf, P. M. Dodd, V. Ramasubramani, and S. C. Glotzer,
     "Simple data and workflow management with the signac framework,"
     *Comput. Mater. Sci.* **146**, 220–229 (2018),

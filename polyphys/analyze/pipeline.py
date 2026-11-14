@@ -16,8 +16,8 @@ A study describes its analysis as data: one
 :class:`~polyphys.spec.AnalysisTable` per particle group, listing a
 :class:`~polyphys.spec.PropertySpec` per probe artifact; both records are in
 :mod:`polyphys.spec`. The tables of the maintainer's studies live beside each
-study's :class:`~polyphys.spec.ProjectSpec` in the repository's
-``projects/`` folder, so a data correction or a special case is code in the
+study's :class:`~polyphys.spec.ProjectSpec` in the companion repository
+polyphys-lab, so a data correction or a special case is code in the
 study's folder, never an option of this module.
 
 Notation
