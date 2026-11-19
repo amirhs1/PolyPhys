@@ -230,9 +230,9 @@ def test_sort_filenames_rejects_extension_in_two_format_groups():
 
 
 def test_sort_filenames_keeps_names_that_differ_after_last_dot():
-    """Two names that differ only after their last dot, as every HnsCyl name
-    ending in ``epshc1.0nc<n>`` does, stay two groups instead of colliding
-    on the part before the dot, with the format the space collectors pass."""
+    """Two names that differ only after their last dot, as names ending in
+    ``epshc1.0nc<n>`` do, stay two groups instead of colliding on the part
+    before the dot, with the format the space collectors pass."""
     files = ["N200epshc1.0nc500-nucleoid-rhoMon-ensAvg.csv",
              "N200epshc1.0nc0-nucleoid-rhoMon-ensAvg.csv"]
 

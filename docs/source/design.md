@@ -121,12 +121,10 @@ $r_{c,ij} = \sigma_{ij}$, not at $2^{1/6}\sigma_{ij}$, and its energy is
 shifted to zero at the cutoff. Those pairs are still purely repulsive, but
 only the part of the repulsion with $r < \sigma_{ij}$ is kept.
 
-## HnsCub and HnsCyl
+## HnsCub
 
-`HnsCub` and
-`HnsCyl`: a ring of $N$ monomers, $n_h$ H-NS
-proteins, and crowders, in a periodic cube or in a cylinder that is periodic
-along its axis. Each protein is a core of size 1 bonded to two poles. The
+`HnsCub`: a ring of $N$ monomers, $n_h$ H-NS proteins, and crowders, in a
+periodic cube. Each protein is a core of size 1 bonded to two poles. The
 particle types are the monomer (1), the H-NS pole (2), the H-NS core (3),
 and the crowder (4). Every pair energy is shifted to zero at its cutoff.
 
@@ -140,7 +138,6 @@ and the crowder (4). Every pair energy is shifted to zero at its cutoff.
 
 | Value | Setting |
 | --- | --- |
-| Wall (HnsCyl) | style `lj126`, as in TransFociCyl: monomers $\epsilon_w = 5$, $\sigma_w = 1$, $r_{c,w} = 2^{1/6}$; poles $\epsilon_w = 1$, $\sigma_w = 0.535$, $r_{c,w} = 0.685$; cores $\epsilon_w = 1$, $\sigma_w = 1$, $r_{c,w} = 2^{1/6}$; crowders $\epsilon_w = 1$, $\sigma_w = (1 + a_c)/2$, $r_{c,w} = 2^{1/6}\sigma_w$ |
 | Bonds | monomer–monomer FENE; pole–core `bond_style harmonic`, $K = 120$, $r_0 = 0.4$ |
 | Angles | `angle_style harmonic` ([LAMMPS](https://docs.lammps.org/angle_harmonic.html)), $E = K(\theta - \theta_0)^2$: monomer–monomer–monomer $K$ = (keyword `kbmm`)/2, $\theta_0 = 180°$; pole–core–pole $K = 50$, $\theta_0 = 180°$ |
 | Masses | monomers, poles, and cores 1; crowders $a_c^3$ |
