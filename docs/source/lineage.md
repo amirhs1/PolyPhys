@@ -188,14 +188,18 @@ the data flows through them:
 | `analysis` | the reduction of the probes down the lineage, and the `space` tables |
 | `viz`      | data prepared for figures                                     |
 | `galaxy`   | tables that combine spaces                                    |
-| `allInOne` | a study's tables of one row per whole, such as the equilibrium values that {func}`~polyphys.analyze.pipeline.equilibrium_wholes` returns |
+| `allInOne` | a study's tables of one row per whole, such as the equilibrium values that {func}`~polyphys.analyze.pipeline.all_in_one_wholes` returns |
 
 PolyPhys reads the files of the `logs` and `trjs` phases
 ({mod}`polyphys.simulate`, {mod}`polyphys.probe`) and writes the `analysis`
 phase ({mod}`polyphys.analyze.pipeline`, {mod}`polyphys.manage.organizer`,
 {mod}`polyphys.analyze.sumrule`). A study's driver decides where the probe
-writes, and no function of PolyPhys writes the `viz`, `galaxy`, or
-`allInOne` phase yet. The [Workflow](workflow.md) page follows the data from
+writes, and no function of PolyPhys writes the `viz` or `galaxy` phase
+yet. Of the `allInOne` phase, PolyPhys writes one table, and only when
+asked: {func}`~polyphys.analyze.pipeline.all_in_one_wholes` with `save_to`
+writes `allInOne-<project>-<group>-equilProps-whole.csv`, one row per whole
+of the study's spaces, into the directory the driver names, after that
+directory's provenance record. The [Workflow](workflow.md) page follows the data from
 `trjs` to `space`.
 
 ## Stages

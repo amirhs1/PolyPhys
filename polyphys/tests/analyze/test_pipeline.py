@@ -9,11 +9,12 @@ subfolder. A tree's values are ``1000 e + 100 w + 10 s + k``
 two-dimensional wholes are written over the tree's files by hand. The hooks
 are also tested on their own with a ``HookContext``; the density kernel is a
 stub that records its calls. The equilibrium values of the wholes are read
-from ensemble CSV files written by hand. Two tests reduce the output of a
-probe run in the test: ``ChainSize`` on chains written by
-``make_chain_files``, which skip without MDAnalysis and take their expected
-names from the parser and their expected means from the probe's own
-results. A stage's provenance record is compared with
+from ensemble CSV files written by hand, and the ``allInOne`` table from
+``ens`` directories of two ChainCyl spaces written by hand. Two tests
+reduce the output of a probe run in the test: ``ChainSize`` on chains
+written by ``make_chain_files``, which skip without MDAnalysis and take
+their expected names from the parser and their expected means from the
+probe's own results. A stage's provenance record is compared with
 ``polyphys.__version__``, the version it is defined to hold.
 """
 import dataclasses
@@ -39,6 +40,7 @@ from polyphys.analyze.pipeline import (
     LocalDensities,
     TimeAverage,
     _resolve,
+    all_in_one_wholes,
     equilibrium_wholes,
     half_contour,
     reduce_space,
@@ -1694,6 +1696,325 @@ def test_equilibrium_wholes_empty_directory_raises(ens_dir):
     with pytest.raises(FileNotFoundError, match="No file matches"):
         equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"},
                            pd.DataFrame({"whole": ["w1"]}))
+
+
+# The allInOne table of the wholes
+
+
+@pytest.fixture
+def write_space(tmp_path):
+    """Factory: write the ``ens`` directory of one ChainCyl space, 100
+    crowders of size `dcrowd` around a chain of 20 monomers, and return it.
+    The directory holds the ensemble CSV of each property, one column per
+    whole with the whole's `series`, and the whole stamps file, whose
+    ``phi_bulk_c`` is the parser's value for each whole."""
+    def _write(dcrowd, series, props=("gyrTMon",), version="1.0.0",
+               stamps_order=None, drop=()):
+        stem = f"N20r5.5lz25.0ac{dcrowd}nc100dt0.005bdump1000adump5000"
+        wholes = [f"{stem}ens{i}" for i in range(1, len(series) + 1)]
+        space = ChainCyl(wholes[0], "whole", "bug").space
+        folder = tmp_path / "analysis" / f"{space}-bug-ens"
+        folder.mkdir(parents=True)
+        for prop in props:
+            pd.DataFrame(dict(zip(wholes, series))).to_csv(
+                folder / f"{stem}-bug-{prop}.csv", index=False)
+        stamps = pd.DataFrame({
+            "whole": wholes,
+            "space": space,
+            "n_frames": [len(column) for column in series],
+            "phi_bulk_c": [ChainCyl(whole, "whole", "bug").phi_bulk_c
+                           for whole in wholes],
+        })
+        if version is not None:
+            stamps["polyphys_version"] = version
+        if stamps_order is not None:
+            stamps = stamps.iloc[stamps_order]
+        stamps.drop(columns=list(drop)).to_csv(
+            folder / f"{space}-bug-stamps-whole.csv", index=False)
+        return folder
+    return _write
+
+
+@pytest.fixture
+def gyr_spec(cyl_spec):
+    """The ChainCyl spec with ``gyrTMon`` as its only time series."""
+    return dataclasses.replace(cyl_spec, tseries_properties=("gyrTMon",))
+
+
+def test_all_in_one_wholes_has_one_row_per_whole_in_the_given_order(
+        write_space, gyr_spec, alternating):
+    """The rows are the spaces in the order given, not sorted, and the
+    wholes of each space in the order of its stamps."""
+    small = write_space(1.0, [alternating, alternating], stamps_order=[1, 0])
+    large = write_space(2.0, [alternating, alternating])
+
+    table = all_in_one_wholes([large, small], gyr_spec)
+
+    assert table["whole"].to_list() == [
+        "N20r5.5lz25.0ac2.0nc100dt0.005bdump1000adump5000ens1",
+        "N20r5.5lz25.0ac2.0nc100dt0.005bdump1000adump5000ens2",
+        "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000ens2",
+        "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000ens1",
+    ]
+    assert table.index.to_list() == [0, 1, 2, 3]
+
+
+def test_all_in_one_wholes_mean_and_var_are_the_time_average_and_variance(
+        write_space, gyr_spec, alternating):
+    """``-mean`` is the time average and ``-var`` the ``ddof = 1`` variance
+    of each whole's series."""
+    spaces = [write_space(1.0, [alternating, alternating + 1]),
+              write_space(2.0, [alternating + 2, alternating + 3])]
+
+    table = all_in_one_wholes(spaces, gyr_spec)
+
+    # 256 frames alternate between c and c + 2: the mean is c + 1 and every
+    # deviation is exactly 1, so the variance is 256/255. The sums are
+    # exact in float64; rtol allows the rounding of the divisions.
+    assert_allclose(table["gyrMon-mean"], [1.0, 2.0, 3.0, 4.0], rtol=1e-12)
+    assert_allclose(table["gyrMon-var"], np.full(4, 256 / 255), rtol=1e-12)
+
+
+def test_all_in_one_wholes_sem_is_the_blocked_error(
+        write_space, gyr_spec, alternating):
+    """``-sem`` is the blocked error: zero for a series whose blocks of two
+    frames all have the same average, where the per-frame error is not."""
+    spaces = [write_space(1.0, [alternating, alternating + 1]),
+              write_space(2.0, [alternating + 2, alternating + 3])]
+
+    table = all_in_one_wholes(spaces, gyr_spec)
+
+    assert table["gyrMon-sem"].to_list() == [0.0, 0.0, 0.0, 0.0]
+
+
+def test_all_in_one_wholes_equals_equilibrium_wholes_of_each_space(
+        write_space, gyr_spec, alternating):
+    """Without its rounded column, the table is ``equilibrium_wholes`` of
+    each space, concatenated: a consistency property, not a reference
+    value."""
+    spaces = [write_space(1.0, [alternating, 3 * alternating]),
+              write_space(2.0, [alternating + 5, alternating / 7])]
+    expected = pd.concat(
+        [equilibrium_wholes(
+            space, {"gyrTMon": "gyrMon"},
+            pd.read_csv(next(space.glob("*-stamps-whole.csv"))))
+         for space in spaces], ignore_index=True)
+
+    table = all_in_one_wholes(spaces, gyr_spec)
+
+    pd.testing.assert_frame_equal(
+        table.drop(columns="phi_bulk_c_round"), expected)
+
+
+def test_all_in_one_wholes_rounds_phi_to_a_multiple_of_the_spec_divisor(
+        write_space, gyr_spec, alternating):
+    """``phi_bulk_c_round`` is a multiple of the spec's divisor within half
+    a step of the stamps' value, and differs between two state points that
+    are more than a step apart: properties of rounding to a multiple."""
+    spec = dataclasses.replace(gyr_spec, divisor=0.025)
+    spaces = [write_space(1.0, [alternating]), write_space(2.0, [alternating])]
+
+    table = all_in_one_wholes(spaces, spec)
+
+    rounded = table["phi_bulk_c_round"].to_numpy()
+    steps = rounded / 0.025
+    # round_to = 3 decimals of a multiple of 0.025 are exact up to float64
+    # round-off, of order 1e-16 here; 1e-9 is far above it and far below
+    # the step.
+    assert_allclose(steps, np.round(steps), rtol=0, atol=1e-9)
+    assert np.all(
+        np.abs(rounded - table["phi_bulk_c"].to_numpy()) <= 0.0125 + 1e-9)
+    assert rounded[0] != rounded[1]
+
+
+@pytest.mark.parametrize("properties, outputs", [
+    pytest.param(None, ["gyrMon", "shapeMon"], id="spec-default"),
+    pytest.param({"shapeTMon": "asphericity"}, ["asphericity"],
+                 id="mapping"),
+])
+def test_all_in_one_wholes_names_outputs_by_the_spec_or_the_mapping(
+        write_space, cyl_spec, alternating, properties, outputs):
+    """Without a mapping the outputs are the spec's time series with their
+    last ``T`` dropped, in the spec's order; a mapping replaces them."""
+    spec = dataclasses.replace(
+        cyl_spec, tseries_properties=("gyrTMon", "shapeTMon"))
+    spaces = [
+        write_space(1.0, [alternating], props=("gyrTMon", "shapeTMon")),
+        write_space(2.0, [alternating], props=("gyrTMon", "shapeTMon")),
+    ]
+
+    table = all_in_one_wholes(spaces, spec, properties)
+
+    assert table.columns.to_list() == [
+        "whole", "space", "n_frames", "phi_bulk_c", "polyphys_version",
+        *[f"{output}-{measure}" for output in outputs
+          for measure in ("mean", "var", "sem")],
+        "phi_bulk_c_round",
+    ]
+
+
+def test_all_in_one_wholes_property_without_a_t_needs_a_mapping(
+        write_space, cyl_spec, alternating):
+    """A spec time series whose name holds no ``T`` raises and asks for
+    the mapping."""
+    spec = dataclasses.replace(cyl_spec, tseries_properties=("gyrMon",))
+    spaces = [write_space(1.0, [alternating], props=("gyrMon",))]
+
+    with pytest.raises(ValueError, match="'gyrMon' holds no 'T'"):
+        all_in_one_wholes(spaces, spec)
+
+
+def test_all_in_one_wholes_without_a_property_raises(
+        write_space, cyl_spec, alternating):
+    """A spec without time series and no mapping raises instead of
+    returning the stamps alone."""
+    spaces = [write_space(1.0, [alternating])]
+
+    with pytest.raises(ValueError, match="no property to reduce"):
+        all_in_one_wholes(spaces, cyl_spec)
+
+
+def test_all_in_one_wholes_directory_without_whole_stamps_raises(
+        write_space, gyr_spec, alternating):
+    """An ``ens`` directory without a whole stamps file raises and is
+    named."""
+    space = write_space(1.0, [alternating])
+    next(space.glob("*-stamps-whole.csv")).unlink()
+
+    with pytest.raises(FileNotFoundError, match=re.escape(str(space))):
+        all_in_one_wholes([space], gyr_spec)
+
+
+def test_all_in_one_wholes_directory_with_two_whole_stamps_raises(
+        write_space, gyr_spec, alternating):
+    """An ``ens`` directory with two whole stamps files raises and is
+    named."""
+    space = write_space(1.0, [alternating])
+    stamps = next(space.glob("*-stamps-whole.csv"))
+    (space / "other-bug-stamps-whole.csv").write_text(stamps.read_text())
+
+    with pytest.raises(ValueError, match=re.escape(str(space))):
+        all_in_one_wholes([space], gyr_spec)
+
+
+def test_all_in_one_wholes_stamps_without_the_crowder_column_raise(
+        write_space, gyr_spec, alternating):
+    """Stamps without the spec's ``crowder_attr`` column raise and name
+    the column."""
+    space = write_space(1.0, [alternating], drop=("phi_bulk_c",))
+
+    with pytest.raises(ValueError, match="no 'phi_bulk_c' column"):
+        all_in_one_wholes([space], gyr_spec)
+
+
+def test_all_in_one_wholes_writes_nothing_by_default(
+        tmp_path, write_space, gyr_spec, alternating):
+    """Without ``save_to`` no file or directory is made."""
+    spaces = [write_space(1.0, [alternating]), write_space(2.0, [alternating])]
+    before = sorted(tmp_path.rglob("*"))
+
+    all_in_one_wholes(spaces, gyr_spec)
+
+    assert sorted(tmp_path.rglob("*")) == before
+
+
+def test_all_in_one_wholes_saves_the_table_and_the_provenance_record(
+        tmp_path, write_space, gyr_spec, alternating):
+    """With ``save_to`` the directory holds the table, under the allInOne
+    name and equal to the one returned, and a provenance record of the
+    running version."""
+    spaces = [write_space(1.0, [alternating, alternating / 7]),
+              write_space(2.0, [alternating / 3])]
+    save_to = tmp_path / "allInOne"
+    save_to.mkdir()
+
+    table = all_in_one_wholes(spaces, gyr_spec, save_to=save_to)
+
+    assert sorted(path.name for path in save_to.iterdir()) == [
+        "allInOne-ChainCyl-bug-equilProps-whole.csv",
+        "allInOne-provenance.json",
+    ]
+    # A float64 written to CSV and parsed back by pandas agrees to
+    # round-off, not always to the last bit.
+    pd.testing.assert_frame_equal(
+        pd.read_csv(save_to / "allInOne-ChainCyl-bug-equilProps-whole.csv"),
+        table, rtol=1e-12, atol=1e-15)
+    record = json.loads((save_to / "allInOne-provenance.json").read_text())
+    assert record == {"polyphys_version": polyphys.__version__}
+
+
+def test_all_in_one_wholes_save_to_must_exist(
+        tmp_path, write_space, gyr_spec, alternating):
+    """A ``save_to`` that is not a directory raises, and nothing is made."""
+    spaces = [write_space(1.0, [alternating])]
+    save_to = tmp_path / "allInOne"
+
+    with pytest.raises(FileNotFoundError, match="not an existing directory"):
+        all_in_one_wholes(spaces, gyr_spec, save_to=save_to)
+
+    assert not save_to.exists()
+
+
+def test_all_in_one_wholes_carries_the_stamps_version_unchanged(
+        write_space, gyr_spec, alternating):
+    """The stamps' ``polyphys_version``, the version that probed each
+    whole, is kept as written and not replaced by the running version."""
+    spaces = [write_space(1.0, [alternating], version="0.9.0"),
+              write_space(2.0, [alternating], version="1.0.0")]
+
+    table = all_in_one_wholes(spaces, gyr_spec)
+
+    assert table["polyphys_version"].to_list() == ["0.9.0", "1.0.0"]
+
+
+def test_all_in_one_wholes_accepts_stamps_without_a_version(
+        write_space, gyr_spec, alternating):
+    """Stamps written before the version column existed give a table
+    without it."""
+    spaces = [write_space(1.0, [alternating], version=None),
+              write_space(2.0, [alternating], version=None)]
+
+    table = all_in_one_wholes(spaces, gyr_spec)
+
+    assert "polyphys_version" not in table.columns
+    assert len(table) == 2
+
+
+@pytest.mark.parametrize("as_type", [
+    pytest.param(str, id="str"),
+    pytest.param(Path, id="path"),
+])
+def test_all_in_one_wholes_rejects_a_single_path(
+        write_space, gyr_spec, alternating, as_type):
+    """One path in place of the list of directories raises instead of
+    being read character by character."""
+    space = write_space(1.0, [alternating])
+
+    with pytest.raises(TypeError, match="not the single path"):
+        all_in_one_wholes(as_type(space), gyr_spec)
+
+
+def test_all_in_one_wholes_rejects_an_empty_list(gyr_spec):
+    """An empty list of directories raises."""
+    with pytest.raises(ValueError, match="names no 'ens' directory"):
+        all_in_one_wholes([], gyr_spec)
+
+
+def test_all_in_one_wholes_rejects_a_whole_in_two_spaces(
+        tmp_path, write_space, gyr_spec, alternating):
+    """A whole that is in the stamps of two directories raises and is
+    named, so no row is counted twice."""
+    space = write_space(1.0, [alternating])
+    copy = tmp_path / "analysis" / "copy-bug-ens"
+    copy.mkdir()
+    for path in space.iterdir():
+        (copy / path.name).write_text(path.read_text())
+
+    with pytest.raises(
+            ValueError,
+            match="N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000ens1' "
+                  "is in the stamps of two spaces"):
+        all_in_one_wholes([space, copy], gyr_spec)
 
 
 # The space stage from the spec

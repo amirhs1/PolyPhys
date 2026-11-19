@@ -295,6 +295,45 @@ such as `...ens1.ring`, while the ensemble files name a whole without the
 suffix: it is appended to the ensemble's names before the merge, and the
 table keeps the stamps' names.
 
+## The allInOne table of a study
+
+A study has several spaces, and its `allInOne` table holds the wholes of
+all of them. {func}`~polyphys.analyze.pipeline.all_in_one_wholes` takes the
+`ens` directories, one per space, and the study's spec. For each space it
+reads the whole stamps file in the directory,
+`<space>-<group>-stamps-whole.csv`, and calls `equilibrium_wholes`; it
+then concatenates the spaces in the order given and adds
+`phi_bulk_c_round`, the stamps' `crowder_attr` column rounded to the spec's
+`divisor` as in the `space` tables.
+
+```python
+from polyphys.analyze.pipeline import all_in_one_wholes
+
+table = all_in_one_wholes(
+    ['analysis/ns400nl5al5ac1-bug-ens', 'analysis/ns400nl5al5ac2-bug-ens'],
+    SPEC, topology='ring', save_to='allInOne')
+```
+
+Without a mapping of properties to output names, the properties are the
+spec's `tseries_properties` and each output name is the property without
+its last `T`, so `gyrTMon` becomes `gyrMon`; a name without a `T` raises
+and asks for the mapping. The columns are those of the stamps, then
+`<output>-mean`, `-var`, and `-sem` for each property, then
+`phi_bulk_c_round`.
+
+The function returns the table and writes nothing by default. With
+`save_to`, an existing directory, it writes the directory's provenance
+record and then the table as
+`allInOne-<spec.name>-<group>-equilProps-whole.csv`. The stamps'
+`polyphys_version` column, the version that probed each whole, stays in
+the table as it is; the provenance record names the version that built
+the table.
+
+A directory with no whole stamps file or with more than one, stamps
+without the `crowder_attr` column, a whole that is in the stamps of two
+spaces, a single path in place of the list, and an empty list each raise
+before any time series is read.
+
 ## What changed from the research code
 
 The module replaces the research code's `analyzer`, whose nine
