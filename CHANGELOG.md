@@ -1,11 +1,10 @@
 # Changelog
 
-All notable changes to PolyPhys are documented here. The format is
-[Common Changelog](https://common-changelog.org/), with two departures: an
-`[Unreleased]` section collects changes between releases, and each release
-adds the commit references its entries lack; and the 1.0.0 changes carry a
-"Migrating to 1.0.0" table of every breaking change since 0.4.0 with its
-migration path. This project follows
+All notable changes to PolyPhys are documented here, in the
+[Common Changelog](https://common-changelog.org/) format. Each version's
+section is written once, when that version is released. One departure from
+the format: the 1.0.0 changes carry a "Migrating to 1.0.0" table of every
+breaking change since 0.4.0 with its migration path. This project follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 From 1.0.0, the public API and its deprecation policy are those of the
@@ -13,6 +12,9 @@ From 1.0.0, the public API and its deprecation policy are those of the
 deprecation is listed under "Changed" and starts with `**Deprecated:**`.
 
 ## [Unreleased]
+
+Written before each section was written at release; later changes are not
+added here. The 1.1.0 section, written from the commits, replaces it.
 
 ### Changed
 

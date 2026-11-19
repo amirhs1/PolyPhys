@@ -8,8 +8,9 @@
 # Types and scopes are in CONTRIBUTING.md, "Names"; a scope is an area there.
 #   Types: feat, fix, docs, test, refactor, chore, release, question
 # Pick one dominant scope.
-# For a breaking change, explain it in the body; its changelog line starts
-# with **Breaking:** (CONTRIBUTING.md, "Changelog").
+# For a breaking change or a deprecation, say so in the body; the
+# release writes its **Breaking:** or **Deprecated:** changelog line
+# from it (CONTRIBUTING.md, "Changelog").
 #
 # AI PROVENANCE
 # Add each applicable trailer as an uncommented line. All trailers sit in one
