@@ -2,8 +2,9 @@
 
 The inputs are tier A: a data file and a dump of one linear chain written
 by the ``make_chain_files`` fixture, and parsers built from hand-written
-names. Expected values are the positions the fixture wrote and the
-attributes the parser sets.
+names. Expected values are the positions the fixture wrote, the
+attributes the parser sets, and ``polyphys.__version__``, the version the
+stamps are defined to record.
 
 The real-frame tests open the tier B files of the published studies' wholes
 (``polyphys/tests/probe/conftest.py``, "Real frames") and probe them with
@@ -24,7 +25,7 @@ import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 import polyphys
-from polyphys.manage.organizer import children_stamps
+from polyphys.manage.organizer import children_stamps, parents_stamps
 from polyphys.tests.synthetic import ChainCyl, RingCub, RingCubBinders, RingCyl
 from polyphys.simulate.dump import iter_dump
 
@@ -114,7 +115,8 @@ def test_make_universe_rejects_a_fixed_keyword(make_chain_files,
 def test_write_stamps_columns_are_genealogy_group_attributes_and_frames(
         whole_parser, tmp_path):
     """The stamps have the lineage names, group, exactly the parser's
-    attributes in order, then n_frames, with the parser's values."""
+    attributes in order, n_frames, then polyphys_version, with the parser's
+    values and the running version."""
     path = write_stamps(whole_parser, 7, tmp_path)
 
     stamps = pd.read_csv(path)
@@ -122,10 +124,11 @@ def test_write_stamps_columns_are_genealogy_group_attributes_and_frames(
     assert path.name == f'{whole_parser.name}-bug-stamps.csv'
     assert stamps.columns.tolist() == (
         ['whole', 'ensemble_long', 'ensemble', 'space', 'group']
-        + whole_parser.attributes + ['n_frames'])
+        + whole_parser.attributes + ['n_frames', 'polyphys_version'])
     assert stamps['whole'].tolist() == [whole_parser.name]
     assert stamps['group'].tolist() == ['bug']
     assert stamps['n_frames'].tolist() == [7]
+    assert stamps['polyphys_version'].tolist() == [polyphys.__version__]
     for attr in whole_parser.attributes:
         assert stamps.loc[0, attr] == getattr(whole_parser, attr), attr
 
@@ -142,6 +145,20 @@ def test_write_stamps_reads_back_through_children_stamps(whole_parser,
 
     assert combined['ensemble_id'].tolist() == [1, 2]
     assert combined['n_frames'].tolist() == [3, 4]
+
+
+def test_write_stamps_version_reaches_the_ensemble_stamps(
+        whole_parser, tmp_path):
+    """Two wholes probed by the running version give their ensemble one
+    polyphys_version, that version."""
+    second = ChainCyl(
+        'N10r2.5lz10ac1nc0dt0.005bdump1adump1ens2', 'whole', 'bug')
+    paths = [(str(write_stamps(parser, 3, tmp_path)),)
+             for parser in (whole_parser, second)]
+
+    ensembles = parents_stamps(children_stamps(paths, 'whole'), 'whole')
+
+    assert ensembles['polyphys_version'].tolist() == [polyphys.__version__]
 
 
 @pytest.mark.parametrize('n_frames', [

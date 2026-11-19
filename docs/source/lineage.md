@@ -278,7 +278,48 @@ into each of the three reduction stages, named
 | `ens`      | `<space>-<group>-stamps-whole.csv`            | whole          |
 | `ensAvg`   | `<space>-<group>-stamps-ensemble_long.csv`    | state point    |
 
-The `wholeSim` table exists only when the probe ran on segments.
+The `wholeSim` table exists only when the probe ran on segments. From
+1.1.0 the probe's stamps end in a `polyphys_version` column, the version
+of PolyPhys that probed each artifact; each table keeps it, and a row one
+level up lists the distinct versions of its children, in the order they
+first appear, joined by `; `.
+
+### Provenance records
+
+Every stage directory that PolyPhys writes holds one provenance record,
+named for the directory: `<prefix>-<group>-<stage>-provenance.json`. It
+is a JSON object with one key, `polyphys_version`, the
+{data}`polyphys.__version__` of the last run that wrote into the stage.
+{func}`~polyphys.analyze.pipeline.reduce_space` writes it into `wholeSim`,
+`ens`, and `ensAvg`, and the writers of the `space` tables into `space`,
+each before its first artifact, with
+{func}`~polyphys.manage.organizer.write_provenance`:
+
+```python
+>>> import json
+>>> import tempfile
+>>> from pathlib import Path
+>>> import polyphys
+>>> from polyphys.manage.organizer import make_database, write_provenance
+>>> tmp = tempfile.TemporaryDirectory()
+>>> probe = Path(tmp.name) / 'probes' / 'N200D20ac2-bug-probe'
+>>> record = write_provenance(make_database(probe, 'analysis', 'ens', 'bug'))
+>>> record.name
+'N200D20ac2-bug-ens-provenance.json'
+>>> version = json.loads(record.read_text())['polyphys_version']
+>>> version == polyphys.__version__
+True
+>>> tmp.cleanup()
+
+```
+
+When a stage already holds a record of another version, as it does when a
+newer PolyPhys writes into a stage that an older one wrote, the record is
+overwritten with a `UserWarning`: the stage may then hold artifacts of both
+versions. The probe writes no record; each probed artifact's version is
+the `polyphys_version` column of its stamps instead. Nothing in PolyPhys
+reads a record, so a stage written before 1.1.0, which has none, reads and
+reduces as before.
 
 ### The grammar of a name
 

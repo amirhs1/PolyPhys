@@ -75,6 +75,9 @@ The :doc:`/lineage` page is the reference; in short:
 - Fields are joined by ``-``. A lineage name never contains ``-``, and a
   group cannot; a property may, to join a measure (``gyrTMon-acf``), so it
   is everything between the group and the stage suffix or the extension.
+- A stage directory's provenance record is
+  ``<prefix>-<group>-<stage>-provenance.json``, the directory's own name
+  followed by ``-provenance.json``, as :func:`write_provenance` builds it.
 
 Dependencies
 ============
@@ -86,7 +89,8 @@ Contents
 ========
 
 Naming and persistence:
-:func:`create_fullname`, :func:`save_artifact`, and :func:`make_database`.
+:func:`create_fullname`, :func:`save_artifact`, :func:`make_database`, and
+:func:`write_provenance`.
 
 Building wholes from their parts:
 :func:`whole_from_segments` and :func:`whole_from_file`.
@@ -160,6 +164,7 @@ Notes
   properties, species, and stages.
 """
 
+import json
 import warnings
 import logging
 from typing import (
@@ -173,6 +178,7 @@ from glob import glob
 from types import MappingProxyType
 import numpy as np
 import pandas as pd
+from ..__version__ import __version__
 from .types import (
     Pathish,
     PathGroup,
@@ -213,6 +219,7 @@ __all__ = [
     'space_tseries',
     'whole_from_file',
     'whole_from_segments',
+    'write_provenance',
 ]
 
 logger = logging.getLogger(__name__)
@@ -329,6 +336,85 @@ def save_artifact(
             f"Unsupported data type {type(data).__name__}."
             + "Expected pd.DataFrame, np.ndarray, or dict of np.ndarray."
         )
+
+
+def write_provenance(save_to: Pathish) -> Path:
+    """
+    Record in a stage directory the version of PolyPhys that writes into it.
+
+    The record is ``<directory>-provenance.json`` in `save_to`, with
+    ``<directory>`` the directory's own name, such as
+    ``N20-bug-ens-provenance.json`` in ``N20-bug-ens``. It holds one JSON
+    object, ``{"polyphys_version": "<version>"}``, with the version
+    :data:`polyphys.__version__` gives.
+
+    .. versionadded:: 1.1.0
+
+    Parameters
+    ----------
+    save_to : Pathish
+        An existing stage directory, such as one that :func:`make_database`
+        returns; a trailing ``/`` is allowed.
+
+    Returns
+    -------
+    pathlib.Path
+        The record written.
+
+    Warns
+    -----
+    UserWarning
+        If the directory already holds a record that names another version,
+        or one that cannot be read as a JSON object with a
+        ``"polyphys_version"`` key. The record is overwritten either way, and
+        the directory may then hold artifacts that two versions wrote.
+
+    Notes
+    -----
+    The writers of the ``wholeSim``, ``ens``, ``ensAvg``, and ``space``
+    stages call this function when they make or reuse the directory, before
+    they write an artifact, so the record names the version of the last
+    write into the stage. A record that names the running version is
+    rewritten with the same bytes. Nothing in PolyPhys reads the record: a
+    stage directory without one, as every directory written before 1.1.0
+    is, stays valid. Time and space are :math:`O(1)`.
+
+    Examples
+    --------
+    >>> import tempfile
+    >>> import polyphys
+    >>> tmp = tempfile.TemporaryDirectory()
+    >>> stage = make_database(Path(tmp.name) / 'probes' / 'N20-bug-probe',
+    ...                       'analysis', 'ens', 'bug')
+    >>> path = write_provenance(stage)
+    >>> path.name
+    'N20-bug-ens-provenance.json'
+    >>> record = json.loads(path.read_text())
+    >>> list(record), record['polyphys_version'] == polyphys.__version__
+    (['polyphys_version'], True)
+    >>> tmp.cleanup()
+    """
+    directory = Path(save_to)
+    path = directory / f"{directory.name}-provenance.json"
+    if path.exists():
+        try:
+            previous = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            previous = None
+        version = (previous.get("polyphys_version")
+                   if isinstance(previous, dict) else None)
+        if version != __version__:
+            warnings.warn(
+                f"{path.name} records PolyPhys {version!r}, not the running "
+                f"{__version__!r}; it is overwritten, and the directory may "
+                "hold artifacts of both versions.",
+                UserWarning,
+                stacklevel=2,
+            )
+    record = {"polyphys_version": __version__}
+    path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8")
+    return path
 
 
 def make_database(
@@ -1502,6 +1588,21 @@ def _group_from_stamp_names(stamps: list[tuple[str]]) -> str:
     return groups.pop()
 
 
+def _join_versions(versions: pd.Series) -> str | float:
+    """
+    The distinct versions of `versions`, in the order they first appear,
+    joined by ``'; '``, or NaN when every value is missing.
+
+    A value that is already joined counts as its parts, so a roll-up of
+    rolled-up stamps lists each version once. Time is :math:`O(n)` for
+    :math:`n` values.
+    """
+    distinct = dict.fromkeys(
+        part for value in versions.dropna()
+        for part in str(value).split("; "))
+    return "; ".join(distinct) if distinct else np.nan
+
+
 def children_stamps(
     stamps: list[tuple[str]],
     child_lineage: PrimitiveLineageT,
@@ -1564,6 +1665,10 @@ def children_stamps(
       ``space`` when that column is present and last otherwise, so the
       result and the parent stamps built from it carry the group either
       way.
+    - The stamps :func:`~polyphys.probe.core.write_stamps` writes from
+      1.1.0 end in a ``polyphys_version`` column, which is kept. Among
+      stamps of which only some have it, the rows of the others are
+      missing a value there.
     - Let n_files be the number of stamp files, n_rows the total number of
       rows, and n_cols the number of columns. Time is O(n_rows * n_cols).
       Every file is read before the frames are concatenated, so peak memory
@@ -1678,7 +1783,8 @@ def parents_stamps(
 
         Every other column takes its last value in each group unless
         `properties` says otherwise; 'lineage_name' and the `child_lineage`
-        column are dropped.
+        column are dropped. The exception is 'polyphys_version', the version
+        of PolyPhys that probed each row (see Notes).
 
     Raises
     ------
@@ -1702,9 +1808,24 @@ def parents_stamps(
       carried into the parent stamps. Either may be absent, as
       'lineage_name' is from the stamps the probe phase writes; an absent
       one is skipped with a DEBUG record.
+    - A 'polyphys_version' column, which
+      :func:`~polyphys.probe.core.write_stamps` writes from 1.1.0, holds
+      in each parent the distinct versions of its children, in the order
+      they first appear, joined by ``'; '``: ``'1.1.0'`` when one version
+      probed them all, ``'1.0.0; 1.1.0'`` when two did. A child value that
+      is already joined counts as its parts, so rolling segments up to
+      wholes and wholes up to ensembles lists each version once. Missing
+      values, the rows of stamps written before 1.1.0, are skipped, and a
+      parent with none is missing too. `properties` may replace this rule.
+      Stamps without the column give parents without it.
     - Let n_rows be the number of child stamps and n_cols the number of
       columns. The group-by is hash-based, so expected time is
-      O(n_rows * n_cols); memory is one copy of the parent stamps.
+      O(n_rows * n_cols); joining the versions adds O(n_rows). Memory is
+      one copy of the parent stamps.
+
+    .. versionchanged:: 1.1.0
+       The 'polyphys_version' column joins the distinct versions of the
+       children instead of taking the last one.
 
     Examples
     --------
@@ -1719,6 +1840,12 @@ def parents_stamps(
       whole  n_segments  n_frames
     0    w1           2        30
     1    w2           1        30
+
+    Two versions probed the segments of ``w1``, one those of ``w2``:
+
+    >>> stamps['polyphys_version'] = ['1.0.0', '1.1.0', '1.1.0']
+    >>> parents_stamps(stamps, 'segment')['polyphys_version'].tolist()
+    ['1.0.0; 1.1.0', '1.1.0']
     """
     invalid_keyword(child_lineage, ["segment", "whole"])
 
@@ -1732,6 +1859,8 @@ def parents_stamps(
     agg_funcs: dict[str, str | Callable[..., Any]] = {
         col: "last" for col in base_columns
     }
+    if "polyphys_version" in agg_funcs:
+        agg_funcs["polyphys_version"] = _join_versions
 
     # Define grouping column and lineage-specific aggregations
     if child_lineage == "whole":
@@ -1845,7 +1974,9 @@ def space_tseries(
         If True, saves the concatenated DataFrame to a CSV file named
         ``<space>-<group>-<prop>-space.csv`` in the ``analysis`` phase's
         ``space`` directory, which :func:`make_database` creates next to
-        `input_database`; a file of the same name is overwritten.
+        `input_database`; a file of the same name is overwritten. The
+        directory's provenance record is written first, by
+        :func:`write_provenance`.
     crowder_attr : str, default 'phi_bulk_c'
         Name of the `parser` attribute that holds the bulk volume fraction
         of crowders. Its value is added as a column of that name, whether or
@@ -1895,6 +2026,10 @@ def space_tseries(
       Time is O(n_rows * n_cols + n_files log n_files). Every file is read
       and kept before the frames are concatenated, so peak memory is about
       twice the result, O(n_rows * n_cols).
+
+    .. versionchanged:: 1.1.0
+       With `is_save`, the ``space`` directory also gets its provenance
+       record.
     """
     prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs = sort_filenames(
@@ -1936,6 +2071,7 @@ def space_tseries(
         save_to_space = make_database(
             input_database, "analysis", stage="space", group=group
         )
+        write_provenance(save_to_space)
         space = save_to_space.split("/")[-2].split("-")[0]
         filepath = (
             save_to_space + f"{create_fullname(space, group, prop)}-space.csv"
@@ -1997,7 +2133,9 @@ def space_hists(
         If True, saves the concatenated DataFrame to a CSV file named
         ``<space>-<group>-<prop>-space.csv`` in the ``analysis`` phase's
         ``space`` directory, which :func:`make_database` creates next to
-        `input_database`; a file of the same name is overwritten.
+        `input_database`; a file of the same name is overwritten. The
+        directory's provenance record is written first, by
+        :func:`write_provenance`.
     crowder_attr : str, default 'phi_bulk_c'
         Name of the `parser` attribute that holds the bulk volume fraction
         of crowders. Its value is added as a column of that name, whether or
@@ -2055,6 +2193,10 @@ def space_hists(
       data. When all the ensemble-averaged DataFrames have the same bin
       center, like 'clustersHistTFoci' or 'bondsHistTFoci' properties, the
       `bin_center` may not be provided.
+
+    .. versionchanged:: 1.1.0
+       With `is_save`, the ``space`` directory also gets its provenance
+       record.
     """
     prop_ext = f"-{prop}-ensAvg.csv"
     ens_avg_csvs_ungrouped = glob(
@@ -2108,6 +2250,7 @@ def space_hists(
         save_to_space = make_database(
             input_database, "analysis", stage="space", group=group
         )
+        write_provenance(save_to_space)
         space = save_to_space.split("/")[-2].split("-")[0]
         filepath = (
             save_to_space + f"{create_fullname(space, group, prop)}-space.csv"

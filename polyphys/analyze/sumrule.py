@@ -72,8 +72,9 @@ Dependencies
 ============
 - `numpy` and `pandas`.
 - :mod:`polyphys.manage.organizer`:
-  :func:`~polyphys.manage.organizer.make_database` and
-  :func:`~polyphys.manage.organizer.create_fullname`.
+  :func:`~polyphys.manage.organizer.make_database`,
+  :func:`~polyphys.manage.organizer.create_fullname`, and
+  :func:`~polyphys.manage.organizer.write_provenance`.
 - :mod:`polyphys.manage.utils` and :mod:`polyphys.manage.types`.
 - :class:`polyphys.spec.ProjectSpec`.
 
@@ -100,7 +101,9 @@ from typing import Any, Callable, Literal, Mapping, Sequence, TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
-from ..manage.organizer import create_fullname, make_database
+from ..manage.organizer import (
+    create_fullname, make_database, write_provenance,
+)
 from ..manage.types import (
     DirectionT,
     EntityT,
@@ -548,7 +551,9 @@ def space_profiles(
         ``<space>-<group>-<direction><quantity><species>-normalizedRescaled-space.csv``
         in the ``analysis`` phase's ``space`` directory, which
         :func:`~polyphys.manage.organizer.make_database` creates next to
-        `input_database`, and log the path at INFO.
+        `input_database`, and log the path at INFO. The directory's
+        provenance record is written first, by
+        :func:`~polyphys.manage.organizer.write_provenance`.
     crowder_attr : str, default 'phi_bulk_c'
         The parser attribute holding the bulk volume fraction of crowders,
         added as a column of that name and rounded into
@@ -691,6 +696,9 @@ def space_profiles(
     .. versionchanged:: 0.7.0
        Carry ``<prop>-norm-sem`` through, and warn on a profile that sums
        to one.
+    .. versionchanged:: 1.1.0
+       With `is_save`, the ``space`` directory also gets its provenance
+       record.
     """
     invalid_keyword(quantity, ["Rho", "Phi"])
     if species not in species_sizes:
@@ -825,6 +833,7 @@ def space_profiles(
         save_to_space = make_database(
             input_database, "analysis", stage="space", group=group
         )
+        write_provenance(save_to_space)
         space = save_to_space.split("/")[-2].split("-")[0]
         filepath = (
             save_to_space
@@ -900,7 +909,8 @@ def space_profiles_from_spec(
         Also write the table to
         ``<space>-<group>-<direction><quantity><species>-normalizedRescaled-space.csv``
         in the ``analysis`` phase's ``space`` directory next to
-        `input_database`.
+        `input_database`, after the directory's provenance record, as
+        :func:`space_profiles` does.
 
     Returns
     -------
@@ -960,6 +970,9 @@ def space_profiles_from_spec(
     >>> tmp.cleanup()
 
     .. versionadded:: 0.9.0
+    .. versionchanged:: 1.1.0
+       With `save`, the ``space`` directory also gets its provenance
+       record.
     """
     return space_profiles(
         os.path.join(os.fspath(input_database), ""), quantity, direction,

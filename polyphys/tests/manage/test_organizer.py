@@ -15,8 +15,10 @@ The space tests build a small ``analysis`` phase on disk; their expected
 period of the group's trajectory (``adump`` for ``all``, ``bdump`` for
 ``bug``) encoded in the filenames. The stamp tests use the column layout of the
 research code's probe-phase stamp files: genealogy columns, parser attributes,
-and ``n_frames``.
+and ``n_frames``. The provenance tests compare a record with
+``polyphys.__version__``, the version the record is defined to hold.
 """
+import json
 import logging
 import os
 import re
@@ -27,6 +29,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+import polyphys
 from polyphys.manage.organizer import (
     BULK_NAME_MAP,
     children_stamps,
@@ -48,6 +51,7 @@ from polyphys.manage.organizer import (
     space_tseries,
     whole_from_file,
     whole_from_segments,
+    write_provenance,
 )
 from polyphys.tests.synthetic import ChainCyl
 from polyphys.manage.types import PhaseT, StageT
@@ -167,6 +171,60 @@ def test_save_artifact_rejects_unsupported_type(tmp_path):
     """Data that is not an array, a DataFrame, or a dict raises TypeError."""
     with pytest.raises(TypeError, match="Unsupported data type list"):
         save_artifact("w-bug-rhoMon", [1.0, 2.0], tmp_path)
+
+
+@pytest.fixture
+def stage_dir(tmp_path):
+    """An ``ens`` stage directory as make_database returns it, ending in
+    '/'."""
+    return make_database(tmp_path / "probes" / "N20-bug-probe", "analysis",
+                         "ens", "bug")
+
+
+def test_write_provenance_records_the_running_version(stage_dir):
+    """The record is <directory>-provenance.json in the directory and holds
+    only the running polyphys.__version__."""
+    path = write_provenance(stage_dir)
+
+    assert path == Path(stage_dir) / "N20-bug-ens-provenance.json"
+    assert json.loads(path.read_text(encoding="utf-8")) == {
+        "polyphys_version": polyphys.__version__}
+
+
+@pytest.mark.parametrize(
+    "previous, named",
+    [
+        pytest.param('{"polyphys_version": "0.0.0"}', "'0.0.0'",
+                     id="another-version"),
+        pytest.param("not json", "None", id="unreadable"),
+        pytest.param('["0.0.0"]', "None", id="not-an-object"),
+    ],
+)
+def test_write_provenance_warns_and_overwrites_another_record(
+    stage_dir, previous, named
+):
+    """A record that names another version, or none, is overwritten with a
+    UserWarning naming what it held."""
+    path = Path(stage_dir) / "N20-bug-ens-provenance.json"
+    path.write_text(previous, encoding="utf-8")
+
+    with pytest.warns(UserWarning,
+                      match=re.escape(f"records PolyPhys {named}, not")):
+        write_provenance(stage_dir)
+
+    assert json.loads(path.read_text(encoding="utf-8")) == {
+        "polyphys_version": polyphys.__version__}
+
+
+@pytest.mark.filterwarnings("error::UserWarning")
+def test_write_provenance_rewrites_its_own_record_unchanged(stage_dir):
+    """Writing the record twice with one version neither warns nor changes
+    its bytes."""
+    first = write_provenance(stage_dir).read_bytes()
+
+    second = write_provenance(stage_dir).read_bytes()
+
+    assert second == first
 
 
 @pytest.mark.parametrize(
@@ -1015,6 +1073,26 @@ def test_children_stamps_takes_child_lineage_by_keyword(
     assert combined["segment_id"].tolist() == [1, 2, 3, 1, 2, 3]
 
 
+def test_children_stamps_leaves_the_version_of_older_stamps_missing(
+    tmp_path
+):
+    """Among stamps of which only some have polyphys_version, the rows of
+    the others are missing it, and the column is kept."""
+    old = tmp_path / "w1-bug-stamps.csv"
+    new = tmp_path / "w2-bug-stamps.csv"
+    pd.DataFrame({"whole": ["w1"], "n_frames": [10]}).to_csv(
+        old, index=False)
+    pd.DataFrame({"whole": ["w2"], "n_frames": [20],
+                  "polyphys_version": ["1.1.0"]}).to_csv(new, index=False)
+
+    combined = children_stamps([(str(old),), (str(new),)], "whole")
+
+    assert combined.columns.tolist() == [
+        "whole", "n_frames", "polyphys_version", "group"]
+    assert pd.isna(combined.loc[0, "polyphys_version"])
+    assert combined.loc[1, "polyphys_version"] == "1.1.0"
+
+
 def test_children_stamps_rejects_unknown_lineage():
     """A lineage other than segment or whole raises ValueError."""
     with pytest.raises(ValueError, match="'nope' is an invalid option"):
@@ -1153,6 +1231,63 @@ def test_parents_stamps_rejects_aggregating_its_own_columns(
     with pytest.raises(ValueError, match=re.escape(
             f"properties cannot set {column!r}")):
         parents_stamps(segment_stamps, "segment", properties={column: "max"})
+
+
+@pytest.mark.parametrize(
+    "versions, expected",
+    [
+        pytest.param(["1.1.0", "1.1.0", "1.1.0"], "1.1.0", id="one-version"),
+        pytest.param(["1.1.0", "1.0.0", "1.1.0"], "1.1.0; 1.0.0",
+                     id="order-of-first-appearance"),
+        pytest.param([np.nan, "1.1.0", np.nan], "1.1.0",
+                     id="missing-skipped"),
+        pytest.param(["1.0.0; 1.1.0", "1.1.0", "1.0.0"], "1.0.0; 1.1.0",
+                     id="joined-value-split"),
+    ],
+)
+def test_parents_stamps_joins_the_distinct_versions_of_the_children(
+    segment_stamps, versions, expected
+):
+    """A parent's polyphys_version lists each version of its children once,
+    in the order they first appear, without the missing ones."""
+    stamps = segment_stamps.assign(
+        polyphys_version=versions + ["2.0.0", "2.0.0", "2.0.0"])
+
+    parents = parents_stamps(stamps, "segment")
+
+    assert parents["polyphys_version"].tolist() == [expected, "2.0.0"]
+
+
+def test_parents_stamps_children_without_versions_give_a_missing_one(
+    segment_stamps
+):
+    """A parent whose children all lack a version has a missing one."""
+    stamps = segment_stamps.assign(
+        polyphys_version=[np.nan, np.nan, np.nan, "1.1.0", "1.1.0", "1.1.0"])
+
+    parents = parents_stamps(stamps, "segment")
+
+    assert pd.isna(parents.loc[0, "polyphys_version"])
+    assert parents.loc[1, "polyphys_version"] == "1.1.0"
+
+
+def test_parents_stamps_without_a_version_column_adds_none(segment_stamps):
+    """Stamps without polyphys_version, as written before 1.1.0, give
+    parents without it."""
+    parents = parents_stamps(segment_stamps, "segment")
+
+    assert "polyphys_version" not in parents.columns
+
+
+def test_parents_stamps_properties_replace_the_version_rule(segment_stamps):
+    """properties may aggregate polyphys_version by another rule."""
+    stamps = segment_stamps.assign(
+        polyphys_version=["1.0.0", "1.1.0", "1.1.0"] * 2)
+
+    parents = parents_stamps(stamps, "segment",
+                             properties={"polyphys_version": "first"})
+
+    assert parents["polyphys_version"].tolist() == ["1.0.0", "1.0.0"]
 
 
 def test_parents_stamps_rejects_unknown_lineage(segment_stamps):
@@ -1319,6 +1454,20 @@ def test_space_tseries_saves_space_csv(tmp_path, make_ens_avg_space):
     pd.testing.assert_frame_equal(pd.read_csv(saved), space)
 
 
+def test_space_tseries_saves_the_space_provenance_record(tmp_path,
+                                                         make_ens_avg_space):
+    """is_save also records the running version in the space directory."""
+    database = make_ens_avg_space("gyrTMon", [[0.0, 1.0, 2.0]] * 2)
+
+    space_tseries(database, "gyrTMon", ChainCyl, "N*", ["dcyl"], "all",
+                  is_save=True)
+
+    record = tmp_path / "analysis" / "N200-all-space" / \
+        "N200-all-space-provenance.json"
+    assert json.loads(record.read_text(encoding="utf-8")) == {
+        "polyphys_version": polyphys.__version__}
+
+
 def test_space_hists_concatenates_and_normalizes(make_ens_avg_space,
                                                  state_attr):
     """space_hists adds bin centers and each normalized histogram sums to 1."""
@@ -1358,6 +1507,19 @@ def test_space_hists_saves_space_csv(tmp_path, make_ens_avg_space):
     saved = tmp_path / "analysis" / "N200-all-space" / \
         "N200-all-rhoMon-space.csv"
     pd.testing.assert_frame_equal(pd.read_csv(saved), space)
+
+
+def test_space_hists_saves_the_space_provenance_record(tmp_path,
+                                                       make_ens_avg_space):
+    """is_save also records the running version in the space directory."""
+    database = make_ens_avg_space("rhoMon", [[1.0, 2.0, 1.0]] * 2)
+
+    space_hists(database, "rhoMon", ChainCyl, "N*", [], "all", is_save=True)
+
+    record = tmp_path / "analysis" / "N200-all-space" / \
+        "N200-all-space-provenance.json"
+    assert json.loads(record.read_text(encoding="utf-8")) == {
+        "polyphys_version": polyphys.__version__}
 
 
 # Integration along the lineage: segment -> whole -> ensemble -> ensAvg

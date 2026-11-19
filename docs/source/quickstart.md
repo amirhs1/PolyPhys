@@ -148,13 +148,16 @@ the `probes` phase:
 ```python
 >>> for stage in sorted((root / 'analysis').iterdir()):
 ...     print(stage.name, len(list(stage.iterdir())))
-N200D20ac2-bug-ens 2
-N200D20ac2-bug-ensAvg 2
-N200D20ac2-bug-wholeSim 4
+N200D20ac2-bug-ens 3
+N200D20ac2-bug-ensAvg 3
+N200D20ac2-bug-wholeSim 5
 
 ```
 
-Four wholes, and two state points at each of the ensemble stages.
+Four wholes, and two state points at each of the ensemble stages, plus
+one provenance record per stage, `<stage directory>-provenance.json`, which
+names the version of PolyPhys that wrote it (the [Lineage](lineage.md)
+page, "Provenance records").
 
 ## The space table
 
@@ -176,7 +179,7 @@ spec declares:
 >>> sorted(set(space['phi_bulk_c_round']))
 [0.325, 0.65]
 >>> sorted(p.name for p in (root / 'analysis').glob('*-space/*'))
-['N200D20ac2-bug-gyrTMon-space.csv']
+['N200D20ac2-bug-gyrTMon-space.csv', 'N200D20ac2-bug-space-provenance.json']
 
 ```
 
