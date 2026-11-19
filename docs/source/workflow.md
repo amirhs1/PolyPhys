@@ -39,7 +39,7 @@ $\Delta$
 | 1    | a whole or segment in `trjs`, with its data file | an analysis of {mod}`polyphys.probe`, built from `PROBE` | one `.npy` file per observable and a stamps file | [Probe](probe.md) |
 | 2    | the probe files of one space         | {func}`~polyphys.analyze.pipeline.reduce_space` with one table of `ANALYSIS` | `analysis/<space>-<group>-ens` and `-ensAvg`, and `-wholeSim` for a `segment` table | [Pipeline](pipeline.md) |
 | 3    | the `ensAvg` stage                   | {func}`~polyphys.manage.organizer.space_tseries`, {func}`~polyphys.manage.organizer.space_hists`, {func}`~polyphys.analyze.sumrule.space_profiles` | `analysis/<space>-<group>-space` | below |
-| 4    | the `ens` stage and the stamps       | {func}`~polyphys.analyze.pipeline.equilibrium_wholes` | a table of one row per whole, returned | [Pipeline](pipeline.md) |
+| 4    | the `ens` stage and the stamps       | {func}`~polyphys.analyze.pipeline.equilibrium_wholes` for one space, {func}`~polyphys.analyze.pipeline.all_in_one_wholes` for the spaces of a study | a table of one row per whole, returned; with `save_to`, `all_in_one_wholes` also writes `allInOne-<project>-<group>-equilProps-whole.csv` | [Pipeline](pipeline.md) |
 
 Step 1 is the only step that reads trajectories and the only one that needs
 MDAnalysis, the `mda` extra; steps 2 to 4 read only the files the probe
@@ -150,6 +150,13 @@ and rolling them up a level with
 page lists the stamps tables of each stage. The frames of one run are correlated, so this error comes from block
 averaging within the whole, not from the per-frame standard error; the
 [Statistics](statistics.md) page explains why and how.
+
+{func}`~polyphys.analyze.pipeline.all_in_one_wholes` runs this step over
+the `ens` directories of a study's spaces, reading each directory's whole
+stamps itself, and adds `phi_bulk_c_round`. It returns the table and
+writes nothing by default; with `save_to` it writes that directory's
+provenance record and then
+`allInOne-<project>-<group>-equilProps-whole.csv`.
 
 ## Which error bar at which level
 

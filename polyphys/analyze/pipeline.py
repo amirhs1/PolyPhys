@@ -85,7 +85,10 @@ ensemble averages of one property into the ``space`` table with the spec's
 columns and rounding step;
 :func:`reduce_stamps` combines the stamps of a space;
 :func:`equilibrium_wholes` reduces each whole's time series to its
-equilibrium value with a blocked error, beside the whole's stamps.
+equilibrium value with a blocked error, beside the whole's stamps;
+:func:`all_in_one_wholes` does so over the spaces of a study, adds the
+rounded volume fraction of crowders, and saves the ``allInOne`` table when
+asked.
 
 Conventions
 ===========
@@ -139,6 +142,8 @@ Dependencies
 - :mod:`polyphys.analyze.stats`:
   :func:`~polyphys.analyze.stats.sem_blocked`.
 - :mod:`polyphys.manage.organizer`: the lineage reducers.
+- :mod:`polyphys.manage.utils`:
+  :func:`~polyphys.manage.utils.round_to_multiple`.
 - :mod:`polyphys.spec`: :class:`~polyphys.spec.ProjectSpec`, the table
   records, and :data:`~polyphys.spec.PerWhole`.
 
@@ -190,7 +195,7 @@ import numbers
 import os
 import re
 import warnings
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Literal, Protocol, TypeGuard, cast
 
@@ -213,6 +218,7 @@ from polyphys.manage.types import (
     PropertyT,
     WholeRelationT,
 )
+from polyphys.manage.utils import round_to_multiple
 from polyphys.spec import PerWhole, ProjectSpec, _check_resolved
 
 __all__ = [
@@ -223,6 +229,7 @@ __all__ = [
     'HookContext',
     'LocalDensities',
     'TimeAverage',
+    'all_in_one_wholes',
     'equilibrium_wholes',
     'half_contour',
     'reduce_space',
@@ -1609,9 +1616,269 @@ def equilibrium_wholes(
     return pd.concat([whole_stamps, combined], axis=1)
 
 
+def all_in_one_wholes(
+    ens_databases: Iterable[Pathish],
+    spec: ProjectSpec,
+    properties: Mapping[PropertyT, str] | None = None,
+    *,
+    group: GroupT | None = None,
+    method: PlateauMethod = 'lee',
+    topology: str | None = None,
+    round_to: int = 3,
+    save_to: Pathish | None = None,
+) -> pd.DataFrame:
+    """
+    Build a study's ``allInOne`` table of one row per whole over several
+    spaces, and save it when asked.
+
+    For each space, the whole stamps in its ``ens`` directory are read and
+    passed to :func:`equilibrium_wholes`, which reduces every whole's time
+    series to its time average, its variance, and the blocked standard
+    error of the average. The tables of the spaces are concatenated in the
+    order given, and a ``phi_bulk_c_round`` column is added: the bulk
+    volume fraction of crowders :math:`\\phi_c` (dimensionless) that the
+    stamps hold in the `spec.crowder_attr` column, rounded to the nearest
+    multiple of the step :math:`\\Delta` (`spec.divisor`) with
+    :func:`~polyphys.manage.utils.round_to_multiple`, as
+    :func:`space_tseries_from_spec` does.
+
+    Parameters
+    ----------
+    ens_databases : iterable of path-like
+        The ``ens`` directories, one per space:
+        ``<root>/analysis/<space>-<group>-ens``, each with the files of
+        :func:`equilibrium_wholes` and exactly one whole stamps file,
+        ``<space>-<group>-stamps-whole.csv``, as :func:`reduce_stamps`
+        writes it. A single path is rejected, not read as a list of one.
+    spec : ~polyphys.spec.ProjectSpec
+        The study's spec.
+    properties : mapping of str to str, optional
+        The time-series property of each ensemble file, mapped to its
+        output name, as in :func:`equilibrium_wholes`. By default the
+        properties are `spec.tseries_properties`, and each output name is
+        the property with its last ``T`` dropped: ``gyrTMon`` gives
+        ``gyrMon``.
+    group : str, optional
+        The particle group of the stamps files; the default is the polymer
+        group, `spec.group`.
+    method : {'lee', 'sem_err'}, default 'lee'
+        The plateau rule of :func:`~polyphys.analyze.stats.sem_blocked`;
+        ``'lee'`` is the published rule.
+    topology : str, optional
+        Appended to each whole's name as ``.<topology>`` before the merge
+        with the stamps, as in :func:`equilibrium_wholes`.
+    round_to : int, default 3
+        The number of decimal places of the rounded :math:`\\phi_c`.
+    save_to : path-like, optional
+        An existing directory. By default nothing is written. With a
+        directory, its provenance record is written first, as
+        :func:`~polyphys.manage.organizer.write_provenance` writes it, and
+        then the table, as
+        ``allInOne-<spec.name>-<group>-equilProps-whole.csv``; a file of
+        that name is overwritten.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per whole, the spaces in the order of `ens_databases` and
+        the wholes of a space in the order of its stamps, with a fresh
+        ``0..n-1`` index. The columns are those of the stamps; then, for
+        each property in the order of `properties`, ``<output>-mean``,
+        ``<output>-var``, and ``<output>-sem``; then ``phi_bulk_c_round``.
+
+    Raises
+    ------
+    TypeError
+        If `ens_databases` is a single path.
+    FileNotFoundError
+        If a directory holds no whole stamps file of `group`, which names
+        the directory; if `save_to` is not an existing directory; or as
+        :func:`equilibrium_wholes` raises.
+    ValueError
+        If `ens_databases` is empty; if there is no property to reduce; if
+        `properties` is not given and a name in `spec.tseries_properties`
+        holds no ``T``; if a directory holds more than one whole stamps
+        file of `group`, which names the directory; if a stamps file has
+        no `spec.crowder_attr` column, which names the column; if a whole
+        is in the stamps of two spaces; or as :func:`equilibrium_wholes`
+        raises.
+
+    Warns
+    -----
+    RuntimeWarning
+        As :func:`equilibrium_wholes`, for a series too short for its
+        correlation time.
+    UserWarning
+        As :func:`~polyphys.manage.organizer.write_provenance`, when
+        `save_to` holds a record of another version.
+
+    Notes
+    -----
+    ``-mean``, ``-var``, and ``-sem`` are those of
+    :func:`equilibrium_wholes`: the time average, the sample variance of
+    the frames (``ddof = 1``), and the blocked standard error of the time
+    average. This function changes no estimator.
+
+    The default output names assume each name in `spec.tseries_properties`
+    is ``<name>T<Species>`` with a species label that holds no ``T``; give
+    `properties` for any other name.
+
+    The stamps' columns are kept as they are, the ``polyphys_version``
+    column among them: the version of PolyPhys that probed each whole. No
+    column is added for the version that builds the table; with `save_to`
+    the directory's provenance record names it. When the stamps of the
+    spaces differ in their columns, a column takes the place of its first
+    appearance and is NaN in the rows of a space whose stamps lack it. A
+    stamps column named ``phi_bulk_c_round`` is replaced. The stamps are
+    read as they are: a crowder attribute under another name, as in stamps
+    the research code wrote, is not renamed.
+
+    Every stamps file is read and checked before any time series is
+    reduced. With :math:`n_\\mathrm{frames}` the frames of the longest
+    series, time is the sum of :func:`equilibrium_wholes` over the spaces,
+    :math:`O(n_\\mathrm{wholes}\\, n_\\mathrm{frames})` per property and
+    space. Peak memory is one ensemble file with its ``float64`` copy, plus
+    the stamps and the table, :math:`O(W (A + 3 P))` for :math:`W` wholes
+    in all, :math:`A` stamps columns, and :math:`P` properties.
+
+    Examples
+    --------
+    Two spaces of one whole each, with 100 crowders of size 1 and of size
+    2. Each series alternates between two values, so its time average is
+    exact and its blocked error vanishes; :math:`\\phi_c \\approx 0.0165`
+    of the first whole rounds to 0.02 on the spec's step of 0.01:
+
+    >>> import tempfile
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from pathlib import Path
+    >>> from polyphys.tests.synthetic import ChainCyl
+    >>> from polyphys.spec import ProjectSpec
+    >>> spec = ProjectSpec(
+    ...     parser=ChainCyl, group='bug', divisor=0.01,
+    ...     crowder_attr='phi_bulk_c', physical_attrs=('nmon',),
+    ...     species_sizes={'Mon': 'dmon'}, tseries_properties=('gyrTMon',))
+    >>> root = Path(tempfile.mkdtemp()) / 'analysis'
+    >>> databases = []
+    >>> for dcrowd, low in ((1.0, 0.0), (2.0, 1.0)):
+    ...     stem = f'N20r5.5lz25.0ac{dcrowd}nc100dt0.005bdump1000adump5000'
+    ...     whole = f'{stem}ens1'
+    ...     space = ChainCyl(whole, 'whole', 'bug').space
+    ...     database = root / f'{space}-bug-ens'
+    ...     database.mkdir(parents=True)
+    ...     pd.DataFrame({whole: np.tile([low, low + 2.0], 128)}).to_csv(
+    ...         database / f'{stem}-bug-gyrTMon.csv', index=False)
+    ...     pd.DataFrame({
+    ...         'whole': [whole],
+    ...         'phi_bulk_c': [ChainCyl(whole, 'whole', 'bug').phi_bulk_c],
+    ...     }).to_csv(database / f'{space}-bug-stamps-whole.csv',
+    ...               index=False)
+    ...     databases.append(database)
+    >>> table = all_in_one_wholes(databases, spec)
+    >>> table.drop(columns='whole').round(4)
+       phi_bulk_c  gyrMon-mean  gyrMon-var  gyrMon-sem  phi_bulk_c_round
+    0      0.0165          1.0      1.0039         0.0              0.02
+    1      0.1667          2.0      1.0039         0.0              0.17
+
+    .. versionadded:: 1.1.0
+    """
+    if isinstance(ens_databases, (str, bytes, os.PathLike)):
+        raise TypeError(
+            "ens_databases must be an iterable of 'ens' directories, one "
+            f"per space, not the single path {ens_databases!r}."
+        )
+    databases = [os.fspath(database) for database in ens_databases]
+    if not databases:
+        raise ValueError("ens_databases names no 'ens' directory.")
+    if properties is None:
+        properties = _outputs_without_last_t(spec.tseries_properties)
+    if not properties:
+        raise ValueError(
+            "There is no property to reduce: give 'properties', or a spec "
+            "whose 'tseries_properties' is not empty."
+        )
+    if save_to is not None and not os.path.isdir(save_to):
+        raise FileNotFoundError(
+            f"save_to is not an existing directory: '{os.fspath(save_to)}'."
+        )
+    group = spec.group if group is None else group
+    crowder_attr = spec.crowder_attr
+
+    all_stamps: list[pd.DataFrame] = []
+    seen: dict[str, str] = {}
+    for database in databases:
+        stamps_name = f'*-{group}-stamps-whole.csv'
+        found = sorted(glob.glob(
+            os.path.join(glob.escape(database), stamps_name)))
+        if not found:
+            raise FileNotFoundError(
+                f"No whole stamps file '{stamps_name}' in '{database}'."
+            )
+        if len(found) > 1:
+            raise ValueError(
+                f"More than one whole stamps file '{stamps_name}' in "
+                f"'{database}': "
+                f"{[os.path.basename(path) for path in found]}."
+            )
+        stamps = pd.read_csv(found[0])
+        if crowder_attr not in stamps.columns:
+            raise ValueError(
+                f"The whole stamps '{found[0]}' have no '{crowder_attr}' "
+                "column, the spec's crowder_attr."
+            )
+        if 'whole' in stamps.columns:
+            for whole in stamps['whole'].astype(str):
+                if whole in seen and seen[whole] != found[0]:
+                    raise ValueError(
+                        f"The whole '{whole}' is in the stamps of two "
+                        f"spaces: '{seen[whole]}' and '{found[0]}'."
+                    )
+                seen[whole] = found[0]
+        all_stamps.append(stamps)
+
+    table = pd.concat(
+        [equilibrium_wholes(database, properties, stamps, method=method,
+                            topology=topology)
+         for database, stamps in zip(databases, all_stamps)],
+        ignore_index=True)
+    measured = [f'{output}-{measure}' for output in properties.values()
+                for measure in ('mean', 'var', 'sem')]
+    kept = [column for column in table.columns
+            if column not in measured and column != 'phi_bulk_c_round']
+    table = table[kept + measured]
+    table['phi_bulk_c_round'] = table[crowder_attr].apply(
+        lambda phi: round_to_multiple(phi, spec.divisor, round_to))
+    if save_to is not None:
+        organizer.write_provenance(save_to)
+        organizer.save_artifact(
+            f'allInOne-{spec.name}-{group}-equilProps-whole', table,
+            os.fspath(save_to))
+    return table
+
+
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+
+def _outputs_without_last_t(
+    properties: Sequence[PropertyT],
+) -> dict[PropertyT, str]:
+    """
+    Map each time-series property to its name without its last ``T``, as
+    ``gyrTMon`` to ``gyrMon``; a name without a ``T`` raises ``ValueError``.
+    """
+    outputs: dict[PropertyT, str] = {}
+    for prop in properties:
+        head, found, tail = prop.rpartition('T')
+        if not found:
+            raise ValueError(
+                f"The property '{prop}' holds no 'T' to drop for its "
+                "output name; give 'properties' as a mapping of each "
+                "property to its output name."
+            )
+        outputs[prop] = head + tail
+    return outputs
 
 
 def _check_whole_type(whole_type: str) -> None:
