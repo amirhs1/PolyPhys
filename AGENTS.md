@@ -25,6 +25,7 @@ commit it, and never copy its contents into a tracked file.
 | Type-check           | `python -m mypy polyphys/analyze polyphys/manage polyphys/probe polyphys/simulate`                                                                    |
 | Docs                 | `python -m sphinx -W -b html docs/source docs/_build`                                                                                                 |
 | Full pre-commit gate | Lint, type-check, and all tests; add the build after a packaging change and the docs build when `docs/source/` changed                                |
+| Pull request gate    | The full pre-commit gate                                                                                                                              |
 
 Run the full gate before calling a change complete, and report the actual
 output, not the expected output. Do not describe a change as working because it
@@ -168,8 +169,12 @@ your role in each tier. Change both in the same commit.
   maintainer set, and expect every line to be read. Work that touches
   security, credentials, private data, or published results is never
   Delegated, whatever the table says.
-- Apply only wording the maintainer supplies: `AI-POLICY.md`, `LICENSE`,
-  `SECURITY.md`.
+- Governing prose (`AI-POLICY.md`, `AGENTS.md`, `SECURITY.md`): draft
+  wording, or improve a draft the maintainer wrote, only as a proposal. Mark
+  it in the pull request's "Notes for review". It stands once the maintainer
+  approves it.
+- `LICENSE`: never draft its wording; apply only text the maintainer
+  supplies.
 - A change listed under "Ask first" needs that approval in any tier; the tier
   then sets how closely it is reviewed.
 - Never edit these; draft a change for the maintainer instead:
