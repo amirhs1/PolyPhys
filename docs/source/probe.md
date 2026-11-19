@@ -565,28 +565,14 @@ geometry instead. At $0.661$ the shifted potential is about $-3.1\,k_B T$
 against $-8.7\,k_B T$ at the minimum, so a strict cut there drops the pairs
 in the outer third of the well that the published criterion counts.
 
-The research code also measured how much the counts depend on the
-threshold. Its threshold sweep, which
-{func}`~polyphys.analyze.clusters.threshold_sweep` now reproduces, reloaded
-the saved distance matrices of the HnsCyl wholes and recounted for every
-cutoff from $\sigma_{mp} = 0.535$ to $r_{\mathrm{cut},mp} = 0.685$ in steps
-of $0.01$ and for a cis threshold of 2 and of 4. Its conclusions: below a
-cutoff of $0.575$ no loops of size 2 or more form; the loop-size distribution peaks
-at a genomic distance of 4 for every cutoff; the normalized loop-size
-distributions collapse for cutoffs of $0.645$ and above; and the cis
-threshold of 2 against 4 changes nothing visible; "Choosing the cis
-threshold" below compares 3 and 4. Both $0.661$ and $0.685$
-lie in that insensitive region, so the switch moves the ensemble averages
-little while the per-frame counts differ by the pairs in the outer band of
-the well.
-
 The H-NS study specs therefore state the published criterion, `cutoff=0.685`
 with `inclusive=True`, as the maintainer decided on 2026-11-04. A study
 that must reproduce the research probe's artifacts exactly states
 `cutoff=0.661` with `inclusive=False` instead; the change is one spec edit.
 
-The sweep itself is {func}`~polyphys.analyze.clusters.threshold_sweep`,
-which takes the stored `distMatT<chain><patches>` array of a whole and a
+The research code's threshold sweep, which recounted the saved distance
+matrices for a grid of cutoffs, is now
+{func}`~polyphys.analyze.clusters.threshold_sweep`, which takes the stored `distMatT<chain><patches>` array of a whole and a
 grid of cutoffs and cis thresholds; the clusters guide, "The threshold
 sweep", describes its tables and why its `inclusive` keyword has no
 default.
@@ -605,12 +591,11 @@ $d(i, j) \le$ `cis_threshold`. Two values have been used.
   at most two monomers between the bridged sites, both give a cis bridge of
   at most 3 bonds, and a trans one of 4 bonds or more.
 - **4, the research probe's value.** The research code that PolyPhys
-  replaces counted both H-NS probes with a cis threshold of 4, a genomic
+  replaces counted its H-NS probes with a cis threshold of 4, a genomic
   distance in bonds, not monomers, compared inclusively. It took 4 because
   the loop-size distribution of the bridged pairs peaks there, at a genomic
-  distance of 4 bonds for every cutoff (see "Choosing the cutoff"). Its
-  threshold sweep compared 2 and 4 only and found no visible difference
-  between them.
+  distance of 4 bonds for every cutoff. Its threshold sweep compared 2 and
+  4 only and found no visible difference between them.
 
 The two differ by the bridges of exactly 4 bonds, three monomers between
 the sites, which 4 counts as cis and 3 as trans. The genomic distance is
@@ -658,9 +643,6 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
   and store the contact matrix as bool, where the research code wrote
   1-based atom IDs, used no minimum image, and stored int64 (see "The pair
   distances").
-- The HnsCyl radial bin size includes the H-NS core diameter in its
-  minimum, as HnsCub's did; the maintainer confirmed the research code's
-  omission as a mistake on 2026-11-04.
 - One class, driven by a `ProbeSpec`, replaces the per-study loops; the
   collectors are preallocated per run or per worker rather than per
   function.
