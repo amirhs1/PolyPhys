@@ -46,6 +46,8 @@ deleted branches.
   `pip install --user`. Put audit-only tools in a disposable environment such
   as `.audit-venv`, never in the project's environment or `pyproject.toml`.
 - Never put an absolute environment or interpreter path in a tracked file.
+- Messages you write (commits, pull requests, issues, comments) name no local
+  environment, interpreter path, or other `AGENTS.local.md` setting.
 
 ## Layout
 
@@ -330,6 +332,10 @@ subject and body.
   when the commit adds or changes a reference value, such as a numerical
   fixture or an expected test value. Omit it for a property test without a
   reference value.
+- A `Ground-truth-source:` line, and any message that cites the research
+  code, names that code and the function, such as
+  `the research probe, fixedsize_bins`; never a file path or line range in a
+  private repository.
 - Never add an AI `Co-authored-by:` line or use `--no-verify`; if the
   `commit-msg` hook rejects a commit, fix the message.
 
