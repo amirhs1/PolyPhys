@@ -54,15 +54,11 @@ the package and the documentation, on every pull request.
 
 ### Changelog
 
-A pull request adds one line per change under `## [Unreleased]` in
-`CHANGELOG.md`, in the form the file's header names, unless its only area is
-`agents`. A pull request that only edits the changelog, and a release pull
-request, add none.
-
-Write the entry in the commit that makes the change, citing the issue the
-pull request closes. A pull request that closes no issue cites itself in a
-second commit, pushed once it is open. The release adds the commit
-references.
+A pull request adds no line to `CHANGELOG.md`: each version's section is
+written once, in its release pull request, as "Releases" says. So that the
+release finds them, say in the commit body and in the pull request body when
+a change is breaking or deprecates a public name (`.gitmessage`); the release
+gives it a `**Breaking:**` or `**Deprecated:**` line.
 
 ## AI assistance
 
@@ -178,6 +174,11 @@ before any pull request that closes an issue of a later milestone merges.
 Each release is tagged on `main`; never tag an older commit to leave later
 work out. The `draft-release` skill checks this, and stops when `main`
 already holds later work.
+
+The release pull request writes the version's section of `CHANGELOG.md`
+from the commits since the last tag and their pull requests, in the form the
+file's header names. The `draft-release` skill drafts it, and the maintainer
+reviews it in that pull request.
 
 From v1.0.0, publishing the GitHub release also starts
 `.github/workflows/publish.yaml`, which uploads the release to TestPyPI and

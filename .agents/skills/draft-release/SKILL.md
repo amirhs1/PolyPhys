@@ -37,19 +37,21 @@ tag an older commit to leave later work out; stop and report instead.
    `polyphys/__version__.py`, `version` and `date-released` in
    `CITATION.cff`, and the changelog section of step 7. Open a pull request;
    the release commit is its merge commit.
-7. CHANGELOG.md: rename `## [Unreleased]` to a version heading whose version
-   links to the release,
-   `## [<MAJOR>.<MINOR>.<PATCH>](<release URL>) - <YYYY-MM-DD>`, and add an
-   empty `## [Unreleased]` above it. In the same edit, make the
-   `[Unreleased]` reference at the end of the file compare from the new tag:
-   `[Unreleased]: https://github.com/amirhs1/PolyPhys/compare/v<version>...HEAD`.
-   The section has no trailer; its commit carries one. Check its entries
-   against step 4 in Common Changelog form:
+7. CHANGELOG.md: write the changes of step 4 in Common Changelog form:
    `### Changed`, `### Added`, `### Removed`, `### Fixed`, in that order,
    each only when it has a change; one imperative line per change,
-   `**Breaking:**` lines first, citing its commit, and its pull request when
-   there is one. Add a missing change, and the commit references the entries
-   lack.
+   `**Breaking:**` lines first and a deprecation under `### Changed`
+   starting with `**Deprecated:**`, citing its commit, and its pull request
+   when there is one; no Unreleased section. Find the breaking changes and
+   deprecations in the commit bodies and in the pull request bodies, which
+   the merge commits carry: `git log --format='%h %s%n%b' <last tag>..HEAD`.
+   Add the section at the top, under a version heading whose version links
+   to the release,
+   `## [<MAJOR>.<MINOR>.<PATCH>](<release URL>) - <YYYY-MM-DD>`, with no
+   trailer; its commit carries one. If the file still has an
+   `## [Unreleased]` section from before this rule, use its lines where they
+   fit, then remove it and its `[Unreleased]` link reference at the end of
+   the file.
 8. Release notes: the same categories without the heading, then your trailer
    block (AGENTS.md, "Provenance"). Once CI passes on the release commit,
    create the draft there, and never publish it:
