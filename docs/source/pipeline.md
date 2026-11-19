@@ -181,6 +181,12 @@ the writing.
 | `ens`      | `<root>/analysis/<prefix>-<group>-ens`  | `<ensemble_long>-<group>-<property>.csv` or `.npy` |
 | `ensAvg`   | `<root>/analysis/<prefix>-<group>-ensAvg` | `<ensemble_long>-<group>-<property>-ensAvg.csv`, or `-ensAvg-<statistic>.npy` per statistic |
 
+Each of these directories also holds its provenance record,
+`<prefix>-<group>-<stage>-provenance.json`, which
+{func}`~polyphys.manage.organizer.write_provenance` writes before any
+artifact: the version of PolyPhys that reduced the space. The
+[Lineage](lineage.md) page, "Provenance records", describes it.
+
 The ensemble of DataFrame wholes is their long form, every whole's rows
 with a `whole` and a `row` column, so no whole is lost before the ensemble
 average; the average is taken row by row across the wholes and carries

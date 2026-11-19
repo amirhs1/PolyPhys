@@ -236,9 +236,13 @@ the frames as in any MDAnalysis analysis. `save` writes
 `<name>-<observable><chain>.npy` per observable, the research code's
 layout, and {func}`~polyphys.probe.core.write_stamps` writes
 `<name>-<group>-stamps.csv`: one row of the artifact's lineage names, its
-`group`, every parser attribute, and `n_frames`, which
+`group`, every parser attribute, `n_frames`, and `polyphys_version`, the
+{data}`polyphys.__version__` that probed it, which
 {func}`~polyphys.analyze.pipeline.reduce_stamps` later combines across a
-space.
+space. The stamps are the probe's only record of its version: the arrays
+are bare `.npy` files, and the jobs of one space write into one directory
+at once, so a record per directory would keep only the last job's
+version.
 
 ### Parallel runs
 
@@ -664,6 +668,9 @@ $O(F N_m / 2)$, and the distances $8 F N_m N_p$ bytes.
 - The stamps carry a `group` column; the research stamps did not, and
   {func}`~polyphys.manage.organizer.children_stamps` adds it from their
   file names, `<name>-<group>-stamps.csv`, so either kind reduces.
+- From 1.1.0 the stamps end in a `polyphys_version` column. The research
+  stamps, and the stamps PolyPhys wrote before 1.1.0, have none; they
+  still reduce, and their rows are missing a version.
 - Frames are not converted to simulation time (see "Reading a
   trajectory"). The research code passed `dt` as the dump interval times
   the time step times the Lennard-Jones time unit, which issue #56 lists

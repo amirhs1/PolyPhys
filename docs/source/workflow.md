@@ -51,8 +51,9 @@ sweep.
 For each whole, a study's driver opens the trajectory and its data file as
 one MDAnalysis universe with {func}`~polyphys.probe.core.make_universe`,
 runs the analyses its `PROBE` asks for, saves their arrays, and writes the
-whole's stamps, one row of its lineage names, its parser attributes, and
-its number of frames, with {func}`~polyphys.probe.core.write_stamps`.
+whole's stamps, one row of its lineage names, its parser attributes, its
+number of frames, and the version of PolyPhys that probed it, with
+{func}`~polyphys.probe.core.write_stamps`.
 
 ### Step 2: reduce down the lineage
 
@@ -60,8 +61,9 @@ its number of frames, with {func}`~polyphys.probe.core.write_stamps`.
 one space, the study's `SPEC`, and one `AnalysisTable` of its `ANALYSIS`. For
 each property of the table, it joins the segments of each whole, groups the
 wholes of each state point into an ensemble, and averages each ensemble over
-its replicates, writing each level to its stage. Each table reads the probe
-directory of its own group:
+its replicates, writing each level to its stage, with a provenance record
+that names the version of PolyPhys that reduced it. Each table reads the
+probe directory of its own group:
 
 ```python
 from polyphys.analyze.pipeline import reduce_space
