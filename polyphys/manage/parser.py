@@ -28,14 +28,14 @@ The module ships no study's parser: a study declares its own, as the
 "Studies" page shows.
 
 .. versionchanged:: 1.0.0
-   The parsers of nine studies left this module. ``TransFociCyl``,
-   ``TransFociCub``, ``HnsCub``, and ``HnsCyl`` went to the ``projects/``
-   folder of the PolyPhys repository, which is not installed; those of
-   five unpublished studies were removed. Importing any of the four from
-   here raises :exc:`ImportError` that says where it went.
+   The parsers of nine studies left this module: four went to the
+   ``projects/`` folder of the PolyPhys repository, which is not
+   installed, and five were removed. Importing a moved parser from here
+   raises :exc:`ImportError` that says where it went.
 
 .. versionchanged:: 1.1.0
-   The four parsers are now in the companion repository
+   The parsers of ``TransFociCyl``, ``TransFociCub``, and ``HnsCub`` are
+   now in the companion repository
    `polyphys-lab <https://github.com/amirhs1/polyphys-lab>`_, as
    ``polyphys_lab.<study>.parser``, and the :exc:`ImportError` points
    there.
@@ -96,7 +96,6 @@ __all__ = [
 _LAB_URL = 'https://github.com/amirhs1/polyphys-lab'
 _MOVED_STUDIES: dict[str, str] = {
     'HnsCub': 'hns_cub',
-    'HnsCyl': 'hns_cyl',
     'TransFociCub': 'trans_foci_cub',
     'TransFociCyl': 'trans_foci_cyl',
 }

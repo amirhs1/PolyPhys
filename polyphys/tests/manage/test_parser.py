@@ -1173,7 +1173,6 @@ def test_keyword_spec_rejects_bad_declaration(kwargs, match):
 
 @pytest.mark.parametrize('name, message', [
     pytest.param('HnsCub', 'polyphys_lab.hns_cub.parser', id='HnsCub'),
-    pytest.param('HnsCyl', 'polyphys_lab.hns_cyl.parser', id='HnsCyl'),
     pytest.param('TransFociCub', 'polyphys_lab.trans_foci_cub.parser',
                  id='TransFociCub'),
     pytest.param('TransFociCyl', 'polyphys_lab.trans_foci_cyl.parser',

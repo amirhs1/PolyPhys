@@ -147,24 +147,29 @@ in the pytest documentation. Their tests are in `polyphys/tests/test_conftest.py
 ## Real frames of the probes
 
 The probe tests in `polyphys/tests/probe/` also run on real frames of the
-four live studies, 22 wholes in all: per study, two replicates without
-crowders and two at a bulk crowder volume fraction of about 0.36 to 0.38;
-for the Hns studies, also the wholes without H-NS; and for HnsCyl, crowders
-of size 1 as well as 2. The maintainer trimmed them from the studies' runs.
+three published studies, HnsCub, TransFociCub, and TransFociCyl, 14 wholes
+in all: per study, two replicates without crowders and two at a bulk
+crowder volume fraction of about 0.36 to 0.38; and for HnsCub, also the two
+wholes without H-NS. The maintainer trimmed them from the studies' runs.
 
 - Tier B, in `polyphys/tests/data/probe/<whole>/`: every whole's last 50
   frames of the polymer group dump,
   `<whole>.ring.<group>.last50.lammpstrj.gz`; and, for the wholes without
-  crowders and the HnsCyl wholes at `ac2 nc386`, the `all` frames of the
-  same time window, `<whole>.j<NN>.ring.all.window.lammpstrj.gz`, and the
-  whole's data file, `<whole>.ring.all.data.gz`.
+  crowders, the `all` frames of the same time window,
+  `<whole>.j<NN>.ring.all.window.lammpstrj.gz`, and the whole's data file,
+  `<whole>.ring.all.data.gz`.
 - Tier C, in `<POLYPHYS_DATA_DIR>/<project>/trjs/<whole>/`, with
   `<project>` the study's project name, such as `HnsCub`: the `all` windows
-  and data files of the other crowded wholes, under the runs' own names.
+  and data files of the crowded wholes, under the runs' own names.
 
-The HnsCyl runs name their wholes without `epshc`, which the `HnsCyl` parser
-reads; the tier B copies insert `epshc1`, the value of their H-NS
-core-crowder pair coefficients.
+The files keep the runs' names, and the tests here parse them with the
+synthetic scheme of the same geometry and species in
+`polyphys/tests/synthetic.py`: `RingCubBinders` for HnsCub, `RingCub` for
+TransFociCub, and `RingCyl` for TransFociCyl. A parser reads only the
+keywords of its own pattern, by name and in any order, so it skips the
+others, such as `kbmm` and `epshc` of HnsCub. The probe specs are the
+tests' own, with the values of the studies' specs in polyphys-lab, which
+also holds the tests that need a study's parser or tier C data.
 
 A polymer dump holds only the polymer group, so it is opened with the data
 file of the whole without crowders of its family and replicate, whose atoms
@@ -177,18 +182,17 @@ code's probe of the same 50 frames of their polymer dumps, under
 `<POLYPHYS_DATA_DIR>/TransFociCub/probes/<space>-bug-probe/<whole>.ring/`,
 and its reduction of that probe, under
 `<POLYPHYS_DATA_DIR>/TransFociCub/analysis/<space>-bug-{ens,ensAvg,space}/`.
-Tier C tests compare each stage of the `bug` pipeline with it: the probe
-tests (`test_chain_size.py`, `test_pairs.py`, `test_core.py`) compare the
-chain-size observables, the principal axes up to sign, the foci bonds and
-clusters histograms, and the stamps with the research probe;
-`test_pipeline.py` reduces the research probe, and the package's own probe
-of the same dumps, to the research `ensAvg`, and builds the research space
-tables from the research `ensAvg`; and `viz/test_helpers.py` draws a space
+The tier C tests that compare each stage of the `bug` pipeline with it
+need the study's parser and specs, so they are in polyphys-lab: the probe
+tests compare the chain-size observables, the principal axes up to sign,
+the foci bonds and clusters histograms, and the stamps with the research
+probe; the pipeline tests reduce the research probe, and the package's own
+probe of the same dumps, to the research `ensAvg`, and build the research
+space tables from the research `ensAvg`; and a viz test draws a space
 table with the helpers. The foci pair distances and the autocorrelation
 functions are left out on purpose: PolyPhys takes the minimum image, which
 the research code did not, and `acf` rejects lags beyond a 50-frame
-series, which the research code's `statsmodels` call clamped. The
-`research_probe_file` fixture finds the probe files.
+series, which the research code's `statsmodels` call clamped.
 
 ## Tests that need LAMMPS
 
@@ -229,7 +233,7 @@ def test_profiles_match_the_research_code(private_data_dir):
 ```
 
 `POLYPHYS_DATA_DIR` names the maintainer's tier C folder, which holds one
-folder per study, named by its project (`HnsCub`, `HnsCyl`, `TransFociCub`,
+folder per study, named by its project (`HnsCub`, `TransFociCub`, and
 `TransFociCyl`). Each study folder holds the phase folders of
 `make_database`, such as `trjs/`, `probes/`, and `analysis/`, and `golden/`
 for test inputs derived from them by the maintainer.

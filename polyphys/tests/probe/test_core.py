@@ -5,12 +5,12 @@ by the ``make_chain_files`` fixture, and parsers built from hand-written
 names. Expected values are the positions the fixture wrote and the
 attributes the parser sets.
 
-The real-frame tests open the tier B files of the studies' wholes
-(``polyphys/tests/probe/conftest.py``, "Real frames"). Their expected
-values are the dump headers and coordinates as the package's own LAMMPS
-reader, :func:`polyphys.simulate.dump.iter_dump`, reads them. The tests
-that run a study's probe spec on these frames are in the polyphys-lab
-repository, with the studies' parsers.
+The real-frame tests open the tier B files of the published studies' wholes
+(``polyphys/tests/probe/conftest.py``, "Real frames") and probe them with
+the test-owned spec and parser of each whole's synthetic scheme. Their
+expected values are the dump headers and coordinates as the package's own
+LAMMPS reader, :func:`polyphys.simulate.dump.iter_dump`, reads them, and
+the particle counts and values in the wholes' names.
 """
 import os
 import subprocess
@@ -25,7 +25,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 import polyphys
 from polyphys.manage.organizer import children_stamps
-from polyphys.tests.synthetic import ChainCyl
+from polyphys.tests.synthetic import ChainCyl, RingCub, RingCubBinders, RingCyl
 from polyphys.simulate.dump import iter_dump
 
 pytest.importorskip("MDAnalysis")
@@ -253,3 +253,68 @@ def test_make_universe_positions_are_the_dump_coordinates_from_the_origin(
     # float32 positions of at most about 165 carry an absolute round-off
     # of about 1e-5.
     assert_allclose(positions, expected, rtol=0, atol=2e-5)
+
+
+def test_spec_selections_pick_the_species_of_a_real_polymer_dump(
+        real_polymer_whole, real_files, real_universe, probe_spec):
+    """Each selection of the scheme's probe spec picks, in the polymer dump,
+    the atoms the whole's name gives its species."""
+    probe = probe_spec(real_polymer_whole.scheme)
+    files = real_files(real_polymer_whole)
+    universe = real_universe(files.topology, files.polymer)
+
+    counts = {species: universe.select_atoms(selection).n_atoms
+              for species, selection in probe.selections.items()}
+
+    assert counts == real_polymer_whole.polymer_counts()
+
+
+def test_spec_selections_pick_the_species_of_a_real_window(
+        real_window_whole, real_files, real_universe, probe_spec):
+    """Each selection of the scheme's probe spec picks, in the ``all``
+    window, the atoms the whole's name gives its species, crowders
+    included."""
+    probe = probe_spec(real_window_whole.scheme)
+    files = real_files(real_window_whole)
+    universe = real_universe(files.data, files.window)
+
+    counts = {species: universe.select_atoms(selection).n_atoms
+              for species, selection in probe.selections.items()}
+
+    assert counts == real_window_whole.window_counts()
+
+
+@pytest.mark.parametrize('scheme, group, whole, expected', [
+    pytest.param(RingCubBinders, 'nucleoid',
+                 'N200kbmm2nh30ac2l25epshc1nc10743ens1',
+                 {'nmon': 200, 'nhns': 30, 'dcrowd': 2.0, 'lcube': 50.0,
+                  'ncrowd': 10743, 'ensemble_id': 1},
+                 id='HnsCub'),
+    pytest.param(RingCub, 'bug',
+                 'al6nl5ml216ns400ac1nc112776l27dt0.005bdump2000adump5000'
+                 'ens1',
+                 {'dmon_large': 6.0, 'nmon_large': 5, 'mmon_large': 216.0,
+                  'nmon_small': 400, 'ncrowd': 112776, 'lcube': 54.0},
+                 id='TransFociCub'),
+    pytest.param(RingCyl, 'bug',
+                 'epss5epsl5r10.5al6nl5ml216ns400ac1nc0lz82.5dt0.005'
+                 'bdump2000adump5000ens2',
+                 {'dmon_large': 6.0, 'nmon_small': 400, 'ncrowd': 0,
+                  'dcyl': 20.0, 'lcyl': 165.0, 'ensemble_id': 2},
+                 id='TransFociCyl'),
+])
+def test_write_stamps_of_a_real_whole_carry_its_name(
+        tmp_path, scheme, group, whole, expected):
+    """The stamps of a real whole, parsed by its synthetic scheme, hold the
+    values its name encodes and the 50 frames of its polymer dump."""
+    parser = scheme(f"{whole}.ring", 'whole', group)
+
+    stamps = pd.read_csv(write_stamps(parser, 50, tmp_path))
+
+    # The schemes' scales: l and lz double into the box and cylinder
+    # lengths, and r gives dcyl = 2 r - 1.
+    assert {key: stamps.loc[0, key] for key in expected} == expected
+    # A whole's lineage name never carries the topology suffix ``.ring``
+    # (ParserBase._set_parents).
+    assert (stamps.loc[0, 'whole'], int(stamps.loc[0, 'n_frames'])) == (
+        whole, 50)
