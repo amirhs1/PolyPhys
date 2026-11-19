@@ -6,8 +6,9 @@
 The :mod:`polyphys.probe.core` module holds what every probe shares: how a
 study's LAMMPS data file and dump are opened as one MDAnalysis
 :class:`~MDAnalysis.core.universe.Universe`, and the *stamps* file, the
-one-row table of a probed artifact's lineage names, parser attributes, and
-frame count that the organizer later combines across a space.
+one-row table of a probed artifact's lineage names, parser attributes,
+frame count, and the version of PolyPhys that probed it, which the
+organizer later combines across a space.
 
 The research code opened every universe with the same four arguments and
 wrote the stamps with the same columns in each of its probe functions;
@@ -30,6 +31,7 @@ Dependencies
   ``mda`` extra.
 - `pandas <https://pandas.pydata.org/>`_.
 - :mod:`polyphys.manage.parser`: :class:`~polyphys.manage.parser.ParserBase`.
+- :data:`polyphys.__version__`, the version the stamps record.
 
 Every probe analysis computes each part of a split run on its own shallow
 copy of itself (``_compute_part``), so that the ``serial`` backend, which
@@ -73,6 +75,7 @@ from MDAnalysis.analysis.backends import BackendBase, BackendMultiprocessing
 from MDAnalysis.analysis.base import AnalysisBase
 from MDAnalysis.analysis.results import Results
 
+from ..__version__ import __version__
 from ..manage.parser import ParserBase
 from ..manage.types import Pathish
 
@@ -201,9 +204,12 @@ def write_stamps(
 ) -> Path:
     """
     Write the stamps of one probed artifact: a one-row CSV of its lineage
-    names, its parser attributes, and its number of frames.
+    names, its parser attributes, its number of frames, and the version of
+    PolyPhys that probed it.
 
     .. versionadded:: 0.7.0
+    .. versionchanged:: 1.1.0
+       The stamps end in a ``polyphys_version`` column.
 
     Parameters
     ----------
@@ -232,37 +238,49 @@ def write_stamps(
     The columns are, in order, the lineage names of
     :attr:`~polyphys.manage.parser.ParserBase.lineage_genealogy`, the
     ``group``, every name in
-    :attr:`~polyphys.manage.parser.ParserBase.attributes`, and
-    ``n_frames``; the row holds the parser's values. The research code's
-    ``stamps_report`` wrote the same columns without ``group``, which
-    :func:`~polyphys.manage.organizer.children_stamps` then takes from the
-    file name. Time and space are :math:`O(a)` for :math:`a` attributes.
+    :attr:`~polyphys.manage.parser.ParserBase.attributes`, ``n_frames``,
+    and ``polyphys_version``; the row holds the parser's values and
+    :data:`polyphys.__version__`. The research code's ``stamps_report``
+    wrote the same columns without ``group`` and ``polyphys_version``;
+    :func:`~polyphys.manage.organizer.children_stamps` takes the group from
+    the file name, and leaves the version missing. The stamps are the only
+    record of the version for a probed artifact: the observables are bare
+    ``.npy`` arrays, and the probe jobs of one space write into one
+    directory at once, so a record per directory would keep only the last
+    job's version. Time and space are :math:`O(a)` for :math:`a`
+    attributes.
 
     Examples
     --------
     >>> import tempfile
+    >>> import polyphys
     >>> from polyphys.tests.synthetic import ChainCyl
     >>> parser = ChainCyl(
     ...     'N4r2.5lz10ac1nc0dt0.005bdump1adump1ens1.j01', 'segment',
     ...     'bug')
     >>> with tempfile.TemporaryDirectory() as tmp:
     ...     stamps = pd.read_csv(write_stamps(parser, 3, tmp))
-    >>> stamps.columns[:3].tolist(), stamps.columns[-2:].tolist()
-    (['segment', 'whole', 'ensemble_long'], ['rho_bulk_c', 'n_frames'])
+    >>> stamps.columns[:3].tolist()
+    ['segment', 'whole', 'ensemble_long']
+    >>> stamps.columns[-3:].tolist()
+    ['rho_bulk_c', 'n_frames', 'polyphys_version']
     >>> int(stamps.loc[0, 'nmon']), int(stamps.loc[0, 'n_frames'])
     (4, 3)
+    >>> stamps.loc[0, 'polyphys_version'] == polyphys.__version__
+    True
     """
     if isinstance(n_frames, bool) or not isinstance(n_frames, int) \
             or n_frames < 0:
         raise ValueError(
             f"'n_frames' must be a non-negative integer, not {n_frames!r}.")
     columns = [*parser.lineage_genealogy, 'group', *parser.attributes,
-               'n_frames']
+               'n_frames', 'polyphys_version']
     values = [
         *(getattr(parser, lineage) for lineage in parser.lineage_genealogy),
         parser.group,
         *(getattr(parser, attr) for attr in parser.attributes),
         n_frames,
+        __version__,
     ]
     stamps = pd.DataFrame([values], columns=columns)
     path = Path(save_to) / f"{parser.name}-{parser.group}-stamps.csv"

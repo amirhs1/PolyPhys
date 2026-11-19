@@ -103,7 +103,11 @@ Conventions
 - Outputs go to ``<root>/analysis/<prefix>-<group>-<stage>`` for the stages
   ``wholeSim`` (the ``segment`` lineage only), ``ens``, and ``ensAvg``, as
   :func:`~polyphys.manage.organizer.make_database` builds them, with the
-  names :func:`~polyphys.manage.organizer.save_artifact` gives.
+  names :func:`~polyphys.manage.organizer.save_artifact` gives. Each stage
+  directory also holds its provenance record,
+  ``<prefix>-<group>-<stage>-provenance.json``, which names the version of
+  PolyPhys that wrote into it
+  (:func:`~polyphys.manage.organizer.write_provenance`).
 - The ensemble of ``'dataframe'`` wholes is their long form, every whole's
   rows with a ``whole`` and a ``row`` column, so no whole is lost before the
   ensemble average; the average is taken row by row across the wholes.
@@ -1050,8 +1054,11 @@ def reduce_stamps(
     :func:`~polyphys.manage.organizer.children_stamps`, then roll up once
     with :func:`~polyphys.manage.organizer.parents_stamps` into whole
     stamps; whole stamps combine directly. Either way the whole stamps roll
-    up once more into ensemble stamps. Time and space are
-    :math:`O(n_\\mathrm{files}\\, n_\\mathrm{columns})`.
+    up once more into ensemble stamps. A ``polyphys_version`` column, the
+    version of PolyPhys that probed each artifact, is kept, and each parent
+    row lists the distinct versions of its children, as
+    :func:`~polyphys.manage.organizer.parents_stamps` describes. Time and
+    space are :math:`O(n_\\mathrm{files}\\, n_\\mathrm{columns})`.
 
     Examples
     --------
@@ -1105,8 +1112,9 @@ def reduce_space(
     density : DensityKernel, optional
         The volume-fraction kernel for :class:`LocalDensities`.
     save : bool, default True
-        Write the stages' files under ``<root>/analysis/``; ``False``
-        returns the ensemble averages without writing anything.
+        Write the stages' files under ``<root>/analysis/``, with each
+        stage's provenance record; ``False`` returns the ensemble averages
+        without writing anything.
 
     Returns
     -------
@@ -1137,10 +1145,15 @@ def reduce_space(
     loaded and checked, the post-hook is applied, and every returned
     artifact goes through :func:`~polyphys.manage.organizer.ensemble` and
     :func:`~polyphys.manage.organizer.ensemble_avg`, or their long-form
-    counterparts for ``'dataframe'`` wholes. With `table.stamps`, the
-    stamps are combined first by :func:`reduce_stamps`. One property's
-    wholes are in memory at a time, so peak memory is the largest property's
-    ``n_wholes`` wholes plus its ensembles; time is
+    counterparts for ``'dataframe'`` wholes. With `save`, each stage
+    directory gets its provenance record from
+    :func:`~polyphys.manage.organizer.write_provenance` as soon as it is
+    made or reused, before any artifact is written: the version of
+    PolyPhys that reduced the space. With `table.stamps`, the stamps are
+    combined first by :func:`reduce_stamps`; their ``polyphys_version``
+    column, when the probe wrote one, is the version that probed each
+    row. One property's wholes are in memory at a time, so peak memory is
+    the largest property's ``n_wholes`` wholes plus its ensembles; time is
     :math:`O(n_\\mathrm{files}\\, n_\\mathrm{frames})` per property plus the
     hook's.
 
@@ -1170,6 +1183,8 @@ def reduce_space(
     1           4.0          8.0          2.0
 
     .. versionadded:: 0.6.0
+    .. versionchanged:: 1.1.0
+       With `save`, each stage directory gets its provenance record.
     """
     parser = spec.parser
     group = table.group
@@ -1200,6 +1215,9 @@ def reduce_space(
             input_database, 'analysis', 'ens', group)
         ens_avg_dir = organizer.make_database(
             input_database, 'analysis', 'ensAvg', group)
+        for stage_dir in (whole_dir, ens_dir, ens_avg_dir):
+            if stage_dir is not None:
+                organizer.write_provenance(stage_dir)
 
     if table.stamps:
         stamp_files = _select(observations, 'stamps', ext='csv')
@@ -1279,7 +1297,9 @@ def space_tseries_from_spec(
         The number of decimal places of the rounded :math:`\\phi_c`.
     save : bool, default False
         Also write the table to ``<space>-<group>-<prop>-space.csv`` in the
-        ``analysis`` phase's ``space`` directory next to `input_database`.
+        ``analysis`` phase's ``space`` directory next to `input_database`,
+        after the directory's provenance record, as
+        :func:`~polyphys.manage.organizer.write_provenance` writes it.
 
     Returns
     -------
@@ -1322,6 +1342,9 @@ def space_tseries_from_spec(
     1   5.0           2.0    20               0.0
 
     .. versionadded:: 0.9.0
+    .. versionchanged:: 1.1.0
+       With `save`, the ``space`` directory also gets its provenance
+       record.
     """
     return organizer.space_tseries(
         os.path.join(os.fspath(input_database), ''), prop, spec.parser,
@@ -1373,7 +1396,9 @@ def space_hists_from_spec(
         The number of decimal places of the rounded :math:`\\phi_c`.
     save : bool, default False
         Also write the table to ``<space>-<group>-<prop>-space.csv`` in the
-        ``analysis`` phase's ``space`` directory next to `input_database`.
+        ``analysis`` phase's ``space`` directory next to `input_database`,
+        after the directory's provenance record, as
+        :func:`~polyphys.manage.organizer.write_provenance` writes it.
 
     Returns
     -------
@@ -1419,6 +1444,9 @@ def space_hists_from_spec(
     1         1.5           0.75               0.0
 
     .. versionadded:: 0.9.0
+    .. versionchanged:: 1.1.0
+       With `save`, the ``space`` directory also gets its provenance
+       record.
     """
     return organizer.space_hists(
         os.path.join(os.fspath(input_database), ''), prop, spec.parser,

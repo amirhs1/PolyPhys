@@ -11,8 +11,10 @@ diameter ``a`` in a cylinder of length ``Z = 2 * lz`` and diameter ``D``, or
 check a result against ``space_profiles`` called with the spec's fields. Two
 tests state properties instead: the ``Phi`` and ``Rho`` forms of
 the rule normalize to one curve, and the normalized sum is one wherever the
-rule holds.
+rule holds. The saved space's provenance record is compared with
+``polyphys.__version__``, the version it is defined to hold.
 """
+import json
 import logging
 import re
 import warnings
@@ -25,6 +27,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
+import polyphys
 from polyphys.analyze.sumrule import (
     PROFILE_NORMALIZERS,
     SUM_NORMALIZERS,
@@ -486,6 +489,22 @@ Rescaled-space.csv' in the analysis phase's space directory."""
     saved = pd.read_csv(tmp_path / "analysis" / "N200-all-space" /
                         "N200-all-rPhiCrd-normalizedRescaled-space.csv")
     pd.testing.assert_frame_equal(saved, space)
+
+
+def test_space_profiles_saves_the_space_provenance_record(
+    make_profile_space, cyl_sizes, tmp_path
+):
+    """is_save also records the running version in the space directory."""
+    database = make_profile_space("rPhiCrd", [0.5, 1.5, 2.5],
+                                  [[0.2, 0.3, 0.1]])
+
+    space_profiles(database, "Phi", "r", "Crd", ChainCyl, "N*", [], "all",
+                   cyl_sizes, is_save=True)
+
+    record = (tmp_path / "analysis" / "N200-all-space"
+              / "N200-all-space-provenance.json")
+    assert json.loads(record.read_text(encoding="utf-8")) == {
+        "polyphys_version": polyphys.__version__}
 
 
 @pytest.mark.parametrize(

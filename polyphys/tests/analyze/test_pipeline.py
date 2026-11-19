@@ -13,9 +13,11 @@ from ensemble CSV files written by hand. Two tests reduce the output of a
 probe run in the test: ``ChainSize`` on chains written by
 ``make_chain_files``, which skip without MDAnalysis and take their expected
 names from the parser and their expected means from the probe's own
-results.
+results. A stage's provenance record is compared with
+``polyphys.__version__``, the version it is defined to hold.
 """
 import dataclasses
+import json
 import logging
 import re
 from pathlib import Path
@@ -25,6 +27,7 @@ import pandas as pd
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
+import polyphys
 from polyphys.analyze.clusters import foci_pair_info
 from polyphys.analyze.correlations import acf
 from polyphys.analyze.stats import sem_blocked
@@ -416,7 +419,8 @@ def test_file_selection_matches_the_last_name_token_exactly(
 def test_outputs_land_in_the_analysis_stage_folders(probe_dir, cyl_spec,
                                                     write_tree):
     """A segment-lineage run writes the wholeSim, ens, and ensAvg folders
-    next to the probe phase, with the organizer's file names."""
+    next to the probe phase, with the organizer's file names and each
+    folder's provenance record."""
     tree = write_tree(ChainCyl, "gyrTMon", n_ensembles=1, n_wholes=2,
                       n_segments=2, n_rows=2)
     names = _parsed(tree, ChainCyl, "whole")
@@ -431,11 +435,16 @@ def test_outputs_land_in_the_analysis_stage_folders(probe_dir, cyl_spec,
         "N-bug-ens", "N-bug-ensAvg", "N-bug-wholeSim"]
     assert sorted(path.name for path in (analysis / "N-bug-wholeSim")
                   .iterdir()) == sorted(
-        f"{name}-bug-gyrTMon.npy" for name in names.values())
-    assert [path.name for path in (analysis / "N-bug-ens").iterdir()] == [
-        f"{ens_name}-bug-gyrTMon.csv"]
-    assert [path.name for path in (analysis / "N-bug-ensAvg").iterdir()] == [
-        f"{ens_name}-bug-gyrTMon-ensAvg.csv"]
+        [f"{name}-bug-gyrTMon.npy" for name in names.values()]
+        + ["N-bug-wholeSim-provenance.json"])
+    assert sorted(path.name for path in (analysis / "N-bug-ens")
+                  .iterdir()) == sorted([
+                      f"{ens_name}-bug-gyrTMon.csv",
+                      "N-bug-ens-provenance.json"])
+    assert sorted(path.name for path in (analysis / "N-bug-ensAvg")
+                  .iterdir()) == sorted([
+                      f"{ens_name}-bug-gyrTMon-ensAvg.csv",
+                      "N-bug-ensAvg-provenance.json"])
 
 
 def test_whole_lineage_writes_no_wholesim_folder(probe_dir, cyl_spec,
@@ -459,6 +468,33 @@ def test_save_false_writes_nothing(probe_dir, cyl_spec, write_tree):
     reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY, save=False)
 
     assert not (probe_dir.parent.parent / "analysis").exists()
+
+
+@pytest.mark.parametrize(
+    "lineage, stages",
+    [
+        pytest.param("segment", ["N-bug-ens", "N-bug-ensAvg",
+                                 "N-bug-wholeSim"], id="segment"),
+        pytest.param("whole", ["N-bug-ens", "N-bug-ensAvg"], id="whole"),
+    ],
+)
+def test_reduce_space_records_the_version_in_each_stage(
+        probe_dir, cyl_spec, write_tree, lineage, stages):
+    """Every stage folder a run writes holds one provenance record, named
+    for the folder, that names the running version."""
+    write_tree(ChainCyl, "gyrTMon", lineage=lineage, n_ensembles=1)
+    table = AnalysisTable("bug", lineage, False, (tseries("gyrT", "Mon"),))
+
+    reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
+
+    analysis = probe_dir.parent.parent / "analysis"
+    records = {path.relative_to(analysis).as_posix():
+               json.loads(path.read_text(encoding="utf-8"))
+               for path in analysis.glob("*/*-provenance.json")}
+    assert records == {
+        f"{stage}/{stage}-provenance.json":
+            {"polyphys_version": polyphys.__version__}
+        for stage in stages}
 
 
 def test_reduce_space_logs_each_property(probe_dir, cyl_spec, write_tree,
@@ -1240,6 +1276,31 @@ def test_reduce_space_writes_the_stamp_files_of_each_stage(probe_dir,
             / "N20ac1.0-bug-stamps-ensemble_long.csv").exists()
 
 
+@pytest.mark.parametrize(
+    "stage, filename",
+    [
+        pytest.param("wholeSim", "N20ac1.0-bug-stamps-segment.csv",
+                     id="wholeSim"),
+        pytest.param("ens", "N20ac1.0-bug-stamps-whole.csv", id="ens"),
+        pytest.param("ensAvg", "N20ac1.0-bug-stamps-ensemble_long.csv",
+                     id="ensAvg"),
+    ],
+)
+def test_reduce_space_reduces_stamps_without_a_version_column(
+        probe_dir, cyl_spec, stage, filename):
+    """Stamps without polyphys_version, as written before 1.1.0, still
+    reduce, and the stage's stamps table has no such column."""
+    stem = "N20r5.5lz25.0ac1.0nc100dt0.005bdump1000adump5000"
+    _write_stamps(probe_dir, "ChainCyl", "bug", [f"{stem}ens1"],
+                  n_segments=2)
+    table = AnalysisTable("bug", "segment", True, ())
+
+    reduce_space(probe_dir, cyl_spec, table, hierarchy=HIERARCHY)
+
+    stamps = pd.read_csv(_analysis(probe_dir, stage) / filename)
+    assert "polyphys_version" not in stamps.columns
+
+
 # End to end
 
 
@@ -1290,13 +1351,15 @@ def test_segment_tree_end_to_end(probe_dir, cyl_spec, write_tree,
     clusters_avg = result["clustersHistMon"][ens_name]
     assert_allclose(clusters_avg["clustersHistMon-mean"],
                     frames_1.mean() + np.array([1.0, 2.0]) + 50)
-    # The wholeSim folder holds the combined wholes and every derived whole.
+    # The wholeSim folder holds the combined wholes, every derived whole,
+    # and its provenance record.
     (names,) = [set(_parsed(hist, ChainCyl, "whole").values())]
     assert sorted(path.name for path in _analysis(probe_dir, "wholeSim")
                   .iterdir()) == sorted(
-        f"{name}-bug-{prop}.npy" for name in names for prop in (
+        [f"{name}-bug-{prop}.npy" for name in names for prop in (
             "gyrTMon", "gyrTMon-acf", "rHistMon", "rEdgeMon", "rRhoMon",
-            "rPhiMon", "clustersHistTMon", "clustersHistMon"))
+            "rPhiMon", "clustersHistTMon", "clustersHistMon")]
+        + ["N-bug-wholeSim-provenance.json"])
 
 
 # A probe's own output, reduced
@@ -1342,8 +1405,9 @@ def test_probe_outputs_reduce_to_the_stage_files(probe_dir, cyl_spec,
                                                  probe_space):
     """The files a probe writes parse in the pipeline, which writes each
     whole of the probed segments to wholeSim and the ensemble and its
-    average to ens and ensAvg, with the stamps of each level, under the
-    names the parser gives the probed segments."""
+    average to ens and ensAvg, with the stamps of each level and each
+    folder's provenance record, under the names the parser gives the
+    probed segments."""
     parsers = [ChainCyl(next((probe_dir / f).glob("*.npy")).name, "segment",
                         "bug", ispath=True)
                for f in sorted(path.name for path in probe_dir.iterdir())]
@@ -1357,16 +1421,19 @@ def test_probe_outputs_reduce_to_the_stage_files(probe_dir, cyl_spec,
     assert list(result["rfloryTMon"]) == [ensemble]
     assert sorted(path.name for path in _analysis(probe_dir, "wholeSim")
                   .iterdir()) == sorted(
-        [f"{space}-bug-stamps-segment.csv"]
+        [f"{space}-bug-stamps-segment.csv",
+         "N-bug-wholeSim-provenance.json"]
         + [f"{whole}-bug-rfloryTMon.npy" for whole in wholes])
     assert sorted(path.name for path in _analysis(probe_dir, "ens")
                   .iterdir()) == sorted([
                       f"{space}-bug-stamps-whole.csv",
-                      f"{ensemble}-bug-rfloryTMon.csv"])
+                      f"{ensemble}-bug-rfloryTMon.csv",
+                      "N-bug-ens-provenance.json"])
     assert sorted(path.name for path in _analysis(probe_dir, "ensAvg")
                   .iterdir()) == sorted([
                       f"{space}-bug-stamps-ensemble_long.csv",
-                      f"{ensemble}-bug-rfloryTMon-ensAvg.csv"])
+                      f"{ensemble}-bug-rfloryTMon-ensAvg.csv",
+                      "N-bug-ensAvg-provenance.json"])
 
 
 @pytest.mark.filterwarnings(
@@ -1537,6 +1604,20 @@ def test_equilibrium_wholes_keeps_the_stamps_order_and_columns(
     assert table["whole"].to_list() == wholes[::-1]
     assert_allclose(table["gyrMon-mean"], [2.0, 1.0])
     assert_allclose(table["shapeMon-mean"], [4.0, 3.0])
+
+
+def test_equilibrium_wholes_ignores_the_provenance_record(
+        ens_dir, write_ensemble, alternating):
+    """A provenance record in the ens folder is not read as an ensemble
+    file: the table is the same with it as without it (invariance)."""
+    wholes = write_ensemble("gyrTMon", [alternating, alternating + 1])
+    stamps = pd.DataFrame({"whole": wholes, "n_frames": [256, 256]})
+    expected = equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps)
+    organizer.write_provenance(ens_dir)
+
+    table = equilibrium_wholes(ens_dir, {"gyrTMon": "gyrMon"}, stamps)
+
+    pd.testing.assert_frame_equal(table, expected)
 
 
 def test_equilibrium_wholes_appends_the_topology_to_match_the_stamps(
