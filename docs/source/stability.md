@@ -1,8 +1,8 @@
 # API stability
 
 From 1.0.0, PolyPhys follows [Semantic Versioning 2.0.0][semver]. This page
-says which names that promise covers and how a name is deprecated and
-removed.
+says which names and files that promise covers and how a name is
+deprecated and removed.
 
 ## What is public
 
@@ -31,6 +31,30 @@ Each public module is stable or provisional:
 | `polyphys.analyze.*`      | Stable      |
 | `polyphys.probe.*`        | Provisional |
 | `polyphys.viz.*`          | Provisional |
+
+(output_files_target)=
+
+## Output files
+
+The files PolyPhys writes are public as far as the documentation names
+them: a file name pattern, a column, or a record key that a page of this
+documentation or the docstring of a public function names. A file follows
+the status, stable or provisional, of the module whose public function
+writes it; a column that a function carries over from a file it reads
+keeps the status of the function that first wrote it.
+
+- Adding a file to a directory, a column to a table, or a key to a record
+  is backward compatible and may come in a minor release. Code that reads
+  PolyPhys's files should select columns and keys by name and ignore the
+  files, columns, and keys it does not know.
+- Renaming or removing a documented file name pattern, column, or key, or
+  changing what a documented column, key, or array means, its unit, or the
+  shape of a documented array, is backward incompatible. It gets a
+  `**Breaking:**` changelog entry, and for a stable module it comes only in
+  a major release.
+- The order of a table's columns and the text form of its numbers are not
+  part of the promise, even where the documentation lists the columns in
+  order.
 
 ## How a name is deprecated
 

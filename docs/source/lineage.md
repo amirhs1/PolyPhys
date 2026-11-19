@@ -325,6 +325,9 @@ the `polyphys_version` column of its stamps instead. Nothing in PolyPhys
 reads a record, so a stage written before 1.1.0, which has none, reads and
 reduces as before.
 
+The {ref}`API stability <output_files_target>` page says how the
+versioning promise covers these file names, columns, and record keys.
+
 ### The grammar of a name
 
 - Fields are joined by `-`: `<lineage name>-<group>-<property>`, then the
